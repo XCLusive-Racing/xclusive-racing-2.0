@@ -9,11 +9,6 @@ module.exports = {
     extend: {
       colors: {
         'xclusive-purple': '#9E26B2',
-        'xclusive-dark': '#0a0a0a',
-      },
-      fontFamily: {
-        'heading': ['var(--font-heading)'],
-        'body': ['var(--font-body)'],
       },
     },
   },

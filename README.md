@@ -1,79 +1,73 @@
-# XCLusive Racing Website
+# XCLusive Racing v2.0
 
-Professional landing page for XCLusive Esports - "The Lion is Born to Dominate"
+Professional esports racing organization website with Supabase integration.
 
 ## Features
 
-- 🦁 Professional esports branding with purple/pink gradients
-- 🏎️ Three team sections (ACC Console, Le Mans Ultimate, iRacing)
-- 📱 Fully responsive design
-- ⚡ Built with Next.js 14 and Tailwind CSS
-- 🚀 Optimized for Vercel deployment
+✅ **White Header** with topo background (Raven Store aesthetic)
+✅ **Sign Up System** (Steam/PS5/Xbox)
+✅ **User Profiles** with ELO ratings
+✅ **Race/Events** platform selection
+✅ **Partner Section** (6 logo placeholders)
+✅ **Merchandise** link to Raven Store
+✅ **Supabase Integration** for user data
+✅ **Poppins Font** (Medium, caps, italic)
 
-## Quick Start
+## Setup
 
-### Local Development
-
+### 1. Install Dependencies
 ```bash
-# Install dependencies
 npm install
+```
 
-# Run development server
+### 2. Set up Supabase
+
+1. Go to https://supabase.com
+2. Create a free account
+3. Create a new project
+4. In the SQL Editor, run this:
+
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  username TEXT NOT NULL,
+  country TEXT,
+  platform TEXT NOT NULL,
+  platform_id TEXT NOT NULL,
+  team TEXT,
+  elo_acc INTEGER DEFAULT 1200,
+  elo_lmu INTEGER DEFAULT 1200,
+  elo_iracing INTEGER DEFAULT 1200,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+5. Get your URL and Anon Key from Project Settings
+6. Create `.env.local` file:
+```
+NEXT_PUBLIC_SUPABASE_URL=your_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
+```
+
+### 3. Run Locally
+```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open http://localhost:3000
 
-### Deploy to Vercel
+## Deployment
 
-1. **Push to GitHub:**
-   - Create a new repository on GitHub
-   - Push this code to your repository
-
-2. **Connect to Vercel:**
-   - Go to [vercel.com](https://vercel.com)
-   - Click "Add New Project"
-   - Import your GitHub repository
-   - Vercel will auto-detect Next.js
-   - Click "Deploy"
-
-3. **Custom Domain:**
-   - In Vercel project settings → Domains
-   - Add your custom domain `xclusive-racing.com`
-   - Follow DNS configuration instructions
-
-## Project Structure
-
-```
-xclusive-racing/
-├── src/
-│   └── app/
-│       ├── page.tsx       # Main landing page
-│       ├── layout.tsx     # Root layout
-│       └── globals.css    # Global styles
-├── public/
-│   └── logo.png          # XCLusive logo
-└── package.json
-```
+Push to GitHub → Deploy on Vercel (same as before)
 
 ## Next Steps
 
-Week 2 Development:
-- [ ] User authentication system
-- [ ] JSON race result upload system
-- [ ] ELO rating calculator
-- [ ] Driver profile pages
-- [ ] Event management dashboard
-- [ ] Google Sheets integration
+- [ ] Add partner logos (replace "LOGO HERE")
+- [ ] Set up ELO calculation system
+- [ ] Build event management
+- [ ] Connect JSON race file uploader
+- [ ] Create admin dashboard
 
-## Tech Stack
+---
 
-- **Framework:** Next.js 14
-- **Styling:** Tailwind CSS
-- **Language:** TypeScript
-- **Deployment:** Vercel
-- **Font:** Rajdhani (Google Fonts)
-
-## License
-
-© 2026 XCLusive Gaming Events. All rights reserved.
+© 2026 XCLusive Gaming Events. The lion is born to dominate.
