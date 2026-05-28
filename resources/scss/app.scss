@@ -18,6 +18,12 @@ html {
     scroll-behavior: smooth;
 }
 
+// Topbar (36px) + navbar (~80px) = 116px total fixed header height
+.xcl-page {
+    padding-top: 116px;
+    min-height: 100vh;
+}
+
 // Typography helpers
 .fw-black { font-weight: 900 !important; }
 .text-uppercase-italic { text-transform: uppercase; font-style: italic; }
@@ -47,7 +53,7 @@ html {
     justify-content: center;
     position: relative;
     overflow: hidden;
-    padding-top: 80px;
+    padding-top: 116px;
 }
 
 .hero-bg {
@@ -76,8 +82,61 @@ html {
     animation: bounce 1.5s infinite;
 }
 
+// Top game bar
+.xcl-topbar {
+    background: #111827;
+    height: 36px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1031;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+}
+
+.xcl-topbar-label {
+    color: #6b7280;
+    font-weight: 700;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.xcl-game-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 3px;
+    font-weight: 800;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    transition: opacity 0.15s;
+
+    &:hover { opacity: 0.8; }
+
+    &.xcl-game-acc {
+        background: rgba(124,58,237,0.2);
+        color: #a78bfa;
+        border: 1px solid rgba(124,58,237,0.4);
+    }
+    &.xcl-game-lmu {
+        background: rgba(234,88,12,0.2);
+        color: #fb923c;
+        border: 1px solid rgba(234,88,12,0.4);
+    }
+    &.xcl-game-iracing {
+        background: rgba(37,99,235,0.2);
+        color: #60a5fa;
+        border: 1px solid rgba(37,99,235,0.4);
+    }
+}
+
 // Navbar
 .navbar-xcl {
+    top: 36px;
     background: white;
     box-shadow: 0 2px 10px rgba(0,0,0,0.08);
 
@@ -211,3 +270,232 @@ html {
     .next-step-title { font-size: 1.4rem; font-weight: 900; color: #7c3aed; text-transform: uppercase; font-style: italic; }
     p { color: #6b7280; margin: 0; }
 }
+
+// ─── Admin Panel ──────────────────────────────────────────────────────────────
+
+$admin-sidebar-width: 260px;
+$admin-sidebar-bg: #15151e;
+$admin-header-height: 68px;
+
+body.admin-body {
+    background: #f5f8fa;
+    overflow-x: hidden;
+}
+
+// Sidebar
+.admin-sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: $admin-sidebar-width;
+    background: $admin-sidebar-bg;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    transition: transform .25s ease;
+
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-track { background: transparent; }
+    &::-webkit-scrollbar-thumb { background: #2d2d3d; border-radius: 2px; }
+}
+
+.admin-sidebar-logo {
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    flex-shrink: 0;
+}
+
+.admin-nav-section-label {
+    padding: 1.25rem 1.5rem .4rem;
+    font-size: .65rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #4b5563;
+}
+
+.admin-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 2px 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: .82rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #6b7280;
+    text-decoration: none;
+    transition: background .15s, color .15s;
+
+    svg { flex-shrink: 0; opacity: .7; transition: opacity .15s; }
+
+    &:hover {
+        background: rgba(124,58,237,.12);
+        color: #c4b5fd;
+        svg { opacity: 1; }
+    }
+    &.active {
+        background: rgba(124,58,237,.2);
+        color: #a78bfa;
+        svg { opacity: 1; }
+    }
+}
+
+.admin-sidebar-footer {
+    margin-top: auto;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255,255,255,.06);
+}
+
+// Main area
+.admin-main {
+    margin-left: $admin-sidebar-width;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+// Header
+.admin-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    height: $admin-header-height;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.admin-breadcrumb {
+    font-size: .8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #9ca3af;
+    a { color: #9ca3af; text-decoration: none; &:hover { color: #7c3aed; } }
+    .sep { margin: 0 .4rem; }
+    .current { color: #111827; }
+}
+
+// Content
+.admin-content {
+    padding: 2rem;
+    flex: 1;
+}
+
+// Metric cards
+.metric-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+
+    .metric-icon {
+        width: 52px; height: 52px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 900;
+        color: #111827;
+        line-height: 1;
+    }
+
+    .metric-label {
+        font-size: .75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: #9ca3af;
+        margin-top: 4px;
+    }
+}
+
+// Admin table card
+.admin-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    overflow: hidden;
+}
+
+.admin-card-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+// Admin form card
+.admin-form-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    padding: 2rem;
+
+    .form-label {
+        font-size: .78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: #374151;
+        margin-bottom: .4rem;
+    }
+
+    .form-control, .form-select {
+        border-color: #e5e7eb;
+        font-size: .9rem;
+        &:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,.12); }
+    }
+}
+
+// Status badge overrides in admin
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: .72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+
+    &.status-open     { background: #d1fae5; color: #065f46; }
+    &.status-closed   { background: #fee2e2; color: #991b1b; }
+    &.status-finished { background: #f3f4f6; color: #374151; }
+}
+
+// Mobile sidebar toggle
+@media (max-width: 991px) {
+    .admin-sidebar { transform: translateX(-100%); &.open { transform: translateX(0); } }
+    .admin-main { margin-left: 0; }
+    .admin-sidebar-overlay {
+        display: none;
+        position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 199;
+        &.open { display: block; }
+    }
+}
+
+// Toast transitions
+.xcl-toast-enter        { transition: opacity .25s ease, transform .25s ease; }
+.xcl-toast-enter-start  { opacity: 0; transform: translateY(-8px); }
+.xcl-toast-enter-end    { opacity: 1; transform: translateY(0); }
+.xcl-toast-leave        { transition: opacity .2s ease; }

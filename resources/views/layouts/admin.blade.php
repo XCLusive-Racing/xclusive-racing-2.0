@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>@yield('title', 'Admin') — XCLusive Racing</title>
+    @vite(['resources/scss/app.scss', 'resources/js/app.js'])
+    @stack('head')
+</head>
+<body class="admin-body" x-data="{ sidebarOpen: false }">
+
+{{-- Mobile overlay --}}
+<div class="admin-sidebar-overlay" :class="{ open: sidebarOpen }" @click="sidebarOpen = false"></div>
+
+{{-- Sidebar --}}
+<aside class="admin-sidebar" :class="{ open: sidebarOpen }">
+
+    {{-- Logo --}}
+    <div class="admin-sidebar-logo">
+        <a href="{{ route('home') }}" class="d-flex align-items-center gap-2 text-decoration-none">
+            <img src="/logo.png" alt="XCLusive" height="32">
+            <div>
+                <div class="text-white fw-black text-uppercase" style="font-size:.75rem;line-height:1.1">XCLusive</div>
+                <div style="font-size:.6rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.08em">Admin Panel</div>
+            </div>
+        </a>
+    </div>
+
+    {{-- Navigation --}}
+    <nav class="py-2 flex-grow-1">
+        <div class="admin-nav-section-label mt-2">Site</div>
+
+        <a href="{{ route('home') }}" class="admin-nav-link">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1V10"/>
+            </svg>
+            Homepage
+        </a>
+
+        <a href="{{ route('race') }}" class="admin-nav-link" target="_blank">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+            </svg>
+            View Events
+        </a>
+
+        @if(auth()->user()->isSuperAdmin())
+        <div class="admin-nav-section-label mt-2">Management</div>
+        <a href="{{ route('admin.users.index') }}"
+           class="admin-nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+            </svg>
+            Users
+        </a>
+        @endif
+
+        <div class="admin-nav-section-label">Events</div>
+
+        <a href="{{ route('admin.races.index') }}"
+           class="admin-nav-link {{ request()->routeIs('admin.races.index') ? 'active' : '' }}">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 6h18M3 14h10M3 18h6"/>
+            </svg>
+            All Races
+        </a>
+
+        <a href="{{ route('admin.calendar') }}"
+           class="admin-nav-link {{ request()->routeIs('admin.calendar') ? 'active' : '' }}">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            Calendar
+        </a>
+
+
+
+        <a href="{{ route('admin.races.bulk-create') }}"
+           class="admin-nav-link {{ request()->routeIs('admin.races.bulk-create') ? 'active' : '' }}">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+            Schedule Series
+        </a>
+
+        <a href="{{ route('admin.races.create') }}"
+           class="admin-nav-link {{ request()->routeIs('admin.races.create') ? 'active' : '' }}">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            Create Single Race
+        </a>
+    </nav>
+
+    {{-- User / Logout --}}
+    <div class="admin-sidebar-footer">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
+                 style="width:36px;height:36px;font-size:.85rem;background:linear-gradient(135deg,#7c3aed,#db2777)">
+                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+            </div>
+            <div style="min-width:0">
+                <div class="text-white fw-bold text-truncate" style="font-size:.8rem">{{ auth()->user()->name }}</div>
+                <div style="font-size:.65rem;color:#6b7280;text-transform:uppercase;font-weight:700">{{ auth()->user()->role }}</div>
+            </div>
+        </div>
+        <form action="{{ route('logout') }}" method="POST">
+            @csrf
+            <button type="submit"
+                    class="w-100 btn btn-sm fw-bold text-uppercase"
+                    style="background:rgba(255,255,255,.06);color:#6b7280;border:1px solid rgba(255,255,255,.08);font-size:.72rem">
+                Logout
+            </button>
+        </form>
+    </div>
+</aside>
+
+{{-- Main --}}
+<div class="admin-main">
+
+    {{-- Header --}}
+    <header class="admin-header">
+        <div class="d-flex align-items-center gap-3">
+            {{-- Mobile hamburger --}}
+            <button class="btn p-1 d-lg-none border-0" @click="sidebarOpen = !sidebarOpen">
+                <svg width="22" height="22" fill="none" stroke="#374151" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+
+            {{-- Breadcrumb --}}
+            <div class="admin-breadcrumb">
+                <a href="{{ route('admin.races.index') }}">Admin</a>
+                <span class="sep">/</span>
+                <span class="current">@yield('page-title', 'Dashboard')</span>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+            @yield('page-actions')
+        </div>
+    </header>
+
+    {{-- Page content --}}
+    <main class="admin-content">
+        @yield('content')
+    </main>
+</div>
+
+{{-- Toast container --}}
+<div x-data="xcToasts()"
+     @toast.window="add($event.detail)"
+     class="position-fixed d-flex flex-column gap-2"
+     style="top:1.5rem;right:1.5rem;z-index:9999;width:300px;pointer-events:none">
+    <template x-for="t in toasts" :key="t.id">
+        <div x-show="t.visible"
+             x-transition:enter="xcl-toast-enter"
+             x-transition:enter-start="xcl-toast-enter-start"
+             x-transition:enter-end="xcl-toast-enter-end"
+             x-transition:leave="xcl-toast-leave"
+             x-transition:leave-start="xcl-toast-enter-end"
+             x-transition:leave-end="xcl-toast-enter-start"
+             class="d-flex align-items-start gap-2 px-3 py-3 rounded-3 shadow"
+             style="pointer-events:auto"
+             :style="`background:${t.color}`">
+            <span x-text="t.message" class="text-white fw-bold flex-grow-1" style="font-size:.82rem;line-height:1.4"></span>
+            <button @click="remove(t.id)"
+                    class="btn-close btn-close-white flex-shrink-0 mt-1"
+                    style="font-size:.6rem"></button>
+        </div>
+    </template>
+</div>
+
+{{-- Flash → toast bridge --}}
+@if(session('success') || session('error') || $errors->any())
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        @if(session('success'))
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: @js(session('success')), type: 'success' } }));
+        @endif
+        @if(session('error'))
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: @js(session('error')), type: 'error' } }));
+        @endif
+        @if($errors->any())
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: @js($errors->first()), type: 'error' } }));
+        @endif
+    });
+</script>
+@endif
+
+@stack('scripts')
+
+<script>
+function xcToasts() {
+    return {
+        toasts: [],
+        add({ message, type = 'success' }) {
+            const id = Date.now() + Math.random();
+            const color = type === 'success' ? '#22c55e' : '#ef4444';
+            this.toasts.push({ id, message, color, visible: true });
+            setTimeout(() => this.remove(id), 4000);
+        },
+        remove(id) {
+            const t = this.toasts.find(t => t.id === id);
+            if (t) t.visible = false;
+            setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 300);
+        },
+    };
+}
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 @section('title', 'Sign Up - XCLusive Racing')
 
 @section('content')
-<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light py-5 mt-4" x-data="{ step: 1, platform: '' }">
+<div class="xcl-page d-flex align-items-center justify-content-center bg-light py-5" x-data="{ step: 1, platform: '' }">
     <div class="bg-white rounded-3 shadow p-4 p-md-5 w-100" style="max-width:480px">
 
         {{-- Step 1: Choose platform --}}
@@ -84,6 +84,12 @@
                 <div class="mb-3">
                     <label class="form-label small fw-bold text-uppercase text-dark">Password</label>
                     <input type="password" name="password" required placeholder="••••••••"
+                           class="form-control border-secondary">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-uppercase text-dark">Confirm Password</label>
+                    <input type="password" name="password_confirmation" required placeholder="••••••••"
                            class="form-control border-secondary">
                 </div>
 

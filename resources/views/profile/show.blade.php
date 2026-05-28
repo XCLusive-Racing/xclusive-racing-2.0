@@ -3,7 +3,7 @@
 @section('title', 'Profile - XCLusive Racing')
 
 @section('content')
-<main class="pt-5 mt-4 pb-5 px-3 min-vh-100 bg-light">
+<main class="xcl-page pb-5 px-3 bg-light">
     <div class="container" style="max-width:900px">
 
         {{-- Profile header --}}
@@ -23,9 +23,18 @@
                     @endif
                 </div>
             </div>
-            <a href="{{ route('profile.edit') }}"
-               class="btn fw-black text-uppercase text-white px-4 py-2"
-               style="background:#7c3aed;">EDIT PROFILE</a>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{{ route('profile.edit') }}"
+                   class="btn fw-black text-uppercase text-white px-4 py-2"
+                   style="background:#7c3aed;">EDIT PROFILE</a>
+
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-danger fw-bold text-uppercase px-4 py-2">
+                        LOGOUT
+                    </button>
+                </form>
+            </div>
         </div>
 
         {{-- ELO ratings --}}

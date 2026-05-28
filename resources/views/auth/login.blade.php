@@ -3,7 +3,7 @@
 @section('title', 'Login - XCLusive Racing')
 
 @section('content')
-<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light py-5 mt-4">
+<div class="xcl-page d-flex align-items-center justify-content-center bg-light py-5">
     <div class="bg-white rounded-3 shadow p-4 p-md-5 w-100" style="max-width:420px">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="fs-2 fw-black text-uppercase fst-italic text-dark mb-0">SIGN IN</h2>
@@ -31,6 +31,11 @@
                 <label class="form-label small fw-bold text-uppercase text-dark">Password</label>
                 <input type="password" name="password" required
                        placeholder="••••••••" class="form-control border-secondary">
+            </div>
+
+            <div class="mb-4 form-check">
+                <input class="form-check-input" type="checkbox" name="remember" id="remember">
+                <label class="form-check-label small text-secondary" for="remember">Remember me</label>
             </div>
 
             <button type="submit" class="btn w-100 fw-bold text-uppercase text-white py-2 mb-3"

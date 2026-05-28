@@ -20,7 +20,7 @@ class RegisterController extends Controller
         $request->validate([
             'name'        => 'required|string|max:255',
             'email'       => 'required|email|unique:users',
-            'password'    => 'required|min:8',
+            'password'    => 'required|min:8|confirmed',
             'country'     => 'required|string|max:100',
             'platform'    => 'required|in:steam,ps5,xbox',
             'platform_id' => 'required|string|max:255',
@@ -35,9 +35,9 @@ class RegisterController extends Controller
             'platform'    => $request->platform,
             'platform_id' => $request->platform_id,
             'team'        => $request->team,
-            'elo_acc'     => 1500,
-            'elo_lmu'     => 1500,
-            'elo_iracing' => 1500,
+            'elo_acc'     => 1200,
+            'elo_lmu'     => 1200,
+            'elo_iracing' => 1200,
         ]);
 
         Auth::login($user);
