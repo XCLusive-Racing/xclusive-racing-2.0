@@ -1,0 +1,64 @@
+<?php
+
+use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
+use App\Http\Controllers\Admin\RaceController as AdminRaceController;
+use App\Http\Controllers\Admin\RaceResultController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RaceController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// Races - public
+Route::get('/race', [RaceController::class, 'index'])->name('race');
+Route::get('/race/{race}', [RaceController::class, 'show'])->name('race.show');
+
+// Calendar
+Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
+
+// Auth
+Route::middleware('guest')->group(function () {
+    Route::get('/register', [RegisterController::class, 'create'])->name('register');
+    Route::post('/register', [RegisterController::class, 'store']);
+    Route::get('/login', [LoginController::class, 'create'])->name('login');
+    Route::post('/login', [LoginController::class, 'store']);
+});
+
+Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
+
+// Protected
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+
+    // Race registration
+    Route::post('/race/{race}/register', [RaceController::class, 'register'])->name('race.register');
+    Route::delete('/race/{race}/register', [RaceController::class, 'unregister'])->name('race.unregister');
+});
+
+// Admin
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/calendar', [AdminCalendarController::class, 'index'])->name('calendar');
+    Route::get('/races', [AdminRaceController::class, 'index'])->name('races.index');
+    Route::get('/races/bulk-create', [AdminRaceController::class, 'bulkCreate'])->name('races.bulk-create');
+    Route::post('/races/bulk-create', [AdminRaceController::class, 'bulkStore'])->name('races.bulk-store');
+    Route::get('/races/create', [AdminRaceController::class, 'create'])->name('races.create');
+    Route::post('/races', [AdminRaceController::class, 'store'])->name('races.store');
+    Route::get('/races/{race}/edit', [AdminRaceController::class, 'edit'])->name('races.edit');
+    Route::put('/races/{race}', [AdminRaceController::class, 'update'])->name('races.update');
+    Route::get('/races/{race}/results', [RaceResultController::class, 'create'])->name('races.results');
+    Route::post('/races/{race}/results', [RaceResultController::class, 'store'])->name('races.results.store');
+});
+
+// Super admin only
+Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+    Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
+    Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
+    Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+});

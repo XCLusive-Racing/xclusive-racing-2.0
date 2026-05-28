@@ -1,0 +1,184 @@
+@extends('layouts.admin')
+
+@section('title', 'Edit User — ' . $user->name)
+@section('page-title', 'Edit User')
+
+@section('page-actions')
+    <a href="{{ route('admin.users.index') }}" class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.78rem">
+        ← Back
+    </a>
+@endsection
+
+@section('content')
+<div class="row justify-content-center">
+<div class="col-xl-8">
+
+{{-- User strip --}}
+<div class="admin-card mb-4 p-0 overflow-hidden">
+    <div class="d-flex align-items-center gap-3 p-4">
+        @if($user->banner)
+            <img src="{{ $user->banner }}" alt="" class="rounded-circle flex-shrink-0" style="width:48px;height:48px;object-fit:cover">
+        @else
+            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
+                 style="width:48px;height:48px;font-size:1.1rem;background:linear-gradient(135deg,#7c3aed,#db2777)">
+                {{ strtoupper(substr($user->name, 0, 1)) }}
+            </div>
+        @endif
+        <div>
+            <div class="fw-black text-dark" style="font-size:1rem">{{ $user->name }}</div>
+            <div class="text-secondary" style="font-size:.8rem">Member since {{ $user->created_at->format('d M Y') }}</div>
+        </div>
+    </div>
+</div>
+
+<form action="{{ route('admin.users.update', $user) }}" method="POST">
+    @csrf @method('PUT')
+
+    {{-- Identity --}}
+    <div class="admin-card mb-4">
+        <div class="admin-card-header">
+            <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:1rem">Identity</div>
+        </div>
+        <div class="p-4">
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <label class="form-label fw-bold text-dark" style="font-size:.82rem">Name</label>
+                    <input type="text" name="name" value="{{ old('name', $user->name) }}"
+                           class="form-control @error('name') is-invalid @enderror" style="border-color:#e5e7eb" required>
+                    @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label fw-bold text-dark" style="font-size:.82rem">Email</label>
+                    <input type="email" name="email" value="{{ old('email', $user->email) }}"
+                           class="form-control @error('email') is-invalid @enderror" style="border-color:#e5e7eb" required>
+                    @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label fw-bold text-dark" style="font-size:.82rem">Role</label>
+                    <select name="role" class="form-select" style="border-color:#e5e7eb">
+                        @foreach(['super_admin'=>'Super Admin','admin'=>'Admin','manager'=>'Manager','driver'=>'Driver'] as $val=>$label)
+                        <option value="{{ $val }}" {{ old('role',$user->role)===$val?'selected':'' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label fw-bold text-dark" style="font-size:.82rem">Country</label>
+                    <input type="text" name="country" value="{{ old('country',$user->country) }}"
+                           class="form-control" style="border-color:#e5e7eb" placeholder="Netherlands">
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label fw-bold text-dark" style="font-size:.82rem">Team</label>
+                    <input type="text" name="team" value="{{ old('team',$user->team) }}"
+                           class="form-control" style="border-color:#e5e7eb">
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label fw-bold text-dark" style="font-size:.82rem">Banner URL</label>
+                    <input type="url" name="banner" value="{{ old('banner',$user->banner) }}"
+                           class="form-control" style="border-color:#e5e7eb" placeholder="https://...">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Driver info --}}
+    <div class="admin-card mb-4">
+        <div class="admin-card-header">
+            <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:1rem">Driver Info</div>
+        </div>
+        <div class="p-4">
+            <div class="row g-3">
+                <div class="col-sm-4">
+                    <label class="form-label fw-bold text-dark" style="font-size:.82rem">Racing Number</label>
+                    <div class="input-group">
+                        <span class="input-group-text fw-bold" style="border-color:#e5e7eb;background:#f9fafb">#</span>
+                        <input type="number" name="car_number" value="{{ old('car_number',$user->car_number) }}"
+                               class="form-control" style="border-color:#e5e7eb" min="1" max="9999" placeholder="69">
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-bold text-dark" style="font-size:.82rem">Car Model</label>
+                    <input type="text" name="car_model" value="{{ old('car_model',$user->car_model) }}"
+                           class="form-control" style="border-color:#e5e7eb" placeholder="Lamborghini Huracán GT3">
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-bold text-dark" style="font-size:.82rem">Primary Game</label>
+                    <select name="game" class="form-select" style="border-color:#e5e7eb">
+                        <option value="">— None —</option>
+                        @foreach(['acc'=>'ACC Console','lmu'=>'Le Mans Ultimate','iracing'=>'iRacing'] as $val=>$label)
+                        <option value="{{ $val }}" {{ old('game',$user->game)===$val?'selected':'' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Platform --}}
+    <div class="admin-card mb-4">
+        <div class="admin-card-header">
+            <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:1rem">Platform</div>
+        </div>
+        <div class="p-4">
+            <div class="row g-3">
+                <div class="col-sm-4">
+                    <label class="form-label fw-bold text-dark" style="font-size:.82rem">Platform</label>
+                    <select name="platform" class="form-select" style="border-color:#e5e7eb">
+                        <option value="">— None —</option>
+                        @foreach(['steam'=>'Steam / PC','ps5'=>'PlayStation 5','xbox'=>'Xbox Series X/S'] as $val=>$label)
+                        <option value="{{ $val }}" {{ old('platform',$user->platform)===$val?'selected':'' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-sm-8">
+                    <label class="form-label fw-bold text-dark" style="font-size:.82rem">
+                        XUID / PSID / Steam ID
+                        <span class="text-secondary fw-normal">(gPortal player ID voor resultaten koppeling)</span>
+                    </label>
+                    <input type="text" name="platform_id" value="{{ old('platform_id',$user->platform_id) }}"
+                           class="form-control" style="border-color:#e5e7eb;font-family:monospace"
+                           placeholder="M12345 / P67890 / 76561198...">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ELO --}}
+    <div class="admin-card mb-4">
+        <div class="admin-card-header">
+            <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:1rem">ELO Ratings</div>
+            <span class="text-secondary" style="font-size:.78rem">Manual override</span>
+        </div>
+        <div class="p-4">
+            <div class="row g-3">
+                <div class="col-sm-4">
+                    <label class="form-label fw-bold" style="font-size:.82rem;color:#7c3aed">ACC Console</label>
+                    <input type="number" name="elo_acc" value="{{ old('elo_acc',$user->elo_acc) }}"
+                           class="form-control" style="border-color:#e5e7eb" min="0" required>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-bold" style="font-size:.82rem;color:#db2777">Le Mans Ultimate</label>
+                    <input type="number" name="elo_lmu" value="{{ old('elo_lmu',$user->elo_lmu) }}"
+                           class="form-control" style="border-color:#e5e7eb" min="0" required>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-bold" style="font-size:.82rem;color:#2563eb">iRacing</label>
+                    <input type="number" name="elo_iracing" value="{{ old('elo_iracing',$user->elo_iracing) }}"
+                           class="form-control" style="border-color:#e5e7eb" min="0" required>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">
+            Save Changes
+        </button>
+        <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4">
+            Cancel
+        </a>
+    </div>
+</form>
+
+</div>
+</div>
+@endsection
