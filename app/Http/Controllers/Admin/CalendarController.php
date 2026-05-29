@@ -20,6 +20,7 @@ class CalendarController extends Controller
                 $current->copy()->startOfMonth(),
                 $current->copy()->endOfMonth(),
             ])
+            ->where('status', '!=', 'closed')
             ->orderBy('scheduled_at')
             ->get()
             ->groupBy(fn($r) => $r->scheduled_at->format('Y-m-d'));

@@ -193,4 +193,23 @@
     </div>
 </section>
 
+{{-- Scroll to top --}}
+<button id="scroll-top"
+        onclick="window.scrollTo({top:0,behavior:'smooth'})"
+        style="position:fixed;bottom:2rem;right:2rem;width:44px;height:44px;border-radius:50%;background:#7c3aed;color:white;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(124,58,237,.4);transition:transform .2s;z-index:999"
+        onmouseover="this.style.transform='translateY(-2px)'"
+        onmouseout="this.style.transform='translateY(0)'">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/>
+    </svg>
+</button>
+<script>
+    (function() {
+        var btn = document.getElementById('scroll-top');
+        window.addEventListener('scroll', function() {
+            btn.style.display = window.scrollY > 300 ? 'flex' : 'none';
+        });
+    })();
+</script>
+
 @endsection

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Race;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class RaceController extends Controller
 {
@@ -98,6 +99,20 @@ class RaceController extends Controller
             ->with('success', $rounds . ' events scheduled successfully!');
     }
 
+    private function storeImage(\Illuminate\Http\UploadedFile $file): string
+    {
+        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $file->move(public_path('images/races'), $filename);
+        return 'images/races/' . $filename;
+    }
+
+    private function deleteImage(?string $path): void
+    {
+        if ($path && file_exists(public_path($path))) {
+            unlink(public_path($path));
+        }
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -107,7 +122,12 @@ class RaceController extends Controller
             'scheduled_at' => 'required|date',
             'max_drivers'  => 'nullable|integer|min:1',
             'description'  => 'nullable|string',
+            'image'        => 'nullable|image|max:4096',
         ]);
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $this->storeImage($request->file('image'));
+        }
 
         Race::create($data);
 
@@ -152,7 +172,13 @@ class RaceController extends Controller
             'status'       => 'required|in:open,closed,finished',
             'max_drivers'  => 'nullable|integer|min:1',
             'description'  => 'nullable|string',
+            'image'        => 'nullable|image|max:4096',
         ]);
+
+        if ($request->hasFile('image')) {
+            $this->deleteImage($race->image);
+            $data['image'] = $this->storeImage($request->file('image'));
+        }
 
         $race->update($data);
 

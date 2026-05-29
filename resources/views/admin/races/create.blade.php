@@ -15,7 +15,7 @@
     <div class="admin-form-card">
         <h2 class="fw-black text-uppercase fst-italic text-dark mb-4" style="font-size:1.1rem">Race Details</h2>
 
-        <form action="{{ route('admin.races.store') }}" method="POST">
+        <form action="{{ route('admin.races.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
             <div class="mb-3">
@@ -63,12 +63,35 @@
                 </div>
             </div>
 
-            <div class="mb-4">
+            <div class="mb-3">
                 <label class="form-label">Description <span class="text-secondary fw-normal" style="text-transform:none">(optional)</span></label>
                 <textarea name="description" rows="3"
                           class="form-control @error('description') is-invalid @enderror"
                           placeholder="Additional race info...">{{ old('description') }}</textarea>
                 @error('description') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="mb-4" x-data="{ preview: null }">
+                <label class="form-label">Event Image <span class="text-secondary fw-normal" style="text-transform:none">(optional)</span></label>
+                <div @click="$refs.input.click()"
+                     style="border:2px dashed #e5e7eb;border-radius:10px;cursor:pointer;overflow:hidden;transition:border-color .15s;min-height:120px"
+                     @mouseenter="$el.style.borderColor='#7c3aed'"
+                     @mouseleave="$el.style.borderColor='#e5e7eb'">
+                    <template x-if="!preview">
+                        <div class="d-flex flex-column align-items-center justify-content-center py-4 text-secondary" style="font-size:.85rem">
+                            <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" class="mb-2" style="opacity:.4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+                            </svg>
+                            Click to upload image
+                        </div>
+                    </template>
+                    <template x-if="preview">
+                        <img :src="preview" style="width:100%;max-height:200px;object-fit:cover;display:block">
+                    </template>
+                </div>
+                <input type="file" name="image" accept="image/*" x-ref="input" class="d-none"
+                       @change="preview = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : null">
+                @error('image') <div class="text-danger mt-1" style="font-size:.85rem">{{ $message }}</div> @enderror
             </div>
 
             <div class="d-flex gap-2">
