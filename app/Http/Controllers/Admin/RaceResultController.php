@@ -29,19 +29,15 @@ class RaceResultController extends Controller
             $selectedServer = $ftpServers->firstWhere('id', $serverId);
 
             if ($selectedServer) {
-                if (!extension_loaded('ftp')) {
-                    $ftpError = 'PHP FTP extension is not enabled on this server.';
-                } else {
-                    $ftp = new FtpService();
+                $ftp = new FtpService();
 
-                    if ($ftp->connect($selectedServer)) {
-                        $result   = $ftp->listFiles($selectedServer->path);
-                        $ftpFiles = $result['json'];
-                        $ftpAllFiles = $result['all'];
-                        $ftp->disconnect();
-                    } else {
-                        $ftpError = 'Could not connect to ' . $selectedServer->host . '. Check credentials in server settings.';
-                    }
+                if ($ftp->connect($selectedServer)) {
+                    $result      = $ftp->listFiles($selectedServer->path);
+                    $ftpFiles    = $result['json'];
+                    $ftpAllFiles = $result['all'];
+                    $ftp->disconnect();
+                } else {
+                    $ftpError = 'Could not connect to ' . $selectedServer->host . '. Check credentials in server settings.';
                 }
 
                 $importedFiles = FtpImportedFile::where('race_id', $race->id)
@@ -93,10 +89,6 @@ class RaceResultController extends Controller
 
         $server   = FtpServer::findOrFail($request->server_id);
         $filename = basename($request->filename);
-
-        if (!extension_loaded('ftp')) {
-            return back()->with('error', 'PHP FTP extension is not enabled on this server.');
-        }
 
         $ftp = new FtpService();
 
