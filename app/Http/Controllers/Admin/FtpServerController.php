@@ -79,8 +79,8 @@ class FtpServerController extends Controller
 
     public function test(FtpServer $ftpServer, FtpService $ftp)
     {
-        if (!extension_loaded('ftp')) {
-            return response()->json(['success' => false, 'message' => 'PHP FTP extension not loaded.']);
+        if (!extension_loaded('curl')) {
+            return response()->json(['success' => false, 'message' => 'PHP cURL extension not loaded.']);
         }
 
         $ok = $ftp->connect($ftpServer);
