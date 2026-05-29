@@ -72,12 +72,12 @@ class FtpService
         $url  = "ftp://{$server->host}:{$server->port}{$path}";
 
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_USERPWD, "{$server->username}:{$server->password}");
-        curl_setopt($ch, CURLOPT_FTP_USE_PASV, true);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, \CURLOPT_URL, $url);
+        curl_setopt($ch, \CURLOPT_USERPWD, "{$server->username}:{$server->password}");
+        curl_setopt($ch, \CURLOPT_FTP_USE_PASV, true);
+        curl_setopt($ch, \CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, \CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, \CURLOPT_RETURNTRANSFER, true);
 
         return $ch;
     }
