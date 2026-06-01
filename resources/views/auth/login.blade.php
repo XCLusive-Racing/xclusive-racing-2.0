@@ -33,13 +33,7 @@
                        placeholder="••••••••" class="form-control border-secondary">
             </div>
 
-            <div class="mb-4 form-check">
-                <input class="form-check-input" type="checkbox" name="remember" id="remember">
-                <label class="form-check-label small text-secondary" for="remember">Remember me</label>
-            </div>
-
-            <button type="submit" class="btn w-100 fw-bold text-uppercase text-white py-2 mb-3"
-                    style="background:#7c3aed;">
+            <button type="submit" class="btn w-100 fw-bold text-uppercase text-white py-2 mb-3 bg-xcl-purple">
                 SIGN IN
             </button>
 
