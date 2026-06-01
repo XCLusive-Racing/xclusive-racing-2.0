@@ -24,13 +24,15 @@
             <div class="mb-3">
                 <label class="form-label small fw-bold text-uppercase text-dark">Email</label>
                 <input type="email" name="email" required value="{{ old('email') }}"
-                       placeholder="your@email.com" class="form-control border-secondary">
+                       placeholder="your@email.com" class="form-control border-secondary"
+                       autocomplete="off">
             </div>
 
             <div class="mb-4">
                 <label class="form-label small fw-bold text-uppercase text-dark">Password</label>
                 <input type="password" name="password" required
-                       placeholder="••••••••" class="form-control border-secondary">
+                       placeholder="••••••••" class="form-control border-secondary"
+                       autocomplete="new-password">
             </div>
 
             <button type="submit" class="btn w-100 fw-bold text-uppercase text-white py-2 mb-3 bg-xcl-purple">
