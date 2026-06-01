@@ -11,7 +11,7 @@ class PlatformLookupService
 {
     private function http(): \Illuminate\Http\Client\PendingRequest
     {
-        $client = $this->http();
+        $client = Http::timeout(10)->withOptions(['connect_timeout' => 5]);
 
         if (app()->environment('local')) {
             $client = $client->withoutVerifying();
