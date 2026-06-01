@@ -9,6 +9,17 @@ use RuntimeException;
 
 class PlatformLookupService
 {
+    private function http(): \Illuminate\Http\Client\PendingRequest
+    {
+        $client = $this->http();
+
+        if (app()->environment('local')) {
+            $client = $client->withoutVerifying();
+        }
+
+        return $client;
+    }
+
     public function lookup(string $platform, string $identifier): array
     {
         return match ($platform) {
@@ -27,7 +38,7 @@ class PlatformLookupService
 
         try {
             if (!preg_match('/^\d{17}$/', $input)) {
-                $res = Http::timeout(10)->get('https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/', [
+                $res = $this->http()->get('https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/', [
                     'key'       => $apiKey,
                     'vanityurl' => $input,
                 ]);
@@ -39,7 +50,7 @@ class PlatformLookupService
                 $input = $res->json('response.steamid');
             }
 
-            $res = Http::timeout(10)->get('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/', [
+            $res = $this->http()->get('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/', [
                 'key'      => $apiKey,
                 'steamids' => $input,
             ]);
@@ -63,7 +74,7 @@ class PlatformLookupService
     private function lookupXbox(string $gamertag): array
     {
         try {
-            $res = Http::timeout(10)->withHeaders([
+            $res = $this->http()->withHeaders([
                 'x-authorization' => config('services.openxbl.api_key'),
                 'Accept'          => 'application/json',
                 'Accept-Language' => 'en-US',
@@ -97,7 +108,7 @@ class PlatformLookupService
         $accessToken = $this->getPsnAccessToken();
 
         try {
-            $res = Http::timeout(10)->withToken($accessToken)
+            $res = $this->http()->withToken($accessToken)
                 ->get("https://us-prof.np.community.playstation.net/userProfile/v1/users/{$onlineId}/profile2", [
                     'fields' => 'accountId,onlineId,currentOnlineId',
                 ]);
@@ -143,7 +154,7 @@ class PlatformLookupService
 
     private function psnFromNpsso(string $npsso): string
     {
-        $authRes = Http::timeout(10)->withOptions(['allow_redirects' => false])
+        $authRes = $this->http()->withOptions(['allow_redirects' => false])
             ->withHeaders(['Cookie' => "npsso={$npsso}"])
             ->get('https://ca.account.sony.com/api/authz/v3/oauth/authorize', [
                 'access_type'   => 'offline',
@@ -170,7 +181,7 @@ class PlatformLookupService
 
     private function psnExchangeCode(string $code): string
     {
-        $res = Http::timeout(10)->withHeaders([
+        $res = $this->http()->withHeaders([
             'Authorization' => 'Basic ' . base64_encode('09515159-7237-4370-b4f0-315ef5c1ea3f:'),
         ])->asForm()->post('https://ca.account.sony.com/api/authz/v3/oauth/token', [
             'code'         => $code,
@@ -188,7 +199,7 @@ class PlatformLookupService
 
     private function psnRefresh(string $refreshToken): string
     {
-        $res = Http::timeout(10)->withHeaders([
+        $res = $this->http()->withHeaders([
             'Authorization' => 'Basic ' . base64_encode('09515159-7237-4370-b4f0-315ef5c1ea3f:'),
         ])->asForm()->post('https://ca.account.sony.com/api/authz/v3/oauth/token', [
             'refresh_token' => $refreshToken,
