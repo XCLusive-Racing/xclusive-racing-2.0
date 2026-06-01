@@ -87,7 +87,7 @@ class PlatformLookupService
             throw new RuntimeException('Xbox account not found. Check your Gamertag.');
         }
 
-        $profile = $res->json('profileUsers.0');
+        $profile = $res->json('content.profileUsers.0');
         if (!$profile) {
             throw new RuntimeException('Xbox account not found. Check your Gamertag.');
         }
