@@ -1,7 +1,7 @@
 {{-- Topbar: vaste platformbalk bovenaan de pagina (36px hoogte) --}}
 {{-- Badges tonen altijd een klein icoon + tekst, op hover het volledige logo --}}
 <div class="xcl-topbar d-flex align-items-center justify-content-start gap-3 px-4">
-    <span class="xcl-topbar-label">PLAY ON</span>
+    <span class="xcl-topbar-label">PLAY ON aha</span>
 
     {{-- ACC platform badge --}}
     <a href="https://www.assettocorsa.net/competizione/" target="_blank"
