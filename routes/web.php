@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\RaceController as AdminRaceController;
 use App\Http\Controllers\Admin\RaceResultController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PasswordSetupController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\HomeController;
@@ -31,6 +32,12 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
+
+// Password setup (for imported users)
+Route::middleware('auth')->group(function () {
+    Route::get('/password/setup', [PasswordSetupController::class, 'show'])->name('password.setup');
+    Route::post('/password/setup', [PasswordSetupController::class, 'store'])->name('password.setup.store');
+});
 
 // Protected
 Route::middleware('auth')->group(function () {

@@ -1,23 +1,23 @@
 <div class="xcl-topbar d-flex align-items-center justify-content-start gap-3 px-4">
-    <span class="xcl-topbar-label">PLAY ON</span>
+    <span class="xcl-topbar-label">GO TO</span>
     <a href="https://www.assettocorsa.net/competizione/" target="_blank" class="xcl-game-badge xcl-game-acc" title="Assetto Corsa Competizione">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
         ACC
+        <img src="/images/home/ACC.jpg" alt="ACC" width="18" height="18" style="border-radius:3px;object-fit:cover;">
     </a>
     <a href="https://www.lemansultimate.com/" target="_blank" class="xcl-game-badge xcl-game-lmu" title="Le Mans Ultimate">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
         LMU
+        <img src="/images/home/LMU.png" alt="LMU" width="18" height="18" style="border-radius:3px;object-fit:cover;">
     </a>
     <a href="https://www.iracing.com/" target="_blank" class="xcl-game-badge xcl-game-iracing" title="iRacing">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
         iRACING
+        <img src="/images/home/Iracing.png" alt="iRacing" width="18" height="18" style="border-radius:3px;object-fit:cover;">
     </a>
 </div>
 
 <nav class="navbar navbar-xcl navbar-expand-md fixed-top" x-data="{ open: false }">
-    <div class="container-xl px-4 align-content-center">
+    <div class="container-fluid px-5 align-content-center">
         <a class="navbar-brand" href="{{ url('/') }}">
-            <img src="/logo.png" alt="XCLusive" height="40">
+            <img src="/images/home/xclusive_racing_logo.png" alt="XCLusive" height="40">
         </a>
 
         <button class="navbar-toggler border-0" @click="open = !open">
@@ -27,10 +27,11 @@
         </button>
 
         <div class="collapse navbar-collapse" :class="{ 'show': open }">
-            <ul class="navbar-nav mx-auto gap-md-3">
+            <ul class="navbar-nav mx-auto gap-md-5 fs-5">
                 <li class="nav-item"><a class="nav-link" href="{{ url('/#about') }}">About</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url('/#teams') }}">Teams</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url('/race') }}">Events</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url('') }}">Results</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url('') }}">Rating</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url('/#partners') }}">Partners</a></li>
                 <li class="nav-item"><a class="nav-link" href="https://raven.gg/stores/xclusive-esports/" target="_blank">Merchandise</a></li>
             </ul>

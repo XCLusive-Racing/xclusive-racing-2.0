@@ -13,9 +13,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'admin'      => \App\Http\Middleware\IsAdmin::class,
-            'superadmin' => \App\Http\Middleware\IsSuperAdmin::class,
+            'admin'             => \App\Http\Middleware\IsAdmin::class,
+            'superadmin'        => \App\Http\Middleware\IsSuperAdmin::class,
+            'password.setup'    => \App\Http\Middleware\EnsurePasswordIsSet::class,
         ]);
+
+        $middleware->appendToGroup('web', \App\Http\Middleware\EnsurePasswordIsSet::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
