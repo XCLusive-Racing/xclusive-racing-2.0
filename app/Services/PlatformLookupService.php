@@ -104,18 +104,6 @@ class PlatformLookupService
 
     private function lookupPsn(string $onlineId): array
     {
-        try {
-            $res = $this->http()
-                ->withHeaders(['User-Agent' => 'Mozilla/5.0'])
-                ->get("https://psnprofiles.com/{$onlineId}");
-        } catch (ConnectionException) {
-            throw new RuntimeException('Could not reach PSN. Please try again.');
-        }
-
-        if (!$res->successful()) {
-            throw new RuntimeException('PSN account not found. Check your Online ID.');
-        }
-
         return [
             'platform_id' => 'P' . strtolower($onlineId),
             'name'        => $onlineId,
