@@ -27,7 +27,7 @@
         </button>
 
         <div class="collapse navbar-collapse" :class="{ 'show': open }">
-            <ul class="navbar-nav mx-auto gap-md-5 fs-5">
+            <ul class="navbar-nav mx-auto gap-md-5">
                 <li class="nav-item"><a class="nav-link" href="{{ url('/#about') }}">About</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url('/race') }}">Events</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url('') }}">Results</a></li>
@@ -38,13 +38,11 @@
 
             <div class="d-flex align-items-center gap-3">
                 <a href="https://discord.gg/AHNTFY9Uuu" target="_blank"
-                   class="btn btn-sm fw-bold text-white d-none d-md-inline-flex"
-                   style="background:#7c3aed;">JOIN DISCORD</a>
+                   class="btn btn-sm fw-bold text-white d-none d-md-inline-flex bg-xcl-purple">JOIN DISCORD</a>
 
                 @auth
                     @if(auth()->user()->canManage())
-                    <a href="{{ route('admin.races.index') }}" class="btn btn-sm fw-bold text-uppercase d-none d-md-inline-flex"
-                       style="background:#7c3aed;color:white;">
+                    <a href="{{ route('admin.races.index') }}" class="btn btn-sm fw-bold text-uppercase text-white d-none d-md-inline-flex bg-xcl-purple">
                         ADMIN
                     </a>
                     @endif

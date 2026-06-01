@@ -71,7 +71,7 @@
         <div class="text-center mb-5">
             <!-- IMAGE PLACEHOLDER: Place XCLusive logo here -->
             <img src="/images/home/xclusive_racing_logo_lion.png"
-                 alt="XCLusive" height="80" class="mb-4 d-block mx-auto">
+                 alt="XCLusive" height="80" class="mb-4 d-block mx-auto" loading="lazy">
             <h2 class="display-4 fw-black text-uppercase fst-italic text-dark mb-3">OUR LEGACY</h2>
             <div class="section-divider"></div>
         </div>

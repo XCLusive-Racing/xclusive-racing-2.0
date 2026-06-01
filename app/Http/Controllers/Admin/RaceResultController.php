@@ -201,6 +201,17 @@ class RaceResultController extends Controller
             ? (int) $session['sessionResult']['bestlap']
             : null;
 
+        $playerIds = collect($lines)
+            ->map(fn($l) => $l['car']['drivers'][0]['playerId'] ?? null)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $usersByPlatformId = User::whereIn('platform_id', $playerIds)
+            ->get()
+            ->keyBy('platform_id');
+
         $saved = 0;
 
         foreach ($lines as $index => $line) {
@@ -231,7 +242,7 @@ class RaceResultController extends Controller
             $dnf        = ($line['missingMandatoryPitstop'] ?? -1) === 1;
             $fastestLap = $bestLapMs !== null && $bestLap !== null && $bestLap === $bestLapMs;
 
-            $user = User::where('platform_id', $playerId)->first();
+            $user = $usersByPlatformId->get($playerId);
 
             RaceResult::updateOrCreate(
                 [
