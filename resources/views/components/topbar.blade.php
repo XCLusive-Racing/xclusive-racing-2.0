@@ -8,7 +8,6 @@
        class="xcl-game-badge xcl-game-acc" title="Assetto Corsa Competizione">
         <span class="xcl-badge-default">
             <img src="/images/home/icons/ACC_logo.png" class="xcl-badge-icon" alt="ACC">
-            ACC
         </span>
         <img src="/images/home/logos/ACC-logo.png" class="xcl-badge-hover" alt="ACC">
     </a>
@@ -18,7 +17,6 @@
        class="xcl-game-badge xcl-game-lmu" title="Le Mans Ultimate">
         <span class="xcl-badge-default">
             <img src="/images/home/icons/LMU_Logo.png" class="xcl-badge-icon" alt="LMU">
-            LMU
         </span>
         <img src="/images/home/logos/LeMans-Logo.png" class="xcl-badge-hover" alt="Le Mans Ultimate">
     </a>
@@ -28,7 +26,6 @@
        class="xcl-game-badge xcl-game-iracing" title="iRacing">
         <span class="xcl-badge-default">
             <img src="/images/home/icons/Iracing_logo.png" class="xcl-badge-icon" alt="iRacing">
-            iRACING
         </span>
         <img src="/images/home/logos/iracing-logo-white.png" class="xcl-badge-hover" alt="iRacing">
     </a>
@@ -37,7 +34,6 @@
     <a href="#" class="xcl-game-badge xcl-game-acrally" title="AC Rally">
         <span class="xcl-badge-default">
             <img src="/images/home/icons/AC_rally_logo.png" class="xcl-badge-icon" alt="AC Rally">
-            AC RALLY
         </span>
         <img src="/images/home/logos/ACRally-logo.png" class="xcl-badge-hover" alt="AC Rally">
     </a>
