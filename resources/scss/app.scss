@@ -81,7 +81,7 @@ html {
 
 // Top game bar
 .xcl-topbar {
-    background: #111827;
+    background: linear-gradient(to right, #24003d, #6b0d47);
     height: 36px;
     position: fixed;
     top: 0;
@@ -103,16 +103,60 @@ html {
 .xcl-game-badge {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 3px 10px;
+    overflow: hidden;
+    padding: 3px 8px;
     border-radius: 3px;
     font-weight: 800;
     font-size: 0.65rem;
     letter-spacing: 0.08em;
     text-decoration: none;
-    transition: opacity 0.15s;
+    white-space: nowrap;
 
-    &:hover { opacity: 0.8; }
+    // Ingeklapte staat: label + placeholder icoontje
+    .xcl-badge-default {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        max-width: 80px;
+        opacity: 1;
+        overflow: hidden;
+        transition: max-width .35s ease, opacity .2s ease;
+        flex-shrink: 0;
+    }
+
+    // Placeholder icoontje (tijdelijk, later te vervangen)
+    .xcl-badge-placeholder {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border-radius: 2px;
+        background: currentColor;
+        opacity: .55;
+        flex-shrink: 0;
+    }
+
+    // Volledig logo: verborgen tot hover
+    .xcl-badge-hover {
+        max-width: 0;
+        height: 20px;
+        opacity: 0;
+        overflow: hidden;
+        object-fit: contain;
+        transition: max-width .35s ease, opacity .2s .15s ease;
+        flex-shrink: 0;
+        display: block;
+    }
+
+    &:hover {
+        .xcl-badge-default {
+            max-width: 0;
+            opacity: 0;
+        }
+        .xcl-badge-hover {
+            max-width: 130px;
+            opacity: 1;
+        }
+    }
 
     &.xcl-game-acc {
         background: rgba(124,58,237,0.2);
@@ -128,6 +172,11 @@ html {
         background: rgba(37,99,235,0.2);
         color: #60a5fa;
         border: 1px solid rgba(37,99,235,0.4);
+    }
+    &.xcl-game-acrally {
+        background: rgba(22,163,74,0.2);
+        color: #4ade80;
+        border: 1px solid rgba(22,163,74,0.4);
     }
 }
 
@@ -260,20 +309,21 @@ html {
     min-height: 100vh;
     padding-top: 116px;
     padding-bottom: 10rem;
-    background: #1a0a2e;
+    background-color: #1a0a2e;
+    background-size: cover;
+    background-position: center right;
+    background-repeat: no-repeat;
     position: relative;
     overflow: hidden;
     display: flex;
     align-items: center;
-    clip-path: polygon(0 0, 100% 0, 100% 88%, 0 100%);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 93%);
 }
 
-.hero-home__bg {
+.hero-home__overlay {
     position: absolute;
     inset: 0;
-    opacity: 0.05;
-    background-size: cover;
-    background-position: center;
+    background: linear-gradient(to right, #1a0a2e 35%, rgba(26,10,46,.6) 65%, rgba(26,10,46,.2) 100%);
     pointer-events: none;
 }
 
@@ -307,10 +357,30 @@ html {
     overflow: hidden;
 }
 
+// Diagonale ramp-overgang tussen hero en about, gevuld met topo-textuur
+.hero-ramp {
+    height: 8vh;
+    background: white;
+    position: relative;
+    overflow: hidden;
+    margin-top: -8vh;
+    clip-path: polygon(0 0, 100% 100%, 0 100%);
+    z-index: 2;
+
+    &__topo {
+        position: absolute;
+        inset: 0;
+        background-size: cover;
+        background-position: center;
+        opacity: 0.12;
+        pointer-events: none;
+    }
+}
+
 .about-section__topo {
     position: absolute;
     inset: 0;
-    opacity: 0.04;
+    opacity: 0.12;
     background-size: cover;
     background-position: center;
     pointer-events: none;
@@ -359,41 +429,82 @@ body.admin-body {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    transition: transform .25s ease;
+    overflow-x: hidden;
+    transition: width .25s ease, transform .25s ease;
 
     &::-webkit-scrollbar { width: 4px; }
     &::-webkit-scrollbar-track { background: transparent; }
     &::-webkit-scrollbar-thumb { background: #2d2d3d; border-radius: 2px; }
+
+    &.is-collapsed {
+        width: 60px;
+
+        .admin-nav-link {
+            justify-content: center;
+            padding: 10px 0;
+            margin: 2px 8px;
+            gap: 0;
+        }
+
+        .admin-sidebar-footer {
+            padding: .75rem 8px;
+        }
+    }
 }
 
 .admin-sidebar-logo {
-    padding: 1.5rem 1.5rem 1rem;
+    padding: 1.25rem 1.25rem .9rem;
     border-bottom: 1px solid rgba(255,255,255,.06);
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .admin-nav-section-label {
-    padding: 1.25rem 1.5rem .4rem;
-    font-size: .65rem;
+    padding: 1rem 1.5rem .3rem;
+    font-size: .6rem;
     font-weight: 800;
     letter-spacing: .12em;
     text-transform: uppercase;
     color: #4b5563;
 }
 
+.admin-nav-section-header {
+    padding: 1rem 1.5rem .3rem;
+    font-size: .6rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #4b5563;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    &:hover { color: #6b7280; }
+}
+
+.admin-nav-section-divider {
+    height: 1px;
+    background: rgba(255,255,255,.06);
+    margin: 8px 12px;
+}
+
 .admin-nav-link {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin: 2px 12px;
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-size: .82rem;
+    gap: 10px;
+    margin: 1px 10px;
+    padding: 8px 12px;
+    border-radius: 7px;
+    font-size: .75rem;
     font-weight: 700;
-    letter-spacing: .04em;
+    letter-spacing: .03em;
     text-transform: uppercase;
     color: #6b7280;
     text-decoration: none;
+    white-space: nowrap;
     transition: background .15s, color .15s;
 
     svg { flex-shrink: 0; opacity: .7; transition: opacity .15s; }
@@ -412,8 +523,22 @@ body.admin-body {
 
 .admin-sidebar-footer {
     margin-top: auto;
-    padding: 1rem 1.5rem;
+    padding: .9rem 1.25rem;
     border-top: 1px solid rgba(255,255,255,.06);
+}
+
+.sidebar-collapse-btn {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 6px;
+    color: #4b5563;
+    padding: 4px 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background .15s, color .15s;
+    flex-shrink: 0;
+    &:hover { background: rgba(255,255,255,.1); color: #9ca3af; }
 }
 
 // Main area
@@ -422,6 +547,9 @@ body.admin-body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    transition: margin-left .25s ease;
+
+    &.is-collapsed { margin-left: 60px; }
 }
 
 // Header
@@ -566,3 +694,36 @@ body.admin-body {
 .xcl-toast-enter-start  { opacity: 0; transform: translateY(-8px); }
 .xcl-toast-enter-end    { opacity: 1; transform: translateY(0); }
 .xcl-toast-leave        { transition: opacity .2s ease; }
+
+// ─── CSS custom properties voor nieuwe componenten ───────────────────────────
+
+:root {
+    --xcl-purple: #7c3aed;
+    --xcl-dark: #12011a;
+    --xcl-purple-light: #9333ea;
+}
+
+// ─── Meet the Teams component ─────────────────────────────────────────────────
+
+// Autoafbeelding met schuine uitsnede en hover zoom
+.car-img-clip {
+    clip-path: polygon(5% 0%, 100% 0%, 95% 100%, 0% 100%);
+    transition: transform .3s ease;
+    &:hover { transform: scale(1.03); }
+}
+
+// Sectie wrapper met SVG hexagon overlay
+.hex-bg {
+    position: relative;
+    overflow: hidden;
+
+    svg.pattern {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0.12;
+        pointer-events: none;
+        z-index: 0;
+    }
+}

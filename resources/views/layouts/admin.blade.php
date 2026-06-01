@@ -14,126 +14,171 @@
     @vite(['resources/scss/app.scss', 'resources/js/app.js'])
     @stack('head')
 </head>
-<body class="admin-body" x-data="{ sidebarOpen: false }">
+<body class="admin-body" x-data="{
+    sidebarOpen: false,
+    sidebarCollapsed: false,
+    sections: { site: true, events: true, config: true, ftp: true }
+}">
 
 {{-- Mobile overlay --}}
 <div class="admin-sidebar-overlay" :class="{ open: sidebarOpen }" @click="sidebarOpen = false"></div>
 
 {{-- Sidebar --}}
-<aside class="admin-sidebar" :class="{ open: sidebarOpen }">
+<aside class="admin-sidebar" :class="{ open: sidebarOpen, 'is-collapsed': sidebarCollapsed }">
 
-    {{-- Logo --}}
-    <div class="admin-sidebar-logo">
-        <a href="{{ route('home') }}" class="d-flex align-items-center gap-2 text-decoration-none">
-            <img src="/logo.png" alt="XCLusive" height="32">
-            <div>
-                <div class="text-white fw-black text-uppercase" style="font-size:.75rem;line-height:1.1">XCLusive</div>
-                <div style="font-size:.6rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.08em">Admin Panel</div>
-            </div>
-        </a>
+    {{-- Collapse toggle --}}
+    <div class="admin-sidebar-logo" :class="sidebarCollapsed ? 'justify-content-center' : 'justify-content-between'">
+        <span x-show="!sidebarCollapsed" class="text-white fw-black text-uppercase" style="font-size:.7rem;letter-spacing:.08em">Admin Panel</span>
+        <button @click="sidebarCollapsed = !sidebarCollapsed"
+                class="sidebar-collapse-btn d-none d-lg-flex">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      :d="sidebarCollapsed ? 'M9 18l6-6-6-6' : 'M15 18l-6-6 6-6'"/>
+            </svg>
+        </button>
     </div>
 
     {{-- Navigation --}}
-    <nav class="py-2 flex-grow-1">
-        <div class="admin-nav-section-label mt-2">Site</div>
+    <nav class="py-1 flex-grow-1">
 
-        <a href="{{ route('home') }}" class="admin-nav-link">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1V10"/>
+        {{-- Site --}}
+        <div x-show="!sidebarCollapsed" class="admin-nav-section-header" @click="sections.site = !sections.site">
+            <span>Site</span>
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                 :style="sections.site ? '' : 'transform:rotate(-90deg)'" style="transition:transform .2s">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
             </svg>
-            Homepage
-        </a>
+        </div>
+        <div x-show="sidebarCollapsed" class="admin-nav-section-divider"></div>
 
-        <a href="{{ route('race') }}" class="admin-nav-link" target="_blank">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-            </svg>
-            View Events
-        </a>
+        <div x-show="sections.site || sidebarCollapsed">
+            <a href="{{ route('home') }}" class="admin-nav-link">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1V10"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">Homepage</span>
+            </a>
+            <a href="{{ route('race') }}" class="admin-nav-link" target="_blank">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">View Events</span>
+            </a>
+        </div>
 
         @if(auth()->user()->isSuperAdmin())
-        <div class="admin-nav-section-label mt-2">Management</div>
-        <a href="{{ route('admin.users.index') }}"
-           class="admin-nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+        {{-- Management (super admin) --}}
+        <div x-show="!sidebarCollapsed" class="admin-nav-section-header" @click="sections.config = !sections.config">
+            <span>Management</span>
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                 :style="sections.config ? '' : 'transform:rotate(-90deg)'" style="transition:transform .2s">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
             </svg>
-            Users
-        </a>
+        </div>
+        <div x-show="sidebarCollapsed" class="admin-nav-section-divider"></div>
+
+        <div x-show="sections.config || sidebarCollapsed">
+            <a href="{{ route('admin.users.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">Users</span>
+            </a>
+        </div>
         @endif
 
-        <div class="admin-nav-section-label">Events</div>
-
-        <a href="{{ route('admin.races.index') }}"
-           class="admin-nav-link {{ request()->routeIs('admin.races.index') ? 'active' : '' }}">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 6h18M3 14h10M3 18h6"/>
+        {{-- Events --}}
+        <div x-show="!sidebarCollapsed" class="admin-nav-section-header" @click="sections.events = !sections.events">
+            <span>Events</span>
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                 :style="sections.events ? '' : 'transform:rotate(-90deg)'" style="transition:transform .2s">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
             </svg>
-            All Races
-        </a>
+        </div>
+        <div x-show="sidebarCollapsed" class="admin-nav-section-divider"></div>
 
-        <a href="{{ route('admin.calendar') }}"
-           class="admin-nav-link {{ request()->routeIs('admin.calendar') ? 'active' : '' }}">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        <div x-show="sections.events || sidebarCollapsed">
+            <a href="{{ route('admin.races.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.races.index') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 6h18M3 14h10M3 18h6"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">All Races</span>
+            </a>
+            <a href="{{ route('admin.calendar') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.calendar') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">Calendar</span>
+            </a>
+            <a href="{{ route('admin.races.bulk-create') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.races.bulk-create') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">Championship Scheduler</span>
+            </a>
+            <a href="{{ route('admin.races.create') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.races.create') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">Create Single Race</span>
+            </a>
+        </div>
+
+        {{-- Configuration --}}
+        <div x-show="!sidebarCollapsed" class="admin-nav-section-header" @click="sections.ftp = !sections.ftp">
+            <span>Configuration</span>
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                 :style="sections.ftp ? '' : 'transform:rotate(-90deg)'" style="transition:transform .2s">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
             </svg>
-            Calendar
-        </a>
+        </div>
+        <div x-show="sidebarCollapsed" class="admin-nav-section-divider"></div>
 
+        <div x-show="sections.ftp || sidebarCollapsed">
+            <a href="{{ route('admin.servers.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.servers.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">FTP Servers</span>
+            </a>
+        </div>
 
-
-        <a href="{{ route('admin.races.bulk-create') }}"
-           class="admin-nav-link {{ request()->routeIs('admin.races.bulk-create') ? 'active' : '' }}">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-            </svg>
-            Schedule Events
-        </a>
-
-        <a href="{{ route('admin.races.create') }}"
-           class="admin-nav-link {{ request()->routeIs('admin.races.create') ? 'active' : '' }}">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-            </svg>
-            Create Single Race
-        </a>
-
-        <div class="admin-nav-section-label mt-2">Configuration</div>
-
-        <a href="{{ route('admin.servers.index') }}"
-           class="admin-nav-link {{ request()->routeIs('admin.servers.*') ? 'active' : '' }}">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
-            </svg>
-            FTP Servers
-        </a>
     </nav>
 
     {{-- User / Logout --}}
     <div class="admin-sidebar-footer">
-        <div class="d-flex align-items-center gap-2 mb-3">
+        <div x-show="!sidebarCollapsed" class="d-flex align-items-center gap-2 mb-2">
             <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
-                 style="width:36px;height:36px;font-size:.85rem;background:linear-gradient(135deg,#7c3aed,#db2777)">
+                 style="width:30px;height:30px;font-size:.75rem;background:linear-gradient(135deg,#7c3aed,#db2777)">
                 {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
             </div>
             <div style="min-width:0">
-                <div class="text-white fw-bold text-truncate" style="font-size:.8rem">{{ auth()->user()->name }}</div>
-                <div style="font-size:.65rem;color:#6b7280;text-transform:uppercase;font-weight:700">{{ auth()->user()->role }}</div>
+                <div class="text-white fw-bold text-truncate" style="font-size:.75rem">{{ auth()->user()->name }}</div>
+                <div style="font-size:.6rem;color:#6b7280;text-transform:uppercase;font-weight:700">{{ auth()->user()->role }}</div>
             </div>
         </div>
         <form action="{{ route('logout') }}" method="POST">
             @csrf
             <button type="submit"
-                    class="w-100 btn btn-sm fw-bold text-uppercase"
-                    style="background:rgba(255,255,255,.06);color:#6b7280;border:1px solid rgba(255,255,255,.08);font-size:.72rem">
-                Logout
+                    class="w-100 btn btn-sm fw-bold text-uppercase d-flex align-items-center justify-content-center gap-2"
+                    style="background:rgba(255,255,255,.06);color:#6b7280;border:1px solid rgba(255,255,255,.08);font-size:.68rem">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">Logout</span>
             </button>
         </form>
     </div>
 </aside>
 
 {{-- Main --}}
-<div class="admin-main">
+<div class="admin-main" :class="{ 'is-collapsed': sidebarCollapsed }">
 
     {{-- Header --}}
     <header class="admin-header">

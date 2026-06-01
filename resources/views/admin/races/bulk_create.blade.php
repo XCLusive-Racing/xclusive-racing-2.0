@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', 'Schedule Events')
-@section('page-title', 'Schedule Events')
+@section('title', 'Championship Scheduler')
+@section('page-title', 'Championship Scheduler')
 
 @section('page-actions')
     <a href="{{ route('admin.calendar') }}" class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.78rem">
@@ -18,6 +18,7 @@
     rounds: {{ old('rounds', 4) }},
     interval: '{{ old('interval', 'weekly') }}',
     selectedDays: {!! json_encode(array_map('strval', old('days', []))) !!},
+    tracks: {!! json_encode(old('tracks', [])) !!},
 
     isBST(date) {
         const y = date.getFullYear();
@@ -62,7 +63,8 @@
 
         return result;
     }
-}">
+}"
+x-init="$watch('preview', val => { while (tracks.length < val.length) tracks.push(''); })">
 
     {{-- Form --}}
     <div class="col-lg-7">
@@ -80,25 +82,23 @@
                     @error('title') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
-                <div class="row g-3 mb-3">
-                    <div class="col-sm-6">
-                        <label class="form-label">Game</label>
-                        <select name="game" class="form-select @error('game') is-invalid @enderror">
-                            <option value="">Select game...</option>
-                            <option value="acc"     {{ old('game') === 'acc'     ? 'selected' : '' }}>ACC Console</option>
-                            <option value="lmu"     {{ old('game') === 'lmu'     ? 'selected' : '' }}>Le Mans Ultimate</option>
-                            <option value="iracing" {{ old('game') === 'iracing' ? 'selected' : '' }}>iRacing</option>
-                        </select>
-                        @error('game') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
-                    <div class="col-sm-6">
-                        <label class="form-label">Track</label>
-                        <input type="text" name="track" value="{{ old('track') }}"
-                               class="form-control @error('track') is-invalid @enderror"
-                               placeholder="e.g. Monza">
-                        @error('track') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label">Game</label>
+                    <select name="game" class="form-select @error('game') is-invalid @enderror">
+                        <option value="">Select game...</option>
+                        <option value="acc"     {{ old('game') === 'acc'     ? 'selected' : '' }}>ACC Console</option>
+                        <option value="lmu"     {{ old('game') === 'lmu'     ? 'selected' : '' }}>Le Mans Ultimate</option>
+                        <option value="iracing" {{ old('game') === 'iracing' ? 'selected' : '' }}>iRacing</option>
+                    </select>
+                    @error('game') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
+
+                @error('tracks') <div class="alert alert-danger py-2 small mb-3">{{ $message }}</div> @enderror
+                @error('tracks.*') <div class="alert alert-danger py-2 small mb-3">Fill in a track for every round.</div> @enderror
+
+                <template x-for="(t, i) in tracks" :key="i">
+                    <input type="hidden" :name="'tracks[' + i + ']'" :value="t">
+                </template>
 
                 <div class="row g-3 mb-3">
                     <div class="col-sm-4">
@@ -170,8 +170,8 @@
                     @error('description') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
-                <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">
-                    Schedule <span x-text="rounds"></span> Events
+                <button type="submit" class="btn fw-black text-uppercase text-white px-4 bg-xcl-purple">
+                    Schedule Events
                 </button>
             </form>
         </div>
@@ -206,13 +206,18 @@
                              :style="{ borderBottom: i < preview.length - 1 ? '1px solid #f3f4f6' : 'none' }">
 
                             <div class="d-flex align-items-center justify-content-center rounded-circle text-white fw-black flex-shrink-0"
-                                 style="width:28px;height:28px;font-size:.7rem;background:#7c3aed;margin-top:1px">
+                                 style="width:28px;height:28px;font-size:.7rem;background:#7c3aed;margin-top:2px">
                                 <span x-text="i + 1"></span>
                             </div>
 
-                            <div style="min-width:0">
+                            <div style="min-width:0;flex:1">
                                 <div class="fw-bold text-dark text-truncate" style="font-size:.85rem" x-text="item.label"></div>
-                                <div class="text-secondary mt-1" style="font-size:.75rem" x-text="item.date + '  ·  ' + item.time"></div>
+                                <div class="text-secondary" style="font-size:.72rem" x-text="item.date + '  ·  ' + item.time"></div>
+                                <input type="text"
+                                       x-model="tracks[i]"
+                                       placeholder="Track name..."
+                                       class="form-control form-control-sm mt-1"
+                                       style="font-size:.75rem;border-color:#e5e7eb">
                             </div>
                         </div>
                     </template>

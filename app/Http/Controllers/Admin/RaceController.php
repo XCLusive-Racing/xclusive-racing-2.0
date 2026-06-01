@@ -47,7 +47,8 @@ class RaceController extends Controller
         $data = $request->validate([
             'title'       => 'required|string|max:200',
             'game'        => 'required|in:acc,lmu,iracing',
-            'track'       => 'required|string|max:255',
+            'tracks'      => 'required|array|min:1',
+            'tracks.*'    => 'required|string|max:255',
             'start_date'  => 'required|date',
             'start_time'  => 'required|date_format:H:i',
             'rounds'      => 'required|integer|min:1|max:366',
@@ -60,10 +61,11 @@ class RaceController extends Controller
 
         $base    = Carbon::parse($data['start_date'] . ' ' . $data['start_time']);
         $rounds  = (int) $data['rounds'];
-        $payload = fn ($at) => [
+        $tracks  = array_values($data['tracks']);
+        $payload = fn ($at, $index) => [
             'title'        => $data['title'],
             'game'         => $data['game'],
-            'track'        => $data['track'],
+            'track'        => $tracks[$index] ?? '',
             'scheduled_at' => $at,
             'max_drivers'  => $data['max_drivers'] ?? null,
             'description'  => $data['description'] ?? null,
@@ -79,7 +81,7 @@ class RaceController extends Controller
 
             while ($created < $rounds && $current < $limit) {
                 if (in_array($current->dayOfWeek, $days)) {
-                    Race::create($payload($current->copy()));
+                    Race::create($payload($current->copy(), $created));
                     $created++;
                 }
                 $current->addDay();
@@ -91,7 +93,7 @@ class RaceController extends Controller
                     'monthly' => $base->copy()->addMonths($i),
                     default   => $base->copy()->addWeeks($i),
                 };
-                Race::create($payload($at));
+                Race::create($payload($at, $i));
             }
         }
 

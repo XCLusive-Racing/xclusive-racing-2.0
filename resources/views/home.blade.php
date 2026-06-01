@@ -3,17 +3,13 @@
 @section('content')
 
 {{-- ─── Hero ──────────────────────────────────────────────────────────────────── --}}
-<section class="hero-home">
-    <div class="hero-home__bg" style="background-image: url('/topo.png');"></div>
+<section class="hero-home" style="background-image:url('/images/home/XCLusive_499P_Header_v3.png')">
 
     <div class="container-xl px-4 position-relative h-100" style="z-index:1;">
         <div class="row align-items-center g-5 h-100 py-5">
 
             {{-- Left: copy --}}
             <div class="col-lg-6 animate-fade-in">
-                <div class="mb-4">
-                    <img src="/images/home/xclusive_racing_logo_lion.png" alt="XCLusive Lion" height="90">
-                </div>
                 <h1 class="hero-home__heading fw-black text-uppercase fst-italic lh-1 mb-4">
                     THE LION IS<br>BORN TO<br>
                     <span class="hero-home__heading--accent">DOMINATE</span>
@@ -32,34 +28,17 @@
                 </div>
             </div>
 
-            {{-- Right: car image --}}
-            <div class="col-lg-6 d-flex align-items-center justify-content-center">
-                <!-- IMAGE PLACEHOLDER: Place race car image here -->
-                <div class="hero-home__car-placeholder">
-                    <svg width="72" height="72" viewBox="0 0 24 24" fill="none"
-                         stroke="rgba(255,255,255,.12)" stroke-width="1.2">
-                        <rect x="3" y="3" width="18" height="18" rx="2"/>
-                        <circle cx="12" cy="12" r="3"/>
-                        <path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>
-                    </svg>
-                    <p class="mt-3 mb-0 fw-bold text-uppercase"
-                       style="color:rgba(255,255,255,.18);letter-spacing:.1em;font-size:.7rem">
-                        PLACE CAR IMAGE HERE
-                    </p>
-                </div>
-            </div>
 
         </div>
     </div>
 
-    {{-- Scroll indicator --}}
-    <div class="position-absolute bottom-0 start-50 translate-middle-x pb-4 animate-bounce" style="z-index:1;">
-        <svg width="24" height="24" fill="none" stroke="rgba(255,255,255,.35)"
-             stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
-        </svg>
-    </div>
+
 </section>
+
+{{-- ─── Ramp: driehoekige overgang met topo-textuur ─────────────────────────── --}}
+<div class="hero-ramp">
+    <div class="hero-ramp__topo" style="background-image:url('/topo.png');"></div>
+</div>
 
 {{-- ─── Legacy / About ──────────────────────────────────────────────────────── --}}
 <section id="about" class="about-section py-5 px-3">
@@ -117,94 +96,7 @@
 </section>
 
 {{-- ─── Teams ──────────────────────────────────────────────────────────────── --}}
-<section id="teams" class="py-5 px-3" x-data="{ active: 'acc' }">
-    <div class="container-xl">
-        <div class="text-center mb-5">
-            <h2 class="display-4 fw-black text-uppercase fst-italic text-dark mb-3">OUR TEAMS</h2>
-            <div class="section-divider"></div>
-        </div>
-
-        {{-- Platform selector --}}
-        <div class="d-flex justify-content-center gap-3 mb-5 flex-wrap">
-            <button @click="active = 'acc'"     :class="active === 'acc'     ? 'active' : ''" class="platform-btn">ACC CONSOLE</button>
-            <button @click="active = 'lmu'"     :class="active === 'lmu'     ? 'active' : ''" class="platform-btn">LE MANS ULTIMATE</button>
-            <button @click="active = 'iracing'" :class="active === 'iracing' ? 'active' : ''" class="platform-btn">iRACING</button>
-        </div>
-
-        {{-- ACC Team --}}
-        <div x-show="active === 'acc'" class="row g-3">
-            @php
-            $accTeam = [
-                ['name' => 'Nat',      'lastName' => 'BENNET',       'country' => '🇬🇧'],
-                ['name' => 'Sergio',   'lastName' => 'HERNÁNDEZ',    'country' => '🇪🇸'],
-                ['name' => 'Phil',     'lastName' => 'SOURCY',       'country' => '🇨🇦'],
-                ['name' => 'Joakim',   'lastName' => 'ERIKSSON',     'country' => '🇸🇪'],
-                ['name' => 'Matteo',   'lastName' => 'MASTROMAURO',  'country' => '🇮🇹'],
-                ['name' => 'Gianluca', 'lastName' => 'ZAMBIONE',     'country' => '🇮🇹'],
-            ];
-            @endphp
-            @foreach($accTeam as $driver)
-            <div class="col-6 col-md-4 col-lg-3">
-                <div class="driver-card rounded-2 p-4 bg-white">
-                    <div class="driver-avatar bg-gradient-xcl">
-                        <span>{{ $driver['name'][0] }}</span>
-                    </div>
-                    <div class="small fw-bold text-xcl-purple mb-1">{{ $driver['name'] }}</div>
-                    <div class="fw-black text-dark mb-2">{{ $driver['lastName'] }}</div>
-                    <div class="fs-4">{{ $driver['country'] }}</div>
-                </div>
-            </div>
-            @endforeach
-        </div>
-
-        {{-- LMU Team --}}
-        <div x-show="active === 'lmu'" class="row g-3">
-            @php
-            $lmuTeam = [
-                ['name' => 'Giuseppe', 'lastName' => 'DINOIA',   'country' => '🇮🇹'],
-                ['name' => 'Paul',     'lastName' => 'MÖLLER',   'country' => '🇩🇪'],
-                ['name' => 'Jesse',    'lastName' => 'AALBREGT', 'country' => '🇳🇱'],
-                ['name' => 'Denis',    'lastName' => 'EBERT',    'country' => '🇩🇪'],
-            ];
-            @endphp
-            @foreach($lmuTeam as $driver)
-            <div class="col-6 col-md-4 col-lg-3">
-                <div class="driver-card rounded-2 p-4 bg-white">
-                    <div class="driver-avatar" style="background:linear-gradient(135deg,#db2777,#7c3aed)">
-                        <span>{{ $driver['name'][0] }}</span>
-                    </div>
-                    <div class="small fw-bold text-xcl-purple mb-1">{{ $driver['name'] }}</div>
-                    <div class="fw-black text-dark mb-2">{{ $driver['lastName'] }}</div>
-                    <div class="fs-4">{{ $driver['country'] }}</div>
-                </div>
-            </div>
-            @endforeach
-        </div>
-
-        {{-- iRacing Team --}}
-        <div x-show="active === 'iracing'" class="row g-3">
-            @php
-            $iracingTeam = [
-                ['name' => 'Ethan',  'lastName' => 'AMBURG',  'country' => '🇺🇸'],
-                ['name' => 'Parker', 'lastName' => 'SOUKUP',  'country' => '🇺🇸'],
-                ['name' => 'James',  'lastName' => 'CURTIN',  'country' => '🇺🇸'],
-            ];
-            @endphp
-            @foreach($iracingTeam as $driver)
-            <div class="col-6 col-md-4 col-lg-3">
-                <div class="driver-card rounded-2 p-4 bg-white">
-                    <div class="driver-avatar" style="background:linear-gradient(135deg,#2563eb,#7c3aed)">
-                        <span>{{ $driver['name'][0] }}</span>
-                    </div>
-                    <div class="small fw-bold text-xcl-purple mb-1">{{ $driver['name'] }}</div>
-                    <div class="fw-black text-dark mb-2">{{ $driver['lastName'] }}</div>
-                    <div class="fs-4">{{ $driver['country'] }}</div>
-                </div>
-            </div>
-            @endforeach
-        </div>
-    </div>
-</section>
+<x-meet-teams />
 
 {{-- ─── Partners ─────────────────────────────────────────────────────────── --}}
 <section id="partners" class="py-5 px-3 bg-light">
