@@ -7,7 +7,7 @@
     <a href="https://www.assettocorsa.net/competizione/" target="_blank"
        class="xcl-game-badge xcl-game-acc" title="Assetto Corsa Competizione">
         <span class="xcl-badge-default">
-            <img src="/images/home/icons/ACC_logo.png" class="xcl-badge-icon" alt="ACC">
+            <img src="/images/home/icons/ACC Logo.png" class="xcl-badge-icon" alt="ACC">
         </span>
         <img src="/images/home/logos/ACC-logo.png" class="xcl-badge-hover" alt="ACC">
     </a>
@@ -16,7 +16,7 @@
     <a href="https://www.lemansultimate.com/" target="_blank"
        class="xcl-game-badge xcl-game-lmu" title="Le Mans Ultimate">
         <span class="xcl-badge-default">
-            <img src="/images/home/icons/LMU_Logo.png" class="xcl-badge-icon" alt="LMU">
+            <img src="/images/home/icons/LM Logo.png" class="xcl-badge-icon" alt="LMU">
         </span>
         <img src="/images/home/logos/LeMans-Logo.png" class="xcl-badge-hover" alt="Le Mans Ultimate">
     </a>
@@ -25,7 +25,7 @@
     <a href="https://www.iracing.com/" target="_blank"
        class="xcl-game-badge xcl-game-iracing" title="iRacing">
         <span class="xcl-badge-default">
-            <img src="/images/home/icons/Iracing_logo.png" class="xcl-badge-icon" alt="iRacing">
+            <img src="/images/home/icons/iR Logo.png" class="xcl-badge-icon" alt="iRacing">
         </span>
         <img src="/images/home/logos/iracing-logo-white.png" class="xcl-badge-hover" alt="iRacing">
     </a>
@@ -33,7 +33,7 @@
     {{-- AC Rally badge --}}
     <a href="#" class="xcl-game-badge xcl-game-acrally" title="AC Rally">
         <span class="xcl-badge-default">
-            <img src="/images/home/icons/AC_rally_logo.png" class="xcl-badge-icon" alt="AC Rally">
+            <img src="/images/home/icons/AC R Logo.png" class="xcl-badge-icon" alt="AC Rally">
         </span>
         <img src="/images/home/logos/ACRally-logo.png" class="xcl-badge-hover" alt="AC Rally">
     </a>

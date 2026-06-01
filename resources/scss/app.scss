@@ -295,7 +295,7 @@ html {
 .section-divider {
     width: 96px;
     height: 4px;
-    background: linear-gradient(90deg, #7c3aed, #db2777);
+    background: linear-gradient(90deg, #8435e4, #5f2866, #732cad);
     margin: 0 auto;
     border-radius: 2px;
 }
@@ -330,7 +330,41 @@ html {
 }
 
 .hero-home__heading--accent {
-    color: #7c3aed;
+    display: inline-block;
+    padding-right: 0.2em;
+    background: linear-gradient(135deg, #8435e4, #5f2866, #732cad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.xcl-gradient-text {
+    display: inline-block;
+    padding-right: 0.1em;
+    background: linear-gradient(135deg, #8435e4, #5f2866, #732cad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(10px); }
+}
+
+.hero-scroll-indicator {
+    position: absolute;
+    bottom: 78px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: bounce 1.5s ease-in-out infinite;
+    z-index: 3;
+    text-decoration: none;
+
+    &:hover { opacity: 0.7; }
 }
 
 .hero-home__car-placeholder {
@@ -352,6 +386,15 @@ html {
     background: white;
     position: relative;
     overflow: hidden;
+
+    &__heading {
+        display: inline-block;
+        padding-right: 0.15em;
+        background: linear-gradient(90deg, #8435e4, #5f2866, #732cad);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
 }
 
 // Diagonale ramp-overgang tussen hero en about, gevuld met topo-textuur
@@ -368,19 +411,21 @@ html {
         position: absolute;
         inset: 0;
         background-size: cover;
-        background-position: center;
-        opacity: 0.05;
+        background-attachment: fixed;
+        opacity: 0.35;
         pointer-events: none;
+        filter: invert(1) sepia(1) saturate(3) hue-rotate(220deg) brightness(1.4);
     }
 }
 
 .about-section__topo {
     position: absolute;
     inset: 0;
-    opacity: 0.05;
+    opacity: 0.35;
     background-size: cover;
-    background-position: center;
+    background-attachment: fixed;
     pointer-events: none;
+    filter: invert(1) sepia(1) saturate(3) hue-rotate(220deg) brightness(1.4);
 }
 
 .about-stats-card {
