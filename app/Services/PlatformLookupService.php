@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -105,13 +104,10 @@ class PlatformLookupService
 
     private function lookupPsn(string $onlineId): array
     {
-        $accessToken = $this->getPsnAccessToken();
-
         try {
-            $res = $this->http()->withToken($accessToken)
-                ->get("https://us-prof.np.community.playstation.net/userProfile/v1/users/{$onlineId}/profile2", [
-                    'fields' => 'accountId,onlineId,currentOnlineId',
-                ]);
+            $res = $this->http()
+                ->withHeaders(['User-Agent' => 'Mozilla/5.0'])
+                ->get("https://psnprofiles.com/{$onlineId}");
         } catch (ConnectionException) {
             throw new RuntimeException('Could not reach PSN. Please try again.');
         }
@@ -120,113 +116,9 @@ class PlatformLookupService
             throw new RuntimeException('PSN account not found. Check your Online ID.');
         }
 
-        $profile = $res->json('profile');
-
         return [
-            'platform_id' => 'P' . $profile['accountId'],
-            'name'        => $profile['currentOnlineId'] ?? $profile['onlineId'],
+            'platform_id' => 'P' . strtolower($onlineId),
+            'name'        => $onlineId,
         ];
-    }
-
-    private function getPsnAccessToken(): string
-    {
-        if ($cached = Cache::get('psn_access_token')) {
-            return $cached;
-        }
-
-        $refreshToken = Cache::get('psn_refresh_token') ?? config('services.psn.refresh_token');
-
-        if ($refreshToken) {
-            try {
-                return $this->psnRefresh($refreshToken);
-            } catch (RuntimeException) {
-                // fall through to NPSSO
-            }
-        }
-
-        $npsso = config('services.psn.npsso');
-        if (!$npsso) {
-            throw new RuntimeException('PSN is not configured. Contact the administrator.');
-        }
-
-        return $this->psnFromNpsso($npsso);
-    }
-
-    private function psnFromNpsso(string $npsso): string
-    {
-        $authRes = $this->http()->withOptions(['allow_redirects' => false])
-            ->withHeaders(['Cookie' => "npsso={$npsso}"])
-            ->get('https://ca.account.sony.com/api/authz/v3/oauth/authorize', [
-                'access_type'   => 'offline',
-                'client_id'     => '09515159-7237-4370-b4f0-315ef5c1ea3f',
-                'redirect_uri'  => 'com.scee.psxandroid.scecompcall://redirect',
-                'response_type' => 'code',
-                'scope'         => 'psn:mobile.v2.core psn:clientapp',
-            ]);
-
-        $location = $authRes->header('Location');
-        if (!$location) {
-            throw new RuntimeException('PSN NPSSO has expired. Update PSN_NPSSO in .env.');
-        }
-
-        parse_str(parse_url($location, PHP_URL_QUERY), $params);
-        $code = $params['code'] ?? null;
-
-        if (!$code) {
-            throw new RuntimeException('PSN authorization code not received.');
-        }
-
-        return $this->psnExchangeCode($code);
-    }
-
-    private function psnExchangeCode(string $code): string
-    {
-        $res = $this->http()->withHeaders([
-            'Authorization' => 'Basic ' . base64_encode('09515159-7237-4370-b4f0-315ef5c1ea3f:'),
-        ])->asForm()->post('https://ca.account.sony.com/api/authz/v3/oauth/token', [
-            'code'         => $code,
-            'grant_type'   => 'authorization_code',
-            'redirect_uri' => 'com.scee.psxandroid.scecompcall://redirect',
-            'token_format' => 'jwt',
-        ]);
-
-        if (!$res->successful()) {
-            throw new RuntimeException('PSN token exchange failed.');
-        }
-
-        return $this->storePsnTokens($res->json());
-    }
-
-    private function psnRefresh(string $refreshToken): string
-    {
-        $res = $this->http()->withHeaders([
-            'Authorization' => 'Basic ' . base64_encode('09515159-7237-4370-b4f0-315ef5c1ea3f:'),
-        ])->asForm()->post('https://ca.account.sony.com/api/authz/v3/oauth/token', [
-            'refresh_token' => $refreshToken,
-            'grant_type'    => 'refresh_token',
-            'scope'         => 'psn:mobile.v2.core psn:clientapp',
-            'token_format'  => 'jwt',
-        ]);
-
-        if (!$res->successful()) {
-            throw new RuntimeException('PSN refresh token expired.');
-        }
-
-        return $this->storePsnTokens($res->json());
-    }
-
-    private function storePsnTokens(array $data): string
-    {
-        $accessToken  = $data['access_token'];
-        $refreshToken = $data['refresh_token'] ?? null;
-        $expiresIn    = $data['expires_in'] ?? 3600;
-
-        Cache::put('psn_access_token', $accessToken, $expiresIn - 60);
-
-        if ($refreshToken) {
-            Cache::put('psn_refresh_token', $refreshToken, now()->addDays(58));
-        }
-
-        return $accessToken;
     }
 }

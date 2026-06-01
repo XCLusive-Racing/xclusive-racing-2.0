@@ -31,9 +31,5 @@ return [
         'api_key' => env('OPENXBL_API_KEY'),
     ],
 
-    'psn' => [
-        'npsso'         => env('PSN_NPSSO'),
-        'refresh_token' => env('PSN_REFRESH_TOKEN'),
-    ],
 
 ];
