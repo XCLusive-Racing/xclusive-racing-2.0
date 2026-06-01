@@ -4,7 +4,7 @@
 
         {{-- Brand: XCLusive Racing logo --}}
         <a class="navbar-brand" href="{{ url('/') }}">
-            <img src="/images/home/xclusive_racing_logo.png" alt="XCLusive" height="40">
+            <img src="/images/home/brand/xclusive_racing_logo.png" alt="XCLusive" height="40">
         </a>
 
         {{-- Hamburger knop voor mobiele weergave --}}
@@ -64,7 +64,7 @@
                     {{-- Profielpagina met mascot icoon --}}
                     <a href="{{ route('profile') }}"
                        class="d-flex align-items-center gap-2 text-decoration-none fw-bold text-xcl-purple">
-                        <img src="/images/home/xclusive_racing_logo_lion.png"
+                        <img src="/images/home/brand/xclusive_racing_logo_lion.png"
                              alt="Profile" width="32" height="32" style="object-fit:contain;">
                         PROFILE
                     </a>
@@ -77,7 +77,7 @@
                     </a>
 
                     {{-- Mascot icoon naast aanmeldknop --}}
-                    <img src="/images/home/xclusive_racing_logo_lion.png"
+                    <img src="/images/home/brand/xclusive_racing_logo_lion.png"
                          alt="XCLusive" width="32" height="32"
                          style="object-fit:contain;">
                 @endauth

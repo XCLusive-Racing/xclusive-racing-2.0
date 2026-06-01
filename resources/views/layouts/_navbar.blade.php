@@ -4,43 +4,43 @@
     <a href="https://www.assettocorsa.net/competizione/" target="_blank"
        class="xcl-game-badge xcl-game-acc" title="Assetto Corsa Competizione">
         <span class="xcl-badge-default">
+            <img src="/images/home/icons/ACC_logo.png" class="xcl-badge-icon" alt="ACC">
             ACC
-            <span class="xcl-badge-placeholder"></span>
         </span>
-        <img src="/images/home/ACC-logo.png" class="xcl-badge-hover" alt="ACC">
+        <img src="/images/home/logos/ACC-logo.png" class="xcl-badge-hover" alt="ACC">
     </a>
 
     <a href="https://www.lemansultimate.com/" target="_blank"
        class="xcl-game-badge xcl-game-lmu" title="Le Mans Ultimate">
         <span class="xcl-badge-default">
+            <img src="/images/home/icons/LMU_Logo.png" class="xcl-badge-icon" alt="LMU">
             LMU
-            <span class="xcl-badge-placeholder"></span>
         </span>
-        <img src="/images/home/LeMans-Logo.png" class="xcl-badge-hover" alt="Le Mans Ultimate">
+        <img src="/images/home/logos/LeMans-Logo.png" class="xcl-badge-hover" alt="Le Mans Ultimate">
     </a>
 
     <a href="https://www.iracing.com/" target="_blank"
        class="xcl-game-badge xcl-game-iracing" title="iRacing">
         <span class="xcl-badge-default">
+            <img src="/images/home/icons/Iracing_logo.png" class="xcl-badge-icon" alt="iRacing">
             iRACING
-            <span class="xcl-badge-placeholder"></span>
         </span>
-        <img src="/images/home/iracing-logo-white.png" class="xcl-badge-hover" alt="iRacing">
+        <img src="/images/home/logos/iracing-logo-white.png" class="xcl-badge-hover" alt="iRacing">
     </a>
 
     <a href="#" class="xcl-game-badge xcl-game-acrally" title="AC Rally">
         <span class="xcl-badge-default">
+            <img src="/images/home/icons/AC_rally_logo.png" class="xcl-badge-icon" alt="AC Rally">
             AC RALLY
-            <span class="xcl-badge-placeholder"></span>
         </span>
-        <img src="/images/home/ACRally-logo.png" class="xcl-badge-hover" alt="AC Rally">
+        <img src="/images/home/logos/ACRally-logo.png" class="xcl-badge-hover" alt="AC Rally">
     </a>
 </div>
 
 <nav class="navbar navbar-xcl navbar-expand-md fixed-top" x-data="{ open: false }">
     <div class="container-fluid px-5 align-content-center">
         <a class="navbar-brand" href="{{ url('/') }}">
-            <img src="/images/home/xclusive_racing_logo.png" alt="XCLusive" height="40">
+            <img src="/images/home/brand/xclusive_racing_logo.png" alt="XCLusive" height="40">
         </a>
 
         <button class="navbar-toggler border-0" @click="open = !open">
@@ -72,7 +72,7 @@
                     @endif
                     <a href="{{ route('profile') }}"
                        class="d-flex align-items-center gap-2 text-decoration-none fw-bold text-xcl-purple">
-                        <img src="/images/home/xclusive_racing_logo_lion.png"
+                        <img src="/images/home/brand/xclusive_racing_logo_lion.png"
                              alt="Profile" width="24" height="24" style="object-fit:contain;">
                         PROFILE
                     </a>

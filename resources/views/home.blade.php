@@ -3,13 +3,11 @@
 @section('content')
 
 {{-- ─── Hero ──────────────────────────────────────────────────────────────────── --}}
-<section class="hero-home" style="background-image:url('/images/home/XCLusive_499P_Header_v3.png')">
-
+<section class="hero-home" style="background-image:url('/images/home/hero/XCLusive_499P_Header_v3.png')">
     <div class="container-xl px-4 position-relative h-100" style="z-index:1;">
-        <div class="row align-items-center g-5 h-100 py-5">
-
+        <div class="row align-items-center g-3 g-lg-5 h-100 py-5">
             {{-- Left: copy --}}
-            <div class="col-lg-6 animate-fade-in">
+            <div class="col-lg-6 animate-fade-in text-center text-lg-start">
                 <h1 class="hero-home__heading fw-black text-uppercase fst-italic lh-1 mb-4">
                     THE LION IS<br>BORN TO<br>
                     <span class="hero-home__heading--accent">DOMINATE</span>
@@ -18,7 +16,7 @@
                     From console championships to global PC competition.<br>
                     <span class="fw-black" style="color:#a78bfa">XCLUSIVE ESPORTS</span> sets the standard in sim racing excellence.
                 </p>
-                <div class="d-flex gap-3 flex-wrap">
+                <div class="d-flex gap-3 flex-wrap justify-content-center justify-content-lg-start">
                     <a href="{{ route('register') }}"
                        class="btn fw-black text-uppercase text-white px-5 py-3 fs-5"
                        style="background:#7c3aed;">SIGN UP</a>
@@ -27,12 +25,8 @@
                        style="border:2px solid rgba(255,255,255,.3);color:white;">TEAMS</a>
                 </div>
             </div>
-
-
         </div>
     </div>
-
-
 </section>
 
 {{-- ─── Ramp: driehoekige overgang met topo-textuur ─────────────────────────── --}}
@@ -49,13 +43,13 @@
         {{-- Centered heading --}}
         <div class="text-center mb-5">
             <!-- IMAGE PLACEHOLDER: Place XCLusive logo here -->
-            <img src="/images/home/xclusive_racing_logo_lion.png"
+            <img src="/images/home/brand/xclusive_racing_logo_lion.png"
                  alt="XCLusive" height="80" class="mb-4 d-block mx-auto" loading="lazy">
             <h2 class="display-4 fw-black text-uppercase fst-italic text-dark mb-3">OUR LEGACY</h2>
             <div class="section-divider"></div>
         </div>
 
-        <div class="row g-5 align-items-center">
+        <div class="row g-4 g-md-5 align-items-center">
 
             {{-- Left: text --}}
             <div class="col-md-6">
@@ -94,10 +88,8 @@
         </div>
     </div>
 </section>
-
-{{-- ─── Teams ──────────────────────────────────────────────────────────────── --}}
-<x-meet-teams />
-
+{{-- ─── Meet Our Team carousel ─────────────────────────────────────────────── --}}
+<x-meet-team />
 {{-- ─── Partners ─────────────────────────────────────────────────────────── --}}
 <section id="partners" class="py-5 px-3 bg-light">
     <div class="container-xl text-center">
@@ -116,7 +108,7 @@
 {{-- ─── Merchandise ──────────────────────────────────────────────────────── --}}
 <section class="py-5 px-3">
     <div class="container-xl">
-        <div class="rounded-3 p-5 text-white text-center bg-gradient-xcl">
+        <div class="rounded-3 p-4 p-md-5 text-white text-center bg-gradient-xcl">
             <h2 class="display-5 fw-black text-uppercase fst-italic mb-3">GET YOUR XCLUSIVE MERCHANDISE</h2>
             <p class="fs-5 mb-4">Represent the pride. Wear the purple.</p>
             <a href="https://raven.gg/stores/xclusive-esports/" target="_blank"

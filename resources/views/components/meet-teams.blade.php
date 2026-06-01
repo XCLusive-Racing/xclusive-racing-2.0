@@ -1,13 +1,13 @@
 {{-- Meet the Teams sectie: hexagon PNG achtergrond + Alpine.js tabfilter + rijderskaarten --}}
 <section id="teams" class="py-5 px-3 position-relative"
-         style="background:url('/images/home/XCLusive_Dark_Hexagon_background_v1.png') center/cover no-repeat #1a0a2e;"
+         style="background:url('/images/home/bg/XCLusive_Dark_Hexagon_background_v1.png') center/cover no-repeat #1a0a2e;"
          x-data="{ activeTab: 'acc' }">
 
     <div class="container-xl">
 
         {{-- Logo, sectiekop en decoratieve streep --}}
         <div class="text-center mb-5">
-            <img src="/images/home/xclusive_racing_logo_lion.png"
+            <img src="/images/home/brand/xclusive_racing_logo_lion.png"
                  alt="XCLusive Esports" height="72"
                  class="d-block mx-auto mb-3" loading="lazy">
 
