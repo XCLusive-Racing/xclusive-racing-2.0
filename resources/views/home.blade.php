@@ -19,9 +19,9 @@
                     <a href="{{ route('register') }}"
                        class="btn fw-black text-uppercase text-white px-5 py-3 fs-5"
                        style="background:#7c3aed;">SIGN UP</a>
-                    <a href="#teams"
+                    <a href="#events"
                        class="btn fw-black text-uppercase px-5 py-3 fs-5"
-                       style="border:2px solid rgba(255,255,255,.3);color:white;">TEAMS</a>
+                       style="border:2px solid rgba(255,255,255,.3);color:white;">SEE EVENTS</a>
                 </div>
             </div>
         </div>
@@ -49,7 +49,7 @@
         <div class="text-center mb-5">
             <!-- IMAGE PLACEHOLDER: Place XCLusive logo here -->
             <img src="/images/home/brand/xclusive_racing_logo_lion.png"
-                 alt="XCLusive" height="220" class="mb-5 d-block mx-auto" style="margin-top:10px" loading="lazy">
+                 alt="XCLusive" height="220" class="mb-5 d-block mx-auto" style="margin-top:10px;position:relative;right:15px" loading="lazy">
             <h2 class="display-4 fw-black text-uppercase fst-italic mb-3 about-section__heading">OUR LEGACY</h2>
             <div class="section-divider"></div>
         </div>
@@ -68,18 +68,20 @@
 
             {{-- Right: dark purple stats card --}}
             <div class="col-md-6">
-                <div class="about-stats-card rounded-3 p-4">
+                <div class="about-stats-card p-4">
+                    <img src="/images/home/brand/XCLusive Lion.png"
+                         alt="" aria-hidden="true" class="about-stats-card__watermark">
                     <div class="mb-4 pb-4 about-stats-card__row">
-                        <div class="display-4 fw-black mb-1" style="color:#a78bfa">7000+</div>
-                        <div class="fw-bold text-uppercase tracking-wide text-white">Active Members</div>
+                        <div class="display-4 fw-black fst-italic mb-1" style="color:#c084fc">7000+</div>
+                        <div class="fw-bold text-uppercase text-white" style="font-size:.8rem;letter-spacing:.08em;color:#e9d5ff!important">Active Members</div>
                     </div>
                     <div class="mb-4 pb-4 about-stats-card__row">
-                        <div class="display-4 fw-black mb-1" style="color:#a78bfa">1000</div>
-                        <div class="fw-bold text-uppercase tracking-wide text-white">Events Hosted</div>
+                        <div class="display-4 fw-black fst-italic mb-1" style="color:#c084fc">1000</div>
+                        <div class="fw-bold text-uppercase text-white" style="font-size:.8rem;letter-spacing:.08em;color:#e9d5ff!important">Events Hosted</div>
                     </div>
                     <div>
-                        <div class="display-4 fw-black mb-1" style="color:#a78bfa">33</div>
-                        <div class="fw-bold text-uppercase tracking-wide text-white">Professional Drivers</div>
+                        <div class="display-4 fw-black fst-italic mb-1" style="color:#c084fc">33</div>
+                        <div class="fw-bold text-uppercase text-white" style="font-size:.8rem;letter-spacing:.08em;color:#e9d5ff!important">Professional Drivers</div>
                     </div>
                 </div>
             </div>
@@ -87,10 +89,13 @@
         </div>
     </div>
 </section>
+{{-- ─── Upcoming Events ─────────────────────────────────────────────────────── --}}
+<x-upcoming-events />
+
 {{-- ─── Meet Our Team carousel ─────────────────────────────────────────────── --}}
 <x-meet-team />
 {{-- ─── Partners ─────────────────────────────────────────────────────────── --}}
-<section id="partners" class="py-5 px-3 bg-light">
+<section id="partners" class="py-5 px-3 bg-light" style="margin-top:-10vh;padding-top:calc(3rem + 10vh)">
     <div class="container-xl text-center">
         <h2 class="display-4 fw-black text-uppercase fst-italic text-dark mb-3">PARTNERS</h2>
         <div class="section-divider mb-5"></div>

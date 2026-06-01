@@ -49,29 +49,20 @@
              }
          }">
 
-    {{-- ── SVG hexagon patroon als halfransparante achtergrondoverlay ─────────── --}}
-    <svg class="meet-team-pattern" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <defs>
-            <pattern id="meet-hex-pattern" x="0" y="0" width="60" height="52"
-                     patternUnits="userSpaceOnUse">
-                <polygon points="30,2 56,16 56,44 30,58 4,44 4,16"
-                         stroke="#9333ea" stroke-width="1" fill="none"/>
-            </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#meet-hex-pattern)"/>
-    </svg>
+    {{-- ── Achtergrond afbeelding overlay ─────────────────────────────────────── --}}
+    <img src="/images/home/teams/Dark_Purple_Hex.png" aria-hidden="true" class="meet-team-pattern" style="object-fit:cover;width:100%;height:100%;">
 
     <div class="container-xl position-relative" style="z-index:1;">
 
         {{-- ── Logo en sectiekop ────────────────────────────────────────────────── --}}
         <div class="text-center mb-4">
-            <h2 class="text-white fw-bold fst-italic text-uppercase mb-2"
-                style="font-size:2.8rem;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;">
+            <h2 class="fw-black fst-italic text-uppercase mb-2"
+                style="font-size:clamp(1.2rem, 2.5vw, 1.8rem);color:white;padding-right:0.15em">
                 MEET OUR TEAM
             </h2>
 
-            {{-- Paarse decoratieve lijn --}}
-            <hr style="width:80px;border-color:#7c3aed;border-width:2px;opacity:1;margin:0 auto 2.5rem;">
+            {{-- Decoratieve lijn --}}
+            <hr style="width:80px;border-color:white;border-width:2px;opacity:0.6;margin:0 auto 2.5rem;">
         </div>
 
         {{-- ── Carousel: drie kaarten naast elkaar, midden actief ──────────────── --}}
@@ -124,13 +115,13 @@
 
         {{-- ── Swipe navigatie: « SWIPE » in geel ──────────────────────────────── --}}
         <div class="d-flex justify-content-center align-items-center gap-4 pt-2">
-            <div class="swipe-nav" @click="prev()">
+            <div class="swipe-nav" @click="prev()" style="color:#d4ee6a">
                 <span>«</span>
             </div>
-            <div class="swipe-nav" style="font-size:1.1rem;cursor:default;">
+            <div class="swipe-nav fw-black text-uppercase" style="font-size:1.1rem;cursor:default;color:white;font-style:normal;font-family:'Poppins',sans-serif;">
                 SWIPE
             </div>
-            <div class="swipe-nav" @click="next()">
+            <div class="swipe-nav" @click="next()" style="color:#d4ee6a">
                 <span>»</span>
             </div>
         </div>
