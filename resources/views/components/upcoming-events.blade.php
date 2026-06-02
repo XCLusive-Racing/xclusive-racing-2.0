@@ -54,11 +54,13 @@ $events = [
 ];
 @endphp
 
+<script>window.__xclEvents = @json($events);</script>
+
 <section id="events" class="upcoming-events-section py-5 px-3" style="position:relative"
          x-data="{
              filter: 'all',
              page: 0,
-             events: {{ json_encode($events) }},
+             events: window.__xclEvents,
              get filtered() {
                  return this.filter === 'all' ? this.events : this.events.filter(e => e.game === this.filter);
              },

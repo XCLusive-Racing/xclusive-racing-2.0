@@ -17,56 +17,6 @@
 
 @push('head')
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
-    <style>
-        #races-table_wrapper .dataTables_filter input {
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 6px 12px;
-            font-size: .85rem;
-            outline: none;
-            transition: border-color .15s, box-shadow .15s;
-        }
-        #races-table_wrapper .dataTables_filter input:focus {
-            border-color: #7c3aed;
-            box-shadow: 0 0 0 3px rgba(124,58,237,.1);
-        }
-        #races-table_wrapper .dataTables_length select {
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 5px 28px 5px 10px;
-            font-size: .85rem;
-        }
-        #races-table_wrapper .dataTables_info,
-        #races-table_wrapper .dataTables_length,
-        #races-table_wrapper .dataTables_filter {
-            font-size: .8rem;
-            color: #9ca3af;
-            padding: 1rem 1.5rem;
-        }
-        #races-table_wrapper .dataTables_paginate {
-            padding: .75rem 1.5rem;
-        }
-        #races-table_wrapper .dataTables_paginate .paginate_button {
-            border-radius: 6px !important;
-            font-size: .78rem;
-            font-weight: 700;
-            padding: 4px 10px !important;
-            border: none !important;
-        }
-        #races-table_wrapper .dataTables_paginate .paginate_button.current {
-            background: #7c3aed !important;
-            color: white !important;
-        }
-        #races-table_wrapper .dataTables_paginate .paginate_button:hover:not(.current) {
-            background: #f3f4f6 !important;
-            color: #374151 !important;
-        }
-        #races-table thead th { cursor: pointer; user-select: none; }
-        #races-table thead th.sorting_asc::after  { content: ' ↑'; color: #7c3aed; font-size:.7rem; }
-        #races-table thead th.sorting_desc::after { content: ' ↓'; color: #7c3aed; font-size:.7rem; }
-        #races-table thead th.sorting::after      { content: ' ↕'; color: #d1d5db; font-size:.7rem; }
-        div.dataTables_wrapper div.dataTables_filter { text-align: right; }
-    </style>
 @endpush
 
 @section('content')

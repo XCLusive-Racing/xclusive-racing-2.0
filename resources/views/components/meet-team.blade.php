@@ -1,51 +1,28 @@
 {{-- ─────────────────────────────────────────────────────────────────────────── --}}
 {{-- Meet Our Team sectie: SVG hexagon achtergrond, diagonale top, Alpine carousel --}}
 {{-- ─────────────────────────────────────────────────────────────────────────── --}}
+<script>
+window.__xclTeams = [
+    { id: 'iracing', image: '/images/home/teams/XCLusive_Placeholder_iRacing.png', logo: '/images/home/logos/iracing-logo-white.png', alt: 'iRacing' },
+    { id: 'lmu',     image: '/images/home/teams/XCLusive_Placeholder_lmu.png',     logo: '/images/home/logos/LeMans-Logo.png',         alt: 'Le Mans Ultimate' },
+    { id: 'acc',     image: '/images/home/teams/XCLusive_Placeholder_ACC.png',     logo: '/images/home/logos/ACC-logo.png',             alt: 'ACC Console' }
+];
+</script>
+
 <section class="meet-team-section py-5"
          x-data="{
              active: 0,
              slideClass: '',
-
-             {{-- Teamdata: vervang placeholder URLs door echte autoafbeeldingen (1200×600px, 2:1 ratio) --}}
-             teams: [
-                 {
-                     id: 'iracing',
-                     image: '/images/home/teams/XCLusive_Placeholder_iRacing.png',
-                     logo: '/images/home/logos/iracing-logo-white.png',
-                     alt: 'iRacing'
-                 },
-                 {
-                     id: 'lmu',
-                     image: '/images/home/teams/XCLusive_Placeholder_lmu.png',
-                     logo: '/images/home/logos/LeMans-Logo.png',
-                     alt: 'Le Mans Ultimate'
-                 },
-                 {
-                     id: 'acc',
-                     image: '/images/home/teams/XCLusive_Placeholder_ACC.png',
-                     logo: '/images/home/logos/ACC-logo.png',
-                     alt: 'ACC Console'
-                 }
-             ],
-
-             {{-- Berekende indices voor linker en rechter kaart --}}
+             teams: window.__xclTeams,
              get leftIndex()  { return (this.active - 1 + this.teams.length) % this.teams.length; },
              get rightIndex() { return (this.active + 1) % this.teams.length; },
-
-             {{-- Navigatie: klasse verwijderen zodat animatie opnieuw kan triggeren --}}
              prev() {
                  this.slideClass = '';
-                 this.$nextTick(() => {
-                     this.active = (this.active - 1 + this.teams.length) % this.teams.length;
-                     this.slideClass = 'swipe-in-right';
-                 });
+                 this.$nextTick(() => { this.active = (this.active - 1 + this.teams.length) % this.teams.length; this.slideClass = 'swipe-in-right'; });
              },
              next() {
                  this.slideClass = '';
-                 this.$nextTick(() => {
-                     this.active = (this.active + 1) % this.teams.length;
-                     this.slideClass = 'swipe-in-left';
-                 });
+                 this.$nextTick(() => { this.active = (this.active + 1) % this.teams.length; this.slideClass = 'swipe-in-left'; });
              }
          }">
 

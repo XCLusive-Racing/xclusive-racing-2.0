@@ -18,8 +18,21 @@
                         {{ $user->country }} &bull; {{ strtoupper($user->platform) }}
                     </p>
                     @if($user->team)
-                    <p class="fw-bold text-uppercase text-xcl-purple mb-0">{{ $user->team }}</p>
+                    <p class="fw-bold text-uppercase text-xcl-purple mb-1">{{ $user->team }}</p>
                     @endif
+                    <div class="d-flex flex-wrap gap-2 align-items-center mt-1">
+                        @if($user->game)
+                        <x-game-badge :game="$user->game" />
+                        @endif
+                        @if($user->car_model)
+                        <span class="text-secondary" style="font-size:.8rem">
+                            <span class="fw-bold text-dark">{{ $user->car_model }}</span>
+                        </span>
+                        @endif
+                        @if($user->car_number)
+                        <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.75rem">#{{ $user->car_number }}</span>
+                        @endif
+                    </div>
                 </div>
             </div>
             <div class="d-flex gap-2 flex-wrap">
@@ -138,22 +151,8 @@
                     </thead>
                     <tbody>
                         @foreach($results as $result)
-                        @php
-                            $gameColors = ['acc' => '#7c3aed', 'lmu' => '#db2777', 'iracing' => '#2563eb'];
-                            $gameColor  = $gameColors[$result->race_game] ?? '#6b7280';
-                        @endphp
                         <tr style="border-bottom:1px solid #f9fafb">
-                            <td>
-                                @if($result->position === 1)
-                                    <span class="fw-black" style="color:#f59e0b">P1</span>
-                                @elseif($result->position === 2)
-                                    <span class="fw-black" style="color:#6b7280">P2</span>
-                                @elseif($result->position === 3)
-                                    <span class="fw-black" style="color:#92400e">P3</span>
-                                @else
-                                    <span class="fw-bold text-secondary">P{{ $result->position }}</span>
-                                @endif
-                            </td>
+                            <td><x-race-position :position="$result->position" /></td>
                             <td>
                                 @if($result->car_number !== null)
                                 <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.72rem">#{{ $result->car_number }}</span>
@@ -169,9 +168,7 @@
                                     · {{ \Carbon\Carbon::parse($result->race_scheduled_at)->format('d M Y') }}
                                     @endif
                                     @if($result->race_game)
-                                    <span class="badge ms-1 text-white" style="background:{{ $gameColor }};font-size:.6rem;padding:2px 6px;border-radius:4px">
-                                        {{ strtoupper($result->race_game) }}
-                                    </span>
+                                    <x-game-badge :game="$result->race_game" class="ms-1" />
                                     @endif
                                 </div>
                             </td>

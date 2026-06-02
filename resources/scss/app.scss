@@ -1196,3 +1196,100 @@ body.admin-body {
         font-size: 3rem;
     }
 }
+
+// ─── Rank avatar rings ────────────────────────────────────────────────────────
+.rank-ring-rookie   { background: linear-gradient(135deg, #ef4444, #b91c1c, #ef4444); background-size: 200% 200%; }
+.rank-ring-bronze   { background: linear-gradient(135deg, #cd7f32, #f59e0b, #92400e, #cd7f32); background-size: 300% 300%; animation: xcl-shimmer 3s ease-in-out infinite; }
+.rank-ring-silver   { background: linear-gradient(135deg, #6b7280, #e5e7eb, #9ca3af, #e5e7eb, #6b7280); background-size: 300% 300%; animation: xcl-shimmer 2.5s ease-in-out infinite; }
+.rank-ring-gold     { background: linear-gradient(135deg, #92400e, #f59e0b, #fde68a, #f59e0b, #92400e); background-size: 300% 300%; animation: xcl-shimmer 2s ease-in-out infinite; box-shadow: 0 0 10px rgba(245,158,11,.5); }
+.rank-ring-platinum { background: linear-gradient(135deg, #4c1d95, #7c3aed, #a78bfa, #7c3aed, #4c1d95); background-size: 300% 300%; animation: xcl-shimmer 1.8s ease-in-out infinite; box-shadow: 0 0 14px rgba(124,58,237,.65); }
+.rank-ring-alien    { background: conic-gradient(#10b981, #34d399, #6ee7b7, #10b981, #059669, #10b981); animation: xcl-spin 2.5s linear infinite; box-shadow: 0 0 18px rgba(16,185,129,.8); }
+
+@keyframes xcl-shimmer {
+    0%   { background-position: 200% center; }
+    100% { background-position: -200% center; }
+}
+@keyframes xcl-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+.rank-shine-wrap {
+    position: relative;
+    overflow: hidden;
+    border-radius: 50%;
+    display: block;
+
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.35) 50%, transparent 60%);
+        border-radius: 50%;
+        animation: xcl-shine 3s ease-in-out infinite;
+    }
+}
+
+@keyframes xcl-shine {
+    0%   { transform: translateX(-100%) rotate(30deg); }
+    40%  { transform: translateX(150%) rotate(30deg); }
+    100% { transform: translateX(150%) rotate(30deg); }
+}
+
+// ─── DataTables (admin) ───────────────────────────────────────────────────────
+.dataTables_wrapper {
+    .dataTables_filter input {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: .85rem;
+        outline: none;
+        transition: border-color .15s, box-shadow .15s;
+
+        &:focus {
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 3px rgba(124,58,237,.1);
+        }
+    }
+
+    .dataTables_length select {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 5px 28px 5px 10px;
+        font-size: .85rem;
+    }
+
+    .dataTables_info,
+    .dataTables_length,
+    .dataTables_filter {
+        font-size: .8rem;
+        color: #9ca3af;
+        padding: 1rem 1.5rem;
+    }
+
+    .dataTables_filter { text-align: right; }
+
+    .dataTables_paginate {
+        padding: .75rem 1.5rem;
+
+        .paginate_button {
+            border-radius: 6px !important;
+            font-size: .78rem;
+            font-weight: 700;
+            padding: 4px 10px !important;
+            border: none !important;
+
+            &.current { background: #7c3aed !important; color: white !important; }
+            &:hover:not(.current) { background: #f3f4f6 !important; color: #374151 !important; }
+        }
+    }
+}
+
+table.dataTable thead th {
+    cursor: pointer;
+    user-select: none;
+
+    &.sorting_asc::after  { content: ' ↑'; color: #7c3aed; font-size: .7rem; }
+    &.sorting_desc::after { content: ' ↓'; color: #7c3aed; font-size: .7rem; }
+    &.sorting::after      { content: ' ↕'; color: #d1d5db; font-size: .7rem; }
+}

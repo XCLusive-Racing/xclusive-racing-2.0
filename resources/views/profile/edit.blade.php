@@ -82,7 +82,21 @@
                                    class="form-control" min="1" max="9999" placeholder="69">
                         </div>
                     </div>
-                    <div class="col-sm-8">
+                    <div class="col-sm-4">
+                        <label class="form-label fw-bold text-dark" style="font-size:.82rem">Primary Game</label>
+                        <select name="game" class="form-select">
+                            <option value="">— None —</option>
+                            @foreach(['acc' => 'ACC Console', 'lmu' => 'Le Mans Ultimate', 'iracing' => 'iRacing'] as $val => $label)
+                            <option value="{{ $val }}" {{ old('game', $user->game) === $val ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="form-label fw-bold text-dark" style="font-size:.82rem">Favourite Car</label>
+                        <input type="text" name="car_model" value="{{ old('car_model', $user->car_model) }}"
+                               class="form-control" placeholder="Lamborghini Huracán GT3">
+                    </div>
+                    <div class="col-12">
                         <label class="form-label fw-bold text-dark" style="font-size:.82rem">Platform</label>
                         <input type="text" value="{{ strtoupper($user->platform ?? '—') }} · {{ $user->platform_id ?? '—' }}"
                                class="form-control" disabled style="background:#f9fafb;font-family:monospace;font-size:.82rem">

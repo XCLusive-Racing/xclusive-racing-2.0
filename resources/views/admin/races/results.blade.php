@@ -320,17 +320,7 @@
                 <tbody>
                     @foreach($raceResults as $result)
                     <tr>
-                        <td class="ps-4">
-                            @if($result->position === 1)
-                                <span class="fw-black" style="color:#f59e0b">P1</span>
-                            @elseif($result->position === 2)
-                                <span class="fw-black" style="color:#6b7280">P2</span>
-                            @elseif($result->position === 3)
-                                <span class="fw-black" style="color:#92400e">P3</span>
-                            @else
-                                <span class="fw-bold text-secondary">P{{ $result->position }}</span>
-                            @endif
-                        </td>
+                        <td class="ps-4"><x-race-position :position="$result->position" /></td>
                         <td>
                             @if($result->car_number !== null)
                             <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.72rem">#{{ $result->car_number }}</span>
@@ -402,17 +392,7 @@
                 <tbody>
                     @foreach($qualiResults as $result)
                     <tr>
-                        <td class="ps-4">
-                            @if($result->position === 1)
-                                <span class="fw-black" style="color:#f59e0b;font-size:1rem">P1</span>
-                            @elseif($result->position === 2)
-                                <span class="fw-black text-secondary">P2</span>
-                            @elseif($result->position === 3)
-                                <span class="fw-black" style="color:#92400e">P3</span>
-                            @else
-                                <span class="fw-bold text-secondary">P{{ $result->position }}</span>
-                            @endif
-                        </td>
+                        <td class="ps-4"><x-race-position :position="$result->position" /></td>
                         <td>
                             @if($result->car_number)
                             <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.72rem">#{{ $result->car_number }}</span>

@@ -5,17 +5,6 @@
 
 @push('head')
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
-    <style>
-        #users-table_wrapper .dataTables_filter input { border:1px solid #e5e7eb;border-radius:8px;padding:6px 12px;font-size:.85rem;outline:none;transition:border-color .15s,box-shadow .15s; }
-        #users-table_wrapper .dataTables_filter input:focus { border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.1); }
-        #users-table_wrapper .dataTables_length select { border:1px solid #e5e7eb;border-radius:8px;padding:5px 28px 5px 10px;font-size:.85rem; }
-        #users-table_wrapper .dataTables_info, #users-table_wrapper .dataTables_length, #users-table_wrapper .dataTables_filter { font-size:.8rem;color:#9ca3af;padding:1rem 1.5rem; }
-        #users-table_wrapper .dataTables_paginate { padding:.75rem 1.5rem; }
-        #users-table_wrapper .dataTables_paginate .paginate_button { border-radius:6px!important;font-size:.78rem;font-weight:700;padding:4px 10px!important;border:none!important; }
-        #users-table_wrapper .dataTables_paginate .paginate_button.current { background:#7c3aed!important;color:white!important; }
-        #users-table_wrapper .dataTables_paginate .paginate_button:hover:not(.current) { background:#f3f4f6!important;color:#374151!important; }
-        div.dataTables_wrapper div.dataTables_filter { text-align:right; }
-    </style>
 @endpush
 
 @section('content')
