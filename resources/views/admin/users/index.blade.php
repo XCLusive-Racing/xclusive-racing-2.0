@@ -45,10 +45,11 @@
             <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
                 <tr>
                     <th class="fw-bold text-uppercase ps-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Driver</th>
-                    <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:70px">Number</th>
-                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Car Model</th>
-                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Game</th>
-                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">XUID / PSID / Steam</th>
+                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">ID</th>
+                    <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Rating</th>
+                    <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">SR</th>
+                    <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Flag</th>
+                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Team / Quote</th>
                     <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Role</th>
                     <th class="pe-4" style="min-width:100px"></th>
                 </tr>
@@ -74,29 +75,6 @@
                             </div>
                         </div>
                     </td>
-                    <td class="text-center">
-                        @if($user->car_number)
-                            <span class="badge fw-black" style="background:#f3f4f6;color:#374151;font-size:.78rem;padding:4px 10px;border-radius:6px">
-                                #{{ $user->car_number }}
-                            </span>
-                        @else
-                            <span class="text-secondary">—</span>
-                        @endif
-                    </td>
-                    <td class="text-secondary" style="font-size:.82rem">{{ $user->car_model ?? '—' }}</td>
-                    <td>
-                        @if($user->game)
-                            @php
-                                $gameColors = ['acc'=>['#7c3aed','ACC Console'],'lmu'=>['#db2777','Le Mans Ultimate'],'iracing'=>['#2563eb','iRacing']];
-                                $gc = $gameColors[$user->game] ?? ['#374151',$user->game];
-                            @endphp
-                            <span class="badge fw-bold text-white" style="background:{{ $gc[0] }};font-size:.7rem;padding:4px 10px;border-radius:6px">
-                                {{ $gc[1] }}
-                            </span>
-                        @else
-                            <span class="text-secondary">—</span>
-                        @endif
-                    </td>
                     <td>
                         @if($user->platform_id)
                             <div class="d-flex align-items-center gap-1">
@@ -109,6 +87,21 @@
                             <span class="text-secondary">—</span>
                         @endif
                     </td>
+                    <td class="text-center fw-bold" style="color:#7c3aed;font-size:.85rem">
+                        {{ $user->elo_acc ?? '—' }}
+                    </td>
+                    <td class="text-center fw-bold" style="font-size:.85rem">
+                        @if($user->sr_acc)
+                            @php $grade = $user->srGrade('acc'); @endphp
+                            <span style="color:{{ $grade['color'] }}">{{ number_format($user->sr_acc, 2) }}</span>
+                        @else
+                            <span class="text-secondary">—</span>
+                        @endif
+                    </td>
+                    <td class="text-center" style="font-size:.85rem">
+                        {{ $user->flag ? strtoupper($user->flag) : '—' }}
+                    </td>
+                    <td class="text-secondary" style="font-size:.82rem">{{ $user->team ?? '—' }}</td>
                     <td>
                         @php
                             $rc = ['super_admin'=>['#f3e8ff','#7c3aed'],'admin'=>['#fce7f3','#db2777'],'manager'=>['#dbeafe','#2563eb'],'driver'=>['#d1fae5','#059669']][$user->role] ?? ['#f3f4f6','#374151'];
@@ -153,8 +146,8 @@
         $(function () {
             $('#users-table').DataTable({
                 pageLength: 25,
-                order: [[5, 'asc'], [0, 'asc']],
-                columnDefs: [{ orderable: false, targets: 6 }],
+                order: [[6, 'asc'], [0, 'asc']],
+                columnDefs: [{ orderable: false, targets: 7 }],
                 language: {
                     search: '', searchPlaceholder: 'Search users…',
                     lengthMenu: 'Show _MENU_ users',
