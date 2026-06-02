@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Car;
 use App\Models\CarAssignment;
 use App\Models\User;
+use App\Services\PsnLookupService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -15,6 +16,11 @@ class ImportDrivers extends Command
     protected $description = 'Import drivers from a CSV file';
 
     private const CHUNK_SIZE = 200;
+
+    public function __construct(private readonly PsnLookupService $psnLookup)
+    {
+        parent::__construct();
+    }
 
     public function handle(): int
     {
@@ -70,12 +76,24 @@ class ImportDrivers extends Command
                 $data = array_combine($headers, $row);
 
                 $platformId = $data[$col['platform_id']] ?? null;
-                if (!$platformId || strlen($platformId) < 3) continue;
+                $gamertag   = $data[$col['driver']] ?? null;
+
+                if (!$platformId || strlen($platformId) < 3) {
+                    // Try PSN live lookup using the gamertag
+                    if (!$gamertag) continue;
+                    try {
+                        $psn        = $this->psnLookup->lookup($gamertag);
+                        $platformId = 'P' . $psn['accountId'];
+                        $gamertag   = $psn['onlineId'];
+                    } catch (\Throwable) {
+                        continue; // PSN lookup failed, skip row
+                    }
+                }
 
                 $rows[] = [
                     'platform_id' => $platformId,
                     'platform'    => str_starts_with($platformId, 'M') ? 'xbox' : 'ps5',
-                    'name'        => $data[$col['driver']] ?? 'Unknown',
+                    'name'        => $gamertag ?? $data[$col['driver']] ?? 'Unknown',
                     'team'        => isset($col['team']) ? ($data[$col['team']] ?? null) : null,
                     'flag'        => isset($col['flag']) ? ($data[$col['flag']] ?? null) : null,
                     $eloField     => isset($col['xcl_rating']) ? ((int) ($data[$col['xcl_rating']] ?? 1500)) : 1500,

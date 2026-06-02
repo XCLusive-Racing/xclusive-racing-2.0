@@ -33,7 +33,25 @@ class RegisterController extends Controller
             return back()->withInput()->withErrors(['gamertag' => $e->getMessage()]);
         }
 
-        if (User::where('platform_id', $profile['platform_id'])->where('platform', $request->platform)->exists()) {
+        $existing = User::where('platform_id', $profile['platform_id'])
+            ->where('platform', $request->platform)
+            ->first();
+
+        if ($existing) {
+            // Imported placeholder — driver claims their account by linking email + password
+            if (str_ends_with($existing->email, '@import.local')) {
+                $existing->update([
+                    'name'              => $profile['name'],
+                    'email'             => $request->email,
+                    'password'          => Hash::make($request->password),
+                    'country'           => $request->country,
+                    'team'              => $request->team ?? $existing->team,
+                    'must_set_password' => false,
+                ]);
+                Auth::login($existing);
+                return redirect()->route('profile');
+            }
+
             return back()->withInput()->withErrors(['gamertag' => 'This platform account is already registered.']);
         }
 
