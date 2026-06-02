@@ -37,6 +37,8 @@ return new class extends Migration
             DB::statement('ALTER TABLE race_results DROP INDEX race_results_session_player_unique');
         } catch (\Exception) {}
 
+        DB::table('race_results')->whereNull('user_id')->delete();
+
         DB::statement('
             ALTER TABLE race_results
                 MODIFY user_id BIGINT UNSIGNED NOT NULL,

@@ -8,6 +8,8 @@ use RuntimeException;
 
 class PlatformLookupService
 {
+    public function __construct(private readonly PsnLookupService $psnLookup) {}
+
     private function http(): \Illuminate\Http\Client\PendingRequest
     {
         $client = Http::timeout(10)->withOptions(['connect_timeout' => 5]);
@@ -104,9 +106,11 @@ class PlatformLookupService
 
     private function lookupPsn(string $onlineId): array
     {
+        $data = $this->psnLookup->lookup($onlineId);
+
         return [
-            'platform_id' => 'P' . strtolower($onlineId),
-            'name'        => $onlineId,
+            'platform_id' => 'P' . $data['accountId'],
+            'name'        => $data['onlineId'],
         ];
     }
 }

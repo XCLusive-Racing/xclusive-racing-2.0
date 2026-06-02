@@ -49,8 +49,8 @@
              }
          }">
 
-    {{-- ── Achtergrond afbeelding overlay ─────────────────────────────────────── --}}
-    <img src="/images/home/teams/Dark_Purple_Hex.png" aria-hidden="true" class="meet-team-pattern" style="object-fit:cover;width:100%;height:100%;">
+    {{-- ── Hexagon achtergrond — absoluut gepositioneerd buiten animated row --}}
+    <img src="/images/home/teams/Dark_Purple_Hex.png" aria-hidden="true" class="meet-team-pattern">
 
     <div class="container-xl position-relative" style="z-index:1;">
 

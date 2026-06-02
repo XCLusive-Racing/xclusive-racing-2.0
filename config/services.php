@@ -31,5 +31,8 @@ return [
         'api_key' => env('OPENXBL_API_KEY'),
     ],
 
+    'psn_lookup' => [
+        'api_key' => env('PSN_LOOKUP_API_KEY'),
+    ],
 
 ];

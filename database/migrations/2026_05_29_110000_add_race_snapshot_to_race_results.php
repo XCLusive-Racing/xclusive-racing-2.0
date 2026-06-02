@@ -34,8 +34,14 @@ return new class extends Migration {
 
     public function down(): void
     {
-        Schema::table('race_results', function (Blueprint $table) {
-            $table->dropForeign(['race_id']);
+        DB::table('race_results')->whereNull('race_id')->delete();
+
+        $foreignKeys = collect(Schema::getForeignKeys('race_results'))->pluck('name')->toArray();
+
+        Schema::table('race_results', function (Blueprint $table) use ($foreignKeys) {
+            if (in_array('race_results_race_id_foreign', $foreignKeys)) {
+                $table->dropForeign(['race_id']);
+            }
             $table->unsignedBigInteger('race_id')->nullable(false)->change();
             $table->foreign('race_id')->references('id')->on('races')->cascadeOnDelete();
             $table->dropColumn(['race_title', 'race_track', 'race_game', 'race_scheduled_at']);
