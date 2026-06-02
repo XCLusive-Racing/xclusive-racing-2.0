@@ -66,8 +66,8 @@
             </a>
         </div>
 
-        @if(auth()->user()->isSuperAdmin())
-        {{-- Management (super admin) --}}
+        @if(auth()->user()->canSeeUsers())
+        {{-- Management — owner, admin, moderator --}}
         <div x-show="!sidebarCollapsed" class="admin-nav-section-header" @click="sections.config = !sections.config">
             <span>Management</span>
             <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
@@ -88,7 +88,8 @@
         </div>
         @endif
 
-        {{-- Events --}}
+        @if(auth()->user()->canManageEvents())
+        {{-- Events — owner, admin, event_manager --}}
         <div x-show="!sidebarCollapsed" class="admin-nav-section-header" @click="sections.events = !sections.events">
             <span>Events</span>
             <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
@@ -128,8 +129,10 @@
                 <span x-show="!sidebarCollapsed">Create Single Race</span>
             </a>
         </div>
+        @endif
 
-        {{-- Configuration --}}
+        @if(auth()->user()->hasAnyRole(['owner', 'admin']))
+        {{-- Configuration — owner, admin only --}}
         <div x-show="!sidebarCollapsed" class="admin-nav-section-header" @click="sections.ftp = !sections.ftp">
             <span>Configuration</span>
             <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
@@ -148,6 +151,7 @@
                 <span x-show="!sidebarCollapsed">FTP Servers</span>
             </a>
         </div>
+        @endif
 
     </nav>
 
@@ -160,7 +164,7 @@
             </div>
             <div style="min-width:0">
                 <div class="text-white fw-bold text-truncate" style="font-size:.75rem">{{ auth()->user()->name }}</div>
-                <div style="font-size:.6rem;color:#6b7280;text-transform:uppercase;font-weight:700">{{ auth()->user()->role }}</div>
+                <div style="font-size:.6rem;color:#6b7280;text-transform:uppercase;font-weight:700">{{ auth()->user()->roles->pluck('name')->join(', ') }}</div>
             </div>
         </div>
         <form action="{{ route('logout') }}" method="POST">

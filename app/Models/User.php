@@ -82,6 +82,29 @@ class User extends Authenticatable
             ?->car;
     }
 
+    // --- Rank based on XCL rating ---
+
+    public static function ranks(): array
+    {
+        return [
+            ['name' => 'Alien',    'slug' => 'alien',    'min' => 8000, 'color' => '#10b981'],
+            ['name' => 'Platinum', 'slug' => 'platinum', 'min' => 6500, 'color' => '#7c3aed'],
+            ['name' => 'Gold',     'slug' => 'gold',     'min' => 5000, 'color' => '#f59e0b'],
+            ['name' => 'Silver',   'slug' => 'silver',   'min' => 3500, 'color' => '#9ca3af'],
+            ['name' => 'Bronze',   'slug' => 'bronze',   'min' => 2000, 'color' => '#cd7f32'],
+            ['name' => 'Rookie',   'slug' => 'rookie',   'min' => 0,    'color' => '#ef4444'],
+        ];
+    }
+
+    public function rank(string $game = 'acc'): array
+    {
+        $elo = (int) ($this->{"elo_{$game}"} ?? 0);
+        foreach (self::ranks() as $rank) {
+            if ($elo >= $rank['min']) return $rank;
+        }
+        return end(self::ranks());
+    }
+
     // --- Rating class (0–3) based on XCL rating score ---
 
     public static function ratingClasses(): array

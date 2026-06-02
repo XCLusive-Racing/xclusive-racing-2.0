@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
 {
@@ -28,5 +30,50 @@ class ProfileController extends Controller
     public function edit()
     {
         return view('profile.edit', ['user' => Auth::user()]);
+    }
+
+    public function update(Request $request)
+    {
+        $user = Auth::user();
+
+        $data = $request->validate([
+            'name'       => 'required|string|max:255',
+            'country'    => 'nullable|string|max:100',
+            'team'       => 'nullable|string|max:255',
+            'car_number' => 'nullable|integer|min:1|max:9999',
+            'avatar'     => 'nullable|image|max:4096',
+        ]);
+
+        if ($request->hasFile('avatar')) {
+            // Delete old avatar if it's a local file
+            if ($user->banner && str_starts_with($user->banner, 'images/avatars/')) {
+                $oldPath = public_path($user->banner);
+                if (file_exists($oldPath)) unlink($oldPath);
+            }
+
+            $filename = \Illuminate\Support\Str::uuid() . '.' . $request->file('avatar')->getClientOriginalExtension();
+            $request->file('avatar')->move(public_path('images/avatars'), $filename);
+            $data['banner'] = 'images/avatars/' . $filename;
+        }
+
+        unset($data['avatar']);
+
+        // Password change (optional)
+        if ($request->filled('new_password')) {
+            $request->validate([
+                'current_password' => 'required',
+                'new_password'     => 'required|min:8|confirmed',
+            ]);
+
+            if (!Hash::check($request->current_password, $user->password)) {
+                return back()->withErrors(['current_password' => 'Current password is incorrect.'])->withInput();
+            }
+
+            $data['password'] = Hash::make($request->new_password);
+        }
+
+        $user->update($data);
+
+        return redirect()->route('profile')->with('success', 'Profile updated successfully.');
     }
 }

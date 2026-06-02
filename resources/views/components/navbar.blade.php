@@ -61,11 +61,10 @@
                         </a>
                     @endif
 
-                    {{-- Profielpagina met mascot icoon --}}
+                    {{-- Profielpagina met avatar --}}
                     <a href="{{ route('profile') }}"
                        class="d-flex align-items-center gap-2 text-decoration-none fw-bold text-xcl-purple">
-                        <img src="/images/home/brand/xclusive_racing_logo_lion.png"
-                             alt="Profile" width="32" height="32" style="object-fit:contain;">
+                        <x-rank-avatar :user="auth()->user()" :size="32" :badge="false" />
                         PROFILE
                     </a>
                 @else
