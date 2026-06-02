@@ -9,9 +9,8 @@
         {{-- Profile header --}}
         <div class="bg-white rounded-3 shadow-sm p-4 mb-4">
             <div class="d-flex align-items-center gap-4 mb-4">
-                <div class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0 bg-gradient-xcl"
-                     style="width:96px;height:96px">
-                    <span class="display-5 fw-black text-white">{{ strtoupper($user->name[0]) }}</span>
+                <div class="flex-shrink-0">
+                    <x-rank-avatar :user="$user" :size="88" />
                 </div>
                 <div>
                     <h1 class="display-6 fw-black text-uppercase fst-italic text-dark mb-1">{{ $user->name }}</h1>
