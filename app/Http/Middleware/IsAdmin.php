@@ -10,7 +10,7 @@ class IsAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (!auth()->check() || (!auth()->user()->isAdmin() && !auth()->user()->isSuperAdmin())) {
+        if (!auth()->check() || !auth()->user()->canManage()) {
             abort(403, 'Access denied.');
         }
 

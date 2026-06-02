@@ -6,11 +6,11 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class IsSuperAdmin
+class HasRole
 {
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
-        if (!auth()->check() || !auth()->user()->isOwner()) {
+        if (!auth()->check() || !auth()->user()->hasAnyRole($roles)) {
             abort(403, 'Access denied.');
         }
 

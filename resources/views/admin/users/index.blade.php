@@ -22,8 +22,8 @@
 
 {{-- Stats --}}
 <div class="row g-3 mb-4">
-    @foreach(['super_admin'=>['Super Admins','#7c3aed','#f3e8ff'],'admin'=>['Admins','#db2777','#fce7f3'],'manager'=>['Managers','#2563eb','#dbeafe'],'driver'=>['Drivers','#059669','#d1fae5']] as $role=>[$label,$color,$bg])
-    <div class="col-sm-6 col-xl-3">
+    @foreach(['owner'=>['Owners','#7c3aed','#f3e8ff'],'admin'=>['Admins','#db2777','#fce7f3'],'moderator'=>['Moderators','#2563eb','#dbeafe'],'event_manager'=>['Event Managers','#d97706','#fef3c7'],'steward'=>['Stewards','#0891b2','#e0f2fe'],'driver'=>['Drivers','#059669','#d1fae5']] as $slug=>[$label,$color,$bg])
+    <div class="col-sm-6 col-xl-2">
         <div class="metric-card">
             <div class="metric-icon" style="background:{{ $bg }}">
                 <svg width="22" height="22" fill="none" stroke="{{ $color }}" stroke-width="2" viewBox="0 0 24 24">
@@ -31,7 +31,7 @@
                 </svg>
             </div>
             <div>
-                <div class="metric-value">{{ $users->where('role',$role)->count() }}</div>
+                <div class="metric-value">{{ $users->filter(fn($u) => $u->roles->contains('slug', $slug))->count() }}</div>
                 <div class="metric-label">{{ $label }}</div>
             </div>
         </div>
@@ -100,11 +100,16 @@
                     <td class="text-secondary" style="font-size:.82rem">{{ $user->team ?? '—' }}</td>
                     <td>
                         @php
-                            $rc = ['super_admin'=>['#f3e8ff','#7c3aed'],'admin'=>['#fce7f3','#db2777'],'manager'=>['#dbeafe','#2563eb'],'driver'=>['#d1fae5','#059669']][$user->role] ?? ['#f3f4f6','#374151'];
+                            $roleColors = ['owner'=>['#f3e8ff','#7c3aed'],'admin'=>['#fce7f3','#db2777'],'moderator'=>['#dbeafe','#2563eb'],'event_manager'=>['#fef3c7','#d97706'],'steward'=>['#e0f2fe','#0891b2'],'driver'=>['#d1fae5','#059669']];
                         @endphp
-                        <span class="badge fw-bold" style="background:{{ $rc[0] }};color:{{ $rc[1] }};font-size:.7rem;padding:4px 10px;border-radius:6px">
-                            {{ ucfirst(str_replace('_',' ',$user->role)) }}
-                        </span>
+                        <div class="d-flex flex-wrap gap-1">
+                        @foreach($user->roles->sortBy('id') as $role)
+                            @php $rc = $roleColors[$role->slug] ?? ['#f3f4f6','#374151']; @endphp
+                            <span class="badge fw-bold" style="background:{{ $rc[0] }};color:{{ $rc[1] }};font-size:.7rem;padding:4px 8px;border-radius:6px">
+                                {{ $role->name }}
+                            </span>
+                        @endforeach
+                        </div>
                     </td>
                     <td class="pe-4">
                         <div class="d-flex gap-2 justify-content-end">

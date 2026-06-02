@@ -74,8 +74,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/servers/{ftpServer}/test', [FtpServerController::class, 'test'])->name('servers.test');
 });
 
-// Super admin only
-Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->group(function () {
+// Users — owner, admin, moderator
+Route::middleware(['auth', 'role:owner,admin,moderator'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
     Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');

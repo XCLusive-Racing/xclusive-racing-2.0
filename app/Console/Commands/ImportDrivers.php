@@ -79,15 +79,9 @@ class ImportDrivers extends Command
                 $gamertag   = $data[$col['driver']] ?? null;
 
                 if (!$platformId || strlen($platformId) < 3) {
-                    // Try PSN live lookup using the gamertag
                     if (!$gamertag) continue;
-                    try {
-                        $psn        = $this->psnLookup->lookup($gamertag);
-                        $platformId = 'P' . $psn['accountId'];
-                        $gamertag   = $psn['onlineId'];
-                    } catch (\Throwable) {
-                        continue; // PSN lookup failed, skip row
-                    }
+                    // Store with temp ID — resolved to real platform_id when driver registers
+                    $platformId = 'T_' . strtolower($gamertag);
                 }
 
                 $rows[] = [

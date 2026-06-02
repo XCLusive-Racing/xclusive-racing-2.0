@@ -37,11 +37,20 @@ class RegisterController extends Controller
             ->where('platform', $request->platform)
             ->first();
 
+        // Fallback: match temp-imported accounts by gamertag (T_ prefix)
+        if (!$existing) {
+            $existing = User::where('platform_id', 'T_' . strtolower($profile['name']))
+                ->where('email', 'like', '%@import.local')
+                ->first();
+        }
+
         if ($existing) {
             // Imported placeholder — driver claims their account by linking email + password
             if (str_ends_with($existing->email, '@import.local')) {
                 $existing->update([
                     'name'              => $profile['name'],
+                    'platform_id'       => $profile['platform_id'],
+                    'platform'          => $request->platform,
                     'email'             => $request->email,
                     'password'          => Hash::make($request->password),
                     'country'           => $request->country,

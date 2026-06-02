@@ -3,6 +3,7 @@
 @section('title', 'Edit User — ' . $user->name)
 @section('page-title', 'Edit User')
 
+
 @section('page-actions')
     <a href="{{ route('admin.users.index') }}" class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.78rem">
         ← Back
@@ -53,13 +54,30 @@
                            class="form-control @error('email') is-invalid @enderror" style="border-color:#e5e7eb" required>
                     @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
-                <div class="col-sm-6">
-                    <label class="form-label fw-bold text-dark" style="font-size:.82rem">Role</label>
-                    <select name="role" class="form-select" style="border-color:#e5e7eb">
-                        @foreach(['super_admin'=>'Super Admin','admin'=>'Admin','manager'=>'Manager','driver'=>'Driver'] as $val=>$label)
-                        <option value="{{ $val }}" {{ old('role',$user->role)===$val?'selected':'' }}>{{ $label }}</option>
-                        @endforeach
-                    </select>
+                <div class="col-12">
+                    <label class="form-label fw-bold text-dark" style="font-size:.82rem">Roles</label>
+                    @if($user->id === auth()->id())
+                        <div class="d-flex flex-wrap gap-1 mt-1">
+                            @foreach($user->roles->sortBy('id') as $role)
+                                <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.78rem;padding:4px 10px;border-radius:6px">{{ $role->name }}</span>
+                            @endforeach
+                        </div>
+                        <p class="text-secondary mt-1 mb-0" style="font-size:.75rem">You cannot change your own roles.</p>
+                    @else
+                        @php $userRoles = old('roles', $user->roles->pluck('slug')->all()); @endphp
+                        <div class="d-flex flex-wrap gap-3 mt-1">
+                            @foreach($roles as $role)
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="roles[]"
+                                       value="{{ $role->slug }}" id="role_{{ $role->slug }}"
+                                       {{ in_array($role->slug, $userRoles) ? 'checked' : '' }}>
+                                <label class="form-check-label fw-bold" for="role_{{ $role->slug }}" style="font-size:.85rem">
+                                    {{ $role->name }}
+                                </label>
+                            </div>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
                 <div class="col-sm-6">
                     <label class="form-label fw-bold text-dark" style="font-size:.82rem">Country</label>

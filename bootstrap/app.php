@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin'             => \App\Http\Middleware\IsAdmin::class,
             'superadmin'        => \App\Http\Middleware\IsSuperAdmin::class,
+            'role'              => \App\Http\Middleware\HasRole::class,
             'password.setup'    => \App\Http\Middleware\EnsurePasswordIsSet::class,
         ]);
 

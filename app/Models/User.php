@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -32,29 +33,42 @@ class User extends Authenticatable
         ];
     }
 
-    public function isSuperAdmin(): bool
+    public function roles(): BelongsToMany
     {
-        return $this->role === 'super_admin';
+        return $this->belongsToMany(Role::class);
     }
 
-    public function isAdmin(): bool
+    public function hasRole(string $role): bool
     {
-        return $this->role === 'admin';
+        return $this->roles->contains('slug', $role);
     }
 
-    public function isManager(): bool
+    public function hasAnyRole(array $roles): bool
     {
-        return $this->role === 'manager';
+        return $this->roles->contains(fn($r) => in_array($r->slug, $roles));
     }
 
-    public function isDriver(): bool
-    {
-        return $this->role === 'driver';
-    }
+    public function isOwner(): bool        { return $this->hasRole('owner'); }
+    public function isAdmin(): bool        { return $this->hasRole('admin'); }
+    public function isModerator(): bool    { return $this->hasRole('moderator'); }
+    public function isEventManager(): bool { return $this->hasRole('event_manager'); }
+    public function isSteward(): bool      { return $this->hasRole('steward'); }
+    public function isDriver(): bool       { return $this->hasRole('driver'); }
+    public function isSuperAdmin(): bool   { return $this->isOwner(); }
 
     public function canManage(): bool
     {
-        return $this->isAdmin() || $this->isSuperAdmin();
+        return $this->hasAnyRole(['owner', 'admin', 'moderator', 'event_manager', 'steward']);
+    }
+
+    public function canSeeUsers(): bool
+    {
+        return $this->hasAnyRole(['owner', 'admin', 'moderator']);
+    }
+
+    public function canManageEvents(): bool
+    {
+        return $this->hasAnyRole(['owner', 'admin', 'event_manager']);
     }
 
     public function raceRegistrations(): HasMany
