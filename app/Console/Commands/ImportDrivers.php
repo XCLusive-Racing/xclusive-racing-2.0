@@ -70,7 +70,7 @@ class ImportDrivers extends Command
                 $data = array_combine($headers, $row);
 
                 $platformId = $data[$col['platform_id']] ?? null;
-                if (!$platformId) continue;
+                if (!$platformId || strlen($platformId) < 3) continue;
 
                 $rows[] = [
                     'platform_id' => $platformId,
@@ -128,7 +128,7 @@ class ImportDrivers extends Command
                         'updated_at'        => $now,
                     ], $toInsert);
 
-                    User::insert($insertRows);
+                    User::insertOrIgnore($insertRows);
                     $imported += count($insertRows);
 
                     // Reload IDs for car assignments

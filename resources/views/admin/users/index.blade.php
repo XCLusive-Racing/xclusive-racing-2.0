@@ -48,7 +48,6 @@
                     <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">ID</th>
                     <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Rating</th>
                     <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">SR</th>
-                    <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Flag</th>
                     <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Team / Quote</th>
                     <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Role</th>
                     <th class="pe-4" style="min-width:100px"></th>
@@ -98,9 +97,6 @@
                             <span class="text-secondary">—</span>
                         @endif
                     </td>
-                    <td class="text-center" style="font-size:.85rem">
-                        {{ $user->flag ? strtoupper($user->flag) : '—' }}
-                    </td>
                     <td class="text-secondary" style="font-size:.82rem">{{ $user->team ?? '—' }}</td>
                     <td>
                         @php
@@ -146,8 +142,8 @@
         $(function () {
             $('#users-table').DataTable({
                 pageLength: 25,
-                order: [[6, 'asc'], [0, 'asc']],
-                columnDefs: [{ orderable: false, targets: 7 }],
+                order: [[5, 'asc'], [0, 'asc']],
+                columnDefs: [{ orderable: false, targets: 6 }],
                 language: {
                     search: '', searchPlaceholder: 'Search users…',
                     lengthMenu: 'Show _MENU_ users',
