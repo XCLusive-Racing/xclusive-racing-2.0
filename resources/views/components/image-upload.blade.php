@@ -1,6 +1,6 @@
 @props(['name' => 'image', 'label' => 'Event Image', 'current' => null, 'optional' => true])
 
-<div class="mb-4" x-data="{ preview: '{{ $current ? asset($current) : '' }}' }">
+<div class="mb-4" x-data="{ preview: '{{ $current ? asset('storage/'.$current) : '' }}' }">
     <label class="form-label">
         {{ $label }}
         @if($optional)

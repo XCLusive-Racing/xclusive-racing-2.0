@@ -119,7 +119,7 @@
                             <div class="bg-white rounded-3 shadow-sm h-100 d-flex flex-column overflow-hidden">
                                 @if($race->image)
                                 <div style="height:140px;overflow:hidden">
-                                    <img src="{{ asset($race->image) }}" alt="{{ $race->title }}" loading="lazy"
+                                    <img src="{{ asset('storage/'.$race->image) }}" alt="{{ $race->title }}" loading="lazy"
                                          style="width:100%;height:100%;object-fit:cover">
                                 </div>
                                 @endif

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Race;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class RaceController extends Controller
@@ -39,14 +40,13 @@ class RaceController extends Controller
     private function storeImage(\Illuminate\Http\UploadedFile $file): string
     {
         $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-        $file->move(public_path('images/races'), $filename);
-        return 'images/races/' . $filename;
+        return $file->storeAs('images/races', $filename, 'public');
     }
 
     private function deleteImage(?string $path): void
     {
-        if ($path && file_exists(public_path($path))) {
-            unlink(public_path($path));
+        if ($path) {
+            Storage::disk('public')->delete($path);
         }
     }
 
