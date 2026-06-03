@@ -8,11 +8,11 @@
 
         {{-- Profile header --}}
         <div class="bg-white rounded-3 shadow-sm p-4 mb-4">
-            <div class="d-flex align-items-center gap-4 mb-4">
+            <div class="d-flex align-items-start gap-4">
                 <div class="flex-shrink-0">
                     <x-rank-avatar :user="$user" :size="88" />
                 </div>
-                <div>
+                <div class="flex-grow-1">
                     <h1 class="display-6 fw-black text-uppercase fst-italic text-dark mb-1">{{ $user->name }}</h1>
                     <p class="text-secondary text-uppercase mb-1">
                         {{ $user->country }} &bull; {{ strtoupper($user->platform) }}
@@ -34,18 +34,17 @@
                         @endif
                     </div>
                 </div>
-            </div>
-            <div class="d-flex gap-2 flex-wrap">
-                <a href="{{ route('profile.edit') }}"
-                   class="btn fw-black text-uppercase text-white px-4 py-2"
-                   style="background:#7c3aed;">EDIT PROFILE</a>
-
-                <form action="{{ route('logout') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="btn btn-outline-danger fw-bold text-uppercase px-4 py-2">
-                        LOGOUT
-                    </button>
-                </form>
+                <div class="d-flex gap-2 flex-shrink-0">
+                    <a href="{{ route('profile.edit') }}"
+                       class="btn btn-sm fw-bold text-uppercase text-white"
+                       style="background:#7c3aed;font-size:.75rem">EDIT</a>
+                    <form action="{{ route('logout') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-outline-danger fw-bold text-uppercase" style="font-size:.75rem">
+                            LOGOUT
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
 
@@ -79,45 +78,72 @@
             <h2 class="fs-2 fw-black text-uppercase fst-italic text-dark mb-4">NEXT STEPS</h2>
             <div class="row g-3">
                 <div class="col-md-6">
+                    @if($nextEvent)
+                    <a href="{{ route('race.show', $nextEvent) }}" class="next-step-card">
+                        <div class="next-step-title mb-1">{{ $nextEvent->title }}</div>
+                        <p class="mb-1">{{ $nextEvent->track }}</p>
+                        <p class="mb-0 text-secondary" style="font-size:.8rem">
+                            {{ $nextEvent->scheduled_at->format('d M Y · H:i') }}
+                        </p>
+                    </a>
+                    @else
                     <a href="{{ url('/race') }}" class="next-step-card">
                         <div class="next-step-title mb-2">FIND RACES</div>
                         <p>Browse and join upcoming racing events</p>
                     </a>
+                    @endif
                 </div>
                 <div class="col-md-6">
-                    <a href="https://www.xboxcommunityleague.com" target="_blank" class="next-step-card">
-                        <div class="next-step-title mb-2">XCL EVENTS</div>
-                        <p>View all XCL hosted events and championships</p>
+                    @if($nextChampionship)
+                    <a href="{{ route('race.show', $nextChampionship) }}" class="next-step-card">
+                        <div class="next-step-title mb-1">{{ $nextChampionship->title }}</div>
+                        <p class="mb-1">{{ $nextChampionship->track }}</p>
+                        <p class="mb-0 text-secondary" style="font-size:.8rem">
+                            {{ $nextChampionship->scheduled_at->format('d M Y · H:i') }}
+                        </p>
                     </a>
+                    @else
+                    <a href="{{ url('/race') }}" class="next-step-card">
+                        <div class="next-step-title mb-2">CHAMPIONSHIP EVENTS</div>
+                        <p>No upcoming championship events</p>
+                    </a>
+                    @endif
                 </div>
             </div>
         </div>
 
         {{-- Stats --}}
+        @php
+            $ds      = ($driver && $driver->stats) ? $driver->stats : null;
+            $dsRaces = $ds?->total_races  ?? $stats['totalRaces'];
+            $dsWins  = $ds?->wins         ?? $stats['wins'];
+            $dsPods  = $ds?->podiums      ?? $stats['podiums'];
+            $dsRate  = $dsRaces > 0 ? round(($dsWins / $dsRaces) * 100) : ($stats['winRate'] ?? 0);
+        @endphp
         <div class="bg-white rounded-3 shadow-sm p-4 mb-4">
             <h2 class="fs-2 fw-black text-uppercase fst-italic text-dark mb-4">YOUR STATS</h2>
             <div class="row g-3">
                 <div class="col-6 col-md-3">
                     <div class="stat-box">
-                        <div class="stat-num">{{ $stats['totalRaces'] }}</div>
+                        <div class="stat-num">{{ $dsRaces }}</div>
                         <div class="stat-label">Races</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
                     <div class="stat-box">
-                        <div class="stat-num">{{ $stats['wins'] }}</div>
+                        <div class="stat-num">{{ $dsWins }}</div>
                         <div class="stat-label">Wins</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
                     <div class="stat-box">
-                        <div class="stat-num">{{ $stats['podiums'] }}</div>
+                        <div class="stat-num">{{ $dsPods }}</div>
                         <div class="stat-label">Podiums</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
                     <div class="stat-box">
-                        <div class="stat-num">{{ $stats['winRate'] }}%</div>
+                        <div class="stat-num">{{ $dsRate }}%</div>
                         <div class="stat-label">Win Rate</div>
                     </div>
                 </div>

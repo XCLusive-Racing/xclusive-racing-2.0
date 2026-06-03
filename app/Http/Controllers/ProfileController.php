@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Driver;
+use App\Models\Race;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -24,7 +26,25 @@ class ProfileController extends Controller
 
         $stats = compact('totalRaces', 'wins', 'podiums', 'winRate');
 
-        return view('profile.show', compact('user', 'results', 'stats'));
+        // Link user to driver record via platform_id or temp gamertag ID
+        $driver = Driver::with(['stats', 'trackTimes'])
+            ->where('xuid_psid', $user->platform_id)
+            ->orWhere('xuid_psid', 'T_' . strtolower($user->name))
+            ->orWhere('gamertag', $user->name)
+            ->first();
+
+        $nextEvent = Race::where('status', '!=', 'finished')
+            ->where('scheduled_at', '>', now())
+            ->orderBy('scheduled_at')
+            ->first();
+
+        $nextChampionship = Race::where('status', '!=', 'finished')
+            ->where('is_championship', true)
+            ->where('scheduled_at', '>', now())
+            ->orderBy('scheduled_at')
+            ->first();
+
+        return view('profile.show', compact('user', 'results', 'stats', 'driver', 'nextEvent', 'nextChampionship'));
     }
 
     public function edit()

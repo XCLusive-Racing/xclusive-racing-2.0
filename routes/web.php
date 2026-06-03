@@ -9,12 +9,16 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordSetupController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\DriverController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\EventController;
+use App\Http\Controllers\HotlapController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RaceController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/events/sidebar-data', [EventController::class, 'getSidebarData'])->name('events.sidebar-data');
 
 // Races - public
 Route::get('/race', [RaceController::class, 'index'])->name('race');
@@ -22,6 +26,11 @@ Route::get('/race/{race}', [RaceController::class, 'show'])->name('race.show');
 
 // Calendar
 Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
+
+// Drivers & Hotlaps - public
+Route::get('/drivers', [DriverController::class, 'index'])->name('drivers.index');
+Route::get('/drivers/{driver}', [DriverController::class, 'show'])->name('drivers.show');
+Route::get('/hotlaps', [HotlapController::class, 'index'])->name('hotlaps.index');
 
 // Auth
 Route::middleware('guest')->group(function () {
@@ -54,8 +63,6 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/calendar', [AdminCalendarController::class, 'index'])->name('calendar');
     Route::get('/races', [AdminRaceController::class, 'index'])->name('races.index');
-    Route::get('/races/bulk-create', [AdminRaceController::class, 'bulkCreate'])->name('races.bulk-create');
-    Route::post('/races/bulk-create', [AdminRaceController::class, 'bulkStore'])->name('races.bulk-store');
     Route::get('/races/create', [AdminRaceController::class, 'create'])->name('races.create');
     Route::post('/races', [AdminRaceController::class, 'store'])->name('races.store');
     Route::get('/races/{race}/edit', [AdminRaceController::class, 'edit'])->name('races.edit');
