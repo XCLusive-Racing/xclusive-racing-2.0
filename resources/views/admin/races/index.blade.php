@@ -4,11 +4,6 @@
 @section('page-title', 'Race Management')
 
 @section('page-actions')
-    <a href="{{ route('admin.races.bulk-create') }}"
-       class="btn btn-sm fw-black text-uppercase text-white px-3"
-       style="background:#7c3aed">
-        + Schedule Series
-    </a>
     <a href="{{ route('admin.races.create') }}"
        class="btn btn-sm btn-outline-secondary fw-bold text-uppercase">
         + Single Race
