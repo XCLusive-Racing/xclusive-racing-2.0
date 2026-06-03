@@ -926,12 +926,14 @@ body.admin-body {
     padding-bottom: calc(3rem + 10vh) !important;
 }
 
-// SVG hex patroon overlay
+// SVG hex patroon overlay — tiled at natural pixel size, no stretch
 .meet-team-pattern {
     position: absolute;
     inset: 0;
-    width: 100%;
-    height: 100%;
+    background-image: url('/images/home/teams/Dark_Purple_Hex.png');
+    background-size: auto;
+    background-repeat: repeat;
+    background-position: center;
     opacity: 0.25;
     pointer-events: none;
     z-index: 0;

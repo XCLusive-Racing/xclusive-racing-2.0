@@ -27,7 +27,7 @@ window.__xclTeams = [
          }">
 
     {{-- ── Hexagon achtergrond — absoluut gepositioneerd buiten animated row --}}
-    <img src="/images/home/teams/Dark_Purple_Hex.png" aria-hidden="true" class="meet-team-pattern">
+    <div aria-hidden="true" class="meet-team-pattern"></div>
 
     <div class="container-xl position-relative" style="z-index:1;">
 
