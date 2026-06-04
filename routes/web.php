@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
 use App\Http\Controllers\Admin\FtpServerController;
+use App\Http\Controllers\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Admin\RaceController as AdminRaceController;
 use App\Http\Controllers\Admin\RaceResultController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -71,6 +72,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/races/{race}/results', [RaceResultController::class, 'create'])->name('races.results');
     Route::post('/races/{race}/results', [RaceResultController::class, 'store'])->name('races.results.store');
     Route::post('/races/{race}/results/ftp', [RaceResultController::class, 'ftpImport'])->name('races.results.ftp');
+
+    // Media Library
+    Route::get('/media', [AdminMediaController::class, 'index'])->name('media.index');
+    Route::get('/media/list', [AdminMediaController::class, 'list'])->name('media.list');
+    Route::post('/media', [AdminMediaController::class, 'store'])->name('media.store');
+    Route::delete('/media/{media}', [AdminMediaController::class, 'destroy'])->name('media.destroy');
 
     // FTP Servers
     Route::get('/servers', [FtpServerController::class, 'index'])->name('servers.index');

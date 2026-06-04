@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Media;
 use App\Models\Race;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class RaceController extends Controller
@@ -37,19 +37,6 @@ class RaceController extends Controller
         return view('admin.races.create', compact('prefillDate'));
     }
 
-    private function storeImage(\Illuminate\Http\UploadedFile $file): string
-    {
-        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-        return $file->storeAs('images/races', $filename, 'public');
-    }
-
-    private function deleteImage(?string $path): void
-    {
-        if ($path) {
-            Storage::disk('public')->delete($path);
-        }
-    }
-
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -59,12 +46,12 @@ class RaceController extends Controller
             'scheduled_at' => 'required|date',
             'max_drivers'  => 'nullable|integer|min:1',
             'description'  => 'nullable|string',
-            'image'        => 'nullable|image|max:4096',
+            'image'        => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',
+            'image_path'   => 'nullable|string|max:500',
         ]);
 
-        if ($request->hasFile('image')) {
-            $data['image'] = $this->storeImage($request->file('image'));
-        }
+        $data['image'] = $this->resolveMedia($request);
+        unset($data['image_path']);
 
         Race::create($data);
 
@@ -101,6 +88,7 @@ class RaceController extends Controller
             return redirect()->route('admin.races.index')
                 ->with('error', 'Past races cannot be edited.');
         }
+
         $data = $request->validate([
             'title'        => 'required|string|max:255',
             'game'         => 'required|in:acc,lmu,iracing',
@@ -109,16 +97,24 @@ class RaceController extends Controller
             'status'       => 'required|in:open,closed,finished',
             'max_drivers'  => 'nullable|integer|min:1',
             'description'  => 'nullable|string',
-            'image'        => 'nullable|image|max:4096',
+            'image'        => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',
+            'image_path'   => 'nullable|string|max:500',
         ]);
 
-        if ($request->hasFile('image')) {
-            $this->deleteImage($race->image);
-            $data['image'] = $this->storeImage($request->file('image'));
-        }
+        $data['image'] = $this->resolveMedia($request);
+        unset($data['image_path']);
 
         $race->update($data);
 
         return redirect()->route('admin.races.index')->with('success', 'Race updated successfully!');
+    }
+
+    private function resolveMedia(Request $request): ?string
+    {
+        if ($request->hasFile('image')) {
+            return Media::createFromUpload($request->file('image'))->path;
+        }
+
+        return $request->filled('image_path') ? $request->image_path : null;
     }
 }

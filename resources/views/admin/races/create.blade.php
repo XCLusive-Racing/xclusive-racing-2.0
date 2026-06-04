@@ -71,7 +71,7 @@
                 @error('description') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>
 
-            <x-image-upload name="image" label="Event Image" />
+            <x-media-picker name="image" label="Event Media" />
 
             <div class="d-flex gap-2">
                 <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">

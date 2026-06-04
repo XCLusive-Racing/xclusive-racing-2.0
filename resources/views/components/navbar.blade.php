@@ -92,10 +92,10 @@
                     </a>
                 @else
                     {{-- Aanmeldknop voor niet-ingelogde bezoekers --}}
-                    <a href="{{ route('register') }}"
+                    <a href="{{ route('login') }}"
                        class="btn btn-sm fw-bold text-uppercase text-white bg-xcl-purple rounded-1 px-4"
                        >
-                        SIGN UP
+                        SIGN IN
                     </a>
 
                     {{-- Mascot icoon naast aanmeldknop --}}
