@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordSetupController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\SteamController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\HomeController;
@@ -42,6 +43,10 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
+
+// Steam OAuth
+Route::get('/auth/steam', [SteamController::class, 'redirect'])->name('auth.steam');
+Route::get('/auth/steam/callback', [SteamController::class, 'callback'])->name('auth.steam.callback');
 
 // Password setup (for imported users)
 Route::middleware('auth')->group(function () {

@@ -51,6 +51,19 @@
             </p>
         </form>
 
+        <div class="position-relative my-4">
+            <hr style="border-color:rgba(255,255,255,.1); margin:0;">
+            <span class="position-absolute top-50 start-50 translate-middle px-3 small text-white-50"
+                  style="background:#0f0f1a; white-space:nowrap;">or continue with</span>
+        </div>
+
+        <a href="{{ route('auth.steam') }}"
+           class="btn w-100 fw-bold text-uppercase text-white py-3 d-flex align-items-center justify-content-center gap-2"
+           style="background:#1b2838; border:1px solid rgba(255,255,255,.1); border-radius:10px; letter-spacing:.06em;">
+            <i class="fab fa-steam fs-5"></i>
+            Sign In with Steam
+        </a>
+
     </div>
 </div>
 @endsection
