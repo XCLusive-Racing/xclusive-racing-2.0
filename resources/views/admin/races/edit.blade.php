@@ -33,6 +33,7 @@
                         <option value="acc"     {{ old('game', $race->game) === 'acc'     ? 'selected' : '' }}>ACC Console</option>
                         <option value="lmu"     {{ old('game', $race->game) === 'lmu'     ? 'selected' : '' }}>Le Mans Ultimate</option>
                         <option value="iracing" {{ old('game', $race->game) === 'iracing' ? 'selected' : '' }}>iRacing</option>
+                        <option value="ac"      {{ old('game', $race->game) === 'ac'      ? 'selected' : '' }}>AC Rally</option>
                     </select>
                     @error('game') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
@@ -41,6 +42,77 @@
                     <input type="text" name="track" value="{{ old('track', $race->track) }}"
                            class="form-control @error('track') is-invalid @enderror">
                     @error('track') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+            </div>
+
+            {{-- Event Tag --}}
+            <div class="mb-3" x-data="{ adding: false }">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <label class="form-label mb-0">Event Tag</label>
+                    <button type="button" @click="adding = !adding"
+                            class="btn btn-sm fw-bold text-uppercase"
+                            style="font-size:.72rem;padding:3px 10px;background:rgba(124,58,237,.1);color:#7c3aed;border:1px solid rgba(124,58,237,.3);border-radius:6px">
+                        <span x-text="adding ? '✕ Cancel' : '+ New tag'"></span>
+                    </button>
+                </div>
+
+                <select name="event_tag" class="form-select @error('event_tag') is-invalid @enderror">
+                    <option value="">Select tag...</option>
+                    @foreach($tags as $tag)
+                        <option value="{{ $tag->slug }}"
+                                {{ old('event_tag', $race->event_tag) === $tag->slug ? 'selected' : '' }}>
+                            {{ $tag->name }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('event_tag') <div class="invalid-feedback">{{ $message }}</div> @enderror
+
+                <div x-show="adding" x-transition style="display:none">
+                    <div class="mt-2 p-3 rounded-2" style="background:#f8f5ff;border:1px solid rgba(124,58,237,.2)">
+                        <p class="fw-bold text-uppercase mb-2" style="font-size:.72rem;color:#7c3aed">Add new tag</p>
+                        @if(session('tag_success'))
+                            <div class="alert alert-success py-1 px-2 mb-2" style="font-size:.8rem">{{ session('tag_success') }}</div>
+                        @endif
+                        <form action="{{ route('admin.event-tags.store') }}" method="POST">
+                            @csrf
+                            <div class="d-flex gap-2 align-items-end">
+                                <div class="flex-grow-1">
+                                    <label class="form-label" style="font-size:.78rem">Name</label>
+                                    <input type="text" name="name" placeholder="e.g. Endurance"
+                                           class="form-control form-control-sm @error('name') is-invalid @enderror">
+                                    @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                </div>
+                                <div>
+                                    <label class="form-label" style="font-size:.78rem">Color</label>
+                                    <input type="color" name="color" value="#7B2FBE"
+                                           class="form-control form-control-sm form-control-color"
+                                           style="width:46px;padding:2px">
+                                </div>
+                                <button type="submit" class="btn btn-sm fw-bold text-white"
+                                        style="background:#7c3aed;white-space:nowrap">
+                                    Add tag
+                                </button>
+                            </div>
+                        </form>
+
+                        @if($tags->isNotEmpty())
+                        <div class="mt-2 d-flex flex-wrap gap-1">
+                            @foreach($tags as $tag)
+                            <div class="d-flex align-items-center gap-1 rounded-2 px-2 py-1"
+                                 style="background:{{ $tag->color }}22;border:1px solid {{ $tag->color }}55;font-size:.75rem">
+                                <span class="fw-bold" style="color:{{ $tag->color }}">{{ $tag->name }}</span>
+                                <form action="{{ route('admin.event-tags.destroy', $tag) }}" method="POST"
+                                      onsubmit="return confirm('Delete tag \'{{ $tag->name }}\'?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit"
+                                            style="background:none;border:none;color:{{ $tag->color }};opacity:.6;padding:0;line-height:1;font-size:.8rem;cursor:pointer"
+                                            title="Delete">&times;</button>
+                                </form>
+                            </div>
+                            @endforeach
+                        </div>
+                        @endif
+                    </div>
                 </div>
             </div>
 

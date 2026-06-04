@@ -3,22 +3,24 @@
 @section('title', 'Race & Events - XCLusive Racing')
 
 @section('content')
-<main class="xcl-page pb-5 px-3 bg-light" x-data="{
+<main class="xcl-page pb-5 px-3 bg-light" style="position:relative;overflow:hidden" x-data="{
     platform: null,
     weeksShown: 1,
-    selectPlatform(p) { this.platform = p; this.weeksShown = 1; },
-    inRange(dateStr) {
-        const d = new Date(dateStr);
-        const now = new Date(); now.setHours(0,0,0,0);
+    eventFilter: 'all',
+    selectPlatform(p) { this.platform = p; this.weeksShown = 1; this.eventFilter = 'all'; },
+    matchesEventFilter(tag, dateStr) {
+        const now    = new Date();
+        const d      = new Date(dateStr);
         const cutoff = new Date(now);
         cutoff.setDate(cutoff.getDate() + this.weeksShown * 7);
-        return d >= now && d <= cutoff;
+        if (this.eventFilter === 'all') return d >= now && d <= cutoff;
+        return tag === this.eventFilter && d >= now && d <= cutoff;
     }
 }">
-    <div class="container-xl">
-        <div class="mb-5 pt-3">
-            <h1 class="display-4 fw-black text-uppercase fst-italic text-dark mb-2">RACE & EVENTS</h1>
-            <p class="text-secondary fs-5">Choose your platform and find races to join</p>
+    <div class="about-section__topo" style="background-image:url('/topo.png')"></div>
+    <div class="container-xl" style="position:relative;z-index:1">
+        <div class="mb-5 pt-4">
+            <h1 class="display-4 fw-black text-uppercase fst-italic text-dark mb-2">RACE &amp; EVENTS</h1>
         </div>
 
         {{-- Platform cards --}}
@@ -26,10 +28,11 @@
             <div class="d-flex gap-3 mb-5 align-items-end" style="height:460px">
                 @foreach([
                     ['acc',     '#7c3aed', 'ACC Console',      'Assetto Corsa Competizione · PS5 &amp; Xbox Series X/S'],
-                    ['lmu',     '#db2777', 'Le Mans Ultimate',  'Le Mans Ultimate · Premium PC Sim Racing'],
+                    ['lmu',     '#db2877', 'Le Mans Ultimate',  'Le Mans Ultimate · Premium PC Sim Racing'],
                     ['iracing', '#2563eb', 'iRacing',           'iRacing · World\'s Leading Online Sim Racing'],
+                    ['ac',      '#16a34a', 'AC Rally',          'Assetto Corsa Rally · PC Sim Racing'],
                 ] as [$game, $color, $label, $desc])
-                @php $count = $races->where('game', $game)->count(); @endphp
+                @php $count = $races->where('game', $game)->where('status', 'open')->count(); @endphp
                 <div x-data="{ on: false }"
                      @mouseenter="on = true;  $refs.vid.play().catch(()=>{})"
                      @mouseleave="on = false; $refs.vid.pause()"
@@ -37,32 +40,21 @@
                      :style="{ height: on ? '460px' : '280px' }"
                      style="flex:1;height:280px;border-radius:16px;overflow:hidden;cursor:pointer;position:relative;transition:height .45s cubic-bezier(.4,0,.2,1)">
 
-                    {{-- Video (swap src for real file when available) --}}
                     <video x-ref="vid" muted loop playsinline preload="none"
                            style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
                         <source src="/videos/{{ $game }}.mp4" type="video/mp4">
                     </video>
 
-                    {{-- Placeholder background (visible when no video) --}}
                     <div style="position:absolute;inset:0;background:linear-gradient(160deg,{{ $color }}55 0%,{{ $color }}cc 100%)"></div>
-
-                    {{-- Dark overlay --}}
                     <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.75) 0%,rgba(0,0,0,.25) 55%,transparent 100%)"></div>
 
-                    {{-- Content --}}
                     <div style="position:absolute;bottom:0;left:0;right:0;padding:1.5rem">
-
-                        {{-- Event count --}}
                         <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:{{ $color }};background:rgba(0,0,0,.35);display:inline-block;padding:3px 10px;border-radius:20px;margin-bottom:.6rem">
                             {{ $count }} open {{ $count === 1 ? 'event' : 'events' }}
                         </div>
-
-                        {{-- Title --}}
                         <div style="color:white;font-size:1.45rem;font-weight:900;text-transform:uppercase;font-style:italic;line-height:1.1;margin-bottom:.75rem">
                             {!! $label !!}
                         </div>
-
-                        {{-- Description + CTA — slide in on hover --}}
                         <div :style="on ? 'max-height:120px;opacity:1' : 'max-height:0;opacity:0'"
                              style="overflow:hidden;transition:max-height .35s ease,opacity .3s ease">
                             <p style="color:rgba(255,255,255,.7);font-size:.82rem;margin-bottom:.85rem">{!! $desc !!}</p>
@@ -72,7 +64,6 @@
                         </div>
                     </div>
 
-                    {{-- Coloured top accent line --}}
                     <div style="position:absolute;top:0;left:0;right:0;height:3px;background:{{ $color }}"></div>
                 </div>
                 @endforeach
@@ -96,81 +87,117 @@
                 ← BACK TO PLATFORMS
             </button>
 
-            <h2 class="display-5 fw-black text-uppercase fst-italic text-dark mb-4">
-                <span x-text="platform === 'acc' ? 'ACC CONSOLE' : platform === 'lmu' ? 'LE MANS ULTIMATE' : 'iRACING'"></span>
-                EVENTS
-            </h2>
 
-            @foreach(['acc', 'lmu', 'iracing'] as $game)
+            {{-- Event type filter (dynamic tags) --}}
+            <div class="d-flex gap-2 flex-wrap mb-4">
+                <button @click="eventFilter = 'all'"
+                        :class="eventFilter === 'all' ? 'xcl-filter-btn--active' : ''"
+                        class="xcl-filter-btn fw-bold text-uppercase">All</button>
+                @foreach($eventTags as $tag)
+                <button @click="eventFilter = '{{ $tag->slug }}'"
+                        :class="eventFilter === '{{ $tag->slug }}' ? 'xcl-filter-btn--active' : ''"
+                        class="xcl-filter-btn fw-bold text-uppercase">{{ $tag->name }}</button>
+                @endforeach
+            </div>
+
+            @foreach(['acc', 'lmu', 'iracing', 'ac'] as $game)
             @php $gameRaces = $races->where('game', $game); @endphp
             <div x-show="platform === '{{ $game }}'">
 
                 @if($gameRaces->isEmpty())
-                    <div class="bg-white rounded-3 shadow-sm p-5 text-center">
-                        <div class="display-1 mb-3">🏁</div>
+                    <div class="rounded-3 p-5 text-center bg-white shadow-sm">
                         <h3 class="fs-1 fw-black text-uppercase fst-italic text-dark mb-3">NO UPCOMING EVENTS</h3>
                         <p class="text-secondary fs-5">Check back soon for new events!</p>
                     </div>
                 @else
-                    <div class="row g-4">
+                    <div class="row row-cols-3 g-3">
                         @foreach($gameRaces as $race)
-                        <div class="col-md-6 col-lg-4"
-                             x-show="inRange('{{ $race->scheduled_at->toDateString() }}')">
-                            <div class="bg-white rounded-3 shadow-sm h-100 d-flex flex-column overflow-hidden">
-                                @if($race->image)
-                                <div style="height:140px;overflow:hidden">
-                                    <img src="{{ asset('storage/'.$race->image) }}" alt="{{ $race->title }}" loading="lazy"
-                                         style="width:100%;height:100%;object-fit:cover">
-                                </div>
-                                @endif
-                                <div class="p-1" style="background: {{ $race->gameColor() }}"></div>
-                                <div class="p-4 d-flex flex-column flex-grow-1">
-                                    <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <span class="badge text-white fw-bold text-uppercase"
-                                              style="background:{{ $race->gameColor() }}">
-                                            {{ $race->gameLabel() }}
-                                        </span>
-                                        <span class="badge {{ $race->status === 'open' ? 'bg-success' : 'bg-secondary' }} text-uppercase">
-                                            {{ $race->status }}
-                                        </span>
+                        @php
+                            $titleLower = strtolower($race->title ?? '');
+                            if ($race->is_championship) {
+                                $badge   = 'SR5 GRID';
+                                $overlay = 'rgba(123,47,190,0.55)';
+                            } elseif (str_contains($titleLower, 'multiclass') || str_contains($titleLower, 'endurance')) {
+                                $badge   = 'MULTICLASS';
+                                $overlay = 'rgba(0,210,120,0.45)';
+                            } else {
+                                $badge   = 'DAILY SPRINT';
+                                $overlay = 'rgba(0,180,160,0.45)';
+                            }
+                            $gameShort = match($race->game) {
+                                'acc'     => 'ACC',
+                                'lmu'     => 'LMU',
+                                'iracing' => 'iRACING',
+                                'ac'      => 'AC RALLY',
+                                default   => strtoupper($race->game),
+                            };
+                            $platforms = match($race->game) {
+                                'acc'     => [['fa-brands fa-playstation', 'PS5'], ['fa-brands fa-xbox', 'Xbox']],
+                                'lmu'     => [['fa-solid fa-desktop', 'PC']],
+                                'iracing' => [['fa-solid fa-desktop', 'PC']],
+                                'ac'      => [['fa-solid fa-desktop', 'PC']],
+                                default   => [],
+                            };
+                        @endphp
+                        <div class="col"
+                             x-show="matchesEventFilter('{{ $race->event_tag ?? 'daily' }}', '{{ $race->scheduled_at->toIso8601String() }}')">
+                            <div class="xcl-ec2">
+
+                                {{-- Image 16:9 --}}
+                                <div class="xcl-ec2__img-wrap">
+                                    @if($race->image)
+                                        <img src="{{ asset('storage/'.$race->image) }}"
+                                             alt="{{ $race->title }}" loading="lazy"
+                                             class="xcl-ec2__img">
+                                    @else
+                                        <div class="xcl-ec2__img-placeholder"></div>
+                                    @endif
+
+                                    <div class="xcl-ec2__overlay" style="background:{{ $overlay }}"></div>
+
+                                    <div class="xcl-ec2__badge-wrap">
+                                        <div class="xcl-ec2__badge">
+                                            <div class="xcl-ec2__badge-main">{{ $badge }}</div>
+                                            <div class="xcl-ec2__badge-sub">{{ $gameShort }}</div>
+                                        </div>
                                     </div>
-                                    <h3 class="fw-black text-uppercase fst-italic text-dark fs-5 mb-1">{{ $race->title }}</h3>
-                                    <p class="text-secondary small mb-1">{{ $race->track }}</p>
-                                    <p class="text-secondary small mb-3">
-                                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" class="me-1">
-                                            <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/>
-                                        </svg>
-                                        {{ $race->scheduledAtUk()->format('D d M Y · H:i T') }}
-                                    </p>
-                                    <p class="text-secondary small mb-3">
-                                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" class="me-1">
-                                            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-                                        </svg>
-                                        {{ $race->registrations_count }}{{ $race->max_drivers ? '/' . $race->max_drivers : '' }} registered
-                                    </p>
-                                    <div class="mt-auto">
-                                        <a href="{{ route('race.show', $race) }}"
-                                           class="btn fw-black text-uppercase text-white w-100"
-                                           style="background:{{ $race->gameColor() }}">
-                                            VIEW EVENT
-                                        </a>
+
+                                    <div class="xcl-ec2__platforms">
+                                        @foreach($platforms as [$icon, $label])
+                                            <i class="{{ $icon }}" title="{{ $label }}"></i>
+                                        @endforeach
                                     </div>
                                 </div>
+
+                                {{-- Info --}}
+                                <div class="xcl-ec2__body">
+                                    <div class="xcl-ec2__time">
+                                        {{ strtoupper($race->scheduledAtUk()->format('l')) }} /
+                                        {{ strtoupper($race->scheduledAtUk()->format('g:i A T')) }}
+                                    </div>
+                                    <div class="xcl-ec2__meta">
+                                        {{ $race->scheduledAtUk()->format('D, M d') }}
+                                        @if($race->track) | {{ $race->track }} @endif
+                                    </div>
+                                    <a href="{{ route('race.show', $race) }}" class="xcl-see-event-btn">
+                                        SEE EVENT
+                                    </a>
+                                </div>
+
                             </div>
                         </div>
                         @endforeach
                     </div>
 
-                    {{-- Load more / Load less --}}
                     <div class="text-center mt-5">
                         <button x-show="weeksShown === 1" @click="weeksShown = 2"
                                 class="btn fw-black text-uppercase px-5 py-2"
-                                style="background:#f3e8ff;color:#7c3aed;border:2px solid #e9d5ff;border-radius:8px;font-size:.85rem">
+                                style="background:rgba(124,58,237,.15);color:#a855f7;border:1.5px solid rgba(168,85,247,.3);border-radius:8px;font-size:.85rem">
                             Load more
                         </button>
                         <button x-show="weeksShown === 2" @click="weeksShown = 1"
                                 class="btn fw-black text-uppercase px-5 py-2"
-                                style="background:#f3e8ff;color:#7c3aed;border:2px solid #e9d5ff;border-radius:8px;font-size:.85rem">
+                                style="background:rgba(124,58,237,.15);color:#a855f7;border:1.5px solid rgba(168,85,247,.3);border-radius:8px;font-size:.85rem">
                             Load less
                         </button>
                     </div>

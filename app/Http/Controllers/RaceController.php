@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EventTag;
 use App\Models\Race;
 use App\Models\RaceRegistration;
 
@@ -14,7 +15,9 @@ class RaceController extends Controller
             ->withCount('registrations')
             ->get();
 
-        return view('race.index', compact('races'));
+        $eventTags = EventTag::orderBy('name')->get();
+
+        return view('race.index', compact('races', 'eventTags'));
     }
 
     public function show(Race $race)

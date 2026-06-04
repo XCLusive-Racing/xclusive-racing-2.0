@@ -1277,6 +1277,7 @@ html {
     &--acc-active    { border-color: #7c3aed; background: rgba(124,58,237,.12); color: #7c3aed; }
     &--lmu-active    { border-color: #ea580c; background: rgba(234,88,12,.12);  color: #ea580c; }
     &--iracing-active{ border-color: #2563eb; background: rgba(37,99,235,.12);  color: #2563eb; }
+    &--ac-active     { border-color: #16a34a; background: rgba(22,163,74,.12);  color: #16a34a; }
 }
 
 .xcl-nav-btn {
@@ -1372,6 +1373,129 @@ html {
     font-size: .75rem;
     color: #d1d5db;
     white-space: nowrap;
+}
+
+// ─── Event cards v2 ───────────────────────────────────────────────────────────
+
+.xcl-ec2 {
+    background: #0f0f1a;
+    border: 1.5px solid rgba(255,255,255,.08);
+    border-radius: 10px;
+    overflow: hidden;
+
+    &__img-wrap {
+        position: relative;
+        aspect-ratio: 16 / 9;
+        overflow: hidden;
+    }
+
+    &__img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    &__img-placeholder {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, #1a0a2e, #0b0b1a);
+    }
+
+    &__overlay {
+        position: absolute;
+        inset: 0;
+    }
+
+    &__badge-wrap {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    &__badge {
+        background: #fff;
+        padding: 5px 12px;
+        text-align: center;
+        border-radius: 0;
+    }
+
+    &__badge-main {
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 700;
+        font-size: .8rem;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: #111;
+        line-height: 1.1;
+    }
+
+    &__badge-sub {
+        font-family: 'Rajdhani', sans-serif;
+        font-size: .62rem;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: #555;
+        line-height: 1.2;
+        margin-top: 1px;
+    }
+
+    &__platforms {
+        position: absolute;
+        bottom: 8px;
+        left: 8px;
+        display: flex;
+        gap: 5px;
+
+        i {
+            color: #fff;
+            opacity: .85;
+            font-size: .8rem;
+        }
+    }
+
+    &__body {
+        padding: .7rem .85rem .85rem;
+    }
+
+    &__time {
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 700;
+        font-size: .85rem;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: #C8FF00;
+        line-height: 1.2;
+        margin-bottom: 3px;
+    }
+
+    &__meta {
+        font-size: .72rem;
+        color: rgba(255,255,255,.7);
+        margin-bottom: .65rem;
+    }
+}
+
+.xcl-see-event-btn {
+    display: block;
+    width: 100%;
+    background: #7B2FBE;
+    color: #fff;
+    text-align: center;
+    padding: .45rem .5rem;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    text-decoration: none;
+    border-radius: 0;
+    transition: background .15s;
+
+    &:hover { background: #6D28D9; color: #fff; }
 }
 
 // Next-steps cards

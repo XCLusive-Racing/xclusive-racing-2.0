@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\EventTag;
 use App\Models\Media;
 use App\Models\Race;
 use Illuminate\Http\Request;
@@ -34,16 +35,18 @@ class RaceController extends Controller
     public function create(Request $request)
     {
         $prefillDate = $request->date('date')?->format('Y-m-d\TH:i');
-        return view('admin.races.create', compact('prefillDate'));
+        $tags = EventTag::orderBy('name')->get();
+        return view('admin.races.create', compact('prefillDate', 'tags'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
             'title'        => 'required|string|max:255',
-            'game'         => 'required|in:acc,lmu,iracing',
+            'game'         => 'required|in:acc,lmu,iracing,ac',
             'track'        => 'required|string|max:255',
             'scheduled_at' => 'required|date',
+            'event_tag'    => 'required|exists:event_tags,slug',
             'max_drivers'  => 'nullable|integer|min:1',
             'description'  => 'nullable|string',
             'image'        => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',
@@ -65,7 +68,8 @@ class RaceController extends Controller
                 ->with('error', 'Past races cannot be edited. You can still manage results.');
         }
 
-        return view('admin.races.edit', compact('race'));
+        $tags = EventTag::orderBy('name')->get();
+        return view('admin.races.edit', compact('race', 'tags'));
     }
 
     public function destroy(Race $race)
@@ -91,10 +95,11 @@ class RaceController extends Controller
 
         $data = $request->validate([
             'title'        => 'required|string|max:255',
-            'game'         => 'required|in:acc,lmu,iracing',
+            'game'         => 'required|in:acc,lmu,iracing,acrally',
             'track'        => 'required|string|max:255',
             'scheduled_at' => 'required|date',
             'status'       => 'required|in:open,closed,finished',
+            'event_tag'    => 'required|exists:event_tags,slug',
             'max_drivers'  => 'nullable|integer|min:1',
             'description'  => 'nullable|string',
             'image'        => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',

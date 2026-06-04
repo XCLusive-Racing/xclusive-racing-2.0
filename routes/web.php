@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
+use App\Http\Controllers\Admin\EventTagController;
 use App\Http\Controllers\Admin\FtpServerController;
 use App\Http\Controllers\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Admin\RaceController as AdminRaceController;
@@ -77,6 +78,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/races/{race}/results', [RaceResultController::class, 'create'])->name('races.results');
     Route::post('/races/{race}/results', [RaceResultController::class, 'store'])->name('races.results.store');
     Route::post('/races/{race}/results/ftp', [RaceResultController::class, 'ftpImport'])->name('races.results.ftp');
+
+    // Event Tags
+    Route::post('/event-tags', [EventTagController::class, 'store'])->name('event-tags.store');
+    Route::delete('/event-tags/{eventTag}', [EventTagController::class, 'destroy'])->name('event-tags.destroy');
 
     // Media Library
     Route::get('/media', [AdminMediaController::class, 'index'])->name('media.index');

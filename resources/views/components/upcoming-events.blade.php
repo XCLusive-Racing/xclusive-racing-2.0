@@ -1,60 +1,56 @@
 @php
-$events = [
-    [
-        'id'         => 1,
-        'game'       => 'acc',
-        'gameLabel'  => 'ACC',
-        'gameColor'  => '#7c3aed',
-        'eventColor' => '#dc2626',
-        'title'      => 'GT3 Sprint Cup',
-        'carClasses' => ['GT3'],
-        'track'      => 'Kyalami',
-        'duration'   => '20min Race',
-        'next'       => 'Tonight 20:00',
-        'logo'       => '/images/events/GT3 Sprint Cup v3.png',
-        'trackImage' => '/images/events/kyalami.png',
-        'minEntry'   => '4.0 SR',
-    ],
-    [
-        'id'         => 2,
-        'game'       => 'iracing',
-        'gameLabel'  => 'iRacing',
-        'gameColor'  => '#2563eb',
-        'title'      => 'The Ring',
-        'carClasses' => ['GT3'],
-        'track'      => 'Nürburgring',
-        'duration'   => '3 Laps',
-        'next'       => 'Tonight 21:00',
-        'image'      => null,
-    ],
-    [
-        'id'         => 3,
-        'game'       => 'lmu',
-        'gameLabel'  => 'Le Mans Ultimate',
-        'gameColor'  => '#ea580c',
-        'title'      => 'Endurance Series',
-        'carClasses' => ['HY', 'LMP2'],
-        'track'      => 'Le Mans',
-        'duration'   => '60min Race',
-        'next'       => 'Tomorrow 18:00',
-        'image'      => null,
-    ],
-    [
-        'id'         => 4,
-        'game'       => 'acc',
-        'gameLabel'  => 'ACC',
-        'gameColor'  => '#7c3aed',
-        'title'      => 'BMW M2 Cup',
-        'carClasses' => ['M2 CUP'],
-        'track'      => 'Brands Hatch',
-        'duration'   => '10min Race',
-        'next'       => 'Tomorrow 20:00',
-        'image'      => null,
-    ],
-];
+use App\Models\Race;
+
+$upcomingRaces = Race::where('scheduled_at', '>', now())
+    ->orderBy('scheduled_at')
+    ->limit(24)
+    ->get()
+    ->map(function ($race) {
+        $titleLower = strtolower($race->title ?? '');
+
+        if ($race->is_championship) {
+            $badge   = 'SR5 GRID';
+            $overlay = 'rgba(123,47,190,0.55)';
+        } elseif (str_contains($titleLower, 'multiclass') || str_contains($titleLower, 'endurance')) {
+            $badge   = 'MULTICLASS';
+            $overlay = 'rgba(0,210,120,0.45)';
+        } else {
+            $badge   = 'DAILY SPRINT';
+            $overlay = 'rgba(0,180,160,0.45)';
+        }
+
+        $gameShort = match($race->game) {
+            'acc'     => 'ACC',
+            'lmu'     => 'LMU',
+            'iracing' => 'iRACING',
+            'ac'      => 'AC RALLY',
+            default   => strtoupper($race->game),
+        };
+
+        $platforms = match($race->game) {
+            'acc'     => ['fa-brands fa-playstation', 'fa-brands fa-xbox'],
+            'lmu'     => ['fa-solid fa-desktop'],
+            'iracing' => ['fa-solid fa-desktop'],
+            'ac'      => ['fa-solid fa-desktop'],
+            default   => [],
+        };
+
+        return [
+            'id'        => $race->id,
+            'game'      => $race->game,
+            'image'     => $race->image ? asset('storage/' . $race->image) : null,
+            'badge'     => $badge,
+            'badgeSub'  => $gameShort,
+            'overlay'   => $overlay,
+            'dayTime'   => strtoupper($race->scheduledAtUk()->format('l')) . ' / ' . strtoupper($race->scheduledAtUk()->format('g:i A T')),
+            'dateMeta'  => $race->scheduledAtUk()->format('D, M d') . ($race->track ? ' | ' . $race->track : ''),
+            'url'       => route('race.show', $race),
+            'platforms' => $platforms,
+        ];
+    });
 @endphp
 
-<script>window.__xclEvents = @json($events);</script>
+<script>window.__xclEvents = @json($upcomingRaces);</script>
 
 <section id="events" class="upcoming-events-section py-5 px-3" style="position:relative"
          x-data="{
@@ -65,31 +61,29 @@ $events = [
                  return this.filter === 'all' ? this.events : this.events.filter(e => e.game === this.filter);
              },
              get visible() {
-                 return this.filtered.slice(this.page * 4, this.page * 4 + 4);
+                 return this.filtered.slice(this.page * 6, this.page * 6 + 6);
              },
              get totalPages() {
-                 return Math.ceil(this.filtered.length / 4);
+                 return Math.max(1, Math.ceil(this.filtered.length / 6));
              },
              setFilter(f) { this.filter = f; this.page = 0; },
              prev() { if (this.page > 0) this.page--; },
              next() { if (this.page < this.totalPages - 1) this.page++; }
          }">
 
-    {{-- Topo overlay --}}
     <div class="about-section__topo" style="background-image:url('/topo.png');"></div>
 
     <div class="container-xl" style="position:relative;z-index:1">
 
-        {{-- Title row --}}
+        {{-- Title --}}
         <div class="mb-3">
             <h2 class="fw-black text-uppercase fst-italic mb-0 about-section__heading"
                 style="font-size:clamp(1.2rem, 2.5vw, 1.8rem)">UPCOMING EVENTS</h2>
         </div>
 
-        {{-- Divider --}}
         <div class="section-divider mb-4" style="margin-left:0"></div>
 
-        {{-- Filter buttons + nav controls on same line --}}
+        {{-- Filter + nav --}}
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
             <div class="d-flex gap-2 flex-wrap">
                 <button @click="setFilter('all')"
@@ -109,6 +103,11 @@ $events = [
                         :class="filter === 'iracing' ? 'xcl-filter-btn--iracing-active' : ''"
                         class="xcl-filter-btn">
                     <img src="/images/home/icons/iR Logo.png" height="20" alt="iRacing">
+                </button>
+                <button @click="setFilter('ac')"
+                        :class="filter === 'ac' ? 'xcl-filter-btn--ac-active' : ''"
+                        class="xcl-filter-btn">
+                    <img src="/images/home/icons/AC R Logo.png" height="20" alt="AC Rally">
                 </button>
             </div>
 
@@ -131,87 +130,51 @@ $events = [
         </div>
 
         {{-- Cards --}}
-        <div class="row g-3">
+        <div class="row row-cols-3 g-3">
             <template x-if="visible.length === 0">
-                <div class="col-12 text-center py-5" style="color:#6b7280">No upcoming events for this platform.</div>
+                <div class="col-12 text-center py-5" style="color:#6b7280">
+                    No upcoming events for this platform.
+                </div>
             </template>
             <template x-for="event in visible" :key="event.id">
-                <div class="col-12 col-sm-6 col-xl-3">
-                    <div class="xcl-event-card h-100 d-flex flex-column"
-                         :style="event.eventColor ? 'border-color:' + event.eventColor + '55' : ''">
+                <div class="col">
+                    <div class="xcl-ec2">
 
-                        {{-- Image area --}}
-                        <div class="xcl-event-card__img" style="position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">
-                            <template x-if="event.trackImage">
-                                <img :src="event.trackImage" aria-hidden="true"
-                                     style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(5px);transform:scale(1.08);opacity:0.7">
+                        {{-- Image 16:9 --}}
+                        <div class="xcl-ec2__img-wrap">
+                            <template x-if="event.image">
+                                <img :src="event.image" :alt="event.badge" class="xcl-ec2__img">
                             </template>
-                            <template x-if="!event.trackImage && !event.logo && !event.image">
-                                <div class="xcl-event-card__img-placeholder" style="position:absolute;inset:0"></div>
+                            <template x-if="!event.image">
+                                <div class="xcl-ec2__img-placeholder"></div>
                             </template>
-                            <template x-if="event.logo">
-                                <img :src="event.logo" :alt="event.title"
-                                     style="position:relative;z-index:1;max-height:85%;max-width:80%;object-fit:contain;display:block">
-                            </template>
-                            <template x-if="event.image && !event.logo">
-                                <img :src="event.image" :alt="event.title" loading="lazy"
-                                     style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
-                            </template>
-                        </div>
 
-                        {{-- Platform color bar --}}
-                        <div class="xcl-event-card__bar"
-                             :style="'background:' + (event.eventColor || event.gameColor)"></div>
+                            {{-- Overlay --}}
+                            <div class="xcl-ec2__overlay" :style="'background:' + event.overlay"></div>
 
-                        {{-- Body --}}
-                        <div class="xcl-event-card__body d-flex flex-column flex-grow-1 p-3">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="xcl-event-card__badge fw-bold text-uppercase text-white"
-                                      :style="'background:' + (event.eventColor || event.gameColor)"
-                                      x-text="event.gameLabel"></span>
-                                <div class="d-flex gap-1 align-items-center">
-                                    <template x-if="event.minEntry">
-                                        <span class="xcl-event-card__min-entry" x-text="event.minEntry"></span>
-                                    </template>
-                                    <span class="xcl-event-card__status xcl-event-card__status--open">OPEN</span>
+                            {{-- Badge centered --}}
+                            <div class="xcl-ec2__badge-wrap">
+                                <div class="xcl-ec2__badge">
+                                    <div class="xcl-ec2__badge-main" x-text="event.badge"></div>
+                                    <div class="xcl-ec2__badge-sub" x-text="event.badgeSub"></div>
                                 </div>
                             </div>
 
-                            <h3 class="fw-black text-uppercase fst-italic text-white mb-2"
-                                style="font-size:.9rem" x-text="event.title"></h3>
-
-                            {{-- Car classes --}}
-                            <p class="xcl-event-card__track mb-1">
-                                Ranked Race in:
-                                <span class="fw-bold text-white"
-                                      x-text="event.carClasses ? event.carClasses.join(' / ') : ''"></span>
-                            </p>
-
-                            {{-- Track --}}
-                            <p class="xcl-event-card__track mb-3">
-                                Track: <span class="fw-bold text-white" x-text="event.track || '—'"></span>
-                            </p>
-
-                            <div class="d-flex gap-2 flex-wrap mt-auto">
-                                <span class="xcl-event-pill">
-                                    <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24" class="me-1">
-                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>
-                                    </svg>
-                                    <span x-text="event.duration"></span>
-                                </span>
-                                <span class="xcl-event-pill">
-                                    <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24" class="me-1">
-                                        <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/>
-                                    </svg>
-                                    <span x-text="'Next: ' + event.next"></span>
-                                </span>
+                            {{-- Platform icons bottom-left --}}
+                            <div class="xcl-ec2__platforms">
+                                <template x-for="icon in event.platforms" :key="icon">
+                                    <i :class="icon"></i>
+                                </template>
                             </div>
-
-                            <a href="/race"
-                               class="btn fw-black text-uppercase text-white w-100 mt-3"
-                               style="font-size:.8rem"
-                               :style="'background:' + (event.eventColor || event.gameColor)">VIEW EVENT</a>
                         </div>
+
+                        {{-- Info below image --}}
+                        <div class="xcl-ec2__body">
+                            <div class="xcl-ec2__time" x-text="event.dayTime"></div>
+                            <div class="xcl-ec2__meta" x-text="event.dateMeta"></div>
+                            <a :href="event.url" class="xcl-see-event-btn">SEE EVENT</a>
+                        </div>
+
                     </div>
                 </div>
             </template>
