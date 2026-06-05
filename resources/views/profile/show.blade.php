@@ -79,7 +79,7 @@
             <div class="row g-3">
                 <div class="col-md-6">
                     @if($nextEvent)
-                    <a href="{{ route('race.show', $nextEvent) }}" class="next-step-card">
+                    <a href="{{ route('events.show', $nextEvent) }}" class="next-step-card">
                         <div class="next-step-title mb-1">{{ $nextEvent->title }}</div>
                         <p class="mb-1">{{ $nextEvent->track }}</p>
                         <p class="mb-0 text-secondary" style="font-size:.8rem">
@@ -87,7 +87,7 @@
                         </p>
                     </a>
                     @else
-                    <a href="{{ url('/race') }}" class="next-step-card">
+                    <a href="{{ url('/events') }}" class="next-step-card">
                         <div class="next-step-title mb-2">FIND RACES</div>
                         <p>Browse and join upcoming racing events</p>
                     </a>
@@ -95,7 +95,7 @@
                 </div>
                 <div class="col-md-6">
                     @if($nextChampionship)
-                    <a href="{{ route('race.show', $nextChampionship) }}" class="next-step-card">
+                    <a href="{{ route('events.show', $nextChampionship) }}" class="next-step-card">
                         <div class="next-step-title mb-1">{{ $nextChampionship->title }}</div>
                         <p class="mb-1">{{ $nextChampionship->track }}</p>
                         <p class="mb-0 text-secondary" style="font-size:.8rem">
@@ -103,7 +103,7 @@
                         </p>
                     </a>
                     @else
-                    <a href="{{ url('/race') }}" class="next-step-card">
+                    <a href="{{ url('/events') }}" class="next-step-card">
                         <div class="next-step-title mb-2">CHAMPIONSHIP EVENTS</div>
                         <p>No upcoming championship events</p>
                     </a>

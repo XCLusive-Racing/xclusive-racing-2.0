@@ -284,7 +284,7 @@ $sbLeaderboard = User::where('elo_acc', '>', 0)
                                     </span>
                                 </div>
 
-                                <a href="{{ route('race.show', $sbNextEvent) }}" class="xcl-sb-next__join-btn">
+                                <a href="{{ route('events.show', $sbNextEvent) }}" class="xcl-sb-next__join-btn">
                                     JOIN EVENT
                                 </a>
                             </div>
@@ -371,7 +371,7 @@ $sbLeaderboard = User::where('elo_acc', '>', 0)
                                     <span class="xcl-sb-badge xcl-sb-badge--platform">{{ $upPlatLabel }}</span>
                                     <span class="xcl-sb-badge xcl-sb-badge--game">{{ $upGameLabel }}</span>
                                 </div>
-                                <a href="{{ route('race.show', $event) }}" class="xcl-sb-up-card__join">JOIN EVENT</a>
+                                <a href="{{ route('events.show', $event) }}" class="xcl-sb-up-card__join">JOIN EVENT</a>
                             </div>
                         </div>
                         @empty

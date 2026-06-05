@@ -23,9 +23,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/events/sidebar-data', [EventController::class, 'getSidebarData'])->name('events.sidebar-data');
 
-// Races - public
-Route::get('/race', [RaceController::class, 'index'])->name('race');
-Route::get('/race/{race}', [RaceController::class, 'show'])->name('race.show');
+// Events - public
+Route::get('/events', [RaceController::class, 'index'])->name('events.index');
+Route::get('/events/{race}', [RaceController::class, 'show'])->name('events.show');
 
 // Calendar
 Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
@@ -61,9 +61,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
-    // Race registration
-    Route::post('/race/{race}/register', [RaceController::class, 'register'])->name('race.register');
-    Route::delete('/race/{race}/register', [RaceController::class, 'unregister'])->name('race.unregister');
+    // Event registration
+    Route::post('/events/{race}/register', [RaceController::class, 'register'])->name('events.register');
+    Route::delete('/events/{race}/unregister', [RaceController::class, 'unregister'])->name('events.unregister');
 });
 
 // Admin

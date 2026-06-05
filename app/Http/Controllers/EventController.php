@@ -29,7 +29,7 @@ class EventController extends Controller
                 'title' => $r->title,
                 'track' => $r->track,
                 'time'  => strtoupper($r->scheduledAtUk()->format('D d M')) . ' · ' . $r->scheduledAtUk()->format('g:iA'),
-                'url'   => route('race.show', $r),
+                'url'   => route('events.show', $r),
             ]);
 
         $leaderboard = User::where('elo_acc', '>', 0)
@@ -52,7 +52,7 @@ class EventController extends Controller
                 'day'     => strtoupper($nextEvent->scheduledAtUk()->format('l')),
                 'time'    => strtoupper($nextEvent->scheduledAtUk()->format('gA T')),
                 'date'    => $nextEvent->scheduledAtUk()->format('D, M d'),
-                'url'     => route('race.show', $nextEvent),
+                'url'     => route('events.show', $nextEvent),
             ] : null,
             'upcomingEvents' => $upcomingEvents,
             'leaderboard'    => $leaderboard,

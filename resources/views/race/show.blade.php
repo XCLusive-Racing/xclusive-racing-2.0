@@ -7,7 +7,7 @@
     <div class="container-xl">
 
         <div class="mb-4 pt-3">
-            <a href="{{ route('race') }}" class="btn btn-link fw-bold text-uppercase text-xcl-purple text-decoration-none ps-0">
+            <a href="{{ route('events.index') }}" class="btn btn-link fw-bold text-uppercase text-xcl-purple text-decoration-none ps-0">
                 ← BACK TO EVENTS
             </a>
         </div>
@@ -189,7 +189,7 @@
                                 You are registered for this race!
                             </div>
                             @if($race->status === 'open')
-                            <form action="{{ route('race.unregister', $race) }}" method="POST">
+                            <form action="{{ route('events.unregister', $race) }}" method="POST">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-outline-danger fw-bold text-uppercase w-100">
@@ -201,7 +201,7 @@
                             @if($race->isFull())
                                 <p class="text-danger fw-bold">This race is full.</p>
                             @else
-                                <form action="{{ route('race.register', $race) }}" method="POST">
+                                <form action="{{ route('events.register', $race) }}" method="POST">
                                     @csrf
                                     <button type="submit"
                                             class="btn fw-black text-uppercase text-white w-100"

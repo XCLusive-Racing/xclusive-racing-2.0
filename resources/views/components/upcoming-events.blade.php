@@ -44,7 +44,7 @@ $upcomingRaces = Race::where('scheduled_at', '>', now())
             'badgeSub' => $gameShort,
             'dayTime'  => strtoupper($race->scheduledAtUk()->format('l')) . ' / ' . strtoupper($race->scheduledAtUk()->format('g:i A T')),
             'dateMeta' => $race->scheduledAtUk()->format('D, M d') . ($race->track ? ' | ' . $race->track : ''),
-            'url'      => route('race.show', $race),
+            'url'      => route('events.show', $race),
         ];
     });
 @endphp
@@ -123,7 +123,7 @@ $upcomingRaces = Race::where('scheduled_at', '>', now())
                         <polyline points="9,18 15,12 9,6"/>
                     </svg>
                 </button>
-                <a href="/race" class="btn fw-black text-uppercase text-white px-4 py-2"
+                <a href="/events" class="btn fw-black text-uppercase text-white px-4 py-2"
                    style="background:#7c3aed;font-size:.85rem">SEE ALL EVENTS</a>
             </div>
         </div>
