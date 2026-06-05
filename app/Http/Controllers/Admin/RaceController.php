@@ -132,7 +132,7 @@ class RaceController extends Controller
     private function resolveIcon(Request $request): ?string
     {
         if ($request->hasFile('icon')) {
-            return Media::createFromUpload($request->file('icon'), 'images/icons')->path;
+            return Media::createFromUpload($request->file('icon'), 'icon')->path;
         }
 
         return $request->filled('icon_path') ? $request->icon_path : null;

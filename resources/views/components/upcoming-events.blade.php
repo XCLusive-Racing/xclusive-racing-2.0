@@ -38,8 +38,8 @@ $upcomingRaces = Race::where('scheduled_at', '>', now())
         return [
             'id'       => $race->id,
             'game'     => $race->game,
-            'image'    => $race->image ? asset('storage/' . $race->image) : null,
-            'icon'     => $race->icon  ? asset('storage/' . $race->icon)  : null,
+            'image'    => $race->image_url,
+            'icon'     => $race->icon_url,
             'badge'    => $badge,
             'badgeSub' => $gameShort,
             'dayTime'  => strtoupper($race->scheduledAtUk()->format('l')) . ' / ' . strtoupper($race->scheduledAtUk()->format('g:i A T')),

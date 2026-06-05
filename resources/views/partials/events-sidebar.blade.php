@@ -196,7 +196,7 @@ $sbLeaderboard = User::where('elo_acc', '>', 0)
                             {{-- Hero image with overlays --}}
                             <div class="xcl-sb-next__hero">
                                 @if($sbNextEvent->image)
-                                    <img src="{{ asset('storage/'.$sbNextEvent->image) }}"
+                                    <img src="{{ $sbNextEvent->image_url }}"
                                          alt="{{ $sbNextEvent->title }}" loading="lazy"
                                          class="xcl-sb-next__hero-img">
                                 @else
@@ -208,7 +208,7 @@ $sbLeaderboard = User::where('elo_acc', '>', 0)
                                 {{-- Race icon centered on hero --}}
                                 @if($sbNextEvent->icon)
                                 <div class="xcl-sb-next__icon-overlay">
-                                    <img src="{{ asset('storage/'.$sbNextEvent->icon) }}" alt="{{ $sbNextEvent->title }}">
+                                    <img src="{{ $sbNextEvent->icon_url }}" alt="{{ $sbNextEvent->title }}">
                                 </div>
                                 @endif
 
@@ -336,7 +336,7 @@ $sbLeaderboard = User::where('elo_acc', '>', 0)
 
                             <div class="xcl-sb-up-card__img-wrap">
                                 @if($event->image)
-                                    <img src="{{ asset('storage/'.$event->image) }}"
+                                    <img src="{{ $event->image_url }}"
                                          alt="{{ $event->title }}" loading="lazy"
                                          class="xcl-sb-up-card__img">
                                 @else
@@ -347,7 +347,7 @@ $sbLeaderboard = User::where('elo_acc', '>', 0)
                                 {{-- Race icon centered on card --}}
                                 @if($event->icon)
                                 <div class="xcl-sb-up-card__icon-overlay">
-                                    <img src="{{ asset('storage/'.$event->icon) }}" alt="{{ $event->title }}">
+                                    <img src="{{ $event->icon_url }}" alt="{{ $event->title }}">
                                 </div>
                                 @endif
 

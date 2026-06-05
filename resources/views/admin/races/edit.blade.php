@@ -182,7 +182,7 @@
             <x-media-picker name="image" label="Background Image" :current="$race->image" />
 
             {{-- Event Icon --}}
-            @php $currentIconUrl = $race->icon ? asset('storage/'.$race->icon) : ''; @endphp
+            @php $currentIconUrl = $race->icon_url ?? ''; @endphp
             <div class="mb-4" x-data="{
                 iconPreview: '{{ $currentIconUrl }}',
                 iconPath: '{{ $race->icon ?? '' }}',

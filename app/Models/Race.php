@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Race extends Model
 {
@@ -70,6 +71,16 @@ class Race extends Model
     public function scheduledAtUk(): \Carbon\Carbon
     {
         return $this->scheduled_at->timezone('Europe/London');
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image ? Storage::disk('public')->url($this->image) : null;
+    }
+
+    public function getIconUrlAttribute(): ?string
+    {
+        return $this->icon ? Storage::disk('public')->url($this->icon) : null;
     }
 
     public function gameColor(): string

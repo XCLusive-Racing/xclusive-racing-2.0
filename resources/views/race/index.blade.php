@@ -149,14 +149,14 @@
                         <div class="xcl-ec2">
                             <div class="xcl-ec2__img-wrap">
                                 @if($race->image)
-                                    <img src="{{ asset('storage/'.$race->image) }}" alt="{{ $race->title }}" loading="lazy" class="xcl-ec2__img">
+                                    <img src="{{ $race->image_url }}" alt="{{ $race->title }}" loading="lazy" class="xcl-ec2__img">
                                 @else
                                     <div class="xcl-ec2__img-placeholder"></div>
                                 @endif
                                 <div class="xcl-ec2__badge-wrap">
                                     @if($race->icon)
                                     <div class="xcl-ec2__icon-badge">
-                                        <img src="{{ asset('storage/'.$race->icon) }}" alt="{{ $race->title }}" class="xcl-ec2__icon-badge-img">
+                                        <img src="{{ $race->icon_url }}" alt="{{ $race->title }}" class="xcl-ec2__icon-badge-img">
                                     </div>
                                     @else
                                     <div class="xcl-ec2__badge">

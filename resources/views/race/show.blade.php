@@ -33,7 +33,7 @@
         {{-- Hero banner --}}
         <div class="xcl-event-hero mb-4">
             @if($race->image)
-                <img src="{{ asset('storage/'.$race->image) }}" alt="{{ $race->title }}" class="xcl-event-hero__img">
+                <img src="{{ $race->image_url }}" alt="{{ $race->title }}" class="xcl-event-hero__img">
             @endif
             <div class="xcl-event-hero__gradient" style="background:linear-gradient(160deg,{{ $race->gameColor() }}44 0%,rgba(0,0,0,.85) 100%)"></div>
             <div class="xcl-event-hero__top-bar" style="background:{{ $race->gameColor() }}"></div>
@@ -51,7 +51,7 @@
             {{-- Icon centered --}}
             @if($race->icon)
             <div class="xcl-event-hero__icon">
-                <img src="{{ asset('storage/'.$race->icon) }}" alt="">
+                <img src="{{ $race->icon_url }}" alt="">
             </div>
             @endif
 

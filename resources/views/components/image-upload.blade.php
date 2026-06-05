@@ -1,6 +1,7 @@
 @props(['name' => 'image', 'label' => 'Event Image', 'current' => null, 'optional' => true])
 
-<div class="mb-4" x-data="{ preview: '{{ $current ? asset('storage/'.$current) : '' }}' }">
+@php $imageUploadUrl = $current ? \Illuminate\Support\Facades\Storage::disk('public')->url($current) : ''; @endphp
+<div class="mb-4" x-data="{ preview: '{{ $imageUploadUrl }}' }">
     <label class="form-label">
         {{ $label }}
         @if($optional)
