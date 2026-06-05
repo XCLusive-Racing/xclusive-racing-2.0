@@ -47,7 +47,7 @@ return [
             'report' => false,
         ],
 
-        'media' => [
+        'media' => env('R2_BUCKET') ? [
             'driver'                  => 's3',
             'key'                     => env('R2_ACCESS_KEY_ID'),
             'secret'                  => env('R2_SECRET_ACCESS_KEY'),
@@ -59,6 +59,13 @@ return [
             'visibility'              => 'public',
             'throw'                   => false,
             'report'                  => false,
+        ] : [
+            'driver'     => 'local',
+            'root'       => public_path('uploads'),
+            'url'        => env('APP_URL').'/uploads',
+            'visibility' => 'public',
+            'throw'      => false,
+            'report'     => false,
         ],
 
         's3' => [
