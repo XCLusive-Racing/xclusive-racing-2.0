@@ -186,12 +186,11 @@
     @endif
 
     {{-- Upload Modal --}}
-    <div x-show="uploadOpen"
-         :style="uploadOpen ? 'display:flex' : 'display:none'"
-         style="position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:1rem"
-         @click.self="uploadOpen = false"
-         x-data="{ source: 'upload', mediaType: 'image' }">
-        <div style="background:#fff;border-radius:12px;width:100%;max-width:520px;overflow:hidden">
+    <div x-show="uploadOpen" style="position:fixed;inset:0;z-index:9500;display:none">
+        <div style="width:100%;height:100%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:1rem"
+             @click.self="uploadOpen = false"
+             x-data="{ source: 'upload', mediaType: 'image' }">
+        <div style="background:#fff;border-radius:12px;width:100%;max-width:520px;overflow:hidden;max-height:90vh;overflow-y:auto">
             <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
                 <h3 class="fw-black text-uppercase fst-italic text-dark mb-0" style="font-size:1rem">Add Media</h3>
                 <button type="button" class="btn-close" @click="uploadOpen = false"></button>
@@ -320,30 +319,31 @@
 
             </div>
         </div>
+        </div>
     </div>
 
     {{-- Delete Confirm Modal --}}
-    <div x-show="confirmOpen"
-         :style="confirmOpen ? 'display:flex' : 'display:none'"
-         style="position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:1rem"
-         @click.self="confirmOpen = false">
-        <div style="background:#fff;border-radius:12px;width:100%;max-width:380px;overflow:hidden">
-            <div class="p-4">
-                <h3 class="fw-black text-uppercase fst-italic text-dark mb-2" style="font-size:1rem">Delete file?</h3>
-                <p class="text-secondary mb-4" style="font-size:.88rem">
-                    This permanently removes the file from storage. Any races or pages referencing it will lose the media.
-                </p>
-                <div class="d-flex gap-2">
-                    <form :action="deleteUrl" method="POST" class="d-inline">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#dc2626">
-                            Delete
+    <div x-show="confirmOpen" style="position:fixed;inset:0;z-index:9500;display:none">
+        <div style="width:100%;height:100%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:1rem"
+             @click.self="confirmOpen = false">
+            <div style="background:#fff;border-radius:12px;width:100%;max-width:380px;overflow:hidden">
+                <div class="p-4">
+                    <h3 class="fw-black text-uppercase fst-italic text-dark mb-2" style="font-size:1rem">Delete file?</h3>
+                    <p class="text-secondary mb-4" style="font-size:.88rem">
+                        This permanently removes the file from storage. Any races or pages referencing it will lose the media.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <form :action="deleteUrl" method="POST" class="d-inline">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#dc2626">
+                                Delete
+                            </button>
+                        </form>
+                        <button type="button" class="btn btn-outline-secondary fw-bold text-uppercase px-4" @click="confirmOpen = false">
+                            Cancel
                         </button>
-                    </form>
-                    <button type="button" class="btn btn-outline-secondary fw-bold text-uppercase px-4" @click="confirmOpen = false">
-                        Cancel
-                    </button>
+                    </div>
                 </div>
             </div>
         </div>
