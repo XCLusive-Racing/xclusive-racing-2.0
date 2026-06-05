@@ -187,7 +187,8 @@
 
     {{-- Upload Modal --}}
     <div x-show="uploadOpen"
-         style="position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:1rem"
+         :style="uploadOpen ? 'display:flex' : 'display:none'"
+         style="position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:1rem"
          @click.self="uploadOpen = false"
          x-data="{ source: 'upload', mediaType: 'image' }">
         <div style="background:#fff;border-radius:12px;width:100%;max-width:520px;overflow:hidden">
@@ -323,7 +324,8 @@
 
     {{-- Delete Confirm Modal --}}
     <div x-show="confirmOpen"
-         style="position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:1rem"
+         :style="confirmOpen ? 'display:flex' : 'display:none'"
+         style="position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:1rem"
          @click.self="confirmOpen = false">
         <div style="background:#fff;border-radius:12px;width:100%;max-width:380px;overflow:hidden">
             <div class="p-4">
