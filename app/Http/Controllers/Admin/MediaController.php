@@ -32,15 +32,41 @@ class MediaController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'file'  => 'required|file|mimes:jpg,jpeg,png,gif,webp,svg,mp4,webm,ogg,mov|max:204800',
-            'title' => 'nullable|string|max:255',
-        ]);
+        $source = $request->input('source', 'upload');
 
-        $media = Media::createFromUpload($request->file('file'));
+        if ($source === 'youtube') {
+            $request->validate([
+                'youtube_url' => ['required', 'string', function ($attr, $val, $fail) {
+                    if (!Media::extractYoutubeId($val)) {
+                        $fail('Please enter a valid YouTube URL.');
+                    }
+                }],
+                'title'    => 'nullable|string|max:255',
+                'category' => 'nullable|string|max:100',
+            ]);
 
-        if ($request->filled('title')) {
-            $media->update(['title' => $request->title]);
+            $media = Media::createFromYoutube(
+                $request->youtube_url,
+                $request->title,
+                $request->category,
+            );
+        } else {
+            $request->validate([
+                'file'     => 'required|file|mimes:jpg,jpeg,png,gif,webp,svg,mp4,webm,mov,mkv|max:204800',
+                'title'    => 'nullable|string|max:255',
+                'type'     => 'nullable|in:image,icon,video',
+                'category' => 'nullable|string|max:100',
+            ]);
+
+            $media = Media::createFromUpload(
+                $request->file('file'),
+                $request->input('type'),
+                $request->input('category'),
+            );
+
+            if ($request->filled('title')) {
+                $media->update(['title' => $request->title]);
+            }
         }
 
         if ($request->expectsJson()) {
@@ -53,7 +79,7 @@ class MediaController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.media.index')->with('success', 'File uploaded successfully.');
+        return redirect()->route('admin.media.index')->with('success', 'Media added successfully.');
     }
 
     public function destroy(Media $media)

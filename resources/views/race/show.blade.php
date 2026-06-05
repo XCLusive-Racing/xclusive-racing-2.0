@@ -3,167 +3,132 @@
 @section('title', $race->title . ' - XCLusive Racing')
 
 @section('content')
-<main class="xcl-page pb-5 px-3 bg-light">
-    <div class="container-xl">
+<main class="events-page xcl-page pb-5 px-3">
+    <div class="about-section__topo" style="background-image:url('/topo.png')"></div>
 
-        <div class="mb-4 pt-3">
-            <a href="{{ route('events.index') }}" class="btn btn-link fw-bold text-uppercase text-xcl-purple text-decoration-none ps-0">
-                ← BACK TO EVENTS
+    <div class="container-xl" style="position:relative;z-index:1">
+
+        {{-- Back button --}}
+        <div class="pt-4 mb-4">
+            <a href="{{ route('events.index') }}" class="events-back-btn text-decoration-none">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5M12 5l-7 7 7 7"/>
+                </svg>
+                BACK TO EVENTS
             </a>
         </div>
 
         @if(session('success'))
-        <div class="alert border-0 text-white fw-bold mb-4" style="background:#22c55e">
+        <div class="alert border-0 text-white fw-bold mb-4 rounded-3" style="background:#16a34a">
             {{ session('success') }}
         </div>
         @endif
 
         @if(session('error'))
-        <div class="alert border-0 text-white fw-bold mb-4" style="background:#ef4444">
+        <div class="alert border-0 text-white fw-bold mb-4 rounded-3" style="background:#dc2626">
             {{ session('error') }}
         </div>
         @endif
 
+        {{-- Hero banner --}}
+        <div class="xcl-event-hero mb-4">
+            @if($race->image)
+                <img src="{{ asset('storage/'.$race->image) }}" alt="{{ $race->title }}" class="xcl-event-hero__img">
+            @endif
+            <div class="xcl-event-hero__gradient" style="background:linear-gradient(160deg,{{ $race->gameColor() }}44 0%,rgba(0,0,0,.85) 100%)"></div>
+            <div class="xcl-event-hero__top-bar" style="background:{{ $race->gameColor() }}"></div>
+
+            {{-- Badges top-right --}}
+            <div class="xcl-event-hero__badges">
+                <span class="xcl-event-hero__badge" style="background:{{ $race->gameColor() }}">
+                    {{ $race->gameLabel() }}
+                </span>
+                <span class="xcl-event-hero__badge {{ $race->status === 'open' ? 'xcl-event-hero__badge--open' : ($race->status === 'finished' ? 'xcl-event-hero__badge--finished' : 'xcl-event-hero__badge--closed') }}">
+                    {{ strtoupper($race->status) }}
+                </span>
+            </div>
+
+            {{-- Icon centered --}}
+            @if($race->icon)
+            <div class="xcl-event-hero__icon">
+                <img src="{{ asset('storage/'.$race->icon) }}" alt="">
+            </div>
+            @endif
+
+            {{-- Title overlay --}}
+            <div class="xcl-event-hero__body">
+                <h1 class="xcl-event-hero__title">{{ $race->title }}</h1>
+                <div class="xcl-event-hero__meta-row">
+                    @if($race->track)
+                    <span class="xcl-event-hero__meta-item">
+                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                        </svg>
+                        {{ $race->track }}
+                    </span>
+                    @endif
+                    <span class="xcl-event-hero__meta-item">
+                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/>
+                        </svg>
+                        {{ $race->scheduledAtUk()->format('D d M Y · H:i T') }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
         <div class="row g-4">
 
-            {{-- Race info --}}
+            {{-- Left: info + results --}}
             <div class="col-lg-8">
-                <div class="bg-white rounded-3 shadow-sm overflow-hidden mb-4">
 
-                    {{-- Hero image --}}
-                    @php
-                    $showPlatforms = match($race->game) {
-                        'acc'     => [['fa-brands fa-playstation','PS5'],['fa-brands fa-xbox','Xbox']],
-                        'lmu'     => [['fa-brands fa-steam','Steam'],['fa-solid fa-desktop','PC']],
-                        'iracing' => [['fa-brands fa-steam','Steam'],['fa-solid fa-desktop','PC']],
-                        'ac'      => [['fa-brands fa-steam','Steam'],['fa-solid fa-desktop','PC']],
-                        default   => [],
-                    };
-                    @endphp
-                    @if($race->image)
-                    <div style="position:relative;aspect-ratio:21/9;overflow:hidden;background:#0b0b1a">
-                        <img src="{{ asset('storage/'.$race->image) }}" alt="{{ $race->title }}"
-                             style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
-                        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.35) 0%,transparent 40%,rgba(0,0,0,.72) 100%)"></div>
-
-                        {{-- Race icon centered --}}
-                        @if($race->icon)
-                        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;pointer-events:none">
-                            <img src="{{ asset('storage/'.$race->icon) }}" alt=""
-                                 style="width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 3px 16px rgba(0,0,0,.85));display:block">
-                        </div>
-                        @endif
-
-                        {{-- Platform icons bottom-left --}}
-                        @if($showPlatforms)
-                        <div style="position:absolute;bottom:.75rem;left:.85rem;display:flex;gap:.35rem;align-items:center;z-index:2">
-                            @foreach($showPlatforms as [$platIcon, $platLabel])
-                            <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:3px 9px;font-size:.68rem;font-weight:700;color:rgba(255,255,255,.85)">
-                                <i class="{{ $platIcon }}"></i> {{ $platLabel }}
-                            </span>
-                            @endforeach
-                        </div>
-                        @endif
-
-                        {{-- Game + status badges top-right --}}
-                        <div style="position:absolute;top:.75rem;right:.85rem;display:flex;gap:.35rem;z-index:2">
-                            <span class="badge text-white fw-bold text-uppercase"
-                                  style="background:{{ $race->gameColor() }};font-size:.72rem;padding:5px 10px">
-                                {{ $race->gameLabel() }}
-                            </span>
-                            <span class="badge fw-bold text-uppercase
-                                {{ $race->status === 'open' ? 'bg-success' : ($race->status === 'finished' ? 'bg-dark' : 'bg-secondary') }}"
-                                  style="font-size:.72rem;padding:5px 10px">
-                                {{ strtoupper($race->status) }}
-                            </span>
-                        </div>
-                    </div>
-                    @else
-                    <div class="p-2" style="background:{{ $race->gameColor() }}"></div>
-                    @endif
-
-                    <div class="p-4">
-                        @if(!$race->image)
-                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
-                            <span class="badge text-white fw-bold text-uppercase fs-6"
-                                  style="background:{{ $race->gameColor() }}">
-                                {{ $race->gameLabel() }}
-                            </span>
-                            <span class="badge text-uppercase fs-6
-                                {{ $race->status === 'open' ? 'bg-success' : ($race->status === 'finished' ? 'bg-dark' : 'bg-secondary') }}">
-                                {{ strtoupper($race->status) }}
-                            </span>
-                        </div>
-                        @endif
-
-                        <h1 class="display-5 fw-black text-uppercase fst-italic text-dark mb-3">{{ $race->title }}</h1>
-
-                        <div class="row g-3 mb-4">
-                            <div class="col-sm-6">
-                                <div class="d-flex align-items-center gap-2 text-secondary">
-                                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                                    </svg>
-                                    <span class="fw-bold">{{ $race->track }}</span>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="d-flex align-items-center gap-2 text-secondary">
-                                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/>
-                                    </svg>
-                                    <span class="fw-bold">{{ $race->scheduledAtUk()->format('D d M Y · H:i T') }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        @if($race->description)
-                        <p class="text-secondary fs-6">{{ $race->description }}</p>
-                        @endif
-                    </div>
+                {{-- Description --}}
+                @if($race->description)
+                <div class="xcl-event-card mb-4">
+                    <h2 class="xcl-event-card__heading">ABOUT THIS EVENT</h2>
+                    <p class="xcl-event-card__text">{{ $race->description }}</p>
                 </div>
+                @endif
 
-                {{-- Results (if finished) --}}
+                {{-- Results --}}
                 @if($race->status === 'finished' && $race->raceResults->isNotEmpty())
-                <div class="bg-white rounded-3 shadow-sm overflow-hidden">
-                    <div class="p-4 border-bottom">
-                        <h2 class="fw-black text-uppercase fst-italic text-dark fs-4 mb-0">RACE RESULTS</h2>
-                    </div>
+                <div class="xcl-event-card">
+                    <h2 class="xcl-event-card__heading">RACE RESULTS</h2>
                     <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
+                        <table class="xcl-results-table">
+                            <thead>
                                 <tr>
-                                    <th class="fw-bold text-uppercase small ps-4">Pos</th>
-                                    <th class="fw-bold text-uppercase small">Driver</th>
-                                    <th class="fw-bold text-uppercase small text-center">Fastest Lap</th>
-                                    <th class="fw-bold text-uppercase small text-center pe-4">Status</th>
+                                    <th>Pos</th>
+                                    <th>Driver</th>
+                                    <th class="text-center">Fastest Lap</th>
+                                    <th class="text-center">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($race->raceResults as $result)
                                 <tr>
-                                    <td class="ps-4">
+                                    <td>
                                         @if($result->position === 1)
-                                            <span class="fw-black" style="color:#f59e0b">P{{ $result->position }}</span>
+                                            <span class="xcl-results-table__pos xcl-results-table__pos--gold">P{{ $result->position }}</span>
                                         @elseif($result->position === 2)
-                                            <span class="fw-black text-secondary">P{{ $result->position }}</span>
+                                            <span class="xcl-results-table__pos xcl-results-table__pos--silver">P{{ $result->position }}</span>
                                         @elseif($result->position === 3)
-                                            <span class="fw-black" style="color:#92400e">P{{ $result->position }}</span>
+                                            <span class="xcl-results-table__pos xcl-results-table__pos--bronze">P{{ $result->position }}</span>
                                         @else
-                                            <span class="fw-bold text-secondary">P{{ $result->position }}</span>
+                                            <span class="xcl-results-table__pos">P{{ $result->position }}</span>
                                         @endif
                                     </td>
-                                    <td class="fw-bold">{{ $result->displayName() }}</td>
+                                    <td class="fw-bold text-white">{{ $result->displayName() }}</td>
                                     <td class="text-center">
                                         @if($result->fastest_lap)
-                                            <span class="badge" style="background:#7c3aed">FL</span>
+                                            <span class="xcl-results-table__fl">FL</span>
                                         @endif
                                     </td>
-                                    <td class="text-center pe-4">
+                                    <td class="text-center">
                                         @if($result->dnf)
-                                            <span class="badge bg-danger">DNF</span>
+                                            <span class="xcl-results-table__status xcl-results-table__status--dnf">DNF</span>
                                         @else
-                                            <span class="badge bg-success">FIN</span>
+                                            <span class="xcl-results-table__status xcl-results-table__status--fin">FIN</span>
                                         @endif
                                     </td>
                                 </tr>
@@ -173,79 +138,76 @@
                     </div>
                 </div>
                 @endif
+
             </div>
 
-            {{-- Sidebar --}}
+            {{-- Right: sidebar --}}
             <div class="col-lg-4">
 
-                {{-- Register card --}}
+                {{-- Registration --}}
                 @if($race->status !== 'finished')
-                <div class="bg-white rounded-3 shadow-sm p-4 mb-4">
-                    <h3 class="fw-black text-uppercase fst-italic text-dark fs-5 mb-3">REGISTRATION</h3>
+                <div class="xcl-event-card mb-4">
+                    <h3 class="xcl-event-card__heading">REGISTRATION</h3>
 
                     @auth
                         @if($isRegistered)
-                            <div class="alert border-0 text-white fw-bold mb-3" style="background:#22c55e; font-size:.9rem">
+                            <div class="xcl-event-reg-status xcl-event-reg-status--registered mb-3">
                                 You are registered for this race!
                             </div>
                             @if($race->status === 'open')
                             <form action="{{ route('events.unregister', $race) }}" method="POST">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-outline-danger fw-bold text-uppercase w-100">
-                                    UNREGISTER
-                                </button>
+                                <button type="submit" class="xcl-event-unreg-btn w-100">UNREGISTER</button>
                             </form>
                             @endif
                         @elseif($race->status === 'open')
                             @if($race->isFull())
-                                <p class="text-danger fw-bold">This race is full.</p>
+                                <div class="xcl-event-reg-status xcl-event-reg-status--full">This race is full.</div>
                             @else
                                 <form action="{{ route('events.register', $race) }}" method="POST">
                                     @csrf
-                                    <button type="submit"
-                                            class="btn fw-black text-uppercase text-white w-100"
+                                    <button type="submit" class="xcl-event-reg-btn w-100"
                                             style="background:{{ $race->gameColor() }}">
-                                        REGISTER NOW
+                                        REGISTER NOW →
                                     </button>
                                 </form>
                             @endif
                         @else
-                            <p class="text-secondary mb-0">Registration is closed.</p>
+                            <p class="xcl-event-card__text mb-0">Registration is closed.</p>
                         @endif
                     @else
-                        <p class="text-secondary mb-3">You need an account to register for events.</p>
-                        <a href="{{ route('login') }}" class="btn fw-black text-uppercase text-white w-100 mb-2"
+                        <p class="xcl-event-card__text mb-3">You need an account to register for events.</p>
+                        <a href="{{ route('login') }}" class="xcl-event-reg-btn w-100 d-block text-center text-decoration-none mb-2"
                            style="background:{{ $race->gameColor() }}">
-                            LOGIN TO REGISTER
+                            LOGIN TO REGISTER →
                         </a>
-                        <a href="{{ route('register') }}" class="btn btn-outline-secondary fw-bold text-uppercase w-100">
+                        <a href="{{ route('register') }}" class="xcl-event-unreg-btn w-100 d-block text-center text-decoration-none">
                             CREATE ACCOUNT
                         </a>
                     @endauth
                 </div>
                 @endif
 
-                {{-- Drivers list --}}
-                <div class="bg-white rounded-3 shadow-sm p-4">
-                    <h3 class="fw-black text-uppercase fst-italic text-dark fs-5 mb-3">
+                {{-- Drivers --}}
+                <div class="xcl-event-card">
+                    <h3 class="xcl-event-card__heading">
                         DRIVERS
-                        <span class="fs-6 fw-normal text-secondary ms-1">
-                            ({{ $race->registrations->count() }}{{ $race->max_drivers ? '/' . $race->max_drivers : '' }})
+                        <span class="xcl-event-card__heading-sub">
+                            {{ $race->registrations->count() }}{{ $race->max_drivers ? '/' . $race->max_drivers : '' }}
                         </span>
                     </h3>
 
                     @if($race->registrations->isEmpty())
-                        <p class="text-secondary small mb-0">No drivers registered yet. Be the first!</p>
+                        <p class="xcl-event-card__text mb-0">No drivers registered yet. Be the first!</p>
                     @else
-                        <div class="d-flex flex-column gap-2">
+                        <div class="xcl-drivers-list">
                             @foreach($race->registrations as $reg)
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black"
-                                     style="width:32px;height:32px;font-size:.8rem;background:{{ $race->gameColor() }};flex-shrink:0">
+                            <div class="xcl-drivers-list__item">
+                                <div class="xcl-drivers-list__avatar" style="background:{{ $race->gameColor() }}">
                                     {{ strtoupper(substr($reg->user->name, 0, 1)) }}
                                 </div>
-                                <span class="fw-bold small">{{ $reg->user->name }}</span>
+                                <span class="xcl-drivers-list__name">{{ $reg->user->name }}</span>
                             </div>
                             @endforeach
                         </div>
