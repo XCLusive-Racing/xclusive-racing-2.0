@@ -48,12 +48,17 @@ return [
         ],
 
         'media' => [
-            'driver' => 'local',
-            'root' => public_path('uploads'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/uploads',
-            'visibility' => 'public',
-            'throw' => false,
-            'report' => false,
+            'driver'                  => 's3',
+            'key'                     => env('R2_ACCESS_KEY_ID'),
+            'secret'                  => env('R2_SECRET_ACCESS_KEY'),
+            'region'                  => 'auto',
+            'bucket'                  => env('R2_BUCKET'),
+            'endpoint'                => 'https://9abeea09a90b90068e8912eecc626af3.r2.cloudflarestorage.com',
+            'use_path_style_endpoint' => true,
+            'url'                     => 'https://pub-e2d000e3fcd546e2a2f60bb689f78558.r2.dev',
+            'visibility'              => 'public',
+            'throw'                   => false,
+            'report'                  => false,
         ],
 
         's3' => [
