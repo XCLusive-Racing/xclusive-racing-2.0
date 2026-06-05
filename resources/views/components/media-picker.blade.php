@@ -1,4 +1,4 @@
-@props(['name' => 'image', 'label' => 'Image', 'current' => null, 'currentType' => 'image', 'optional' => true])
+@props(['name' => 'image', 'label' => 'Image', 'current' => null, 'currentType' => 'image', 'optional' => true, 'filterDefault' => 'all'])
 
 @once
 @push('scripts')
@@ -14,7 +14,7 @@ function xcMediaPicker(config) {
         galleryOpen: false,
         galleryItems: [],
         gallerySearch: '',
-        galleryFilter: 'all',
+        galleryFilter: config.filterDefault || 'all',
         galleryLoading: false,
         modalUploading: false,
 
@@ -110,7 +110,8 @@ function xcMediaPicker(config) {
     mediaPath: '{{ $current ?? '' }}',
     galleryUrl: '{{ route('admin.media.list') }}',
     uploadUrl: '{{ route('admin.media.store') }}',
-    csrfToken: '{{ csrf_token() }}'
+    csrfToken: '{{ csrf_token() }}',
+    filterDefault: '{{ $filterDefault }}'
 })">
 
     <label class="form-label">
@@ -230,6 +231,10 @@ function xcMediaPicker(config) {
                             class="btn btn-sm fw-bold text-uppercase"
                             :style="galleryFilter==='image' ? 'background:#7c3aed;color:white;border:1px solid #7c3aed' : 'background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb'"
                             style="font-size:.68rem;padding:.2rem .55rem">Images</button>
+                    <button type="button" @click="galleryFilter='icon'"
+                            class="btn btn-sm fw-bold text-uppercase"
+                            :style="galleryFilter==='icon' ? 'background:#d97706;color:white;border:1px solid #d97706' : 'background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb'"
+                            style="font-size:.68rem;padding:.2rem .55rem">Icons</button>
                     <button type="button" @click="galleryFilter='video'"
                             class="btn btn-sm fw-bold text-uppercase"
                             :style="galleryFilter==='video' ? 'background:#2563eb;color:white;border:1px solid #2563eb' : 'background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb'"
@@ -285,6 +290,12 @@ function xcMediaPicker(config) {
                                 <template x-if="item.type === 'image'">
                                     <img :src="item.url" :alt="item.original_name"
                                          style="width:100%;height:100%;object-fit:cover;display:block">
+                                </template>
+
+                                {{-- Icon preview --}}
+                                <template x-if="item.type === 'icon'">
+                                    <img :src="item.url" :alt="item.original_name"
+                                         style="width:70%;height:70%;object-fit:contain;display:block;margin:auto">
                                 </template>
 
                                 {{-- Video preview --}}
