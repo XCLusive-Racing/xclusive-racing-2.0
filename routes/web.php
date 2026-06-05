@@ -88,6 +88,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/media/list', [AdminMediaController::class, 'list'])->name('media.list');
     Route::post('/media', [AdminMediaController::class, 'store'])->name('media.store');
     Route::delete('/media/{media}', [AdminMediaController::class, 'destroy'])->name('media.destroy');
+    Route::post('/media/migrate-storage', [AdminMediaController::class, 'migrateStorage'])->name('admin.media.migrate-storage');
 
     // FTP Servers
     Route::get('/servers', [FtpServerController::class, 'index'])->name('servers.index');

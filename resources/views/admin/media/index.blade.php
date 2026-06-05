@@ -4,6 +4,14 @@
 @section('page-title', 'Media Library')
 
 @section('page-actions')
+    <form method="POST" action="{{ route('admin.media.migrate-storage') }}" class="d-inline">
+        @csrf
+        <button type="submit" class="btn btn-sm fw-black text-uppercase"
+                style="background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;font-size:.78rem"
+                onclick="return confirm('Move all existing media files to the new storage location?')">
+            Fix Old Media
+        </button>
+    </form>
     <button type="button"
             class="btn btn-sm fw-black text-uppercase text-white"
             style="background:#7c3aed;font-size:.78rem"
@@ -13,6 +21,9 @@
 @endsection
 
 @section('content')
+@if(session('success'))
+<div class="alert alert-success mb-4">{{ session('success') }}</div>
+@endif
 
 <div x-data="{
     uploadOpen: false,
