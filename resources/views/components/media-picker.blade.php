@@ -100,7 +100,7 @@ function xcMediaPicker(config) {
 @endonce
 
 @php
-    $currentUrl  = $current ? \Illuminate\Support\Facades\Storage::disk('public')->url($current) : '';
+    $currentUrl  = $current ? \Illuminate\Support\Facades\Storage::disk('media')->url($current) : '';
     $currentType = $currentType ?? 'image';
 @endphp
 

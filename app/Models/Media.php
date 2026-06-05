@@ -34,7 +34,7 @@ class Media extends Model
 
         $folder   = self::$folderMap[$type] ?? 'images/media';
         $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-        $path     = $file->storeAs($folder, $filename, 'public');
+        $path     = $file->storeAs($folder, $filename, 'media');
 
         return self::create([
             'filename'      => $filename,
@@ -76,7 +76,7 @@ class Media extends Model
         if ($this->isYoutube()) {
             return "https://www.youtube.com/embed/{$this->youtube_id}";
         }
-        return Storage::disk('public')->url($this->path);
+        return Storage::disk('media')->url($this->path);
     }
 
     public function getYoutubeThumbnailAttribute(): string

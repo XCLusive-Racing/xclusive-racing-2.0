@@ -75,12 +75,12 @@ class Race extends Model
 
     public function getImageUrlAttribute(): ?string
     {
-        return $this->image ? Storage::disk('public')->url($this->image) : null;
+        return $this->image ? Storage::disk('media')->url($this->image) : null;
     }
 
     public function getIconUrlAttribute(): ?string
     {
-        return $this->icon ? Storage::disk('public')->url($this->icon) : null;
+        return $this->icon ? Storage::disk('media')->url($this->icon) : null;
     }
 
     public function gameColor(): string
