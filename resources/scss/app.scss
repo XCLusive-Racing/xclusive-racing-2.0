@@ -291,11 +291,12 @@ html {
         writing-mode: vertical-rl;
         text-orientation: mixed;
         transform: rotate(180deg);
-        font-family: 'Rajdhani', sans-serif;
-        font-weight: 700;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-weight: 800;
+        font-style: italic;
         letter-spacing: 2px;
         text-transform: uppercase;
-        font-size: 11px;
+        font-size: 12px;
         white-space: nowrap;
         color: white;
         margin-top: 8px;
@@ -420,9 +421,10 @@ html {
 }
 
 .xcl-sidebar__logo-text {
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 700;
-    font-size: .85rem;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-style: italic;
+    font-size: 1.05rem;
     letter-spacing: .18em;
     text-transform: uppercase;
     color: white;
@@ -459,9 +461,10 @@ html {
         border: none;
         border-bottom: 2px solid transparent;
         color: rgba(255,255,255,.35);
-        font-family: 'Rajdhani', sans-serif;
-        font-weight: 700;
-        font-size: .72rem;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-weight: 800;
+        font-style: italic;
+        font-size: .92rem;
         letter-spacing: .1em;
         text-transform: uppercase;
         cursor: pointer;
@@ -511,9 +514,10 @@ html {
 
 // Column section titles
 .xcl-sb-title {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 1rem;
-    font-weight: 700;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 800;
+    font-style: italic;
     letter-spacing: .12em;
     text-transform: uppercase;
     margin-bottom: 1rem;
@@ -1410,7 +1414,11 @@ html {
 
     &__badge-wrap {
         position: absolute;
-        inset: 0;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 3;
+        pointer-events: none;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1418,15 +1426,16 @@ html {
 
     &__badge {
         background: #fff;
-        padding: 5px 12px;
+        padding: 8px 18px 10px;
         text-align: center;
         border-radius: 0;
     }
 
     &__badge-main {
-        font-family: 'Rajdhani', sans-serif;
-        font-weight: 700;
-        font-size: .8rem;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-weight: 800;
+        font-style: italic;
+        font-size: 1.15rem;
         text-transform: uppercase;
         letter-spacing: .07em;
         color: #111;
@@ -1434,27 +1443,45 @@ html {
     }
 
     &__badge-sub {
-        font-family: 'Rajdhani', sans-serif;
-        font-size: .62rem;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-weight: 700;
+        font-size: .82rem;
         text-transform: uppercase;
         letter-spacing: .05em;
         color: #555;
         line-height: 1.2;
-        margin-top: 1px;
+        margin-top: 2px;
     }
 
-    &__platforms {
-        position: absolute;
-        bottom: 8px;
-        left: 8px;
+    &__badge-platforms {
         display: flex;
-        gap: 5px;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 7px;
+        padding-top: 7px;
+        border-top: 1px solid rgba(0,0,0,.12);
 
         i {
-            color: #fff;
-            opacity: .85;
-            font-size: .8rem;
+            font-size: 1.1rem;
+            color: #222;
+            opacity: .8;
         }
+    }
+
+    &__icon-badge {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+
+    &__icon-badge-img {
+        width: 170px;
+        height: 170px;
+        object-fit: contain;
+        filter: drop-shadow(0 3px 18px rgba(0,0,0,.85));
+        display: block;
     }
 
     &__body {
@@ -2229,4 +2256,519 @@ table.dataTable thead th {
     &.sorting_asc::after  { content: ' ↑'; color: #7c3aed; font-size: .7rem; }
     &.sorting_desc::after { content: ' ↓'; color: #7c3aed; font-size: .7rem; }
     &.sorting::after      { content: ' ↕'; color: #d1d5db; font-size: .7rem; }
+}
+
+// ─── Events Sidebar Redesign ──────────────────────────────────────────────────
+
+// Compact single-row header variant
+.xcl-sidebar__header--v2 {
+    padding: .6rem 1.25rem;
+
+    .xcl-sidebar__header-top { gap: .75rem; }
+
+    .xcl-sidebar__game-filters { gap: .3rem; }
+}
+
+// Powered-by sponsor label
+.xcl-sb-powered-by {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.35);
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    &__name {
+        color: rgba(255,255,255,.7);
+        border: 1px solid rgba(255,255,255,.18);
+        padding: 1px 6px;
+        border-radius: 3px;
+        margin-left: 4px;
+    }
+}
+
+// Vertical CLOSE tab on the left edge of the open sidebar
+.xcl-sidebar__close-tab {
+    position: fixed;
+    right: min(1400px, 95vw);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 130px;
+    background: #4A1A7A;
+    border: 1px solid rgba(200,255,0,.25);
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    gap: 8px;
+    color: rgba(255,255,255,.65);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-style: italic;
+    font-size: .75rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    z-index: 1050;
+    box-shadow: -4px 0 16px rgba(123,47,190,.35);
+    transition: background .15s, color .15s;
+
+    span {
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        transform: rotate(180deg);
+    }
+
+    &:hover { background: #6D28D9; color: white; }
+}
+
+// ── Next Event: hero image block ──────────────────────────────────────────────
+
+.xcl-sb-next__hero {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #0F1428;
+    margin-bottom: .75rem;
+    border-radius: 4px;
+}
+
+.xcl-sb-next__hero-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.xcl-sb-next__hero-placeholder {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #1F1040 0%, #0B0B1A 100%);
+}
+
+.xcl-sb-next__hero-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(0,0,0,.6) 0%,
+        transparent 35%,
+        rgba(0,0,0,.72) 100%
+    );
+}
+
+.xcl-sb-next__icon-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+        width: 125px;
+        height: 125px;
+        object-fit: contain;
+        filter: drop-shadow(0 2px 14px rgba(0,0,0,.85));
+    }
+}
+
+.xcl-sb-next__title-overlay {
+    position: absolute;
+    bottom: 2.25rem;
+    left: .75rem;
+    right: .75rem;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-style: italic;
+    font-size: 1.5rem;
+    text-transform: uppercase;
+    color: white;
+    letter-spacing: .04em;
+    line-height: 1.05;
+    text-shadow: 0 2px 10px rgba(0,0,0,.85);
+}
+
+.xcl-sb-next__hero-platforms {
+    position: absolute;
+    bottom: .5rem;
+    left: .75rem;
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+}
+
+.xcl-sb-next__hero-platform-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(0,0,0,.65);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: .6rem;
+    font-weight: 700;
+    color: rgba(255,255,255,.85);
+
+    i { font-size: .68rem; }
+}
+
+// ── Countdown timer ───────────────────────────────────────────────────────────
+
+.xcl-sb-countdown {
+    &--hero {
+        position: absolute;
+        top: .6rem;
+        left: .75rem;
+        background: rgba(0,0,0,.7);
+        border: 1px solid rgba(200,255,0,.4);
+        padding: .2rem .55rem .25rem;
+        border-radius: 3px;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+
+        .xcl-sb-countdown__label {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: .58rem;
+            font-weight: 700;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: #C8FF00;
+            line-height: 1;
+            display: block;
+        }
+
+        .xcl-sb-countdown__time {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: .88rem;
+            color: white;
+            letter-spacing: .03em;
+            line-height: 1.2;
+        }
+    }
+
+    &--small {
+        display: inline-flex;
+        align-items: center;
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 700;
+        font-size: .78rem;
+        color: #C8FF00;
+        letter-spacing: .03em;
+        text-shadow: 0 1px 4px rgba(0,0,0,.8);
+    }
+}
+
+// ── Lobby counter ─────────────────────────────────────────────────────────────
+
+.xcl-sb-lobby {
+    position: absolute;
+    top: .6rem;
+    right: .75rem;
+    background: rgba(0,0,0,.7);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 3px;
+    padding: .2rem .5rem;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: .8rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    i { font-size: .68rem; opacity: .7; }
+
+    &--small {
+        position: static;
+        background: transparent;
+        border: none;
+        padding: 0;
+        font-size: .73rem;
+        color: rgba(255,255,255,.55);
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        text-shadow: 0 1px 4px rgba(0,0,0,.8);
+    }
+}
+
+// ── Info block below hero ─────────────────────────────────────────────────────
+
+.xcl-sb-next__info { padding: 0 .05rem; }
+
+.xcl-sb-next__badges-row {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    flex-wrap: wrap;
+    margin-bottom: .6rem;
+}
+
+.xcl-sb-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: .68rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: .15rem .45rem;
+    border-radius: 3px;
+
+    &--game {
+        background: rgba(123,47,190,.3);
+        color: #c4b5fd;
+        border: 1px solid rgba(123,47,190,.5);
+    }
+
+    &--sr {
+        background: rgba(34,197,94,.15);
+        color: #4ade80;
+        border: 1px solid rgba(34,197,94,.3);
+    }
+
+    &--open {
+        background: rgba(34,197,94,.15);
+        color: #4ade80;
+        border: 1px solid rgba(34,197,94,.3);
+    }
+
+    &--closed {
+        background: rgba(239,68,68,.1);
+        color: #f87171;
+        border: 1px solid rgba(239,68,68,.25);
+    }
+
+    &--platform {
+        background: rgba(255,255,255,.07);
+        color: rgba(255,255,255,.55);
+        border: 1px solid rgba(255,255,255,.13);
+    }
+}
+
+.xcl-sb-next__details {
+    display: flex;
+    flex-direction: column;
+    gap: .28rem;
+    margin-bottom: .65rem;
+    padding-bottom: .65rem;
+    border-bottom: 1px solid rgba(31,41,55,.9);
+}
+
+.xcl-sb-next__detail-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+}
+
+.xcl-sb-next__detail-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #8B9BB4;
+    flex-shrink: 0;
+}
+
+.xcl-sb-next__detail-value {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: .85rem;
+    font-weight: 700;
+    color: white;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.xcl-sb-next__footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: .6rem;
+    gap: .5rem;
+}
+
+.xcl-sb-next__duration-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(200,255,0,.1);
+    border: 1px solid rgba(200,255,0,.25);
+    color: #C8FF00;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: .7rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: .2rem .5rem;
+    border-radius: 3px;
+    flex-shrink: 0;
+
+    i { font-size: .55rem; }
+}
+
+.xcl-sb-next__next-time {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: .75rem;
+    font-weight: 700;
+    color: rgba(255,255,255,.55);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    text-align: right;
+    line-height: 1.25;
+}
+
+.xcl-sb-next__join-btn {
+    display: block;
+    width: 100%;
+    background: #7B2FBE;
+    color: white;
+    text-align: center;
+    padding: .6rem .75rem;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background .15s, transform .1s;
+
+    &:hover  { background: #6D28D9; color: white; }
+    &:active { transform: scale(.98); }
+}
+
+// ── Upcoming event stacked cards ──────────────────────────────────────────────
+
+.xcl-sb-up-card {
+    background: #111827;
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: .6rem;
+
+    &:last-child { margin-bottom: 0; }
+
+    &__img-wrap {
+        position: relative;
+        aspect-ratio: 16 / 7;
+        overflow: hidden;
+        background: #0F1428;
+    }
+
+    &__img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    &__img-placeholder {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, #1F1040 0%, #0B0B1A 100%);
+    }
+
+    &__img-gradient {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            to bottom,
+            rgba(0,0,0,.45) 0%,
+            transparent 30%,
+            rgba(0,0,0,.7) 100%
+        );
+    }
+
+    &__icon-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 3;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        img {
+            width: 90px;
+            height: 90px;
+            object-fit: contain;
+            filter: drop-shadow(0 1px 8px rgba(0,0,0,.85));
+        }
+    }
+
+    &__title {
+        position: absolute;
+        bottom: 1.6rem;
+        left: .55rem;
+        right: .55rem;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-weight: 800;
+        font-style: italic;
+        font-size: 1rem;
+        text-transform: uppercase;
+        color: white;
+        letter-spacing: .04em;
+        line-height: 1.1;
+        text-shadow: 0 1px 6px rgba(0,0,0,.9);
+    }
+
+    &__meta-row {
+        position: absolute;
+        bottom: .35rem;
+        left: .55rem;
+        right: .55rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    &__footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: .4rem .55rem;
+        gap: .35rem;
+        background: rgba(0,0,0,.2);
+    }
+
+    &__join {
+        flex-shrink: 0;
+        background: #7B2FBE;
+        color: white;
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 700;
+        font-size: .75rem;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        text-decoration: none;
+        padding: .25rem .55rem;
+        border-radius: 3px;
+        white-space: nowrap;
+        transition: background .15s;
+
+        &:hover { background: #8B3FCE; color: white; }
+    }
 }

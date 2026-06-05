@@ -25,10 +25,17 @@ class EventTagController extends Controller
         $data['slug'] = Str::slug($data['name']);
 
         if (EventTag::where('slug', $data['slug'])->exists()) {
+            if ($request->expectsJson()) {
+                return response()->json(['errors' => ['name' => ['A tag with this name already exists.']]], 422);
+            }
             return back()->withErrors(['name' => 'A tag with this name already exists.']);
         }
 
-        EventTag::create($data);
+        $tag = EventTag::create($data);
+
+        if ($request->expectsJson()) {
+            return response()->json($tag);
+        }
 
         return back()->withInput()->with('tag_success', 'Tag "' . $data['name'] . '" added.');
     }
@@ -36,6 +43,11 @@ class EventTagController extends Controller
     public function destroy(EventTag $eventTag)
     {
         $eventTag->delete();
+
+        if (request()->expectsJson() || request()->header('X-HTTP-Method-Override') === 'DELETE') {
+            return response()->json(['ok' => true]);
+        }
+
         return back()->with('success', 'Tag deleted.');
     }
 }

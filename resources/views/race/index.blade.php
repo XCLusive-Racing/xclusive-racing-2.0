@@ -153,19 +153,19 @@
                                         <div class="xcl-ec2__img-placeholder"></div>
                                     @endif
 
-                                    <div class="xcl-ec2__overlay" style="background:{{ $overlay }}"></div>
-
+                                    {{-- Center overlay: race icon OR text badge --}}
                                     <div class="xcl-ec2__badge-wrap">
+                                        @if($race->icon)
+                                        <div class="xcl-ec2__icon-badge">
+                                            <img src="{{ asset('storage/'.$race->icon) }}" alt="{{ $race->title }}"
+                                                 class="xcl-ec2__icon-badge-img">
+                                        </div>
+                                        @else
                                         <div class="xcl-ec2__badge">
                                             <div class="xcl-ec2__badge-main">{{ $badge }}</div>
                                             <div class="xcl-ec2__badge-sub">{{ $gameShort }}</div>
                                         </div>
-                                    </div>
-
-                                    <div class="xcl-ec2__platforms">
-                                        @foreach($platforms as [$icon, $label])
-                                            <i class="{{ $icon }}" title="{{ $label }}"></i>
-                                        @endforeach
+                                        @endif
                                     </div>
                                 </div>
 

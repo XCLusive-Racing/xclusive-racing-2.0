@@ -36,16 +36,15 @@ $upcomingRaces = Race::where('scheduled_at', '>', now())
         };
 
         return [
-            'id'        => $race->id,
-            'game'      => $race->game,
-            'image'     => $race->image ? asset('storage/' . $race->image) : null,
-            'badge'     => $badge,
-            'badgeSub'  => $gameShort,
-            'overlay'   => $overlay,
-            'dayTime'   => strtoupper($race->scheduledAtUk()->format('l')) . ' / ' . strtoupper($race->scheduledAtUk()->format('g:i A T')),
-            'dateMeta'  => $race->scheduledAtUk()->format('D, M d') . ($race->track ? ' | ' . $race->track : ''),
-            'url'       => route('race.show', $race),
-            'platforms' => $platforms,
+            'id'       => $race->id,
+            'game'     => $race->game,
+            'image'    => $race->image ? asset('storage/' . $race->image) : null,
+            'icon'     => $race->icon  ? asset('storage/' . $race->icon)  : null,
+            'badge'    => $badge,
+            'badgeSub' => $gameShort,
+            'dayTime'  => strtoupper($race->scheduledAtUk()->format('l')) . ' / ' . strtoupper($race->scheduledAtUk()->format('g:i A T')),
+            'dateMeta' => $race->scheduledAtUk()->format('D, M d') . ($race->track ? ' | ' . $race->track : ''),
+            'url'      => route('race.show', $race),
         ];
     });
 @endphp
@@ -149,21 +148,18 @@ $upcomingRaces = Race::where('scheduled_at', '>', now())
                                 <div class="xcl-ec2__img-placeholder"></div>
                             </template>
 
-                            {{-- Overlay --}}
-                            <div class="xcl-ec2__overlay" :style="'background:' + event.overlay"></div>
-
-                            {{-- Badge centered --}}
+                            {{-- Center overlay: icon or text badge --}}
                             <div class="xcl-ec2__badge-wrap">
-                                <div class="xcl-ec2__badge">
-                                    <div class="xcl-ec2__badge-main" x-text="event.badge"></div>
-                                    <div class="xcl-ec2__badge-sub" x-text="event.badgeSub"></div>
-                                </div>
-                            </div>
-
-                            {{-- Platform icons bottom-left --}}
-                            <div class="xcl-ec2__platforms">
-                                <template x-for="icon in event.platforms" :key="icon">
-                                    <i :class="icon"></i>
+                                <template x-if="event.icon">
+                                    <div class="xcl-ec2__icon-badge">
+                                        <img :src="event.icon" :alt="event.badge" class="xcl-ec2__icon-badge-img">
+                                    </div>
+                                </template>
+                                <template x-if="!event.icon">
+                                    <div class="xcl-ec2__badge">
+                                        <div class="xcl-ec2__badge-main" x-text="event.badge"></div>
+                                        <div class="xcl-ec2__badge-sub" x-text="event.badgeSub"></div>
+                                    </div>
                                 </template>
                             </div>
                         </div>

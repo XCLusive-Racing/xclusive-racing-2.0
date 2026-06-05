@@ -51,10 +51,13 @@ class RaceController extends Controller
             'description'  => 'nullable|string',
             'image'        => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',
             'image_path'   => 'nullable|string|max:500',
+            'icon'         => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
+            'icon_path'    => 'nullable|string|max:500',
         ]);
 
         $data['image'] = $this->resolveMedia($request);
-        unset($data['image_path']);
+        $data['icon']  = $this->resolveIcon($request);
+        unset($data['image_path'], $data['icon_path']);
 
         Race::create($data);
 
@@ -95,7 +98,7 @@ class RaceController extends Controller
 
         $data = $request->validate([
             'title'        => 'required|string|max:255',
-            'game'         => 'required|in:acc,lmu,iracing,acrally',
+            'game'         => 'required|in:acc,lmu,iracing,ac',
             'track'        => 'required|string|max:255',
             'scheduled_at' => 'required|date',
             'status'       => 'required|in:open,closed,finished',
@@ -104,10 +107,13 @@ class RaceController extends Controller
             'description'  => 'nullable|string',
             'image'        => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',
             'image_path'   => 'nullable|string|max:500',
+            'icon'         => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
+            'icon_path'    => 'nullable|string|max:500',
         ]);
 
         $data['image'] = $this->resolveMedia($request);
-        unset($data['image_path']);
+        $data['icon']  = $this->resolveIcon($request);
+        unset($data['image_path'], $data['icon_path']);
 
         $race->update($data);
 
@@ -121,5 +127,14 @@ class RaceController extends Controller
         }
 
         return $request->filled('image_path') ? $request->image_path : null;
+    }
+
+    private function resolveIcon(Request $request): ?string
+    {
+        if ($request->hasFile('icon')) {
+            return Media::createFromUpload($request->file('icon'), 'images/icons')->path;
+        }
+
+        return $request->filled('icon_path') ? $request->icon_path : null;
     }
 }

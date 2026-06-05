@@ -29,8 +29,61 @@
             {{-- Race info --}}
             <div class="col-lg-8">
                 <div class="bg-white rounded-3 shadow-sm overflow-hidden mb-4">
+
+                    {{-- Hero image --}}
+                    @php
+                    $showPlatforms = match($race->game) {
+                        'acc'     => [['fa-brands fa-playstation','PS5'],['fa-brands fa-xbox','Xbox']],
+                        'lmu'     => [['fa-brands fa-steam','Steam'],['fa-solid fa-desktop','PC']],
+                        'iracing' => [['fa-brands fa-steam','Steam'],['fa-solid fa-desktop','PC']],
+                        'ac'      => [['fa-brands fa-steam','Steam'],['fa-solid fa-desktop','PC']],
+                        default   => [],
+                    };
+                    @endphp
+                    @if($race->image)
+                    <div style="position:relative;aspect-ratio:21/9;overflow:hidden;background:#0b0b1a">
+                        <img src="{{ asset('storage/'.$race->image) }}" alt="{{ $race->title }}"
+                             style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
+                        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.35) 0%,transparent 40%,rgba(0,0,0,.72) 100%)"></div>
+
+                        {{-- Race icon centered --}}
+                        @if($race->icon)
+                        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;pointer-events:none">
+                            <img src="{{ asset('storage/'.$race->icon) }}" alt=""
+                                 style="width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 3px 16px rgba(0,0,0,.85));display:block">
+                        </div>
+                        @endif
+
+                        {{-- Platform icons bottom-left --}}
+                        @if($showPlatforms)
+                        <div style="position:absolute;bottom:.75rem;left:.85rem;display:flex;gap:.35rem;align-items:center;z-index:2">
+                            @foreach($showPlatforms as [$platIcon, $platLabel])
+                            <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:3px 9px;font-size:.68rem;font-weight:700;color:rgba(255,255,255,.85)">
+                                <i class="{{ $platIcon }}"></i> {{ $platLabel }}
+                            </span>
+                            @endforeach
+                        </div>
+                        @endif
+
+                        {{-- Game + status badges top-right --}}
+                        <div style="position:absolute;top:.75rem;right:.85rem;display:flex;gap:.35rem;z-index:2">
+                            <span class="badge text-white fw-bold text-uppercase"
+                                  style="background:{{ $race->gameColor() }};font-size:.72rem;padding:5px 10px">
+                                {{ $race->gameLabel() }}
+                            </span>
+                            <span class="badge fw-bold text-uppercase
+                                {{ $race->status === 'open' ? 'bg-success' : ($race->status === 'finished' ? 'bg-dark' : 'bg-secondary') }}"
+                                  style="font-size:.72rem;padding:5px 10px">
+                                {{ strtoupper($race->status) }}
+                            </span>
+                        </div>
+                    </div>
+                    @else
                     <div class="p-2" style="background:{{ $race->gameColor() }}"></div>
+                    @endif
+
                     <div class="p-4">
+                        @if(!$race->image)
                         <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
                             <span class="badge text-white fw-bold text-uppercase fs-6"
                                   style="background:{{ $race->gameColor() }}">
@@ -41,6 +94,7 @@
                                 {{ strtoupper($race->status) }}
                             </span>
                         </div>
+                        @endif
 
                         <h1 class="display-5 fw-black text-uppercase fst-italic text-dark mb-3">{{ $race->title }}</h1>
 
