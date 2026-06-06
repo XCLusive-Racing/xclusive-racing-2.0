@@ -9,7 +9,7 @@ window.__xclTeams = [
 ];
 </script>
 
-<section class="meet-team-section py-5"
+<section id="teams" class="meet-team-section py-5"
          x-data="{
              active: 0,
              slideClass: '',

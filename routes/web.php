@@ -1,13 +1,16 @@
 <?php
 
 use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
+use App\Http\Controllers\Admin\EventTagController;
 use App\Http\Controllers\Admin\FtpServerController;
+use App\Http\Controllers\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Admin\RaceController as AdminRaceController;
 use App\Http\Controllers\Admin\RaceResultController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordSetupController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\SteamController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\HomeController;
@@ -20,9 +23,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/events/sidebar-data', [EventController::class, 'getSidebarData'])->name('events.sidebar-data');
 
-// Races - public
-Route::get('/race', [RaceController::class, 'index'])->name('race');
-Route::get('/race/{race}', [RaceController::class, 'show'])->name('race.show');
+// Events - public
+Route::get('/events', [RaceController::class, 'index'])->name('events.index');
+Route::get('/events/{race}', [RaceController::class, 'show'])->name('events.show');
 
 // Calendar
 Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
@@ -42,6 +45,10 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
+// Steam OAuth
+Route::get('/auth/steam', [SteamController::class, 'redirect'])->name('auth.steam');
+Route::get('/auth/steam/callback', [SteamController::class, 'callback'])->name('auth.steam.callback');
+
 // Password setup (for imported users)
 Route::middleware('auth')->group(function () {
     Route::get('/password/setup', [PasswordSetupController::class, 'show'])->name('password.setup');
@@ -54,9 +61,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
-    // Race registration
-    Route::post('/race/{race}/register', [RaceController::class, 'register'])->name('race.register');
-    Route::delete('/race/{race}/register', [RaceController::class, 'unregister'])->name('race.unregister');
+    // Event registration
+    Route::post('/events/{race}/register', [RaceController::class, 'register'])->name('events.register');
+    Route::delete('/events/{race}/unregister', [RaceController::class, 'unregister'])->name('events.unregister');
 });
 
 // Admin
@@ -71,6 +78,16 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/races/{race}/results', [RaceResultController::class, 'create'])->name('races.results');
     Route::post('/races/{race}/results', [RaceResultController::class, 'store'])->name('races.results.store');
     Route::post('/races/{race}/results/ftp', [RaceResultController::class, 'ftpImport'])->name('races.results.ftp');
+
+    // Event Tags
+    Route::post('/event-tags', [EventTagController::class, 'store'])->name('event-tags.store');
+    Route::delete('/event-tags/{eventTag}', [EventTagController::class, 'destroy'])->name('event-tags.destroy');
+
+    // Media Library
+    Route::get('/media', [AdminMediaController::class, 'index'])->name('media.index');
+    Route::get('/media/list', [AdminMediaController::class, 'list'])->name('media.list');
+    Route::post('/media', [AdminMediaController::class, 'store'])->name('media.store');
+    Route::delete('/media/{media}', [AdminMediaController::class, 'destroy'])->name('media.destroy');
 
     // FTP Servers
     Route::get('/servers', [FtpServerController::class, 'index'])->name('servers.index');

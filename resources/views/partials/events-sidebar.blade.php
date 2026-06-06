@@ -5,21 +5,16 @@ use App\Models\User;
 $now = now();
 
 $sbNextEvent = Race::where('scheduled_at', '>', $now)
+    ->withCount('registrations')
     ->orderBy('scheduled_at')
     ->first();
 
 $sbUpcoming = Race::where('scheduled_at', '>', $now)
+    ->withCount('registrations')
     ->when($sbNextEvent, fn($q) => $q->where('id', '!=', $sbNextEvent->id))
     ->orderBy('scheduled_at')
-    ->limit(3)
+    ->limit(4)
     ->get();
-
-$sbEventInfo = [
-    'CAR CLASS' => $sbNextEvent?->title ?? '—',
-    'TEMP'      => '—',
-    'CLOUDS'    => '—',
-    'RAIN'      => '0%',
-];
 
 $sbLeaderboard = User::where('elo_acc', '>', 0)
     ->orderByDesc('elo_acc')
@@ -32,18 +27,6 @@ $sbLeaderboard = User::where('elo_acc', '>', 0)
         'country' => strtoupper($u->country ?? 'XX'),
         'gain'    => (int)($u->elo_acc ?? 0),
     ]);
-
-$sbPlatforms = [
-    'acc'     => ['PS', 'XB'],
-    'lmu'     => ['PC'],
-    'iracing' => ['PC'],
-];
-
-$sbBadges = [
-    ['label' => 'DAILY SPRINT', 'bg' => '#7B2FBE', 'color' => '#fff'],
-    ['label' => 'DYS GRD',      'bg' => '#16a34a', 'color' => '#fff'],
-    ['label' => 'ROOKIES ONLY', 'bg' => '#ea580c', 'color' => '#fff'],
-];
 @endphp
 
 <script>window.__xclLeaderboard = @json($sbLeaderboard);</script>
@@ -54,50 +37,20 @@ $sbBadges = [
     gameFilter: 'all',
     searchQuery: '',
     currentPage: 1,
-    sortCol: 'pos',
-    sortDir: 'asc',
     leaderboard: window.__xclLeaderboard || [],
-
     get filteredLeaderboard() {
         const q = this.searchQuery.toLowerCase();
-        let data = q
+        return q
             ? this.leaderboard.filter(d => d.name.toLowerCase().includes(q))
             : [...this.leaderboard];
-
-        data.sort((a, b) => {
-            let av = a[this.sortCol], bv = b[this.sortCol];
-            if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
-            if (av < bv) return this.sortDir === 'asc' ? -1 : 1;
-            if (av > bv) return this.sortDir === 'asc' ? 1 : -1;
-            return 0;
-        });
-        return data;
     },
-
+    get totalPages() {
+        return Math.max(1, Math.ceil(this.filteredLeaderboard.length / 10));
+    },
     get paginatedLeaderboard() {
         const start = (this.currentPage - 1) * 10;
         return this.filteredLeaderboard.slice(start, start + 10);
     },
-
-    get totalPages() {
-        return Math.max(1, Math.ceil(this.filteredLeaderboard.length / 10));
-    },
-
-    toggleSort(col) {
-        if (this.sortCol === col) {
-            this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
-        } else {
-            this.sortCol = col;
-            this.sortDir = 'asc';
-        }
-        this.currentPage = 1;
-    },
-
-    sortIcon(col) {
-        if (this.sortCol !== col) return '↕';
-        return this.sortDir === 'asc' ? '↑' : '↓';
-    },
-
     init() {
         this.$watch('open', val => {
             document.body.style.overflow = val ? 'hidden' : '';
@@ -106,7 +59,7 @@ $sbBadges = [
     }
 }" @keydown.escape.window="open = false">
 
-    {{-- ── Trigger tab ─────────────────────────────────────────────────────── --}}
+    {{-- ── Trigger tab ──────────────────────────────────────────────────────── --}}
     <button
         class="xcl-sidebar-trigger"
         :class="{ 'xcl-sidebar-trigger--open': open }"
@@ -131,46 +84,57 @@ $sbBadges = [
          aria-hidden="true">
     </div>
 
+    {{-- ── Vertical CLOSE tab (left edge of sidebar, outside overflow:hidden) ── --}}
+    <button class="xcl-sidebar__close-tab"
+            x-show="open"
+            @click="open = false"
+            aria-label="Close panel"
+            style="display:none">
+        <svg width="9" height="9" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+        <span>CLOSE</span>
+    </button>
+
     {{-- ── Sidebar panel ───────────────────────────────────────────────────── --}}
     <aside class="xcl-sidebar" :class="{ 'xcl-sidebar--open': open }" aria-label="Events dashboard">
 
         {{-- Header --}}
-        <div class="xcl-sidebar__header">
+        <div class="xcl-sidebar__header xcl-sidebar__header--v2">
             <div class="xcl-sidebar__header-top">
-                <span class="xcl-sidebar__logo-text">XCL EVENTS DASHBOARD</span>
-                <button class="xcl-sidebar__close" @click="open = false" aria-label="Close">&#215;</button>
-            </div>
-            <div class="xcl-sidebar__game-filters">
-                <button class="xcl-sb-game-btn"
-                        :class="{ 'active': gameFilter === 'all' }"
-                        @click="gameFilter = 'all'"
-                        title="All games">
-                    <i class="fa-solid fa-grip"></i>
-                </button>
-                <button class="xcl-sb-game-btn xcl-sb-game-btn--acc"
-                        :class="{ 'active': gameFilter === 'acc' }"
-                        @click="gameFilter = 'acc'"
-                        title="Assetto Corsa Competizione">
-                    <img src="/images/home/icons/ACC Logo.png" alt="ACC">
-                </button>
-                <button class="xcl-sb-game-btn xcl-sb-game-btn--lmu"
-                        :class="{ 'active': gameFilter === 'lmu' }"
-                        @click="gameFilter = 'lmu'"
-                        title="Le Mans Ultimate">
-                    <img src="/images/home/icons/LM Logo.png" alt="LMU">
-                </button>
-                <button class="xcl-sb-game-btn xcl-sb-game-btn--iracing"
-                        :class="{ 'active': gameFilter === 'iracing' }"
-                        @click="gameFilter = 'iracing'"
-                        title="iRacing">
-                    <img src="/images/home/icons/iR Logo.png" alt="iRacing">
-                </button>
-                <button class="xcl-sb-game-btn xcl-sb-game-btn--ac"
-                        :class="{ 'active': gameFilter === 'ac' }"
-                        @click="gameFilter = 'ac'"
-                        title="AC Rally">
-                    <img src="/images/home/icons/AC R Logo.png" alt="AC Rally">
-                </button>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="xcl-sidebar__logo-text">XCL EVENTS DASHBOARD</span>
+                    <div class="xcl-sidebar__game-filters">
+                        <button class="xcl-sb-game-btn"
+                                :class="{ 'active': gameFilter === 'all' }"
+                                @click="gameFilter = 'all'" title="All games">
+                            <i class="fa-solid fa-grip"></i>
+                        </button>
+                        <button class="xcl-sb-game-btn xcl-sb-game-btn--acc"
+                                :class="{ 'active': gameFilter === 'acc' }"
+                                @click="gameFilter = 'acc'" title="Assetto Corsa Competizione">
+                            <img src="/images/home/icons/ACC Logo.png" alt="ACC">
+                        </button>
+                        <button class="xcl-sb-game-btn xcl-sb-game-btn--lmu"
+                                :class="{ 'active': gameFilter === 'lmu' }"
+                                @click="gameFilter = 'lmu'" title="Le Mans Ultimate">
+                            <img src="/images/home/icons/LM Logo.png" alt="LMU">
+                        </button>
+                        <button class="xcl-sb-game-btn xcl-sb-game-btn--iracing"
+                                :class="{ 'active': gameFilter === 'iracing' }"
+                                @click="gameFilter = 'iracing'" title="iRacing">
+                            <img src="/images/home/icons/iR Logo.png" alt="iRacing">
+                        </button>
+                        <button class="xcl-sb-game-btn xcl-sb-game-btn--ac"
+                                :class="{ 'active': gameFilter === 'ac' }"
+                                @click="gameFilter = 'ac'" title="AC Rally">
+                            <img src="/images/home/icons/AC R Logo.png" alt="AC Rally">
+                        </button>
+                    </div>
+                </div>
+                <div class="xcl-sb-powered-by">
+                    POWERED BY <span class="xcl-sb-powered-by__name">[ SPONSOR ]</span>
+                </div>
             </div>
         </div>
 
@@ -198,33 +162,131 @@ $sbBadges = [
                         </div>
 
                         @if($sbNextEvent)
-                        <div class="xcl-sb-next">
-                            <div class="xcl-sb-next__img-wrap">
+                        @php
+                            $nextGameLabel = match($sbNextEvent->game) {
+                                'acc' => 'ACC', 'lmu' => 'LMU',
+                                'iracing' => 'iRACING', 'ac' => 'AC RALLY',
+                                default => strtoupper($sbNextEvent->game)
+                            };
+                            $nextPlatIcons = match($sbNextEvent->game) {
+                                'acc'     => [['fa-brands fa-playstation','PS5'], ['fa-brands fa-xbox','Xbox']],
+                                'lmu'     => [['fa-brands fa-steam','Steam'], ['fa-solid fa-desktop','PC']],
+                                'iracing' => [['fa-brands fa-steam','Steam'], ['fa-solid fa-desktop','PC']],
+                                'ac'      => [['fa-brands fa-steam','Steam'], ['fa-solid fa-desktop','PC']],
+                                default   => [['fa-solid fa-desktop','PC']],
+                            };
+                        @endphp
+                        <div class="xcl-sb-next"
+                             x-data="{
+                                 d: 0, h: 0, m: 0, s: 0,
+                                 init() {
+                                     const t = new Date('{{ $sbNextEvent->scheduled_at->toIso8601String() }}');
+                                     const tick = () => {
+                                         const diff = t - new Date();
+                                         if (diff <= 0) { this.d=this.h=this.m=this.s=0; return; }
+                                         this.d = Math.floor(diff/86400000);
+                                         this.h = Math.floor((diff%86400000)/3600000);
+                                         this.m = Math.floor((diff%3600000)/60000);
+                                         this.s = Math.floor((diff%60000)/1000);
+                                     };
+                                     tick(); setInterval(tick, 1000);
+                                 }
+                             }">
+
+                            {{-- Hero image with overlays --}}
+                            <div class="xcl-sb-next__hero">
                                 @if($sbNextEvent->image)
-                                    <img src="{{ asset('storage/'.$sbNextEvent->image) }}"
-                                         alt="{{ $sbNextEvent->title }}" loading="lazy">
+                                    <img src="{{ $sbNextEvent->image_url }}"
+                                         alt="{{ $sbNextEvent->title }}" loading="lazy"
+                                         class="xcl-sb-next__hero-img">
                                 @else
-                                    <div style="width:100%;aspect-ratio:16/9;background:linear-gradient(135deg,#1F1040 0%,#0B0B1A 100%)"></div>
+                                    <div class="xcl-sb-next__hero-placeholder"></div>
                                 @endif
-                                <span class="xcl-sb-next__badge">DAILY SPRINT</span>
-                                <div class="xcl-sb-next__platforms">
-                                    @foreach($sbPlatforms[$sbNextEvent->game] ?? [] as $platform)
-                                        <span class="xcl-sb-next__platform">{{ $platform }}</span>
+
+                                <div class="xcl-sb-next__hero-gradient"></div>
+
+                                {{-- Race icon centered on hero --}}
+                                @if($sbNextEvent->icon)
+                                <div class="xcl-sb-next__icon-overlay">
+                                    <img src="{{ $sbNextEvent->icon_url }}" alt="{{ $sbNextEvent->title }}">
+                                </div>
+                                @endif
+
+                                {{-- Countdown top-left --}}
+                                <div class="xcl-sb-countdown xcl-sb-countdown--hero">
+                                    <span class="xcl-sb-countdown__label">STARTS IN</span>
+                                    <span class="xcl-sb-countdown__time">
+                                        <span x-text="String(d).padStart(2,'0')"></span>D&nbsp;<span x-text="String(h).padStart(2,'0')"></span>H&nbsp;<span x-text="String(m).padStart(2,'0')"></span>M&nbsp;<span x-text="String(s).padStart(2,'0')"></span>S
+                                    </span>
+                                </div>
+
+                                {{-- Lobby counter top-right --}}
+                                <div class="xcl-sb-lobby">
+                                    <i class="fa-solid fa-comments"></i>
+                                    <span>{{ $sbNextEvent->registrations_count }} / {{ $sbNextEvent->max_drivers ?? '∞' }}</span>
+                                </div>
+
+                                {{-- Race name big overlay --}}
+                                <div class="xcl-sb-next__title-overlay">
+                                    {{ strtoupper($sbNextEvent->title ?? $sbNextEvent->gameLabel()) }}
+                                </div>
+
+                                {{-- Platform icons bottom --}}
+                                <div class="xcl-sb-next__hero-platforms">
+                                    @foreach($nextPlatIcons as [$icon, $label])
+                                    <span class="xcl-sb-next__hero-platform-icon">
+                                        <i class="{{ $icon }}"></i> {{ $label }}
+                                    </span>
                                     @endforeach
                                 </div>
                             </div>
 
-                            <p class="xcl-sb-next__time">
-                                {{ strtoupper($sbNextEvent->scheduledAtUk()->format('l')) }} /
-                                {{ strtoupper($sbNextEvent->scheduledAtUk()->format('gA T')) }}
-                            </p>
-                            <p class="xcl-sb-next__circuit">
-                                {{ $sbNextEvent->scheduledAtUk()->format('D, M d') }}
-                                @if($sbNextEvent->track) | {{ $sbNextEvent->track }} @endif
-                            </p>
-                            <div class="xcl-sb-next__actions">
-                                <a href="{{ route('race.show', $sbNextEvent) }}" class="xcl-sb-next__more-info">More Info</a>
-                                <a href="{{ route('race.show', $sbNextEvent) }}" class="xcl-sb-next__enter">ENTER</a>
+                            {{-- Info below image --}}
+                            <div class="xcl-sb-next__info">
+
+                                {{-- Badges row: sim, SR, status --}}
+                                <div class="xcl-sb-next__badges-row">
+                                    <span class="xcl-sb-badge xcl-sb-badge--game">{{ $nextGameLabel }}</span>
+                                    <span class="xcl-sb-badge xcl-sb-badge--sr">4.0 SR</span>
+                                    @if($sbNextEvent->status === 'open')
+                                        <span class="xcl-sb-badge xcl-sb-badge--open">OPEN</span>
+                                    @else
+                                        <span class="xcl-sb-badge xcl-sb-badge--closed">CLOSED</span>
+                                    @endif
+                                </div>
+
+                                {{-- Race details --}}
+                                <div class="xcl-sb-next__details">
+                                    <div class="xcl-sb-next__detail-item">
+                                        <span class="xcl-sb-next__detail-label">CAR CLASS</span>
+                                        <span class="xcl-sb-next__detail-value">{{ $sbNextEvent->title ?? '—' }}</span>
+                                    </div>
+                                    <div class="xcl-sb-next__detail-item">
+                                        <span class="xcl-sb-next__detail-label">TRACK</span>
+                                        <span class="xcl-sb-next__detail-value">{{ $sbNextEvent->track ?? '—' }}</span>
+                                    </div>
+                                    <div class="xcl-sb-next__detail-item">
+                                        <span class="xcl-sb-next__detail-label">WEATHER</span>
+                                        <span class="xcl-sb-next__detail-value">
+                                            <i class="fa-solid fa-sun" style="color:#fbbf24;font-size:.7rem"></i> DRY
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {{-- Duration + scheduled time --}}
+                                <div class="xcl-sb-next__footer-row">
+                                    <span class="xcl-sb-next__duration-badge">
+                                        <i class="fa-solid fa-clock"></i> 20 MIN
+                                    </span>
+                                    <span class="xcl-sb-next__next-time">
+                                        {{ strtoupper($sbNextEvent->scheduledAtUk()->format('D, M d')) }}<br>
+                                        {{ strtoupper($sbNextEvent->scheduledAtUk()->format('g:iA T')) }}
+                                    </span>
+                                </div>
+
+                                <a href="{{ route('events.show', $sbNextEvent) }}" class="xcl-sb-next__join-btn">
+                                    JOIN EVENT
+                                </a>
                             </div>
                         </div>
                         @else
@@ -236,62 +298,85 @@ $sbBadges = [
                     </div>
                     {{-- end col 1 --}}
 
-                    {{-- ─ COLUMN 2: UPCOMING + EVENT INFO ──────────────────── --}}
+                    {{-- ─ COLUMN 2: UPCOMING EVENTS ────────────────────────── --}}
                     <div class="xcl-sb-col">
                         <div class="xcl-sb-title">
                             <span>UPCOMING </span><span>EVENTS</span>
                         </div>
 
-                        @forelse($sbUpcoming as $i => $event)
-                        @php $badge = $sbBadges[$i % count($sbBadges)]; @endphp
-                        <div class="xcl-sb-event-row">
-                            <div class="xcl-sb-event-row__thumb">
+                        @forelse($sbUpcoming as $event)
+                        @php
+                            $upPlatLabel = match($event->game) {
+                                'acc'             => 'PS5 / XBOX',
+                                'lmu','iracing','ac' => 'PC / STEAM',
+                                default           => 'PC',
+                            };
+                            $upGameLabel = match($event->game) {
+                                'acc' => 'ACC', 'lmu' => 'LMU',
+                                'iracing' => 'iRACING', 'ac' => 'AC RALLY',
+                                default => strtoupper($event->game),
+                            };
+                        @endphp
+                        <div class="xcl-sb-up-card"
+                             x-data="{
+                                 d: 0, h: 0, m: 0, s: 0,
+                                 init() {
+                                     const t = new Date('{{ $event->scheduled_at->toIso8601String() }}');
+                                     const tick = () => {
+                                         const diff = t - new Date();
+                                         if (diff <= 0) { this.d=this.h=this.m=this.s=0; return; }
+                                         this.d = Math.floor(diff/86400000);
+                                         this.h = Math.floor((diff%86400000)/3600000);
+                                         this.m = Math.floor((diff%3600000)/60000);
+                                         this.s = Math.floor((diff%60000)/1000);
+                                     };
+                                     tick(); setInterval(tick, 1000);
+                                 }
+                             }">
+
+                            <div class="xcl-sb-up-card__img-wrap">
                                 @if($event->image)
-                                    <img src="{{ asset('storage/'.$event->image) }}"
-                                         alt="{{ $event->title }}" loading="lazy">
+                                    <img src="{{ $event->image_url }}"
+                                         alt="{{ $event->title }}" loading="lazy"
+                                         class="xcl-sb-up-card__img">
                                 @else
-                                    <div class="xcl-sb-event-row__thumb-placeholder"
-                                         style="color:{{ $event->gameColor() }}">
-                                        {{ strtoupper(substr($event->game, 0, 3)) }}
-                                    </div>
+                                    <div class="xcl-sb-up-card__img-placeholder"></div>
                                 @endif
-                                <span class="xcl-sb-event-row__thumb-badge"
-                                      style="background:{{ $badge['bg'] }};color:{{ $badge['color'] }}">
-                                    {{ $badge['label'] }}
-                                </span>
+                                <div class="xcl-sb-up-card__img-gradient"></div>
+
+                                {{-- Race icon centered on card --}}
+                                @if($event->icon)
+                                <div class="xcl-sb-up-card__icon-overlay">
+                                    <img src="{{ $event->icon_url }}" alt="{{ $event->title }}">
+                                </div>
+                                @endif
+
+                                <div class="xcl-sb-up-card__title">
+                                    {{ strtoupper($event->title ?? $event->gameLabel()) }}
+                                </div>
+
+                                <div class="xcl-sb-up-card__meta-row">
+                                    <div class="xcl-sb-countdown xcl-sb-countdown--small">
+                                        <span x-text="String(d).padStart(2,'0')"></span>D&nbsp;<span x-text="String(h).padStart(2,'0')"></span>H&nbsp;<span x-text="String(m).padStart(2,'0')"></span>M
+                                    </div>
+                                    <div class="xcl-sb-lobby xcl-sb-lobby--small">
+                                        <i class="fa-solid fa-comments"></i>
+                                        <span>{{ $event->registrations_count }} / {{ $event->max_drivers ?? '∞' }}</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="xcl-sb-event-row__info">
-                                <p class="xcl-sb-event-row__date">
-                                    {{ strtoupper($event->scheduledAtUk()->format('D d M')) }}
-                                    &bull; {{ $event->scheduledAtUk()->format('g:iA') }}
-                                </p>
-                                <p class="xcl-sb-event-row__circuit">{{ $event->track ?? '—' }}</p>
+
+                            <div class="xcl-sb-up-card__footer">
+                                <div class="d-flex gap-1 flex-wrap align-items-center">
+                                    <span class="xcl-sb-badge xcl-sb-badge--platform">{{ $upPlatLabel }}</span>
+                                    <span class="xcl-sb-badge xcl-sb-badge--game">{{ $upGameLabel }}</span>
+                                </div>
+                                <a href="{{ route('events.show', $event) }}" class="xcl-sb-up-card__join">JOIN EVENT</a>
                             </div>
-                            <a href="{{ route('race.show', $event) }}" class="xcl-sb-event-row__enter">ENTER</a>
                         </div>
                         @empty
                         <p style="color:#8B9BB4;font-size:.8rem;padding:.5rem 0">No further events scheduled</p>
                         @endforelse
-
-                        {{-- Event Info --}}
-                        @if($sbNextEvent)
-                        <div class="xcl-sb-info">
-                            <div class="xcl-sb-title" style="margin-top:0">
-                                <span>EVENT </span><span>INFO</span>
-                            </div>
-                            <div class="xcl-sb-info__grid">
-                                @foreach($sbEventInfo as $label => $value)
-                                <div class="xcl-sb-info__cell">
-                                    <span class="xcl-sb-info__label">{{ $label }}</span>
-                                    <span class="xcl-sb-info__value">{{ $value }}</span>
-                                </div>
-                                @endforeach
-                            </div>
-                            <a href="{{ route('race.show', $sbNextEvent) }}" class="xcl-sb-info__req-link">
-                                REQUIREMENTS &rarr;
-                            </a>
-                        </div>
-                        @endif
                     </div>
                     {{-- end col 2 --}}
 
@@ -301,7 +386,6 @@ $sbBadges = [
                             <span>WEEKLY </span><span>LEADERBOARD</span>
                         </div>
 
-                        {{-- Search --}}
                         <div class="xcl-sb-search">
                             <svg class="xcl-sb-search__icon" width="14" height="14" fill="none"
                                  stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -314,34 +398,23 @@ $sbBadges = [
                                    autocomplete="off">
                         </div>
 
-                        {{-- Table --}}
                         <table class="xcl-sb-lb-table">
                             <thead>
                                 <tr>
-                                    <th @click="toggleSort('pos')"
-                                        :class="{ active: sortCol === 'pos' }">
-                                        POS <span x-text="sortIcon('pos')"></span>
-                                    </th>
-                                    <th @click="toggleSort('name')"
-                                        :class="{ active: sortCol === 'name' }">
-                                        DRIVER <span x-text="sortIcon('name')"></span>
-                                    </th>
-                                    <th @click="toggleSort('gain')"
-                                        :class="{ active: sortCol === 'gain' }"
-                                        style="text-align:right">
-                                        GAIN <span x-text="sortIcon('gain')"></span>
-                                    </th>
+                                    <th>#</th>
+                                    <th>DRIVER</th>
+                                    <th style="text-align:right">GAIN</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <template x-if="paginatedLeaderboard.length === 0">
+                                <template x-if="filteredLeaderboard.length === 0">
                                     <tr>
                                         <td colspan="3" style="text-align:center;color:#8B9BB4;padding:1.5rem .5rem;font-size:.8rem">
                                             No results found
                                         </td>
                                     </tr>
                                 </template>
-                                <template x-for="(driver, idx) in paginatedLeaderboard" :key="driver.pos">
+                                <template x-for="driver in paginatedLeaderboard" :key="driver.pos">
                                     <tr :class="{ 'top-3': driver.pos <= 3 }">
                                         <td class="xcl-lb-pos" x-text="driver.pos"></td>
                                         <td>
@@ -359,18 +432,15 @@ $sbBadges = [
                             </tbody>
                         </table>
 
-                        {{-- Pagination --}}
                         <div class="xcl-sb-pagination" x-show="totalPages > 1">
                             <button @click="currentPage = 1" :disabled="currentPage === 1">&laquo;</button>
                             <button @click="currentPage = Math.max(1, currentPage - 1)" :disabled="currentPage === 1">&lsaquo;</button>
-
                             <template x-for="p in totalPages" :key="p">
                                 <button @click="currentPage = p"
                                         :class="{ active: currentPage === p }"
                                         x-text="p">
                                 </button>
                             </template>
-
                             <button @click="currentPage = Math.min(totalPages, currentPage + 1)" :disabled="currentPage === totalPages">&rsaquo;</button>
                             <button @click="currentPage = totalPages" :disabled="currentPage === totalPages">&raquo;</button>
                         </div>
@@ -378,7 +448,6 @@ $sbBadges = [
                     {{-- end col 3 --}}
 
                 </div>
-                {{-- end grid --}}
             </div>
             {{-- end daily tab --}}
 
@@ -399,7 +468,6 @@ $sbBadges = [
             </div>
 
         </div>
-        {{-- end xcl-sidebar__content --}}
 
     </aside>
 

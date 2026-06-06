@@ -65,7 +65,7 @@ class PlatformLookupService
         }
 
         return [
-            'platform_id' => $player['steamid'],
+            'platform_id' => 'S' . $player['steamid'],
             'name'        => $player['personaname'],
         ];
     }

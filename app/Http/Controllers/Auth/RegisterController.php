@@ -13,24 +13,42 @@ class RegisterController extends Controller
 {
     public function create()
     {
-        return view('auth.register');
+        return view('auth.register', [
+            'steamId'   => session('steam_platform_id'),
+            'steamName' => session('steam_name'),
+        ]);
     }
 
     public function store(Request $request, PlatformLookupService $lookup)
     {
-        $request->validate([
+        $steamOAuth = $request->platform === 'steam' && session('steam_platform_id');
+
+        $rules = [
             'email'    => 'required|email|unique:users',
             'password' => 'required|min:8|confirmed',
             'country'  => 'required|string|max:100',
             'platform' => 'required|in:steam,ps5,xbox',
-            'gamertag' => 'required|string|max:255',
             'team'     => 'nullable|string|max:255',
-        ]);
+        ];
 
-        try {
-            $profile = $lookup->lookup($request->platform, $request->gamertag);
-        } catch (\RuntimeException $e) {
-            return back()->withInput()->withErrors(['gamertag' => $e->getMessage()]);
+        if (!$steamOAuth) {
+            $rules['gamertag'] = 'required|string|max:255';
+        }
+
+        $request->validate($rules);
+
+        if ($steamOAuth) {
+            $profile = [
+                'platform_id' => session('steam_platform_id'),
+                'name'        => session('steam_name'),
+            ];
+            session()->forget(['steam_platform_id', 'steam_name']);
+        } else {
+            try {
+                $profile = $lookup->lookup($request->platform, $request->gamertag);
+            } catch (\RuntimeException $e) {
+                return back()->withInput()->withErrors(['gamertag' => $e->getMessage()]);
+            }
         }
 
         $existing = User::where('platform_id', $profile['platform_id'])
@@ -72,9 +90,9 @@ class RegisterController extends Controller
             'platform'    => $request->platform,
             'platform_id' => $profile['platform_id'],
             'team'        => $request->team,
-            'elo_acc'     => 1200,
-            'elo_lmu'     => 1200,
-            'elo_iracing' => 1200,
+            'elo_acc'     => 1500,
+            'elo_lmu'     => 1500,
+            'elo_iracing' => 1500,
         ]);
 
         Auth::login($user);

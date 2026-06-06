@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Race extends Model
 {
-    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'max_drivers', 'description', 'image'];
+    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon'];
 
     protected function casts(): array
     {
@@ -62,6 +63,8 @@ class Race extends Model
             'acc'     => 'ACC Console',
             'lmu'     => 'Le Mans Ultimate',
             'iracing' => 'iRacing',
+            'ac'      => 'AC Rally',
+            default   => strtoupper($this->game),
         };
     }
 
@@ -70,12 +73,24 @@ class Race extends Model
         return $this->scheduled_at->timezone('Europe/London');
     }
 
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image ? Storage::disk('public')->url($this->image) : null;
+    }
+
+    public function getIconUrlAttribute(): ?string
+    {
+        return $this->icon ? Storage::disk('public')->url($this->icon) : null;
+    }
+
     public function gameColor(): string
     {
         return match ($this->game) {
             'acc'     => '#7c3aed',
-            'lmu'     => '#db2777',
+            'lmu'     => '#db2877',
             'iracing' => '#2563eb',
+            'ac'      => '#16a34a',
+            default   => '#6b7280',
         };
     }
 }

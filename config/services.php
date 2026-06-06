@@ -24,7 +24,10 @@ return [
     ],
 
     'steam' => [
-        'api_key' => env('STEAM_API_KEY'),
+        'api_key'       => env('STEAM_API_KEY'),
+        'client_id'     => null,
+        'client_secret' => env('STEAM_API_KEY'),
+        'redirect'      => env('APP_URL') . '/auth/steam/callback',
     ],
 
     'openxbl' => [

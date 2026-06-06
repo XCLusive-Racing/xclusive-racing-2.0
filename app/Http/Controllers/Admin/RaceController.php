@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\EventTag;
+use App\Models\Media;
 use App\Models\Race;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -33,38 +35,29 @@ class RaceController extends Controller
     public function create(Request $request)
     {
         $prefillDate = $request->date('date')?->format('Y-m-d\TH:i');
-        return view('admin.races.create', compact('prefillDate'));
-    }
-
-    private function storeImage(\Illuminate\Http\UploadedFile $file): string
-    {
-        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-        $file->move(public_path('images/races'), $filename);
-        return 'images/races/' . $filename;
-    }
-
-    private function deleteImage(?string $path): void
-    {
-        if ($path && file_exists(public_path($path))) {
-            unlink(public_path($path));
-        }
+        $tags = EventTag::orderBy('name')->get();
+        return view('admin.races.create', compact('prefillDate', 'tags'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
             'title'        => 'required|string|max:255',
-            'game'         => 'required|in:acc,lmu,iracing',
+            'game'         => 'required|in:acc,lmu,iracing,ac',
             'track'        => 'required|string|max:255',
             'scheduled_at' => 'required|date',
+            'event_tag'    => 'required|exists:event_tags,slug',
             'max_drivers'  => 'nullable|integer|min:1',
             'description'  => 'nullable|string',
-            'image'        => 'nullable|image|max:4096',
+            'image'        => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',
+            'image_path'   => 'nullable|string|max:500',
+            'icon'         => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
+            'icon_path'    => 'nullable|string|max:500',
         ]);
 
-        if ($request->hasFile('image')) {
-            $data['image'] = $this->storeImage($request->file('image'));
-        }
+        $data['image'] = $this->resolveMedia($request);
+        $data['icon']  = $this->resolveIcon($request);
+        unset($data['image_path'], $data['icon_path']);
 
         Race::create($data);
 
@@ -78,7 +71,8 @@ class RaceController extends Controller
                 ->with('error', 'Past races cannot be edited. You can still manage results.');
         }
 
-        return view('admin.races.edit', compact('race'));
+        $tags = EventTag::orderBy('name')->get();
+        return view('admin.races.edit', compact('race', 'tags'));
     }
 
     public function destroy(Race $race)
@@ -101,24 +95,46 @@ class RaceController extends Controller
             return redirect()->route('admin.races.index')
                 ->with('error', 'Past races cannot be edited.');
         }
+
         $data = $request->validate([
             'title'        => 'required|string|max:255',
-            'game'         => 'required|in:acc,lmu,iracing',
+            'game'         => 'required|in:acc,lmu,iracing,ac',
             'track'        => 'required|string|max:255',
             'scheduled_at' => 'required|date',
             'status'       => 'required|in:open,closed,finished',
+            'event_tag'    => 'required|exists:event_tags,slug',
             'max_drivers'  => 'nullable|integer|min:1',
             'description'  => 'nullable|string',
-            'image'        => 'nullable|image|max:4096',
+            'image'        => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',
+            'image_path'   => 'nullable|string|max:500',
+            'icon'         => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
+            'icon_path'    => 'nullable|string|max:500',
         ]);
 
-        if ($request->hasFile('image')) {
-            $this->deleteImage($race->image);
-            $data['image'] = $this->storeImage($request->file('image'));
-        }
+        $data['image'] = $this->resolveMedia($request);
+        $data['icon']  = $this->resolveIcon($request);
+        unset($data['image_path'], $data['icon_path']);
 
         $race->update($data);
 
         return redirect()->route('admin.races.index')->with('success', 'Race updated successfully!');
+    }
+
+    private function resolveMedia(Request $request): ?string
+    {
+        if ($request->hasFile('image')) {
+            return Media::createFromUpload($request->file('image'))->path;
+        }
+
+        return $request->filled('image_path') ? $request->image_path : null;
+    }
+
+    private function resolveIcon(Request $request): ?string
+    {
+        if ($request->hasFile('icon')) {
+            return Media::createFromUpload($request->file('icon'), 'icon')->path;
+        }
+
+        return $request->filled('icon_path') ? $request->icon_path : null;
     }
 }

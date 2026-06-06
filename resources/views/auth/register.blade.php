@@ -3,8 +3,12 @@
 @section('title', 'Sign Up - XCLusive Racing')
 
 @section('content')
+@php
+    $startStep = (old('platform') || $steamId) ? 2 : 1;
+    $startPlatform = old('platform', $steamId ? 'steam' : '');
+@endphp
 <div class="xcl-auth-page py-5"
-     x-data="{ step: {{ old('platform') ? 2 : 1 }}, platform: '{{ old('platform', '') }}' }">
+     x-data="{ step: {{ $startStep }}, platform: '{{ $startPlatform }}' }">
 
     <div class="xcl-auth-page__topo" style="background-image:url('/topo.png');"></div>
     <div class="xcl-auth-card">
@@ -19,10 +23,10 @@
             <p class="text-white small text-center mb-4">Select the platform you race on</p>
 
             <div class="d-flex flex-column gap-3">
-                <button type="button" @click="platform = 'steam'; step = 2" class="xcl-platform-btn xcl-platform-btn--steam">
+                <a href="{{ route('auth.steam') }}" class="xcl-platform-btn xcl-platform-btn--steam">
                     <i class="fa-brands fa-steam fs-5"></i>
                     Steam
-                </button>
+                </a>
                 <button type="button" @click="platform = 'xbox'; step = 2" class="xcl-platform-btn xcl-platform-btn--xbox">
                     <i class="fa-brands fa-xbox fs-5"></i>
                     Xbox
@@ -56,6 +60,16 @@
                 @csrf
                 <input type="hidden" name="platform" :value="platform">
 
+                @if ($steamId)
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-uppercase text-white-50 mb-1">Steam Account</label>
+                    <div class="form-control xcl-auth-input d-flex align-items-center gap-2"
+                         style="opacity:.7; cursor:default;">
+                        <i class="fa-brands fa-steam"></i>
+                        {{ $steamName }}
+                    </div>
+                </div>
+                @else
                 <div class="mb-3">
                     <label class="form-label small fw-bold text-uppercase text-white-50 mb-1">
                         <span x-text="platform === 'steam' ? 'Steam ID or Vanity URL' : platform === 'ps5' ? 'PSN Online ID' : 'Xbox Gamertag'"></span>
@@ -71,6 +85,7 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
+                @endif
 
                 <div class="mb-3">
                     <label class="form-label small fw-bold text-uppercase text-white-50 mb-1">Email</label>

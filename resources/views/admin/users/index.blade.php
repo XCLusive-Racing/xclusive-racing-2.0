@@ -11,17 +11,17 @@
 
 {{-- Stats --}}
 <div class="row g-3 mb-4">
-    @foreach(['owner'=>['Owners','#7c3aed','#f3e8ff'],'admin'=>['Admins','#db2777','#fce7f3'],'moderator'=>['Moderators','#2563eb','#dbeafe'],'event_manager'=>['Event Managers','#d97706','#fef3c7'],'steward'=>['Stewards','#0891b2','#e0f2fe'],'driver'=>['Drivers','#059669','#d1fae5']] as $slug=>[$label,$color,$bg])
-    <div class="col-sm-6 col-xl-2">
-        <div class="metric-card">
-            <div class="metric-icon" style="background:{{ $bg }}">
-                <svg width="22" height="22" fill="none" stroke="{{ $color }}" stroke-width="2" viewBox="0 0 24 24">
+    @foreach(['admin'=>['Admins','#db2777','#fce7f3'],'moderator'=>['Moderators','#2563eb','#dbeafe'],'event_manager'=>['Event Managers','#d97706','#fef3c7'],'steward'=>['Stewards','#0891b2','#e0f2fe'],'driver'=>['Drivers','#059669','#d1fae5']] as $slug=>[$label,$color,$bg])
+    <div class="col-sm-6 col-xl">
+        <div class="metric-card" style="padding:1rem">
+            <div class="metric-icon" style="background:{{ $bg }};width:38px;height:38px;min-width:38px">
+                <svg width="18" height="18" fill="none" stroke="{{ $color }}" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                 </svg>
             </div>
-            <div>
+            <div class="overflow-hidden">
                 <div class="metric-value">{{ $users->filter(fn($u) => $u->roles->contains('slug', $slug))->count() }}</div>
-                <div class="metric-label">{{ $label }}</div>
+                <div class="metric-label text-truncate">{{ $label }}</div>
             </div>
         </div>
     </div>

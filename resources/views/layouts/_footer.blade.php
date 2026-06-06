@@ -50,7 +50,7 @@
                 <div class="d-flex flex-column gap-2">
                     <a href="{{ url('/#about') }}"    class="footer-link">About Us</a>
                     <a href="{{ url('/#teams') }}"    class="footer-link">Teams</a>
-                    <a href="{{ route('race') }}"     class="footer-link">Events</a>
+                    <a href="{{ route('events.index') }}"     class="footer-link">Events</a>
                     <a href="{{ route('calendar') }}" class="footer-link">Calendar</a>
                     <a href="{{ url('/#partners') }}" class="footer-link">Partners</a>
                 </div>
@@ -62,7 +62,7 @@
                 <div class="d-flex flex-column gap-2">
                     @auth
                         <a href="{{ route('profile') }}"  class="footer-link">My Profile</a>
-                        <a href="{{ route('race') }}"     class="footer-link">My Races</a>
+                        <a href="{{ route('events.index') }}"     class="footer-link">My Races</a>
                     @else
                         <a href="{{ route('login') }}"    class="footer-link">Login</a>
                         <a href="{{ route('register') }}" class="footer-link">Register</a>

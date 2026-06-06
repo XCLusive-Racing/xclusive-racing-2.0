@@ -53,7 +53,7 @@
             <ul class="navbar-nav mx-auto gap-md-5">
                 <li class="nav-item"><a class="nav-link" href="{{ url('/#about') }}">ABOUT</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url('/#teams') }}">TEAMS</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url('/race') }}">XCL EVENTS</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url('/events') }}">XCL EVENTS</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url('/#partners') }}">PARTNERS</a></li>
                 <li class="nav-item"><a class="nav-link" href="https://raven.gg/stores/xclusive-esports/" target="_blank">MERCHANDISE</a></li>
                 <li class="nav-item position-relative" x-data="{ dd: false }">
@@ -108,9 +108,9 @@
                         PROFILE
                     </a>
                 @else
-                    <a href="{{ route('register') }}"
+                    <a href="{{ route('login') }}"
                        class="btn btn-sm fw-bold text-uppercase text-white bg-xcl-purple rounded-1 px-4">
-                        SIGN UP
+                        SIGN IN
                     </a>
                 @endauth
             </div>

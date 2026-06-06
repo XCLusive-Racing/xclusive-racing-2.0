@@ -1,5 +1,6 @@
 {{-- Hoofdnavigatiebalk: Bootstrap navbar met Alpine.js hamburger toggle --}}
 <nav class="navbar navbar-xcl navbar-expand-md fixed-top" x-data="{ open: false }">
+    <div class="navbar-xcl__topo" style="background-image:url('/topo.png');"></div>
     <div class="container-fluid px-5 align-content-center">
 
         {{-- Brand: XCLusive Racing logo --}}
@@ -28,7 +29,7 @@
                     <a class="nav-link" href="{{ url('/#teams') }}">TEAMS</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url('/race') }}">XCL EVENTS</a>
+                    <a class="nav-link" href="{{ url('/events') }}">XCL EVENTS</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url('/#partners') }}">PARTNERS</a>
@@ -92,10 +93,10 @@
                     </a>
                 @else
                     {{-- Aanmeldknop voor niet-ingelogde bezoekers --}}
-                    <a href="{{ route('register') }}"
+                    <a href="{{ route('login') }}"
                        class="btn btn-sm fw-bold text-uppercase text-white bg-xcl-purple rounded-1 px-4"
                        >
-                        SIGN UP
+                        SIGN IN
                     </a>
 
                     {{-- Mascot icoon naast aanmeldknop --}}
