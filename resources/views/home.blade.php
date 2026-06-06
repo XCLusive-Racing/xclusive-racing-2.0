@@ -29,11 +29,6 @@
                            class="btn fw-black text-uppercase px-5 py-3 fs-5"
                            style="border:2px solid rgba(255,255,255,.3);color:white;">SIGN IN</a>
                     @endauth
-                    @auth
-                        <a href="#events"
-                           class="btn fw-black text-uppercase px-5 py-3 fs-5"
-                           style="border:2px solid rgba(255,255,255,.3);color:white;">SEE EVENTS</a>
-                    @endauth
                 </div>
             </div>
         </div>
@@ -53,11 +48,11 @@
 
 {{-- ─── Legacy / About ──────────────────────────────────────────────────────── --}}
 <x-about-section />
-{{-- ─── Upcoming Events ─────────────────────────────────────────────────────── --}}
-<x-upcoming-events />
 
 {{-- ─── Meet Our Team carousel ─────────────────────────────────────────────── --}}
+<div class="pt-5 mt-5">
 <x-meet-team />
+</div>
 {{-- ─── Partners ─────────────────────────────────────────────────────────── --}}
 <section id="partners" class="partners-section py-5 px-3" style="margin-top:-10vh;padding-top:calc(3rem + 10vh)">
     <div class="about-section__topo" style="background-image:url('/topo.png');"></div>

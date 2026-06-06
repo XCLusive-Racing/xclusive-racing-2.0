@@ -270,6 +270,11 @@ html {
 
 // ─── Events Sidebar (900 px wide) ─────────────────────────────────────────────
 
+@keyframes bounceLeft {
+    0%, 100% { transform: translateX(0); }
+    50%       { transform: translateX(-5px); }
+}
+
 .xcl-sidebar-trigger {
     position: fixed;
     top: 50%;
@@ -277,53 +282,59 @@ html {
     transform: translateY(-50%) translateX(0);
     width: 42px;
     height: 180px;
-    background: #5B21B6;
-    border-left: 4px solid #C8FF00;
-    border-top: none;
-    border-right: none;
-    border-bottom: none;
-    border-radius: 0;
+    background: #1a0a2e;
+    border: none;
+    border-left: 3px solid #d4ee6a;
+    border-radius: 8px 0 0 8px;
     color: white;
     cursor: pointer;
     z-index: 1051;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    padding-top: 14px;
-    gap: 0;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 10px 24px 10px;
     outline: none;
-    box-shadow: -2px 0 12px rgba(91, 33, 182, .5);
+    box-shadow: -3px 0 16px rgba(26, 10, 46, .7);
     transition: transform .3s cubic-bezier(0.16, 1, 0.3, 1), background 200ms ease;
 
-    &__arrow {
-        font-size: 13px;
-        transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
-        flex-shrink: 0;
+    &__chevrons {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0;
+    }
+
+    &__chevron-1,
+    &__chevron-2 {
+        display: flex;
+        animation: bounceLeft 1.2s ease-in-out infinite;
+    }
+
+    &__chevron-2 {
+        margin-left: -14px;
     }
 
     &__text {
         writing-mode: vertical-rl;
         text-orientation: mixed;
         transform: rotate(180deg);
-        font-family: 'Barlow Condensed', sans-serif;
-        font-weight: 800;
-        font-style: italic;
-        letter-spacing: 2px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700;
+        font-style: normal;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
-        font-size: 12px;
+        font-size: 0.75rem;
         white-space: nowrap;
         color: white;
-        margin-top: 8px;
     }
 
     &--open {
         transform: translateY(-50%) translateX(calc(-1 * min(1400px, 95vw)));
     }
 
-    &--open &__arrow { transform: rotate(180deg); }
-
-    &:hover { background: #6D28D9; }
+    &:hover { background: #2d1052; }
 
     @media (max-width: 480px) {
         &--open { display: none !important; }
