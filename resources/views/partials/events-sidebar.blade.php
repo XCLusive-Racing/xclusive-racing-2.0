@@ -57,7 +57,7 @@ $sbLeaderboard = User::where('elo_acc', '>', 0)
         });
         this.$watch('searchQuery', () => { this.currentPage = 1; });
     }
-}" @keydown.escape.window="open = false">
+}" @keydown.escape.window="open = false" @open-events-sidebar.window="open = true">
 
     {{-- ── Trigger tab ──────────────────────────────────────────────────────── --}}
     <button
@@ -80,7 +80,7 @@ $sbLeaderboard = User::where('elo_acc', '>', 0)
                 </svg>
             </span>
         </div>
-        <span class="xcl-sidebar-trigger__text">UPCOMING EVENTS</span>
+        <span class="xcl-sidebar-trigger__text" x-text="open ? 'CLOSE EVENTS' : 'UPCOMING EVENTS'"></span>
     </button>
 
     {{-- ── Backdrop ─────────────────────────────────────────────────────────── --}}

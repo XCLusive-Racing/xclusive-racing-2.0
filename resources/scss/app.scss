@@ -304,6 +304,11 @@ html {
         flex-direction: row;
         align-items: center;
         gap: 0;
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    &--open &__chevrons {
+        transform: rotate(180deg);
     }
 
     &__chevron-1,
@@ -1177,7 +1182,7 @@ html {
 .hero-home__heading--accent {
     display: inline-block;
     padding-right: 0.2em;
-    background: linear-gradient(135deg, #8435e4, #5f2866, #732cad);
+    background: linear-gradient(135deg, #8435e4, #b56ef5, #732cad);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -1186,7 +1191,7 @@ html {
 .xcl-gradient-text {
     display: inline-block;
     padding-right: 0.1em;
-    background: linear-gradient(135deg, #8435e4, #5f2866, #732cad);
+    background: linear-gradient(135deg, #8435e4, #b56ef5, #732cad);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

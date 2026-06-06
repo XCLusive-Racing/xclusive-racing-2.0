@@ -10,8 +10,9 @@
             {{-- Left: copy --}}
             <div class="col-lg-6 animate-fade-in text-center text-lg-start">
                 <h1 class="hero-home__heading fw-black text-uppercase fst-italic lh-1 mb-4">
-                    THE LION IS<br>BORN TO<br>
-                    <span class="hero-home__heading--accent">DOMINATE</span>
+                    WHERE<br>
+                    <span class="hero-home__heading--accent">RACING LEGENDS</span><br>
+                    ARE FORGED
                 </h1>
                 <p class="hero-home__sub fs-5 mb-5">
                     Born on console. Built for global competition.<br><span style="display:block;margin-top:0.5em"></span><span class="fw-black xcl-gradient-text"><span style="font-size:1.2em">XCL</span>USIVE</span> is the home of premier sim racing events, a trusted community, and the <span class="fw-black xcl-gradient-text"><span style="font-size:1.2em">XCL</span>USIVE <span style="font-size:1.2em">R</span>ACING</span> team.<br><span style="display:block;margin-top:0.5em"></span>This is where champions are made.
@@ -23,11 +24,12 @@
                            style="background:#7c3aed;">MY PROFILE</a>
                     @else
                         <a href="{{ route('register') }}"
-                           class="btn fw-black text-uppercase text-white px-5 py-3 fs-5"
-                           style="background:#7c3aed;">JOIN NOW</a>
-                        <a href="{{ route('login') }}"
-                           class="btn fw-black text-uppercase px-5 py-3 fs-5"
-                           style="border:2px solid rgba(255,255,255,.3);color:white;">SIGN IN</a>
+                           class="btn fw-black text-uppercase text-white py-3 fs-5"
+                           style="background:#7c3aed;width:180px;">JOIN NOW</a>
+                        <a href="#"
+                           class="btn fw-black text-uppercase py-3 fs-5"
+                           style="border:2px solid rgba(255,255,255,.3);color:white;width:180px;"
+                           onclick="event.preventDefault();window.dispatchEvent(new CustomEvent('open-events-sidebar'))">SEE EVENTS</a>
                     @endauth
                 </div>
             </div>
