@@ -38,7 +38,7 @@ class UserController extends Controller
             'platform_id' => 'nullable|string|max:60',
             'car_number'  => 'nullable|integer|min:1|max:9999',
             'car_model'   => 'nullable|string|max:100',
-            'banner'      => 'nullable|url|max:500',
+            'banner'      => 'nullable|string|max:500',
             'game'        => 'nullable|in:acc,lmu,iracing',
             'team'        => 'nullable|string|max:100',
             'elo_acc'     => 'required|integer|min:0',
