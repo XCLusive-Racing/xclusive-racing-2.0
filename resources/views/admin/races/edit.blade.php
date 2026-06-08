@@ -56,9 +56,9 @@
 
                     <div class="row g-3">
                         <div class="col-sm-4">
-                            <label class="form-label">Date & Time (UTC)</label>
+                            <label class="form-label">Date & Time (BST)</label>
                             <input type="datetime-local" name="scheduled_at"
-                                   value="{{ old('scheduled_at', $race->scheduled_at->format('Y-m-d\TH:i')) }}"
+                                   value="{{ old('scheduled_at', $race->scheduledAtUk()->format('Y-m-d\TH:i')) }}"
                                    class="form-control @error('scheduled_at') is-invalid @enderror">
                             @error('scheduled_at') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>

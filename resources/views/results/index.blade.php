@@ -39,7 +39,7 @@
                                 <div class="fw-bold text-dark" style="font-size:.82rem;line-height:1.3;{{ $selected?->id === $race->id ? 'color:#7c3aed!important' : '' }}">
                                     {{ $race->title }}
                                 </div>
-                                <div class="text-secondary" style="font-size:.72rem">{{ $race->scheduled_at->format('d M Y') }}</div>
+                                <div class="text-secondary" style="font-size:.72rem">{{ $race->scheduledAtUk()->format('d M Y') }}</div>
                             </div>
                         </a>
                         @endforeach
@@ -60,7 +60,7 @@
                         <div>
                             <div class="fw-black text-dark" style="font-size:1rem">{{ $selected->title }}</div>
                             <div class="text-secondary" style="font-size:.78rem">
-                                {{ $selected->track }} &middot; {{ $selected->scheduled_at->format('d M Y') }}
+                                {{ $selected->track }} &middot; {{ $selected->scheduledAtUk()->format('d M Y') }}
                             </div>
                         </div>
                     </div>

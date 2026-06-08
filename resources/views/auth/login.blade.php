@@ -40,6 +40,15 @@
                        autocomplete="new-password">
             </div>
 
+            <div class="mb-4">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
+                    <label class="form-check-label small fw-bold text-uppercase text-white-50" for="remember">
+                        Remember me
+                    </label>
+                </div>
+            </div>
+
             <button type="submit" class="btn w-100 fw-black text-uppercase text-white py-3 mb-4 bg-gradient-xcl border-0"
                     style="letter-spacing:.06em; border-radius:10px;">
                 Sign In

@@ -44,7 +44,7 @@
                                 <option value="">— Not race-specific —</option>
                                 @foreach($races as $race)
                                 <option value="{{ $race->id }}" {{ old('race_id') == $race->id ? 'selected' : '' }}>
-                                    {{ $race->title }} ({{ $race->scheduled_at->format('d M Y') }})
+                                    {{ $race->title }} ({{ $race->scheduledAtUk()->format('d M Y') }})
                                 </option>
                                 @endforeach
                             </select>

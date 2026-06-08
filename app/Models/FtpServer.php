@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class FtpServer extends Model
 {
-    protected $fillable = ['name', 'host', 'port', 'username', 'password', 'path', 'active'];
+    protected $fillable = ['name', 'host', 'port', 'username', 'password', 'path', 'cfg_path', 'active'];
 
     protected $casts = [
         'password' => 'encrypted',

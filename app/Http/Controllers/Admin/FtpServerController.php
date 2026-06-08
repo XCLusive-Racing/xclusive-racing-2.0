@@ -30,9 +30,10 @@ class FtpServerController extends Controller
             'username' => 'required|string|max:100',
             'password' => 'required|string|max:255',
             'path'     => 'required|string|max:255',
+            'cfg_path' => 'nullable|string|max:255',
         ]);
 
-        FtpServer::create($request->only('name', 'host', 'port', 'username', 'password', 'path'));
+        FtpServer::create($request->only('name', 'host', 'port', 'username', 'password', 'path', 'cfg_path'));
 
         return redirect()->route('admin.servers.index')->with('success', 'Server added.');
     }
@@ -50,6 +51,7 @@ class FtpServerController extends Controller
             'port'     => 'required|integer|min:1|max:65535',
             'username' => 'required|string|max:100',
             'path'     => 'required|string|max:255',
+            'cfg_path' => 'nullable|string|max:255',
         ];
 
         if ($request->filled('password')) {
@@ -58,7 +60,7 @@ class FtpServerController extends Controller
 
         $request->validate($rules);
 
-        $data           = $request->only('name', 'host', 'port', 'username', 'path');
+        $data           = $request->only('name', 'host', 'port', 'username', 'path', 'cfg_path');
         $data['active'] = $request->boolean('active');
 
         if ($request->filled('password')) {

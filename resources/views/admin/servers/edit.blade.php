@@ -76,8 +76,17 @@
                         <input type="text" name="path" value="{{ old('path', $server->path) }}"
                                class="form-control @error('path') is-invalid @enderror"
                                style="font-family:monospace">
-                        <div class="form-text" style="font-size:.72rem;color:#9ca3af">Directory on the FTP server where JSON result files are saved.</div>
+                        <div class="form-text" style="font-size:.72rem;color:#9ca3af">Directory where JSON result files are saved.</div>
                         @error('path') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Config Path</label>
+                        <input type="text" name="cfg_path" value="{{ old('cfg_path', $server->cfg_path) }}"
+                               class="form-control @error('cfg_path') is-invalid @enderror"
+                               style="font-family:monospace">
+                        <div class="form-text" style="font-size:.72rem;color:#9ca3af">Directory where ACC config files are pushed (entrylist.json, configuration.json, settings.json).</div>
+                        @error('cfg_path') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="form-check">
