@@ -48,7 +48,7 @@
                     <td class="ps-4">
                         <div class="d-flex align-items-center gap-2">
                             @if($user->banner)
-                                <img src="{{ $user->banner }}" alt=""
+                                <img src="{{ $user->avatarUrl() }}" alt=""
                                      class="rounded-circle flex-shrink-0"
                                      style="width:32px;height:32px;object-fit:cover">
                             @else

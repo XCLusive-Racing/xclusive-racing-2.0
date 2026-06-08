@@ -18,7 +18,7 @@
 <div class="admin-card mb-4 p-0 overflow-hidden">
     <div class="d-flex align-items-center gap-3 p-4">
         @if($user->banner)
-            <img src="{{ $user->banner }}" alt="" class="rounded-circle flex-shrink-0" style="width:48px;height:48px;object-fit:cover">
+            <img src="{{ $user->avatarUrl() }}" alt="" class="rounded-circle flex-shrink-0" style="width:48px;height:48px;object-fit:cover">
         @else
             <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
                  style="width:48px;height:48px;font-size:1.1rem;background:linear-gradient(135deg,#7c3aed,#db2777)">

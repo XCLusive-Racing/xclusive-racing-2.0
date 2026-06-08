@@ -14,7 +14,7 @@
         <div style="position:absolute;inset:3px;background:white;border-radius:50%;padding:2px">
             <div class="rank-shine-wrap" style="width:100%;height:100%">
                 @if($user->banner)
-                    <img src="{{ asset($user->banner) }}" alt="{{ $user->name }}"
+                    <img src="{{ $user->avatarUrl() }}" alt="{{ $user->name }}"
                          class="rounded-circle" style="width:100%;height:100%;object-fit:cover;display:block">
                 @else
                     <div class="rounded-circle d-flex align-items-center justify-content-center bg-gradient-xcl"
@@ -30,7 +30,7 @@
         <div style="background:white;padding:2px;border-radius:50%">
             <div class="rank-shine-wrap" style="width:{{ $size }}px;height:{{ $size }}px">
                 @if($user->banner)
-                    <img src="{{ asset($user->banner) }}" alt="{{ $user->name }}"
+                    <img src="{{ $user->avatarUrl() }}" alt="{{ $user->name }}"
                          class="rounded-circle" style="width:{{ $size }}px;height:{{ $size }}px;object-fit:cover;display:block">
                 @else
                     <div class="rounded-circle d-flex align-items-center justify-content-center bg-gradient-xcl"

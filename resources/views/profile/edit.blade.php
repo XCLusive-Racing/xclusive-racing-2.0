@@ -48,7 +48,7 @@
                     {{-- Current avatar preview --}}
                     <div id="avatar-preview-wrap" class="flex-shrink-0">
                         @if($user->banner)
-                            <img id="avatar-preview" src="{{ asset($user->banner) }}" alt=""
+                            <img id="avatar-preview" src="{{ $user->avatarUrl() }}" alt=""
                                  class="rounded-circle" style="width:64px;height:64px;object-fit:cover">
                         @else
                             <div id="avatar-initials" class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black"

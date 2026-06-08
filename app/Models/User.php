@@ -71,6 +71,13 @@ class User extends Authenticatable
         return $this->hasAnyRole(['owner', 'admin', 'event_manager']);
     }
 
+    public function avatarUrl(): ?string
+    {
+        if (!$this->banner) return null;
+        if (str_starts_with($this->banner, 'http')) return $this->banner;
+        return asset($this->banner);
+    }
+
     public function raceRegistrations(): HasMany
     {
         return $this->hasMany(RaceRegistration::class);

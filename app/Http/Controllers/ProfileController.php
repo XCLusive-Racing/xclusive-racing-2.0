@@ -7,6 +7,8 @@ use App\Models\Race;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ProfileController extends Controller
 {
@@ -67,15 +69,22 @@ class ProfileController extends Controller
         ]);
 
         if ($request->hasFile('avatar')) {
-            // Delete old avatar if it's a local file
-            if ($user->banner && str_starts_with($user->banner, 'images/avatars/')) {
-                $oldPath = public_path($user->banner);
-                if (file_exists($oldPath)) unlink($oldPath);
+            // Delete old avatar
+            if ($user->banner) {
+                if (str_starts_with($user->banner, 'http')) {
+                    // R2 — extract the path after the base URL and delete from disk
+                    $diskUrl = rtrim(Storage::disk('media')->url(''), '/');
+                    $oldPath = ltrim(str_replace($diskUrl, '', $user->banner), '/');
+                    if ($oldPath) Storage::disk('media')->delete($oldPath);
+                } elseif (str_starts_with($user->banner, 'images/avatars/')) {
+                    $localPath = public_path($user->banner);
+                    if (file_exists($localPath)) unlink($localPath);
+                }
             }
 
-            $filename = \Illuminate\Support\Str::uuid() . '.' . $request->file('avatar')->getClientOriginalExtension();
-            $request->file('avatar')->move(public_path('images/avatars'), $filename);
-            $data['banner'] = 'images/avatars/' . $filename;
+            $ext      = $request->file('avatar')->getClientOriginalExtension();
+            $path     = $request->file('avatar')->storeAs('avatars', Str::uuid() . '.' . $ext, 'media');
+            $data['banner'] = Storage::disk('media')->url($path);
         }
 
         unset($data['avatar']);
