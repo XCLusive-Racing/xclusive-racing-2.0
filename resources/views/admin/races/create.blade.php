@@ -59,7 +59,7 @@
 
                     <div class="row g-3">
                         <div class="col-sm-6">
-                            <label class="form-label">Date & Time (UTC)</label>
+                            <label class="form-label">Date & Time (BST)</label>
                             <input type="datetime-local" name="scheduled_at"
                                    value="{{ old('scheduled_at', $prefillDate ? $prefillDate . 'T20:00' : '') }}"
                                    class="form-control @error('scheduled_at') is-invalid @enderror">

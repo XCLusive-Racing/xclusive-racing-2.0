@@ -69,13 +69,21 @@
                 <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Configuration</p>
 
-                    <div class="mb-0">
+                    <div class="mb-3">
                         <label class="form-label">Results Path</label>
                         <input type="text" name="path" value="{{ old('path', '/results') }}"
                                class="form-control @error('path') is-invalid @enderror"
                                style="font-family:monospace">
-                        <div class="form-text" style="font-size:.72rem;color:#9ca3af">Directory on the FTP server where JSON result files are saved.</div>
+                        <div class="form-text" style="font-size:.72rem;color:#9ca3af">Directory where JSON result files are saved.</div>
                         @error('path') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label">Config Path</label>
+                        <input type="text" name="cfg_path" value="{{ old('cfg_path', '/cfg') }}"
+                               class="form-control @error('cfg_path') is-invalid @enderror"
+                               style="font-family:monospace">
+                        <div class="form-text" style="font-size:.72rem;color:#9ca3af">Directory where ACC config files are pushed (entrylist.json, configuration.json, settings.json).</div>
+                        @error('cfg_path') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                 </div>
             </div>

@@ -129,6 +129,43 @@
                         </div>
                     </div>
 
+                    {{-- Push Config --}}
+                    @if($ftpServers->isNotEmpty())
+                    <div class="col-12">
+                        <div class="p-3 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div>
+                                    <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.82rem">Push Config to Server</div>
+                                    <div class="text-secondary mt-1" style="font-size:.75rem">Uploads entrylist.json, configuration.json and settings.json to the server's cfg directory.</div>
+                                </div>
+                            </div>
+                            @if(session('success'))
+                            <div class="alert alert-success py-2 px-3 mb-3" style="font-size:.8rem">{{ session('success') }}</div>
+                            @endif
+                            @if(session('error'))
+                            <div class="alert alert-danger py-2 px-3 mb-3" style="font-size:.8rem">{{ session('error') }}</div>
+                            @endif
+                            <form action="{{ route('admin.races.push-config', $race) }}" method="POST" class="d-flex gap-2 align-items-end flex-wrap">
+                                @csrf
+                                <div class="flex-grow-1" style="min-width:200px">
+                                    <label class="form-label fw-bold text-dark" style="font-size:.78rem">Server</label>
+                                    <select name="server_id" class="form-select form-select-sm @error('server_id') is-invalid @enderror">
+                                        <option value="">Select server…</option>
+                                        @foreach($ftpServers as $server)
+                                        <option value="{{ $server->id }}">{{ $server->name }} — {{ $server->cfg_path }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('server_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                </div>
+                                <button type="submit" class="btn btn-sm fw-black text-uppercase text-white flex-shrink-0"
+                                        style="background:#7c3aed;font-size:.78rem;padding:7px 16px">
+                                    Push Config →
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    @endif
+
                     {{-- Right: media --}}
                     @if($race->image_url || $race->icon_url)
                     <div class="col-lg-4">

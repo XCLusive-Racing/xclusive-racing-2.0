@@ -64,4 +64,84 @@ class BopController extends Controller
         $bop->delete();
         return redirect()->route('admin.bops.index')->with('success', 'BOP entry deleted.');
     }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'json_file' => 'required|file|mimes:json,txt|max:4096',
+            'game'      => 'required|in:acc,lmu,iracing,ac',
+            'mode'      => 'required|in:merge,replace',
+        ]);
+
+        $content = file_get_contents($request->file('json_file')->getRealPath());
+        $decoded = json_decode($content, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return back()->with('import_error', 'Invalid JSON: ' . json_last_error_msg());
+        }
+
+        $entries = isset($decoded['entries']) ? $decoded['entries'] : $decoded;
+
+        if (!is_array($entries) || empty($entries)) {
+            return back()->with('import_error', 'JSON must contain an array of BOP entries.');
+        }
+
+        $game = $request->input('game');
+
+        if ($request->input('mode') === 'replace') {
+            Bop::where('game', $game)->delete();
+        }
+
+        $created = 0;
+        $updated = 0;
+        $skipped = 0;
+
+        foreach ($entries as $entry) {
+            $carModel = $entry['car_model'] ?? null;
+
+            if (!$carModel) {
+                $skipped++;
+                continue;
+            }
+
+            $track    = ($entry['track'] ?? null) ?: null;
+            $ballast  = isset($entry['ballast_kg']) ? (int) $entry['ballast_kg'] : 0;
+            $restrict = isset($entry['restrictor']) ? (int) $entry['restrictor'] : 0;
+            $notes    = ($entry['notes'] ?? null) ?: null;
+
+            if ($request->input('mode') === 'merge') {
+                $existing = Bop::where('game', $game)
+                    ->where('car_model', $carModel)
+                    ->where('track', $track)
+                    ->first();
+
+                if ($existing) {
+                    $existing->update([
+                        'ballast_kg' => $ballast,
+                        'restrictor' => $restrict,
+                        'notes'      => $notes,
+                    ]);
+                    $updated++;
+                    continue;
+                }
+            }
+
+            Bop::create([
+                'game'       => $game,
+                'car_model'  => $carModel,
+                'track'      => $track,
+                'ballast_kg' => $ballast,
+                'restrictor' => $restrict,
+                'notes'      => $notes,
+            ]);
+            $created++;
+        }
+
+        $parts = [];
+        if ($created) $parts[] = "{$created} created";
+        if ($updated) $parts[] = "{$updated} updated";
+        if ($skipped) $parts[] = "{$skipped} skipped";
+
+        return back()->with('success', 'Import complete: ' . implode(', ', $parts) . '.');
+    }
 }

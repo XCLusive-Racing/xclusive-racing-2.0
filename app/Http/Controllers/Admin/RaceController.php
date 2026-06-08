@@ -7,6 +7,7 @@ use App\Models\EventTag;
 use App\Models\FtpImportedFile;
 use App\Models\FtpServer;
 use App\Models\Race;
+use App\Services\AccServerConfigService;
 use App\Services\FtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -147,7 +148,7 @@ class RaceController extends Controller
             Race::create(array_merge($shared, [
                 'title'        => $event['title'],
                 'track'        => $event['track'],
-                'scheduled_at' => $event['scheduled_at'],
+                'scheduled_at' => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $event['scheduled_at'], 'Europe/London')->utc(),
             ]));
         }
 
@@ -186,6 +187,7 @@ class RaceController extends Controller
             'icon_path'            => 'nullable|string|max:500',
         ]);
 
+        $data['scheduled_at'] = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
         $data['image'] = $this->resolveMedia($request);
         $data['icon']  = $this->resolveIcon($request);
         unset($data['image_path'], $data['icon_path']);
@@ -237,6 +239,8 @@ class RaceController extends Controller
             'icon_keep'            => 'nullable|in:0,1',
         ]);
 
+        $data['scheduled_at'] = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
+
         $resolvedImage  = $this->resolveMedia($request);
         $data['image']  = $resolvedImage ?? ($request->input('image_keep') === '0' ? null : $race->image);
 
@@ -248,6 +252,41 @@ class RaceController extends Controller
         $race->update($data);
 
         return redirect()->route('admin.races.index')->with('success', 'Race updated successfully!');
+    }
+
+    public function pushConfig(Request $request, Race $race, AccServerConfigService $config)
+    {
+        $request->validate(['server_id' => 'required|exists:ftp_servers,id']);
+
+        $server = FtpServer::findOrFail($request->server_id);
+        $ftp    = new FtpService();
+
+        if (!$ftp->connect($server)) {
+            return back()->with('error', 'Could not connect to ' . $server->host . '.');
+        }
+
+        $cfgPath = rtrim($server->cfg_path, '/');
+
+        $files = [
+            'entrylist.json'     => json_encode($config->entryList($race),     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            'configuration.json' => json_encode($config->configuration($race), JSON_PRETTY_PRINT),
+            'settings.json'      => json_encode($config->settings($race),      JSON_PRETTY_PRINT),
+        ];
+
+        $failed = [];
+        foreach ($files as $filename => $content) {
+            if (!$ftp->uploadFile($cfgPath . '/' . $filename, $content)) {
+                $failed[] = $filename;
+            }
+        }
+
+        $ftp->disconnect();
+
+        if ($failed) {
+            return back()->with('error', 'Failed to upload: ' . implode(', ', $failed));
+        }
+
+        return back()->with('success', 'Config pushed to ' . $server->name . ' — entrylist.json, configuration.json, settings.json uploaded.');
     }
 
     private function resolveMedia(Request $request): ?string
