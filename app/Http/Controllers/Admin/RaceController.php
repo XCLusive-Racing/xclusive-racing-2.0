@@ -22,14 +22,7 @@ class RaceController extends Controller
             ->orderBy('scheduled_at', 'desc')
             ->get();
 
-        $stats = [
-            'total'         => $races->count(),
-            'open'          => $races->where('status', 'open')->count(),
-            'finished'      => $races->where('status', 'finished')->count(),
-            'registrations' => $races->sum('registrations_count'),
-        ];
-
-        return view('admin.races.index', compact('races', 'stats'));
+        return view('admin.races.index', compact('races'));
     }
 
     public function create(Request $request)
@@ -74,20 +67,6 @@ class RaceController extends Controller
 
         $tags = EventTag::orderBy('name')->get();
         return view('admin.races.edit', compact('race', 'tags'));
-    }
-
-    public function destroy(Race $race)
-    {
-        if ($race->status !== 'finished') {
-            return redirect()->route('admin.races.index')
-                ->with('error', 'Only finished races can be deleted.');
-        }
-
-        $title = $race->title;
-        $race->delete();
-
-        return redirect()->route('admin.races.index')
-            ->with('success', '"' . $title . '" deleted. Results are preserved on driver profiles.');
     }
 
     public function update(Request $request, Race $race)

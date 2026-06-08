@@ -74,7 +74,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/races', [AdminRaceController::class, 'store'])->name('races.store');
     Route::get('/races/{race}/edit', [AdminRaceController::class, 'edit'])->name('races.edit');
     Route::put('/races/{race}', [AdminRaceController::class, 'update'])->name('races.update');
-    Route::delete('/races/{race}', [AdminRaceController::class, 'destroy'])->name('races.destroy');
     Route::get('/races/{race}/results', [RaceResultController::class, 'create'])->name('races.results');
     Route::post('/races/{race}/results', [RaceResultController::class, 'store'])->name('races.results.store');
     Route::post('/races/{race}/results/ftp', [RaceResultController::class, 'ftpImport'])->name('races.results.ftp');

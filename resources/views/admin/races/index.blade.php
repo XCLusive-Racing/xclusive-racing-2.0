@@ -16,62 +16,6 @@
 
 @section('content')
 
-{{-- Metric cards --}}
-<div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
-        <div class="metric-card">
-            <div class="metric-icon" style="background:#f3e8ff">
-                <svg width="24" height="24" fill="none" stroke="#7c3aed" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 6h18M3 14h10M3 18h6"/>
-                </svg>
-            </div>
-            <div>
-                <div class="metric-value">{{ $stats['total'] }}</div>
-                <div class="metric-label">Total Races</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="metric-card">
-            <div class="metric-icon" style="background:#d1fae5">
-                <svg width="24" height="24" fill="none" stroke="#059669" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-            </div>
-            <div>
-                <div class="metric-value">{{ $stats['open'] }}</div>
-                <div class="metric-label">Open Events</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="metric-card">
-            <div class="metric-icon" style="background:#dbeafe">
-                <svg width="24" height="24" fill="none" stroke="#2563eb" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
-                </svg>
-            </div>
-            <div>
-                <div class="metric-value">{{ $stats['registrations'] }}</div>
-                <div class="metric-label">Registrations</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="metric-card">
-            <div class="metric-icon" style="background:#f3f4f6">
-                <svg width="24" height="24" fill="none" stroke="#374151" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 3l14 9-14 9V3z"/>
-                </svg>
-            </div>
-            <div>
-                <div class="metric-value">{{ $stats['finished'] }}</div>
-                <div class="metric-label">Finished</div>
-            </div>
-        </div>
-    </div>
-</div>
-
 {{-- DataTable card --}}
 <div class="admin-card">
 
@@ -80,26 +24,26 @@
         <span class="fw-bold text-uppercase me-1" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Filter:</span>
         <button onclick="filterGame('')"
                 id="filter-all"
-                class="btn btn-sm fw-bold text-uppercase px-3 active"
+                class="btn btn-sm fw-bold text-uppercase px-3"
                 style="font-size:.72rem;border-radius:6px;background:#111827;color:white;border:1px solid #111827">
             All
         </button>
         <button onclick="filterGame('ACC Console')"
                 id="filter-acc"
                 class="btn btn-sm fw-bold text-uppercase px-3"
-                style="font-size:.72rem;border-radius:6px;background:rgba(124,58,237,.08);color:#7c3aed;border:1px solid rgba(124,58,237,.2)">
+                style="font-size:.72rem;border-radius:6px;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb">
             ACC Console
         </button>
         <button onclick="filterGame('Le Mans Ultimate')"
                 id="filter-lmu"
                 class="btn btn-sm fw-bold text-uppercase px-3"
-                style="font-size:.72rem;border-radius:6px;background:rgba(219,39,119,.08);color:#db2777;border:1px solid rgba(219,39,119,.2)">
+                style="font-size:.72rem;border-radius:6px;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb">
             Le Mans Ultimate
         </button>
         <button onclick="filterGame('iRacing')"
                 id="filter-iracing"
                 class="btn btn-sm fw-bold text-uppercase px-3"
-                style="font-size:.72rem;border-radius:6px;background:rgba(37,99,235,.08);color:#2563eb;border:1px solid rgba(37,99,235,.2)">
+                style="font-size:.72rem;border-radius:6px;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb">
             iRacing
         </button>
     </div>
@@ -158,17 +102,6 @@
                                 Edit
                             </a>
                             @endif
-                            @if($race->status === 'finished')
-                            <form action="{{ route('admin.races.destroy', $race) }}" method="POST"
-                                  onsubmit="return confirm('Delete {{ addslashes($race->title) }}?\nResults will be preserved on driver profiles.')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm fw-bold text-uppercase"
-                                        style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.72rem;padding:5px 12px;border-radius:6px">
-                                    Delete
-                                </button>
-                            </form>
-                            @endif
                         </div>
                     </td>
                 </tr>
@@ -206,13 +139,6 @@
             });
         });
 
-        const filterStyles = {
-            '':                { bg: '#f3f4f6',              border: '#e5e7eb',              color: '#374151' },
-            'ACC Console':     { bg: 'rgba(124,58,237,.08)', border: 'rgba(124,58,237,.2)',  color: '#7c3aed' },
-            'Le Mans Ultimate':{ bg: 'rgba(219,39,119,.08)', border: 'rgba(219,39,119,.2)',  color: '#db2777' },
-            'iRacing':         { bg: 'rgba(37,99,235,.08)',  border: 'rgba(37,99,235,.2)',   color: '#2563eb' },
-        };
-
         const filterIds = {
             '':                 'filter-all',
             'ACC Console':      'filter-acc',
@@ -224,18 +150,11 @@
             table.column(1).search(game, false, false).draw();
 
             Object.entries(filterIds).forEach(([key, id]) => {
-                const btn = document.getElementById(id);
-                const s   = filterStyles[key];
-                const activeStyle = key === '' ? { bg: '#111827', border: '#111827', color: 'white' } : { bg: '#7c3aed', border: '#7c3aed', color: 'white' };
-                if (key === game) {
-                    btn.style.background   = activeStyle.bg;
-                    btn.style.borderColor  = activeStyle.border;
-                    btn.style.color        = activeStyle.color;
-                } else {
-                    btn.style.background   = s.bg;
-                    btn.style.borderColor  = s.border;
-                    btn.style.color        = s.color;
-                }
+                const btn    = document.getElementById(id);
+                const active = key === game;
+                btn.style.background  = active ? '#111827' : '#f3f4f6';
+                btn.style.borderColor = active ? '#111827' : '#e5e7eb';
+                btn.style.color       = active ? 'white'   : '#374151';
             });
         }
     </script>

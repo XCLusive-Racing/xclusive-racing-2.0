@@ -62,36 +62,13 @@
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                 </svg>
-                <span x-show="!sidebarCollapsed">View Events</span>
+                <span x-show="!sidebarCollapsed">View Site</span>
             </a>
         </div>
 
-        @if(auth()->user()->canSeeUsers())
-        {{-- Management — owner, admin, moderator --}}
-        <div x-show="!sidebarCollapsed" class="admin-nav-section-header" @click="sections.config = !sections.config">
-            <span>Management</span>
-            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
-                 :style="sections.config ? '' : 'transform:rotate(-90deg)'" style="transition:transform .2s">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-            </svg>
-        </div>
-        <div x-show="sidebarCollapsed" class="admin-nav-section-divider"></div>
-
-        <div x-show="sections.config || sidebarCollapsed">
-            <a href="{{ route('admin.users.index') }}"
-               class="admin-nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
-                </svg>
-                <span x-show="!sidebarCollapsed">Users</span>
-            </a>
-        </div>
-        @endif
-
-        @if(auth()->user()->canManageEvents())
-        {{-- Events — owner, admin, event_manager --}}
+        {{-- Management --}}
         <div x-show="!sidebarCollapsed" class="admin-nav-section-header" @click="sections.events = !sections.events">
-            <span>Events</span>
+            <span>Management</span>
             <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
                  :style="sections.events ? '' : 'transform:rotate(-90deg)'" style="transition:transform .2s">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
@@ -100,8 +77,9 @@
         <div x-show="sidebarCollapsed" class="admin-nav-section-divider"></div>
 
         <div x-show="sections.events || sidebarCollapsed">
+            @if(auth()->user()->canManageEvents())
             <a href="{{ route('admin.races.index') }}"
-               class="admin-nav-link {{ request()->routeIs('admin.races.index') ? 'active' : '' }}">
+               class="admin-nav-link {{ request()->routeIs('admin.races.index') || request()->routeIs('admin.races.results*') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 6h18M3 14h10M3 18h6"/>
                 </svg>
@@ -114,18 +92,51 @@
                 </svg>
                 <span x-show="!sidebarCollapsed">Calendar</span>
             </a>
+            @endif
+            @if(auth()->user()->hasAnyRole(['owner', 'admin']))
+            <a href="{{ route('admin.media.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.media.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">Media Library</span>
+            </a>
+            @endif
+            @if(auth()->user()->canSeeUsers())
+            <a href="{{ route('admin.users.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">Users</span>
+            </a>
+            @endif
+        </div>
+
+        @if(auth()->user()->canManageEvents())
+        {{-- Events --}}
+        <div x-show="!sidebarCollapsed" class="admin-nav-section-header" @click="sections.config = !sections.config">
+            <span>Events</span>
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                 :style="sections.config ? '' : 'transform:rotate(-90deg)'" style="transition:transform .2s">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </div>
+        <div x-show="sidebarCollapsed" class="admin-nav-section-divider"></div>
+
+        <div x-show="sections.config || sidebarCollapsed">
             <a href="{{ route('admin.races.create') }}"
                class="admin-nav-link {{ request()->routeIs('admin.races.create') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
                 </svg>
-                <span x-show="!sidebarCollapsed">Create Single Race</span>
+                <span x-show="!sidebarCollapsed">Create Race</span>
             </a>
         </div>
         @endif
 
         @if(auth()->user()->hasAnyRole(['owner', 'admin']))
-        {{-- Configuration — owner, admin only --}}
+        {{-- Configuration --}}
         <div x-show="!sidebarCollapsed" class="admin-nav-section-header" @click="sections.ftp = !sections.ftp">
             <span>Configuration</span>
             <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
@@ -142,13 +153,6 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
                 </svg>
                 <span x-show="!sidebarCollapsed">FTP Servers</span>
-            </a>
-            <a href="{{ route('admin.media.index') }}"
-               class="admin-nav-link {{ request()->routeIs('admin.media.*') ? 'active' : '' }}">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
-                </svg>
-                <span x-show="!sidebarCollapsed">Media Library</span>
             </a>
         </div>
         @endif
