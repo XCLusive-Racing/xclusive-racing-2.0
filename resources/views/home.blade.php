@@ -54,12 +54,10 @@
 {{-- ─── Legacy / About ──────────────────────────────────────────────────────── --}}
 <x-about-section />
 
-{{-- ─── Meet Our Team carousel ─────────────────────────────────────────────── --}}
-<div class="pt-5 mt-5">
+{{-- ─── Meet Our Team ──────────────────────────────────────────────────────── --}}
 <x-meet-team />
-</div>
-{{-- ─── Partners ─────────────────────────────────────────────────────────── --}}
-<section id="partners" class="partners-section py-5 px-3" style="margin-top:-10vh;padding-top:calc(3rem + 10vh)">
+{{-- ─── Partners ───────────────────────────────────────────────────────────── --}}
+<section id="partners" class="partners-section py-5 px-3">
     <div class="about-section__topo" style="background-image:url('/topo.png');"></div>
     <div class="container-xl text-center position-relative" style="z-index:1">
         <h2 class="display-4 fw-black text-uppercase fst-italic about-section__heading mb-3">PARTNERS</h2>

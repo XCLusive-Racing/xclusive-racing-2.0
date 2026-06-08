@@ -1235,6 +1235,7 @@ html {
     background: white;
     position: relative;
     overflow: hidden;
+    padding-bottom: 5rem !important;
 
     &__heading {
         display: inline-block;
@@ -2485,7 +2486,7 @@ body.admin-body {
 // ─── Meet Our Team component ──────────────────────────────────────────────────
 
 .meet-team-section {
-    background: #12011a;
+    background: linear-gradient(to right, #24003d, #6b0d47);
     position: relative;
     overflow: hidden;
     // Lichte diagonale insnede aan de bovenkant
@@ -2495,18 +2496,8 @@ body.admin-body {
     padding-bottom: calc(3rem + 10vh) !important;
 }
 
-// SVG hex patroon overlay — tiled at natural pixel size, no stretch
 .meet-team-pattern {
-    position: absolute;
-    inset: 0;
-    background-image: url('/images/home/teams/Dark_Purple_Hex.png');
-    background-size: auto;
-    background-repeat: repeat;
-    background-position: center;
-    opacity: 0.25;
-    pointer-events: none;
-    z-index: 0;
-    filter: brightness(3) saturate(0.5);
+    display: none;
 }
 
 // Swipe-animaties bij kaart wissel
