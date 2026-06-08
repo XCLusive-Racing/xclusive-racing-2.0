@@ -187,6 +187,56 @@
                 </div>
 
                 <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+                    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Event Format <span class="fw-normal" style="text-transform:none">(optional)</span></p>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-4">
+                            <label class="form-label">Practice <span class="fw-normal text-secondary">(min)</span></label>
+                            <input type="number" name="practice_duration" value="{{ old('practice_duration', $race->practice_duration) }}"
+                                   class="form-control" min="1" max="999" placeholder="e.g. 15">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Qualifying <span class="fw-normal text-secondary">(min)</span></label>
+                            <input type="number" name="qualifying_duration" value="{{ old('qualifying_duration', $race->qualifying_duration) }}"
+                                   class="form-control" min="1" max="999" placeholder="e.g. 10">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Race <span class="fw-normal text-secondary">(min)</span></label>
+                            <input type="number" name="race_duration" value="{{ old('race_duration', $race->race_duration) }}"
+                                   class="form-control" min="1" max="999" placeholder="e.g. 20">
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-sm-4">
+                            <label class="form-label">Car Class</label>
+                            <input type="text" name="car_class" value="{{ old('car_class', $race->car_class) }}"
+                                   class="form-control" placeholder="e.g. GT3, GT4, LMP2">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Weather</label>
+                            <select name="weather" class="form-select">
+                                <option value="">— Not set —</option>
+                                <option value="dry"    {{ old('weather', $race->weather) === 'dry'    ? 'selected' : '' }}>Dry</option>
+                                <option value="wet"    {{ old('weather', $race->weather) === 'wet'    ? 'selected' : '' }}>Wet</option>
+                                <option value="mixed"  {{ old('weather', $race->weather) === 'mixed'  ? 'selected' : '' }}>Mixed</option>
+                                <option value="random" {{ old('weather', $race->weather) === 'random' ? 'selected' : '' }}>Random</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Time of Day</label>
+                            <select name="time_of_day" class="form-select">
+                                <option value="">— Not set —</option>
+                                <option value="day"     {{ old('time_of_day', $race->time_of_day) === 'day'     ? 'selected' : '' }}>Day</option>
+                                <option value="dusk"    {{ old('time_of_day', $race->time_of_day) === 'dusk'    ? 'selected' : '' }}>Dusk</option>
+                                <option value="night"   {{ old('time_of_day', $race->time_of_day) === 'night'   ? 'selected' : '' }}>Night</option>
+                                <option value="dynamic" {{ old('time_of_day', $race->time_of_day) === 'dynamic' ? 'selected' : '' }}>Dynamic</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Description <span class="fw-normal" style="text-transform:none">(optional)</span></p>
                     <textarea name="description" rows="3"
                               class="form-control @error('description') is-invalid @enderror"

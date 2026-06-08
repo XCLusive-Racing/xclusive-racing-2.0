@@ -189,7 +189,12 @@ $sbLeaderboard = User::where('elo_acc', '>', 0)
                                 default   => [['fa-solid fa-desktop','PC']],
                             };
                         @endphp
+                        <div x-show="gameFilter !== 'all' && gameFilter !== '{{ $sbNextEvent->game }}'" class="xcl-sb-empty" style="display:none">
+                            <p>NO <span x-text="gameFilter.toUpperCase()"></span> EVENTS</p>
+                            <p>No upcoming events for this game</p>
+                        </div>
                         <div class="xcl-sb-next"
+                             x-show="gameFilter === 'all' || gameFilter === '{{ $sbNextEvent->game }}'"
                              x-data="{
                                  d: 0, h: 0, m: 0, s: 0,
                                  init() {
@@ -331,6 +336,7 @@ $sbLeaderboard = User::where('elo_acc', '>', 0)
                             };
                         @endphp
                         <div class="xcl-sb-up-card"
+                             x-show="gameFilter === 'all' || gameFilter === '{{ $event->game }}'"
                              x-data="{
                                  d: 0, h: 0, m: 0, s: 0,
                                  init() {

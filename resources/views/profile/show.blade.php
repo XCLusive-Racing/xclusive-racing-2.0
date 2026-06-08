@@ -73,9 +73,9 @@
             </div>
         </div>
 
-        {{-- Next steps --}}
+        {{-- Next events --}}
         <div class="bg-white rounded-3 shadow-sm p-4 mb-4">
-            <h2 class="fs-2 fw-black text-uppercase fst-italic text-dark mb-4">NEXT STEPS</h2>
+            <h2 class="fs-2 fw-black text-uppercase fst-italic text-dark mb-4">NEXT EVENTS</h2>
             <div class="row g-3">
                 <div class="col-md-6">
                     @if($nextEvent)
