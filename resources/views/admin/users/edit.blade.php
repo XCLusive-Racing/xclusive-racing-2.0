@@ -91,8 +91,8 @@
                 </div>
                 <div class="col-sm-6">
                     <label class="form-label fw-bold text-dark" style="font-size:.82rem">Banner URL</label>
-                    <input type="url" name="banner" value="{{ old('banner',$user->banner) }}"
-                           class="form-control" style="border-color:#e5e7eb" placeholder="https://...">
+                    <input type="text" name="banner" value="{{ old('banner',$user->banner) }}"
+                           class="form-control" style="border-color:#e5e7eb" placeholder="https://... or images/avatars/...">
                 </div>
             </div>
         </div>

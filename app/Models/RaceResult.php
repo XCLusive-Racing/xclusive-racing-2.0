@@ -13,6 +13,7 @@ class RaceResult extends Model
         'player_id', 'driver_name', 'car_number', 'vehicle',
         'position', 'best_lap', 'lap_count', 'laps_led', 'total_time', 'consistency',
         'fastest_lap', 'dnf',
+        'rating_before', 'rating_after', 'elo_change', 'sof',
     ];
 
     private const ACC_CARS = [
@@ -62,8 +63,12 @@ class RaceResult extends Model
     protected function casts(): array
     {
         return [
-            'fastest_lap' => 'boolean',
-            'dnf'         => 'boolean',
+            'fastest_lap'   => 'boolean',
+            'dnf'           => 'boolean',
+            'rating_before' => 'decimal:4',
+            'rating_after'  => 'decimal:4',
+            'elo_change'    => 'decimal:4',
+            'sof'           => 'decimal:2',
         ];
     }
 

@@ -9,6 +9,8 @@ use App\Models\Race;
 use App\Models\RaceResult;
 use App\Models\User;
 use App\Services\FtpService;
+use App\Services\RatingService;
+use App\Services\XclRating;
 use Illuminate\Http\Request;
 
 class RaceResultController extends Controller
@@ -174,6 +176,7 @@ class RaceResultController extends Controller
 
         if ($counts['race'] > 0) {
             $race->update(['status' => 'finished']);
+            (new RatingService(new XclRating()))->processRace($race);
         }
 
         return [$counts, $errors];

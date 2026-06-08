@@ -82,9 +82,44 @@ class MediaController extends Controller
         return redirect()->route('admin.media.index')->with('success', 'Media added successfully.');
     }
 
+    public function migrateStorage()
+    {
+        $moved = 0;
+
+        foreach (['images', 'videos'] as $folder) {
+            $oldBase = storage_path('app/public/' . $folder);
+            $newBase = public_path('uploads/' . $folder);
+
+            if (!is_dir($oldBase)) continue;
+
+            $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($oldBase, \FilesystemIterator::SKIP_DOTS));
+
+            foreach ($iterator as $file) {
+                if (!$file->isFile()) continue;
+
+                $relative  = substr($file->getPathname(), strlen(storage_path('app/public')) + 1);
+                $relative  = str_replace('\\', '/', $relative);
+                $dest      = public_path('uploads/' . $relative);
+
+                if (file_exists($dest)) continue;
+
+                @mkdir(dirname($dest), 0755, true);
+
+                if (copy($file->getPathname(), $dest)) {
+                    $moved++;
+                }
+            }
+        }
+
+        return redirect()->route('admin.media.index')
+            ->with('success', "Storage migrated: {$moved} file(s) moved to public/uploads.");
+    }
+
     public function destroy(Media $media)
     {
-        Storage::disk('public')->delete($media->path);
+        if ($media->path) {
+            Storage::disk('media')->delete($media->path);
+        }
         $media->delete();
 
         if (request()->expectsJson()) {

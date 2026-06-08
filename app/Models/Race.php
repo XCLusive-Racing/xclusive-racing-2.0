@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 
 class Race extends Model
 {
-    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon'];
+    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon', 'duration_key'];
 
     protected function casts(): array
     {
@@ -75,12 +75,12 @@ class Race extends Model
 
     public function getImageUrlAttribute(): ?string
     {
-        return $this->image ? Storage::disk('public')->url($this->image) : null;
+        return $this->image ? Storage::disk('media')->url($this->image) : null;
     }
 
     public function getIconUrlAttribute(): ?string
     {
-        return $this->icon ? Storage::disk('public')->url($this->icon) : null;
+        return $this->icon ? Storage::disk('media')->url($this->icon) : null;
     }
 
     public function gameColor(): string

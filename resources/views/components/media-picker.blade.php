@@ -1,4 +1,4 @@
-@props(['name' => 'image', 'label' => 'Image', 'current' => null, 'currentType' => 'image', 'optional' => true])
+@props(['name' => 'image', 'label' => 'Image', 'current' => null, 'currentType' => 'image', 'optional' => true, 'filterDefault' => 'all'])
 
 @once
 @push('scripts')
@@ -10,11 +10,12 @@ function xcMediaPicker(config) {
         mediaPath: config.mediaPath || '',
         galleryUrl: config.galleryUrl,
         uploadUrl: config.uploadUrl,
+        deleteBaseUrl: config.deleteBaseUrl,
         csrfToken: config.csrfToken,
         galleryOpen: false,
         galleryItems: [],
         gallerySearch: '',
-        galleryFilter: 'all',
+        galleryFilter: config.filterDefault || 'all',
         galleryLoading: false,
         modalUploading: false,
 
@@ -82,6 +83,23 @@ function xcMediaPicker(config) {
             this.$refs.fileInput.value = '';
         },
 
+        async deleteMedia(item) {
+            if (!confirm('Delete "' + (item.title || item.original_name) + '" from the library? This cannot be undone.')) return;
+            const r = await fetch(this.deleteBaseUrl + item.id, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': this.csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            });
+            if (r.ok) {
+                this.galleryItems = this.galleryItems.filter(i => i.id !== item.id);
+                if (this.mediaPath === item.path) {
+                    this.clear();
+                }
+            }
+        },
+
         get filtered() {
             return this.galleryItems.filter(i => {
                 const matchType = this.galleryFilter === 'all' || i.type === this.galleryFilter;
@@ -100,7 +118,7 @@ function xcMediaPicker(config) {
 @endonce
 
 @php
-    $currentUrl  = $current ? \Illuminate\Support\Facades\Storage::disk('public')->url($current) : '';
+    $currentUrl  = $current ? \Illuminate\Support\Facades\Storage::disk('media')->url($current) : '';
     $currentType = $currentType ?? 'image';
 @endphp
 
@@ -110,7 +128,9 @@ function xcMediaPicker(config) {
     mediaPath: '{{ $current ?? '' }}',
     galleryUrl: '{{ route('admin.media.list') }}',
     uploadUrl: '{{ route('admin.media.store') }}',
-    csrfToken: '{{ csrf_token() }}'
+    deleteBaseUrl: '{{ url('admin/media') }}/',
+    csrfToken: '{{ csrf_token() }}',
+    filterDefault: '{{ $filterDefault }}'
 })">
 
     <label class="form-label">
@@ -204,6 +224,8 @@ function xcMediaPicker(config) {
 
     {{-- Hidden: stores media path (gallery pick or empty if direct upload) --}}
     <input type="hidden" name="{{ $name }}_path" x-model="mediaPath">
+    {{-- Hidden: 1 = media selected/unchanged, 0 = explicitly cleared --}}
+    <input type="hidden" name="{{ $name }}_keep" :value="preview ? '1' : '0'">
 
     @error($name)
         <div class="text-danger mt-1" style="font-size:.85rem">{{ $message }}</div>
@@ -230,6 +252,10 @@ function xcMediaPicker(config) {
                             class="btn btn-sm fw-bold text-uppercase"
                             :style="galleryFilter==='image' ? 'background:#7c3aed;color:white;border:1px solid #7c3aed' : 'background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb'"
                             style="font-size:.68rem;padding:.2rem .55rem">Images</button>
+                    <button type="button" @click="galleryFilter='icon'"
+                            class="btn btn-sm fw-bold text-uppercase"
+                            :style="galleryFilter==='icon' ? 'background:#d97706;color:white;border:1px solid #d97706' : 'background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb'"
+                            style="font-size:.68rem;padding:.2rem .55rem">Icons</button>
                     <button type="button" @click="galleryFilter='video'"
                             class="btn btn-sm fw-bold text-uppercase"
                             :style="galleryFilter==='video' ? 'background:#2563eb;color:white;border:1px solid #2563eb' : 'background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb'"
@@ -276,15 +302,22 @@ function xcMediaPicker(config) {
                 <template x-if="!galleryLoading && filtered.length > 0">
                     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.6rem">
                         <template x-for="item in filtered" :key="item.id">
-                            <div @click="selectGallery(item)"
+                            <div x-data="{hov:false}"
+                                 @click.self="selectGallery(item)"
                                  style="border:2px solid transparent;border-radius:8px;overflow:hidden;cursor:pointer;position:relative;aspect-ratio:1;background:#111827;transition:border-color .12s,transform .12s"
-                                 @mouseenter="$el.style.borderColor='#7c3aed';$el.style.transform='scale(1.03)'"
-                                 @mouseleave="$el.style.borderColor='transparent';$el.style.transform='scale(1)'">
+                                 @mouseenter="hov=true;$el.style.borderColor='#7c3aed';$el.style.transform='scale(1.03)'"
+                                 @mouseleave="hov=false;$el.style.borderColor='transparent';$el.style.transform='scale(1)'">
 
                                 {{-- Image preview --}}
                                 <template x-if="item.type === 'image'">
                                     <img :src="item.url" :alt="item.original_name"
                                          style="width:100%;height:100%;object-fit:cover;display:block">
+                                </template>
+
+                                {{-- Icon preview --}}
+                                <template x-if="item.type === 'icon'">
+                                    <img :src="item.url" :alt="item.original_name"
+                                         style="width:70%;height:70%;object-fit:contain;display:block;margin:auto">
                                 </template>
 
                                 {{-- Video preview --}}
@@ -304,10 +337,16 @@ function xcMediaPicker(config) {
                                 </template>
 
                                 {{-- Name overlay --}}
-                                <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.7));padding:.3rem .4rem">
+                                <div @click.self="selectGallery(item)" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.7));padding:.3rem .4rem">
                                     <div class="text-white text-truncate" style="font-size:.62rem" x-text="item.title || item.original_name"></div>
                                     <div style="font-size:.58rem;color:rgba(255,255,255,.55)" x-text="item.size"></div>
                                 </div>
+                                {{-- Delete button --}}
+                                <button type="button"
+                                        @click.stop="deleteMedia(item)"
+                                        :style="hov ? 'opacity:1' : 'opacity:0'"
+                                        style="position:absolute;top:.3rem;right:.3rem;background:rgba(220,38,38,.85);border:none;color:white;width:20px;height:20px;border-radius:4px;font-size:.65rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .15s"
+                                        title="Delete">✕</button>
                             </div>
                         </template>
                     </div>

@@ -433,14 +433,69 @@
 
     {{-- Ratings tab --}}
     <div x-show="tab === 'ratings'" x-cloak>
+        @php $ratedResults = $raceResults->whereNotNull('rating_after')->sortBy('position'); @endphp
+
+        @if($ratedResults->isEmpty())
         <div class="p-5 text-center">
-            <div style="font-size:2.5rem;margin-bottom:.75rem">📊</div>
-            <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:1.1rem">ELO Ratings</div>
-            <div class="text-secondary mt-2" style="font-size:.875rem;max-width:380px;margin:0 auto">
-                Rating changes will appear here after ELO calculation is implemented.
-                Ratings are based on race results per platform (ACC, LMU, iRacing).
-            </div>
+            <div class="fw-bold text-dark" style="font-size:.95rem">No rating data yet</div>
+            <div class="text-secondary mt-1" style="font-size:.82rem">Import race results first — ratings are calculated automatically.</div>
         </div>
+        @else
+        @php $sof = $ratedResults->first()->sof; @endphp
+        <div class="px-4 py-3 d-flex align-items-center gap-3" style="border-bottom:1px solid #f3f4f6;background:#f9fafb">
+            <span class="fw-black text-uppercase fst-italic text-dark" style="font-size:.78rem">Strength of Field</span>
+            <span class="badge fw-bold" style="background:#7c3aed;color:white;font-size:.78rem;padding:4px 10px;border-radius:6px">
+                {{ number_format($sof, 0) }}
+            </span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size:.82rem">
+                <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+                    <tr>
+                        <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:50px">Pos</th>
+                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Driver</th>
+                        <th class="fw-bold text-uppercase text-center" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:80px">Status</th>
+                        <th class="fw-bold text-uppercase text-end" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:110px">Before</th>
+                        <th class="fw-bold text-uppercase text-end" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:100px">Elo Δ</th>
+                        <th class="fw-bold text-uppercase text-end pe-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:110px">After</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($ratedResults as $result)
+                    @php $change = (float) $result->elo_change; @endphp
+                    <tr>
+                        <td class="ps-4"><x-race-position :position="$result->position" /></td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
+                                     style="width:28px;height:28px;font-size:.68rem;background:{{ $race->gameColor() }}">
+                                    {{ strtoupper(substr($result->displayName(), 0, 1)) }}
+                                </div>
+                                <span class="fw-bold">{{ $result->displayName() }}</span>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            @if($result->dnf)
+                                <span class="badge" style="background:#fef2f2;color:#dc2626;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">DNF</span>
+                            @else
+                                <span class="badge" style="background:#f0fdf4;color:#16a34a;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">FIN</span>
+                            @endif
+                        </td>
+                        <td class="text-end text-secondary" style="font-family:monospace;font-size:.8rem">
+                            {{ number_format((float) $result->rating_before, 0) }}
+                        </td>
+                        <td class="text-end fw-black" style="font-family:monospace;font-size:.85rem;color:{{ $change >= 0 ? '#059669' : '#dc2626' }}">
+                            {{ $change >= 0 ? '+' : '' }}{{ number_format($change, 1) }}
+                        </td>
+                        <td class="text-end pe-4 fw-bold" style="font-family:monospace;font-size:.8rem">
+                            {{ number_format((float) $result->rating_after, 0) }}
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
     </div>
 
 </div>

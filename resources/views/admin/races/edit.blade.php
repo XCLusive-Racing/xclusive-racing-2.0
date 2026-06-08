@@ -45,6 +45,25 @@
                 </div>
             </div>
 
+            <div class="mb-3">
+                <label class="form-label">Rating Multiplier</label>
+                <select name="duration_key" class="form-select @error('duration_key') is-invalid @enderror">
+                    <option value="">Default (1.0×)</option>
+                    <option value="15"   {{ old('duration_key', $race->duration_key) === '15'   ? 'selected' : '' }}>15 min sprint — 0.6×</option>
+                    <option value="20"   {{ old('duration_key', $race->duration_key) === '20'   ? 'selected' : '' }}>20 min sprint — 0.8×</option>
+                    <option value="30"   {{ old('duration_key', $race->duration_key) === '30'   ? 'selected' : '' }}>30 min sprint — 1.0×</option>
+                    <option value="30+"  {{ old('duration_key', $race->duration_key) === '30+'  ? 'selected' : '' }}>30 min championship sprint — 1.2×</option>
+                    <option value="30++" {{ old('duration_key', $race->duration_key) === '30++' ? 'selected' : '' }}>30 min endurance sprint — 1.3×</option>
+                    <option value="45"   {{ old('duration_key', $race->duration_key) === '45'   ? 'selected' : '' }}>45 min race — 1.5×</option>
+                    <option value="45+"  {{ old('duration_key', $race->duration_key) === '45+'  ? 'selected' : '' }}>45 min race+ — 1.6×</option>
+                    <option value="60"   {{ old('duration_key', $race->duration_key) === '60'   ? 'selected' : '' }}>60 min race — 2.0×</option>
+                    <option value="60+"  {{ old('duration_key', $race->duration_key) === '60+'  ? 'selected' : '' }}>60 min race+ — 2.1×</option>
+                    <option value="90"   {{ old('duration_key', $race->duration_key) === '90'   ? 'selected' : '' }}>90 min race — 2.5×</option>
+                    <option value="90+"  {{ old('duration_key', $race->duration_key) === '90+'  ? 'selected' : '' }}>90 min race+ — 2.6×</option>
+                </select>
+                @error('duration_key') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+
             {{-- Event Tag --}}
             <script>window.__xclTags = @json($tags->map(fn($t) => ['slug'=>$t->slug,'name'=>$t->name,'color'=>$t->color]));</script>
             <div class="mb-3" x-data="{
@@ -181,62 +200,7 @@
 
             <x-media-picker name="image" label="Background Image" :current="$race->image" />
 
-            {{-- Event Icon --}}
-            @php $currentIconUrl = $race->icon_url ?? ''; @endphp
-            <div class="mb-4" x-data="{
-                iconPreview: '{{ $currentIconUrl }}',
-                iconPath: '{{ $race->icon ?? '' }}',
-                onIconChange(e) {
-                    const f = e.target.files[0];
-                    if (!f) return;
-                    this.iconPreview = URL.createObjectURL(f);
-                    this.iconPath = '';
-                },
-                clearIcon() {
-                    this.iconPreview = '';
-                    this.iconPath = '';
-                    this.$refs.iconInput.value = '';
-                }
-            }">
-                <label class="form-label">Event Icon <span class="text-secondary fw-normal" style="text-transform:none;font-size:.85em">(optional)</span></label>
-
-                <div class="d-flex align-items-center gap-3">
-                    <div style="width:88px;height:88px;border:2px dashed #e5e7eb;border-radius:10px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#f9fafb;cursor:pointer;transition:border-color .15s"
-                         :style="iconPreview ? 'border:2px solid #7c3aed;background:#f5f3ff' : ''"
-                         @click="$refs.iconInput.click()">
-                        <template x-if="iconPreview">
-                            <img :src="iconPreview" style="width:100%;height:100%;object-fit:contain;padding:8px;display:block">
-                        </template>
-                        <template x-if="!iconPreview">
-                            <svg width="26" height="26" fill="none" stroke="#d1d5db" stroke-width="1.5" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
-                            </svg>
-                        </template>
-                    </div>
-
-                    <div class="d-flex flex-column gap-2">
-                        <button type="button" @click="$refs.iconInput.click()"
-                                class="btn btn-sm fw-bold text-uppercase"
-                                style="font-size:.72rem;background:#f3f4f6;border:1px solid #e5e7eb;color:#374151"
-                                x-text="iconPreview ? 'Replace icon' : 'Upload icon'">
-                        </button>
-                        <button type="button" @click="clearIcon()" x-show="iconPreview"
-                                class="btn btn-sm fw-bold text-uppercase"
-                                style="font-size:.72rem;background:#fee2e2;border:1px solid #fca5a5;color:#dc2626;display:none">
-                            Remove
-                        </button>
-                        <p class="text-secondary mb-0" style="font-size:.72rem">PNG, SVG, WebP · max 4 MB</p>
-                    </div>
-                </div>
-
-                <input type="file" name="icon" accept="image/png,image/svg+xml,image/webp,image/jpeg,image/gif"
-                       x-ref="iconInput" class="d-none" @change="onIconChange">
-                <input type="hidden" name="icon_path" x-model="iconPath">
-
-                @error('icon')
-                    <div class="text-danger mt-1" style="font-size:.85rem">{{ $message }}</div>
-                @enderror
-            </div>
+            <x-media-picker name="icon" label="Event Icon" :current="$race->icon" currentType="icon" filterDefault="icon" />
 
             <div class="d-flex gap-2">
                 <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">
