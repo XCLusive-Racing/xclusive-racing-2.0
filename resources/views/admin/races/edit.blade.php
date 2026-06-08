@@ -45,6 +45,25 @@
                 </div>
             </div>
 
+            <div class="mb-3">
+                <label class="form-label">Rating Multiplier</label>
+                <select name="duration_key" class="form-select @error('duration_key') is-invalid @enderror">
+                    <option value="">Default (1.0×)</option>
+                    <option value="15"   {{ old('duration_key', $race->duration_key) === '15'   ? 'selected' : '' }}>15 min sprint — 0.6×</option>
+                    <option value="20"   {{ old('duration_key', $race->duration_key) === '20'   ? 'selected' : '' }}>20 min sprint — 0.8×</option>
+                    <option value="30"   {{ old('duration_key', $race->duration_key) === '30'   ? 'selected' : '' }}>30 min sprint — 1.0×</option>
+                    <option value="30+"  {{ old('duration_key', $race->duration_key) === '30+'  ? 'selected' : '' }}>30 min championship sprint — 1.2×</option>
+                    <option value="30++" {{ old('duration_key', $race->duration_key) === '30++' ? 'selected' : '' }}>30 min endurance sprint — 1.3×</option>
+                    <option value="45"   {{ old('duration_key', $race->duration_key) === '45'   ? 'selected' : '' }}>45 min race — 1.5×</option>
+                    <option value="45+"  {{ old('duration_key', $race->duration_key) === '45+'  ? 'selected' : '' }}>45 min race+ — 1.6×</option>
+                    <option value="60"   {{ old('duration_key', $race->duration_key) === '60'   ? 'selected' : '' }}>60 min race — 2.0×</option>
+                    <option value="60+"  {{ old('duration_key', $race->duration_key) === '60+'  ? 'selected' : '' }}>60 min race+ — 2.1×</option>
+                    <option value="90"   {{ old('duration_key', $race->duration_key) === '90'   ? 'selected' : '' }}>90 min race — 2.5×</option>
+                    <option value="90+"  {{ old('duration_key', $race->duration_key) === '90+'  ? 'selected' : '' }}>90 min race+ — 2.6×</option>
+                </select>
+                @error('duration_key') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+
             {{-- Event Tag --}}
             <script>window.__xclTags = @json($tags->map(fn($t) => ['slug'=>$t->slug,'name'=>$t->name,'color'=>$t->color]));</script>
             <div class="mb-3" x-data="{

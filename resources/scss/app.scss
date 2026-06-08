@@ -2396,6 +2396,27 @@ body.admin-body {
     &.status-finished { background: #f3f4f6; color: #374151; }
 }
 
+// Admin tab buttons (results page)
+.admin-tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: .6rem .9rem;
+    font-size: .78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #9ca3af;
+    cursor: pointer;
+    border-radius: 0;
+    transition: color .15s, border-color .15s;
+    white-space: nowrap;
+    margin-bottom: -1px;
+
+    &:hover:not(.active) { color: #374151; }
+    &.active { color: var(--tab-color, #7c3aed); border-bottom-color: var(--tab-color, #7c3aed); }
+}
+
 // Mobile sidebar toggle
 @media (max-width: 991px) {
     .admin-sidebar { transform: translateX(-100%); &.open { transform: translateX(0); } }

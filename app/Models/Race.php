@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 
 class Race extends Model
 {
-    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon'];
+    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon', 'duration_key'];
 
     protected function casts(): array
     {

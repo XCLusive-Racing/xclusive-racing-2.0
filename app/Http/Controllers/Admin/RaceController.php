@@ -47,6 +47,7 @@ class RaceController extends Controller
             'track'        => 'required|string|max:255',
             'scheduled_at' => 'required|date',
             'event_tag'    => 'required|exists:event_tags,slug',
+            'duration_key' => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
             'max_drivers'  => 'nullable|integer|min:1',
             'description'  => 'nullable|string',
             'image'        => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',
@@ -103,17 +104,24 @@ class RaceController extends Controller
             'scheduled_at' => 'required|date',
             'status'       => 'required|in:open,closed,finished',
             'event_tag'    => 'required|exists:event_tags,slug',
+            'duration_key' => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
             'max_drivers'  => 'nullable|integer|min:1',
             'description'  => 'nullable|string',
             'image'        => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',
             'image_path'   => 'nullable|string|max:500',
+            'image_keep'   => 'nullable|in:0,1',
             'icon'         => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
             'icon_path'    => 'nullable|string|max:500',
+            'icon_keep'    => 'nullable|in:0,1',
         ]);
 
-        $data['image'] = $this->resolveMedia($request);
-        $data['icon']  = $this->resolveIcon($request);
-        unset($data['image_path'], $data['icon_path']);
+        $resolvedImage  = $this->resolveMedia($request);
+        $data['image']  = $resolvedImage ?? ($request->input('image_keep') === '0' ? null : $race->image);
+
+        $resolvedIcon   = $this->resolveIcon($request);
+        $data['icon']   = $resolvedIcon ?? ($request->input('icon_keep') === '0' ? null : $race->icon);
+
+        unset($data['image_path'], $data['image_keep'], $data['icon_path'], $data['icon_keep']);
 
         $race->update($data);
 
