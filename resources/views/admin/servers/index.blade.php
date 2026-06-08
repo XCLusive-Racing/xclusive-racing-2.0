@@ -73,6 +73,11 @@
                                     onclick="testConnection({{ $server->id }}, this)">
                                 Test
                             </button>
+                            <a href="{{ route('admin.servers.browse', $server) }}"
+                               class="btn btn-sm fw-bold text-uppercase"
+                               style="background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;font-size:.68rem;padding:3px 10px">
+                                Browse
+                            </a>
                             <a href="{{ route('admin.servers.edit', $server) }}"
                                class="btn btn-sm fw-bold text-uppercase"
                                style="background:#f3e8ff;color:#7c3aed;border:1px solid #e9d5ff;font-size:.68rem;padding:3px 10px">

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\BopController as AdminBopController;
 use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
 use App\Http\Controllers\Admin\EventTagController;
+use App\Http\Controllers\Admin\FtpBrowserController;
 use App\Http\Controllers\Admin\FtpServerController;
 use App\Http\Controllers\Admin\RatingConfigController;
 use App\Http\Controllers\Admin\MediaController as AdminMediaController;
@@ -95,6 +96,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/races/{race}/results', [RaceResultController::class, 'create'])->name('races.results');
     Route::post('/races/{race}/results', [RaceResultController::class, 'store'])->name('races.results.store');
     Route::post('/races/{race}/results/ftp', [RaceResultController::class, 'ftpImport'])->name('races.results.ftp');
+    Route::post('/races/{race}/push-config', [AdminRaceController::class, 'pushConfig'])->name('races.push-config');
 
     // Event Tags
     Route::post('/event-tags', [EventTagController::class, 'store'])->name('event-tags.store');
@@ -114,6 +116,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/bops/{bop}/edit', [AdminBopController::class, 'edit'])->name('bops.edit');
     Route::put('/bops/{bop}', [AdminBopController::class, 'update'])->name('bops.update');
     Route::delete('/bops/{bop}', [AdminBopController::class, 'destroy'])->name('bops.destroy');
+    Route::post('/bops/import', [AdminBopController::class, 'import'])->name('bops.import');
 
     // Reports
     Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
@@ -128,6 +131,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/servers/{ftpServer}', [FtpServerController::class, 'update'])->name('servers.update');
     Route::delete('/servers/{ftpServer}', [FtpServerController::class, 'destroy'])->name('servers.destroy');
     Route::post('/servers/{ftpServer}/test', [FtpServerController::class, 'test'])->name('servers.test');
+
+    // FTP Browser
+    Route::get('/servers/{ftpServer}/browse', [FtpBrowserController::class, 'index'])->name('servers.browse');
+    Route::get('/servers/{ftpServer}/browse/download', [FtpBrowserController::class, 'download'])->name('servers.browse.download');
+    Route::get('/servers/{ftpServer}/browse/view', [FtpBrowserController::class, 'view'])->name('servers.browse.view');
+    Route::post('/servers/{ftpServer}/browse/upload', [FtpBrowserController::class, 'upload'])->name('servers.browse.upload');
+    Route::post('/servers/{ftpServer}/browse/mkdir', [FtpBrowserController::class, 'mkdir'])->name('servers.browse.mkdir');
+    Route::post('/servers/{ftpServer}/browse/delete', [FtpBrowserController::class, 'delete'])->name('servers.browse.delete');
+    Route::post('/servers/{ftpServer}/browse/rename', [FtpBrowserController::class, 'rename'])->name('servers.browse.rename');
 });
 
 // Owner + moderator — Users
