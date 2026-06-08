@@ -57,7 +57,7 @@ $sbLeaderboard = User::where('elo_acc', '>', 0)
         });
         this.$watch('searchQuery', () => { this.currentPage = 1; });
     }
-}" @keydown.escape.window="open = false">
+}" @keydown.escape.window="open = false" @open-events-sidebar.window="open = true">
 
     {{-- ── Trigger tab ──────────────────────────────────────────────────────── --}}
     <button
@@ -66,8 +66,21 @@ $sbLeaderboard = User::where('elo_acc', '>', 0)
         @click="open = !open"
         aria-label="Toggle events panel"
         :aria-expanded="open.toString()">
-        <i class="fa-solid fa-chevron-right xcl-sidebar-trigger__arrow"></i>
-        <span class="xcl-sidebar-trigger__text">UPCOMING EVENTS</span>
+        <div class="xcl-sidebar-trigger__chevrons">
+            <span class="xcl-sidebar-trigger__chevron-1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                     stroke="#d4ee6a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15,18 9,12 15,6"/>
+                </svg>
+            </span>
+            <span class="xcl-sidebar-trigger__chevron-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                     stroke="#d4ee6a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15,18 9,12 15,6"/>
+                </svg>
+            </span>
+        </div>
+        <span class="xcl-sidebar-trigger__text" x-text="open ? 'CLOSE EVENTS' : 'UPCOMING EVENTS'"></span>
     </button>
 
     {{-- ── Backdrop ─────────────────────────────────────────────────────────── --}}
