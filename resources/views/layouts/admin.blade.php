@@ -11,6 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @vite(['resources/scss/app.scss', 'resources/js/app.js'])
     @stack('head')
 </head>
@@ -79,7 +80,7 @@
         <div x-show="sections.events || sidebarCollapsed">
             @if(auth()->user()->canManageEvents())
             <a href="{{ route('admin.races.index') }}"
-               class="admin-nav-link {{ request()->routeIs('admin.races.index') || request()->routeIs('admin.races.results*') ? 'active' : '' }}">
+               class="admin-nav-link {{ request()->routeIs('admin.races.index') || request()->routeIs('admin.races.show') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 6h18M3 14h10M3 18h6"/>
                 </svg>
@@ -154,6 +155,13 @@
                 </svg>
                 <span x-show="!sidebarCollapsed">FTP Servers</span>
             </a>
+            <a href="{{ route('admin.rating-config.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.rating-config.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">Rating Config</span>
+            </a>
         </div>
         @endif
 
@@ -217,29 +225,8 @@
     </main>
 </div>
 
-{{-- Toast container --}}
-<div x-data="xcToasts()"
-     @toast.window="add($event.detail)"
-     class="position-fixed d-flex flex-column gap-2"
-     style="top:1.5rem;right:1.5rem;z-index:9999;width:300px;pointer-events:none">
-    <template x-for="t in toasts" :key="t.id">
-        <div x-show="t.visible"
-             x-transition:enter="xcl-toast-enter"
-             x-transition:enter-start="xcl-toast-enter-start"
-             x-transition:enter-end="xcl-toast-enter-end"
-             x-transition:leave="xcl-toast-leave"
-             x-transition:leave-start="xcl-toast-enter-end"
-             x-transition:leave-end="xcl-toast-enter-start"
-             class="d-flex align-items-start gap-2 px-3 py-3 rounded-3 shadow"
-             style="pointer-events:auto"
-             :style="`background:${t.color}`">
-            <span x-text="t.message" class="text-white fw-bold flex-grow-1" style="font-size:.82rem;line-height:1.4"></span>
-            <button @click="remove(t.id)"
-                    class="btn-close btn-close-white flex-shrink-0 mt-1"
-                    style="font-size:.6rem"></button>
-        </div>
-    </template>
-</div>
+{{-- Toast listener --}}
+<div x-data="xcToasts()" @toast.window="add($event.detail)"></div>
 
 {{-- Flash → toast bridge --}}
 @if(session('success') || session('error') || $errors->any())
@@ -263,19 +250,35 @@
 <script>
 function xcToasts() {
     return {
-        toasts: [],
         add({ message, type = 'success' }) {
-            const id = Date.now() + Math.random();
-            const color = type === 'success' ? '#22c55e' : '#ef4444';
-            this.toasts.push({ id, message, color, visible: true });
-            setTimeout(() => this.remove(id), 4000);
-        },
-        remove(id) {
-            const t = this.toasts.find(t => t.id === id);
-            if (t) t.visible = false;
-            setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 300);
+            Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3500,
+                timerProgressBar: true,
+            }).fire({
+                icon: type === 'success' ? 'success' : 'error',
+                title: message,
+            });
         },
     };
+}
+
+async function xcDeleteSubmit(form, title, text = '') {
+    const result = await Swal.fire({
+        title: title,
+        text: text,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        reverseButtons: true,
+        focusCancel: true,
+    });
+    if (result.isConfirmed) form.submit();
 }
 </script>
 </body>

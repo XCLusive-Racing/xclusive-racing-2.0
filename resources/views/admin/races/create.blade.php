@@ -82,18 +82,18 @@
                         <div class="col-sm-6">
                             <label class="form-label">Rating Multiplier</label>
                             <select name="duration_key" class="form-select @error('duration_key') is-invalid @enderror">
-                                <option value="">Default (1.0×)</option>
-                                <option value="15"   {{ old('duration_key') === '15'   ? 'selected' : '' }}>15 min sprint — 0.6×</option>
-                                <option value="20"   {{ old('duration_key') === '20'   ? 'selected' : '' }}>20 min sprint — 0.8×</option>
-                                <option value="30"   {{ old('duration_key') === '30'   ? 'selected' : '' }}>30 min sprint — 1.0×</option>
-                                <option value="30+"  {{ old('duration_key') === '30+'  ? 'selected' : '' }}>30 min championship — 1.2×</option>
-                                <option value="30++" {{ old('duration_key') === '30++' ? 'selected' : '' }}>30 min endurance — 1.3×</option>
-                                <option value="45"   {{ old('duration_key') === '45'   ? 'selected' : '' }}>45 min race — 1.5×</option>
-                                <option value="45+"  {{ old('duration_key') === '45+'  ? 'selected' : '' }}>45 min race+ — 1.6×</option>
-                                <option value="60"   {{ old('duration_key') === '60'   ? 'selected' : '' }}>60 min race — 2.0×</option>
-                                <option value="60+"  {{ old('duration_key') === '60+'  ? 'selected' : '' }}>60 min race+ — 2.1×</option>
-                                <option value="90"   {{ old('duration_key') === '90'   ? 'selected' : '' }}>90 min race — 2.5×</option>
-                                <option value="90+"  {{ old('duration_key') === '90+'  ? 'selected' : '' }}>90 min race+ — 2.6×</option>
+                                <option value="">1.0× (default)</option>
+                                <option value="15"   {{ old('duration_key') === '15'   ? 'selected' : '' }}>0.6×</option>
+                                <option value="20"   {{ old('duration_key') === '20'   ? 'selected' : '' }}>0.8×</option>
+                                <option value="30"   {{ old('duration_key') === '30'   ? 'selected' : '' }}>1.0×</option>
+                                <option value="30+"  {{ old('duration_key') === '30+'  ? 'selected' : '' }}>1.2×</option>
+                                <option value="30++" {{ old('duration_key') === '30++' ? 'selected' : '' }}>1.3×</option>
+                                <option value="45"   {{ old('duration_key') === '45'   ? 'selected' : '' }}>1.5×</option>
+                                <option value="45+"  {{ old('duration_key') === '45+'  ? 'selected' : '' }}>1.6×</option>
+                                <option value="60"   {{ old('duration_key') === '60'   ? 'selected' : '' }}>2.0×</option>
+                                <option value="60+"  {{ old('duration_key') === '60+'  ? 'selected' : '' }}>2.1×</option>
+                                <option value="90"   {{ old('duration_key') === '90'   ? 'selected' : '' }}>2.5×</option>
+                                <option value="90+"  {{ old('duration_key') === '90+'  ? 'selected' : '' }}>2.6×</option>
                             </select>
                             @error('duration_key') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
@@ -130,7 +130,8 @@
                                     finally { this.saving = false; }
                                 },
                                 async deleteTag(slug) {
-                                    if (!confirm('Delete this tag?')) return;
+                                    const res = await Swal.fire({ title: 'Delete tag?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc2626', cancelButtonColor: '#6b7280', confirmButtonText: 'Delete', cancelButtonText: 'Cancel', reverseButtons: true });
+                                    if (!res.isConfirmed) return;
                                     const r = await fetch('/admin/event-tags/' + slug, {
                                         method: 'POST',
                                         headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'X-HTTP-Method-Override': 'DELETE', 'Accept': 'application/json' }

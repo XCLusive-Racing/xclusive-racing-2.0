@@ -108,11 +108,11 @@
                                 Edit
                             </a>
                             @if($user->id !== auth()->id())
-                            <form action="{{ route('admin.users.destroy', $user) }}" method="POST"
-                                  onsubmit="return confirm('Delete {{ addslashes($user->name) }}? This cannot be undone.')">
+                            <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return false">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="btn btn-sm fw-bold text-uppercase"
-                                        style="font-size:.72rem;padding:5px 12px;border-radius:6px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca">
+                                <button type="button" class="btn btn-sm fw-bold text-uppercase"
+                                        style="font-size:.72rem;padding:5px 12px;border-radius:6px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca"
+                                        onclick="xcDeleteSubmit(this.closest('form'), 'Delete {{ addslashes($user->name) }}?', 'This cannot be undone.')">
                                     Delete
                                 </button>
                             </form>

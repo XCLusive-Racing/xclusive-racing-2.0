@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
 use App\Http\Controllers\Admin\EventTagController;
 use App\Http\Controllers\Admin\FtpServerController;
+use App\Http\Controllers\Admin\RatingConfigController;
 use App\Http\Controllers\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Admin\RaceController as AdminRaceController;
 use App\Http\Controllers\Admin\RaceResultController;
@@ -72,6 +73,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/races', [AdminRaceController::class, 'index'])->name('races.index');
     Route::get('/races/create', [AdminRaceController::class, 'create'])->name('races.create');
     Route::post('/races', [AdminRaceController::class, 'store'])->name('races.store');
+    Route::get('/races/{race}', [AdminRaceController::class, 'show'])->name('races.show');
+    Route::get('/races/{race}/entry-list', [AdminRaceController::class, 'downloadEntryList'])->name('races.entry-list');
     Route::get('/races/{race}/edit', [AdminRaceController::class, 'edit'])->name('races.edit');
     Route::put('/races/{race}', [AdminRaceController::class, 'update'])->name('races.update');
     Route::get('/races/{race}/results', [RaceResultController::class, 'create'])->name('races.results');
@@ -88,6 +91,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/media', [AdminMediaController::class, 'store'])->name('media.store');
     Route::delete('/media/{media}', [AdminMediaController::class, 'destroy'])->name('media.destroy');
     Route::post('/media/migrate-storage', [AdminMediaController::class, 'migrateStorage'])->name('media.migrate-storage');
+
+    // Rating Config
+    Route::get('/rating-config', [RatingConfigController::class, 'index'])->name('rating-config.index');
+    Route::patch('/rating-config/{key}', [RatingConfigController::class, 'update'])->name('rating-config.update');
 
     // FTP Servers
     Route::get('/servers', [FtpServerController::class, 'index'])->name('servers.index');

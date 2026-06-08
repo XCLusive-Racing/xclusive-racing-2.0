@@ -90,18 +90,11 @@
                     </td>
                     <td class="pe-4">
                         <div class="d-flex gap-2 justify-content-end">
-                            <a href="{{ route('admin.races.results', $race) }}"
+                            <a href="{{ route('admin.races.show', $race) }}"
                                class="btn btn-sm fw-bold text-uppercase text-white"
                                style="background:#7c3aed;font-size:.72rem;padding:5px 12px;border-radius:6px">
-                                Results
+                                See Event
                             </a>
-                            @if(!$race->isPast())
-                            <a href="{{ route('admin.races.edit', $race) }}"
-                               class="btn btn-sm btn-outline-secondary fw-bold text-uppercase"
-                               style="font-size:.72rem;padding:5px 12px;border-radius:6px">
-                                Edit
-                            </a>
-                            @endif
                         </div>
                     </td>
                 </tr>

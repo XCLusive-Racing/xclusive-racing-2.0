@@ -78,11 +78,11 @@
                                style="background:#f3e8ff;color:#7c3aed;border:1px solid #e9d5ff;font-size:.68rem;padding:3px 10px">
                                 Edit
                             </a>
-                            <form action="{{ route('admin.servers.destroy', $server) }}" method="POST"
-                                  onsubmit="return confirm('Delete {{ $server->name }}?')">
+                            <form action="{{ route('admin.servers.destroy', $server) }}" method="POST" onsubmit="return false">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="btn btn-sm fw-bold text-uppercase"
-                                        style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.68rem;padding:3px 10px">
+                                <button type="button" class="btn btn-sm fw-bold text-uppercase"
+                                        style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.68rem;padding:3px 10px"
+                                        onclick="xcDeleteSubmit(this.closest('form'), 'Delete {{ addslashes($server->name) }}?')">
                                     Delete
                                 </button>
                             </form>

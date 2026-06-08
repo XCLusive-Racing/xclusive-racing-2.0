@@ -19,10 +19,25 @@
 
 <div x-data="{
     uploadOpen: false,
-    confirmOpen: false,
-    deleteUrl: null,
     typeFilter: 'all',
-    categoryFilter: 'all'
+    categoryFilter: 'all',
+    async confirmDelete(url) {
+        const r = await Swal.fire({
+            title: 'Delete file?',
+            text: 'This permanently removes the file from storage. Any races referencing it will lose the media.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Delete',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+        });
+        if (r.isConfirmed) {
+            this.$refs.deleteForm.action = url;
+            this.$refs.deleteForm.submit();
+        }
+    }
 }"
 @open-upload-modal.window="uploadOpen = true">
 
@@ -167,7 +182,7 @@
                         <button type="button"
                                 class="btn btn-sm fw-bold text-uppercase"
                                 style="font-size:.68rem;padding:3px 8px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca"
-                                @click="deleteUrl='{{ route('admin.media.destroy', $item) }}'; confirmOpen=true">
+                                @click="confirmDelete('{{ route('admin.media.destroy', $item) }}')">
                             Delete
                         </button>
                     </div>
@@ -314,32 +329,11 @@
         </div>
     </div>
 
-    {{-- Delete Confirm Modal --}}
-    <div x-show="confirmOpen" style="position:fixed;inset:0;z-index:9500;display:none">
-        <div style="width:100%;height:100%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:1rem"
-             @click.self="confirmOpen = false">
-            <div style="background:#fff;border-radius:12px;width:100%;max-width:380px;overflow:hidden">
-                <div class="p-4">
-                    <h3 class="fw-black text-uppercase fst-italic text-dark mb-2" style="font-size:1rem">Delete file?</h3>
-                    <p class="text-secondary mb-4" style="font-size:.88rem">
-                        This permanently removes the file from storage. Any races or pages referencing it will lose the media.
-                    </p>
-                    <div class="d-flex gap-2">
-                        <form :action="deleteUrl" method="POST" class="d-inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#dc2626">
-                                Delete
-                            </button>
-                        </form>
-                        <button type="button" class="btn btn-outline-secondary fw-bold text-uppercase px-4" @click="confirmOpen = false">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {{-- Hidden delete form --}}
+    <form x-ref="deleteForm" method="POST" style="display:none">
+        @csrf
+        @method('DELETE')
+    </form>
 
 </div>
 
