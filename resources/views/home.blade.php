@@ -4,7 +4,6 @@
 
 {{-- ─── Hero ──────────────────────────────────────────────────────────────────── --}}
 <section class="hero-home" style="background-image:url('/images/home/hero/XCLusive P499 Header v4.png')">
-    <div class="hero-home__overlay"></div>
     <div class="container-xl px-4 position-relative h-100" style="z-index:1;">
         <div class="row align-items-center g-3 g-lg-5 h-100 py-5">
             {{-- Left: copy --}}

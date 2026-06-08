@@ -93,11 +93,66 @@ html {
 }
 
 .xcl-topbar-label {
-    color: #6b7280;
     font-weight: 700;
     font-size: 0.65rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
+}
+
+// PLAY ON = right side of gradient (light rose), PLATFORM = left side (light purple)
+.xcl-topbar > .xcl-topbar-label          { color: #e879a0; }
+.xcl-topbar-platform > .xcl-topbar-label { color: #a78bfa; }
+
+// Platform selector group (right side of topbar)
+.xcl-topbar-platform {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+}
+
+// Platform badge — expanding box on hover (same pattern as xcl-game-badge)
+.xcl-platform-badge {
+    display: inline-flex;
+    align-items: center;
+    overflow: hidden;
+    padding: 3px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    cursor: default;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+
+    .xcl-platform-icon {
+        width: 18px;
+        height: 18px;
+        object-fit: contain;
+        flex-shrink: 0;
+        opacity: 0.75;
+        transition: opacity 0.2s ease;
+    }
+
+    .xcl-platform-label {
+        max-width: 0;
+        opacity: 0;
+        overflow: hidden;
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: white;
+        letter-spacing: 0.08em;
+        margin-left: 0;
+        transition: max-width 0.25s ease, opacity 0.2s ease 0.1s, margin-left 0.25s ease;
+    }
+
+    &:hover {
+        .xcl-platform-icon { opacity: 1; }
+
+        .xcl-platform-label {
+            max-width: 90px;
+            opacity: 1;
+            margin-left: 6px;
+        }
+    }
 }
 
 .xcl-game-badge {
@@ -108,6 +163,11 @@ html {
     border-radius: 3px;
     font-weight: 800;
     font-size: 0.65rem;
+    margin-right: -2px;
+
+    &:not(:hover) {
+        transition-delay: 0.15s;
+    }
     letter-spacing: 0.08em;
     text-decoration: none;
     white-space: nowrap;
@@ -343,6 +403,81 @@ html {
     @media (max-width: 480px) {
         &--open { display: none !important; }
     }
+}
+
+// ── Social icon strip: sits below the trigger tab, same lime border ──────────
+.xcl-sb-social {
+    position: fixed;
+    top: calc(50% + 90px);   // flush with trigger bottom (trigger is 180px, centered)
+    right: 0;
+    z-index: 1051;
+    background: #1a0a2e;
+    border-left: 3px solid #d4ee6a;
+    border-radius: 0 0 0 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    padding: 4px 0 10px 0;
+    gap: 0;
+    box-shadow: -3px 0 16px rgba(26, 10, 46, .7);
+    transition: transform .3s cubic-bezier(0.16, 1, 0.3, 1);
+
+    &--open {
+        transform: translateX(calc(-1 * min(1400px, 95vw)));
+    }
+
+    @media (max-width: 480px) {
+        &--open { display: none !important; }
+    }
+}
+
+.xcl-sb-social-pill {
+    display: flex;
+    flex-direction: row-reverse;   // icon packs to the right, label expands left
+    align-items: center;
+    overflow: hidden;
+    max-width: 26px;
+    height: 28px;
+    border-radius: 5px 0 0 5px;
+    text-decoration: none;
+    cursor: pointer;
+    margin-bottom: -1px;           // close gap between pills (anti-flicker)
+    transition: max-width 0.25s ease, background 0.2s ease;
+
+    &:not(:hover) { transition-delay: 0.1s; }
+
+    &:hover {
+        max-width: 130px;
+        background: rgba(212, 238, 106, 0.1);
+
+        .xcl-sb-social-icon { color: #d4ee6a; opacity: 1; }
+        .xcl-sb-social-label { opacity: 1; margin-right: 6px; }
+    }
+}
+
+.xcl-sb-social-icon {
+    flex-shrink: 0;
+    width: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.82rem;
+    opacity: 0.7;
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.xcl-sb-social-label {
+    white-space: nowrap;
+    font-size: 0.58rem;
+    font-weight: 700;
+    font-family: 'Poppins', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.9);
+    margin-right: 0;
+    opacity: 0;
+    transition: opacity 0.15s ease 0.05s, margin-right 0.25s ease;
 }
 
 .xcl-sidebar-overlay {
@@ -2489,106 +2624,268 @@ body.admin-body {
     background: linear-gradient(to right, #24003d, #6b0d47);
     position: relative;
     overflow: hidden;
-    // Lichte diagonale insnede aan de bovenkant
-    clip-path: polygon(0 0, 100% 10%, 100% 100%, 0 90%);
-    margin-top: -10vh;
-    padding-top: calc(3rem + 10vh) !important;
-    padding-bottom: calc(3rem + 10vh) !important;
+    clip-path: polygon(0 0, 100% 8vh, 100% 100%, 0 calc(100% - 8vh));
+    margin-top: -8vh;
+    padding-top: calc(3rem + 8vh) !important;
+    padding-bottom: calc(3rem + 8vh) !important;
 }
 
-.meet-team-pattern {
-    display: none;
+.meet-team-pattern { display: none; }
+
+// Eyebrow label
+.mt-eyebrow {
+    color: #a78bfa;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
 }
 
-// Swipe-animaties bij kaart wissel
-@keyframes swipe-in-left {
-    from { transform: translateX(60px); opacity: 0; }
-    to   { transform: translateX(0);    opacity: 1; }
-}
-@keyframes swipe-in-right {
-    from { transform: translateX(-60px); opacity: 0; }
-    to   { transform: translateX(0);     opacity: 1; }
-}
-.swipe-in-left  { animation: swipe-in-left  .35s ease; }
-.swipe-in-right { animation: swipe-in-right .35s ease; }
-
-// Clip-path varianten per positie — alle kanten gelijke hoek (12%)
-.car-clip-left,
-.car-clip-center,
-.car-clip-right  { clip-path: polygon(12% 0%, 100% 0%, 88% 100%, 0% 100%); }
-
-// Auto-afbeelding stijl (rechte aanlevering, clip via bovenstaande klassen)
-.car-image {
-    width: 100%;
-    height: 220px;
-    object-fit: cover;
-    display: block;
-    transition: opacity .15s ease;
-    filter: brightness(1.15);
-
-    &--center { height: 240px; }
+// Gradient heading
+.mt-heading {
+    font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+    display: inline-block;
+    background: linear-gradient(90deg, #8435e4, #5f2866, #732cad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    padding-right: 0.05em;
 }
 
-// Middelste kaart: zelfde stijl als zijkaarten, hover activeert het effect
-.team-card-center {
-    opacity: 0.7;
-    transform: translateY(0) scale(0.97);
-    z-index: 1;
-    transition: opacity .3s ease, transform .3s ease, box-shadow .3s ease;
+.mt-divider {
+    width: 80px;
+    border-color: white;
+    border-width: 2px;
+    opacity: 0.6;
+    margin: 0.75rem auto 2rem;
+}
 
+// Filter tabs
+.mt-filter-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: white;
+    border-radius: 999px;
+    padding: 6px 18px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background .2s ease, border-color .2s ease;
+
+    &--active,
     &:hover {
-        opacity: 1;
-        transform: translateY(-12px) scale(1.04);
-        box-shadow: 0 0 30px rgba(147, 51, 234, 0.5);
-        z-index: 3;
-
-        .car-image { filter: brightness(1.3); }
+        background: #7c3aed;
+        border-color: #7c3aed;
     }
 }
 
-// Zij-kaarten: iets kleiner en transparanter, hover = zelfde effect als midden
-.team-card-side {
-    opacity: 0.7;
-    transform: translateY(0) scale(0.97);
-    z-index: 1;
-    transition: opacity .3s ease, transform .3s ease, box-shadow .3s ease;
+// Driver card base
+.mt-driver-card {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform .2s ease, border-color .2s ease;
+    height: 100%;
 
     &:hover {
-        opacity: 1;
-        transform: translateY(-12px) scale(1.04);
-        box-shadow: 0 0 30px rgba(147, 51, 234, 0.5);
-        z-index: 3;
+        transform: translateY(-4px);
+        border-color: #7c3aed;
+    }
 
-        .car-image { filter: brightness(1.3); }
+    &--more {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        min-height: 200px;
+        padding: 1.5rem;
     }
 }
 
-// Platform logo badge linksonder op elke kaart
-.logo-badge {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    background: rgba(10, 0, 20, 0.75);
-    padding: 4px 10px;
-    border-radius: 4px;
+// Portrait placeholder
+.mt-driver-portrait {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    background: #2d1b4e;
     display: flex;
     align-items: center;
+    justify-content: center;
+    overflow: hidden;
 }
 
-// Swipe navigatie in geel
-.swipe-nav {
-    color: #f0c040;
-    font-size: 1.1rem;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    cursor: pointer;
+.mt-driver-initials {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 900;
+    font-style: italic;
+    color: #c084fc;
     user-select: none;
-    transition: opacity .15s ease;
+}
 
-    &:hover { opacity: 0.75; }
+// Pill badges
+.mt-badge {
+    position: absolute;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    border-radius: 999px;
 
-    span { font-size: 1.6rem; line-height: 1; }
+    &--game {
+        top: 8px;
+        left: 8px;
+        background: rgba(0, 0, 0, 0.65);
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    &--platform { top: 8px; right: 8px; }
+
+    &--pc {
+        background: rgba(59, 130, 246, 0.2);
+        color: #93c5fd;
+        border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+
+    &--ps5 {
+        background: rgba(37, 99, 235, 0.3);
+        color: #bfdbfe;
+        border: 1px solid rgba(37, 99, 235, 0.5);
+    }
+
+    &--xbox {
+        background: rgba(22, 163, 74, 0.25);
+        color: #86efac;
+        border: 1px solid rgba(22, 163, 74, 0.4);
+    }
+}
+
+// Card info
+.mt-driver-info { padding: 0.75rem 0.85rem; }
+
+.mt-driver-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.25rem;
+}
+
+.mt-driver-flag {
+    width: 18px;
+    height: auto;
+    border-radius: 2px;
+    opacity: 0.85;
+    flex-shrink: 0;
+}
+
+.mt-driver-socials {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    display: flex;
+    gap: 0.4rem;
+    z-index: 2;
+}
+
+.mt-social-link {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.7rem;
+    text-decoration: none;
+    transition: color 0.2s ease;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+
+    &:hover { color: white; }
+}
+
+.mt-driver-name {
+    font-weight: 700;
+    font-style: italic;
+    color: white;
+    font-size: 0.95rem;
+    line-height: 1.2;
+}
+
+.mt-driver-role {
+    font-size: 0.72rem;
+    margin-top: 0.2rem;
+
+    &--captain { color: #eab308; font-weight: 700; }
+    &--pro     { color: rgba(192, 132, 252, 0.7); }
+}
+
+// +29 more card
+.mt-more-count {
+    display: block;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: white;
+    line-height: 1;
+}
+
+.mt-more-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    margin-top: 0.25rem;
+}
+
+.mt-more-link {
+    display: block;
+    font-size: 0.8rem;
+    color: #a78bfa;
+    margin-top: 0.75rem;
+    text-decoration: none;
+    transition: color .15s ease;
+
+    &:hover { color: white; }
+}
+
+// CTA buttons
+.mt-cta-btn {
+    display: inline-block;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    color: white;
+    font-weight: 700;
+    font-style: italic;
+    text-transform: uppercase;
+    border-radius: 8px;
+    padding: 12px 28px;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    transition: background .2s ease, border-color .2s ease;
+
+    &:hover {
+        background: rgba(124, 58, 237, 0.3);
+        border-color: #7c3aed;
+        color: white;
+    }
+}
+
+// Role legend
+.mt-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: white;
+}
+
+.mt-legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
 }
 
 // ─── Auth pages ──────────────────────────────────────────────────────────────
@@ -2735,18 +3032,6 @@ body.admin-body {
         padding-bottom: 3rem !important;
     }
 
-    // Geen parallelogram-clips op mobiel (te smal voor de afkap)
-    .car-clip-left,
-    .car-clip-center,
-    .car-clip-right {
-        clip-path: none;
-    }
-
-    // Carousel middenkaart: volledige breedte, minder hoogte
-    .car-image {
-        height: 200px;
-        &--center { height: 200px; }
-    }
 
     // Verklein stat-nummers op mobiel
     .about-stats-card {
