@@ -55,9 +55,14 @@ class RegisterController extends Controller
             ->where('platform', $request->platform)
             ->first();
 
-        // Fallback: match temp-imported accounts by gamertag (T_ prefix)
+        // Fallback: match temp-imported accounts by gamertag (T_ prefix).
+        // Strip #xxxx discriminator from both sides so "Name#1234" matches "T_name".
         if (!$existing) {
-            $existing = User::where('platform_id', 'T_' . strtolower($profile['name']))
+            $normalizedName = strtolower(preg_replace('/#\d+$/', '', $profile['name']));
+            $existing = User::where(function ($q) use ($normalizedName, $profile) {
+                    $q->where('platform_id', 'T_' . $normalizedName)
+                      ->orWhere('platform_id', 'T_' . strtolower($profile['name']));
+                })
                 ->where('email', 'like', '%@import.local')
                 ->first();
         }

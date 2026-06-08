@@ -74,12 +74,15 @@ class PlatformLookupService
 
     private function lookupXbox(string $gamertag): array
     {
+        // Strip the #xxxx discriminator — the Xbox API expects just the base name
+        $baseTag = trim(preg_replace('/#\d+$/', '', trim($gamertag)));
+
         try {
             $res = $this->http()->withHeaders([
                 'x-authorization' => config('services.openxbl.api_key'),
                 'Accept'          => 'application/json',
                 'Accept-Language' => 'en-US',
-            ])->get('https://xbl.io/api/v2/friends/search', ['gt' => $gamertag]);
+            ])->get('https://xbl.io/api/v2/friends/search', ['gt' => $baseTag]);
         } catch (ConnectionException) {
             throw new RuntimeException('Could not reach Xbox Live. Please try again.');
         }
@@ -94,7 +97,7 @@ class PlatformLookupService
         }
 
         $xuid = $profile['id'];
-        $tag  = collect($profile['settings'] ?? [])->firstWhere('id', 'Gamertag')['value'] ?? $gamertag;
+        $tag  = collect($profile['settings'] ?? [])->firstWhere('id', 'Gamertag')['value'] ?? $baseTag;
 
         return [
             'platform_id' => 'M' . $xuid,

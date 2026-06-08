@@ -81,6 +81,9 @@
                     <div class="mt-1" style="font-size:.78rem; color:rgba(255,255,255,.3);" x-show="platform === 'steam'">
                         Enter your 17-digit SteamID64, or the name from steamcommunity.com/id/<strong>name</strong>
                     </div>
+                    <div class="mt-1" style="font-size:.78rem; color:rgba(255,255,255,.3);" x-show="platform === 'xbox'">
+                        Enter your Gamertag with or without the #xxxx suffix (e.g. <strong>PlayerName</strong> or <strong>PlayerName#1234</strong>)
+                    </div>
                     @error('gamertag')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
