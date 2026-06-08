@@ -6,7 +6,7 @@
 
         {{-- ── Header ────────────────────────────────────────────────────────────── --}}
         <div class="text-center mb-5">
-            <p class="mt-eyebrow">EST. XCL · XBOX COMMUNITY LEAGUE</p>
+            <p class="mt-eyebrow">EST. 2023 · XCL</p>
             <h2 class="mt-heading fw-black fst-italic text-uppercase mb-0">
                 MEET OUR TEAM
             </h2>
