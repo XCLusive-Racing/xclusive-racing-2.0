@@ -133,6 +133,13 @@
                 </svg>
                 <span x-show="!sidebarCollapsed">Create Race</span>
             </a>
+            <a href="{{ route('admin.races.bulk-create') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.races.bulk-create') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">Bulk Create</span>
+            </a>
         </div>
         @endif
 

@@ -90,6 +90,48 @@ class RaceController extends Controller
         ], JSON_PRETTY_PRINT);
     }
 
+    public function bulkCreate()
+    {
+        $tags = EventTag::orderBy('name')->get();
+        return view('admin.races.bulk-create', compact('tags'));
+    }
+
+    public function bulkStore(Request $request)
+    {
+        $request->validate([
+            'game'              => 'required|in:acc,lmu,iracing,ac',
+            'event_tag'         => 'required|exists:event_tags,slug',
+            'duration_key'      => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
+            'max_drivers'       => 'nullable|integer|min:1',
+            'description'       => 'nullable|string',
+            'events'            => 'required|array|min:1|max:20',
+            'events.*.title'        => 'required|string|max:255',
+            'events.*.track'        => 'required|string|max:255',
+            'events.*.scheduled_at' => 'required|date',
+        ]);
+
+        $shared = [
+            'game'         => $request->game,
+            'event_tag'    => $request->event_tag,
+            'duration_key' => $request->duration_key ?: null,
+            'max_drivers'  => $request->max_drivers ?: null,
+            'description'  => $request->description ?: null,
+            'status'       => 'open',
+        ];
+
+        foreach ($request->events as $event) {
+            Race::create(array_merge($shared, [
+                'title'        => $event['title'],
+                'track'        => $event['track'],
+                'scheduled_at' => $event['scheduled_at'],
+            ]));
+        }
+
+        $count = count($request->events);
+        return redirect()->route('admin.races.index')
+            ->with('success', $count . ' ' . ($count === 1 ? 'race' : 'races') . ' created successfully!');
+    }
+
     public function create(Request $request)
     {
         $prefillDate = $request->date('date')?->format('Y-m-d\TH:i');
