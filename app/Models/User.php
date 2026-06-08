@@ -58,12 +58,12 @@ class User extends Authenticatable
 
     public function canManage(): bool
     {
-        return $this->hasAnyRole(['owner', 'admin', 'moderator', 'event_manager', 'steward']);
+        return $this->hasAnyRole(['owner', 'admin', 'event_manager']);
     }
 
     public function canSeeUsers(): bool
     {
-        return $this->hasAnyRole(['owner', 'admin', 'moderator']);
+        return $this->hasAnyRole(['owner', 'moderator']);
     }
 
     public function canManageEvents(): bool

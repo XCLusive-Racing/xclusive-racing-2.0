@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Driver Standings - XCLusive Racing')
+@section('title', 'Leaderboard - XCLusive Racing')
 
 @php
 $classMeta = [
@@ -20,7 +20,7 @@ $classMeta = [
         {{-- Header --}}
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
             <div>
-                <h1 class="display-6 fw-black text-uppercase fst-italic text-dark mb-1">Driver Standings</h1>
+                <h1 class="display-6 fw-black text-uppercase fst-italic text-dark mb-1">Leaderboard</h1>
                 <p class="text-secondary mb-0">{{ number_format($drivers->total()) }} drivers ranked by XCL Rating</p>
             </div>
             <form method="GET" action="{{ route('drivers.index') }}" class="d-flex gap-2">
@@ -47,9 +47,6 @@ $classMeta = [
                             <th class="fw-bold text-uppercase text-secondary py-3 text-end" style="font-size:.7rem;letter-spacing:.06em">XCL Rating</th>
                             <th class="fw-bold text-uppercase text-secondary py-3 text-center" style="font-size:.7rem;letter-spacing:.06em">SR</th>
                             <th class="fw-bold text-uppercase text-secondary py-3 d-none d-md-table-cell" style="font-size:.7rem;letter-spacing:.06em">Team</th>
-                            <th class="fw-bold text-uppercase text-secondary py-3 text-center d-none d-lg-table-cell" style="font-size:.7rem;letter-spacing:.06em">Races</th>
-                            <th class="fw-bold text-uppercase text-secondary py-3 text-center d-none d-lg-table-cell" style="font-size:.7rem;letter-spacing:.06em">Wins</th>
-                            <th class="fw-bold text-uppercase text-secondary py-3 text-center d-none d-lg-table-cell" style="font-size:.7rem;letter-spacing:.06em">Podiums</th>
                             <th class="py-3" style="width:48px"></th>
                         </tr>
                     </thead>
@@ -70,8 +67,9 @@ $classMeta = [
                                     <span class="text-secondary" style="font-size:.8rem">{{ $driver->country_code }}</span>
                                     @endif
                                     <a href="{{ route('drivers.show', $driver) }}"
-                                       class="fw-bold text-dark text-decoration-none"
-                                       style="font-size:.9rem">{{ $driver->gamertag }}</a>
+                                       class="fw-bold text-decoration-none"
+                                       style="font-size:.9rem;color:#111827;transition:color .15s"
+                                       onmouseover="this.style.color='#7c3aed'" onmouseout="this.style.color='#111827'">{{ $driver->gamertag }}</a>
                                     @if($driver->number)
                                     <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.7rem">#{{ $driver->number }}</span>
                                     @endif
@@ -94,19 +92,12 @@ $classMeta = [
                             <td class="text-secondary d-none d-md-table-cell" style="font-size:.82rem;max-width:160px">
                                 <span class="text-truncate d-block">{{ $driver->team ?? '—' }}</span>
                             </td>
-                            <td class="text-center fw-bold d-none d-lg-table-cell">{{ $stats?->total_races ?? '—' }}</td>
-                            <td class="text-center fw-bold d-none d-lg-table-cell" style="color:#f59e0b">{{ $stats?->wins ?? '—' }}</td>
-                            <td class="text-center fw-bold d-none d-lg-table-cell">{{ $stats?->podiums ?? '—' }}</td>
-                            <td class="text-end pe-3">
-                                <a href="{{ route('drivers.show', $driver) }}"
-                                   class="text-secondary" style="font-size:.8rem;text-decoration:none">→</a>
-                            </td>
                         </tr>
                         @endforeach
 
                         @if($drivers->isEmpty())
                         <tr>
-                            <td colspan="10" class="text-center py-5 text-secondary">No drivers found.</td>
+                            <td colspan="7" class="text-center py-5 text-secondary">No drivers found.</td>
                         </tr>
                         @endif
                     </tbody>
@@ -125,4 +116,5 @@ $classMeta = [
         </div>
     </div>
 </main>
+
 @endsection

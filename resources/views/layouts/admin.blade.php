@@ -18,7 +18,7 @@
 <body class="admin-body" x-data="{
     sidebarOpen: false,
     sidebarCollapsed: false,
-    sections: { site: true, events: true, config: true, ftp: true }
+    sections: { site: true, events: true, racing: true, config: true, ftp: true }
 }">
 
 {{-- Mobile overlay --}}
@@ -143,6 +143,35 @@
         </div>
         @endif
 
+        {{-- Racing --}}
+        <div x-show="!sidebarCollapsed" class="admin-nav-section-header" @click="sections.racing = !sections.racing">
+            <span>Racing</span>
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                 :style="sections.racing ? '' : 'transform:rotate(-90deg)'" style="transition:transform .2s">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </div>
+        <div x-show="sidebarCollapsed" class="admin-nav-section-divider"></div>
+
+        <div x-show="sections.racing || sidebarCollapsed">
+            @if(auth()->user()->canManageEvents())
+            <a href="{{ route('admin.bops.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.bops.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">BOPs</span>
+            </a>
+            <a href="{{ route('admin.reports.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">Reports</span>
+            </a>
+            @endif
+        </div>
+
         @if(auth()->user()->hasAnyRole(['owner', 'admin']))
         {{-- Configuration --}}
         <div x-show="!sidebarCollapsed" class="admin-nav-section-header" @click="sections.ftp = !sections.ftp">
@@ -162,6 +191,7 @@
                 </svg>
                 <span x-show="!sidebarCollapsed">FTP Servers</span>
             </a>
+            @if(auth()->user()->isOwner())
             <a href="{{ route('admin.rating-config.index') }}"
                class="admin-nav-link {{ request()->routeIs('admin.rating-config.*') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -169,6 +199,7 @@
                 </svg>
                 <span x-show="!sidebarCollapsed">Rating Config</span>
             </a>
+            @endif
         </div>
         @endif
 

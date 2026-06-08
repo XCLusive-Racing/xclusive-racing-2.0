@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\BopController as AdminBopController;
 use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
 use App\Http\Controllers\Admin\EventTagController;
 use App\Http\Controllers\Admin\FtpServerController;
@@ -7,11 +8,13 @@ use App\Http\Controllers\Admin\RatingConfigController;
 use App\Http\Controllers\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Admin\RaceController as AdminRaceController;
 use App\Http\Controllers\Admin\RaceResultController;
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordSetupController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SteamController;
+use App\Http\Controllers\BopController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\HomeController;
@@ -19,6 +22,8 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\HotlapController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RaceController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ResultsController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -35,6 +40,14 @@ Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
 Route::get('/drivers', [DriverController::class, 'index'])->name('drivers.index');
 Route::get('/drivers/{driver}', [DriverController::class, 'show'])->name('drivers.show');
 Route::get('/hotlaps', [HotlapController::class, 'index'])->name('hotlaps.index');
+
+// Results, BOP & Reports - public
+Route::get('/results', [ResultsController::class, 'index'])->name('results.index');
+Route::get('/bop', [BopController::class, 'index'])->name('bop.index');
+Route::middleware('auth')->group(function () {
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
+});
 
 // Auth
 Route::middleware('guest')->group(function () {
@@ -94,9 +107,18 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/media/{media}', [AdminMediaController::class, 'destroy'])->name('media.destroy');
     Route::post('/media/migrate-storage', [AdminMediaController::class, 'migrateStorage'])->name('media.migrate-storage');
 
-    // Rating Config
-    Route::get('/rating-config', [RatingConfigController::class, 'index'])->name('rating-config.index');
-    Route::patch('/rating-config/{key}', [RatingConfigController::class, 'update'])->name('rating-config.update');
+    // BOPs
+    Route::get('/bops', [AdminBopController::class, 'index'])->name('bops.index');
+    Route::get('/bops/create', [AdminBopController::class, 'create'])->name('bops.create');
+    Route::post('/bops', [AdminBopController::class, 'store'])->name('bops.store');
+    Route::get('/bops/{bop}/edit', [AdminBopController::class, 'edit'])->name('bops.edit');
+    Route::put('/bops/{bop}', [AdminBopController::class, 'update'])->name('bops.update');
+    Route::delete('/bops/{bop}', [AdminBopController::class, 'destroy'])->name('bops.destroy');
+
+    // Reports
+    Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/{report}', [AdminReportController::class, 'show'])->name('reports.show');
+    Route::patch('/reports/{report}/status', [AdminReportController::class, 'updateStatus'])->name('reports.status');
 
     // FTP Servers
     Route::get('/servers', [FtpServerController::class, 'index'])->name('servers.index');
@@ -108,10 +130,17 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/servers/{ftpServer}/test', [FtpServerController::class, 'test'])->name('servers.test');
 });
 
-// Users — owner, admin, moderator
-Route::middleware(['auth', 'role:owner,admin,moderator'])->prefix('admin')->name('admin.')->group(function () {
+// Owner + moderator — Users
+Route::middleware(['auth', 'role:owner,moderator'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
     Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+});
+
+// Owner only
+Route::middleware(['auth', 'role:owner'])->prefix('admin')->name('admin.')->group(function () {
+    // Rating Config
+    Route::get('/rating-config', [RatingConfigController::class, 'index'])->name('rating-config.index');
+    Route::patch('/rating-config/{key}', [RatingConfigController::class, 'update'])->name('rating-config.update');
 });

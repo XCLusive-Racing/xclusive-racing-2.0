@@ -66,21 +66,33 @@ class RaceController extends Controller
     {
         $registrations = $race->registrations()->with('user')->orderBy('created_at')->get();
 
+        $entries = $registrations->map(function ($reg) use ($race) {
+            $user      = $reg->user;
+            $lastName  = $user->team ? $user->name . "\n" . $user->team : ($user->name ?? '');
+            $shortName = strtoupper(substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3));
+
+            return [
+                'drivers' => [
+                    [
+                        'firstName'      => '',
+                        'lastName'       => $lastName,
+                        'shortName'      => $shortName,
+                        'playerID'       => $user->platform_id ?? '',
+                        'driverCategory' => $user->ratingClass($race->game) + 1,
+                    ],
+                ],
+                'raceNumber'          => is_numeric($user->car_number) ? (int) $user->car_number : '',
+                'defaultGridPosition' => -1,
+                'ballastKg'           => 0,
+                'forcedCarModel'      => -1,
+                'overrideDriverInfo'  => 1,
+            ];
+        });
+
         $data = [
-            'event' => [
-                'title' => $race->title,
-                'track' => $race->track,
-                'game'  => $race->gameLabel(),
-                'date'  => $race->scheduled_at->toISOString(),
-            ],
-            'entries' => $registrations->values()->map(fn ($reg, $i) => [
-                'position'      => $i + 1,
-                'name'          => $reg->user->name,
-                'platform'      => $reg->user->platform,
-                'platform_id'   => $reg->user->platform_id,
-                'team'          => $reg->user->team,
-                'registered_at' => $reg->created_at->toISOString(),
-            ])->values(),
+            'entries'        => $entries,
+            'configVersion'  => 1,
+            'forceEntryList' => 0,
         ];
 
         $filename = Str::slug($race->title) . '-entry-list.json';
