@@ -26,6 +26,33 @@
             @endforeach
         </div>
 
+        {{-- Track filter --}}
+        @if($tracks->isNotEmpty())
+        <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+            <span class="fw-bold text-uppercase text-secondary" style="font-size:.72rem;letter-spacing:.06em">Track</span>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{{ route('bop.index', ['game' => $activeGame]) }}"
+                   class="btn btn-sm fw-bold text-uppercase px-3"
+                   style="font-size:.72rem;border-radius:20px;
+                          {{ !$activeTrack
+                              ? 'background:#1f2937;color:#fff;border:1px solid #1f2937'
+                              : 'background:#fff;color:#374151;border:1px solid #e5e7eb' }}">
+                    All tracks
+                </a>
+                @foreach($tracks as $track)
+                <a href="{{ route('bop.index', ['game' => $activeGame, 'track' => $track]) }}"
+                   class="btn btn-sm fw-bold text-uppercase px-3"
+                   style="font-size:.72rem;border-radius:20px;
+                          {{ $activeTrack === $track
+                              ? 'background:#1f2937;color:#fff;border:1px solid #1f2937'
+                              : 'background:#fff;color:#374151;border:1px solid #e5e7eb' }}">
+                    {{ $track }}
+                </a>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         {{-- BOP table --}}
         <div class="bg-white rounded-3 shadow-sm overflow-hidden">
             @if($bops->isEmpty())

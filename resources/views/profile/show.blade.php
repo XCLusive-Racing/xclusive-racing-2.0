@@ -83,7 +83,7 @@
                         <div class="next-step-title mb-1">{{ $nextEvent->title }}</div>
                         <p class="mb-1">{{ $nextEvent->track }}</p>
                         <p class="mb-0 text-secondary" style="font-size:.8rem">
-                            {{ $nextEvent->scheduled_at->format('d M Y · H:i') }}
+                            {{ $nextEvent->scheduledAtUk()->format('d M Y · H:i T') }}
                         </p>
                     </a>
                     @else
@@ -99,7 +99,7 @@
                         <div class="next-step-title mb-1">{{ $nextChampionship->title }}</div>
                         <p class="mb-1">{{ $nextChampionship->track }}</p>
                         <p class="mb-0 text-secondary" style="font-size:.8rem">
-                            {{ $nextChampionship->scheduled_at->format('d M Y · H:i') }}
+                            {{ $nextChampionship->scheduledAtUk()->format('d M Y · H:i T') }}
                         </p>
                     </a>
                     @else
@@ -191,7 +191,7 @@
                                 <div class="text-secondary" style="font-size:.72rem">
                                     {{ $result->race_track ?? '' }}
                                     @if($result->race_scheduled_at)
-                                    · {{ \Carbon\Carbon::parse($result->race_scheduled_at)->format('d M Y') }}
+                                    · {{ \Carbon\Carbon::parse($result->race_scheduled_at)->timezone('Europe/London')->format('d M Y') }}
                                     @endif
                                     @if($result->race_game)
                                     <x-game-badge :game="$result->race_game" class="ms-1" />

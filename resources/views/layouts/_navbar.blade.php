@@ -91,7 +91,7 @@
             </ul>
 
             <div class="d-flex align-items-center gap-3">
-                <a href="https://discord.gg/AHNTFY9Uuu" target="_blank"
+                <a href="https://discord.gg/3q5QAs8Dkw" target="_blank"
                    class="btn btn-sm fw-bold text-white d-none d-md-inline-flex bg-xcl-purple">JOIN DISCORD</a>
 
                 @auth

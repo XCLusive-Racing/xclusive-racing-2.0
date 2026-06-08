@@ -199,6 +199,168 @@ class FtpService
         return $content;
     }
 
+    public function uploadFile(string $remotePath, string $content): bool
+    {
+        if (!$this->server) {
+            return false;
+        }
+
+        $path = '/' . ltrim($remotePath, '/');
+        $url  = "ftp://{$this->server->host}:{$this->server->port}{$path}";
+
+        $fp = fopen('php://temp', 'r+');
+        fwrite($fp, $content);
+        rewind($fp);
+
+        $ch = curl_init();
+        curl_setopt($ch, \CURLOPT_URL, $url);
+        curl_setopt($ch, \CURLOPT_USERPWD, "{$this->server->username}:{$this->server->password}");
+        curl_setopt($ch, defined('CURLOPT_FTP_USE_PASV') ? \CURLOPT_FTP_USE_PASV : 119, true);
+        curl_setopt($ch, \CURLOPT_UPLOAD, true);
+        curl_setopt($ch, \CURLOPT_INFILE, $fp);
+        curl_setopt($ch, \CURLOPT_INFILESIZE, strlen($content));
+        curl_setopt($ch, \CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, \CURLOPT_TIMEOUT, 30);
+
+        curl_exec($ch);
+        $error = curl_errno($ch);
+        curl_close($ch);
+        fclose($fp);
+
+        return $error === 0;
+    }
+
+    public function listDirectory(string $path): array
+    {
+        if (!$this->server) {
+            return [];
+        }
+
+        $dirPath    = '/' . ltrim(rtrim($path, '/'), '/') . '/';
+        $candidates = array_unique([$dirPath, rtrim($dirPath, '/'), $path]);
+        $listing    = null;
+
+        foreach ($candidates as $p) {
+            $ch     = $this->makeCurl($this->server, $p);
+            $result = curl_exec($ch);
+            $error  = curl_errno($ch);
+            curl_close($ch);
+
+            if ($error === 0 && $result !== false && trim($result) !== '') {
+                $listing = $result;
+                break;
+            }
+        }
+
+        if ($listing === null) {
+            return [];
+        }
+
+        $entries = $this->parseFullListing($listing);
+
+        usort($entries, function ($a, $b) {
+            if ($a['type'] !== $b['type']) {
+                return $a['type'] === 'dir' ? -1 : 1;
+            }
+            return strcasecmp($a['name'], $b['name']);
+        });
+
+        return $entries;
+    }
+
+    public function makeDirectory(string $path): bool
+    {
+        return $this->runFtpCommands(['MKD ' . $this->absPath($path)]);
+    }
+
+    public function deleteFile(string $path): bool
+    {
+        return $this->runFtpCommands(['DELE ' . $this->absPath($path)]);
+    }
+
+    public function deleteDirectory(string $path): bool
+    {
+        return $this->runFtpCommands(['RMD ' . $this->absPath($path)]);
+    }
+
+    public function renameFile(string $from, string $to): bool
+    {
+        return $this->runFtpCommands([
+            'RNFR ' . $this->absPath($from),
+            'RNTO ' . $this->absPath($to),
+        ]);
+    }
+
+    private function runFtpCommands(array $commands): bool
+    {
+        if (!$this->server) {
+            return false;
+        }
+
+        $url = "ftp://{$this->server->host}:{$this->server->port}/";
+        $ch  = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_USERPWD, "{$this->server->username}:{$this->server->password}");
+        curl_setopt($ch, defined('CURLOPT_FTP_USE_PASV') ? CURLOPT_FTP_USE_PASV : 119, true);
+        curl_setopt($ch, CURLOPT_QUOTE, $commands);
+        curl_setopt($ch, CURLOPT_NOBODY, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_exec($ch);
+        $error = curl_errno($ch);
+        curl_close($ch);
+
+        return $error === 0;
+    }
+
+    private function parseFullListing(string $listing): array
+    {
+        $entries = [];
+
+        foreach (explode("\n", trim($listing)) as $line) {
+            $line = trim($line);
+            if ($line === '' || $line === '.' || $line === '..') {
+                continue;
+            }
+
+            // Unix-style: drwxr-xr-x 2 user group 4096 May 28 12:34 dirname
+            if (preg_match(
+                '/^([d\-][rwxsStT\-]{9})\S*\s+\d+\s+\S+\s+\S+\s+(\d+)\s+(\w+\s+\d+\s+[\d:]+)\s+(.+)$/',
+                $line, $m
+            )) {
+                $entries[] = [
+                    'name'     => basename(trim($m[4])),
+                    'type'     => $m[1][0] === 'd' ? 'dir' : 'file',
+                    'size'     => (int) $m[2],
+                    'modified' => trim($m[3]),
+                ];
+                continue;
+            }
+
+            // Windows/IIS-style: 05-29-26  02:34PM  <DIR>  dirname
+            if (preg_match(
+                '/^(\d{2}-\d{2}-\d{2}\s+\d{2}:\d{2}[AP]M)\s+(<DIR>|\d+)\s+(.+)$/',
+                $line, $m
+            )) {
+                $isDir     = $m[2] === '<DIR>';
+                $entries[] = [
+                    'name'     => basename(trim($m[3])),
+                    'type'     => $isDir ? 'dir' : 'file',
+                    'size'     => $isDir ? null : (int) $m[2],
+                    'modified' => trim($m[1]),
+                ];
+            }
+        }
+
+        return $entries;
+    }
+
+    private function absPath(string $path): string
+    {
+        return '/' . ltrim($path, '/');
+    }
+
     public function disconnect(): void
     {
         $this->server = null;
