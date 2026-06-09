@@ -26,7 +26,7 @@
                     <img src="/images/home/brand/XCLusive Lion.png"
                          alt="" aria-hidden="true" class="about-stats-card__watermark">
                     <div class="mb-4 pb-4 about-stats-card__row">
-                        <div class="display-4 fw-black fst-italic mb-1" style="color:#c084fc">7000+</div>
+                        <div class="display-4 fw-black fst-italic mb-1" style="color:#c084fc">{{ number_format(\App\Models\User::count()) }}</div>
                         <div class="fw-bold text-uppercase text-white" style="font-size:.8rem;letter-spacing:.08em;color:#e9d5ff!important">Active Members</div>
                     </div>
                     <div class="mb-4 pb-4 about-stats-card__row">

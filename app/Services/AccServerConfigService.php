@@ -92,13 +92,28 @@ class AccServerConfigService
 
     public function settings(Race $race): array
     {
+        $srRequired = match ($race->sr_requirement) {
+            '5'  => 5,
+            '7'  => 7,
+            default => -1,
+        };
+
+        $rcRequired = match ($race->min_rating) {
+            'bronze'   => 0,
+            'silver'   => 60,
+            'gold'     => 80,
+            'platinum' => 95,
+            'alien'    => 99,
+            default    => -1,
+        };
+
         return [
             'serverName'              => 'XCL | ' . ($race->title ?? 'Event'),
             'adminPassword'           => '',
             'carGroup'                => $this->carGroup($race->car_class),
             'trackMedal'              => 0,
-            'safetyRatingRequired'    => -1,
-            'racecraftRatingRequired' => -1,
+            'safetyRatingRequired'    => $srRequired,
+            'racecraftRatingRequired' => $rcRequired,
             'password'                => '',
             'spectatorPassword'       => '',
             'maxCarSlots'             => $race->max_drivers ?? 30,

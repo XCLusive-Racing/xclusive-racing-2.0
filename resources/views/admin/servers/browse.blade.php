@@ -29,9 +29,13 @@ function ftpFileSize(?int $bytes): string {
     deleteConfirm: null,
     viewModal: false,
     viewName: '',
+    viewPath: '',
     viewContent: '',
     viewLoading: false,
     viewError: '',
+    viewSaving: false,
+    viewSaved: false,
+    viewSaveError: '',
     openRename(path, name) {
         this.renamePath = path;
         this.renameName = name;
@@ -39,11 +43,14 @@ function ftpFileSize(?int $bytes): string {
         this.$nextTick(() => { if (this.$refs.renameInput) this.$refs.renameInput.focus(); });
     },
     async openView(path, name) {
-        this.viewName = name;
+        this.viewName    = name;
+        this.viewPath    = path;
         this.viewContent = '';
-        this.viewError = '';
+        this.viewError   = '';
+        this.viewSaved   = false;
+        this.viewSaveError = '';
         this.viewLoading = true;
-        this.viewModal = true;
+        this.viewModal   = true;
         try {
             const url = '{{ route('admin.servers.browse.view', $server) }}?path=' + encodeURIComponent(path);
             const res = await fetch(url);
@@ -58,6 +65,30 @@ function ftpFileSize(?int $bytes): string {
             this.viewError = 'Network error.';
         }
         this.viewLoading = false;
+    },
+    async saveFile() {
+        this.viewSaving = true;
+        this.viewSaved  = false;
+        this.viewSaveError = '';
+        try {
+            const res = await fetch('{{ route('admin.servers.browse.save', $server) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                },
+                body: JSON.stringify({ path: this.viewPath, content: this.viewContent }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                this.viewSaveError = data.error ?? 'Save failed.';
+            } else {
+                this.viewSaved = true;
+            }
+        } catch (e) {
+            this.viewSaveError = 'Network error.';
+        }
+        this.viewSaving = false;
     }
 }">
 
@@ -222,6 +253,13 @@ function ftpFileSize(?int $bytes): string {
                                class="fw-bold text-decoration-none text-dark" style="font-size:.82rem">
                                 {{ $entry['name'] }}
                             </a>
+                        @elseif(strtolower(pathinfo($entry['name'], PATHINFO_EXTENSION)) === 'json')
+                            <button type="button"
+                                    @click="openView('{{ $entryPath }}', '{{ addslashes($entry['name']) }}')"
+                                    class="fw-bold text-decoration-none btn btn-link p-0"
+                                    style="font-family:monospace;font-size:.78rem;color:#7c3aed">
+                                {{ $entry['name'] }}
+                            </button>
                         @else
                             <span class="fw-bold text-dark" style="font-family:monospace;font-size:.78rem">{{ $entry['name'] }}</span>
                         @endif
@@ -327,32 +365,45 @@ function ftpFileSize(?int $bytes): string {
 </div>
 @endif
 
-{{-- View JSON modal --}}
+{{-- Edit JSON modal --}}
 <div x-show="viewModal" x-cloak
      style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1050;display:flex;align-items:center;justify-content:center;padding:1rem"
      @keydown.escape.window="viewModal = false"
      @click.self="viewModal = false">
-    <div style="background:white;border-radius:12px;width:100%;max-width:760px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+    <div style="background:white;border-radius:12px;width:100%;max-width:860px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2)">
 
-        {{-- Modal header --}}
+        {{-- Header --}}
         <div class="d-flex align-items-center justify-content-between px-4 py-3" style="border-bottom:1px solid #f3f4f6;flex-shrink:0">
             <div>
                 <div class="fw-black text-dark" style="font-size:.9rem;font-family:monospace" x-text="viewName"></div>
                 <div class="text-secondary" style="font-size:.72rem">{{ $server->name }}</div>
             </div>
-            <button @click="viewModal = false" type="button"
-                    style="background:none;border:none;color:#9ca3af;font-size:1.2rem;line-height:1;padding:4px 8px;cursor:pointer">✕</button>
+            <div class="d-flex align-items-center gap-2">
+                <span x-show="viewSaved" class="fw-bold text-success" style="font-size:.75rem">✓ Saved</span>
+                <span x-show="viewSaveError" class="fw-bold text-danger" style="font-size:.75rem" x-text="viewSaveError"></span>
+                <button type="button" @click="saveFile()"
+                        :disabled="viewLoading || viewSaving"
+                        class="btn btn-sm fw-black text-uppercase text-white"
+                        style="background:#7c3aed;font-size:.72rem;padding:4px 14px">
+                    <span x-show="!viewSaving">Save</span>
+                    <span x-show="viewSaving">Saving…</span>
+                </button>
+                <button @click="viewModal = false" type="button"
+                        style="background:none;border:none;color:#9ca3af;font-size:1.2rem;line-height:1;padding:4px 8px;cursor:pointer">✕</button>
+            </div>
         </div>
 
-        {{-- Modal body --}}
-        <div style="overflow-y:auto;flex:1;padding:1rem">
+        {{-- Body --}}
+        <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;padding:1rem">
             <div x-show="viewLoading" class="text-center py-5">
                 <div class="text-secondary fw-bold" style="font-size:.82rem">Loading…</div>
             </div>
-            <div x-show="viewError" class="text-danger fw-bold" style="font-size:.82rem" x-text="viewError"></div>
-            <pre x-show="!viewLoading && !viewError"
-                 style="margin:0;font-size:.78rem;line-height:1.6;color:#1f2937;white-space:pre-wrap;word-break:break-all"
-                 x-text="viewContent"></pre>
+            <div x-show="viewError && !viewLoading" class="text-danger fw-bold py-3" style="font-size:.82rem" x-text="viewError"></div>
+            <textarea x-show="!viewLoading && !viewError"
+                      x-model="viewContent"
+                      class="form-control font-monospace flex-grow-1"
+                      style="font-size:.78rem;line-height:1.6;resize:none;height:100%;min-height:400px"
+                      spellcheck="false"></textarea>
         </div>
 
     </div>

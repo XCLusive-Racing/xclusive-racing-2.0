@@ -28,7 +28,7 @@ class RaceController extends Controller
         return view('admin.races.index', compact('races'));
     }
 
-    public function show(Race $race)
+    public function show(Race $race, AccServerConfigService $config)
     {
         $raceResults   = $race->results()->where('session_type', 'race')->with('user')->get();
         $qualiResults  = $race->results()->where('session_type', 'quali')->with('user')->get();
@@ -57,9 +57,16 @@ class RaceController extends Controller
             }
         }
 
+        $configFiles = [
+            'entrylist.json'     => json_encode($config->entryList($race),     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            'configuration.json' => json_encode($config->configuration($race), JSON_PRETTY_PRINT),
+            'settings.json'      => json_encode($config->settings($race),      JSON_PRETTY_PRINT),
+        ];
+
         return view('admin.races.show', compact(
             'race', 'raceResults', 'qualiResults', 'registrations',
-            'ftpServers', 'selectedServer', 'ftpFiles', 'ftpAllFiles', 'ftpError', 'importedFiles'
+            'ftpServers', 'selectedServer', 'ftpFiles', 'ftpAllFiles', 'ftpError', 'importedFiles',
+            'configFiles'
         ));
     }
 
@@ -177,6 +184,8 @@ class RaceController extends Controller
             'qualifying_duration'  => 'nullable|integer|min:1|max:999',
             'race_duration'        => 'nullable|integer|min:1|max:999',
             'car_class'            => 'nullable|string|max:50',
+            'sr_requirement'       => 'nullable|in:none,5,7',
+            'min_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
             'max_drivers'          => 'nullable|integer|min:1',
@@ -227,6 +236,8 @@ class RaceController extends Controller
             'qualifying_duration'  => 'nullable|integer|min:1|max:999',
             'race_duration'        => 'nullable|integer|min:1|max:999',
             'car_class'            => 'nullable|string|max:50',
+            'sr_requirement'       => 'nullable|in:none,5,7',
+            'min_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
             'max_drivers'          => 'nullable|integer|min:1',
@@ -258,6 +269,19 @@ class RaceController extends Controller
     {
         $request->validate(['server_id' => 'required|exists:ftp_servers,id']);
 
+        $files = [
+            'entrylist.json'     => $request->input('entrylist_json')     ?: json_encode($config->entryList($race),     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            'configuration.json' => $request->input('configuration_json') ?: json_encode($config->configuration($race), JSON_PRETTY_PRINT),
+            'settings.json'      => $request->input('settings_json')      ?: json_encode($config->settings($race),      JSON_PRETTY_PRINT),
+        ];
+
+        foreach ($files as $filename => $content) {
+            json_decode($content);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return back()->with('error', "Invalid JSON in {$filename}: " . json_last_error_msg());
+            }
+        }
+
         $server = FtpServer::findOrFail($request->server_id);
         $ftp    = new FtpService();
 
@@ -266,12 +290,6 @@ class RaceController extends Controller
         }
 
         $cfgPath = rtrim($server->cfg_path, '/');
-
-        $files = [
-            'entrylist.json'     => json_encode($config->entryList($race),     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-            'configuration.json' => json_encode($config->configuration($race), JSON_PRETTY_PRINT),
-            'settings.json'      => json_encode($config->settings($race),      JSON_PRETTY_PRINT),
-        ];
 
         $failed = [];
         foreach ($files as $filename => $content) {

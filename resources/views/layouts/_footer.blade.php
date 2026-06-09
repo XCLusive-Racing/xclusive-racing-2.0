@@ -11,7 +11,7 @@
                     Join the pride.
                 </p>
                 <div class="d-flex gap-3 mt-4">
-                    <a href="https://discord.gg/3q5QAs8Dkw" target="_blank"
+                    <a href="{{ config('xcl.discord_url') }}" target="_blank"
                        class="d-flex align-items-center justify-content-center rounded-2 text-decoration-none"
                        style="width:36px;height:36px;background:rgba(255,255,255,.06);color:#9ca3af;transition:all .2s"
                        onmouseover="this.style.background='#7c3aed';this.style.color='white'"

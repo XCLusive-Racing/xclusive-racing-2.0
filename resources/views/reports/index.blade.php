@@ -1,10 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Incident Reports - XCLusive Racing')
+@section('title', 'Incident Reports - ' . config('xcl.name'))
 
 @section('content')
 <main class="xcl-page pb-5 px-3 bg-light">
-    <div class="container" style="max-width:900px">
+    <div class="about-section__topo" style="background-image:url('/topo.png')"></div>
+    <div class="container" style="max-width:900px;position:relative;z-index:1">
 
         {{-- Header --}}
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">

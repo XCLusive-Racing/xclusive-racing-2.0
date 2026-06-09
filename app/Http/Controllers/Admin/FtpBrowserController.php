@@ -166,6 +166,28 @@ class FtpBrowserController extends Controller
                 : 'Delete failed.');
     }
 
+    public function save(FtpServer $ftpServer, Request $request)
+    {
+        $request->validate([
+            'path'    => 'required|string',
+            'content' => 'required|string',
+        ]);
+
+        $path = $this->sanitizePath($request->input('path'));
+        $ftp  = new FtpService();
+
+        if (!$ftp->connect($ftpServer)) {
+            return response()->json(['error' => 'Could not connect to ' . $ftpServer->host . '.'], 502);
+        }
+
+        $ok = $ftp->uploadFile($path, $request->input('content'));
+        $ftp->disconnect();
+
+        return $ok
+            ? response()->json(['success' => true])
+            : response()->json(['error' => 'Failed to save file.'], 502);
+    }
+
     public function rename(FtpServer $ftpServer, Request $request)
     {
         $request->validate([

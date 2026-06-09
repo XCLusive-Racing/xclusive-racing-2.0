@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'XCL Events - XCLusive Racing')
+@section('title', 'XCL Events - ' . config('xcl.name'))
 
 @section('content')
 <main class="events-page xcl-page pb-5 px-3" x-data="{

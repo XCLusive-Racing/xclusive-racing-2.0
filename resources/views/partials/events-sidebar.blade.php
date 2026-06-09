@@ -16,20 +16,25 @@ $sbUpcoming = Race::where('scheduled_at', '>', $now)
     ->limit(4)
     ->get();
 
-$sbLeaderboard = User::where('elo_acc', '>', 0)
-    ->orderByDesc('elo_acc')
-    ->limit(40)
-    ->get()
-    ->values()
-    ->map(fn($u, $i) => [
-        'pos'     => $i + 1,
-        'name'    => $u->name,
-        'country' => strtoupper($u->country ?? 'XX'),
-        'gain'    => (int)($u->elo_acc ?? 0),
-    ]);
+$sbGames = ['acc' => 'elo_acc', 'lmu' => 'elo_lmu', 'iracing' => 'elo_iracing'];
+$sbLeaderboards = [];
+foreach ($sbGames as $game => $col) {
+    $sbLeaderboards[$game] = User::where($col, '>', 0)
+        ->orderByDesc($col)
+        ->limit(40)
+        ->get()
+        ->values()
+        ->map(fn($u, $i) => [
+            'pos'       => $i + 1,
+            'name'      => $u->displayName(),
+            'country'   => strtoupper($u->country ?? 'XX'),
+            'gain'      => (int)($u->$col ?? 0),
+            'supporter' => (bool)$u->is_supporter,
+        ]);
+}
 @endphp
 
-<script>window.__xclLeaderboard = @json($sbLeaderboard);</script>
+<script>window.__xclLeaderboards = @json($sbLeaderboards);</script>
 
 <div x-data="{
     open: false,
@@ -37,12 +42,16 @@ $sbLeaderboard = User::where('elo_acc', '>', 0)
     gameFilter: 'all',
     searchQuery: '',
     currentPage: 1,
-    leaderboard: window.__xclLeaderboard || [],
+    leaderboards: window.__xclLeaderboards || {},
+    get activeLeaderboard() {
+        const g = ['acc','lmu','iracing'].includes(this.gameFilter) ? this.gameFilter : 'acc';
+        return this.leaderboards[g] || [];
+    },
     get filteredLeaderboard() {
         const q = this.searchQuery.toLowerCase();
         return q
-            ? this.leaderboard.filter(d => d.name.toLowerCase().includes(q))
-            : [...this.leaderboard];
+            ? this.activeLeaderboard.filter(d => d.name.toLowerCase().includes(q))
+            : [...this.activeLeaderboard];
     },
     get totalPages() {
         return Math.max(1, Math.ceil(this.filteredLeaderboard.length / 10));
@@ -56,6 +65,7 @@ $sbLeaderboard = User::where('elo_acc', '>', 0)
             document.body.style.overflow = val ? 'hidden' : '';
         });
         this.$watch('searchQuery', () => { this.currentPage = 1; });
+        this.$watch('gameFilter', () => { this.currentPage = 1; this.searchQuery = ''; });
     }
 }" @keydown.escape.window="open = false" @open-events-sidebar.window="open = true">
 
@@ -146,7 +156,9 @@ $sbLeaderboard = User::where('elo_acc', '>', 0)
                     </div>
                 </div>
                 <div class="xcl-sb-powered-by">
-                    POWERED BY <span class="xcl-sb-powered-by__name">[ SPONSOR ]</span>
+                    @if(config('xcl.sponsor'))
+                    POWERED BY <span class="xcl-sb-powered-by__name">{{ config('xcl.sponsor') }}</span>
+                    @endif
                 </div>
             </div>
         </div>
@@ -440,6 +452,8 @@ $sbLeaderboard = User::where('elo_acc', '>', 0)
                                             <div class="xcl-lb-driver">
                                                 <div class="xcl-lb-flag-placeholder" x-text="driver.country"></div>
                                                 <span class="xcl-lb-name" x-text="driver.name"></span>
+                                                <span x-show="driver.supporter" title="Supporter"
+                                                      style="font-size:.6rem;color:#f59e0b;line-height:1">★</span>
                                             </div>
                                         </td>
                                         <td class="xcl-lb-gain"

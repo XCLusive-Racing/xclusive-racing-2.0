@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'must_set_password', 'country', 'platform', 'platform_id', 'car_number', 'car_model', 'banner', 'game', 'team', 'role', 'flag', 'elo_acc', 'elo_lmu', 'elo_iracing', 'sr_acc', 'sr_lmu', 'sr_iracing'])]
+#[Fillable(['name', 'email', 'password', 'must_set_password', 'display_name_preference', 'is_supporter', 'country', 'platform', 'platform_id', 'car_number', 'car_model', 'banner', 'game', 'team', 'role', 'flag', 'elo_acc', 'elo_lmu', 'elo_iracing', 'sr_acc', 'sr_lmu', 'sr_iracing'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -30,6 +30,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
             'must_set_password' => 'boolean',
+            'is_supporter'      => 'boolean',
         ];
     }
 
@@ -69,6 +70,14 @@ class User extends Authenticatable
     public function canManageEvents(): bool
     {
         return $this->hasAnyRole(['owner', 'admin', 'event_manager']);
+    }
+
+    public function displayName(): string
+    {
+        if ($this->display_name_preference === 'gamertag' && $this->platform_id) {
+            return preg_replace('/#\d+$/', '', $this->platform_id);
+        }
+        return $this->name;
     }
 
     public function avatarUrl(): ?string
