@@ -9,10 +9,12 @@
 
 @section('content')
 <div class="admin-card" style="max-width:560px">
-    <form method="POST" action="{{ route('admin.bops.store') }}">
-        @csrf
-        @include('admin.bops._form')
-        <button type="submit" class="btn fw-bold text-white mt-2" style="background:#7c3aed;font-size:.85rem">Save BOP Entry</button>
-    </form>
+    <div class="px-4 py-4">
+        <form method="POST" action="{{ route('admin.bops.store') }}">
+            @csrf
+            @include('admin.bops._form')
+            <button type="submit" class="btn fw-bold text-white mt-2" style="background:#7c3aed;font-size:.85rem">Save BOP Entry</button>
+        </form>
+    </div>
 </div>
 @endsection

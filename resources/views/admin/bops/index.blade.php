@@ -86,13 +86,13 @@
 @foreach($games as $gameKey => $gameLabel)
 @php $gameBops = $bops->get($gameKey, collect()); @endphp
 <div class="admin-card mb-4">
-    <div class="d-flex align-items-center justify-content-between mb-3">
+    <div class="d-flex align-items-center justify-content-between px-4 py-3" style="border-bottom:1px solid #f3f4f6">
         <h6 class="fw-black text-uppercase mb-0" style="font-size:.8rem;letter-spacing:.06em">{{ $gameLabel }}</h6>
         <span class="text-secondary" style="font-size:.75rem">{{ $gameBops->count() }} entries</span>
     </div>
 
     @if($gameBops->isEmpty())
-    <p class="text-secondary mb-0" style="font-size:.82rem">No BOP entries for {{ $gameLabel }} yet.</p>
+    <p class="text-secondary mb-0 px-4 py-3" style="font-size:.82rem">No BOP entries for {{ $gameLabel }} yet.</p>
     @else
     <div class="table-responsive">
         <table class="table align-middle mb-0" style="font-size:.83rem">
