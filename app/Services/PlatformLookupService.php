@@ -74,22 +74,25 @@ class PlatformLookupService
 
     private function lookupXbox(string $gamertag): array
     {
-        // Strip the #xxxx discriminator — the Xbox API expects just the base name
-        $baseTag = trim(preg_replace('/#\d+$/', '', trim($gamertag)));
+        // Strip discriminator, normalize whitespace
+        $baseTag = trim(preg_replace('/\s+/', ' ', preg_replace('/#\d+$/', '', trim($gamertag))));
 
         try {
             $res = $this->http()->withHeaders([
                 'x-authorization' => config('services.openxbl.api_key'),
                 'Accept'          => 'application/json',
                 'Accept-Language' => 'en-US',
-            ])->get('https://xbl.io/api/v2/friends/search', ['gt' => $baseTag]);
+            ])->get('https://xbl.io/api/v2/friends/search?gt=' . rawurlencode($baseTag));
         } catch (ConnectionException) {
             throw new RuntimeException('Could not reach Xbox Live. Please try again.');
         }
 
         if (!$res->successful()) {
+            \Log::debug('OpenXBL error', ['status' => $res->status(), 'body' => $res->body()]);
             throw new RuntimeException('Xbox account not found. Check your Gamertag.');
         }
+
+        \Log::debug('OpenXBL response', ['body' => $res->json()]);
 
         $profile = $res->json('content.profileUsers.0');
         if (!$profile) {
