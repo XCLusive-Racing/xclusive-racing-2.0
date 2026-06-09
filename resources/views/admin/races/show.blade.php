@@ -131,38 +131,98 @@
 
                     {{-- Push Config --}}
                     @if($ftpServers->isNotEmpty())
-                    <div class="col-12">
+                    <div class="col-12" x-data="{
+                        modal: false,
+                        modalFile: '',
+                        files: {
+                            'entrylist.json':     {{ Js::from($configFiles['entrylist.json']) }},
+                            'configuration.json': {{ Js::from($configFiles['configuration.json']) }},
+                            'settings.json':      {{ Js::from($configFiles['settings.json']) }},
+                        },
+                        open(filename) { this.modalFile = filename; this.modal = true; },
+                        save() { this.modal = false; }
+                    }" @keydown.escape.window="modal = false">
+
                         <div class="p-3 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
-                            <div class="d-flex align-items-center justify-content-between mb-3">
-                                <div>
-                                    <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.82rem">Push Config to Server</div>
-                                    <div class="text-secondary mt-1" style="font-size:.75rem">Uploads entrylist.json, configuration.json and settings.json to the server's cfg directory.</div>
-                                </div>
-                            </div>
+                            <div class="fw-black text-uppercase fst-italic text-dark mb-1" style="font-size:.82rem">Push Config to Server</div>
+                            <div class="text-secondary mb-3" style="font-size:.75rem">Click a filename to edit, then select a server and push.</div>
+
                             @if(session('success'))
                             <div class="alert alert-success py-2 px-3 mb-3" style="font-size:.8rem">{{ session('success') }}</div>
                             @endif
                             @if(session('error'))
                             <div class="alert alert-danger py-2 px-3 mb-3" style="font-size:.8rem">{{ session('error') }}</div>
                             @endif
-                            <form action="{{ route('admin.races.push-config', $race) }}" method="POST" class="d-flex gap-2 align-items-end flex-wrap">
-                                @csrf
-                                <div class="flex-grow-1" style="min-width:200px">
-                                    <label class="form-label fw-bold text-dark" style="font-size:.78rem">Server</label>
-                                    <select name="server_id" class="form-select form-select-sm @error('server_id') is-invalid @enderror">
-                                        <option value="">Select server…</option>
-                                        @foreach($ftpServers as $server)
-                                        <option value="{{ $server->id }}">{{ $server->name }} — {{ $server->cfg_path }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('server_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                                <button type="submit" class="btn btn-sm fw-black text-uppercase text-white flex-shrink-0"
-                                        style="background:#7c3aed;font-size:.78rem;padding:7px 16px">
-                                    Push Config →
+
+                            {{-- File buttons --}}
+                            <div class="d-flex gap-2 flex-wrap mb-3">
+                                @foreach(['entrylist.json', 'configuration.json', 'settings.json'] as $filename)
+                                <button type="button" @click="open('{{ $filename }}')"
+                                        class="btn btn-sm fw-bold d-flex align-items-center gap-1"
+                                        style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;font-size:.75rem">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    {{ $filename }}
                                 </button>
+                                @endforeach
+                            </div>
+
+                            {{-- Push form — hidden inputs carry the (possibly edited) JSON --}}
+                            <form action="{{ route('admin.races.push-config', $race) }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="entrylist_json"     :value="files['entrylist.json']">
+                                <input type="hidden" name="configuration_json" :value="files['configuration.json']">
+                                <input type="hidden" name="settings_json"      :value="files['settings.json']">
+
+                                <div class="d-flex gap-2 align-items-end flex-wrap">
+                                    <div class="flex-grow-1" style="min-width:200px">
+                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">Server</label>
+                                        <select name="server_id" class="form-select form-select-sm @error('server_id') is-invalid @enderror">
+                                            <option value="">Select server…</option>
+                                            @foreach($ftpServers as $ftpServer)
+                                            <option value="{{ $ftpServer->id }}" {{ old('server_id') == $ftpServer->id ? 'selected' : '' }}>
+                                                {{ $ftpServer->name }} — {{ $ftpServer->cfg_path }}
+                                            </option>
+                                            @endforeach
+                                        </select>
+                                        @error('server_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                    </div>
+                                    <button type="submit" class="btn btn-sm fw-black text-uppercase text-white flex-shrink-0"
+                                            style="background:#7c3aed;font-size:.78rem;padding:7px 16px">
+                                        Push Config →
+                                    </button>
+                                </div>
                             </form>
                         </div>
+
+                        {{-- Edit modal --}}
+                        <div x-show="modal" x-cloak
+                             class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                             style="z-index:1055;background:rgba(0,0,0,.5)"
+                             @click.self="save()">
+                            <div class="bg-white rounded-3 shadow-lg d-flex flex-column"
+                                 style="width:min(860px,95vw);max-height:88vh">
+                                <div class="d-flex align-items-center justify-content-between px-4 py-3"
+                                     style="border-bottom:1px solid #e5e7eb">
+                                    <span class="fw-black font-monospace text-dark" style="font-size:.85rem" x-text="modalFile"></span>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <button type="button" @click="save()"
+                                                class="btn btn-sm fw-black text-uppercase text-white"
+                                                style="background:#7c3aed;font-size:.72rem;padding:4px 14px">
+                                            Save
+                                        </button>
+                                        <button type="button" @click="modal = false"
+                                                class="btn-close btn-sm" aria-label="Close"></button>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 overflow-hidden d-flex flex-column p-3">
+                                    <textarea class="form-control font-monospace flex-grow-1"
+                                              x-model="files[modalFile]"
+                                              style="font-size:.75rem;line-height:1.6;resize:none;height:100%"
+                                              spellcheck="false"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                     @endif
 

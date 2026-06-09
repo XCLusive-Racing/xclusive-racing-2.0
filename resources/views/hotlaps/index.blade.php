@@ -1,10 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Hotlap Leaderboard - XCLusive Racing')
+@section('title', 'Hotlap Leaderboard - ' . config('xcl.name'))
 
 @section('content')
 <main class="xcl-page pb-5 px-3 bg-light">
-    <div class="container" style="max-width:900px">
+    <div class="about-section__topo" style="background-image:url('/topo.png')"></div>
+    <div class="container" style="max-width:900px;position:relative;z-index:1">
 
         <div class="mb-4">
             <h1 class="display-6 fw-black text-uppercase fst-italic text-dark mb-1">Hotlap Leaderboard</h1>

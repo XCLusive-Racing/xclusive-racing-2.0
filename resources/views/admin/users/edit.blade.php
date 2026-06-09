@@ -94,6 +94,23 @@
                     <input type="text" name="banner" value="{{ old('banner',$user->banner) }}"
                            class="form-control" style="border-color:#e5e7eb" placeholder="https://... or images/avatars/...">
                 </div>
+                <div class="col-sm-6">
+                    <label class="form-label fw-bold text-dark" style="font-size:.82rem">Display Name</label>
+                    <select name="display_name_preference" class="form-select" style="border-color:#e5e7eb">
+                        <option value="gamertag" {{ old('display_name_preference',$user->display_name_preference??'gamertag')==='gamertag'?'selected':'' }}>Gamertag (platform ID)</option>
+                        <option value="name"     {{ old('display_name_preference',$user->display_name_preference??'gamertag')==='name'    ?'selected':'' }}>Real name ({{ $user->name }})</option>
+                    </select>
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label fw-bold text-dark d-block" style="font-size:.82rem">Supporter</label>
+                    <div class="form-check form-switch mt-1">
+                        <input class="form-check-input" type="checkbox" name="is_supporter" id="is_supporter" value="1"
+                               {{ old('is_supporter', $user->is_supporter) ? 'checked' : '' }}>
+                        <label class="form-check-label fw-bold text-secondary" for="is_supporter" style="font-size:.82rem">
+                            Supporter badge
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -3,21 +3,45 @@
 namespace App\Http\Controllers;
 
 use App\Models\Driver;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class DriverController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Driver::with('stats')->orderByDesc('xcl_rating');
+        $games = [
+            'acc'     => ['label' => 'ACC Console',      'col' => 'elo_acc',     'sr' => 'sr_acc',     'color' => '#7c3aed'],
+            'lmu'     => ['label' => 'Le Mans Ultimate', 'col' => 'elo_lmu',     'sr' => 'sr_lmu',     'color' => '#db2877'],
+            'iracing' => ['label' => 'iRacing',          'col' => 'elo_iracing', 'sr' => 'sr_iracing', 'color' => '#2563eb'],
+        ];
+
+        $game = $request->input('game', 'acc');
+        if (!array_key_exists($game, $games)) {
+            $game = 'acc';
+        }
+        $gameInfo = $games[$game];
+        $eloCol   = $gameInfo['col'];
+        $srCol    = $gameInfo['sr'];
+
+        $query = User::where($eloCol, '>', 0)->orderByDesc($eloCol);
 
         if ($request->filled('q')) {
-            $query->where('gamertag', 'like', '%' . $request->q . '%');
+            $q = $request->q;
+            $query->where(function ($sub) use ($q) {
+                $sub->where('name', 'like', "%{$q}%")
+                    ->orWhere('platform_id', 'like', "%{$q}%");
+            });
         }
 
         $drivers = $query->paginate(50)->withQueryString();
 
-        return view('drivers.index', compact('drivers'));
+        $platformIds = $drivers->pluck('platform_id')->filter()->values()->all();
+        $driverMap   = Driver::whereIn('xuid_psid', $platformIds)
+            ->get(['id', 'xuid_psid'])
+            ->keyBy('xuid_psid');
+
+        return view('drivers.index', compact('drivers', 'games', 'game', 'gameInfo', 'eloCol', 'srCol', 'driverMap'));
     }
 
     public function show(Driver $driver)

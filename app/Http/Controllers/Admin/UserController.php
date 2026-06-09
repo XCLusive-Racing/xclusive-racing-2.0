@@ -39,13 +39,16 @@ class UserController extends Controller
             'car_number'  => 'nullable|integer|min:1|max:9999',
             'car_model'   => 'nullable|string|max:100',
             'banner'      => 'nullable|string|max:500',
-            'game'        => 'nullable|in:acc,lmu,iracing',
-            'team'        => 'nullable|string|max:100',
+            'game'                   => 'nullable|in:acc,lmu,iracing',
+            'team'                   => 'nullable|string|max:100',
+            'display_name_preference'=> 'nullable|in:gamertag,name',
+            'is_supporter'           => 'nullable|boolean',
             'elo_acc'     => 'required|integer|min:0',
             'elo_lmu'     => 'required|integer|min:0',
             'elo_iracing' => 'required|integer|min:0',
         ]);
 
+        $data['is_supporter'] = $request->boolean('is_supporter');
         $user->update(\Illuminate\Support\Arr::except($data, ['roles']));
 
         if ($user->id !== auth()->id()) {

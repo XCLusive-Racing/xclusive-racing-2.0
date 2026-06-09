@@ -237,6 +237,34 @@
                 </div>
 
                 <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+                    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Requirements <span class="fw-normal" style="text-transform:none">(optional)</span></p>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="form-label">Safety Rating (SR)</label>
+                            <select name="sr_requirement" class="form-select">
+                                <option value="">— No requirement —</option>
+                                <option value="none"  {{ old('sr_requirement', $race->sr_requirement) === 'none'  ? 'selected' : '' }}>None (grade D allowed)</option>
+                                <option value="5"     {{ old('sr_requirement', $race->sr_requirement) === '5'     ? 'selected' : '' }}>SR ≥ 5.0 (grade B+)</option>
+                                <option value="7"     {{ old('sr_requirement', $race->sr_requirement) === '7'     ? 'selected' : '' }}>SR ≥ 7.0 (grade X+)</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Minimum Rating Class</label>
+                            <select name="min_rating" class="form-select">
+                                <option value="">— No requirement —</option>
+                                <option value="all"      {{ old('min_rating', $race->min_rating) === 'all'      ? 'selected' : '' }}>All classes</option>
+                                <option value="rookie"   {{ old('min_rating', $race->min_rating) === 'rookie'   ? 'selected' : '' }}>Rookie+</option>
+                                <option value="bronze"   {{ old('min_rating', $race->min_rating) === 'bronze'   ? 'selected' : '' }}>Bronze+</option>
+                                <option value="silver"   {{ old('min_rating', $race->min_rating) === 'silver'   ? 'selected' : '' }}>Silver+</option>
+                                <option value="gold"     {{ old('min_rating', $race->min_rating) === 'gold'     ? 'selected' : '' }}>Gold+</option>
+                                <option value="platinum" {{ old('min_rating', $race->min_rating) === 'platinum' ? 'selected' : '' }}>Platinum+</option>
+                                <option value="alien"    {{ old('min_rating', $race->min_rating) === 'alien'    ? 'selected' : '' }}>Alien only</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Description <span class="fw-normal" style="text-transform:none">(optional)</span></p>
                     <textarea name="description" rows="3"
                               class="form-control @error('description') is-invalid @enderror"

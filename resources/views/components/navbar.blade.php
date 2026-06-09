@@ -88,7 +88,7 @@
             <div class="d-flex align-items-center gap-3">
 
                 {{-- Discord knop --}}
-                <a href="https://discord.gg/AHNTFY9Uuu" target="_blank"
+                <a href="{{ config('xcl.discord_url') }}" target="_blank"
                    class="btn btn-sm fw-bold text-white d-none d-md-inline-flex bg-xcl-purple"
                    >
                     JOIN DISCORD

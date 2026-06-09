@@ -19,6 +19,20 @@ html {
 .xcl-page {
     padding-top: 116px;
     min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+.xcl-topo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    opacity: 0.12;
+    pointer-events: none;
+    z-index: 0;
 }
 
 // Typography helpers
