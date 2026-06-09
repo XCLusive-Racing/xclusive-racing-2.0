@@ -4,9 +4,6 @@
 @section('page-title', 'Balance of Performance')
 
 @section('page-actions')
-    <a href="{{ route('admin.bops.create') }}" class="btn btn-sm fw-bold text-uppercase text-white" style="background:#7c3aed;font-size:.78rem">
-        + Add BOP
-    </a>
 @endsection
 
 @section('content')
@@ -19,11 +16,19 @@
 @endif
 
 {{-- JSON Import --}}
-<div class="admin-card mb-4" x-data="{ open: {{ session('import_error') ? 'true' : 'false' }} }">
-    <div class="d-flex align-items-center justify-content-between px-4 py-3" style="cursor:pointer" @click="open = !open">
-        <div>
-            <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.82rem">Import via JSON</div>
-            <div class="text-secondary mt-1" style="font-size:.72rem">Upload a JSON file to bulk-create or update BOP entries.</div>
+<div class="admin-card mb-5" x-data="{ open: {{ session('import_error') ? 'true' : 'false' }} }">
+    <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom"
+         style="cursor:pointer;background:#fafafa;border-radius:inherit" @click="open = !open">
+        <div class="d-flex align-items-center gap-3">
+            <div style="width:32px;height:32px;background:#7c3aed15;border-radius:8px;display:flex;align-items:center;justify-content:center">
+                <svg width="15" height="15" fill="none" stroke="#7c3aed" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                </svg>
+            </div>
+            <div>
+                <div class="fw-black text-dark" style="font-size:.85rem">Import via JSON</div>
+                <div class="text-secondary" style="font-size:.72rem">Bulk-create or update BOP entries from a JSON file</div>
+            </div>
         </div>
         <svg width="16" height="16" fill="none" stroke="#9ca3af" stroke-width="2.5" viewBox="0 0 24 24"
              :style="open ? 'transform:rotate(180deg);transition:.2s' : 'transition:.2s'">
@@ -31,7 +36,7 @@
         </svg>
     </div>
 
-    <div x-show="open" x-cloak style="border-top:1px solid #f3f4f6">
+    <div x-show="open" x-cloak>
         <div class="px-4 py-4">
             <form action="{{ route('admin.bops.import') }}" method="POST" enctype="multipart/form-data">
                 @csrf
@@ -68,73 +73,112 @@
                 </div>
             </form>
 
-            <div class="mt-3 p-3 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
-                <div class="fw-bold text-dark mb-1" style="font-size:.72rem">Expected JSON format</div>
-                <pre style="font-size:.72rem;color:#6b7280;margin:0;line-height:1.6">[
-  { "car_model": "Ferrari 488 GT3 Evo", "track": null, "ballast_kg": 10, "restrictor": 0, "notes": "" },
-  { "car_model": "Porsche 992 GT3 R",   "track": "monza", "ballast_kg": -5, "restrictor": 2 }
-]</pre>
-                <div class="text-secondary mt-2" style="font-size:.71rem">
-                    <strong>Merge</strong> — updates existing entries (matched on car_model + track), adds new ones.<br>
-                    <strong>Replace all</strong> — deletes all existing BOP entries for the selected game first.
+            <div class="mt-4 p-3 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
+                <div class="fw-bold text-dark mb-2" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.05em">Expected format</div>
+                <pre style="font-size:.72rem;color:#6b7280;margin:0;line-height:1.8;background:transparent">{ "entries": [
+  { "carModel": 24, "track": "spa", "ballastKg": -5, "restrictor": 0 },
+  { "car_model": "Ferrari 488 GT3 Evo", "track": null, "ballast_kg": 10, "restrictor": 0 }
+]}</pre>
+                <div class="d-flex gap-4 mt-2" style="font-size:.71rem;color:#6b7280">
+                    <span><strong class="text-dark">Merge</strong> — updates existing, adds new</span>
+                    <span><strong class="text-dark">Replace all</strong> — clears game first, then inserts</span>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+{{-- Game sections --}}
 @foreach($games as $gameKey => $gameLabel)
 @php $gameBops = $bops->get($gameKey, collect()); @endphp
-<div class="admin-card mb-4">
-    <div class="d-flex align-items-center justify-content-between mb-3">
-        <h6 class="fw-black text-uppercase mb-0" style="font-size:.8rem;letter-spacing:.06em">{{ $gameLabel }}</h6>
-        <span class="text-secondary" style="font-size:.75rem">{{ $gameBops->count() }} entries</span>
+<div class="admin-card mb-3" x-data="{ open: false, search: '' }">
+
+    {{-- Header --}}
+    <div class="d-flex align-items-center justify-content-between px-4 py-3"
+         style="cursor:pointer" @click="open = !open">
+        <div class="d-flex align-items-center gap-3">
+            <h6 class="fw-black text-uppercase mb-0" style="font-size:.82rem;letter-spacing:.06em">{{ $gameLabel }}</h6>
+            <span class="badge fw-bold" style="background:#7c3aed15;color:#7c3aed;font-size:.7rem">
+                {{ $gameBops->count() }} entries
+            </span>
+        </div>
+        <svg width="14" height="14" fill="none" stroke="#9ca3af" stroke-width="2.5" viewBox="0 0 24 24"
+             :style="open ? 'transform:rotate(180deg);transition:.2s' : 'transition:.2s'">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
     </div>
 
-    @if($gameBops->isEmpty())
-    <p class="text-secondary mb-0" style="font-size:.82rem">No BOP entries for {{ $gameLabel }} yet.</p>
-    @else
-    <div class="table-responsive">
-        <table class="table align-middle mb-0" style="font-size:.83rem">
-            <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
-                <tr>
-                    <th class="fw-bold text-uppercase text-secondary py-2" style="font-size:.68rem;letter-spacing:.06em">Car Model</th>
-                    <th class="fw-bold text-uppercase text-secondary py-2" style="font-size:.68rem;letter-spacing:.06em">Track</th>
-                    <th class="fw-bold text-uppercase text-secondary py-2 text-end" style="font-size:.68rem;letter-spacing:.06em">Ballast</th>
-                    <th class="fw-bold text-uppercase text-secondary py-2 text-end" style="font-size:.68rem;letter-spacing:.06em">Restrictor</th>
-                    <th class="fw-bold text-uppercase text-secondary py-2 d-none d-md-table-cell" style="font-size:.68rem;letter-spacing:.06em">Notes</th>
-                    <th style="width:90px"></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($gameBops as $bop)
-                <tr style="border-bottom:1px solid #f9fafb">
-                    <td class="fw-bold text-dark">{{ $bop->car_model }}</td>
-                    <td class="text-secondary">{{ $bop->track ?? 'All tracks' }}</td>
-                    <td class="text-end fw-bold" style="color:{{ $bop->ballast_kg > 0 ? '#ef4444' : ($bop->ballast_kg < 0 ? '#10b981' : '#374151') }}">
-                        {{ $bop->ballast_kg > 0 ? '+' : '' }}{{ $bop->ballast_kg }} kg
-                    </td>
-                    <td class="text-end text-secondary">{{ $bop->restrictor > 0 ? $bop->restrictor . '%' : '—' }}</td>
-                    <td class="text-secondary d-none d-md-table-cell" style="max-width:200px">
-                        <span class="text-truncate d-block">{{ $bop->notes ?? '—' }}</span>
-                    </td>
-                    <td class="text-end pe-2">
-                        <div class="d-flex gap-1 justify-content-end">
-                            <a href="{{ route('admin.bops.edit', $bop) }}"
-                               class="btn btn-xs btn-outline-secondary fw-bold" style="font-size:.7rem;padding:2px 8px">Edit</a>
-                            <form method="POST" action="{{ route('admin.bops.destroy', $bop) }}"
-                                  onsubmit="return confirm('Delete this BOP entry?')">
-                                @csrf @method('DELETE')
-                                <button class="btn btn-xs btn-outline-danger fw-bold" style="font-size:.7rem;padding:2px 8px">Del</button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+    {{-- Body --}}
+    <div x-show="open" x-cloak style="border-top:1px solid #f3f4f6">
+        @if($gameBops->isEmpty())
+        <p class="text-secondary px-4 py-4 mb-0" style="font-size:.82rem">No BOP entries for {{ $gameLabel }} yet.</p>
+        @else
+
+        {{-- Search bar --}}
+        <div class="px-4 py-3 border-bottom" style="background:#fafafa" @click.stop>
+            <div class="position-relative" style="max-width:300px">
+                <svg width="13" height="13" fill="none" stroke="#9ca3af" stroke-width="2" viewBox="0 0 24 24"
+                     style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none">
+                    <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
+                </svg>
+                <input type="text" x-model="search" placeholder="Search car or track…"
+                       class="form-control form-control-sm"
+                       style="padding-left:30px;font-size:.82rem;border-color:#e5e7eb">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-middle mb-0" style="font-size:.83rem">
+                <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
+                    <tr>
+                        <th class="fw-bold text-uppercase text-secondary ps-4 pe-3 py-3" style="font-size:.68rem;letter-spacing:.06em">Car Model</th>
+                        <th class="fw-bold text-uppercase text-secondary px-3 py-3" style="font-size:.68rem;letter-spacing:.06em">Track</th>
+                        <th class="fw-bold text-uppercase text-secondary px-3 py-3 text-end" style="font-size:.68rem;letter-spacing:.06em;width:100px">Ballast</th>
+                        <th class="fw-bold text-uppercase text-secondary px-3 py-3 text-end" style="font-size:.68rem;letter-spacing:.06em;width:100px">Restrictor</th>
+                        <th class="fw-bold text-uppercase text-secondary px-3 py-3 d-none d-md-table-cell" style="font-size:.68rem;letter-spacing:.06em">Notes</th>
+                        <th class="pe-4" style="width:100px"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($gameBops as $bop)
+                    <tr style="border-bottom:1px solid #f9fafb;transition:background .1s"
+                        onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background=''"
+                        x-show="search === '' || '{{ strtolower($bop->car_model) }} {{ strtolower($bop->track ?? '') }}'.includes(search.toLowerCase())">
+                        <td class="fw-bold text-dark ps-4 pe-3 py-3" style="font-size:.85rem">{{ $bop->car_model }}</td>
+                        <td class="px-3 py-3" style="font-size:.82rem">
+                            @if($bop->track)
+                            <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.7rem">{{ $bop->track }}</span>
+                            @else
+                            <span class="text-secondary" style="font-size:.8rem">All tracks</span>
+                            @endif
+                        </td>
+                        <td class="text-end fw-black px-3 py-3" style="font-size:.88rem;color:{{ $bop->ballast_kg > 0 ? '#ef4444' : ($bop->ballast_kg < 0 ? '#10b981' : '#9ca3af') }}">
+                            {{ $bop->ballast_kg > 0 ? '+' : '' }}{{ $bop->ballast_kg }} kg
+                        </td>
+                        <td class="text-end px-3 py-3 text-secondary" style="font-size:.85rem">
+                            {{ $bop->restrictor > 0 ? $bop->restrictor . '%' : '—' }}
+                        </td>
+                        <td class="text-secondary d-none d-md-table-cell px-3 py-3" style="font-size:.8rem;max-width:200px">
+                            <span class="text-truncate d-block">{{ $bop->notes ?? '—' }}</span>
+                        </td>
+                        <td class="text-end pe-4 py-3">
+                            <div class="d-flex gap-1 justify-content-end">
+                                <a href="{{ route('admin.bops.edit', $bop) }}"
+                                   class="btn btn-xs btn-outline-secondary fw-bold" style="font-size:.7rem;padding:3px 10px">Edit</a>
+                                <form method="POST" action="{{ route('admin.bops.destroy', $bop) }}"
+                                      onsubmit="return confirm('Delete this BOP entry?')">
+                                    @csrf @method('DELETE')
+                                    <button class="btn btn-xs btn-outline-danger fw-bold" style="font-size:.7rem;padding:3px 10px">Del</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
     </div>
-    @endif
 </div>
 @endforeach
 
