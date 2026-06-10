@@ -14,7 +14,7 @@ class ProfileController extends Controller
 {
     public function show()
     {
-        $user = Auth::user();
+        $user = Auth::user()->load('connectedAccounts');
 
         $results = $user->raceResults()
             ->where('session_type', 'race')
@@ -35,23 +35,20 @@ class ProfileController extends Controller
             ->orWhere('gamertag', $user->name)
             ->first();
 
-        $nextEvent = Race::where('status', '!=', 'finished')
+        $myEvents = Race::whereHas('registrations', fn($q) => $q->where('user_id', $user->id))
+            ->where('status', '!=', 'finished')
             ->where('scheduled_at', '>', now())
             ->orderBy('scheduled_at')
-            ->first();
+            ->take(6)
+            ->get();
 
-        $nextChampionship = Race::where('status', '!=', 'finished')
-            ->where('is_championship', true)
-            ->where('scheduled_at', '>', now())
-            ->orderBy('scheduled_at')
-            ->first();
-
-        return view('profile.show', compact('user', 'results', 'stats', 'driver', 'nextEvent', 'nextChampionship'));
+        return view('profile.show', compact('user', 'results', 'stats', 'driver', 'myEvents'));
     }
 
     public function edit()
     {
-        return view('profile.edit', ['user' => Auth::user()]);
+        $user = Auth::user()->load('connectedAccounts');
+        return view('profile.edit', compact('user'));
     }
 
     public function update(Request $request)

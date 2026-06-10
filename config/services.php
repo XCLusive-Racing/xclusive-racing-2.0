@@ -23,6 +23,12 @@ return [
         ],
     ],
 
+    'discord' => [
+        'client_id'     => env('DISCORD_CLIENT_ID'),
+        'client_secret' => env('DISCORD_CLIENT_SECRET'),
+        'redirect'      => env('APP_URL') . '/auth/discord/callback',
+    ],
+
     'steam' => [
         'api_key'       => env('STEAM_API_KEY'),
         'client_id'     => null,
@@ -31,7 +37,7 @@ return [
     ],
 
     'openxbl' => [
-        'api_key' => env('OPENXBL_API_KEY'),
+        'api_key' => env('XBOX_API_KEY'),
     ],
 
     'psn_lookup' => [

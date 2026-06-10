@@ -21,9 +21,19 @@ class BopController extends Controller
             ->orderBy('track')
             ->pluck('track');
 
+        $cars = Bop::where('game', $activeGame)
+            ->distinct()
+            ->orderBy('car_model')
+            ->pluck('car_model');
+
         $activeTrack = request('track');
         if ($activeTrack && !$tracks->contains($activeTrack)) {
             $activeTrack = null;
+        }
+
+        $activeCar = request('car');
+        if ($activeCar && !$cars->contains($activeCar)) {
+            $activeCar = null;
         }
 
         $query = Bop::where('game', $activeGame);
@@ -34,8 +44,12 @@ class BopController extends Controller
             });
         }
 
+        if ($activeCar) {
+            $query->where('car_model', $activeCar);
+        }
+
         $bops = $query->orderBy('track')->orderBy('car_model')->get();
 
-        return view('bop.index', compact('games', 'activeGame', 'tracks', 'activeTrack', 'bops'));
+        return view('bop.index', compact('games', 'activeGame', 'tracks', 'activeTrack', 'cars', 'activeCar', 'bops'));
     }
 }

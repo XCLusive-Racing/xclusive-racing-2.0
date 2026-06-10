@@ -1,56 +1,84 @@
 @php $bop = $bop ?? null; @endphp
 
-<div class="mb-3">
-    <label class="form-label fw-bold" style="font-size:.8rem">Game <span class="text-danger">*</span></label>
-    <select name="game" class="form-select form-select-sm @error('game') is-invalid @enderror">
-        @foreach($games as $key => $label)
-        <option value="{{ $key }}" {{ old('game', $bop?->game) === $key ? 'selected' : '' }}>{{ $label }}</option>
-        @endforeach
-    </select>
-    @error('game')<div class="invalid-feedback">{{ $message }}</div>@enderror
-</div>
-
-<div class="mb-3">
-    <label class="form-label fw-bold" style="font-size:.8rem">Car Model <span class="text-danger">*</span></label>
-    <input type="text" name="car_model"
-           value="{{ old('car_model', $bop?->car_model) }}"
-           class="form-control form-control-sm @error('car_model') is-invalid @enderror"
-           placeholder="e.g. Ferrari 296 GT3">
-    @error('car_model')<div class="invalid-feedback">{{ $message }}</div>@enderror
-</div>
-
-<div class="mb-3">
-    <label class="form-label fw-bold" style="font-size:.8rem">Track <span class="text-secondary fw-normal">(leave empty = all tracks)</span></label>
-    <input type="text" name="track"
-           value="{{ old('track', $bop?->track) }}"
-           class="form-control form-control-sm @error('track') is-invalid @enderror"
-           placeholder="e.g. Spa-Francorchamps">
-    @error('track')<div class="invalid-feedback">{{ $message }}</div>@enderror
-</div>
-
-<div class="row g-3 mb-3">
-    <div class="col-6">
-        <label class="form-label fw-bold" style="font-size:.8rem">Ballast (kg) <span class="text-danger">*</span></label>
-        <input type="number" name="ballast_kg"
-               value="{{ old('ballast_kg', $bop?->ballast_kg ?? 0) }}"
-               class="form-control form-control-sm @error('ballast_kg') is-invalid @enderror"
-               min="-100" max="200">
-        @error('ballast_kg')<div class="invalid-feedback">{{ $message }}</div>@enderror
-    </div>
-    <div class="col-6">
-        <label class="form-label fw-bold" style="font-size:.8rem">Restrictor (%) <span class="text-danger">*</span></label>
-        <input type="number" name="restrictor"
-               value="{{ old('restrictor', $bop?->restrictor ?? 0) }}"
-               class="form-control form-control-sm @error('restrictor') is-invalid @enderror"
-               min="0" max="20">
-        @error('restrictor')<div class="invalid-feedback">{{ $message }}</div>@enderror
+{{-- Game & Car --}}
+<div class="px-4 pt-4 pb-3 border-bottom">
+    <div class="fw-black text-uppercase mb-3" style="font-size:.68rem;letter-spacing:.08em;color:#9ca3af">Car Identity</div>
+    <div class="row g-3">
+        <div class="col-sm-5">
+            <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">Game <span class="text-danger">*</span></label>
+            <select name="game" class="form-select @error('game') is-invalid @enderror" style="font-size:.85rem">
+                @foreach($games as $key => $label)
+                <option value="{{ $key }}" {{ old('game', $bop?->game) === $key ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
+            </select>
+            @error('game')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        </div>
+        <div class="col-sm-7">
+            <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">Car Model <span class="text-danger">*</span></label>
+            <input type="text" name="car_model"
+                   value="{{ old('car_model', $bop?->car_model) }}"
+                   class="form-control @error('car_model') is-invalid @enderror"
+                   style="font-size:.85rem"
+                   placeholder="e.g. Ferrari 296 GT3">
+            @error('car_model')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        </div>
     </div>
 </div>
 
-<div class="mb-3">
-    <label class="form-label fw-bold" style="font-size:.8rem">Notes</label>
+{{-- Track --}}
+<div class="px-4 py-3 border-bottom">
+    <div class="fw-black text-uppercase mb-3" style="font-size:.68rem;letter-spacing:.08em;color:#9ca3af">Track</div>
+    <div>
+        <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">
+            Track
+            <span class="fw-normal text-secondary ms-1" style="font-size:.75rem">— leave empty to apply to all tracks</span>
+        </label>
+        <input type="text" name="track"
+               value="{{ old('track', $bop?->track) }}"
+               class="form-control @error('track') is-invalid @enderror"
+               style="font-size:.85rem;max-width:320px"
+               placeholder="e.g. spa">
+        @error('track')<div class="invalid-feedback">{{ $message }}</div>@enderror
+    </div>
+</div>
+
+{{-- Ballast & Restrictor --}}
+<div class="px-4 py-3 border-bottom" x-data="{ ballast: {{ old('ballast_kg', $bop?->ballast_kg ?? 0) }} }">
+    <div class="fw-black text-uppercase mb-3" style="font-size:.68rem;letter-spacing:.08em;color:#9ca3af">Performance Adjustment</div>
+    <div class="row g-3 align-items-start">
+        <div class="col-sm-5">
+            <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">Ballast (kg) <span class="text-danger">*</span></label>
+            <input type="number" name="ballast_kg"
+                   x-model="ballast"
+                   value="{{ old('ballast_kg', $bop?->ballast_kg ?? 0) }}"
+                   class="form-control @error('ballast_kg') is-invalid @enderror"
+                   style="font-size:.85rem"
+                   min="-100" max="200">
+            @error('ballast_kg')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            <div class="mt-2 fw-black" style="font-size:1.1rem"
+                 :style="ballast > 0 ? 'color:#ef4444' : (ballast < 0 ? 'color:#10b981' : 'color:#9ca3af')">
+                <span x-text="ballast > 0 ? '+' + ballast + ' kg' : ballast + ' kg'"></span>
+            </div>
+        </div>
+        <div class="col-sm-5">
+            <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">Restrictor (%) <span class="text-danger">*</span></label>
+            <input type="number" name="restrictor"
+                   value="{{ old('restrictor', $bop?->restrictor ?? 0) }}"
+                   class="form-control @error('restrictor') is-invalid @enderror"
+                   style="font-size:.85rem"
+                   min="0" max="20">
+            @error('restrictor')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        </div>
+    </div>
+</div>
+
+{{-- Notes --}}
+<div class="px-4 pt-3 pb-4">
+    <div class="fw-black text-uppercase mb-3" style="font-size:.68rem;letter-spacing:.08em;color:#9ca3af">Notes</div>
+    <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">Notes <span class="fw-normal text-secondary">(optional)</span></label>
     <textarea name="notes" rows="2"
-              class="form-control form-control-sm @error('notes') is-invalid @enderror"
+              class="form-control @error('notes') is-invalid @enderror"
+              style="font-size:.85rem"
               placeholder="Optional remarks...">{{ old('notes', $bop?->notes) }}</textarea>
     @error('notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
 </div>

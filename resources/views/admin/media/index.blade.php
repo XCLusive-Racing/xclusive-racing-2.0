@@ -17,29 +17,7 @@
 <div class="alert alert-success mb-4">{{ session('success') }}</div>
 @endif
 
-<div x-data="{
-    uploadOpen: false,
-    typeFilter: 'all',
-    categoryFilter: 'all',
-    async confirmDelete(url) {
-        const r = await Swal.fire({
-            title: 'Delete file?',
-            text: 'This permanently removes the file from storage. Any races referencing it will lose the media.',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc2626',
-            cancelButtonColor: '#6b7280',
-            confirmButtonText: 'Delete',
-            cancelButtonText: 'Cancel',
-            reverseButtons: true,
-        });
-        if (r.isConfirmed) {
-            this.$refs.deleteForm.action = url;
-            this.$refs.deleteForm.submit();
-        }
-    }
-}"
-@open-upload-modal.window="uploadOpen = true">
+<div x-data="mediaManager({ openUpload: {{ $errors->any() ? 'true' : 'false' }} })" @open-upload-modal.window="uploadOpen = true">
 
     {{-- Stats + filter bar --}}
     <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
@@ -339,12 +317,4 @@
 
 @endsection
 
-@if($errors->any())
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        window.dispatchEvent(new CustomEvent('open-upload-modal'));
-    });
-</script>
-@endpush
 @endif

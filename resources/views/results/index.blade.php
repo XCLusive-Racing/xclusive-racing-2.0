@@ -2,6 +2,7 @@
 
 @section('title', 'Results - ' . config('xcl.name'))
 
+
 @section('content')
 <main class="xcl-page pb-5 px-3 bg-light">
     <div class="about-section__topo" style="background-image:url('/topo.png')"></div>
@@ -31,13 +32,12 @@
                     </div>
                     <div style="max-height:480px;overflow-y:auto">
                         @foreach($races as $race)
+                        @php $isActive = $selected?->id === $race->id; @endphp
                         <a href="{{ route('results.index', ['race' => $race->id]) }}"
-                           class="d-flex align-items-start gap-2 px-3 py-2 text-decoration-none border-bottom"
-                           style="transition:background .1s;{{ $selected?->id === $race->id ? 'background:#7c3aed14;' : '' }}"
-                           onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='{{ $selected?->id === $race->id ? '#7c3aed14' : '' }}'">
+                           class="result-race-item d-flex align-items-start gap-2 px-3 py-2 text-decoration-none border-bottom {{ $isActive ? 'active' : '' }}">
                             <span class="badge mt-1 flex-shrink-0" style="background:{{ $race->gameColor() }};font-size:.6rem">{{ $race->gameLabel() }}</span>
                             <div>
-                                <div class="fw-bold text-dark" style="font-size:.82rem;line-height:1.3;{{ $selected?->id === $race->id ? 'color:#7c3aed!important' : '' }}">
+                                <div class="fw-bold text-dark" style="font-size:.82rem;line-height:1.3;{{ $isActive ? 'color:#7c3aed' : '' }}">
                                     {{ $race->title }}
                                 </div>
                                 <div class="text-secondary" style="font-size:.72rem">{{ $race->scheduledAtUk()->format('d M Y') }}</div>

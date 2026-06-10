@@ -20,77 +20,12 @@ function ftpFileSize(?int $bytes): string {
 }
 @endphp
 
-<div x-data="{
+<div x-data="fileBrowser({
     showUpload: {{ $errors->has('file') ? 'true' : 'false' }},
     showMkdir: {{ $errors->has('name') ? 'true' : 'false' }},
-    renameModal: false,
-    renamePath: '',
-    renameName: '',
-    deleteConfirm: null,
-    viewModal: false,
-    viewName: '',
-    viewPath: '',
-    viewContent: '',
-    viewLoading: false,
-    viewError: '',
-    viewSaving: false,
-    viewSaved: false,
-    viewSaveError: '',
-    openRename(path, name) {
-        this.renamePath = path;
-        this.renameName = name;
-        this.renameModal = true;
-        this.$nextTick(() => { if (this.$refs.renameInput) this.$refs.renameInput.focus(); });
-    },
-    async openView(path, name) {
-        this.viewName    = name;
-        this.viewPath    = path;
-        this.viewContent = '';
-        this.viewError   = '';
-        this.viewSaved   = false;
-        this.viewSaveError = '';
-        this.viewLoading = true;
-        this.viewModal   = true;
-        try {
-            const url = '{{ route('admin.servers.browse.view', $server) }}?path=' + encodeURIComponent(path);
-            const res = await fetch(url);
-            const text = await res.text();
-            if (!res.ok) {
-                const err = JSON.parse(text);
-                this.viewError = err.error ?? 'Could not load file.';
-            } else {
-                this.viewContent = text;
-            }
-        } catch (e) {
-            this.viewError = 'Network error.';
-        }
-        this.viewLoading = false;
-    },
-    async saveFile() {
-        this.viewSaving = true;
-        this.viewSaved  = false;
-        this.viewSaveError = '';
-        try {
-            const res = await fetch('{{ route('admin.servers.browse.save', $server) }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                },
-                body: JSON.stringify({ path: this.viewPath, content: this.viewContent }),
-            });
-            const data = await res.json();
-            if (!res.ok) {
-                this.viewSaveError = data.error ?? 'Save failed.';
-            } else {
-                this.viewSaved = true;
-            }
-        } catch (e) {
-            this.viewSaveError = 'Network error.';
-        }
-        this.viewSaving = false;
-    }
-}">
+    viewUrl: '{{ route('admin.servers.browse.view', $server) }}',
+    saveUrl: '{{ route('admin.servers.browse.save', $server) }}'
+})">
 
 {{-- Server info + breadcrumb bar --}}
 <div class="admin-card mb-3">

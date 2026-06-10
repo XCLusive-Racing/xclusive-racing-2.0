@@ -259,34 +259,7 @@
                 <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Event Tag</p>
 
                 <script>window.__xclTagsBulk = @json($tags->map(fn($t) => ['slug'=>$t->slug,'name'=>$t->name,'color'=>$t->color]));</script>
-                <div x-data="{
-                    tags: window.__xclTagsBulk || [],
-                    adding: false,
-                    tagName: '',
-                    tagColor: '#7B2FBE',
-                    saving: false,
-                    tagError: '',
-                    async saveTag() {
-                        if (!this.tagName.trim()) return;
-                        this.saving = true; this.tagError = '';
-                        try {
-                            const r = await fetch('{{ route('admin.event-tags.store') }}', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
-                                body: JSON.stringify({ name: this.tagName, color: this.tagColor })
-                            });
-                            const data = await r.json();
-                            if (r.ok) {
-                                this.tags.push({ slug: data.slug, name: data.name, color: data.color });
-                                this.tagName = ''; this.tagColor = '#7B2FBE';
-                                setTimeout(() => { this.adding = false; }, 1200);
-                            } else {
-                                this.tagError = data.errors?.name?.[0] || data.message || 'Failed to save tag.';
-                            }
-                        } catch { this.tagError = 'Network error.'; }
-                        finally { this.saving = false; }
-                    }
-                }">
+                <div x-data="eventTags({ tags: window.__xclTagsBulk || [], storeUrl: '{{ route('admin.event-tags.store') }}', deleteBaseUrl: '/admin/event-tags/', csrfToken: '{{ csrf_token() }}' })">
                     <div class="d-flex align-items-center justify-content-between mb-1">
                         <label class="form-label mb-0">Tag</label>
                         <button type="button" @click="adding = !adding"

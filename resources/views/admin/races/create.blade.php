@@ -100,45 +100,7 @@
                         <div class="col-sm-6">
                             {{-- Event Tag --}}
                             <script>window.__xclTags = @json($tags->map(fn($t) => ['slug'=>$t->slug,'name'=>$t->name,'color'=>$t->color]));</script>
-                            <div x-data="{
-                                adding: false,
-                                tagName: '',
-                                tagColor: '#7B2FBE',
-                                saving: false,
-                                tagError: '',
-                                tagSuccess: '',
-                                tags: window.__xclTags || [],
-                                async saveTag() {
-                                    if (!this.tagName.trim()) return;
-                                    this.saving = true; this.tagError = ''; this.tagSuccess = '';
-                                    try {
-                                        const r = await fetch('{{ route('admin.event-tags.store') }}', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
-                                            body: JSON.stringify({ name: this.tagName, color: this.tagColor })
-                                        });
-                                        const data = await r.json();
-                                        if (r.ok) {
-                                            this.tags.push({ slug: data.slug, name: data.name, color: data.color });
-                                            this.tagSuccess = data.name + ' added!';
-                                            this.tagName = ''; this.tagColor = '#7B2FBE';
-                                            setTimeout(() => { this.adding = false; this.tagSuccess = ''; }, 1200);
-                                        } else {
-                                            this.tagError = data.errors?.name?.[0] || data.message || 'Failed to save tag.';
-                                        }
-                                    } catch { this.tagError = 'Network error.'; }
-                                    finally { this.saving = false; }
-                                },
-                                async deleteTag(slug) {
-                                    const res = await Swal.fire({ title: 'Delete tag?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc2626', cancelButtonColor: '#6b7280', confirmButtonText: 'Delete', cancelButtonText: 'Cancel', reverseButtons: true });
-                                    if (!res.isConfirmed) return;
-                                    const r = await fetch('/admin/event-tags/' + slug, {
-                                        method: 'POST',
-                                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'X-HTTP-Method-Override': 'DELETE', 'Accept': 'application/json' }
-                                    });
-                                    if (r.ok) this.tags = this.tags.filter(t => t.slug !== slug);
-                                }
-                            }">
+                            <div x-data="eventTags({ tags: window.__xclTags || [], storeUrl: '{{ route('admin.event-tags.store') }}', deleteBaseUrl: '/admin/event-tags/', csrfToken: '{{ csrf_token() }}' })">
                                 <div class="d-flex align-items-center justify-content-between mb-1">
                                     <label class="form-label mb-0">Event Tag</label>
                                     <button type="button" @click="adding = !adding"

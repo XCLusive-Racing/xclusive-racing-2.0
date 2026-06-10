@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Driver;
+use App\Models\RaceResult;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -52,6 +53,11 @@ class DriverController extends Controller
             ->sortBy('track')
             ->values();
 
-        return view('drivers.show', compact('driver', 'trackTimes'));
+        $avgRating = RaceResult::where('player_id', $driver->xuid_psid)
+            ->where('session_type', 'race')
+            ->whereNotNull('rating_after')
+            ->avg('rating_after');
+
+        return view('drivers.show', compact('driver', 'trackTimes', 'avgRating'));
     }
 }

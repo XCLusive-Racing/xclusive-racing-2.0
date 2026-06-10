@@ -36,38 +36,7 @@ foreach ($sbGames as $game => $col) {
 
 <script>window.__xclLeaderboards = @json($sbLeaderboards);</script>
 
-<div x-data="{
-    open: false,
-    activeTab: 'daily',
-    gameFilter: 'all',
-    searchQuery: '',
-    currentPage: 1,
-    leaderboards: window.__xclLeaderboards || {},
-    get activeLeaderboard() {
-        const g = ['acc','lmu','iracing'].includes(this.gameFilter) ? this.gameFilter : 'acc';
-        return this.leaderboards[g] || [];
-    },
-    get filteredLeaderboard() {
-        const q = this.searchQuery.toLowerCase();
-        return q
-            ? this.activeLeaderboard.filter(d => d.name.toLowerCase().includes(q))
-            : [...this.activeLeaderboard];
-    },
-    get totalPages() {
-        return Math.max(1, Math.ceil(this.filteredLeaderboard.length / 10));
-    },
-    get paginatedLeaderboard() {
-        const start = (this.currentPage - 1) * 10;
-        return this.filteredLeaderboard.slice(start, start + 10);
-    },
-    init() {
-        this.$watch('open', val => {
-            document.body.style.overflow = val ? 'hidden' : '';
-        });
-        this.$watch('searchQuery', () => { this.currentPage = 1; });
-        this.$watch('gameFilter', () => { this.currentPage = 1; this.searchQuery = ''; });
-    }
-}" @keydown.escape.window="open = false" @open-events-sidebar.window="open = true">
+<div x-data="eventsSidebar()" @keydown.escape.window="open = false" @open-events-sidebar.window="open = true">
 
     {{-- ── Trigger tab ──────────────────────────────────────────────────────── --}}
     <button
@@ -207,21 +176,7 @@ foreach ($sbGames as $game => $col) {
                         </div>
                         <div class="xcl-sb-next"
                              x-show="gameFilter === 'all' || gameFilter === '{{ $sbNextEvent->game }}'"
-                             x-data="{
-                                 d: 0, h: 0, m: 0, s: 0,
-                                 init() {
-                                     const t = new Date('{{ $sbNextEvent->scheduled_at->toIso8601String() }}');
-                                     const tick = () => {
-                                         const diff = t - new Date();
-                                         if (diff <= 0) { this.d=this.h=this.m=this.s=0; return; }
-                                         this.d = Math.floor(diff/86400000);
-                                         this.h = Math.floor((diff%86400000)/3600000);
-                                         this.m = Math.floor((diff%3600000)/60000);
-                                         this.s = Math.floor((diff%60000)/1000);
-                                     };
-                                     tick(); setInterval(tick, 1000);
-                                 }
-                             }">
+                             x-data="countdownTimer('{{ $sbNextEvent->scheduled_at->toIso8601String() }}')">
 
                             {{-- Hero image with overlays --}}
                             <div class="xcl-sb-next__hero">
@@ -349,21 +304,7 @@ foreach ($sbGames as $game => $col) {
                         @endphp
                         <div class="xcl-sb-up-card"
                              x-show="gameFilter === 'all' || gameFilter === '{{ $event->game }}'"
-                             x-data="{
-                                 d: 0, h: 0, m: 0, s: 0,
-                                 init() {
-                                     const t = new Date('{{ $event->scheduled_at->toIso8601String() }}');
-                                     const tick = () => {
-                                         const diff = t - new Date();
-                                         if (diff <= 0) { this.d=this.h=this.m=this.s=0; return; }
-                                         this.d = Math.floor(diff/86400000);
-                                         this.h = Math.floor((diff%86400000)/3600000);
-                                         this.m = Math.floor((diff%3600000)/60000);
-                                         this.s = Math.floor((diff%60000)/1000);
-                                     };
-                                     tick(); setInterval(tick, 1000);
-                                 }
-                             }">
+                             x-data="countdownTimer('{{ $event->scheduled_at->toIso8601String() }}')">
 
                             <div class="xcl-sb-up-card__img-wrap">
                                 @if($event->image)

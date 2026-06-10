@@ -1,121 +1,5 @@
 @props(['name' => 'image', 'label' => 'Image', 'current' => null, 'currentType' => 'image', 'optional' => true, 'filterDefault' => 'all'])
 
-@once
-@push('scripts')
-<script>
-function xcMediaPicker(config) {
-    return {
-        preview: config.preview || '',
-        previewType: config.previewType || 'image',
-        mediaPath: config.mediaPath || '',
-        galleryUrl: config.galleryUrl,
-        uploadUrl: config.uploadUrl,
-        deleteBaseUrl: config.deleteBaseUrl,
-        csrfToken: config.csrfToken,
-        galleryOpen: false,
-        galleryItems: [],
-        gallerySearch: '',
-        galleryFilter: config.filterDefault || 'all',
-        galleryLoading: false,
-        modalUploading: false,
-
-        async openGallery() {
-            this.galleryOpen = true;
-            if (!this.galleryItems.length) {
-                this.galleryLoading = true;
-                try {
-                    const r = await fetch(this.galleryUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-                    this.galleryItems = await r.json();
-                } finally {
-                    this.galleryLoading = false;
-                }
-            }
-        },
-
-        selectGallery(item) {
-            this.preview = item.url;
-            this.previewType = item.type || 'image';
-            this.mediaPath = item.path;
-            this.$refs.fileInput.value = '';
-            this.galleryOpen = false;
-        },
-
-        onFileChange(e) {
-            const f = e.target.files[0];
-            if (!f) return;
-            this.preview = URL.createObjectURL(f);
-            this.previewType = f.type.startsWith('video/') ? 'video' : 'image';
-            this.mediaPath = '';
-        },
-
-        async onModalUpload(e) {
-            const f = e.target.files[0];
-            if (!f) return;
-            this.preview = URL.createObjectURL(f);
-            this.previewType = f.type.startsWith('video/') ? 'video' : 'image';
-            this.modalUploading = true;
-            try {
-                const fd = new FormData();
-                fd.append('file', f);
-                fd.append('_token', this.csrfToken);
-                const r = await fetch(this.uploadUrl, {
-                    method: 'POST',
-                    body: fd,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                if (r.ok) {
-                    const data = await r.json();
-                    this.mediaPath = data.path;
-                    this.preview = data.url;
-                    this.previewType = data.type || 'image';
-                    this.galleryItems = [];
-                }
-            } finally {
-                this.modalUploading = false;
-                this.galleryOpen = false;
-            }
-        },
-
-        clear() {
-            this.preview = '';
-            this.previewType = 'image';
-            this.mediaPath = '';
-            this.$refs.fileInput.value = '';
-        },
-
-        async deleteMedia(item) {
-            if (!confirm('Delete "' + (item.title || item.original_name) + '" from the library? This cannot be undone.')) return;
-            const r = await fetch(this.deleteBaseUrl + item.id, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': this.csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest',
-                }
-            });
-            if (r.ok) {
-                this.galleryItems = this.galleryItems.filter(i => i.id !== item.id);
-                if (this.mediaPath === item.path) {
-                    this.clear();
-                }
-            }
-        },
-
-        get filtered() {
-            return this.galleryItems.filter(i => {
-                const matchType = this.galleryFilter === 'all' || i.type === this.galleryFilter;
-                if (!this.gallerySearch) return matchType;
-                const q = this.gallerySearch.toLowerCase();
-                return matchType && (
-                    (i.original_name || '').toLowerCase().includes(q) ||
-                    (i.title || '').toLowerCase().includes(q)
-                );
-            });
-        }
-    };
-}
-</script>
-@endpush
-@endonce
 
 @php
     $currentUrl  = $current ? \Illuminate\Support\Facades\Storage::disk('media')->url($current) : '';
@@ -145,7 +29,7 @@ function xcMediaPicker(config) {
          :style="preview ? 'border-color:#7c3aed' : ''">
 
         {{-- Media selected: show preview with action buttons --}}
-        <template x-if="preview && previewType === 'image'">
+        <template x-if="preview && (previewType === 'image' || previewType === 'icon')">
             <div class="position-relative">
                 <img :src="preview" style="width:100%;max-height:220px;object-fit:cover;display:block">
                 <div class="position-absolute top-0 end-0 m-2 d-flex gap-1">
@@ -200,7 +84,7 @@ function xcMediaPicker(config) {
                 <button type="button" @click="$refs.fileInput.click()"
                         class="flex-fill d-flex flex-column align-items-center justify-content-center py-4 text-secondary border-0 bg-transparent gap-2"
                         style="font-size:.82rem;cursor:pointer">
-                    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="opacity:.4">
+                    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="opacity:.4">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
                     </svg>
                     Upload new
@@ -209,7 +93,7 @@ function xcMediaPicker(config) {
                 <button type="button" @click="openGallery()"
                         class="flex-fill d-flex flex-column align-items-center justify-content-center py-4 text-secondary border-0 bg-transparent gap-2"
                         style="font-size:.82rem;cursor:pointer">
-                    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="opacity:.4">
+                    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="opacity:.4">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
                     </svg>
                     Browse gallery
@@ -356,8 +240,3 @@ function xcMediaPicker(config) {
     </div>
 </div>
 
-@once
-<style>
-@keyframes xcl-spin { to { transform: rotate(360deg); } }
-</style>
-@endonce

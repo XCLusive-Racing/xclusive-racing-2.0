@@ -34,6 +34,17 @@
                         <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.75rem">#{{ $user->car_number }}</span>
                         @endif
                     </div>
+                    @if($user->connectedAccounts->isNotEmpty())
+                    <div class="d-flex flex-wrap gap-1 mt-2">
+                        @foreach($user->connectedAccounts as $account)
+                        <span class="badge d-inline-flex align-items-center gap-1 fw-bold"
+                              style="background:{{ $account->providerColor() }};color:#fff;font-size:.7rem;padding:3px 8px">
+                            {!! $account->providerIcon() !!}
+                            {{ $account->username }}
+                        </span>
+                        @endforeach
+                    </div>
+                    @endif
                 </div>
                 <div class="d-flex gap-2 flex-shrink-0">
                     <a href="{{ route('profile.edit') }}"
@@ -74,43 +85,37 @@
             </div>
         </div>
 
-        {{-- Next events --}}
+        {{-- My registered events --}}
         <div class="bg-white rounded-3 shadow-sm p-4 mb-4">
-            <h2 class="fs-2 fw-black text-uppercase fst-italic text-dark mb-4">NEXT EVENTS</h2>
+            <h2 class="fs-2 fw-black text-uppercase fst-italic text-dark mb-4">MY EVENTS</h2>
+            @if($myEvents->isEmpty())
+            <a href="{{ url('/events') }}" class="next-step-card">
+                <div class="next-step-title mb-2">NO UPCOMING EVENTS</div>
+                <p class="mb-0">You haven't registered for any upcoming races yet. Browse events to join one.</p>
+            </a>
+            @else
             <div class="row g-3">
+                @foreach($myEvents as $event)
                 <div class="col-md-6">
-                    @if($nextEvent)
-                    <a href="{{ route('events.show', $nextEvent) }}" class="next-step-card">
-                        <div class="next-step-title mb-1">{{ $nextEvent->title }}</div>
-                        <p class="mb-1">{{ $nextEvent->track }}</p>
-                        <p class="mb-0 text-secondary" style="font-size:.8rem">
-                            {{ $nextEvent->scheduledAtUk()->format('d M Y · H:i T') }}
+                    <a href="{{ route('events.show', $event) }}" class="next-step-card">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge fw-bold" style="background:{{ $event->gameColor() }};color:#fff;font-size:.65rem;padding:2px 7px;border-radius:4px">
+                                {{ $event->gameLabel() }}
+                            </span>
+                            @if($event->is_championship)
+                            <span class="badge fw-bold" style="background:#fef3c7;color:#92400e;font-size:.65rem;padding:2px 7px;border-radius:4px">Championship</span>
+                            @endif
+                        </div>
+                        <div class="next-step-title mb-1">{{ $event->title }}</div>
+                        <p class="mb-1 text-secondary" style="font-size:.85rem">{{ $event->track }}</p>
+                        <p class="mb-0 text-secondary" style="font-size:.78rem">
+                            {{ $event->scheduledAtUk()->format('d M Y · H:i T') }}
                         </p>
                     </a>
-                    @else
-                    <a href="{{ url('/events') }}" class="next-step-card">
-                        <div class="next-step-title mb-2">FIND RACES</div>
-                        <p>Browse and join upcoming racing events</p>
-                    </a>
-                    @endif
                 </div>
-                <div class="col-md-6">
-                    @if($nextChampionship)
-                    <a href="{{ route('events.show', $nextChampionship) }}" class="next-step-card">
-                        <div class="next-step-title mb-1">{{ $nextChampionship->title }}</div>
-                        <p class="mb-1">{{ $nextChampionship->track }}</p>
-                        <p class="mb-0 text-secondary" style="font-size:.8rem">
-                            {{ $nextChampionship->scheduledAtUk()->format('d M Y · H:i T') }}
-                        </p>
-                    </a>
-                    @else
-                    <a href="{{ url('/events') }}" class="next-step-card">
-                        <div class="next-step-title mb-2">CHAMPIONSHIP EVENTS</div>
-                        <p>No upcoming championship events</p>
-                    </a>
-                    @endif
-                </div>
+                @endforeach
             </div>
+            @endif
         </div>
 
         {{-- Stats --}}
