@@ -20,7 +20,7 @@ $stats   = $driver->stats;
 @section('content')
 <main class="xcl-page pb-5 px-3 bg-light">
     <div class="about-section__topo" style="background-image:url('/topo.png')"></div>
-    <div class="container" style="max-width:960px">
+    <div class="container" style="max-width:960px;position:relative;z-index:1">
 
         {{-- Back --}}
         <div class="mb-3">
@@ -92,9 +92,7 @@ $stats   = $driver->stats;
                     ['label' => 'Top 5s',      'value' => $stats->top5s],
                     ['label' => 'Top 10s',     'value' => $stats->top10s],
                     ['label' => 'Fastest Laps','value' => $stats->fastest_race_laps, 'color' => '#7c3aed'],
-                    ['label' => 'DNS',         'value' => $driver->dns_count,  'color' => $driver->dns_count > 0 ? '#ef4444' : null],
-                    ['label' => 'Pos. Gained', 'value' => ($stats->positions_gained > 0 ? '+' : '') . $stats->positions_gained,
-                                               'color' => $stats->positions_gained >= 0 ? '#10b981' : '#ef4444'],
+                    ['label' => 'Avg. Rating', 'value' => $avgRating ? number_format($avgRating, 0) : '—'],
                 ] as $stat)
                 <div class="col-6 col-sm-4 col-lg-3">
                     <div class="stat-box">
@@ -107,38 +105,6 @@ $stats   = $driver->stats;
                 @endforeach
             </div>
 
-            {{-- Penalty summary --}}
-            @php
-            $totalPenalties = $stats->penalty_pit_speeding + $stats->penalty_wrong_way + $stats->penalty_cutting
-                + $stats->penalty_trolling + $stats->penalty_start_speeding + $stats->penalty_out_of_start_pos
-                + $stats->penalty_stop_go_30 + $stats->penalty_disqualified + $stats->penalty_drive_through
-                + $stats->penalty_post_race_time;
-            @endphp
-            @if($totalPenalties > 0)
-            <div class="mt-3 pt-3 border-top">
-                <p class="fw-bold text-uppercase text-secondary mb-2" style="font-size:.72rem;letter-spacing:.06em">Penalties</p>
-                <div class="d-flex flex-wrap gap-2">
-                    @foreach([
-                        ['Pit Speeding',      $stats->penalty_pit_speeding],
-                        ['Wrong Way',         $stats->penalty_wrong_way],
-                        ['Cutting',           $stats->penalty_cutting],
-                        ['Trolling',          $stats->penalty_trolling],
-                        ['Start Speeding',    $stats->penalty_start_speeding],
-                        ['Out of Start Pos',  $stats->penalty_out_of_start_pos],
-                        ['Stop & Go 30',      $stats->penalty_stop_go_30],
-                        ['Disqualified',      $stats->penalty_disqualified],
-                        ['Drive Through',     $stats->penalty_drive_through],
-                        ['Post Race Time',    $stats->penalty_post_race_time],
-                    ] as [$label, $count])
-                    @if($count > 0)
-                    <span class="badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.72rem;font-weight:700">
-                        {{ $label }}: {{ $count }}
-                    </span>
-                    @endif
-                    @endforeach
-                </div>
-            </div>
-            @endif
         </div>
         @endif
 

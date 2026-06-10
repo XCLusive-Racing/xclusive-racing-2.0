@@ -10,6 +10,8 @@ $btn-font-weight: 800;
 
 @import 'bootstrap/scss/bootstrap';
 
+[x-cloak] { display: none !important; }
+
 // Smooth scroll
 html {
     scroll-behavior: smooth;
@@ -1679,8 +1681,8 @@ html {
     }
 
     &__icon-badge-img {
-        width: 170px;
-        height: 170px;
+        width: 190px;
+        height: 190px;
         object-fit: contain;
         filter: drop-shadow(0 3px 18px rgba(0,0,0,.85));
         display: block;
@@ -3292,8 +3294,8 @@ table.dataTable thead th {
     justify-content: center;
 
     img {
-        width: 125px;
-        height: 125px;
+        width: 145px;
+        height: 145px;
         object-fit: contain;
         filter: drop-shadow(0 2px 14px rgba(0,0,0,.85));
     }
@@ -3628,8 +3630,8 @@ table.dataTable thead th {
         justify-content: center;
 
         img {
-            width: 90px;
-            height: 90px;
+            width: 105px;
+            height: 105px;
             object-fit: contain;
             filter: drop-shadow(0 1px 8px rgba(0,0,0,.85));
         }
