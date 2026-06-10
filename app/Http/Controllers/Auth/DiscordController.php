@@ -4,18 +4,30 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\ConnectedAccount;
+use GuzzleHttp\Client;
 use Laravel\Socialite\Facades\Socialite;
 
 class DiscordController extends Controller
 {
+    private function driver()
+    {
+        $driver = Socialite::driver('discord');
+
+        if (app()->environment('local')) {
+            $driver->setHttpClient(new Client(['verify' => false]));
+        }
+
+        return $driver;
+    }
+
     public function redirect()
     {
-        return Socialite::driver('discord')->redirect();
+        return $this->driver()->redirect();
     }
 
     public function callback()
     {
-        $discordUser = Socialite::driver('discord')->user();
+        $discordUser = $this->driver()->user();
 
         $existing = ConnectedAccount::where('provider', 'discord')
             ->where('provider_id', $discordUser->getId())
