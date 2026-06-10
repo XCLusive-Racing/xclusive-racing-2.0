@@ -8,11 +8,29 @@ use Illuminate\Support\Facades\Storage;
 
 class Race extends Model
 {
-    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon', 'duration_key', 'practice_duration', 'qualifying_duration', 'race_duration', 'car_class', 'sr_requirement', 'min_rating', 'weather', 'time_of_day'];
+    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon', 'duration_key', 'practice_duration', 'qualifying_duration', 'race_duration', 'car_class', 'sr_requirement', 'min_rating', 'weather', 'time_of_day', 'config_overrides'];
 
     protected function casts(): array
     {
-        return ['scheduled_at' => 'datetime'];
+        return [
+            'scheduled_at'     => 'datetime',
+            'config_overrides' => 'array',
+        ];
+    }
+
+    public function configFile(string $filename): ?string
+    {
+        return $this->config_overrides[$filename] ?? null;
+    }
+
+    public function hasConfigOverride(string $filename): bool
+    {
+        return isset($this->config_overrides[$filename]);
+    }
+
+    public function hasAnyConfigOverride(): bool
+    {
+        return ! empty($this->config_overrides);
     }
 
     public function registrations(): HasMany
