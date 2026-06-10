@@ -14,7 +14,7 @@ class ProfileController extends Controller
 {
     public function show()
     {
-        $user = Auth::user();
+        $user = Auth::user()->load('connectedAccounts');
 
         $results = $user->raceResults()
             ->where('session_type', 'race')
@@ -47,7 +47,8 @@ class ProfileController extends Controller
 
     public function edit()
     {
-        return view('profile.edit', ['user' => Auth::user()]);
+        $user = Auth::user()->load('connectedAccounts');
+        return view('profile.edit', compact('user'));
     }
 
     public function update(Request $request)

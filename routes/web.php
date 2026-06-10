@@ -11,10 +11,12 @@ use App\Http\Controllers\Admin\RaceController as AdminRaceController;
 use App\Http\Controllers\Admin\RaceResultController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Auth\DiscordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordSetupController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SteamController;
+use App\Http\Controllers\ConnectedAccountController;
 use App\Http\Controllers\BopController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DriverController;
@@ -64,6 +66,12 @@ Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 Route::get('/auth/steam', [SteamController::class, 'redirect'])->name('auth.steam');
 Route::get('/auth/steam/callback', [SteamController::class, 'callback'])->name('auth.steam.callback');
 
+// Discord OAuth (auth required — only for linking)
+Route::middleware('auth')->group(function () {
+    Route::get('/auth/discord', [DiscordController::class, 'redirect'])->name('auth.discord');
+    Route::get('/auth/discord/callback', [DiscordController::class, 'callback'])->name('auth.discord.callback');
+});
+
 // Password setup (for imported users)
 Route::middleware('auth')->group(function () {
     Route::get('/password/setup', [PasswordSetupController::class, 'show'])->name('password.setup');
@@ -75,6 +83,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    Route::post('/profile/connected-accounts', [ConnectedAccountController::class, 'store'])->name('connected-accounts.store');
+    Route::delete('/profile/connected-accounts/{connectedAccount}', [ConnectedAccountController::class, 'destroy'])->name('connected-accounts.destroy');
 
     // Event registration
     Route::post('/events/{race}/register', [RaceController::class, 'register'])->name('events.register');

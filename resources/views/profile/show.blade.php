@@ -34,6 +34,17 @@
                         <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.75rem">#{{ $user->car_number }}</span>
                         @endif
                     </div>
+                    @if($user->connectedAccounts->isNotEmpty())
+                    <div class="d-flex flex-wrap gap-1 mt-2">
+                        @foreach($user->connectedAccounts as $account)
+                        <span class="badge d-inline-flex align-items-center gap-1 fw-bold"
+                              style="background:{{ $account->providerColor() }};color:#fff;font-size:.7rem;padding:3px 8px">
+                            {!! $account->providerIcon() !!}
+                            {{ $account->username }}
+                        </span>
+                        @endforeach
+                    </div>
+                    @endif
                 </div>
                 <div class="d-flex gap-2 flex-shrink-0">
                     <a href="{{ route('profile.edit') }}"
