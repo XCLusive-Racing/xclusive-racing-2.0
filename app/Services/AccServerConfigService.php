@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Bop;
 use App\Models\Race;
 
 class AccServerConfigService
@@ -126,6 +127,31 @@ class AccServerConfigService
             'dumpEntryList'           => 0,
             'formationLapType'        => 3,
             'configVersion'           => 1,
+        ];
+    }
+
+    public function bop(string $game = 'acc'): array
+    {
+        $entries = Bop::where('game', $game)->orderBy('car_model')->get();
+
+        $mapped = [];
+        foreach ($entries as $bop) {
+            $carId = Bop::carModelId($bop->car_model);
+            if ($carId === null) {
+                continue;
+            }
+
+            $mapped[] = [
+                'track'      => $bop->track ?? '',
+                'carModel'   => $carId,
+                'ballastKg'  => (int) $bop->ballast_kg,
+                'restrictor' => (int) $bop->restrictor,
+            ];
+        }
+
+        return [
+            'entries'       => $mapped,
+            'configVersion' => 1,
         ];
     }
 

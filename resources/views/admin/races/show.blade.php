@@ -213,9 +213,9 @@
         <div x-show="tab === 'config'" x-cloak>
             @php
                 $configFiles = [
-                    'entrylist.json'     => json_encode($configData->entryList($race),     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-                    'configuration.json' => json_encode($configData->configuration($race), JSON_PRETTY_PRINT),
-                    'settings.json'      => json_encode($configData->settings($race),      JSON_PRETTY_PRINT),
+                    'entrylist.json' => json_encode($configData->entryList($race),     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+                    'event.json'     => json_encode($configData->configuration($race), JSON_PRETTY_PRINT),
+                    'settings.json'  => json_encode($configData->settings($race),      JSON_PRETTY_PRINT),
                 ];
             @endphp
 
@@ -268,7 +268,7 @@
             </div>
 
             {{-- Config file editors --}}
-            @foreach(['entrylist.json', 'configuration.json', 'settings.json'] as $filename)
+            @foreach(['entrylist.json', 'event.json', 'settings.json'] as $filename)
             @php
                 $hasOverride = $race->hasConfigOverride($filename);
                 $content     = $hasOverride ? $race->configFile($filename) : $configFiles[$filename];

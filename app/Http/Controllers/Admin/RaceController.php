@@ -58,9 +58,9 @@ class RaceController extends Controller
         }
 
         $configFiles = [
-            'entrylist.json'     => json_encode($config->entryList($race),     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-            'configuration.json' => json_encode($config->configuration($race), JSON_PRETTY_PRINT),
-            'settings.json'      => json_encode($config->settings($race),      JSON_PRETTY_PRINT),
+            'entrylist.json' => json_encode($config->entryList($race),     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            'event.json'     => json_encode($config->configuration($race), JSON_PRETTY_PRINT),
+            'settings.json'  => json_encode($config->settings($race),      JSON_PRETTY_PRINT),
         ];
 
         return view('admin.races.show', compact(
@@ -270,15 +270,15 @@ class RaceController extends Controller
         $request->validate(['server_id' => 'required|exists:ftp_servers,id']);
 
         $files = [
-            'entrylist.json'     => $request->input('entrylist_json')
+            'entrylist.json' => $request->input('entrylist_json')
                 ?? $race->configFile('entrylist.json')
-                ?? json_encode($config->entryList($race),     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-            'configuration.json' => $request->input('configuration_json')
-                ?? $race->configFile('configuration.json')
+                ?? json_encode($config->entryList($race), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            'event.json'     => $request->input('event_json')
+                ?? $race->configFile('event.json')
                 ?? json_encode($config->configuration($race), JSON_PRETTY_PRINT),
-            'settings.json'      => $request->input('settings_json')
+            'settings.json'  => $request->input('settings_json')
                 ?? $race->configFile('settings.json')
-                ?? json_encode($config->settings($race),      JSON_PRETTY_PRINT),
+                ?? json_encode($config->settings($race), JSON_PRETTY_PRINT),
         ];
 
         foreach ($files as $filename => $content) {
@@ -316,7 +316,7 @@ class RaceController extends Controller
     public function saveConfig(Request $request, Race $race)
     {
         $request->validate([
-            'file'    => 'required|in:entrylist.json,configuration.json,settings.json',
+            'file'    => 'required|in:entrylist.json,event.json,settings.json',
             'content' => 'required|string',
         ]);
 
@@ -336,7 +336,7 @@ class RaceController extends Controller
     public function resetConfig(Request $request, Race $race)
     {
         $request->validate([
-            'file' => 'required|in:entrylist.json,configuration.json,settings.json',
+            'file' => 'required|in:entrylist.json,event.json,settings.json',
         ]);
 
         $overrides = $race->config_overrides ?? [];

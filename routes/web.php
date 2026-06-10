@@ -130,6 +130,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/bops/{bop}', [AdminBopController::class, 'update'])->name('bops.update');
     Route::delete('/bops/{bop}', [AdminBopController::class, 'destroy'])->name('bops.destroy');
     Route::post('/bops/import', [AdminBopController::class, 'import'])->name('bops.import');
+    Route::post('/bops/push', [AdminBopController::class, 'pushBop'])->name('bops.push');
 
     // Reports
     Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');

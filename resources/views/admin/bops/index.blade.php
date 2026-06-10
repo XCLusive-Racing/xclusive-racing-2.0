@@ -17,6 +17,54 @@
 @if(session('import_error'))
 <div class="alert border-0 text-white fw-bold mb-4 rounded-3" style="background:#ef4444">{{ session('import_error') }}</div>
 @endif
+@if(session('push_success'))
+<div class="alert border-0 text-white fw-bold mb-4 rounded-3" style="background:#16a34a">{{ session('push_success') }}</div>
+@endif
+@if(session('push_error'))
+<div class="alert border-0 text-white fw-bold mb-4 rounded-3" style="background:#ef4444">{{ session('push_error') }}</div>
+@endif
+
+{{-- Push BOP to Server --}}
+<div class="admin-card mb-4">
+    <div class="px-4 py-3" style="border-bottom:1px solid #f3f4f6">
+        <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.82rem">Push BOP to Server</div>
+        <div class="text-secondary mt-1" style="font-size:.72rem">Generates <code>bop.json</code> from the entries below and uploads it to the selected server's cfg path.</div>
+    </div>
+    <div class="px-4 py-4">
+        @if($ftpServers->isEmpty())
+            <div class="text-secondary" style="font-size:.82rem">No active FTP servers configured.
+                <a href="{{ route('admin.servers.create') }}" class="fw-bold" style="color:#7c3aed">Add one →</a>
+            </div>
+        @else
+        <form action="{{ route('admin.bops.push') }}" method="POST">
+            @csrf
+            <div class="d-flex gap-3 align-items-end flex-wrap">
+                <div>
+                    <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">Game</label>
+                    <select name="game" class="form-select form-select-sm" style="min-width:140px">
+                        @foreach($games as $key => $label)
+                        <option value="{{ $key }}" {{ $key === 'acc' ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="flex-grow-1" style="min-width:220px">
+                    <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">Server</label>
+                    <select name="server_id" class="form-select form-select-sm">
+                        <option value="">Select server…</option>
+                        @foreach($ftpServers as $ftpServer)
+                        <option value="{{ $ftpServer->id }}">{{ $ftpServer->name }} — {{ $ftpServer->cfg_path ?: $ftpServer->path }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-sm fw-black text-uppercase text-white flex-shrink-0"
+                        style="background:#7c3aed;font-size:.78rem;padding:7px 18px">
+                    Push BOP →
+                </button>
+            </div>
+        </form>
+        @endif
+    </div>
+</div>
 
 {{-- JSON Import --}}
 <div class="admin-card mb-4" x-data="{ open: {{ session('import_error') ? 'true' : 'false' }} }">
