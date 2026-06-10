@@ -103,31 +103,3 @@
 
 @endsection
 
-@push('scripts')
-<script>
-function testConnection(id, btn) {
-    btn.textContent = 'Testing…';
-    btn.disabled = true;
-
-    fetch(`/admin/servers/${id}/test`, {
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content }
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            btn.textContent = '✓ Online';
-            btn.style.cssText = 'background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;font-size:.68rem;padding:3px 10px';
-        } else {
-            btn.textContent = '✗ Offline';
-            btn.style.cssText = 'background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.68rem;padding:3px 10px';
-        }
-        btn.disabled = false;
-    })
-    .catch(() => {
-        btn.textContent = '✗ Error';
-        btn.disabled = false;
-    });
-}
-</script>
-@endpush

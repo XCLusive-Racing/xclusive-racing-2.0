@@ -296,20 +296,3 @@
 </main>
 @endsection
 
-@push('scripts')
-<script>
-function previewAvatar(input) {
-    const filename = document.getElementById('avatar-filename');
-    filename.textContent = input.files[0]?.name ?? 'No file chosen';
-
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            const wrap = document.getElementById('avatar-preview-wrap');
-            wrap.innerHTML = `<img id="avatar-preview" src="${e.target.result}" class="rounded-circle" style="width:64px;height:64px;object-fit:cover">`;
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-</script>
-@endpush

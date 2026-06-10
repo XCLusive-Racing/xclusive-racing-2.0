@@ -2,14 +2,6 @@
 
 @section('title', 'Results - ' . config('xcl.name'))
 
-@push('head')
-<style>
-    .result-race-item { background: transparent; transition: background .1s; }
-    .result-race-item:hover { background: #f9fafb !important; }
-    .result-race-item.active { background: #ede9fe !important; }
-    .result-race-item.active:hover { background: #e0d9fb !important; }
-</style>
-@endpush
 
 @section('content')
 <main class="xcl-page pb-5 px-3 bg-light">

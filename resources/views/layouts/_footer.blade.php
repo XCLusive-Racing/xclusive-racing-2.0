@@ -97,16 +97,3 @@
     </div>
 
 </footer>
-
-@once
-<style>
-    .footer-link {
-        color: #6b7280;
-        text-decoration: none;
-        font-size: .875rem;
-        font-weight: 600;
-        transition: color .15s;
-    }
-    .footer-link:hover { color: #a78bfa; }
-</style>
-@endonce

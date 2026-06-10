@@ -3690,3 +3690,24 @@ table.dataTable thead th {
         &:hover { background: #8B3FCE; color: white; }
     }
 }
+
+// Footer links
+.footer-link {
+    color: #6b7280;
+    text-decoration: none;
+    font-size: .875rem;
+    font-weight: 600;
+    transition: color .15s;
+
+    &:hover { color: #a78bfa; }
+}
+
+// Results page race list
+.result-race-item {
+    background: transparent;
+    transition: background .1s;
+
+    &:hover { background: #f9fafb !important; }
+    &.active { background: #ede9fe !important; }
+    &.active:hover { background: #e0d9fb !important; }
+}

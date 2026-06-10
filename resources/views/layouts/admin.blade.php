@@ -8,10 +8,6 @@
     <link rel="icon" type="image/x-icon" href="/favicons/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @vite(['resources/scss/app.scss', 'resources/js/app.js'])
     @stack('head')
 </head>
@@ -285,39 +281,5 @@
 
 @stack('scripts')
 
-<script>
-function xcToasts() {
-    return {
-        add({ message, type = 'success' }) {
-            Swal.mixin({
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3500,
-                timerProgressBar: true,
-            }).fire({
-                icon: type === 'success' ? 'success' : 'error',
-                title: message,
-            });
-        },
-    };
-}
-
-async function xcDeleteSubmit(form, title, text = '') {
-    const result = await Swal.fire({
-        title: title,
-        text: text,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Delete',
-        cancelButtonText: 'Cancel',
-        confirmButtonColor: '#dc2626',
-        cancelButtonColor: '#6b7280',
-        reverseButtons: true,
-        focusCancel: true,
-    });
-    if (result.isConfirmed) form.submit();
-}
-</script>
 </body>
 </html>
