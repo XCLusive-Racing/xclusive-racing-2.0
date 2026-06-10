@@ -21,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen(function (SocialiteWasCalled $event) {
             $event->extendSocialite('steam', \SocialiteProviders\Steam\Provider::class);
+            $event->extendSocialite('discord', \SocialiteProviders\Discord\Provider::class);
         });
     }
 }

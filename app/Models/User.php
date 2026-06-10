@@ -102,6 +102,16 @@ class User extends Authenticatable
         return $this->hasMany(CarAssignment::class);
     }
 
+    public function connectedAccounts(): HasMany
+    {
+        return $this->hasMany(ConnectedAccount::class);
+    }
+
+    public function connectedAccount(string $provider): ?ConnectedAccount
+    {
+        return $this->connectedAccounts->firstWhere('provider', $provider);
+    }
+
     public function carForGame(string $game): ?Car
     {
         return $this->carAssignments()
