@@ -19,7 +19,7 @@ class ConnectedAccountController extends Controller
             $lookupProvider = $request->provider === 'psn' ? 'ps5' : $request->provider;
             $result = $lookup->lookup($lookupProvider, $request->username);
         } catch (\RuntimeException $e) {
-            return back()->withErrors(['username' => $e->getMessage()]);
+            return back()->withErrors([$request->provider . '_username' => $e->getMessage()]);
         }
 
         $existing = ConnectedAccount::where('provider', $request->provider)

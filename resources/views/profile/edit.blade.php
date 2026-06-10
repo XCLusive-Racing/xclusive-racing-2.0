@@ -218,15 +218,15 @@
                                     <div class="text-secondary" style="font-size:.78rem">{{ $xbox->username }}</div>
                                     @else
                                     <div class="text-secondary mb-2" style="font-size:.78rem">Not connected</div>
-                                    <form action="{{ route('connected-accounts.store') }}" method="POST" class="d-flex gap-2">
+                                    <form action="{{ route('connected-accounts.store') }}" method="POST" class="d-flex gap-2 flex-wrap">
                                         @csrf
                                         <input type="hidden" name="provider" value="xbox">
                                         <input type="text" name="username" placeholder="Gamertag"
-                                               class="form-control form-control-sm @error('username') is-invalid @enderror"
+                                               class="form-control form-control-sm @error('xbox_username') is-invalid @enderror"
                                                style="font-size:.8rem">
                                         <button type="submit" class="btn btn-sm fw-bold text-uppercase text-white flex-shrink-0"
                                                 style="background:#107c10;font-size:.72rem">Connect</button>
-                                        @error('username')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                        @error('xbox_username')<div class="invalid-feedback w-100">{{ $message }}</div>@enderror
                                     </form>
                                     @endif
                                 </div>
@@ -254,15 +254,15 @@
                                     <div class="text-secondary" style="font-size:.78rem">{{ $psn->username }}</div>
                                     @else
                                     <div class="text-secondary mb-2" style="font-size:.78rem">Not connected</div>
-                                    <form action="{{ route('connected-accounts.store') }}" method="POST" class="d-flex gap-2">
+                                    <form action="{{ route('connected-accounts.store') }}" method="POST" class="d-flex gap-2 flex-wrap">
                                         @csrf
                                         <input type="hidden" name="provider" value="psn">
                                         <input type="text" name="username" placeholder="PSN Online ID"
-                                               class="form-control form-control-sm @error('username') is-invalid @enderror"
+                                               class="form-control form-control-sm @error('psn_username') is-invalid @enderror"
                                                style="font-size:.8rem">
                                         <button type="submit" class="btn btn-sm fw-bold text-uppercase text-white flex-shrink-0"
                                                 style="background:#00439c;font-size:.72rem">Connect</button>
-                                        @error('username')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                        @error('psn_username')<div class="invalid-feedback w-100">{{ $message }}</div>@enderror
                                     </form>
                                     @endif
                                 </div>
