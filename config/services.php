@@ -37,7 +37,7 @@ return [
     ],
 
     'openxbl' => [
-        'api_key' => env('OPENXBL_API_KEY'),
+        'api_key' => env('XBOX_API_KEY'),
     ],
 
     'psn_lookup' => [

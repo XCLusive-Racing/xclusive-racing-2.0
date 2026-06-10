@@ -74,12 +74,17 @@ class PlatformLookupService
 
     private function lookupXbox(string $gamertag): array
     {
+        $apiKey = config('services.openxbl.api_key');
+        if (!$apiKey) {
+            throw new RuntimeException('Xbox lookup is not configured. Contact an admin.');
+        }
+
         // Strip the #xxxx discriminator — the Xbox API expects just the base name
         $baseTag = trim(preg_replace('/#\d+$/', '', trim($gamertag)));
 
         try {
             $res = $this->http()->withHeaders([
-                'x-authorization' => config('services.openxbl.api_key'),
+                'x-authorization' => $apiKey,
                 'Accept'          => 'application/json',
                 'Accept-Language' => 'en-US',
             ])->get('https://xbl.io/api/v2/friends/search', ['gt' => $baseTag]);
