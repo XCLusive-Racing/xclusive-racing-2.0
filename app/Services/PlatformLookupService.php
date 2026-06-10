@@ -74,7 +74,7 @@ class PlatformLookupService
 
     private function lookupXbox(string $gamertag): array
     {
-        // Strip discriminator, normalize whitespace
+        // Strip discriminator suffix (#1234), normalize whitespace
         $baseTag = trim(preg_replace('/\s+/', ' ', preg_replace('/#\d+$/', '', trim($gamertag))));
 
         try {
@@ -82,20 +82,21 @@ class PlatformLookupService
                 'x-authorization' => config('services.openxbl.api_key'),
                 'Accept'          => 'application/json',
                 'Accept-Language' => 'en-US',
-            ])->get('https://xbl.io/api/v2/friends/search?gt=' . rawurlencode($baseTag));
+            ])->get('https://xbl.io/api/v2/player/summary?gt=' . rawurlencode($baseTag));
         } catch (ConnectionException) {
             throw new RuntimeException('Could not reach Xbox Live. Please try again.');
         }
 
-        if (!$res->successful()) {
-            \Log::debug('OpenXBL error', ['status' => $res->status(), 'body' => $res->body()]);
+        if (! $res->successful()) {
+            \Log::error('OpenXBL error', ['status' => $res->status(), 'body' => $res->body()]);
             throw new RuntimeException('Xbox account not found. Check your Gamertag.');
         }
 
-        \Log::debug('OpenXBL response', ['body' => $res->json()]);
+        // player/summary returns profileUsers directly (no content wrapper)
+        $profile = $res->json('profileUsers.0');
 
-        $profile = $res->json('content.profileUsers.0');
-        if (!$profile) {
+        if (! $profile) {
+            \Log::error('OpenXBL empty profile', ['gt' => $baseTag, 'body' => $res->json()]);
             throw new RuntimeException('Xbox account not found. Check your Gamertag.');
         }
 
