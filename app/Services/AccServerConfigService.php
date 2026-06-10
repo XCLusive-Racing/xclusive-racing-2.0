@@ -37,7 +37,7 @@ class AccServerConfigService
         return [
             'entries'        => $entries,
             'configVersion'  => 1,
-            'forceEntryList' => 0,
+            'forceEntryList' => 1,
         ];
     }
 
