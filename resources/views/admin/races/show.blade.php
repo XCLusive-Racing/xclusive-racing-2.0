@@ -58,6 +58,15 @@
                     style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s">
                 Info
             </button>
+            <button @click="tab = 'config'"
+                    :style="tab === 'config' ? 'color:#7c3aed;border-bottom:2px solid #7c3aed' : 'color:#9ca3af;border-bottom:2px solid transparent'"
+                    class="btn btn-link fw-black text-uppercase text-decoration-none py-3 px-3"
+                    style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s">
+                Config
+                @if($race->hasAnyConfigOverride())
+                <span class="badge ms-1" style="background:#f59e0b;color:white;font-size:.62rem;padding:2px 6px;border-radius:10px">custom</span>
+                @endif
+            </button>
             <button @click="tab = 'entries'"
                     :style="tab === 'entries' ? 'color:#7c3aed;border-bottom:2px solid #7c3aed' : 'color:#9ca3af;border-bottom:2px solid transparent'"
                     class="btn btn-link fw-black text-uppercase text-decoration-none py-3 px-3"
@@ -129,12 +138,20 @@
                         </div>
                     </div>
 
-                    {{-- Push Config --}}
+                    {{-- Quick push --}}
                     @if($ftpServers->isNotEmpty())
                     <div class="col-12">
                         <div class="p-3 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
                             <div class="fw-black text-uppercase fst-italic text-dark mb-1" style="font-size:.82rem">Push Config to Server</div>
-                            <div class="text-secondary mb-3" style="font-size:.75rem">Select a server and push the generated config files.</div>
+                            <div class="text-secondary mb-3" style="font-size:.75rem">
+                                Pushes the
+                                @if($race->hasAnyConfigOverride())
+                                    <span style="color:#f59e0b;font-weight:700">saved custom config</span>
+                                @else
+                                    auto-generated config
+                                @endif
+                                to the selected server. To review or edit first, use the <button type="button" @click="tab = 'config'" class="btn btn-link p-0 fw-bold text-decoration-none" style="font-size:.75rem;color:#7c3aed;vertical-align:baseline">Config tab</button>.
+                            </div>
 
                             @if(session('success'))
                             <div class="alert alert-success py-2 px-3 mb-3" style="font-size:.8rem">{{ session('success') }}</div>
@@ -191,6 +208,127 @@
                 </div>
             </div>
         </div>
+
+        {{-- CONFIG TAB --}}
+        <div x-show="tab === 'config'" x-cloak>
+            @php
+                $configFiles = [
+                    'entrylist.json'     => json_encode($configData->entryList($race),     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+                    'configuration.json' => json_encode($configData->configuration($race), JSON_PRETTY_PRINT),
+                    'settings.json'      => json_encode($configData->settings($race),      JSON_PRETTY_PRINT),
+                ];
+            @endphp
+
+            {{-- Push bar --}}
+            <div class="px-4 pt-4 pb-3" style="border-bottom:1px solid #f3f4f6">
+
+                @if(session('config_success'))
+                <div class="alert py-2 px-3 mb-3" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;font-size:.8rem;border-radius:8px">
+                    {{ session('config_success') }}
+                </div>
+                @endif
+                @if(session('config_error'))
+                <div class="alert py-2 px-3 mb-3" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:.8rem;border-radius:8px">
+                    {{ session('config_error') }}
+                </div>
+                @endif
+
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <div>
+                        <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.82rem">Push Config to Server</div>
+                        <div class="text-secondary mt-1" style="font-size:.75rem">
+                            @if($race->hasAnyConfigOverride())
+                                Pushes your <span style="color:#f59e0b;font-weight:700">saved custom config</span> files.
+                            @else
+                                Pushes auto-generated config files.
+                            @endif
+                        </div>
+                    </div>
+                    @if($ftpServers->isNotEmpty())
+                    <form action="{{ route('admin.races.push-config', $race) }}" method="POST" class="d-flex gap-2 align-items-center ms-auto flex-wrap">
+                        @csrf
+                        <select name="server_id" class="form-select form-select-sm" style="min-width:220px">
+                            <option value="">Select server…</option>
+                            @foreach($ftpServers as $ftpServer)
+                            <option value="{{ $ftpServer->id }}">{{ $ftpServer->name }} — {{ $ftpServer->cfg_path }}</option>
+                            @endforeach
+                        </select>
+                        <button type="submit" class="btn btn-sm fw-black text-uppercase text-white flex-shrink-0"
+                                style="background:#7c3aed;font-size:.78rem;padding:7px 18px">
+                            Push All →
+                        </button>
+                    </form>
+                    @else
+                    <div class="ms-auto">
+                        <a href="{{ route('admin.servers.create') }}" class="btn btn-sm fw-bold text-uppercase"
+                           style="background:#7c3aed;color:white;font-size:.72rem">+ Add FTP Server</a>
+                    </div>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Config file editors --}}
+            @foreach(['entrylist.json', 'configuration.json', 'settings.json'] as $filename)
+            @php
+                $hasOverride = $race->hasConfigOverride($filename);
+                $content     = $hasOverride ? $race->configFile($filename) : $configFiles[$filename];
+            @endphp
+            <div x-data="{ open: '{{ $filename === 'entrylist.json' ? 'true' : 'false' }}' }" style="border-bottom:1px solid #f3f4f6">
+
+                {{-- File header --}}
+                <div class="d-flex align-items-center justify-content-between px-4 py-3"
+                     style="cursor:pointer;background:{{ $hasOverride ? '#fffbeb' : '#f9fafb' }}"
+                     @click="open = open === 'true' ? 'false' : 'true'">
+                    <div class="d-flex align-items-center gap-3">
+                        <svg :style="open === 'true' ? 'transform:rotate(90deg)' : ''" style="transition:transform .15s;flex-shrink:0" width="14" height="14" viewBox="0 0 20 20" fill="currentColor" class="text-secondary"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+                        <span class="fw-black text-dark" style="font-family:monospace;font-size:.875rem">{{ $filename }}</span>
+                        @if($hasOverride)
+                        <span class="badge" style="background:#fef3c7;color:#92400e;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">custom</span>
+                        @else
+                        <span class="badge" style="background:#f3f4f6;color:#6b7280;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">auto</span>
+                        @endif
+                    </div>
+                    <div class="d-flex gap-2" @click.stop>
+                        @if($hasOverride)
+                        <form action="{{ route('admin.races.reset-config', $race) }}" method="POST" onsubmit="return confirm('Reset {{ $filename }} to auto-generated?')">
+                            @csrf @method('DELETE')
+                            <input type="hidden" name="file" value="{{ $filename }}">
+                            <button type="submit" class="btn btn-sm fw-bold text-uppercase"
+                                    style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.68rem;padding:3px 10px">
+                                Reset
+                            </button>
+                        </form>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Editor --}}
+                <div x-show="open === 'true'" x-cloak>
+                    <form action="{{ route('admin.races.save-config', $race) }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="file" value="{{ $filename }}">
+                        <div style="position:relative">
+                            <textarea name="content" rows="16" spellcheck="false"
+                                      style="width:100%;font-family:monospace;font-size:.78rem;line-height:1.5;padding:1rem 1.25rem;border:none;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;background:{{ $hasOverride ? '#fffdf5' : 'white' }};resize:vertical;outline:none;display:block">{{ $content }}</textarea>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between px-4 py-2" style="background:#f9fafb">
+                            <span class="text-secondary" style="font-size:.72rem">
+                                Edit and save to override the auto-generated version.
+                                @if($hasOverride) Auto-generation is paused for this file. @endif
+                            </span>
+                            <button type="submit" class="btn btn-sm fw-black text-uppercase text-white"
+                                    style="background:#059669;font-size:.72rem;padding:4px 14px">
+                                Save
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+            @endforeach
+
+        </div>
+        {{-- END Config tab --}}
 
         {{-- ENTRY LIST TAB --}}
         <div x-show="tab === 'entries'" x-cloak>
