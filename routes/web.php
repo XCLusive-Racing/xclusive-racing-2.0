@@ -131,6 +131,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/races/{race}/results/ftp-cancel', [RaceResultController::class, 'ftpCancel'])->name('races.results.ftp-cancel');
     Route::post('/races/{race}/push-config', [AdminRaceController::class, 'pushConfig'])->name('races.push-config');
     Route::post('/races/{race}/save-config', [AdminRaceController::class, 'saveConfig'])->name('races.save-config');
+    Route::post('/races/{race}/upload-entrylist', [AdminRaceController::class, 'uploadEntrylist'])->name('races.upload-entrylist');
     Route::delete('/races/{race}/reset-config', [AdminRaceController::class, 'resetConfig'])->name('races.reset-config');
 
     // Event Tags

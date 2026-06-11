@@ -176,7 +176,7 @@ class RaceResultController extends Controller
         $deleted = RaceResult::where('race_id', $race->id)->where('session_type', $sessionType)->delete();
         $imported->delete();
 
-        return back()->with('success', "Import of \"{$filename}\" cancelled — {$deleted} {$sessionType} results removed.");
+        return back()->with('success', "{$deleted} {$sessionType} results cleared — ready to re-import.");
     }
 
     public function addDns(Request $request, Race $race)

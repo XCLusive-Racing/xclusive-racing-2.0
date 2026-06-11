@@ -77,8 +77,6 @@ class PlatformLookupService
         // Strip discriminator suffix (#1234), normalize whitespace
         $baseTag = trim(preg_replace('/\s+/', ' ', preg_replace('/#\d+$/', '', trim($gamertag))));
 
-        \Log::info('Xbox lookup started', ['input' => $gamertag, 'normalized' => $baseTag]);
-
         try {
             $res = $this->http()->withHeaders([
                 'x-authorization' => config('services.openxbl.api_key'),
@@ -90,14 +88,11 @@ class PlatformLookupService
             throw new RuntimeException('Could not reach Xbox Live. Please try again.');
         }
 
-        \Log::info('Xbox lookup response', ['status' => $res->status(), 'body' => $res->json()]);
-
         if (! $res->successful()) {
             \Log::error('OpenXBL error', ['status' => $res->status(), 'body' => $res->body()]);
             throw new RuntimeException('Xbox account not found. Check your Gamertag.');
         }
 
-        // player/summary returns profileUsers directly (no content wrapper)
         $profile = $res->json('content.people.0');
 
         if (! $profile) {

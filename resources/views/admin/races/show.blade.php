@@ -336,12 +336,30 @@
                 <span class="fw-black text-uppercase fst-italic text-secondary" style="font-size:.72rem;letter-spacing:.08em">
                     {{ $registrations->count() }} {{ $registrations->count() === 1 ? 'driver' : 'drivers' }} registered
                 </span>
-                <a href="{{ route('admin.races.entry-list', $race) }}"
-                   class="btn btn-sm fw-bold text-uppercase"
-                   style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:.72rem;padding:4px 12px;border-radius:6px">
-                    ↓ Download JSON
-                </a>
+                <div class="d-flex align-items-center gap-2">
+                    <form action="{{ route('admin.races.upload-entrylist', $race) }}" method="POST" enctype="multipart/form-data" class="d-flex align-items-center gap-2">
+                        @csrf
+                        <input type="file" name="entrylist_file" accept=".json" required
+                               class="form-control form-control-sm" style="font-size:.72rem;max-width:200px">
+                        <button type="submit" class="btn btn-sm fw-bold text-uppercase flex-shrink-0"
+                                style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:.72rem;padding:4px 12px;border-radius:6px;white-space:nowrap">
+                            ↑ Upload Entrylist
+                        </button>
+                    </form>
+                    <a href="{{ route('admin.races.entry-list', $race) }}"
+                       class="btn btn-sm fw-bold text-uppercase"
+                       style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:.72rem;padding:4px 12px;border-radius:6px">
+                        ↓ Download JSON
+                    </a>
+                </div>
             </div>
+            @if(session('config_success'))
+            <div class="mx-4 mt-3 p-2 rounded-2" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;font-size:.8rem">{{ session('config_success') }}</div>
+            @endif
+            @if(session('config_error'))
+            <div class="mx-4 mt-3 p-2 rounded-2" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:.8rem">{{ session('config_error') }}</div>
+            @endif
+
             @if($registrations->isEmpty())
             <div class="p-5 text-center">
                 <div class="fw-bold text-dark" style="font-size:.95rem">No registrations yet</div>

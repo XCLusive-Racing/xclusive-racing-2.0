@@ -313,6 +313,26 @@ class RaceController extends Controller
         return back()->with('success', 'Config pushed to ' . $server->name . ' — entrylist.json, configuration.json, settings.json uploaded.');
     }
 
+    public function uploadEntrylist(Request $request, Race $race)
+    {
+        $request->validate([
+            'entrylist_file' => 'required|file|mimes:json|max:10240',
+        ]);
+
+        $content = file_get_contents($request->file('entrylist_file')->getRealPath());
+        json_decode($content);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return back()->with('config_error', 'Invalid JSON: ' . json_last_error_msg());
+        }
+
+        $overrides = $race->config_overrides ?? [];
+        $overrides['entrylist.json'] = $content;
+        $race->update(['config_overrides' => $overrides]);
+
+        return back()->with('config_success', 'entrylist.json uploaded and saved.');
+    }
+
     public function saveConfig(Request $request, Race $race)
     {
         $request->validate([
