@@ -37,20 +37,27 @@
 </div>
 
 {{-- FTP Server Import card --}}
-<div class="admin-card mb-4">
+<div class="admin-card mb-4" x-data="{ open: true }">
     <div class="admin-card-header">
         <div>
             <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:1.05rem">Import via FTP Server</div>
             <div class="text-secondary mt-1" style="font-size:.78rem">Select a GPortal server to browse and import result files.</div>
         </div>
-        <a href="{{ route('admin.servers.index') }}"
-           class="btn btn-sm fw-bold text-uppercase"
-           style="background:#f3e8ff;color:#7c3aed;border:1px solid #e9d5ff;font-size:.72rem;padding:4px 12px;border-radius:6px">
-            Manage Servers
-        </a>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ route('admin.servers.index') }}"
+               class="btn btn-sm fw-bold text-uppercase"
+               style="background:#f3e8ff;color:#7c3aed;border:1px solid #e9d5ff;font-size:.72rem;padding:4px 12px;border-radius:6px">
+                Manage Servers
+            </a>
+            <button type="button" @click="open = !open"
+                    class="btn btn-sm fw-bold text-uppercase"
+                    style="background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;font-size:.72rem;padding:4px 12px;border-radius:6px;min-width:85px">
+                <span x-text="open ? '▲ Collapse' : '▼ Expand'"></span>
+            </button>
+        </div>
     </div>
 
-    <div class="p-4">
+    <div x-show="open" style="display:block">
 
         @if($ftpServers->isEmpty())
         <div class="text-center py-3">
@@ -157,17 +164,19 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @php $maxImportsReached = count($importedFiles) >= 2; @endphp
                         @foreach($ftpFiles as $file)
                         @php
                             $parsed     = \App\Services\FtpService::parseFilename($file['name']);
                             $isImported = in_array($file['name'], $importedFiles);
                             $sizeKb     = $file['size'] !== null ? round($file['size'] / 1024, 1) . ' KB' : '—';
+                            $dimRow     = $isImported || (!$isImported && $maxImportsReached);
                         @endphp
-                        <tr style="{{ $isImported ? 'opacity:.5' : '' }}">
-                            <td class="ps-3">
+                        <tr>
+                            <td class="ps-3" style="{{ $dimRow && !$isImported ? 'opacity:.4' : ($isImported ? 'opacity:.45' : '') }}">
                                 <div class="fw-bold text-dark" style="font-size:.78rem;font-family:monospace">{{ $file['name'] }}</div>
                             </td>
-                            <td>
+                            <td style="{{ $dimRow && !$isImported ? 'opacity:.4' : ($isImported ? 'opacity:.45' : '') }}">
                                 @if($parsed['session'] === 'Race')
                                     <span class="badge" style="background:#d1fae5;color:#065f46;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">Race</span>
                                 @elseif($parsed['session'] === 'Qualifying')
@@ -176,15 +185,29 @@
                                     <span class="badge" style="background:#f3f4f6;color:#6b7280;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">?</span>
                                 @endif
                             </td>
-                            <td style="font-size:.75rem;color:#6b7280">
+                            <td style="font-size:.75rem;color:#6b7280;{{ $dimRow && !$isImported ? 'opacity:.4' : ($isImported ? 'opacity:.45' : '') }}">
                                 {{ $parsed['date'] !== '—' ? $parsed['date'] : ($file['modified'] ?? '—') }}
                             </td>
-                            <td style="font-size:.75rem;color:#6b7280;font-family:monospace">{{ $sizeKb }}</td>
+                            <td style="font-size:.75rem;color:#6b7280;font-family:monospace;{{ $dimRow && !$isImported ? 'opacity:.4' : ($isImported ? 'opacity:.45' : '') }}">{{ $sizeKb }}</td>
                             <td class="text-end pe-3">
                                 @if($isImported)
-                                    <span class="badge" style="background:#f0fdf4;color:#16a34a;font-size:.68rem;padding:4px 10px;border-radius:5px;font-weight:700">
-                                        ✓ Imported
-                                    </span>
+                                    <div class="d-flex align-items-center gap-2 justify-content-end">
+                                        <span class="badge" style="background:#f0fdf4;color:#16a34a;font-size:.68rem;padding:4px 10px;border-radius:5px;font-weight:700">
+                                            ✓ Imported
+                                        </span>
+                                        <form action="{{ route('admin.races.results.ftp-cancel', $race) }}" method="POST"
+                                              onsubmit="return confirm('Remove all results from this file?')">
+                                            @csrf
+                                            <input type="hidden" name="filename" value="{{ $file['name'] }}">
+                                            <button type="submit"
+                                                    class="btn btn-sm fw-bold text-uppercase"
+                                                    style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.65rem;padding:3px 10px;border-radius:5px">
+                                                Reset
+                                            </button>
+                                        </form>
+                                    </div>
+                                @elseif($maxImportsReached)
+                                    <span style="font-size:.72rem;color:#9ca3af;font-weight:600">Max reached</span>
                                 @else
                                     <form action="{{ route('admin.races.results.ftp', $race) }}" method="POST" class="d-inline">
                                         @csrf
@@ -212,14 +235,13 @@
 </div>
 
 {{-- Manual Upload card --}}
-<div class="admin-card mb-4">
+<div class="admin-card mb-4" x-data="{ open: false }">
     <div class="admin-card-header">
         <div>
             <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:1.05rem">Manual Upload</div>
             <div class="text-secondary mt-1" style="font-size:.78rem">Manually upload one or more JSON result files.</div>
         </div>
-        @if($raceResults->isNotEmpty() || $qualiResults->isNotEmpty())
-        <div class="d-flex gap-2">
+        <div class="d-flex align-items-center gap-2">
             @if($raceResults->isNotEmpty())
             <span class="badge" style="background:#d1fae5;color:#065f46;font-size:.72rem;padding:5px 10px;border-radius:6px;font-weight:700">
                 Race: {{ $raceResults->count() }} drivers
@@ -230,11 +252,15 @@
                 Quali: {{ $qualiResults->count() }} drivers
             </span>
             @endif
+            <button type="button" @click="open = !open"
+                    class="btn btn-sm fw-bold text-uppercase"
+                    style="background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;font-size:.72rem;padding:4px 12px;border-radius:6px;min-width:85px">
+                <span x-text="open ? '▲ Collapse' : '▼ Expand'"></span>
+            </button>
         </div>
-        @endif
     </div>
 
-    <div class="p-4">
+    <div x-show="open" style="display:none">
         <form action="{{ route('admin.races.results.store', $race) }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="d-flex gap-3 align-items-end flex-wrap">
@@ -257,6 +283,60 @@
         </form>
     </div>
 </div>
+
+{{-- DNS Candidates card --}}
+@if($dnsCandidates->isNotEmpty())
+<div class="admin-card mb-4" style="border-left:4px solid #dc2626">
+    <div class="admin-card-header">
+        <div>
+            <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:1.05rem">
+                DNS — Registered Drivers Not in Results
+                <span class="badge ms-2 text-white fw-bold" style="background:#dc2626;font-size:.68rem;padding:3px 8px;border-radius:6px">{{ $dnsCandidates->count() }}</span>
+            </div>
+            <div class="text-secondary mt-1" style="font-size:.78rem">These drivers registered but have no result entry. Select them to add as DNS.</div>
+        </div>
+    </div>
+    <form action="{{ route('admin.races.results.dns', $race) }}" method="POST">
+        @csrf
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size:.82rem">
+                <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+                    <tr>
+                        <th class="ps-4" style="width:40px">
+                            <input type="checkbox" id="dns-all"
+                                   onclick="document.querySelectorAll('.dns-cb').forEach(cb => cb.checked = this.checked)">
+                        </th>
+                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Driver</th>
+                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Platform</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($dnsCandidates as $reg)
+                    <tr>
+                        <td class="ps-4">
+                            <input type="checkbox" name="user_ids[]" value="{{ $reg->user_id }}" class="dns-cb">
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ $reg->user->name ?? '—' }}</div>
+                        </td>
+                        <td style="font-size:.75rem;color:#6b7280;font-family:monospace">
+                            {{ $reg->user->platform ?? '—' }} — {{ $reg->user->platform_id ?? '—' }}
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        <div class="p-3 d-flex justify-content-end" style="border-top:1px solid #f3f4f6">
+            <button type="submit"
+                    class="btn btn-sm fw-black text-uppercase text-white"
+                    style="background:#dc2626;font-size:.72rem;padding:5px 16px;border-radius:6px">
+                Add Selected as DNS
+            </button>
+        </div>
+    </form>
+</div>
+@endif
 
 {{-- Tabs --}}
 <div class="admin-card" x-data="{ tab: '{{ $raceResults->isNotEmpty() ? 'race' : ($qualiResults->isNotEmpty() ? 'quali' : 'race') }}' }">
@@ -345,7 +425,9 @@
                         <td class="text-secondary" style="font-size:.78rem">{{ $result->vehicle ?? '—' }}</td>
                         <td class="text-center fw-bold">{{ $result->lap_count ?? '—' }}</td>
                         <td class="text-center" style="font-family:monospace;font-size:.8rem">
-                            @if($result->dnf)
+                            @if($result->dns)
+                                <span class="badge" style="background:#fef2f2;color:#6b7280;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DNS</span>
+                            @elseif($result->dnf)
                                 <span class="badge" style="background:#fef2f2;color:#dc2626;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DNF</span>
                             @else
                                 {{ \App\Models\RaceResult::formatMs($result->total_time) }}
@@ -435,10 +517,39 @@
     <div x-show="tab === 'ratings'" x-cloak>
         @php $ratedResults = $raceResults->whereNotNull('rating_after')->sortBy('position'); @endphp
 
+        <div class="px-4 pt-3 pb-2 d-flex align-items-center justify-content-between" style="border-bottom:1px solid #f3f4f6">
+            <div>
+                @if($linkedFinishers < $minRatingDrivers)
+                <span style="font-size:.78rem;color:#dc2626;font-weight:700">
+                    ⚠ Need {{ $minRatingDrivers }} linked finishers — have {{ $linkedFinishers }}.
+                    Make sure drivers have accounts matched to their platform ID.
+                </span>
+                @else
+                <span style="font-size:.78rem;color:#6b7280">{{ $linkedFinishers }} linked finishers</span>
+                @endif
+            </div>
+            @if($raceResults->isNotEmpty())
+            <form action="{{ route('admin.races.results.recalculate', $race) }}" method="POST">
+                @csrf
+                <button type="submit"
+                        class="btn btn-sm fw-black text-uppercase text-white"
+                        style="background:#059669;font-size:.7rem;padding:4px 14px;border-radius:6px">
+                    Recalculate Ratings
+                </button>
+            </form>
+            @endif
+        </div>
+
         @if($ratedResults->isEmpty())
         <div class="p-5 text-center">
             <div class="fw-bold text-dark" style="font-size:.95rem">No rating data yet</div>
-            <div class="text-secondary mt-1" style="font-size:.82rem">Import race results first — ratings are calculated automatically.</div>
+            <div class="text-secondary mt-1" style="font-size:.82rem">
+                @if($linkedFinishers < $minRatingDrivers)
+                    Not enough linked finishers. Add DNS entries or link more drivers to their accounts, then click Recalculate.
+                @else
+                    Click "Recalculate Ratings" above to calculate.
+                @endif
+            </div>
         </div>
         @else
         @php $sof = $ratedResults->first()->sof; @endphp
@@ -497,6 +608,7 @@
         </div>
         @endif
     </div>
+
 
 </div>
 

@@ -12,7 +12,7 @@ class RaceResult extends Model
         'session_type', 'user_id',
         'player_id', 'driver_name', 'car_number', 'vehicle',
         'position', 'best_lap', 'lap_count', 'laps_led', 'total_time', 'consistency',
-        'fastest_lap', 'dnf',
+        'fastest_lap', 'dnf', 'dns',
         'rating_before', 'rating_after', 'elo_change', 'sof',
     ];
 
@@ -65,6 +65,7 @@ class RaceResult extends Model
         return [
             'fastest_lap'   => 'boolean',
             'dnf'           => 'boolean',
+            'dns'           => 'boolean',
             'rating_before' => 'decimal:4',
             'rating_after'  => 'decimal:4',
             'elo_change'    => 'decimal:4',

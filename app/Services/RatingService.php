@@ -35,16 +35,24 @@ class RatingService
 
         $entries = $results->map(function (RaceResult $r) use ($ratingField) {
             $rating = (float) ($r->user->{$ratingField} ?? 1500);
-            $status = $r->dnf ? 'DNF' : 'FIN';
+            $status = $r->dns ? 'DNS' : ($r->dnf ? 'DNF' : 'FIN');
 
             return [
                 'driver_id'  => $r->user_id,
                 'name'       => $r->displayName(),
                 'rating'     => $rating,
-                'finish_pos' => $r->dnf ? null : $r->position,
+                'finish_pos' => ($status === 'FIN') ? $r->position : null,
                 'status'     => $status,
             ];
         })->values()->all();
+
+        $finisherCount = collect($entries)->where('status', 'FIN')->count();
+        \Log::info('RatingService: starting calculation', [
+            'race_id'        => $race->id,
+            'linked_drivers' => count($entries),
+            'finishers'      => $finisherCount,
+            'min_required'   => $this->calculator->MIN_DRIVERS,
+        ]);
 
         $this->calculator->MULTIPLIER = 1.0;
 
@@ -61,8 +69,8 @@ class RatingService
                 ['name' => $race->title, 'race_date' => $race->scheduled_at->toDateString()],
                 $entries
             );
-        } catch (\InvalidArgumentException) {
-            // Not enough finishers — skip silently
+        } catch (\InvalidArgumentException $e) {
+            \Log::warning('RatingService: skipped — ' . $e->getMessage(), ['race_id' => $race->id]);
             return;
         }
 

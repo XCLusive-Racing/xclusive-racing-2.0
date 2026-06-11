@@ -84,7 +84,7 @@ class PlatformLookupService
                 'x-authorization' => config('services.openxbl.api_key'),
                 'Accept'          => 'application/json',
                 'Accept-Language' => 'en-US',
-            ])->get('https://xbl.io/api/v2/player/summary?gt=' . rawurlencode($baseTag));
+            ])->get('https://xbl.io/api/v2/search/' . rawurlencode($baseTag));
         } catch (ConnectionException) {
             \Log::error('Xbox lookup connection failed', ['gt' => $baseTag]);
             throw new RuntimeException('Could not reach Xbox Live. Please try again.');
@@ -98,15 +98,16 @@ class PlatformLookupService
         }
 
         // player/summary returns profileUsers directly (no content wrapper)
-        $profile = $res->json('profileUsers.0');
+        $profile = $res->json('content.people.0');
 
         if (! $profile) {
             \Log::error('OpenXBL empty profile', ['gt' => $baseTag, 'body' => $res->json()]);
             throw new RuntimeException('Xbox account not found. Check your Gamertag.');
         }
 
-        $xuid = $profile['id'];
-        $tag  = collect($profile['settings'] ?? [])->firstWhere('id', 'Gamertag')['value'] ?? $baseTag;
+        $xuid = $profile['xuid'];
+        $tag = $profile['gamertag'] ?? $baseTag;
+        // Er bestaan ook een gamertag, modernGamertag en uniqueModernGamertag
 
         return [
             'platform_id' => 'M' . $xuid,

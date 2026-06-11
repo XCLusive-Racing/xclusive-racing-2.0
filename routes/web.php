@@ -27,7 +27,26 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RaceController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ResultsController;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
+
+Route::get('sven', function () {
+    $baseTag = 'SatNat911GTS';
+    $baseTag = 'DeEchteCas';
+        $client = Http::timeout(10)->withOptions(['connect_timeout' => 5]);
+
+        if (app()->environment('local')) {
+            $client = $client->withoutVerifying();
+        }
+
+        $url = 'https://xbl.io/api/v2/player/summary?gt=' . rawurlencode($baseTag);
+    $res = $client->withHeaders([
+        'x-authorization' => config('services.openxbl.api_key'),
+        'Accept'          => 'application/json',
+        'Accept-Language' => 'en-US',
+    ])->get($url);
+    dd($res, $res->body());
+});
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/events/sidebar-data', [EventController::class, 'getSidebarData'])->name('events.sidebar-data');
@@ -107,6 +126,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/races/{race}/results', [RaceResultController::class, 'create'])->name('races.results');
     Route::post('/races/{race}/results', [RaceResultController::class, 'store'])->name('races.results.store');
     Route::post('/races/{race}/results/ftp', [RaceResultController::class, 'ftpImport'])->name('races.results.ftp');
+    Route::post('/races/{race}/results/dns', [RaceResultController::class, 'addDns'])->name('races.results.dns');
+    Route::post('/races/{race}/results/recalculate', [RaceResultController::class, 'recalculate'])->name('races.results.recalculate');
+    Route::post('/races/{race}/results/ftp-cancel', [RaceResultController::class, 'ftpCancel'])->name('races.results.ftp-cancel');
     Route::post('/races/{race}/push-config', [AdminRaceController::class, 'pushConfig'])->name('races.push-config');
     Route::post('/races/{race}/save-config', [AdminRaceController::class, 'saveConfig'])->name('races.save-config');
     Route::delete('/races/{race}/reset-config', [AdminRaceController::class, 'resetConfig'])->name('races.reset-config');

@@ -12,6 +12,7 @@ use App\Services\FtpService;
 use App\Services\RatingService;
 use App\Services\XclRating;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class RaceResultController extends Controller
 {
@@ -48,9 +49,18 @@ class RaceResultController extends Controller
             }
         }
 
+        $resultUserIds  = $raceResults->pluck('user_id')->filter()->toArray();
+        $dnsCandidates  = $race->registrations()->with('user')->get()
+            ->filter(fn($r) => !in_array($r->user_id, $resultUserIds))
+            ->values();
+
+        $linkedFinishers = $raceResults->where('dns', false)->where('dnf', false)->whereNotNull('user_id')->count();
+        $minRatingDrivers = (new XclRating())->MIN_DRIVERS;
+
         return view('admin.races.results', compact(
             'race', 'raceResults', 'qualiResults',
-            'ftpServers', 'selectedServer', 'ftpFiles', 'ftpAllFiles', 'ftpError', 'importedFiles'
+            'ftpServers', 'selectedServer', 'ftpFiles', 'ftpAllFiles', 'ftpError', 'importedFiles',
+            'dnsCandidates', 'linkedFinishers', 'minRatingDrivers'
         ));
     }
 
@@ -149,6 +159,91 @@ class RaceResultController extends Controller
         }
 
         return $this->redirectWithCounts($counts, $errors);
+    }
+
+    public function ftpCancel(Request $request, Race $race)
+    {
+        $request->validate(['filename' => 'required|string|max:255']);
+
+        $filename = basename($request->filename);
+        $imported = FtpImportedFile::where('race_id', $race->id)->where('filename', $filename)->firstOrFail();
+
+        // Determine session type from filename (Q = quali, R = race)
+        $parts       = explode('_', pathinfo($filename, PATHINFO_FILENAME));
+        $typeChar    = strtoupper($parts[2] ?? '');
+        $sessionType = $typeChar === 'Q' ? 'quali' : 'race';
+
+        $deleted = RaceResult::where('race_id', $race->id)->where('session_type', $sessionType)->delete();
+        $imported->delete();
+
+        return back()->with('success', "Import of \"{$filename}\" cancelled — {$deleted} {$sessionType} results removed.");
+    }
+
+    public function addDns(Request $request, Race $race)
+    {
+        $request->validate(['user_ids' => 'required|array|min:1', 'user_ids.*' => 'integer|exists:users,id']);
+
+        $existingPlayerIds = RaceResult::where('race_id', $race->id)
+            ->where('session_type', 'race')
+            ->whereNotNull('user_id')
+            ->pluck('user_id')
+            ->toArray();
+
+        $maxPos = RaceResult::where('race_id', $race->id)->where('session_type', 'race')->max('position') ?? 0;
+
+        $added = 0;
+        foreach ($request->user_ids as $userId) {
+            if (in_array($userId, $existingPlayerIds)) continue;
+
+            $user = \App\Models\User::find($userId);
+            if (!$user) continue;
+
+            RaceResult::create([
+                'race_id'           => $race->id,
+                'session_type'      => 'race',
+                'user_id'           => $user->id,
+                'player_id'         => $user->platform_id ?? 'DNS_' . $user->id,
+                'driver_name'       => $user->name,
+                'race_title'        => $race->title,
+                'race_track'        => $race->track,
+                'race_game'         => $race->game,
+                'race_scheduled_at' => $race->scheduled_at,
+                'position'          => ++$maxPos,
+                'dns'               => true,
+                'dnf'               => false,
+                'fastest_lap'       => false,
+            ]);
+            $added++;
+        }
+
+        return back()->with('success', $added . ' DNS ' . Str::plural('entry', $added) . ' added.');
+    }
+
+    public function recalculate(Race $race)
+    {
+        $results = RaceResult::where('race_id', $race->id)
+            ->where('session_type', 'race')
+            ->whereNotNull('user_id')
+            ->get();
+
+        $finishers = $results->where('dns', false)->where('dnf', false)->count();
+        $linked    = $results->count();
+        $minNeeded = (new \App\Services\XclRating())->MIN_DRIVERS;
+
+        if ($finishers < $minNeeded) {
+            return back()->with('error',
+                "Cannot calculate ratings: need {$minNeeded} linked finishers, have {$finishers}. " .
+                "Make sure drivers have accounts and are matched to their platform ID."
+            );
+        }
+
+        try {
+            (new RatingService(new XclRating()))->processRace($race);
+            return back()->with('success', "Ratings recalculated for {$linked} linked drivers.");
+        } catch (\Throwable $e) {
+            \Log::error('Recalculate ratings failed', ['race_id' => $race->id, 'error' => $e->getMessage()]);
+            return back()->with('error', 'Rating calculation failed: ' . $e->getMessage());
+        }
     }
 
     private function decodeContent(string $content, string $name): array
