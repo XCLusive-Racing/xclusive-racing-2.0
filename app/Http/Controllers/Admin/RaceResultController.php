@@ -92,33 +92,54 @@ class RaceResultController extends Controller
         $server   = FtpServer::findOrFail($request->server_id);
         $filename = basename($request->filename);
 
+        \Log::info('FTP import started', ['race_id' => $race->id, 'file' => $filename, 'server' => $server->host]);
+
         $ftp = new FtpService();
 
         if (!$ftp->connect($server)) {
+            \Log::error('FTP connect failed', ['host' => $server->host]);
             return back()->with('error', 'Could not connect to ' . $server->host . '.');
         }
 
         $fullPath = rtrim($server->path, '/') . '/' . $filename;
+        \Log::info('FTP downloading', ['path' => $fullPath]);
+
         $content  = $ftp->getFileContent($fullPath);
         $ftp->disconnect();
 
         if ($content === false) {
+            \Log::error('FTP download failed', ['path' => $fullPath]);
             return back()->with('error', 'Could not download: ' . $filename);
         }
+
+        \Log::info('FTP file downloaded', ['bytes' => strlen($content)]);
 
         [$content, $error] = $this->decodeContent($content, $filename);
 
         if ($error) {
+            \Log::error('FTP decode failed', ['file' => $filename, 'error' => $error]);
             return back()->with('error', $error);
         }
 
         $counts = ['race' => 0, 'quali' => 0];
         $errors = [];
 
-        [$sessionCounts, $sessionErrors] = $this->processSessions($content, $race, $filename);
-        $counts['race']  += $sessionCounts['race'];
-        $counts['quali'] += $sessionCounts['quali'];
-        $errors = array_merge($errors, $sessionErrors);
+        try {
+            [$sessionCounts, $sessionErrors] = $this->processSessions($content, $race, $filename);
+            $counts['race']  += $sessionCounts['race'];
+            $counts['quali'] += $sessionCounts['quali'];
+            $errors = array_merge($errors, $sessionErrors);
+        } catch (\Throwable $e) {
+            \Log::error('FTP import exception', [
+                'file'    => $filename,
+                'race_id' => $race->id,
+                'error'   => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+            return back()->with('error', 'Import failed: ' . $e->getMessage());
+        }
+
+        \Log::info('FTP import done', ['race' => $counts['race'], 'quali' => $counts['quali'], 'errors' => $errors]);
 
         if ($counts['race'] > 0 || $counts['quali'] > 0) {
             FtpImportedFile::updateOrCreate(
