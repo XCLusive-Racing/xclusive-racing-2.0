@@ -15,7 +15,8 @@ class ReportController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $races = Race::where('status', 'finished')
+        $races = Race::select(['id','title','track','scheduled_at'])
+            ->where('status', 'finished')
             ->orderBy('scheduled_at', 'desc')
             ->get();
 

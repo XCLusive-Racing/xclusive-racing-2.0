@@ -76,6 +76,10 @@
                 <span class="badge ms-1" style="background:#7c3aed;color:white;font-size:.65rem;padding:2px 7px;border-radius:10px">
                     {{ $registrations->count() }}
                 </span>
+                @elseif(!empty($entrylistDrivers))
+                <span class="badge ms-1" style="background:#f59e0b;color:white;font-size:.65rem;padding:2px 7px;border-radius:10px">
+                    {{ count($entrylistDrivers) }}
+                </span>
                 @endif
             </button>
             <button @click="tab = 'results'"
@@ -358,6 +362,71 @@
             @endif
             @if(session('config_error'))
             <div class="mx-4 mt-3 p-2 rounded-2" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:.8rem">{{ session('config_error') }}</div>
+            @endif
+
+            {{-- Uploaded entrylist --}}
+            @if(!empty($entrylistDrivers))
+            <div style="border-bottom:2px solid #fde68a">
+                <div class="px-4 py-2 d-flex align-items-center gap-2" style="background:#fffbeb">
+                    <span class="badge fw-bold" style="background:#fef3c7;color:#92400e;font-size:.68rem;padding:3px 8px;border-radius:5px">custom entrylist.json</span>
+                    <span class="text-secondary" style="font-size:.75rem">{{ count($entrylistDrivers) }} {{ count($entrylistDrivers) === 1 ? 'driver' : 'drivers' }} in uploaded entrylist</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" style="font-size:.875rem">
+                        <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+                            <tr>
+                                <th class="fw-bold text-uppercase ps-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:50px">#</th>
+                                <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Driver</th>
+                                <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Platform ID</th>
+                                <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Team</th>
+                                <th class="fw-bold text-uppercase pe-4 text-end" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:80px">Car #</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($entrylistDrivers as $i => $entry)
+                            @php $user = $entry['user']; @endphp
+                            <tr>
+                                <td class="ps-4 text-secondary fw-bold" style="font-size:.8rem">{{ $i + 1 }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
+                                             style="width:30px;height:30px;font-size:.72rem;background:linear-gradient(135deg,#7c3aed,#db2777)">
+                                            {{ strtoupper(substr($user?->name ?? $entry['name'], 0, 1)) }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ $user?->name ?? $entry['name'] }}</div>
+                                            @if($user?->platform)
+                                            <span class="badge fw-bold" style="background:#f3f4f6;color:#6b7280;font-size:.62rem;padding:1px 5px">
+                                                {{ strtoupper($user->platform) }}
+                                            </span>
+                                            @endif
+                                            @if(!$user)
+                                            <span class="badge fw-bold" style="background:#fef2f2;color:#dc2626;font-size:.62rem;padding:1px 5px">no account</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if($entry['player_id'])
+                                    <code style="font-size:.78rem;color:#374151">{{ $entry['player_id'] }}</code>
+                                    @else
+                                    <span class="text-secondary">—</span>
+                                    @endif
+                                </td>
+                                <td class="text-secondary" style="font-size:.82rem">{{ $user?->team ?? '—' }}</td>
+                                <td class="pe-4 text-end">
+                                    @if($entry['car_number'] !== null)
+                                    <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.72rem">#{{ $entry['car_number'] }}</span>
+                                    @else
+                                    <span class="text-secondary">—</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             @endif
 
             @if($registrations->isEmpty())

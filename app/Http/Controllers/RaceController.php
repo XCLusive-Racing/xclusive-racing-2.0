@@ -10,10 +10,11 @@ class RaceController extends Controller
 {
     public function index()
     {
-        $races = Race::where('status', '!=', 'finished')
+        $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','event_tag','max_drivers','duration_key','image','icon','description','sr_requirement','min_rating'])
+            ->where('status', '!=', 'finished')
             ->orderBy('scheduled_at')
-            ->withCount('registrations')
             ->get();
+        $races->loadCount('registrations');
 
         $eventTags = EventTag::orderBy('name')->get();
 

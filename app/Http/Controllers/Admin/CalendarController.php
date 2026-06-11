@@ -16,7 +16,8 @@ class CalendarController extends Controller
 
         $current = Carbon::createFromDate($year, $month, 1)->startOfMonth();
 
-        $races = Race::whereBetween('scheduled_at', [
+        $races = Race::select(['id','title','game','track','scheduled_at','status'])
+            ->whereBetween('scheduled_at', [
                 $current->copy()->startOfMonth(),
                 $current->copy()->endOfMonth(),
             ])

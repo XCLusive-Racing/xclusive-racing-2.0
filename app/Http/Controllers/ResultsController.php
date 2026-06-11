@@ -8,7 +8,8 @@ class ResultsController extends Controller
 {
     public function index()
     {
-        $races = Race::where('status', 'finished')
+        $races = Race::select(['id','title','game','track','scheduled_at','status'])
+            ->where('status', 'finished')
             ->orderBy('scheduled_at', 'desc')
             ->get();
 

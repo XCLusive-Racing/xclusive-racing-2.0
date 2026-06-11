@@ -21,9 +21,10 @@ class RaceController extends Controller
             ->where('scheduled_at', '<', now())
             ->update(['status' => 'closed']);
 
-        $races = Race::withCount('registrations')
+        $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','event_tag','max_drivers','duration_key'])
             ->orderBy('scheduled_at', 'desc')
             ->get();
+        $races->loadCount('registrations');
 
         return view('admin.races.index', compact('races'));
     }
@@ -63,10 +64,35 @@ class RaceController extends Controller
             'settings.json'  => json_encode($config->settings($race),      JSON_PRETTY_PRINT),
         ];
 
+        $entrylistDrivers = [];
+        $uploadedEntrylist = $race->configFile('entrylist.json');
+        if ($uploadedEntrylist) {
+            $parsed = json_decode($uploadedEntrylist, true);
+            $playerIds = collect($parsed['entries'] ?? [])
+                ->map(fn($e) => $e['drivers'][0]['playerID'] ?? null)
+                ->filter()->values()->all();
+
+            $usersByPlatformId = \App\Models\User::whereIn('platform_id', $playerIds)
+                ->get()->keyBy('platform_id');
+
+            foreach ($parsed['entries'] ?? [] as $entry) {
+                $driver = $entry['drivers'][0] ?? null;
+                if (!$driver) continue;
+                $playerId = $driver['playerID'] ?? null;
+                $name = trim(($driver['firstName'] ?? '') . ' ' . ($driver['lastName'] ?? ''));
+                $entrylistDrivers[] = [
+                    'name'       => $name ?: 'Unknown',
+                    'player_id'  => $playerId,
+                    'car_number' => $entry['raceNumber'] ?? null,
+                    'user'       => $playerId ? $usersByPlatformId->get($playerId) : null,
+                ];
+            }
+        }
+
         return view('admin.races.show', compact(
             'race', 'raceResults', 'qualiResults', 'registrations',
             'ftpServers', 'selectedServer', 'ftpFiles', 'ftpAllFiles', 'ftpError', 'importedFiles',
-            'configFiles'
+            'configFiles', 'entrylistDrivers'
         ))->with('configData', $config);
     }
 

@@ -49,18 +49,53 @@ class RaceResultController extends Controller
             }
         }
 
-        $resultUserIds  = $raceResults->pluck('user_id')->filter()->toArray();
-        $dnsCandidates  = $race->registrations()->with('user')->get()
+        $resultUserIds   = $raceResults->pluck('user_id')->filter()->toArray();
+        $resultPlayerIds = $raceResults->pluck('player_id')->filter()->toArray();
+
+        $dnsCandidates = $race->registrations()->with('user')->get()
             ->filter(fn($r) => !in_array($r->user_id, $resultUserIds))
             ->values();
 
-        $linkedFinishers = $raceResults->where('dns', false)->where('dnf', false)->whereNotNull('user_id')->count();
+        // Entrylist-based DNS candidates (drivers in uploaded entrylist but not in results)
+        $entrylistDnsCandidates = collect();
+        $uploadedEntrylist = $race->configFile('entrylist.json');
+        if ($uploadedEntrylist) {
+            $parsed = json_decode($uploadedEntrylist, true);
+            $registrationUserIds = $dnsCandidates->pluck('user_id')->filter()->toArray();
+
+            $playerIds = collect($parsed['entries'] ?? [])
+                ->map(fn($e) => $e['drivers'][0]['playerID'] ?? null)
+                ->filter()->values()->all();
+            $usersByPlatformId = User::whereIn('platform_id', $playerIds)->get()->keyBy('platform_id');
+
+            foreach ($parsed['entries'] ?? [] as $entry) {
+                $driver   = $entry['drivers'][0] ?? null;
+                $playerId = $driver['playerID'] ?? null;
+                if (!$playerId) continue;
+                if (in_array($playerId, $resultPlayerIds)) continue;
+
+                $user = $usersByPlatformId->get($playerId);
+                // Skip if already covered by registrations-based DNS candidates
+                if ($user && in_array($user->id, $registrationUserIds)) continue;
+                if ($user && in_array($user->id, $resultUserIds)) continue;
+
+                $name = trim(($driver['firstName'] ?? '') . ' ' . ($driver['lastName'] ?? ''));
+                $entrylistDnsCandidates->push([
+                    'player_id'  => $playerId,
+                    'name'       => $name ?: 'Unknown',
+                    'car_number' => $entry['raceNumber'] ?? null,
+                    'user'       => $user,
+                ]);
+            }
+        }
+
+        $linkedFinishers  = $raceResults->where('dns', false)->where('dnf', false)->whereNotNull('user_id')->count();
         $minRatingDrivers = (new XclRating())->MIN_DRIVERS;
 
         return view('admin.races.results', compact(
             'race', 'raceResults', 'qualiResults',
             'ftpServers', 'selectedServer', 'ftpFiles', 'ftpAllFiles', 'ftpError', 'importedFiles',
-            'dnsCandidates', 'linkedFinishers', 'minRatingDrivers'
+            'dnsCandidates', 'entrylistDnsCandidates', 'linkedFinishers', 'minRatingDrivers'
         ));
     }
 
@@ -181,29 +216,51 @@ class RaceResultController extends Controller
 
     public function addDns(Request $request, Race $race)
     {
-        $request->validate(['user_ids' => 'required|array|min:1', 'user_ids.*' => 'integer|exists:users,id']);
+        $request->validate([
+            'user_ids'        => 'nullable|array',
+            'user_ids.*'      => 'integer|exists:users,id',
+            'player_entries'  => 'nullable|array',
+            'player_entries.*'=> 'string|max:100',
+        ]);
 
-        $existingPlayerIds = RaceResult::where('race_id', $race->id)
-            ->where('session_type', 'race')
-            ->whereNotNull('user_id')
-            ->pluck('user_id')
-            ->toArray();
+        $existingUserIds   = RaceResult::where('race_id', $race->id)->where('session_type', 'race')->whereNotNull('user_id')->pluck('user_id')->toArray();
+        $existingPlayerIds = RaceResult::where('race_id', $race->id)->where('session_type', 'race')->pluck('player_id')->toArray();
+        $maxPos            = RaceResult::where('race_id', $race->id)->where('session_type', 'race')->max('position') ?? 0;
+        $added             = 0;
 
-        $maxPos = RaceResult::where('race_id', $race->id)->where('session_type', 'race')->max('position') ?? 0;
-
-        $added = 0;
-        foreach ($request->user_ids as $userId) {
-            if (in_array($userId, $existingPlayerIds)) continue;
-
-            $user = \App\Models\User::find($userId);
+        foreach ($request->user_ids ?? [] as $userId) {
+            if (in_array($userId, $existingUserIds)) continue;
+            $user = User::find($userId);
             if (!$user) continue;
-
             RaceResult::create([
                 'race_id'           => $race->id,
                 'session_type'      => 'race',
                 'user_id'           => $user->id,
                 'player_id'         => $user->platform_id ?? 'DNS_' . $user->id,
                 'driver_name'       => $user->name,
+                'race_title'        => $race->title,
+                'race_track'        => $race->track,
+                'race_game'         => $race->game,
+                'race_scheduled_at' => $race->scheduled_at,
+                'position'          => ++$maxPos,
+                'dns'               => true,
+                'dnf'               => false,
+                'fastest_lap'       => false,
+            ]);
+            $added++;
+        }
+
+        foreach ($request->player_entries ?? [] as $encoded) {
+            $data     = json_decode(base64_decode($encoded), true);
+            $playerId = $data['player_id'] ?? null;
+            $name     = $data['name'] ?? 'Unknown';
+            if (!$playerId || in_array($playerId, $existingPlayerIds)) continue;
+            RaceResult::create([
+                'race_id'           => $race->id,
+                'session_type'      => 'race',
+                'user_id'           => null,
+                'player_id'         => $playerId,
+                'driver_name'       => $name,
                 'race_title'        => $race->title,
                 'race_track'        => $race->track,
                 'race_game'         => $race->game,

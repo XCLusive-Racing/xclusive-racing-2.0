@@ -285,15 +285,16 @@
 </div>
 
 {{-- DNS Candidates card --}}
-@if($dnsCandidates->isNotEmpty())
+@if($dnsCandidates->isNotEmpty() || $entrylistDnsCandidates->isNotEmpty())
+@php $totalDns = $dnsCandidates->count() + $entrylistDnsCandidates->count(); @endphp
 <div class="admin-card mb-4" style="border-left:4px solid #dc2626">
     <div class="admin-card-header">
         <div>
             <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:1.05rem">
-                DNS — Registered Drivers Not in Results
-                <span class="badge ms-2 text-white fw-bold" style="background:#dc2626;font-size:.68rem;padding:3px 8px;border-radius:6px">{{ $dnsCandidates->count() }}</span>
+                DNS — Drivers Not in Results
+                <span class="badge ms-2 text-white fw-bold" style="background:#dc2626;font-size:.68rem;padding:3px 8px;border-radius:6px">{{ $totalDns }}</span>
             </div>
-            <div class="text-secondary mt-1" style="font-size:.78rem">These drivers registered but have no result entry. Select them to add as DNS.</div>
+            <div class="text-secondary mt-1" style="font-size:.78rem">Select drivers to add as DNS.</div>
         </div>
     </div>
     <form action="{{ route('admin.races.results.dns', $race) }}" method="POST">
@@ -303,11 +304,11 @@
                 <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
                     <tr>
                         <th class="ps-4" style="width:40px">
-                            <input type="checkbox" id="dns-all"
-                                   onclick="document.querySelectorAll('.dns-cb').forEach(cb => cb.checked = this.checked)">
+                            <input type="checkbox" onclick="document.querySelectorAll('.dns-cb').forEach(cb => cb.checked = this.checked)">
                         </th>
                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Driver</th>
-                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Platform</th>
+                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Platform ID</th>
+                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Source</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -316,11 +317,29 @@
                         <td class="ps-4">
                             <input type="checkbox" name="user_ids[]" value="{{ $reg->user_id }}" class="dns-cb">
                         </td>
-                        <td>
-                            <div class="fw-bold">{{ $reg->user->name ?? '—' }}</div>
+                        <td class="fw-bold">{{ $reg->user->name ?? '—' }}</td>
+                        <td style="font-size:.75rem;color:#6b7280;font-family:monospace">{{ $reg->user->platform_id ?? '—' }}</td>
+                        <td><span class="badge" style="background:#ede9fe;color:#6d28d9;font-size:.65rem;padding:2px 7px;border-radius:5px;font-weight:700">Registered</span></td>
+                    </tr>
+                    @endforeach
+                    @foreach($entrylistDnsCandidates as $entry)
+                    @php $encoded = base64_encode(json_encode(['player_id' => $entry['player_id'], 'name' => $entry['name']])); @endphp
+                    <tr>
+                        <td class="ps-4">
+                            <input type="checkbox" name="player_entries[]" value="{{ $encoded }}" class="dns-cb">
                         </td>
-                        <td style="font-size:.75rem;color:#6b7280;font-family:monospace">
-                            {{ $reg->user->platform ?? '—' }} — {{ $reg->user->platform_id ?? '—' }}
+                        <td>
+                            <div class="fw-bold">{{ $entry['name'] }}</div>
+                            @if($entry['user'])
+                            <div class="text-secondary" style="font-size:.68rem">linked: {{ $entry['user']->name }}</div>
+                            @endif
+                        </td>
+                        <td style="font-size:.75rem;color:#6b7280;font-family:monospace">{{ $entry['player_id'] }}</td>
+                        <td>
+                            <span class="badge" style="background:#fef3c7;color:#92400e;font-size:.65rem;padding:2px 7px;border-radius:5px;font-weight:700">Entrylist</span>
+                            @if($entry['car_number'] !== null)
+                            <span class="badge ms-1" style="background:#f3f4f6;color:#374151;font-size:.65rem;padding:2px 7px;border-radius:5px;font-weight:700">#{{ $entry['car_number'] }}</span>
+                            @endif
                         </td>
                     </tr>
                     @endforeach

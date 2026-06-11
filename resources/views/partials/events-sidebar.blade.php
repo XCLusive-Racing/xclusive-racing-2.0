@@ -5,16 +5,18 @@ use App\Models\User;
 $now = now();
 
 $sbNextEvent = Race::where('scheduled_at', '>', $now)
-    ->withCount('registrations')
+    ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon'])
     ->orderBy('scheduled_at')
     ->first();
+if ($sbNextEvent) $sbNextEvent->loadCount('registrations');
 
 $sbUpcoming = Race::where('scheduled_at', '>', $now)
-    ->withCount('registrations')
+    ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon'])
     ->when($sbNextEvent, fn($q) => $q->where('id', '!=', $sbNextEvent->id))
     ->orderBy('scheduled_at')
     ->limit(4)
     ->get();
+$sbUpcoming->loadCount('registrations');
 
 $sbGames = ['acc' => 'elo_acc', 'lmu' => 'elo_lmu', 'iracing' => 'elo_iracing'];
 $sbLeaderboards = [];

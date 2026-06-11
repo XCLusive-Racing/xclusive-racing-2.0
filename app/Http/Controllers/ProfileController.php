@@ -35,7 +35,8 @@ class ProfileController extends Controller
             ->orWhere('gamertag', $user->name)
             ->first();
 
-        $myEvents = Race::whereHas('registrations', fn($q) => $q->where('user_id', $user->id))
+        $myEvents = Race::select(['id','title','game','track','scheduled_at','status'])
+            ->whereHas('registrations', fn($q) => $q->where('user_id', $user->id))
             ->where('status', '!=', 'finished')
             ->where('scheduled_at', '>', now())
             ->orderBy('scheduled_at')

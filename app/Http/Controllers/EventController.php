@@ -15,11 +15,13 @@ class EventController extends Controller
     {
         $now = now();
 
-        $nextEvent = Race::where('scheduled_at', '>', $now)
+        $nextEvent = Race::select(['id','title','game','track','scheduled_at'])
+            ->where('scheduled_at', '>', $now)
             ->orderBy('scheduled_at')
             ->first();
 
-        $upcomingEvents = Race::where('scheduled_at', '>', $now)
+        $upcomingEvents = Race::select(['id','title','game','track','scheduled_at'])
+            ->where('scheduled_at', '>', $now)
             ->when($nextEvent, fn($q) => $q->where('id', '!=', $nextEvent->id))
             ->orderBy('scheduled_at')
             ->limit(3)
