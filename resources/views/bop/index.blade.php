@@ -5,7 +5,7 @@
 @section('content')
 <main class="xcl-page pb-5 px-3 bg-light">
     <div class="about-section__topo" style="background-image:url('/topo.png')"></div>
-    <div class="container" style="max-width:800px;position:relative;z-index:1">
+    <div class="container" style="max-width:860px;position:relative;z-index:1">
 
         {{-- Header --}}
         <div class="mb-4">
@@ -27,39 +27,52 @@
             @endforeach
         </div>
 
-        {{-- Filters --}}
-        <form method="GET" action="{{ route('bop.index') }}" class="bg-white rounded-3 shadow-sm p-3 mb-4">
-            <input type="hidden" name="game" value="{{ $activeGame }}">
-            <div class="row g-2 align-items-end">
-                <div class="col-sm-5">
-                    <label class="form-label fw-bold text-uppercase text-secondary mb-1" style="font-size:.68rem;letter-spacing:.06em">Car</label>
-                    <select name="car" class="form-select form-select-sm" onchange="this.form.submit()">
-                        <option value="">All cars</option>
-                        @foreach($cars as $car)
-                        <option value="{{ $car }}" {{ $activeCar === $car ? 'selected' : '' }}>{{ $car }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-sm-5">
-                    <label class="form-label fw-bold text-uppercase text-secondary mb-1" style="font-size:.68rem;letter-spacing:.06em">Track</label>
-                    <select name="track" class="form-select form-select-sm" onchange="this.form.submit()">
-                        <option value="">All tracks</option>
-                        @foreach($tracks as $track)
-                        <option value="{{ $track }}" {{ $activeTrack === $track ? 'selected' : '' }}>{{ $track }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-sm-2">
-                    @if($activeCar || $activeTrack)
-                    <a href="{{ route('bop.index', ['game' => $activeGame]) }}"
-                       class="btn btn-sm btn-outline-secondary w-100 fw-bold text-uppercase"
-                       style="font-size:.72rem">
-                        Reset
-                    </a>
-                    @endif
-                </div>
-            </div>
-        </form>
+        {{-- Category filter --}}
+        <div class="d-flex gap-2 flex-wrap mb-3">
+            <a href="{{ route('bop.index', array_filter(['game' => $activeGame, 'track' => $activeTrack])) }}"
+               class="btn btn-sm fw-bold text-uppercase px-3"
+               style="font-size:.72rem;border-radius:20px;
+                      {{ !$activeCategory
+                          ? 'background:#111827;color:#fff;border:1px solid #111827'
+                          : 'background:#fff;color:#374151;border:1px solid #e5e7eb' }}">
+                All
+            </a>
+            @foreach($categories as $key => $label)
+            <a href="{{ route('bop.index', array_filter(['game' => $activeGame, 'category' => $key, 'track' => $activeTrack])) }}"
+               class="btn btn-sm fw-bold text-uppercase px-3"
+               style="font-size:.72rem;border-radius:20px;
+                      {{ $activeCategory === $key
+                          ? 'background:#111827;color:#fff;border:1px solid #111827'
+                          : 'background:#fff;color:#374151;border:1px solid #e5e7eb' }}">
+                {{ $label }}
+            </a>
+            @endforeach
+        </div>
+
+        {{-- Track filter --}}
+        @if($tracks->isNotEmpty())
+        <div class="d-flex gap-2 flex-wrap align-items-center mb-4">
+            <span class="fw-bold text-uppercase text-secondary" style="font-size:.68rem;letter-spacing:.06em">Track:</span>
+            <a href="{{ route('bop.index', array_filter(['game' => $activeGame, 'category' => $activeCategory])) }}"
+               class="btn btn-sm fw-bold text-uppercase px-3"
+               style="font-size:.7rem;border-radius:20px;
+                      {{ !$activeTrack
+                          ? 'background:#374151;color:#fff;border:1px solid #374151'
+                          : 'background:#fff;color:#374151;border:1px solid #e5e7eb' }}">
+                All tracks
+            </a>
+            @foreach($tracks as $track)
+            <a href="{{ route('bop.index', array_filter(['game' => $activeGame, 'category' => $activeCategory, 'track' => $track])) }}"
+               class="btn btn-sm fw-bold text-uppercase px-3"
+               style="font-size:.7rem;border-radius:20px;
+                      {{ $activeTrack === $track
+                          ? 'background:#374151;color:#fff;border:1px solid #374151'
+                          : 'background:#fff;color:#374151;border:1px solid #e5e7eb' }}">
+                {{ $track }}
+            </a>
+            @endforeach
+        </div>
+        @endif
 
         {{-- Table --}}
         <div class="bg-white rounded-3 shadow-sm overflow-hidden">
@@ -68,7 +81,7 @@
                 No BOP data found for the selected filters.
             </div>
             @else
-            <div class="table-responsive" style="max-height:480px;overflow-y:auto">
+            <div class="table-responsive">
                 <table class="table align-middle mb-0" style="font-size:.875rem">
                     <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
                         <tr>

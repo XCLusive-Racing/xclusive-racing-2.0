@@ -8,11 +8,17 @@ class BopController extends Controller
 {
     public function index()
     {
-        $games = Bop::games();
+        $games      = Bop::games();
+        $categories = Bop::categories();
 
         $activeGame = request('game', 'acc');
         if (!array_key_exists($activeGame, $games)) {
             $activeGame = 'acc';
+        }
+
+        $activeCategory = request('category');
+        if ($activeCategory && !array_key_exists($activeCategory, $categories)) {
+            $activeCategory = null;
         }
 
         $tracks = Bop::where('game', $activeGame)
@@ -21,22 +27,16 @@ class BopController extends Controller
             ->orderBy('track')
             ->pluck('track');
 
-        $cars = Bop::where('game', $activeGame)
-            ->distinct()
-            ->orderBy('car_model')
-            ->pluck('car_model');
-
         $activeTrack = request('track');
         if ($activeTrack && !$tracks->contains($activeTrack)) {
             $activeTrack = null;
         }
 
-        $activeCar = request('car');
-        if ($activeCar && !$cars->contains($activeCar)) {
-            $activeCar = null;
-        }
-
         $query = Bop::where('game', $activeGame);
+
+        if ($activeCategory) {
+            $query->whereIn('car_model', Bop::carNamesByCategory($activeCategory));
+        }
 
         if ($activeTrack) {
             $query->where(function ($q) use ($activeTrack) {
@@ -44,12 +44,8 @@ class BopController extends Controller
             });
         }
 
-        if ($activeCar) {
-            $query->where('car_model', $activeCar);
-        }
-
         $bops = $query->orderBy('track')->orderBy('car_model')->get();
 
-        return view('bop.index', compact('games', 'activeGame', 'tracks', 'activeTrack', 'cars', 'activeCar', 'bops'));
+        return view('bop.index', compact('games', 'categories', 'activeGame', 'activeCategory', 'tracks', 'activeTrack', 'bops'));
     }
 }
