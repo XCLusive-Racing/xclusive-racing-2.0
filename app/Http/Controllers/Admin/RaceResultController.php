@@ -252,15 +252,18 @@ class RaceResultController extends Controller
             $carModel   = $line['car']['carModel'] ?? null;
             $timing     = $line['timing'] ?? [];
 
-            $bestLap   = ($timing['bestLap']   ?? -1) > 0 ? (int) $timing['bestLap']   : null;
+            $rawBestLap = (int) ($timing['bestLap'] ?? -1);
+            $bestLap   = ($rawBestLap > 0 && $rawBestLap < 2147483647) ? $rawBestLap : null;
             $lapCount  = isset($timing['lapCount'])        ? (int) $timing['lapCount']  : null;
-            $totalTime = ($timing['totalTime'] ?? -1) > 0 ? (int) $timing['totalTime'] : null;
+            $rawTotal  = (int) ($timing['totalTime'] ?? -1);
+            $totalTime = ($rawTotal > 0 && $rawTotal < 2147483647) ? $rawTotal : null;
             $lapsLed   = isset($line['lapsLed'])           ? (int) $line['lapsLed']     : null;
 
             $consistency = null;
             if ($bestLap && $lapCount > 0 && $totalTime) {
                 $avgLap = $totalTime / $lapCount;
-                $consistency = round(($bestLap / $avgLap) * 100, 2);
+                $raw = ($bestLap / $avgLap) * 100;
+                $consistency = ($raw >= 0 && $raw <= 999.99) ? round($raw, 2) : null;
             }
 
             $dnf        = ($line['missingMandatoryPitstop'] ?? -1) === 1;
