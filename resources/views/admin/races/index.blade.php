@@ -53,11 +53,11 @@
             <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
                 <tr>
                     <th class="fw-bold text-uppercase ps-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Race</th>
-                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Game</th>
-                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Date</th>
-                    <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Drivers</th>
+                    <th class="fw-bold text-uppercase d-none d-sm-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Game</th>
+                    <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Date</th>
+                    <th class="fw-bold text-uppercase text-center d-none d-lg-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Drivers</th>
                     <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Status</th>
-                    <th class="pe-4" style="min-width:160px"></th>
+                    <th class="pe-4" style="min-width:100px"></th>
                 </tr>
             </thead>
             <tbody>
@@ -66,18 +66,26 @@
                     <td class="ps-4">
                         <div class="fw-bold text-dark">{{ $race->title }}</div>
                         <div class="text-secondary" style="font-size:.78rem">{{ $race->track }}</div>
+                        {{-- Mobile: game badge + date inline --}}
+                        <div class="d-sm-none mt-1 d-flex align-items-center gap-2 flex-wrap">
+                            <span class="badge text-white fw-bold"
+                                  style="background:{{ $race->gameColor() }};font-size:.65rem;padding:3px 7px;border-radius:5px">
+                                {{ $race->gameLabel() }}
+                            </span>
+                            <span style="font-size:.72rem;color:#9ca3af">{{ $race->scheduledAtUk()->format('d M Y') }}</span>
+                        </div>
                     </td>
-                    <td>
+                    <td class="d-none d-sm-table-cell">
                         <span class="badge text-white fw-bold"
                               style="background:{{ $race->gameColor() }};font-size:.7rem;padding:5px 10px;border-radius:6px">
                             {{ $race->gameLabel() }}
                         </span>
                     </td>
-                    <td class="text-secondary" style="font-size:.82rem" data-order="{{ $race->scheduled_at->timestamp }}">
+                    <td class="d-none d-md-table-cell text-secondary" style="font-size:.82rem" data-order="{{ $race->scheduled_at->timestamp }}">
                         {{ $race->scheduledAtUk()->format('d M Y') }}<br>
                         <span style="color:#9ca3af">{{ $race->scheduledAtUk()->format('H:i T') }}</span>
                     </td>
-                    <td class="text-center fw-bold">
+                    <td class="d-none d-lg-table-cell text-center fw-bold">
                         {{ $race->registrations_count }}{{ $race->max_drivers ? ' / ' . $race->max_drivers : '' }}
                     </td>
                     <td class="text-center">
@@ -89,11 +97,11 @@
                         </span>
                     </td>
                     <td class="pe-4">
-                        <div class="d-flex gap-2 justify-content-end">
+                        <div class="d-flex gap-1 gap-md-2 justify-content-end align-items-center flex-wrap">
                             <a href="{{ route('admin.races.show', $race) }}"
                                class="btn btn-sm fw-bold text-uppercase text-white"
                                style="background:#7c3aed;font-size:.72rem;padding:5px 12px;border-radius:6px">
-                                See Event
+                                Open
                             </a>
                         </div>
                     </td>

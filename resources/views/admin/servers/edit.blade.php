@@ -15,7 +15,7 @@
     @csrf @method('PUT')
 
     <div class="row g-4 align-items-start">
-        <div class="col-lg-7">
+        <div class="col-12 col-lg-7">
 
             <div class="admin-card mb-4">
                 <div class="px-4 pt-4 pb-2">

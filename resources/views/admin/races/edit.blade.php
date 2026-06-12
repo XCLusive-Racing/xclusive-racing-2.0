@@ -18,7 +18,7 @@
     <div class="row g-4 align-items-start">
 
         {{-- Left: form fields --}}
-        <div class="col-lg-8">
+        <div class="col-12 col-lg-8">
 
             <div class="admin-card mb-4">
                 <div class="px-4 pt-4 pb-2">
@@ -248,7 +248,7 @@
         </div>
 
         {{-- Right: media --}}
-        <div class="col-lg-4">
+        <div class="col-12 col-lg-4">
             <div class="admin-card mb-4">
                 <div class="px-4 pt-4 pb-3">
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Media</p>

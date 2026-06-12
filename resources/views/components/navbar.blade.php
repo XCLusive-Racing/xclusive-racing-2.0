@@ -18,6 +18,11 @@
             </svg>
         </button>
 
+        {{-- XCL logo rechts van hamburger (alleen mobiel) --}}
+        <a href="{{ url('/') }}" class="d-md-none ms-2">
+            <img src="/images/home/brand/xclusive_racing_logo.png" alt="XCLusive" height="28">
+        </a>
+
         <div class="collapse navbar-collapse" :class="{ 'show': open }">
 
             {{-- Mobiel: Profile + Admin bovenaan het hamburger menu --}}

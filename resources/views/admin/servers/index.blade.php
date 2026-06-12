@@ -39,8 +39,8 @@
             <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
                 <tr>
                     <th class="fw-bold text-uppercase ps-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Name</th>
-                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Host</th>
-                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Path</th>
+                    <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Host</th>
+                    <th class="fw-bold text-uppercase d-none d-lg-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Path</th>
                     <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:90px">Status</th>
                     <th class="fw-bold text-uppercase text-end pe-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:160px">Actions</th>
                 </tr>
@@ -52,10 +52,10 @@
                         <div class="fw-bold text-dark">{{ $server->name }}</div>
                         <div class="text-secondary" style="font-size:.7rem">Port {{ $server->port }}</div>
                     </td>
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         <span style="font-family:monospace;font-size:.8rem;color:#374151">{{ $server->host }}</span>
                     </td>
-                    <td>
+                    <td class="d-none d-lg-table-cell">
                         <span style="font-family:monospace;font-size:.75rem;color:#6b7280">{{ $server->path }}</span>
                     </td>
                     <td class="text-center">
@@ -66,7 +66,7 @@
                         @endif
                     </td>
                     <td class="text-end pe-4">
-                        <div class="d-flex gap-2 justify-content-end align-items-center">
+                        <div class="d-flex gap-1 gap-md-2 justify-content-end align-items-center flex-wrap">
                             <button type="button"
                                     class="btn btn-sm fw-bold text-uppercase"
                                     style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:.68rem;padding:3px 10px"

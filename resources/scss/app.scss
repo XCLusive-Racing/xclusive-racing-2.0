@@ -3109,6 +3109,66 @@ body.admin-body {
     }
 }
 
+// ─── Calendar: compact on small screens ──────────────────────────────────────
+@media (max-width: 575px) {
+    .xcl-cal-day {
+        min-height: 64px !important;
+        padding: .3rem .25rem !important;
+    }
+    .xcl-cal-day-label {
+        font-size: .6rem !important;
+        padding: .4rem 0 !important;
+    }
+    .xcl-cal-daynr {
+        font-size: .65rem !important;
+        width: 20px !important;
+        height: 20px !important;
+    }
+}
+
+// ─── Admin mobile tweaks (<768px) ────────────────────────────────────────────
+@media (max-width: 767px) {
+    .admin-content {
+        padding: 1rem;
+    }
+    .admin-header {
+        padding: 0 1rem;
+        height: auto;
+        min-height: 56px;
+        flex-wrap: wrap;
+        gap: .5rem;
+        padding-top: .5rem;
+        padding-bottom: .5rem;
+    }
+
+    .dataTables_wrapper {
+        .dataTables_length,
+        .dataTables_filter {
+            float: none;
+            text-align: left;
+            padding: .75rem 1rem .25rem;
+        }
+        .dataTables_filter {
+            padding-top: .25rem;
+            padding-bottom: .75rem;
+        }
+        .dataTables_filter input {
+            width: 100%;
+            margin-left: 0;
+            display: block;
+            margin-top: .35rem;
+        }
+        .dataTables_info,
+        .dataTables_paginate {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+        .dataTables_paginate {
+            text-align: left;
+        }
+    }
+}
+
 // ─── XS (<480px) extra tweaks ─────────────────────────────────────────────────
 @media (max-width: 480px) {
     .hero-home__sub {

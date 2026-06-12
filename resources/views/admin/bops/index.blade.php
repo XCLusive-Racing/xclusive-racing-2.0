@@ -4,9 +4,6 @@
 @section('page-title', 'Balance of Performance')
 
 @section('page-actions')
-    <a href="{{ route('admin.bops.create') }}" class="btn btn-sm fw-bold text-uppercase text-white" style="background:#7c3aed;font-size:.78rem">
-        + Add BOP
-    </a>
 @endsection
 
 @section('content')
@@ -131,58 +128,134 @@
     </div>
 </div>
 
-@foreach($games as $gameKey => $gameLabel)
-@php $gameBops = $bops->get($gameKey, collect()); @endphp
+{{-- Global toggle bar --}}
+@php $totalBops = $bops->flatten()->count(); $totalActive = $bops->flatten()->where('active', true)->count(); @endphp
+@if($totalBops > 0)
 <div class="admin-card mb-4">
-    <div class="d-flex align-items-center justify-content-between px-4 py-3" style="border-bottom:1px solid #f3f4f6">
-        <h6 class="fw-black text-uppercase mb-0" style="font-size:.8rem;letter-spacing:.06em">{{ $gameLabel }}</h6>
-        <span class="text-secondary" style="font-size:.75rem">{{ $gameBops->count() }} entries</span>
+    <div class="px-4 py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <span class="fw-black text-uppercase fst-italic text-dark" style="font-size:.78rem">All Games</span>
+            <span class="badge fw-bold" style="background:#f3e8ff;color:#7c3aed;font-size:.7rem;padding:3px 8px;border-radius:6px">
+                {{ $totalActive }} / {{ $totalBops }} active
+            </span>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <form method="POST" action="{{ route('admin.bops.toggle-all') }}">
+                @csrf <input type="hidden" name="active" value="1">
+                <button type="submit" class="btn btn-sm fw-bold text-uppercase"
+                        style="font-size:.72rem;padding:4px 12px;background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;border-radius:6px">
+                    ✓ Activate All
+                </button>
+            </form>
+            <form method="POST" action="{{ route('admin.bops.toggle-all') }}">
+                @csrf <input type="hidden" name="active" value="0">
+                <button type="submit" class="btn btn-sm fw-bold text-uppercase"
+                        style="font-size:.72rem;padding:4px 12px;background:#fef3c7;color:#92400e;border:1px solid #fde68a;border-radius:6px">
+                    ✕ Deactivate All
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+@foreach($games as $gameKey => $gameLabel)
+@php
+    $gameBops   = $bops->get($gameKey, collect());
+    $gameActive = $gameBops->where('active', true)->count();
+@endphp
+<div class="admin-card mb-4" x-data="{ open: true }">
+
+    {{-- Section header --}}
+    <div class="d-flex align-items-center justify-content-between px-4 py-3 flex-wrap gap-2"
+         style="border-bottom:1px solid #f3f4f6">
+        <div class="d-flex align-items-center gap-2" style="cursor:pointer" @click="open = !open">
+            <svg width="14" height="14" fill="none" stroke="#9ca3af" stroke-width="2.5" viewBox="0 0 24 24"
+                 :style="open ? 'transition:.2s' : 'transform:rotate(-90deg);transition:.2s'">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+            <h6 class="fw-black text-uppercase mb-0" style="font-size:.8rem;letter-spacing:.06em">{{ $gameLabel }}</h6>
+            @if($gameBops->isNotEmpty())
+            <span class="badge fw-bold" style="background:#f3f4f6;color:#6b7280;font-size:.68rem;padding:2px 8px;border-radius:5px">
+                {{ $gameActive }} / {{ $gameBops->count() }} active
+            </span>
+            @endif
+        </div>
+        @if($gameBops->isNotEmpty())
+        <div class="d-flex gap-2 flex-wrap">
+            <form method="POST" action="{{ route('admin.bops.toggle-game') }}">
+                @csrf <input type="hidden" name="game" value="{{ $gameKey }}">
+                <input type="hidden" name="active" value="1">
+                <button type="submit" class="btn btn-sm fw-bold text-uppercase"
+                        style="font-size:.68rem;padding:3px 10px;background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;border-radius:5px">
+                    ✓ All On
+                </button>
+            </form>
+            <form method="POST" action="{{ route('admin.bops.toggle-game') }}">
+                @csrf <input type="hidden" name="game" value="{{ $gameKey }}">
+                <input type="hidden" name="active" value="0">
+                <button type="submit" class="btn btn-sm fw-bold text-uppercase"
+                        style="font-size:.68rem;padding:3px 10px;background:#fef3c7;color:#92400e;border:1px solid #fde68a;border-radius:5px">
+                    ✕ All Off
+                </button>
+            </form>
+        </div>
+        @endif
     </div>
 
-    @if($gameBops->isEmpty())
-    <p class="text-secondary mb-0 px-4 py-3" style="font-size:.82rem">No BOP entries for {{ $gameLabel }} yet.</p>
-    @else
-    <div class="table-responsive">
-        <table class="table align-middle mb-0" style="font-size:.83rem">
-            <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
-                <tr>
-                    <th class="fw-bold text-uppercase text-secondary py-2" style="font-size:.68rem;letter-spacing:.06em">Car Model</th>
-                    <th class="fw-bold text-uppercase text-secondary py-2" style="font-size:.68rem;letter-spacing:.06em">Track</th>
-                    <th class="fw-bold text-uppercase text-secondary py-2 text-end" style="font-size:.68rem;letter-spacing:.06em">Ballast</th>
-                    <th class="fw-bold text-uppercase text-secondary py-2 text-end" style="font-size:.68rem;letter-spacing:.06em">Restrictor</th>
-                    <th class="fw-bold text-uppercase text-secondary py-2 d-none d-md-table-cell" style="font-size:.68rem;letter-spacing:.06em">Notes</th>
-                    <th style="width:90px"></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($gameBops as $bop)
-                <tr style="border-bottom:1px solid #f9fafb">
-                    <td class="fw-bold text-dark">{{ $bop->car_model }}</td>
-                    <td class="text-secondary">{{ $bop->track ?? 'All tracks' }}</td>
-                    <td class="text-end fw-bold" style="color:{{ $bop->ballast_kg > 0 ? '#ef4444' : ($bop->ballast_kg < 0 ? '#10b981' : '#374151') }}">
-                        {{ $bop->ballast_kg > 0 ? '+' : '' }}{{ $bop->ballast_kg }} kg
-                    </td>
-                    <td class="text-end text-secondary">{{ $bop->restrictor > 0 ? $bop->restrictor . '%' : '—' }}</td>
-                    <td class="text-secondary d-none d-md-table-cell" style="max-width:200px">
-                        <span class="text-truncate d-block">{{ $bop->notes ?? '—' }}</span>
-                    </td>
-                    <td class="text-end pe-2">
-                        <div class="d-flex gap-1 justify-content-end">
-                            <a href="{{ route('admin.bops.edit', $bop) }}"
-                               class="btn btn-xs btn-outline-secondary fw-bold" style="font-size:.7rem;padding:2px 8px">Edit</a>
-                            <form method="POST" action="{{ route('admin.bops.destroy', $bop) }}"
-                                  onsubmit="return confirm('Delete this BOP entry?')">
-                                @csrf @method('DELETE')
-                                <button class="btn btn-xs btn-outline-danger fw-bold" style="font-size:.7rem;padding:2px 8px">Del</button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+    <div x-show="open" x-transition>
+        @if($gameBops->isEmpty())
+        <p class="text-secondary mb-0 px-4 py-3" style="font-size:.82rem">No BOP entries for {{ $gameLabel }} yet.</p>
+        @else
+        <div class="table-responsive">
+            <table class="table align-middle mb-0" style="font-size:.83rem">
+                <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
+                    <tr>
+                        <th class="fw-bold text-uppercase text-secondary py-2" style="font-size:.68rem;letter-spacing:.06em">Car Model</th>
+                        <th class="fw-bold text-uppercase text-secondary py-2 d-none d-sm-table-cell" style="font-size:.68rem;letter-spacing:.06em">Track</th>
+                        <th class="fw-bold text-uppercase text-secondary py-2 text-end" style="font-size:.68rem;letter-spacing:.06em">Ballast</th>
+                        <th class="fw-bold text-uppercase text-secondary py-2 text-end d-none d-sm-table-cell" style="font-size:.68rem;letter-spacing:.06em">Restr.</th>
+                        <th class="fw-bold text-uppercase text-secondary py-2 d-none d-md-table-cell" style="font-size:.68rem;letter-spacing:.06em">Notes</th>
+                        <th style="width:100px"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($gameBops as $bop)
+                    <tr style="border-bottom:1px solid #f9fafb;opacity:{{ $bop->active ? '1' : '.45' }}">
+                        <td class="fw-bold" style="color:{{ $bop->active ? '#111827' : '#9ca3af' }}">
+                            {{ $bop->car_model }}
+                            @if(!$bop->active)
+                            <span class="badge ms-1 fw-bold" style="background:#f3f4f6;color:#9ca3af;font-size:.6rem;padding:2px 6px;border-radius:4px">off</span>
+                            @endif
+                        </td>
+                        <td class="text-secondary d-none d-sm-table-cell">{{ $bop->track ?? 'All tracks' }}</td>
+                        <td class="text-end fw-bold" style="color:{{ $bop->ballast_kg > 0 ? '#ef4444' : ($bop->ballast_kg < 0 ? '#10b981' : '#374151') }}">
+                            {{ $bop->ballast_kg > 0 ? '+' : '' }}{{ $bop->ballast_kg }} kg
+                        </td>
+                        <td class="text-end text-secondary d-none d-sm-table-cell">{{ $bop->restrictor > 0 ? $bop->restrictor . '%' : '—' }}</td>
+                        <td class="text-secondary d-none d-md-table-cell" style="max-width:200px">
+                            <span class="text-truncate d-block">{{ $bop->notes ?? '—' }}</span>
+                        </td>
+                        <td class="text-end pe-2">
+                            <div class="d-flex gap-1 justify-content-end flex-wrap align-items-center">
+                                <a href="{{ route('admin.bops.edit', $bop) }}"
+                                   class="btn btn-xs btn-outline-secondary fw-bold" style="font-size:.7rem;padding:2px 8px">Edit</a>
+                                <form method="POST" action="{{ route('admin.bops.toggle', $bop) }}">
+                                    @csrf
+                                    <button type="submit" class="btn btn-xs fw-bold" style="font-size:.7rem;padding:2px 8px;{{ $bop->active ? 'background:#fef3c7;color:#92400e;border:1px solid #fde68a' : 'background:#d1fae5;color:#065f46;border:1px solid #6ee7b7' }}">
+                                        {{ $bop->active ? 'Off' : 'On' }}
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
     </div>
-    @endif
+
 </div>
 @endforeach
 
