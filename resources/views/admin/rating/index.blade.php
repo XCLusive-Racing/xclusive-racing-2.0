@@ -65,8 +65,8 @@ $rFactorParams = [
                 <tr>
                     <th class="fw-bold text-uppercase ps-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:200px">Parameter</th>
                     <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:180px">Value</th>
-                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Description</th>
-                    <th class="fw-bold text-uppercase pe-4 text-end" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:120px"></th>
+                    <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Description</th>
+                    <th class="fw-bold text-uppercase pe-4 text-end d-none d-lg-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:120px"></th>
                 </tr>
             </thead>
             <tbody>
@@ -103,8 +103,8 @@ $rFactorParams = [
                         </div>
                         <div x-show="error" x-text="error" style="font-size:.72rem;color:#dc2626;margin-top:3px"></div>
                     </td>
-                    <td class="text-secondary" style="font-size:.8rem">{{ $meta['desc'] }}</td>
-                    <td class="pe-4 text-end">
+                    <td class="text-secondary d-none d-md-table-cell" style="font-size:.8rem">{{ $meta['desc'] }}</td>
+                    <td class="pe-4 text-end d-none d-lg-table-cell">
                         <span style="background:#fef3c7;color:#92400e;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:4px">adjustable</span>
                     </td>
                 </tr>
@@ -125,8 +125,8 @@ $rFactorParams = [
                 <tr>
                     <th class="fw-bold text-uppercase ps-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:200px">Parameter</th>
                     <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:180px">Value</th>
-                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Description</th>
-                    <th class="fw-bold text-uppercase pe-4 text-end" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:120px"></th>
+                    <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Description</th>
+                    <th class="fw-bold text-uppercase pe-4 text-end d-none d-lg-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:120px"></th>
                 </tr>
             </thead>
             <tbody>
@@ -162,8 +162,8 @@ $rFactorParams = [
                         </div>
                         <div x-show="error" x-text="error" style="font-size:.72rem;color:#dc2626;margin-top:3px"></div>
                     </td>
-                    <td class="text-secondary" style="font-size:.8rem">{{ $meta['desc'] }}</td>
-                    <td class="pe-4 text-end">
+                    <td class="text-secondary d-none d-md-table-cell" style="font-size:.8rem">{{ $meta['desc'] }}</td>
+                    <td class="pe-4 text-end d-none d-lg-table-cell">
                         <span style="background:#fef3c7;color:#92400e;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:4px">adjustable</span>
                     </td>
                 </tr>
@@ -178,10 +178,10 @@ $rFactorParams = [
                         <span class="fw-bold text-secondary" style="font-size:.95rem">{{ round(($rHigh - $rLow) / (36 - 1), 4) }}</span>
                         <span class="text-secondary" style="font-size:.75rem"> @ 36 drivers</span>
                     </td>
-                    <td class="text-secondary" style="font-size:.8rem">
+                    <td class="text-secondary d-none d-md-table-cell" style="font-size:.8rem">
                         = (R_HIGH – R_LOW) / (n_finishers – 1). With 36 drivers: ({{ $rHigh }} – {{ $rLow }}) / 35 = {{ round(($rHigh - $rLow) / 35, 4) }} per position.
                     </td>
-                    <td class="pe-4 text-end">
+                    <td class="pe-4 text-end d-none d-lg-table-cell">
                         <span style="background:#d1fae5;color:#065f46;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:4px">automatic</span>
                     </td>
                 </tr>
@@ -225,8 +225,8 @@ $rFactorParams = [
                 <tr>
                     <th class="fw-bold text-uppercase ps-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:220px">Parameter</th>
                     <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:180px">Value</th>
-                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Description</th>
-                    <th style="width:120px"></th>
+                    <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Description</th>
+                    <th class="d-none d-lg-table-cell" style="width:120px"></th>
                 </tr>
             </thead>
             <tbody>
@@ -244,8 +244,8 @@ $rFactorParams = [
                         </div>
                         <div x-show="error" x-text="error" style="font-size:.72rem;color:#dc2626;margin-top:3px"></div>
                     </td>
-                    <td class="text-secondary" style="font-size:.8rem">{{ $meta['desc'] }}</td>
-                    <td class="pe-4 text-end"><span style="background:#fef3c7;color:#92400e;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:4px">adjustable</span></td>
+                    <td class="text-secondary d-none d-md-table-cell" style="font-size:.8rem">{{ $meta['desc'] }}</td>
+                    <td class="pe-4 text-end d-none d-lg-table-cell"><span style="background:#fef3c7;color:#92400e;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:4px">adjustable</span></td>
                 </tr>
                 @endforeach
             </tbody>
@@ -264,8 +264,8 @@ $rFactorParams = [
                 <tr>
                     <th class="fw-bold text-uppercase ps-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:220px">Parameter</th>
                     <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:180px">Value</th>
-                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Description</th>
-                    <th style="width:120px"></th>
+                    <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Description</th>
+                    <th class="d-none d-lg-table-cell" style="width:120px"></th>
                 </tr>
             </thead>
             <tbody>
@@ -283,8 +283,8 @@ $rFactorParams = [
                         </div>
                         <div x-show="error" x-text="error" style="font-size:.72rem;color:#dc2626;margin-top:3px"></div>
                     </td>
-                    <td class="text-secondary" style="font-size:.8rem">{{ $meta['desc'] }}</td>
-                    <td class="pe-4 text-end"><span style="background:#fef3c7;color:#92400e;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:4px">adjustable</span></td>
+                    <td class="text-secondary d-none d-md-table-cell" style="font-size:.8rem">{{ $meta['desc'] }}</td>
+                    <td class="pe-4 text-end d-none d-lg-table-cell"><span style="background:#fef3c7;color:#92400e;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:4px">adjustable</span></td>
                 </tr>
                 @endforeach
             </tbody>

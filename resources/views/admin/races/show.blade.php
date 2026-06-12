@@ -18,7 +18,7 @@
 
 {{-- Event header strip --}}
 <div class="admin-card mb-4 p-0 overflow-hidden">
-    <div class="d-flex align-items-center flex-wrap">
+    <div class="d-flex align-items-center overflow-x-auto flex-nowrap" style="overflow-x:auto">
         <div class="p-4" style="border-right:1px solid #f3f4f6;min-width:60px">
             <span class="badge text-white fw-bold d-inline-block"
                   style="background:{{ $race->gameColor() }};font-size:.72rem;padding:4px 10px;border-radius:6px">

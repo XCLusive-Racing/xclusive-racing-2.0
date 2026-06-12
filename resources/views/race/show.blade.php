@@ -80,7 +80,7 @@
         <div class="row g-4">
 
             {{-- Left: info + results --}}
-            <div class="col-lg-8">
+            <div class="col-12 col-lg-8">
 
                 {{-- Description --}}
                 @if($race->description)
@@ -142,7 +142,7 @@
             </div>
 
             {{-- Right: sidebar --}}
-            <div class="col-lg-4">
+            <div class="col-12 col-lg-4">
 
                 {{-- Registration --}}
                 @if($race->status !== 'finished')

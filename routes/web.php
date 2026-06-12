@@ -154,6 +154,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/bops/{bop}', [AdminBopController::class, 'destroy'])->name('bops.destroy');
     Route::post('/bops/import', [AdminBopController::class, 'import'])->name('bops.import');
     Route::post('/bops/push', [AdminBopController::class, 'pushBop'])->name('bops.push');
+    Route::post('/bops/toggle-all', [AdminBopController::class, 'toggleAll'])->name('bops.toggle-all');
+    Route::post('/bops/toggle-game', [AdminBopController::class, 'toggleGame'])->name('bops.toggle-game');
+    Route::post('/bops/{bop}/toggle', [AdminBopController::class, 'toggle'])->name('bops.toggle');
 
     // Reports
     Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');

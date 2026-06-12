@@ -69,6 +69,28 @@ class BopController extends Controller
         return redirect()->route('admin.bops.index')->with('success', 'BOP entry deleted.');
     }
 
+    public function toggle(Bop $bop)
+    {
+        $bop->update(['active' => !$bop->active]);
+        return back()->with('success', $bop->car_model . ' marked as ' . ($bop->active ? 'active' : 'inactive') . '.');
+    }
+
+    public function toggleGame(Request $request)
+    {
+        $request->validate(['game' => 'required|in:acc,lmu,iracing,ac', 'active' => 'required|boolean']);
+        Bop::where('game', $request->game)->update(['active' => $request->boolean('active')]);
+        $label = $request->boolean('active') ? 'activated' : 'deactivated';
+        return back()->with('success', (Bop::games()[$request->game] ?? $request->game) . ' BOPs ' . $label . '.');
+    }
+
+    public function toggleAll(Request $request)
+    {
+        $request->validate(['active' => 'required|boolean']);
+        Bop::query()->update(['active' => $request->boolean('active')]);
+        $label = $request->boolean('active') ? 'activated' : 'deactivated';
+        return back()->with('success', 'All BOPs ' . $label . '.');
+    }
+
     public function pushBop(Request $request, AccServerConfigService $config)
     {
         $request->validate([
@@ -77,7 +99,7 @@ class BopController extends Controller
         ]);
 
         $game   = $request->input('game');
-        $count  = Bop::where('game', $game)->count();
+        $count  = Bop::where('game', $game)->where('active', true)->count();
 
         if ($count === 0) {
             return back()->with('push_error', 'No BOP entries found for ' . strtoupper($game) . '.');

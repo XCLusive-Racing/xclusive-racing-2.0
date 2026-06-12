@@ -40,11 +40,12 @@
 
     {{-- Day headers --}}
     <div class="d-grid" style="grid-template-columns:repeat(7,1fr);border-bottom:1px solid #e5e7eb">
-        @foreach(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] as $dayLabel)
-        <div class="text-center py-3 fw-black text-uppercase"
+        @foreach([['Mon','M'],['Tue','T'],['Wed','W'],['Thu','T'],['Fri','F'],['Sat','S'],['Sun','S']] as [$full,$short])
+        <div class="xcl-cal-day-label text-center py-3 fw-black text-uppercase"
              style="font-size:.68rem;letter-spacing:.08em;color:#9ca3af;
                     border-right:{{ $loop->last ? 'none' : '1px solid #f3f4f6' }}">
-            {{ $dayLabel }}
+            <span class="d-none d-sm-inline">{{ $full }}</span>
+            <span class="d-sm-none">{{ $short }}</span>
         </div>
         @endforeach
     </div>
@@ -69,7 +70,7 @@
             $cursor->addDay();
         @endphp
 
-        <div style="min-height:110px;
+        <div class="xcl-cal-day" style="min-height:110px;
                     border-right:{{ $d === 6       ? 'none' : '1px solid #f3f4f6' }};
                     border-bottom:{{ $w === $weeks-1 ? 'none' : '1px solid #f3f4f6' }};
                     background:{{ !$isThisMonth ? '#fafafa' : 'white' }};
@@ -78,12 +79,12 @@
             {{-- Day number + quick-add button --}}
             <div class="d-flex align-items-center justify-content-between mb-1">
                 @if($isToday)
-                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle text-white fw-black"
+                    <span class="xcl-cal-daynr d-inline-flex align-items-center justify-content-center rounded-circle text-white fw-black"
                           style="width:24px;height:24px;font-size:.75rem;background:#7c3aed;flex-shrink:0">
                         {{ $day->day }}
                     </span>
                 @else
-                    <span class="fw-bold" style="font-size:.78rem;color:{{ $isThisMonth ? '#111827' : '#d1d5db' }};line-height:24px;padding:0 2px">
+                    <span class="xcl-cal-daynr fw-bold" style="font-size:.78rem;color:{{ $isThisMonth ? '#111827' : '#d1d5db' }};line-height:24px;padding:0 2px">
                         {{ $day->day }}
                     </span>
                 @endif

@@ -145,8 +145,8 @@ function ftpFileSize(?int $bytes): string {
                 <tr>
                     <th class="ps-4" style="width:32px"></th>
                     <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Name</th>
-                    <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Size</th>
-                    <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:155px">Modified</th>
+                    <th class="fw-bold text-uppercase d-none d-sm-table-cell" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Size</th>
+                    <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:155px">Modified</th>
                     <th style="width:48px"></th>
                 </tr>
             </thead>
@@ -201,12 +201,12 @@ function ftpFileSize(?int $bytes): string {
                     </td>
 
                     {{-- Size --}}
-                    <td style="font-size:.75rem;color:#6b7280;font-family:monospace">
+                    <td class="d-none d-sm-table-cell" style="font-size:.75rem;color:#6b7280;font-family:monospace">
                         {{ $isDir ? '—' : ftpFileSize($entry['size']) }}
                     </td>
 
                     {{-- Modified --}}
-                    <td style="font-size:.75rem;color:#6b7280">{{ $entry['modified'] ?? '—' }}</td>
+                    <td class="d-none d-md-table-cell" style="font-size:.75rem;color:#6b7280">{{ $entry['modified'] ?? '—' }}</td>
 
                     {{-- Kebab menu --}}
                     <td class="pe-3 text-end" x-data="{ open: false }" @click.outside="open = false" style="position:relative">
