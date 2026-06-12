@@ -1,44 +1,65 @@
-<div class="xcl-topbar d-flex align-items-center justify-content-start gap-3 px-4">
-    <span class="xcl-topbar-label">PLAY ON</span>
+<div class="xcl-topbar d-flex align-items-center justify-content-between px-4">
+    {{-- Desktop: PLAY ON + game badges --}}
+    <div class="d-none d-md-flex align-items-center gap-3">
+        <span class="xcl-topbar-label">PLAY ON</span>
 
-    <a href="https://www.assettocorsa.net/competizione/" target="_blank"
-       class="xcl-game-badge xcl-game-acc" title="Assetto Corsa Competizione">
-        <span class="xcl-badge-default">
-            <img src="/images/home/icons/ACC_logo.png" class="xcl-badge-icon" alt="ACC">
-            ACC
-        </span>
-        <img src="/images/home/logos/ACC-logo.png" class="xcl-badge-hover" alt="ACC">
-    </a>
+        <a href="https://www.assettocorsa.net/competizione/" target="_blank"
+           class="xcl-game-badge xcl-game-acc" title="Assetto Corsa Competizione">
+            <span class="xcl-badge-default">
+                <img src="/images/home/icons/ACC_logo.png" class="xcl-badge-icon" alt="ACC">
+                ACC
+            </span>
+            <img src="/images/home/logos/ACC-logo.png" class="xcl-badge-hover" alt="ACC">
+        </a>
 
-    <a href="https://www.lemansultimate.com/" target="_blank"
-       class="xcl-game-badge xcl-game-lmu" title="Le Mans Ultimate">
-        <span class="xcl-badge-default">
-            <img src="/images/home/icons/LMU_Logo.png" class="xcl-badge-icon" alt="LMU">
-            LMU
-        </span>
-        <img src="/images/home/logos/LeMans-Logo.png" class="xcl-badge-hover" alt="Le Mans Ultimate">
-    </a>
+        <a href="https://www.lemansultimate.com/" target="_blank"
+           class="xcl-game-badge xcl-game-lmu" title="Le Mans Ultimate">
+            <span class="xcl-badge-default">
+                <img src="/images/home/icons/LMU_Logo.png" class="xcl-badge-icon" alt="LMU">
+                LMU
+            </span>
+            <img src="/images/home/logos/LeMans-Logo.png" class="xcl-badge-hover" alt="Le Mans Ultimate">
+        </a>
 
-    <a href="https://www.iracing.com/" target="_blank"
-       class="xcl-game-badge xcl-game-iracing" title="iRacing">
-        <span class="xcl-badge-default">
-            <img src="/images/home/icons/Iracing_logo.png" class="xcl-badge-icon" alt="iRacing">
-            iRACING
-        </span>
-        <img src="/images/home/logos/iracing-logo-white.png" class="xcl-badge-hover" alt="iRacing">
-    </a>
+        <a href="https://www.iracing.com/" target="_blank"
+           class="xcl-game-badge xcl-game-iracing" title="iRacing">
+            <span class="xcl-badge-default">
+                <img src="/images/home/icons/Iracing_logo.png" class="xcl-badge-icon" alt="iRacing">
+                iRACING
+            </span>
+            <img src="/images/home/logos/iracing-logo-white.png" class="xcl-badge-hover" alt="iRacing">
+        </a>
 
-    <a href="#" class="xcl-game-badge xcl-game-acrally" title="AC Rally">
-        <span class="xcl-badge-default">
-            <img src="/images/home/icons/AC_rally_logo.png" class="xcl-badge-icon" alt="AC Rally">
-            AC RALLY
-        </span>
-        <img src="/images/home/logos/ACRally-logo.png" class="xcl-badge-hover" alt="AC Rally">
-    </a>
+        <a href="#" class="xcl-game-badge xcl-game-acrally" title="AC Rally">
+            <span class="xcl-badge-default">
+                <img src="/images/home/icons/AC_rally_logo.png" class="xcl-badge-icon" alt="AC Rally">
+                AC RALLY
+            </span>
+            <img src="/images/home/logos/ACRally-logo.png" class="xcl-badge-hover" alt="AC Rally">
+        </a>
+    </div>
+
+    <div class="d-flex d-md-none align-items-center">
+        @auth
+            <a href="{{ route('profile') }}"
+               class="d-flex align-items-center gap-1 text-decoration-none fw-bold text-white"
+               style="font-size:.72rem;letter-spacing:.04em;opacity:.85">
+                <img src="/images/home/brand/xclusive_racing_logo_lion.png"
+                     alt="" width="16" height="16" style="object-fit:contain;opacity:.8">
+                MY PROFILE
+            </a>
+        @else
+            <a href="{{ route('login') }}"
+               class="btn btn-sm fw-bold text-uppercase text-white rounded-1 px-3"
+               style="background:rgba(124,58,237,.8);font-size:.7rem;padding-top:2px;padding-bottom:2px">
+                SIGN IN
+            </a>
+        @endauth
+    </div>
 </div>
 
 <nav class="navbar navbar-xcl navbar-expand-md fixed-top" x-data="{ open: false }">
-    <div class="container-fluid px-5 align-content-center">
+    <div class="container-fluid px-3 px-md-5 align-content-center">
         <a class="navbar-brand" href="{{ url('/') }}">
             <img src="/images/home/brand/xclusive_racing_logo.png" alt="XCLusive" height="40">
         </a>
@@ -90,7 +111,7 @@
                 </li>
             </ul>
 
-            <div class="d-flex align-items-center gap-3">
+            <div class="d-none d-md-flex align-items-center gap-3">
                 <a href="{{ config('xcl.discord_url') }}" target="_blank"
                    class="btn btn-sm fw-bold text-white d-none d-md-inline-flex bg-xcl-purple">JOIN DISCORD</a>
 

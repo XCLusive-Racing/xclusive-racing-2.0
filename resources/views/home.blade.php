@@ -22,15 +22,15 @@
                            class="btn fw-black text-uppercase text-white px-5 py-3 fs-5"
                            style="background:#7c3aed;">MY PROFILE</a>
                         <a href="{{ route('events.index') }}"
-                           class="btn fw-black text-uppercase py-3 fs-5"
-                           style="border:2px solid rgba(255,255,255,.3);color:white;width:180px;">SEE EVENTS</a>
+                           class="btn fw-black text-uppercase px-5 py-3 fs-5"
+                           style="border:2px solid rgba(255,255,255,.3);color:white;">SEE EVENTS</a>
                     @else
                         <a href="{{ route('register') }}"
-                           class="btn fw-black text-uppercase text-white py-3 fs-5"
-                           style="background:#7c3aed;width:180px;">JOIN NOW</a>
+                           class="btn fw-black text-uppercase text-white px-5 py-3 fs-5"
+                           style="background:#7c3aed;">JOIN NOW</a>
                         <a href="#"
-                           class="btn fw-black text-uppercase py-3 fs-5"
-                           style="border:2px solid rgba(255,255,255,.3);color:white;width:180px;"
+                           class="btn fw-black text-uppercase px-5 py-3 fs-5"
+                           style="border:2px solid rgba(255,255,255,.3);color:white;"
                            onclick="event.preventDefault();window.dispatchEvent(new CustomEvent('open-events-sidebar'))">SEE EVENTS</a>
                     @endauth
                 </div>

@@ -25,12 +25,12 @@
         <div class="row g-4">
 
             {{-- Race selector --}}
-            <div class="col-lg-3">
+            <div class="col-12 col-md-4 col-lg-3">
                 <div class="bg-white rounded-3 shadow-sm overflow-hidden">
                     <div class="px-3 py-2 border-bottom" style="background:#fafafa">
                         <span style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af">Events</span>
                     </div>
-                    <div style="max-height:480px;overflow-y:auto">
+                    <div class="results-race-list">
                         @foreach($races as $race)
                         @php $isActive = $selected?->id === $race->id; @endphp
                         <a href="{{ route('results.index', ['race' => $race->id]) }}"
@@ -49,7 +49,7 @@
             </div>
 
             {{-- Results panel --}}
-            <div class="col-lg-9">
+            <div class="col-12 col-md-8 col-lg-9">
                 @if($selected)
                 <div x-data="{ tab: 'race' }">
 

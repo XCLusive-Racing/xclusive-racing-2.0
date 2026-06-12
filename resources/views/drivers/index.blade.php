@@ -24,12 +24,12 @@ $classMeta = [
                 <h1 class="display-6 fw-black text-uppercase fst-italic text-dark mb-1">Leaderboard</h1>
                 <p class="text-secondary mb-0">{{ number_format($drivers->total()) }} drivers ranked · {{ $gameInfo['label'] }}</p>
             </div>
-            <form method="GET" action="{{ route('drivers.index') }}" class="d-flex gap-2">
+            <form method="GET" action="{{ route('drivers.index') }}" class="d-flex gap-2 xcl-search-form">
                 <input type="hidden" name="game" value="{{ $game }}">
                 <input type="text" name="q" value="{{ request('q') }}"
                        placeholder="Search name or gamertag…"
-                       class="form-control form-control-sm"
-                       style="width:220px;border-color:#e5e7eb;font-size:.85rem">
+                       class="form-control form-control-sm flex-fill"
+                       style="border-color:#e5e7eb;font-size:.85rem;min-width:0">
                 <button class="btn btn-sm fw-bold text-white px-3" style="background:#7c3aed">Search</button>
                 @if(request('q'))
                 <a href="{{ route('drivers.index', ['game' => $game]) }}" class="btn btn-sm btn-outline-secondary">Clear</a>

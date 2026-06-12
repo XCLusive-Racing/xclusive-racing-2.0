@@ -38,10 +38,11 @@ foreach ($sbGames as $game => $col) {
 
 <script>window.__xclLeaderboards = @json($sbLeaderboards);</script>
 
-<div x-data="eventsSidebar()" @keydown.escape.window="open = false" @open-events-sidebar.window="open = true">
+<div x-data="{ ...eventsSidebar(), navbarOpen: false }" @keydown.escape.window="open = false" @open-events-sidebar.window="open = true" @navbar-toggled.window="navbarOpen = $event.detail.open; if($event.detail.open) open = false">
 
     {{-- ── Trigger tab ──────────────────────────────────────────────────────── --}}
     <button
+        x-show="!navbarOpen"
         class="xcl-sidebar-trigger"
         :class="{ 'xcl-sidebar-trigger--open': open }"
         @click="open = !open"

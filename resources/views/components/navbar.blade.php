@@ -3,13 +3,13 @@
     <div class="navbar-xcl__topo" style="background-image:url('/topo.png');"></div>
     <div class="container-fluid px-5 align-content-center">
 
-        {{-- Brand: XCLusive Racing logo --}}
-        <a class="navbar-brand" href="{{ url('/') }}">
+        {{-- Brand: XCLusive Racing logo (verborgen op mobiel) --}}
+        <a class="navbar-brand d-none d-md-block" href="{{ url('/') }}">
             <img src="/images/home/brand/xclusive_racing_logo.png" alt="XCLusive" height="40">
         </a>
 
         {{-- Hamburger knop voor mobiele weergave --}}
-        <button class="navbar-toggler border-0" type="button" @click="open = !open"
+        <button class="navbar-toggler border-0" type="button" @click="open = !open; $dispatch('navbar-toggled', { open: open })"
                 aria-label="Toggle navigation">
             <svg width="24" height="24" fill="none" stroke="#7c3aed"
                  stroke-width="2" viewBox="0 0 24 24">
@@ -20,8 +20,28 @@
 
         <div class="collapse navbar-collapse" :class="{ 'show': open }">
 
+            {{-- Mobiel: Profile + Admin bovenaan het hamburger menu --}}
+            @auth
+            <div class="d-flex d-md-none align-items-center gap-2 py-2 mb-1 border-bottom border-secondary-subtle">
+                <a href="{{ route('profile') }}"
+                   class="d-flex align-items-center gap-2 text-decoration-none fw-bold text-xcl-purple">
+                    <x-rank-avatar :user="auth()->user()" :size="28" :badge="false" />
+                    PROFILE
+                </a>
+                @if(auth()->user()->canManage())
+                <a href="{{ route('admin.races.index') }}"
+                   class="btn btn-sm fw-bold text-uppercase text-white bg-xcl-purple ms-auto">
+                    ADMIN
+                </a>
+                @endif
+            </div>
+            @endauth
+
             {{-- Navigatielinks gecentreerd in de balk --}}
             <ul class="navbar-nav mx-auto gap-md-4">
+                <li class="nav-item d-md-none">
+                    <a class="nav-link" href="{{ url('/') }}">HOME</a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url('/#about') }}">ABOUT</a>
                 </li>
@@ -56,36 +76,16 @@
                         x-transition:leave-end="opacity-0"
                         @click="dd = false"
                         class="xcl-dropdown">
-                        <li>
-                            <a class="xcl-dropdown-item" href="{{ route('drivers.index') }}">
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                                LEADERBOARD
-                            </a>
-                        </li>
-                        <li>
-                            <a class="xcl-dropdown-item" href="{{ route('results.index') }}">
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                                RESULTS
-                            </a>
-                        </li>
-                        <li>
-                            <a class="xcl-dropdown-item" href="{{ route('bop.index') }}">
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
-                                BOPs
-                            </a>
-                        </li>
-                        <li>
-                            <a class="xcl-dropdown-item" href="{{ route('reports.index') }}">
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                REPORTS
-                            </a>
-                        </li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('drivers.index') }}">LEADERBOARD</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('results.index') }}">RESULTS</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('bop.index') }}">BOPs</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('reports.index') }}">REPORTS</a></li>
                     </ul>
                 </li>
             </ul>
 
-            {{-- Rechts: Discord knop + authenticatie --}}
-            <div class="d-flex align-items-center gap-3">
+            {{-- Rechts: Discord knop + authenticatie (alleen desktop) --}}
+            <div class="d-none d-md-flex align-items-center gap-3">
 
                 {{-- Discord knop --}}
                 <a href="{{ config('xcl.discord_url') }}" target="_blank"

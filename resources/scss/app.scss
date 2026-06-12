@@ -1348,15 +1348,14 @@ html {
 }
 
 @keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50%       { transform: translateY(10px); }
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50%       { transform: translateX(-50%) translateY(10px); }
 }
 
 .hero-scroll-indicator {
     position: absolute;
     bottom: 78px;
     left: 50%;
-    transform: translateX(-50%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3057,6 +3056,74 @@ body.admin-body {
     // Hero heading kleiner
     .hero-home__heading {
         font-size: 3rem;
+    }
+
+    // Navbar: minder padding op small screens
+    .navbar-xcl .container-fluid {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    // Racing dropdown: inline flow op mobiel (geen absolute positionering)
+    .xcl-dropdown {
+        position: static;
+        transform: none;
+        box-shadow: none;
+        border: none;
+        border-left: 2px solid rgba(124, 58, 237, .4);
+        border-radius: 0;
+        background: rgba(124, 58, 237, .05);
+        padding: 4px 0;
+        margin-top: 4px;
+        margin-left: 8px;
+
+        &::before { display: none; }
+    }
+
+    // Race selector max-height kleiner op mobiel
+    .results-race-list {
+        max-height: 220px;
+        overflow-y: auto;
+    }
+
+    // Leaderboard search form: volledige breedte op mobiel
+    .xcl-search-form {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+}
+
+// ─── Tablet responsive overrides (768px – 991px) ─────────────────────────────
+@media (min-width: 768px) and (max-width: 991px) {
+    .results-race-list {
+        max-height: 380px;
+        overflow-y: auto;
+    }
+}
+
+// ─── Desktop (992px+) race list ───────────────────────────────────────────────
+@media (min-width: 992px) {
+    .results-race-list {
+        max-height: 480px;
+        overflow-y: auto;
+    }
+}
+
+// ─── XS (<480px) extra tweaks ─────────────────────────────────────────────────
+@media (max-width: 480px) {
+    .hero-home__sub {
+        font-size: .9rem;
+    }
+
+    .hero-home__heading {
+        font-size: 2.5rem;
+    }
+
+    // Merch & partners sections: minder padding
+    .merch-section .merch-cta,
+    .partners-section .container-xl {
+        padding-left: 1.25rem !important;
+        padding-right: 1.25rem !important;
     }
 }
 
