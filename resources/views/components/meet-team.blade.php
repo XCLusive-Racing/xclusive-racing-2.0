@@ -17,6 +17,7 @@
         <div class="d-flex justify-content-center gap-2 mb-4 flex-wrap">
             @foreach([
                 ['all',     'ALL'],
+                ['pro',     'PRO'],
                 ['lmu',     'LMU'],
                 ['acc',     'ACC'],
                 ['iracing', 'IRACING'],
@@ -34,11 +35,11 @@
         {{-- ── Driver Cards Grid ────────────────────────────────────────────────── --}}
         <div class="row row-cols-2 row-cols-md-5 g-3 mb-4">
 
-            {{-- 1. W. Gigé — LMU / PC / France --}}
+            {{-- 1. Wilson Gigé — LMU / PC / France --}}
             <div class="col" x-show="filter === 'all' || filter === 'lmu'" x-transition>
                 <div class="mt-driver-card">
                     <div class="mt-driver-portrait">
-                        <img src="/images/drivers/W.Gige.png" alt="W. Gigé"
+                        <img src="/images/drivers/W.Gige.png" alt="Wilson Gigé"
                              style="width:100%;height:100%;object-fit:cover;object-position:top;">
                         <span class="mt-badge mt-badge--game">LMU</span>
                         <span class="mt-badge mt-badge--platform mt-badge--pc">PC</span>
@@ -49,45 +50,46 @@
                     </div>
                     <div class="mt-driver-info">
                         <div class="mt-driver-name-row">
-                            <span class="mt-driver-name">W. Gigé</span>
+                            <span class="mt-driver-name">Wilson Gigé</span>
                             <img src="/images/flags/flag-france.png" class="mt-driver-flag" alt="France">
                         </div>
-                        <div class="mt-driver-role mt-driver-role--pro">Pro Driver</div>
+                        <div class="mt-driver-role mt-driver-role--esports">Esports Driver</div>
                     </div>
                 </div>
             </div>
 
-            {{-- 2. A. Lucky — LMU / PC / Italy --}}
-            <div class="col" x-show="filter === 'all' || filter === 'lmu'" x-transition>
+            {{-- 3. Mats van Rooijen — Hybrid / Racing Driver / Netherlands --}}
+            <div class="col" x-show="filter === 'all' || filter === 'pro'" x-transition>
                 <div class="mt-driver-card">
                     <div class="mt-driver-portrait">
-                        <img src="/images/drivers/A.Lucky.png" alt="A. Lucky"
+                        <img src="/images/drivers/Mats.png" alt="Mats van Rooijen"
                              style="width:100%;height:100%;object-fit:cover;object-position:top;">
-                        <span class="mt-badge mt-badge--game">LMU</span>
-                        <span class="mt-badge mt-badge--platform mt-badge--pc">PC</span>
+                        <span class="mt-badge mt-badge--game">PRO</span>
+                        <span class="mt-badge mt-badge--platform mt-badge--hybrid">Hybrid</span>
                         <div class="mt-driver-socials">
-                            <a href="#" class="mt-social-link" title="X / Twitter"><i class="fa-brands fa-x-twitter"></i></a>
-                            <a href="#" class="mt-social-link" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                            <a href="https://matsvrooijen.vercel.app/" class="mt-social-link" title="Website" target="_blank" rel="noopener"><i class="fa-solid fa-globe"></i></a>
+                            <a href="https://www.instagram.com/matsvanrooijen_official/" class="mt-social-link" title="Instagram" target="_blank" rel="noopener"><i class="fa-brands fa-instagram"></i></a>
+                            <a href="https://www.linkedin.com/in/mats-van-rooijen-540354314/" class="mt-social-link" title="LinkedIn" target="_blank" rel="noopener"><i class="fa-brands fa-linkedin"></i></a>
                         </div>
                     </div>
                     <div class="mt-driver-info">
                         <div class="mt-driver-name-row">
-                            <span class="mt-driver-name">A. Lucky</span>
-                            <img src="/images/flags/flag-italy.png" class="mt-driver-flag" alt="Italy">
+                            <span class="mt-driver-name">Mats van Rooijen</span>
+                            <img src="/images/flags/flag-netherlands.png" class="mt-driver-flag" alt="Netherlands">
                         </div>
-                        <div class="mt-driver-role mt-driver-role--pro">Pro Driver</div>
+                        <div class="mt-driver-role mt-driver-role--racing">Racing Driver</div>
                     </div>
                 </div>
             </div>
 
-            {{-- 3. J. Farish — ACC / Xbox / GB --}}
+            {{-- 4. James Farish — ACC / Console / GB --}}
             <div class="col" x-show="filter === 'all' || filter === 'acc'" x-transition>
                 <div class="mt-driver-card">
                     <div class="mt-driver-portrait">
-                        <img src="/images/drivers/JamesFarish.png" alt="J. Farish"
+                        <img src="/images/drivers/JamesFarish.png" alt="James Farish"
                              style="width:100%;height:100%;object-fit:cover;object-position:top;">
                         <span class="mt-badge mt-badge--game">ACC</span>
-                        <span class="mt-badge mt-badge--platform mt-badge--xbox">Xbox</span>
+                        <span class="mt-badge mt-badge--platform mt-badge--xbox">Console</span>
                         <div class="mt-driver-socials">
                             <a href="#" class="mt-social-link" title="X / Twitter"><i class="fa-brands fa-x-twitter"></i></a>
                             <a href="#" class="mt-social-link" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
@@ -95,19 +97,19 @@
                     </div>
                     <div class="mt-driver-info">
                         <div class="mt-driver-name-row">
-                            <span class="mt-driver-name">J. Farish</span>
+                            <span class="mt-driver-name">James Farish</span>
                             <img src="/images/flags/flag-united%20kingdom.png" class="mt-driver-flag" alt="Great Britain">
                         </div>
-                        <div class="mt-driver-role mt-driver-role--pro">Pro Driver</div>
+                        <div class="mt-driver-role mt-driver-role--esports">Esports Driver</div>
                     </div>
                 </div>
             </div>
 
-            {{-- 4. P. Soukup — iRacing / PC / US --}}
+            {{-- 5. Parker Soukup — iRacing / PC / US --}}
             <div class="col" x-show="filter === 'all' || filter === 'iracing'" x-transition>
                 <div class="mt-driver-card">
                     <div class="mt-driver-portrait">
-                        <img src="/images/drivers/P.Soukup.png" alt="P. Soukup"
+                        <img src="/images/drivers/P.Soukup.png" alt="Parker Soukup"
                              style="width:100%;height:100%;object-fit:cover;object-position:top;">
                         <span class="mt-badge mt-badge--game">IRACING</span>
                         <span class="mt-badge mt-badge--platform mt-badge--pc">PC</span>
@@ -118,10 +120,10 @@
                     </div>
                     <div class="mt-driver-info">
                         <div class="mt-driver-name-row">
-                            <span class="mt-driver-name">P. Soukup</span>
+                            <span class="mt-driver-name">Parker Soukup</span>
                             <img src="/images/flags/flag-usa.png" class="mt-driver-flag" alt="United States">
                         </div>
-                        <div class="mt-driver-role mt-driver-role--pro">Pro Driver</div>
+                        <div class="mt-driver-role mt-driver-role--esports">Esports Driver</div>
                     </div>
                 </div>
             </div>
@@ -146,16 +148,13 @@
         {{-- ── Role Legend ──────────────────────────────────────────────────────── --}}
         <div class="d-flex justify-content-center flex-wrap gap-4">
             <span class="mt-legend-item">
-                <span class="mt-legend-dot" style="background:#7c3aed;"></span>RACE DRIVERS
+                <span class="mt-legend-dot" style="background:rgba(192,132,252,0.85);"></span>ESPORTS DRIVERS
             </span>
             <span class="mt-legend-item">
-                <span class="mt-legend-dot" style="background:#ec4899;"></span>EVENT MANAGERS
+                <span class="mt-legend-dot" style="background:#d4ee6a;"></span>RACING DRIVERS
             </span>
             <span class="mt-legend-item">
-                <span class="mt-legend-dot" style="background:#3b82f6;"></span>STEWARDS
-            </span>
-            <span class="mt-legend-item">
-                <span class="mt-legend-dot" style="background:#eab308;"></span>XCL STAFF
+                <span class="mt-legend-dot" style="background:#3b82f6;"></span>STAFF
             </span>
         </div>
 

@@ -2777,6 +2777,12 @@ body.admin-body {
         color: #86efac;
         border: 1px solid rgba(22, 163, 74, 0.4);
     }
+
+    &--hybrid {
+        background: rgba(212, 238, 106, 0.15);
+        color: #d4ee6a;
+        border: 1px solid rgba(212, 238, 106, 0.4);
+    }
 }
 
 // Card info
@@ -2807,8 +2813,8 @@ body.admin-body {
 }
 
 .mt-social-link {
-    color: rgba(255, 255, 255, 0.55);
-    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.85rem;
     text-decoration: none;
     transition: color 0.2s ease;
     text-shadow: 0 1px 3px rgba(0,0,0,0.6);
@@ -2826,10 +2832,13 @@ body.admin-body {
 
 .mt-driver-role {
     font-size: 0.72rem;
+    font-weight: 600;
     margin-top: 0.2rem;
 
+    &--esports { color: rgba(192, 132, 252, 0.85); }
+    &--racing  { color: #d4ee6a; font-weight: 700; }
+    &--staff   { color: #3b82f6; font-weight: 700; }
     &--captain { color: #eab308; font-weight: 700; }
-    &--pro     { color: rgba(192, 132, 252, 0.7); }
 }
 
 // +29 more card
