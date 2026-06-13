@@ -1777,6 +1777,21 @@ html {
     overflow: hidden;
 }
 
+// Team category card grid (3-column variant)
+.team-category-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    height: 480px;
+
+    @media (max-width: 767px) {
+        grid-template-columns: 1fr;
+        height: auto;
+
+        .events-platform-card { min-height: 260px; }
+    }
+}
+
 // Platform card grid
 .events-platform-grid {
     display: grid;

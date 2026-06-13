@@ -51,7 +51,7 @@
                     <a class="nav-link" href="{{ url('/#about') }}">ABOUT</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url('/#teams') }}">TEAMS</a>
+                    <a class="nav-link" href="{{ route('team') }}">TEAM</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url('/events') }}">XCL EVENTS</a>

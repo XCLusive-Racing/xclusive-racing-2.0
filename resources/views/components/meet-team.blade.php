@@ -77,7 +77,7 @@
                             <span class="mt-driver-name">Mats van Rooijen</span>
                             <img src="/images/flags/flag-netherlands.png" class="mt-driver-flag" alt="Netherlands">
                         </div>
-                        <div class="mt-driver-role mt-driver-role--racing">Racing Driver</div>
+                        <div class="mt-driver-role mt-driver-role--racing">Professional Driver</div>
                     </div>
                 </div>
             </div>
@@ -151,7 +151,7 @@
                 <span class="mt-legend-dot" style="background:rgba(192,132,252,0.85);"></span>ESPORTS DRIVERS
             </span>
             <span class="mt-legend-item">
-                <span class="mt-legend-dot" style="background:#d4ee6a;"></span>RACING DRIVERS
+                <span class="mt-legend-dot" style="background:#d4ee6a;"></span>PROFESSIONAL DRIVERS
             </span>
             <span class="mt-legend-item">
                 <span class="mt-legend-dot" style="background:#3b82f6;"></span>STAFF
