@@ -12,7 +12,7 @@
 
 @section('content')
 <div class="row justify-content-center">
-<div class="col-xl-8">
+<div class="col-12 col-xl-8">
 
 {{-- User strip --}}
 <div class="admin-card mb-4 p-0 overflow-hidden">
@@ -65,7 +65,9 @@
                         <p class="text-secondary mt-1 mb-0" style="font-size:.75rem">You cannot change your own roles.</p>
                     @else
                         @php $userRoles = old('roles', $user->roles->pluck('slug')->all()); @endphp
-                        <div class="d-flex flex-wrap gap-3 mt-1">
+
+                        {{-- Desktop: checkboxes --}}
+                        <div class="d-none d-md-flex flex-wrap gap-3 mt-1">
                             @foreach($roles as $role)
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="roles[]"
@@ -75,6 +77,21 @@
                                     {{ $role->name }}
                                 </label>
                             </div>
+                            @endforeach
+                        </div>
+
+                        {{-- Mobile: read-only badges + hidden inputs to preserve roles on submit --}}
+                        <div class="d-md-none mt-1">
+                            <div class="d-flex flex-wrap gap-1">
+                                @forelse($user->roles->sortBy('id') as $role)
+                                    <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.78rem;padding:4px 10px;border-radius:6px">{{ $role->name }}</span>
+                                @empty
+                                    <span class="text-secondary" style="font-size:.8rem">No roles assigned</span>
+                                @endforelse
+                            </div>
+                            <p class="text-secondary mt-1 mb-0" style="font-size:.72rem">Role changes available on desktop.</p>
+                            @foreach($userRoles as $roleSlug)
+                                <input type="hidden" name="roles[]" value="{{ $roleSlug }}">
                             @endforeach
                         </div>
                     @endif

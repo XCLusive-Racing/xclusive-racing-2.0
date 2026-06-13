@@ -9,36 +9,17 @@
 
 @section('content')
 
-{{-- Stats --}}
-<div class="row g-3 mb-4">
-    @foreach(['admin'=>['Admins','#db2777','#fce7f3'],'moderator'=>['Moderators','#2563eb','#dbeafe'],'event_manager'=>['Event Managers','#d97706','#fef3c7'],'steward'=>['Stewards','#0891b2','#e0f2fe'],'driver'=>['Drivers','#059669','#d1fae5']] as $slug=>[$label,$color,$bg])
-    <div class="col-sm-6 col-xl">
-        <div class="metric-card" style="padding:1rem">
-            <div class="metric-icon" style="background:{{ $bg }};width:38px;height:38px;min-width:38px">
-                <svg width="18" height="18" fill="none" stroke="{{ $color }}" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                </svg>
-            </div>
-            <div class="overflow-hidden">
-                <div class="metric-value">{{ $users->filter(fn($u) => $u->roles->contains('slug', $slug))->count() }}</div>
-                <div class="metric-label text-truncate">{{ $label }}</div>
-            </div>
-        </div>
-    </div>
-    @endforeach
-</div>
-
 <div class="admin-card">
     <div class="table-responsive">
         <table id="users-table" class="table table-hover align-middle mb-0 w-100" style="font-size:.875rem">
             <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
                 <tr>
                     <th class="fw-bold text-uppercase ps-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Driver</th>
-                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">ID</th>
-                    <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Rating</th>
-                    <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">SR</th>
-                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Team / Quote</th>
-                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Role</th>
+                    <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">ID</th>
+                    <th class="fw-bold text-uppercase text-center d-none d-sm-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Rating</th>
+                    <th class="fw-bold text-uppercase text-center d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">SR</th>
+                    <th class="fw-bold text-uppercase d-none d-lg-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Team / Quote</th>
+                    <th class="fw-bold text-uppercase d-none d-sm-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Role</th>
                     <th class="pe-4" style="min-width:100px"></th>
                 </tr>
             </thead>
@@ -63,7 +44,7 @@
                             </div>
                         </div>
                     </td>
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         @if($user->platform_id)
                             <div class="d-flex align-items-center gap-1">
                                 <span class="badge fw-bold" style="background:#f3f4f6;color:#6b7280;font-size:.65rem;padding:2px 6px">
@@ -75,10 +56,10 @@
                             <span class="text-secondary">—</span>
                         @endif
                     </td>
-                    <td class="text-center fw-bold" style="color:#7c3aed;font-size:.85rem">
+                    <td class="text-center fw-bold d-none d-sm-table-cell" style="color:#7c3aed;font-size:.85rem">
                         {{ $user->elo_acc ?? '—' }}
                     </td>
-                    <td class="text-center fw-bold" style="font-size:.85rem">
+                    <td class="text-center fw-bold d-none d-md-table-cell" style="font-size:.85rem">
                         @if($user->sr_acc)
                             @php $grade = $user->srGrade('acc'); @endphp
                             <span style="color:{{ $grade['color'] }}">{{ number_format($user->sr_acc, 2) }}</span>
@@ -86,8 +67,8 @@
                             <span class="text-secondary">—</span>
                         @endif
                     </td>
-                    <td class="text-secondary" style="font-size:.82rem">{{ $user->team ?? '—' }}</td>
-                    <td>
+                    <td class="text-secondary d-none d-lg-table-cell" style="font-size:.82rem">{{ $user->team ?? '—' }}</td>
+                    <td class="d-none d-sm-table-cell">
                         @php
                             $roleColors = ['owner'=>['#f3e8ff','#7c3aed'],'admin'=>['#fce7f3','#db2777'],'moderator'=>['#dbeafe','#2563eb'],'event_manager'=>['#fef3c7','#d97706'],'steward'=>['#e0f2fe','#0891b2'],'driver'=>['#d1fae5','#059669']];
                         @endphp
@@ -107,16 +88,6 @@
                                style="font-size:.72rem;padding:5px 12px;border-radius:6px">
                                 Edit
                             </a>
-                            @if($user->id !== auth()->id())
-                            <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return false">
-                                @csrf @method('DELETE')
-                                <button type="button" class="btn btn-sm fw-bold text-uppercase"
-                                        style="font-size:.72rem;padding:5px 12px;border-radius:6px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca"
-                                        onclick="xcDeleteSubmit(this.closest('form'), 'Delete {{ addslashes($user->name) }}?', 'This cannot be undone.')">
-                                    Delete
-                                </button>
-                            </form>
-                            @endif
                         </div>
                     </td>
                 </tr>

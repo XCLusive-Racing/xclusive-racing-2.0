@@ -6,7 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Bop extends Model
 {
-    protected $fillable = ['game', 'car_model', 'track', 'ballast_kg', 'restrictor', 'notes'];
+    protected $fillable = ['game', 'car_model', 'track', 'ballast_kg', 'restrictor', 'notes', 'active'];
+
+    protected $casts = ['active' => 'boolean'];
 
     public static function games(): array
     {

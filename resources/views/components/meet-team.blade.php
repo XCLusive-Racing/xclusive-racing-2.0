@@ -33,7 +33,7 @@
         </div>
 
         {{-- ── Driver Cards Grid ────────────────────────────────────────────────── --}}
-        <div class="row row-cols-2 row-cols-md-5 g-3 mb-4">
+        <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3 mb-4">
 
             {{-- 1. Wilson Gigé — LMU / PC / France --}}
             <div class="col" x-show="filter === 'all' || filter === 'lmu'" x-transition>

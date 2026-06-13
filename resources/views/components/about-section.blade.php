@@ -5,7 +5,7 @@
 
         <div class="text-center mb-5">
             <img src="/images/home/brand/xclusive_racing_logo_lion.png"
-                 alt="XCLusive" height="220" class="mb-5 d-block mx-auto" style="margin-top:10px;position:relative;right:15px" loading="lazy">
+                 alt="XCLusive" class="mb-5 d-block mx-auto" style="margin-top:10px;height:clamp(120px,18vw,220px);width:auto" loading="lazy">
             <h2 class="display-4 fw-black text-uppercase fst-italic mb-3 about-section__heading">OUR LEGACY</h2>
             <div class="section-divider"></div>
         </div>

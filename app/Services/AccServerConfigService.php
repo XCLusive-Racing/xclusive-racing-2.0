@@ -132,7 +132,7 @@ class AccServerConfigService
 
     public function bop(string $game = 'acc'): array
     {
-        $entries = Bop::where('game', $game)->orderBy('car_model')->get();
+        $entries = Bop::where('game', $game)->where('active', true)->orderBy('car_model')->get();
 
         $mapped = [];
         foreach ($entries as $bop) {

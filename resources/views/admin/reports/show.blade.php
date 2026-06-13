@@ -18,7 +18,7 @@
 <div class="row g-4">
 
     {{-- Report details --}}
-    <div class="col-lg-7">
+    <div class="col-12 col-lg-7">
         <div class="admin-card">
             <div class="d-flex align-items-center justify-content-between mb-4">
                 <h6 class="fw-black text-uppercase mb-0" style="font-size:.78rem;letter-spacing:.06em">Incident Details</h6>
@@ -68,7 +68,7 @@
     </div>
 
     {{-- Steward action --}}
-    <div class="col-lg-5">
+    <div class="col-12 col-lg-5">
         <div class="admin-card">
             <h6 class="fw-black text-uppercase mb-4" style="font-size:.78rem;letter-spacing:.06em">Steward Decision</h6>
 

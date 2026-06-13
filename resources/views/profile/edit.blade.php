@@ -21,7 +21,7 @@
             <div class="row g-4">
 
                 {{-- LEFT COLUMN --}}
-                <div class="col-lg-6 d-flex flex-column gap-4">
+                <div class="col-12 col-lg-6 d-flex flex-column gap-4">
 
                     {{-- Identity --}}
                     <div class="bg-white rounded-3 shadow-sm p-4">
@@ -113,7 +113,7 @@
                 </div>
 
                 {{-- RIGHT COLUMN --}}
-                <div class="col-lg-6 d-flex flex-column gap-4">
+                <div class="col-12 col-lg-6 d-flex flex-column gap-4">
 
                     {{-- Password --}}
                     <div class="bg-white rounded-3 shadow-sm p-4">

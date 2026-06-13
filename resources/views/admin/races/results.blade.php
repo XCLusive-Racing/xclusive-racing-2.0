@@ -13,20 +13,20 @@
 
 {{-- Race info strip --}}
 <div class="admin-card mb-4 p-0 overflow-hidden">
-    <div class="d-flex align-items-center gap-0 flex-wrap">
-        <div class="p-4" style="border-right:1px solid #f3f4f6;min-width:160px">
+    <div class="d-flex align-items-start flex-wrap">
+        <div class="p-3 p-md-4" style="border-right:1px solid #f3f4f6;min-width:140px;flex:1 1 140px">
             <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af">Race</div>
-            <div class="fw-black text-dark mt-1" style="font-size:.95rem">{{ $race->title }}</div>
+            <div class="fw-black text-dark mt-1" style="font-size:.9rem">{{ $race->title }}</div>
         </div>
-        <div class="p-4" style="border-right:1px solid #f3f4f6;min-width:140px">
+        <div class="p-3 p-md-4 d-none d-sm-block" style="border-right:1px solid #f3f4f6;min-width:120px;flex:1 1 120px">
             <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af">Track</div>
-            <div class="fw-bold text-dark mt-1" style="font-size:.9rem">{{ $race->track }}</div>
+            <div class="fw-bold text-dark mt-1" style="font-size:.85rem">{{ $race->track }}</div>
         </div>
-        <div class="p-4" style="border-right:1px solid #f3f4f6;min-width:180px">
+        <div class="p-3 p-md-4" style="border-right:1px solid #f3f4f6;min-width:140px;flex:1 1 140px">
             <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af">Date</div>
-            <div class="fw-bold text-dark mt-1" style="font-size:.9rem">{{ $race->scheduledAtUk()->format('d M Y · H:i T') }}</div>
+            <div class="fw-bold text-dark mt-1" style="font-size:.82rem">{{ $race->scheduledAtUk()->format('d M Y · H:i') }}</div>
         </div>
-        <div class="p-4">
+        <div class="p-3 p-md-4" style="flex:0 0 auto">
             <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af">Game</div>
             <span class="badge text-white fw-bold mt-1 d-inline-block"
                   style="background:{{ $race->gameColor() }};font-size:.72rem;padding:4px 10px;border-radius:6px">
@@ -157,10 +157,10 @@
                     <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
                         <tr>
                             <th class="fw-bold text-uppercase ps-3" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">File</th>
-                            <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:95px">Session</th>
-                            <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:140px">Date</th>
-                            <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:80px">Size</th>
-                            <th class="fw-bold text-uppercase text-end pe-3" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:130px">Action</th>
+                            <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:80px">Session</th>
+                            <th class="fw-bold text-uppercase d-none d-sm-table-cell" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:130px">Date</th>
+                            <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:80px">Size</th>
+                            <th class="fw-bold text-uppercase text-end pe-3" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:120px">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -185,10 +185,10 @@
                                     <span class="badge" style="background:#f3f4f6;color:#6b7280;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">?</span>
                                 @endif
                             </td>
-                            <td style="font-size:.75rem;color:#6b7280;{{ $dimRow && !$isImported ? 'opacity:.4' : ($isImported ? 'opacity:.45' : '') }}">
+                            <td class="d-none d-sm-table-cell" style="font-size:.75rem;color:#6b7280;{{ $dimRow && !$isImported ? 'opacity:.4' : ($isImported ? 'opacity:.45' : '') }}">
                                 {{ $parsed['date'] !== '—' ? $parsed['date'] : ($file['modified'] ?? '—') }}
                             </td>
-                            <td style="font-size:.75rem;color:#6b7280;font-family:monospace;{{ $dimRow && !$isImported ? 'opacity:.4' : ($isImported ? 'opacity:.45' : '') }}">{{ $sizeKb }}</td>
+                            <td class="d-none d-md-table-cell" style="font-size:.75rem;color:#6b7280;font-family:monospace;{{ $dimRow && !$isImported ? 'opacity:.4' : ($isImported ? 'opacity:.45' : '') }}">{{ $sizeKb }}</td>
                             <td class="text-end pe-3">
                                 @if($isImported)
                                     <div class="d-flex align-items-center gap-2 justify-content-end">
@@ -307,7 +307,7 @@
                             <input type="checkbox" onclick="document.querySelectorAll('.dns-cb').forEach(cb => cb.checked = this.checked)">
                         </th>
                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Driver</th>
-                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Platform ID</th>
+                        <th class="fw-bold text-uppercase d-none d-sm-table-cell" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Platform ID</th>
                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Source</th>
                     </tr>
                 </thead>
@@ -318,7 +318,7 @@
                             <input type="checkbox" name="user_ids[]" value="{{ $reg->user_id }}" class="dns-cb">
                         </td>
                         <td class="fw-bold">{{ $reg->user->name ?? '—' }}</td>
-                        <td style="font-size:.75rem;color:#6b7280;font-family:monospace">{{ $reg->user->platform_id ?? '—' }}</td>
+                        <td class="d-none d-sm-table-cell" style="font-size:.75rem;color:#6b7280;font-family:monospace">{{ $reg->user->platform_id ?? '—' }}</td>
                         <td><span class="badge" style="background:#ede9fe;color:#6d28d9;font-size:.65rem;padding:2px 7px;border-radius:5px;font-weight:700">Registered</span></td>
                     </tr>
                     @endforeach
@@ -334,7 +334,7 @@
                             <div class="text-secondary" style="font-size:.68rem">linked: {{ $entry['user']->name }}</div>
                             @endif
                         </td>
-                        <td style="font-size:.75rem;color:#6b7280;font-family:monospace">{{ $entry['player_id'] }}</td>
+                        <td class="d-none d-sm-table-cell" style="font-size:.75rem;color:#6b7280;font-family:monospace">{{ $entry['player_id'] }}</td>
                         <td>
                             <span class="badge" style="background:#fef3c7;color:#92400e;font-size:.65rem;padding:2px 7px;border-radius:5px;font-weight:700">Entrylist</span>
                             @if($entry['car_number'] !== null)
@@ -406,21 +406,21 @@
                 <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
                     <tr>
                         <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:50px">Pos</th>
-                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:55px">No</th>
+                        <th class="fw-bold text-uppercase d-none d-sm-table-cell" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:55px">No</th>
                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Driver</th>
-                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Vehicle</th>
-                        <th class="fw-bold text-uppercase text-center" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:60px">Laps</th>
-                        <th class="fw-bold text-uppercase text-center" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:115px">Time/Retired</th>
+                        <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Vehicle</th>
+                        <th class="fw-bold text-uppercase text-center d-none d-md-table-cell" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:60px">Laps</th>
+                        <th class="fw-bold text-uppercase text-center" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:115px">Time</th>
                         <th class="fw-bold text-uppercase text-center" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:105px">Best Lap</th>
-                        <th class="fw-bold text-uppercase text-center" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Consistency</th>
-                        <th class="fw-bold text-uppercase text-center pe-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:55px">Led</th>
+                        <th class="fw-bold text-uppercase text-center d-none d-lg-table-cell" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Consistency</th>
+                        <th class="fw-bold text-uppercase text-center pe-4 d-none d-lg-table-cell" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:55px">Led</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($raceResults as $result)
                     <tr>
                         <td class="ps-4"><x-race-position :position="$result->position" /></td>
-                        <td>
+                        <td class="d-none d-sm-table-cell">
                             @if($result->car_number !== null)
                             <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.72rem">#{{ $result->car_number }}</span>
                             @else
@@ -441,8 +441,8 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="text-secondary" style="font-size:.78rem">{{ $result->vehicle ?? '—' }}</td>
-                        <td class="text-center fw-bold">{{ $result->lap_count ?? '—' }}</td>
+                        <td class="d-none d-md-table-cell text-secondary" style="font-size:.78rem">{{ $result->vehicle ?? '—' }}</td>
+                        <td class="d-none d-md-table-cell text-center fw-bold">{{ $result->lap_count ?? '—' }}</td>
                         <td class="text-center" style="font-family:monospace;font-size:.8rem">
                             @if($result->dns)
                                 <span class="badge" style="background:#fef2f2;color:#6b7280;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DNS</span>
@@ -458,10 +458,10 @@
                             <span class="badge ms-1" style="background:#7c3aed;font-size:.58rem;padding:2px 5px">FL</span>
                             @endif
                         </td>
-                        <td class="text-center" style="font-size:.78rem">
+                        <td class="d-none d-lg-table-cell text-center" style="font-size:.78rem">
                             {{ $result->consistency !== null ? $result->consistency . '%' : '—' }}
                         </td>
-                        <td class="text-center fw-bold pe-4">{{ $result->laps_led ?? '—' }}</td>
+                        <td class="d-none d-lg-table-cell text-center fw-bold pe-4">{{ $result->laps_led ?? '—' }}</td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -484,9 +484,9 @@
                 <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
                     <tr>
                         <th class="fw-bold text-uppercase ps-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:60px">Pos</th>
-                        <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:60px">Car #</th>
+                        <th class="fw-bold text-uppercase d-none d-sm-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:60px">Car #</th>
                         <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Driver</th>
-                        <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:80px">Laps</th>
+                        <th class="fw-bold text-uppercase text-center d-none d-sm-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:80px">Laps</th>
                         <th class="fw-bold text-uppercase text-center pe-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:130px">Best Lap</th>
                     </tr>
                 </thead>
@@ -494,7 +494,7 @@
                     @foreach($qualiResults as $result)
                     <tr>
                         <td class="ps-4"><x-race-position :position="$result->position" /></td>
-                        <td>
+                        <td class="d-none d-sm-table-cell">
                             @if($result->car_number)
                             <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.72rem">#{{ $result->car_number }}</span>
                             @else
@@ -515,7 +515,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="text-center fw-bold">{{ $result->lap_count ?? '—' }}</td>
+                        <td class="d-none d-sm-table-cell text-center fw-bold">{{ $result->lap_count ?? '—' }}</td>
                         <td class="text-center pe-4">
                             <span class="fw-bold" style="font-family:monospace">
                                 {{ \App\Models\RaceResult::formatMs($result->best_lap) }}

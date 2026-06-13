@@ -9,7 +9,7 @@
 
         {{-- Profile header --}}
         <div class="bg-white rounded-3 shadow-sm p-4 mb-4">
-            <div class="d-flex align-items-start gap-4">
+            <div class="d-flex align-items-start gap-3 flex-wrap">
                 <div class="flex-shrink-0">
                     <x-rank-avatar :user="$user" :size="88" />
                 </div>
@@ -171,21 +171,21 @@
                     <thead style="border-bottom:2px solid #f3f4f6">
                         <tr>
                             <th class="fw-bold text-uppercase text-secondary pb-2" style="font-size:.72rem;letter-spacing:.06em;width:55px">Pos</th>
-                            <th class="fw-bold text-uppercase text-secondary pb-2" style="font-size:.72rem;letter-spacing:.06em;width:55px">No</th>
+                            <th class="fw-bold text-uppercase text-secondary pb-2 d-none d-sm-table-cell" style="font-size:.72rem;letter-spacing:.06em;width:55px">No</th>
                             <th class="fw-bold text-uppercase text-secondary pb-2" style="font-size:.72rem;letter-spacing:.06em">Event</th>
-                            <th class="fw-bold text-uppercase text-secondary pb-2" style="font-size:.72rem;letter-spacing:.06em">Vehicle</th>
-                            <th class="fw-bold text-uppercase text-secondary pb-2 text-center" style="font-size:.72rem;letter-spacing:.06em;width:60px">Laps</th>
-                            <th class="fw-bold text-uppercase text-secondary pb-2 text-center" style="font-size:.72rem;letter-spacing:.06em;width:110px">Time/Retired</th>
+                            <th class="fw-bold text-uppercase text-secondary pb-2 d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em">Vehicle</th>
+                            <th class="fw-bold text-uppercase text-secondary pb-2 text-center d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;width:60px">Laps</th>
+                            <th class="fw-bold text-uppercase text-secondary pb-2 text-center d-none d-sm-table-cell" style="font-size:.72rem;letter-spacing:.06em;width:110px">Time/Retired</th>
                             <th class="fw-bold text-uppercase text-secondary pb-2 text-center" style="font-size:.72rem;letter-spacing:.06em;width:105px">Best Lap</th>
-                            <th class="fw-bold text-uppercase text-secondary pb-2 text-center" style="font-size:.72rem;letter-spacing:.06em;width:90px">Consistency</th>
-                            <th class="fw-bold text-uppercase text-secondary pb-2 text-center" style="font-size:.72rem;letter-spacing:.06em;width:50px">Led</th>
+                            <th class="fw-bold text-uppercase text-secondary pb-2 text-center d-none d-lg-table-cell" style="font-size:.72rem;letter-spacing:.06em;width:90px">Consistency</th>
+                            <th class="fw-bold text-uppercase text-secondary pb-2 text-center d-none d-lg-table-cell" style="font-size:.72rem;letter-spacing:.06em;width:50px">Led</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($results as $result)
                         <tr style="border-bottom:1px solid #f9fafb">
                             <td><x-race-position :position="$result->position" /></td>
-                            <td>
+                            <td class="d-none d-sm-table-cell">
                                 @if($result->car_number !== null)
                                 <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.72rem">#{{ $result->car_number }}</span>
                                 @else
@@ -204,9 +204,9 @@
                                     @endif
                                 </div>
                             </td>
-                            <td class="text-secondary" style="font-size:.82rem">{{ $result->vehicle ?? '—' }}</td>
-                            <td class="text-center fw-bold">{{ $result->lap_count ?? '—' }}</td>
-                            <td class="text-center" style="font-family:monospace;font-size:.82rem">
+                            <td class="text-secondary d-none d-md-table-cell" style="font-size:.82rem">{{ $result->vehicle ?? '—' }}</td>
+                            <td class="text-center fw-bold d-none d-md-table-cell">{{ $result->lap_count ?? '—' }}</td>
+                            <td class="text-center d-none d-sm-table-cell" style="font-family:monospace;font-size:.82rem">
                                 @if($result->dnf)
                                     <span class="badge" style="background:#fef2f2;color:#dc2626;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DNF</span>
                                 @else
@@ -219,10 +219,10 @@
                                 <span class="badge ms-1" style="background:#7c3aed;font-size:.6rem;padding:2px 5px">FL</span>
                                 @endif
                             </td>
-                            <td class="text-center" style="font-size:.82rem">
+                            <td class="text-center d-none d-lg-table-cell" style="font-size:.82rem">
                                 {{ $result->consistency !== null ? $result->consistency . '%' : '—' }}
                             </td>
-                            <td class="text-center fw-bold">{{ $result->laps_led ?? '—' }}</td>
+                            <td class="text-center fw-bold d-none d-lg-table-cell">{{ $result->laps_led ?? '—' }}</td>
                         </tr>
                         @endforeach
                     </tbody>
