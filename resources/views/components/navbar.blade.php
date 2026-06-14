@@ -50,8 +50,30 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url('/#about') }}">ABOUT</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('team') }}">TEAM</a>
+                <li class="nav-item position-relative" x-data="{ dd: false }" @click.outside="dd = false">
+                    <div class="d-flex align-items-center">
+                        <a class="nav-link fw-bold pe-1" href="{{ route('team') }}">TEAM</a>
+                        <button class="nav-link border-0 bg-transparent px-1 py-0 d-flex align-items-center"
+                                @click="dd = !dd">
+                            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                                 :style="dd ? 'transform:rotate(180deg);transition:.2s' : 'transition:.2s'">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <ul x-show="dd"
+                        x-transition:enter="transition ease-out duration-150"
+                        x-transition:enter-start="opacity-0 translate-y-1"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-100"
+                        x-transition:leave-start="opacity-100"
+                        x-transition:leave-end="opacity-0"
+                        @click="dd = false"
+                        class="xcl-dropdown">
+                        <li><a class="xcl-dropdown-item" href="/teams/drivers">DRIVERS</a></li>
+                        <li><a class="xcl-dropdown-item" href="/teams/staff">STAFF</a></li>
+                        <li><a class="xcl-dropdown-item" href="/teams/join">JOIN THE TEAM</a></li>
+                    </ul>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url('/events') }}">XCL EVENTS</a>
@@ -59,9 +81,29 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url('/#partners') }}">PARTNERS</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="https://raven.gg/stores/xclusive-esports/"
-                       target="_blank">MERCHANDISE</a>
+                <li class="nav-item position-relative" x-data="{ dd: false }">
+                    <button class="nav-link fw-bold d-flex align-items-center gap-1 border-0 bg-transparent"
+                            @click="dd = !dd" @click.outside="dd = false">
+                        SHOP
+                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                             :style="dd ? 'transform:rotate(180deg);transition:.2s' : 'transition:.2s'">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <ul x-show="dd"
+                        x-transition:enter="transition ease-out duration-150"
+                        x-transition:enter-start="opacity-0 translate-y-1"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-100"
+                        x-transition:leave-start="opacity-100"
+                        x-transition:leave-end="opacity-0"
+                        @click="dd = false"
+                        class="xcl-dropdown">
+                        <li><a class="xcl-dropdown-item" href="https://raven.gg/stores/xclusive-esports/" target="_blank">MERCHANDISE</a></li>
+                        <li><a class="xcl-dropdown-item" href="#">COACHING</a></li>
+                        <li><a class="xcl-dropdown-item" href="#">SETUPS</a></li>
+                        <li><a class="xcl-dropdown-item" href="#">EVENTS</a></li>
+                    </ul>
                 </li>
                 <li class="nav-item position-relative" x-data="{ dd: false }">
                     <button class="nav-link fw-bold d-flex align-items-center gap-1 border-0 bg-transparent"

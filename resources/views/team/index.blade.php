@@ -20,28 +20,32 @@
 
             @foreach([
                 [
-                    'slug'  => 'pro',
-                    'color' => '#7c3aed',
-                    'title' => 'Professional Drivers',
-                    'desc'  => 'Our real-world racing drivers competing at the highest level of motorsport, proudly flying the XCLusive flag.',
-                    'image' => '/images/team/Looping by cartech.png',
-                    'logo'  => '/images/home/brand/xclusive_racing_logo.png',
+                    'slug'     => 'pro',
+                    'color'    => '#d4ee6a',
+                    'title'    => 'Professional Drivers',
+                    'desc'     => 'Our real-world racing drivers competing at the highest level of motorsport, proudly flying the XCLusive flag.',
+                    'image'    => '/images/team/Looping by cartech.png',
+                    'img_pos'  => '30% center',
+                    'logo'     => '/images/team/XCLusive Racing.png',
                 ],
                 [
-                    'slug'  => 'esports',
-                    'color' => '#c084fc',
-                    'title' => 'Esports Drivers',
-                    'desc'  => 'Elite sim racers representing XCLusive across ACC, LMU, iRacing and more — chasing every tenth.',
-                    'image' => '/images/team/XCLusive Placeholder lmu.png',
-                    'logo'  => '/images/team/xclusive_esports_logo_text.png',
+                    'slug'     => 'esports',
+                    'color'    => '#c084fc',
+                    'title'    => 'Esports Drivers',
+                    'desc'     => 'Elite sim racers representing XCLusive across ACC, LMU, iRacing and more — chasing every tenth.',
+                    'image'    => '/images/team/XCLusive Placeholder lmu.png',
+                    'img_pos'  => 'center center',
+                    'logo'     => '/images/team/XCLusive Esports.png',
                 ],
                 [
-                    'slug'  => 'staff',
-                    'color' => '#3b82f6',
-                    'title' => 'Staff',
-                    'desc'  => 'The team behind the team — organizers, stewards, and community managers keeping it all running.',
-                    'image' => '/images/team/XCLusive Placeholder.png',
-                    'logo'  => '/images/team/XCLusive_Gaming_Events_Logo.png',
+                    'slug'     => 'staff',
+                    'color'    => '#3b82f6',
+                    'title'    => 'Staff',
+                    'desc'     => 'The team behind the team — organizers, stewards, and community managers keeping it all running.',
+                    'image'    => '/images/team/XCLusive Placeholder.png',
+                    'img_pos'  => '0% center',
+                    'img_zoom' => 1.5,
+                    'logo'     => '/images/team/XCLusive Gaming Events.png',
                 ],
             ] as $cat)
 
@@ -53,19 +57,19 @@
 
                 {{-- Background: swap $cat['image'] src once images are ready --}}
                 @if($cat['image'])
-                    <img src="{{ $cat['image'] }}" alt="{{ $cat['title'] }}" class="events-platform-card__video">
+                    <img src="{{ $cat['image'] }}" alt="{{ $cat['title'] }}" class="events-platform-card__video" style="object-position:{{ $cat['img_pos'] ?? 'center center' }};{{ isset($cat['img_zoom']) ? 'transform:scale('.$cat['img_zoom'].');transform-origin:center center;' : '' }}">
                 @else
                     <div style="position:absolute;inset:0;background:linear-gradient(160deg,#1a0a2e 0%,{{ $cat['color'] }}55 100%)"></div>
                 @endif
 
-                <div class="events-platform-card__gradient" style="background:linear-gradient(160deg,{{ $cat['color'] }}{{ $cat['image'] ? '18' : '44' }} 0%,{{ $cat['color'] }}{{ $cat['image'] ? '44' : 'bb' }} 100%)"></div>
+                <div class="events-platform-card__gradient"></div>
                 <div class="events-platform-card__shadow"></div>
                 <div class="events-platform-card__top-bar" style="background:{{ $cat['color'] }}"></div>
 
                 {{-- Category logo top-left --}}
                 @if($cat['logo'])
                 <div class="events-platform-card__logo">
-                    <img src="{{ $cat['logo'] }}" alt="{{ $cat['title'] }}" height="33">
+                    <img src="{{ $cat['logo'] }}" alt="{{ $cat['title'] }}" height="52">
                 </div>
                 @endif
 
@@ -84,6 +88,14 @@
             @endforeach
 
         </div>
+
+        {{-- Stats CTA Banner --}}
+        <x-cta-banner
+            heading="TRACK TEAM STATS"
+            subtext="Follow our results, rating progress, and race history across every event"
+            button="VIEW STATS →"
+            href="/stats"
+        />
 
     </div>
 </main>

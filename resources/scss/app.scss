@@ -1855,16 +1855,22 @@ html {
 
     &__logo {
         position: absolute;
-        top: 1rem;
-        left: 1rem;
+        top: 0;
+        left: 0;
+        right: 0;
         z-index: 3;
-        background: rgba(0,0,0,.5);
-        padding: 4px 10px;
-        border-radius: 4px;
+        background: transparent;
+        padding: 10px 14px;
         display: flex;
         align-items: center;
+        justify-content: center;
+        transition: background .3s ease;
 
         img { display: block; }
+    }
+
+    &:hover &__logo, &--active &__logo {
+        background: white;
     }
 
     &__count {
