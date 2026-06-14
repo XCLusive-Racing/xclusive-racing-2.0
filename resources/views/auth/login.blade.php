@@ -1,5 +1,6 @@
 @extends('layouts.app')
 
+@section('no-sidebar', true)
 @section('title', 'Sign In - XCLusive Racing')
 
 @section('content')
