@@ -11,10 +11,10 @@ class Championship extends Model
     protected $fillable = [
         'name', 'game', 'season', 'status', 'description', 'image', 'icon',
         'max_drivers', 'is_multiclass', 'points_system', 'bonus_fastest_lap',
-        'bonus_pole', 'drop_rounds', 'max_missed_rounds', 'min_rounds_to_qualify',
-        'registration_open', 'registration_deadline', 'sr_requirement', 'min_rating',
-        'car_class', 'practice_duration', 'qualifying_duration', 'race_duration',
-        'weather', 'time_of_day', 'duration_key',
+        'bonus_pole', 'drop_rounds', 'max_missed_rounds', 'missed_rounds_action',
+        'missed_rounds_penalty_points', 'registration_open', 'registration_deadline',
+        'sr_requirement', 'min_rating', 'car_class', 'practice_duration',
+        'qualifying_duration', 'race_duration', 'weather', 'time_of_day', 'duration_key',
     ];
 
     protected function casts(): array

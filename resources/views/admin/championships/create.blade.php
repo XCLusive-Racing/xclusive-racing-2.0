@@ -110,14 +110,21 @@
                                    class="form-control" min="0">
                         </div>
                         <div class="col-sm-4">
-                            <label class="form-label">Max Missed Rounds <span class="fw-normal text-secondary">(optional)</span></label>
+                            <label class="form-label">Rounds Allowed to Miss</label>
                             <input type="number" name="max_missed_rounds" value="{{ old('max_missed_rounds') }}"
                                    class="form-control" min="0" placeholder="No limit">
                         </div>
-                        <div class="col-sm-4">
-                            <label class="form-label">Min Rounds to Qualify <span class="fw-normal text-secondary">(optional)</span></label>
-                            <input type="number" name="min_rounds_to_qualify" value="{{ old('min_rounds_to_qualify') }}"
-                                   class="form-control" min="0" placeholder="No minimum">
+                        <div class="col-sm-4" x-data="{ action: '{{ old('missed_rounds_action', 'none') }}' }">
+                            <label class="form-label">If limit exceeded</label>
+                            <select name="missed_rounds_action" class="form-select" x-model="action">
+                                <option value="none">No penalty</option>
+                                <option value="penalise">Penalty points</option>
+                            </select>
+                            <div x-show="action === 'penalise'" class="mt-2">
+                                <input type="number" name="missed_rounds_penalty_points"
+                                       value="{{ old('missed_rounds_penalty_points') }}"
+                                       class="form-control" min="1" placeholder="Points deducted per missed round">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -182,7 +189,7 @@
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Race Defaults <span class="fw-normal" style="text-transform:none">(used when adding rounds)</span></p>
 
                     <div class="row g-3 mb-3">
-                        <div class="col-sm-4">
+                        <div class="col-sm-4" x-show="!multiclass">
                             <label class="form-label">Car Class</label>
                             <input type="text" name="car_class" value="{{ old('car_class') }}"
                                    class="form-control" placeholder="e.g. GT3">
