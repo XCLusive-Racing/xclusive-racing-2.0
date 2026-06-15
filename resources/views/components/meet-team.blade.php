@@ -62,7 +62,7 @@
             <div class="col" x-show="filter === 'all' || filter === 'pro'" x-transition>
                 <div class="mt-driver-card">
                     <div class="mt-driver-portrait">
-                        <img src="/images/drivers/Mats.png" alt="Mats van Rooijen"
+                        <img src="/images/drivers/M.vanRooijen.png" alt="Mats van Rooijen"
                              style="width:100%;height:100%;object-fit:cover;object-position:top;">
                         <span class="mt-badge mt-badge--game">PRO</span>
                         <span class="mt-badge mt-badge--platform mt-badge--hybrid">Hybrid</span>
@@ -77,19 +77,19 @@
                             <span class="mt-driver-name">Mats van Rooijen</span>
                             <img src="/images/flags/flag-netherlands.png" class="mt-driver-flag" alt="Netherlands">
                         </div>
-                        <div class="mt-driver-role mt-driver-role--racing">Racing Driver</div>
+                        <div class="mt-driver-role mt-driver-role--racing">Professional Driver</div>
                     </div>
                 </div>
             </div>
 
-            {{-- 4. James Farish — ACC / Console / GB --}}
-            <div class="col" x-show="filter === 'all' || filter === 'acc'" x-transition>
+            {{-- 4. Dirk Schouten — PRO / Hybrid / Professional Driver --}}
+            <div class="col" x-show="filter === 'all' || filter === 'pro'" x-transition>
                 <div class="mt-driver-card">
                     <div class="mt-driver-portrait">
-                        <img src="/images/drivers/JamesFarish.png" alt="James Farish"
+                        <img src="/images/drivers/D.Schouten.png" alt="Dirk Schouten"
                              style="width:100%;height:100%;object-fit:cover;object-position:top;">
-                        <span class="mt-badge mt-badge--game">ACC</span>
-                        <span class="mt-badge mt-badge--platform mt-badge--xbox">Console</span>
+                        <span class="mt-badge mt-badge--game">PRO</span>
+                        <span class="mt-badge mt-badge--platform mt-badge--hybrid">Hybrid</span>
                         <div class="mt-driver-socials">
                             <a href="#" class="mt-social-link" title="X / Twitter"><i class="fa-brands fa-x-twitter"></i></a>
                             <a href="#" class="mt-social-link" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
@@ -97,10 +97,9 @@
                     </div>
                     <div class="mt-driver-info">
                         <div class="mt-driver-name-row">
-                            <span class="mt-driver-name">James Farish</span>
-                            <img src="/images/flags/flag-united%20kingdom.png" class="mt-driver-flag" alt="Great Britain">
+                            <span class="mt-driver-name">Dirk Schouten</span>
                         </div>
-                        <div class="mt-driver-role mt-driver-role--esports">Esports Driver</div>
+                        <div class="mt-driver-role mt-driver-role--racing">Professional Driver</div>
                     </div>
                 </div>
             </div>
@@ -151,7 +150,7 @@
                 <span class="mt-legend-dot" style="background:rgba(192,132,252,0.85);"></span>ESPORTS DRIVERS
             </span>
             <span class="mt-legend-item">
-                <span class="mt-legend-dot" style="background:#d4ee6a;"></span>RACING DRIVERS
+                <span class="mt-legend-dot" style="background:#d4ee6a;"></span>PROFESSIONAL DRIVERS
             </span>
             <span class="mt-legend-item">
                 <span class="mt-legend-dot" style="background:#3b82f6;"></span>STAFF

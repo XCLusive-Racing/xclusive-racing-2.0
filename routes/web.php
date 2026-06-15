@@ -51,6 +51,7 @@ Route::get('sven', function () {
 });
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::view('/team', 'team.index')->name('team');
 Route::get('/events/sidebar-data', [EventController::class, 'getSidebarData'])->name('events.sidebar-data');
 
 // Championships - public
