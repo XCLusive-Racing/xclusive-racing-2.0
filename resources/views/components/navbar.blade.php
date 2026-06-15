@@ -75,8 +75,27 @@
                         <li><a class="xcl-dropdown-item" href="/teams/join">JOIN THE TEAM</a></li>
                     </ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url('/events') }}">XCL EVENTS</a>
+                <li class="nav-item position-relative" x-data="{ dd: false }" @click.outside="dd = false">
+                    <button class="nav-link fw-bold d-flex align-items-center gap-1 border-0 bg-transparent"
+                            @click="dd = !dd">
+                        XCL EVENTS
+                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                             :style="dd ? 'transform:rotate(180deg);transition:.2s' : 'transition:.2s'">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <ul x-show="dd"
+                        x-transition:enter="transition ease-out duration-150"
+                        x-transition:enter-start="opacity-0 translate-y-1"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-100"
+                        x-transition:leave-start="opacity-100"
+                        x-transition:leave-end="opacity-0"
+                        @click="dd = false"
+                        class="xcl-dropdown">
+                        <li><a class="xcl-dropdown-item" href="{{ route('events.index') }}">EVENTS</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('calendar') }}">CALENDAR</a></li>
+                    </ul>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url('/#partners') }}">PARTNERS</a>
