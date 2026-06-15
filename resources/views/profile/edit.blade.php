@@ -140,6 +140,22 @@
                         </div>
                     </div>
 
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-4 mb-4">
+                <button type="submit" class="btn fw-black text-uppercase text-white px-4 py-2"
+                        style="background:#7c3aed">Save Changes</button>
+                <a href="{{ route('profile') }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4 py-2">
+                    Cancel
+                </a>
+            </div>
+
+        </form>
+
+        {{-- Connected Accounts (outside main form to avoid nested forms) --}}
+        <div class="row g-4 mb-5">
+            <div class="col-12 col-lg-6 offset-lg-6">
                     {{-- Connected Accounts --}}
                     <div class="bg-white rounded-3 shadow-sm p-4 flex-grow-1">
                         <h2 class="fw-black text-uppercase fst-italic text-dark mb-1" style="font-size:1rem">Connected Accounts</h2>
@@ -280,18 +296,9 @@
                         </div>
                     </div>
 
-                </div>
             </div>
+        </div>
 
-            <div class="d-flex gap-2 mt-4">
-                <button type="submit" class="btn fw-black text-uppercase text-white px-4 py-2"
-                        style="background:#7c3aed">Save Changes</button>
-                <a href="{{ route('profile') }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4 py-2">
-                    Cancel
-                </a>
-            </div>
-
-        </form>
     </div>
 </main>
 @endsection
