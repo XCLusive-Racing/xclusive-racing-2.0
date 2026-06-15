@@ -11,7 +11,8 @@
 
 @section('content')
 
-<form action="{{ route('admin.races.store') }}" method="POST" enctype="multipart/form-data">
+<form action="{{ route('admin.races.store') }}" method="POST" enctype="multipart/form-data"
+      x-data="raceClassForm()">
     @csrf
 
     <div class="row g-4 align-items-start">
@@ -227,6 +228,58 @@
                               placeholder="Additional race info...">{{ old('description') }}</textarea>
                     @error('description') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
+
+                {{-- Multiclass --}}
+                <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+                    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Multiclass <span class="fw-normal" style="text-transform:none">(optional)</span></p>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="is_multiclass_race"
+                                   @change="multiclass = $event.target.checked" {{ old('is_multiclass') ? 'checked' : '' }}>
+                            <label class="form-check-label fw-bold" for="is_multiclass_race">Enable Multiclass</label>
+                        </div>
+                        <input type="hidden" name="is_multiclass" :value="multiclass ? '1' : '0'">
+                    </div>
+
+                    <div x-show="multiclass" x-transition style="display:none">
+                        <template x-for="(cls, i) in classes" :key="i">
+                            <div class="p-3 rounded-2 mb-2" style="background:#f9fafb;border:1px solid #e5e7eb">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="fw-bold" style="font-size:.82rem" x-text="'Class ' + (i+1)"></span>
+                                    <button type="button" @click="classes.splice(i,1)"
+                                            class="btn btn-sm text-danger" style="font-size:.72rem;padding:2px 8px">Remove</button>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-sm-4">
+                                        <label class="form-label" style="font-size:.78rem">Name</label>
+                                        <input type="text" x-model="cls.name" class="form-control form-control-sm" placeholder="e.g. GT3">
+                                    </div>
+                                    <div class="col-sm-2">
+                                        <label class="form-label" style="font-size:.78rem">Color</label>
+                                        <input type="color" x-model="cls.color" class="form-control form-control-sm form-control-color" style="width:100%;padding:2px">
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <label class="form-label" style="font-size:.78rem">Car Class</label>
+                                        <input type="text" x-model="cls.car_class" class="form-control form-control-sm" placeholder="e.g. GT3">
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <label class="form-label" style="font-size:.78rem">Max Drivers</label>
+                                        <input type="number" x-model="cls.max_drivers" class="form-control form-control-sm" placeholder="No limit" min="1">
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <button type="button" @click="classes.push({name:'',color:'#db2777',car_class:'',max_drivers:''})"
+                                class="btn btn-sm fw-bold text-uppercase"
+                                style="background:rgba(219,39,119,.1);color:#db2777;border:1px solid rgba(219,39,119,.3);font-size:.72rem">
+                            + Add Class
+                        </button>
+
+                        <input type="hidden" name="classes_json" :value="JSON.stringify(classes)">
+                    </div>
+                </div>
             </div>
 
             {{-- Actions --}}
@@ -258,3 +311,14 @@
 </form>
 
 @endsection
+
+@push('scripts')
+<script>
+function raceClassForm() {
+    return {
+        multiclass: {{ old('is_multiclass') ? 'true' : 'false' }},
+        classes: [],
+    };
+}
+</script>
+@endpush

@@ -7,6 +7,7 @@ use App\Models\EventTag;
 use App\Models\FtpImportedFile;
 use App\Models\FtpServer;
 use App\Models\Race;
+use App\Models\RaceClass;
 use App\Services\AccServerConfigService;
 use App\Services\FtpService;
 use Illuminate\Http\Request;
@@ -220,14 +221,18 @@ class RaceController extends Controller
             'image_path'           => 'nullable|string|max:500',
             'icon'                 => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
             'icon_path'            => 'nullable|string|max:500',
+            'is_multiclass'        => 'nullable|boolean',
         ]);
 
         $data['scheduled_at'] = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
-        $data['image'] = $this->resolveMedia($request);
-        $data['icon']  = $this->resolveIcon($request);
+        $data['image']        = $this->resolveMedia($request);
+        $data['icon']         = $this->resolveIcon($request);
+        $data['is_multiclass'] = $request->boolean('is_multiclass');
         unset($data['image_path'], $data['icon_path']);
 
-        Race::create($data);
+        $race = Race::create($data);
+
+        $this->syncRaceClasses($request, $race);
 
         return redirect()->route('admin.races.index')->with('success', 'Race created successfully!');
     }
@@ -274,9 +279,11 @@ class RaceController extends Controller
             'icon'                 => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
             'icon_path'            => 'nullable|string|max:500',
             'icon_keep'            => 'nullable|in:0,1',
+            'is_multiclass'        => 'nullable|boolean',
         ]);
 
-        $data['scheduled_at'] = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
+        $data['scheduled_at']  = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
+        $data['is_multiclass'] = $request->boolean('is_multiclass');
 
         $resolvedImage  = $this->resolveMedia($request);
         $data['image']  = $resolvedImage ?? ($request->input('image_keep') === '0' ? null : $race->image);
@@ -287,6 +294,8 @@ class RaceController extends Controller
         unset($data['image_path'], $data['image_keep'], $data['icon_path'], $data['icon_keep']);
 
         $race->update($data);
+
+        $this->syncRaceClasses($request, $race);
 
         return redirect()->route('admin.races.index')->with('success', 'Race updated successfully!');
     }
@@ -390,6 +399,31 @@ class RaceController extends Controller
         $race->update(['config_overrides' => empty($overrides) ? null : $overrides]);
 
         return back()->with('config_success', '"' . $request->input('file') . '" reset to auto-generated.');
+    }
+
+    private function syncRaceClasses(Request $request, Race $race): void
+    {
+        $classesJson = $request->input('classes_json');
+        if (!$classesJson) {
+            return;
+        }
+
+        $classes = json_decode($classesJson, true);
+        if (!is_array($classes)) {
+            return;
+        }
+
+        $race->raceClasses()->delete();
+
+        foreach ($classes as $i => $class) {
+            $race->raceClasses()->create([
+                'name'        => $class['name'] ?? 'Class ' . ($i + 1),
+                'color'       => $class['color'] ?? '#db2777',
+                'car_class'   => $class['car_class'] ?? null,
+                'max_drivers' => $class['max_drivers'] ?? null,
+                'sort_order'  => $i,
+            ]);
+        }
     }
 
     private function resolveMedia(Request $request): ?string

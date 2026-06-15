@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\BopController as AdminBopController;
+use App\Http\Controllers\Admin\ChampionshipController as AdminChampionshipController;
+use App\Http\Controllers\ChampionshipController;
 use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
 use App\Http\Controllers\Admin\EventTagController;
 use App\Http\Controllers\Admin\FtpBrowserController;
@@ -50,6 +52,12 @@ Route::get('sven', function () {
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/events/sidebar-data', [EventController::class, 'getSidebarData'])->name('events.sidebar-data');
+
+// Championships - public
+Route::get('/championships', [ChampionshipController::class, 'index'])->name('championships.index');
+Route::get('/championships/{championship}', [ChampionshipController::class, 'show'])->name('championships.show');
+Route::post('/championships/{championship}/register', [ChampionshipController::class, 'register'])->name('championships.register')->middleware('auth');
+Route::delete('/championships/{championship}/unregister', [ChampionshipController::class, 'unregister'])->name('championships.unregister')->middleware('auth');
 
 // Events - public
 Route::get('/events', [RaceController::class, 'index'])->name('events.index');
@@ -133,6 +141,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/races/{race}/save-config', [AdminRaceController::class, 'saveConfig'])->name('races.save-config');
     Route::post('/races/{race}/upload-entrylist', [AdminRaceController::class, 'uploadEntrylist'])->name('races.upload-entrylist');
     Route::delete('/races/{race}/reset-config', [AdminRaceController::class, 'resetConfig'])->name('races.reset-config');
+
+    // Championships
+    Route::resource('championships', AdminChampionshipController::class)->except(['destroy']);
+    Route::post('championships/{championship}/rounds', [AdminChampionshipController::class, 'addRound'])->name('championships.rounds.store');
+    Route::delete('championships/{championship}/rounds/{race}', [AdminChampionshipController::class, 'removeRound'])->name('championships.rounds.destroy');
+    Route::post('championships/{championship}/penalties', [AdminChampionshipController::class, 'addPenalty'])->name('championships.penalties.store');
+    Route::delete('championships/{championship}/penalties/{penalty}', [AdminChampionshipController::class, 'destroyPenalty'])->name('championships.penalties.destroy');
 
     // Event Tags
     Route::post('/event-tags', [EventTagController::class, 'store'])->name('event-tags.store');

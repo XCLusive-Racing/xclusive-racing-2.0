@@ -81,6 +81,7 @@
                         x-transition:leave-end="opacity-0"
                         @click="dd = false"
                         class="xcl-dropdown">
+                        <li><a class="xcl-dropdown-item" href="{{ route('championships.index') }}">CHAMPIONSHIPS</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('drivers.index') }}">LEADERBOARD</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('results.index') }}">RESULTS</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('bop.index') }}">BOPs</a></li>
