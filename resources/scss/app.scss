@@ -1977,8 +1977,8 @@ html {
     border-radius: 14px;
     overflow: hidden;
     aspect-ratio: 21 / 7;
-    background: #1a0a2e;
-    border: 1.5px solid rgba(124,58,237,.2);
+    background: #1e0c16;
+    border: 1.5px solid rgba(219,39,119,.35);
 
     @media (max-width: 767px) { aspect-ratio: 16 / 9; }
 
@@ -2108,11 +2108,12 @@ html {
 }
 
 .xcl-event-card {
-    background: #1a0a2e;
-    border: 1.5px solid rgba(124,58,237,.2);
+    background: #1e0c16;
+    border: 1.5px solid rgba(219,39,119,.22);
     border-radius: 12px;
     padding: 1.25rem 1.35rem;
     overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(219,39,119,.08);
 
     &__heading {
         font-family: 'Barlow Condensed', sans-serif;
@@ -2124,7 +2125,7 @@ html {
         color: #fff;
         margin: 0 0 1rem;
         padding-bottom: .65rem;
-        border-bottom: 1.5px solid rgba(124,58,237,.2);
+        border-bottom: 1.5px solid rgba(219,39,119,.2);
         display: flex;
         align-items: baseline;
         gap: .5rem;
@@ -2202,12 +2203,12 @@ html {
         letter-spacing: .06em;
         color: rgba(255,255,255,.45);
         padding: .5rem .75rem;
-        border-bottom: 1px solid rgba(124,58,237,.2);
+        border-bottom: 1px solid rgba(219,39,119,.2);
     }
 
     td {
         padding: .6rem .75rem;
-        border-bottom: 1px solid rgba(124,58,237,.1);
+        border-bottom: 1px solid rgba(219,39,119,.1);
         font-size: .88rem;
         color: rgba(255,255,255,.65);
     }
@@ -2226,9 +2227,9 @@ html {
     }
 
     &__fl {
-        background: rgba(124,58,237,.25);
-        color: #a855f7;
-        border: 1px solid rgba(168,85,247,.3);
+        background: rgba(219,39,119,.2);
+        color: #f472b6;
+        border: 1px solid rgba(219,39,119,.35);
         border-radius: 4px;
         font-size: .7rem;
         font-weight: 800;
@@ -2248,35 +2249,191 @@ html {
     }
 }
 
-.xcl-drivers-list {
-    display: flex;
-    flex-direction: column;
-    gap: .6rem;
+.xcl-drivers-grid-wrap {
+    position: relative;
+
+    &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 40px;
+        background: linear-gradient(transparent, #1e0c16);
+        pointer-events: none;
+        border-radius: 0 0 8px 8px;
+    }
+
+    &.no-overflow::after { display: none; }
+}
+
+.xcl-drivers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .5rem;
+    max-height: 304px;
+    overflow-y: auto;
+    padding-right: 2px;
+    padding-bottom: 4px;
+
+    &::-webkit-scrollbar { width: 3px; }
+    &::-webkit-scrollbar-track { background: transparent; }
+    &::-webkit-scrollbar-thumb { background: rgba(219,39,119,.3); border-radius: 2px; }
 
     &__item {
         display: flex;
         align-items: center;
-        gap: .65rem;
+        gap: .5rem;
+        padding: .35rem .4rem;
+        border-radius: 7px;
+        transition: background .15s;
+
+        &:hover { background: rgba(255,255,255,.06); }
     }
 
     &__avatar {
-        width: 34px;
-        height: 34px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: .8rem;
+        font-size: .75rem;
         font-weight: 900;
         color: #fff;
         flex-shrink: 0;
+        overflow: hidden;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
     }
 
     &__name {
-        font-size: .88rem;
+        font-size: .78rem;
         font-weight: 700;
-        color: rgba(255,255,255,.85);
+        color: rgba(255,255,255,.8);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
+}
+
+.xcl-session-schedule {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+
+    @media (max-width: 575px) {
+        flex-direction: column;
+        gap: .75rem;
+    }
+
+    &__step {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        padding: .75rem .5rem;
+
+        &:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 0;
+            width: 1px;
+            height: 40%;
+            transform: translateY(-50%);
+            background: rgba(219,39,119,.2);
+
+            @media (max-width: 575px) {
+                display: none;
+            }
+        }
+    }
+
+    &__dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        border: 2px solid rgba(219,39,119,.5);
+        background: rgba(219,39,119,.15);
+        margin-bottom: .55rem;
+        flex-shrink: 0;
+
+        &--race {
+            width: 12px;
+            height: 12px;
+        }
+    }
+
+    &__info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: .2rem;
+    }
+
+    &__label {
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 800;
+        font-size: .7rem;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: rgba(255,255,255,.45);
+
+        &--race {
+            font-size: .75rem;
+        }
+    }
+
+    &__dur {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-weight: 900;
+        font-style: italic;
+        font-size: 1.35rem;
+        color: #fff;
+        line-height: 1;
+
+        &--race {
+            font-size: 1.55rem;
+        }
+    }
+}
+
+.xcl-event-reqs {
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+}
+
+.xcl-event-req-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .45rem .6rem;
+    background: rgba(255,255,255,.04);
+    border-radius: 7px;
+    border: 1px solid rgba(219,39,119,.12);
+}
+
+.xcl-event-req-label {
+    font-size: .78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: rgba(255,255,255,.45);
+}
+
+.xcl-event-req-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-style: italic;
+    font-size: 1rem;
+    color: #fff;
 }
 
 // Next-steps cards
