@@ -431,39 +431,32 @@ html {
     }
 }
 
-// Pills inside the trigger tab — icon always fills 42px (tab width), centered.
-// Pill is right-aligned so it expands leftward on hover without shifting the icon.
+// Pills inside the trigger tab — expand leftward from the screen edge on hover.
 .xcl-trigger-pill {
     display: flex;
-    flex-direction: row-reverse;
+    flex-direction: row;
     align-items: center;
+    justify-content: space-between;
     overflow: hidden;
-    width: 42px;
-    height: 30px;
-    border-radius: 4px 0 0 4px;
-    background: rgba(255, 255, 255, 0.08);
-    transition: width 0.25s ease, background 0.2s ease;
+    width: 44px;
+    border-radius: 8px 0 0 8px;
+    background: rgba(124, 58, 237, 0.25);
+    transition: width 0.3s ease, background 0.3s ease;
     text-decoration: none;
     cursor: pointer;
+    padding: 8px 10px;
+    gap: 10px;
 
     &:hover {
-        background: rgba(255, 255, 255, 0.15);
+        width: 140px;
+        background: #7c3aed;
         .xcl-trigger-pill__label { opacity: 1; }
         .xcl-trigger-pill__icon  { color: #d4ee6a; }
     }
-
-    &--discord:hover   { width: 110px; }
-    &--twitch:hover    { width: 100px; }
-    &--instagram:hover { width: 128px; }
-    &--tiktok:hover    { width: 100px; }
 }
 
 .xcl-trigger-pill__icon {
     flex-shrink: 0;
-    width: 42px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     color: rgba(255, 255, 255, 0.65);
     font-size: 1rem;
     transition: color 0.2s ease;
@@ -471,15 +464,14 @@ html {
 
 .xcl-trigger-pill__label {
     white-space: nowrap;
-    font-size: 0.58rem;
+    font-size: 0.72rem;
     font-weight: 700;
     font-family: 'Poppins', sans-serif;
-    text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: rgba(255, 255, 255, 0.9);
+    text-transform: uppercase;
+    color: #d4ee6a;
     opacity: 0;
-    padding-right: 8px;
-    transition: opacity 0.15s ease 0.1s;
+    transition: opacity 0.15s ease 0.15s;
 }
 
 // ── Social icon strip: sits below the trigger tab, same lime border ──────────

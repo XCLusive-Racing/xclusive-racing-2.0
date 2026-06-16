@@ -64,19 +64,19 @@ foreach ($sbGames as $game => $col) {
         </div>
         <span class="xcl-sidebar-trigger__text">DASHBOARD</span>
         <div class="xcl-sidebar-trigger__socials" @click.stop>
-            <a href="{{ config('xcl.discord_url') }}" class="xcl-trigger-pill xcl-trigger-pill--discord" target="_blank" rel="noopener" title="Discord">
+            <a href="{{ config('xcl.discord_url') }}" class="xcl-trigger-pill xcl-trigger-pill--discord" target="_blank" rel="noopener">
                 <span class="xcl-trigger-pill__icon"><i class="fa-brands fa-discord"></i></span>
                 <span class="xcl-trigger-pill__label">Discord</span>
             </a>
-            <a href="#" class="xcl-trigger-pill xcl-trigger-pill--twitch" title="Twitch">
+            <a href="#" class="xcl-trigger-pill xcl-trigger-pill--twitch">
                 <span class="xcl-trigger-pill__icon"><i class="fa-brands fa-twitch"></i></span>
                 <span class="xcl-trigger-pill__label">Twitch</span>
             </a>
-            <a href="https://www.instagram.com/xclusive_esport/" class="xcl-trigger-pill xcl-trigger-pill--instagram" target="_blank" rel="noopener" title="Instagram">
+            <a href="https://www.instagram.com/xclusive_esport/" class="xcl-trigger-pill xcl-trigger-pill--instagram" target="_blank" rel="noopener">
                 <span class="xcl-trigger-pill__icon"><i class="fa-brands fa-instagram"></i></span>
                 <span class="xcl-trigger-pill__label">Instagram</span>
             </a>
-            <a href="#" class="xcl-trigger-pill xcl-trigger-pill--tiktok" title="TikTok">
+            <a href="#" class="xcl-trigger-pill xcl-trigger-pill--tiktok">
                 <span class="xcl-trigger-pill__icon"><i class="fa-brands fa-tiktok"></i></span>
                 <span class="xcl-trigger-pill__label">TikTok</span>
             </a>
