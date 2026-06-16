@@ -406,7 +406,7 @@ html {
         font-style: normal;
         letter-spacing: 0.1em;
         text-transform: uppercase;
-        font-size: 0.75rem;
+        font-size: 0.9rem;
         white-space: nowrap;
         color: white;
     }
@@ -418,16 +418,6 @@ html {
         width: 100%;
         gap: 10px;
         margin-top: 12px;
-
-        // Icon 16px, opacity 0.7 → 1.0 on hover
-        .xcl-sb-social-icon {
-            font-size: 1rem;
-            opacity: 0.7;
-        }
-
-        .xcl-sb-social-pill:hover .xcl-sb-social-icon {
-            opacity: 1;
-        }
     }
 
     &--open {
@@ -439,6 +429,57 @@ html {
     @media (max-width: 480px) {
         &--open { display: none !important; }
     }
+}
+
+// Pills inside the trigger tab — icon always fills 42px (tab width), centered.
+// Pill is right-aligned so it expands leftward on hover without shifting the icon.
+.xcl-trigger-pill {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    overflow: hidden;
+    width: 42px;
+    height: 30px;
+    border-radius: 4px 0 0 4px;
+    background: rgba(255, 255, 255, 0.08);
+    transition: width 0.25s ease, background 0.2s ease;
+    text-decoration: none;
+    cursor: pointer;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.15);
+        .xcl-trigger-pill__label { opacity: 1; }
+        .xcl-trigger-pill__icon  { color: #d4ee6a; }
+    }
+
+    &--discord:hover   { width: 110px; }
+    &--twitch:hover    { width: 100px; }
+    &--instagram:hover { width: 128px; }
+    &--tiktok:hover    { width: 100px; }
+}
+
+.xcl-trigger-pill__icon {
+    flex-shrink: 0;
+    width: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 1rem;
+    transition: color 0.2s ease;
+}
+
+.xcl-trigger-pill__label {
+    white-space: nowrap;
+    font-size: 0.58rem;
+    font-weight: 700;
+    font-family: 'Poppins', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.9);
+    opacity: 0;
+    padding-right: 8px;
+    transition: opacity 0.15s ease 0.1s;
 }
 
 // ── Social icon strip: sits below the trigger tab, same lime border ──────────
