@@ -40,7 +40,7 @@
                 <div class="mt-driver-card">
                     <div class="mt-driver-portrait">
                         <img src="/images/drivers/W.Gige.png" alt="Wilson Gigé"
-                             style="width:100%;height:100%;object-fit:cover;object-position:top;">
+                             style="width:100%;height:100%;object-fit:cover;object-position:50% 20%;">
                         <span class="mt-badge mt-badge--game">LMU</span>
                         <span class="mt-badge mt-badge--platform mt-badge--pc">PC</span>
                         <div class="mt-driver-socials">
@@ -63,7 +63,7 @@
                 <div class="mt-driver-card">
                     <div class="mt-driver-portrait">
                         <img src="/images/drivers/M.vanRooijen.png" alt="Mats van Rooijen"
-                             style="width:100%;height:100%;object-fit:cover;object-position:top;">
+                             style="width:100%;height:100%;object-fit:cover;object-position:50% 20%;">
                         <span class="mt-badge mt-badge--game">PRO</span>
                         <span class="mt-badge mt-badge--platform mt-badge--hybrid">Hybrid</span>
                         <div class="mt-driver-socials">
@@ -87,7 +87,7 @@
                 <div class="mt-driver-card">
                     <div class="mt-driver-portrait">
                         <img src="/images/drivers/D.Schouten.png" alt="Dirk Schouten"
-                             style="width:100%;height:100%;object-fit:cover;object-position:top;">
+                             style="width:100%;height:100%;object-fit:cover;object-position:50% 20%;">
                         <span class="mt-badge mt-badge--game">PRO</span>
                         <span class="mt-badge mt-badge--platform mt-badge--hybrid">Hybrid</span>
                         <div class="mt-driver-socials">
@@ -109,7 +109,7 @@
                 <div class="mt-driver-card">
                     <div class="mt-driver-portrait">
                         <img src="/images/drivers/P.Soukup.png" alt="Parker Soukup"
-                             style="width:100%;height:100%;object-fit:cover;object-position:top;">
+                             style="width:100%;height:100%;object-fit:cover;object-position:50% 20%;">
                         <span class="mt-badge mt-badge--game">IRACING</span>
                         <span class="mt-badge mt-badge--platform mt-badge--pc">PC</span>
                         <div class="mt-driver-socials">
