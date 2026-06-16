@@ -3367,6 +3367,58 @@ body.admin-body {
     flex-shrink: 0;
 }
 
+// Carousel
+.mt-carousel-wrapper {
+    overflow: hidden;
+    position: relative;
+}
+
+.mt-carousel-track {
+    display: flex;
+    flex-wrap: nowrap;
+    will-change: transform;
+}
+
+.mt-carousel-item {
+    flex: 0 0 25%;
+    min-width: 0;
+    padding: 0 6px;
+    box-sizing: border-box;
+
+    @media (max-width: 767px) {
+        flex: 0 0 100%;
+    }
+}
+
+.mt-carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #ef4444;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    padding: 0;
+
+    svg { pointer-events: none; }
+
+    &:hover {
+        background: rgba(0, 0, 0, 0.85);
+        border-color: rgba(239, 68, 68, 0.5);
+    }
+
+    &--left  { left: 4px;  }
+    &--right { right: 4px; }
+}
+
 // ─── Auth pages ──────────────────────────────────────────────────────────────
 
 .xcl-auth-page {
