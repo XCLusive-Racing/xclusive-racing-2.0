@@ -33,7 +33,7 @@
         </div>
 
         {{-- ── Carousel ─────────────────────────────────────────────────────────── --}}
-        <div class="position-relative mb-4">
+        <div class="position-relative mb-4" style="padding: 0 28px;">
 
             {{-- Left arrow --}}
             <button class="mt-carousel-arrow mt-carousel-arrow--left"
@@ -49,7 +49,7 @@
             {{-- Track wrapper --}}
             <div class="mt-carousel-wrapper" x-ref="wrapper">
                 <div class="mt-carousel-track"
-                     :style="`transform: translateX(-${current * ($refs.wrapper ? $refs.wrapper.offsetWidth : 0)}px); transition: transform 0.3s ease;`">
+                     :style="`transform: translateX(-${current * ($refs.wrapper ? $refs.wrapper.offsetWidth / perPage : 0)}px); transition: transform 0.3s ease;`">
 
                     {{-- Driver cards (rendered from Alpine data) --}}
                     <template x-for="driver in filtered" :key="driver.name">
@@ -103,7 +103,7 @@
 
             {{-- Right arrow --}}
             <button class="mt-carousel-arrow mt-carousel-arrow--right"
-                    x-show="current < pages - 1"
+                    x-show="current < maxCurrent"
                     x-transition
                     @click="next()"
                     aria-label="Next">
@@ -218,11 +218,11 @@ function driverCarousel() {
         },
 
         get perPage() {
-            return window.innerWidth >= 768 ? 4 : 1;
+            return window.innerWidth >= 768 ? 5 : 1;
         },
 
-        get pages() {
-            return Math.ceil((this.filtered.length + 1) / this.perPage); // +1 for MORE card
+        get maxCurrent() {
+            return Math.max(0, this.filtered.length + 1 - this.perPage); // +1 for MORE card
         },
 
         setFilter(f) {
@@ -235,7 +235,7 @@ function driverCarousel() {
         },
 
         next() {
-            if (this.current < this.pages - 1) this.current++;
+            if (this.current < this.maxCurrent) this.current++;
         },
 
         gameBadgeLabel(cat) {

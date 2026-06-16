@@ -3380,7 +3380,7 @@ body.admin-body {
 }
 
 .mt-carousel-item {
-    flex: 0 0 25%;
+    flex: 0 0 20%;
     min-width: 0;
     padding: 0 6px;
     box-sizing: border-box;
@@ -3398,8 +3398,8 @@ body.admin-body {
     height: 44px;
     border-radius: 50%;
     background: rgba(0, 0, 0, 0.65);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: #ef4444;
+    border: 1px solid rgba(212, 238, 106, 0.3);
+    color: #d4ee6a;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -3412,11 +3412,11 @@ body.admin-body {
 
     &:hover {
         background: rgba(0, 0, 0, 0.85);
-        border-color: rgba(239, 68, 68, 0.5);
+        border-color: rgba(212, 238, 106, 0.7);
     }
 
-    &--left  { left: 4px;  }
-    &--right { right: 4px; }
+    &--left  { left: 0;  }
+    &--right { right: 0; }
 }
 
 // ─── Auth pages ──────────────────────────────────────────────────────────────
