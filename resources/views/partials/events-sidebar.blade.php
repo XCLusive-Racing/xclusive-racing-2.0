@@ -62,7 +62,25 @@ foreach ($sbGames as $game => $col) {
                 </svg>
             </span>
         </div>
-        <span class="xcl-sidebar-trigger__text" x-text="open ? 'CLOSE EVENTS' : 'UPCOMING EVENTS'"></span>
+        <span class="xcl-sidebar-trigger__text">XCL DASHBOARD</span>
+        <div class="xcl-sidebar-trigger__socials" @click.stop>
+            <a href="{{ config('xcl.discord_url') }}" class="xcl-sb-social-pill" target="_blank" rel="noopener" title="Discord">
+                <span class="xcl-sb-social-icon"><i class="fa-brands fa-discord"></i></span>
+                <span class="xcl-sb-social-label">Discord</span>
+            </a>
+            <a href="#" class="xcl-sb-social-pill" title="Twitch">
+                <span class="xcl-sb-social-icon"><i class="fa-brands fa-twitch"></i></span>
+                <span class="xcl-sb-social-label">Twitch</span>
+            </a>
+            <a href="https://www.instagram.com/xclusive_esport/" class="xcl-sb-social-pill" target="_blank" rel="noopener" title="Instagram">
+                <span class="xcl-sb-social-icon"><i class="fa-brands fa-instagram"></i></span>
+                <span class="xcl-sb-social-label">Instagram</span>
+            </a>
+            <a href="#" class="xcl-sb-social-pill" title="TikTok">
+                <span class="xcl-sb-social-icon"><i class="fa-brands fa-tiktok"></i></span>
+                <span class="xcl-sb-social-label">TikTok</span>
+            </a>
+        </div>
     </button>
 
     {{-- ── Backdrop ─────────────────────────────────────────────────────────── --}}
