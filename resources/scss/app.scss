@@ -1250,22 +1250,32 @@ html {
 }
 
 .partner-box {
-    background: rgba(124,58,237,.04);
-    border: 1.5px dashed rgba(124,58,237,.2);
+    background: #1a0a2e;
+    border: 1px solid rgba(124, 58, 237, 0.25);
     border-radius: 10px;
-    min-height: 130px;
+    min-height: 110px;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #9ca3af;
-    font-weight: 700;
-    font-size: 0.85rem;
-    transition: border-color .2s, background .2s;
+    padding: 1.25rem 1.5rem;
+    transition: border-color .2s ease, transform .2s ease;
 
     &:hover {
-        border-color: rgba(124,58,237,.45);
-        background: rgba(124,58,237,.07);
+        border-color: rgba(212, 238, 106, 0.45);
+        transform: translateY(-2px);
+    }
+}
+
+.partner-logo {
+    max-width: 100%;
+    max-height: 48px;
+    width: auto;
+    object-fit: contain;
+    opacity: 0.85;
+    transition: opacity .2s ease;
+
+    .partner-box:hover & {
+        opacity: 1;
     }
 }
 
