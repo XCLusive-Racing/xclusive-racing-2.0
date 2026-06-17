@@ -427,8 +427,39 @@ html {
 
     &:hover { background: #2d1052; }
 
-    @media (max-width: 480px) {
+    @media (max-width: 767px) {
+        // Full-width bottom bar — panel slides up from here
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 48px;
+        min-height: unset;
+        transform: none;
+        flex-direction: row;
+        justify-content: center;
+        gap: 10px;
+        border-left: none;
+        border-top: 3px solid #d4ee6a;
+        border-radius: 0;
+        padding: 0 16px;
+
+        &__text {
+            writing-mode: horizontal-tb;
+            transform: none;
+            font-size: 0.82rem;
+        }
+
+        // Left-pointing chevrons rotated to face up
+        &__chevrons { transform: rotate(-90deg); }
+        &--open &__chevrons { transform: rotate(-90deg); }
+
+        // Panel covers the trigger when open — hide it
         &--open { display: none !important; }
+
+        // Social pills don't fit the horizontal bar
+        &__socials { display: none; }
     }
 }
 
@@ -589,6 +620,21 @@ html {
     > * { position: relative; z-index: 1; }
 
     &--open { transform: translateX(0); }
+
+    @media (max-width: 767px) {
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100vw;
+        max-width: 100vw;
+        height: 85vh;
+        border-radius: 12px 12px 0 0;
+        transform: translateY(100%);
+        box-shadow: 0 -8px 60px rgba(123,47,190,.45);
+
+        &--open { transform: translateY(0); }
+    }
 }
 
 .xcl-sidebar__header {
@@ -3952,6 +3998,8 @@ table.dataTable thead th {
     }
 
     &:hover { background: #6D28D9; color: white; }
+
+    @media (max-width: 767px) { display: none !important; }
 }
 
 // ── Next Event: hero image block ──────────────────────────────────────────────
