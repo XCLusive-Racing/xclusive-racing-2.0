@@ -50,35 +50,35 @@ foreach ($sbGames as $game => $col) {
         :aria-expanded="open.toString()">
         <div class="xcl-sidebar-trigger__chevrons">
             <span class="xcl-sidebar-trigger__chevron-1">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
                      stroke="#d4ee6a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="15,18 9,12 15,6"/>
                 </svg>
             </span>
             <span class="xcl-sidebar-trigger__chevron-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
                      stroke="#d4ee6a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="15,18 9,12 15,6"/>
                 </svg>
             </span>
         </div>
-        <span class="xcl-sidebar-trigger__text">XCL DASHBOARD</span>
+        <span class="xcl-sidebar-trigger__text">DASHBOARD</span>
         <div class="xcl-sidebar-trigger__socials" @click.stop>
-            <a href="{{ config('xcl.discord_url') }}" class="xcl-sb-social-pill" target="_blank" rel="noopener" title="Discord">
-                <span class="xcl-sb-social-icon"><i class="fa-brands fa-discord"></i></span>
-                <span class="xcl-sb-social-label">Discord</span>
+            <a href="{{ config('xcl.discord_url') }}" class="xcl-trigger-pill xcl-trigger-pill--discord" target="_blank" rel="noopener">
+                <span class="xcl-trigger-pill__icon"><i class="fa-brands fa-discord"></i></span>
+                <span class="xcl-trigger-pill__label">Discord</span>
             </a>
-            <a href="#" class="xcl-sb-social-pill" title="Twitch">
-                <span class="xcl-sb-social-icon"><i class="fa-brands fa-twitch"></i></span>
-                <span class="xcl-sb-social-label">Twitch</span>
+            <a href="#" class="xcl-trigger-pill xcl-trigger-pill--twitch">
+                <span class="xcl-trigger-pill__icon"><i class="fa-brands fa-twitch"></i></span>
+                <span class="xcl-trigger-pill__label">Twitch</span>
             </a>
-            <a href="https://www.instagram.com/xclusive_esport/" class="xcl-sb-social-pill" target="_blank" rel="noopener" title="Instagram">
-                <span class="xcl-sb-social-icon"><i class="fa-brands fa-instagram"></i></span>
-                <span class="xcl-sb-social-label">Instagram</span>
+            <a href="https://www.instagram.com/xclusive_esport/" class="xcl-trigger-pill xcl-trigger-pill--instagram" target="_blank" rel="noopener">
+                <span class="xcl-trigger-pill__icon"><i class="fa-brands fa-instagram"></i></span>
+                <span class="xcl-trigger-pill__label">Instagram</span>
             </a>
-            <a href="#" class="xcl-sb-social-pill" title="TikTok">
-                <span class="xcl-sb-social-icon"><i class="fa-brands fa-tiktok"></i></span>
-                <span class="xcl-sb-social-label">TikTok</span>
+            <a href="#" class="xcl-trigger-pill xcl-trigger-pill--tiktok">
+                <span class="xcl-trigger-pill__icon"><i class="fa-brands fa-tiktok"></i></span>
+                <span class="xcl-trigger-pill__label">TikTok</span>
             </a>
         </div>
     </button>

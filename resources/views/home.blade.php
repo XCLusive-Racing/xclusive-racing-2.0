@@ -65,7 +65,7 @@
         <div class="row g-4 justify-content-center">
             @foreach([
                 ['boostlogo-DEF-wit-01-06.png', 'Boost'],
-                ['ds-logo.svg',                  'DS'],
+                ['ds-logo-white.png',             'DS'],
                 ['logo-dark.png',                'Partner'],
                 ['Logo-White.webp',              'Partner'],
                 ['simlab-white-no-tagline-e1637234882156.png', 'SimLab'],

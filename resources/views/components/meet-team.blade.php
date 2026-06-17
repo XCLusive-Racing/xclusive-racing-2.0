@@ -218,7 +218,7 @@ function driverCarousel() {
         },
 
         get perPage() {
-            return window.innerWidth >= 768 ? 5 : 1;
+            return window.innerWidth >= 768 ? 5 : 2;
         },
 
         get maxCurrent() {
