@@ -356,7 +356,8 @@ html {
     right: 0;
     transform: translateY(-50%) translateX(0);
     width: 42px;
-    height: 320px;
+    height: auto;
+    min-height: fit-content;
     background: #1a0a2e;
     border: none;
     border-left: 3px solid #d4ee6a;
@@ -369,7 +370,7 @@ html {
     align-items: center;
     justify-content: center;
     gap: 4px;
-    padding: 10px 0;
+    padding: 10px 0 16px;
     outline: none;
     overflow: visible;
     box-shadow: -3px 0 16px rgba(26, 10, 46, .7);
@@ -416,8 +417,8 @@ html {
         flex-direction: column;
         align-items: flex-end;
         width: 100%;
-        gap: 10px;
-        margin-top: 12px;
+        gap: 2px;
+        margin-top: 10px;
     }
 
     &--open {
@@ -431,7 +432,7 @@ html {
     }
 }
 
-// Pills inside the trigger tab — expand leftward from the screen edge on hover.
+// Pills inside the trigger tab — blend into tab bg, expand leftward on hover.
 .xcl-trigger-pill {
     display: flex;
     flex-direction: row;
@@ -440,16 +441,18 @@ html {
     overflow: hidden;
     width: 44px;
     border-radius: 8px 0 0 8px;
-    background: rgba(124, 58, 237, 0.25);
-    transition: width 0.3s ease, background 0.3s ease;
+    background: transparent;
+    border-left: 2px solid transparent;
+    transition: width 0.3s ease, background 0.3s ease, border-left-color 0.2s ease;
     text-decoration: none;
     cursor: pointer;
-    padding: 8px 10px;
+    padding: 6px 8px;
     gap: 10px;
 
     &:hover {
-        width: 140px;
-        background: #7c3aed;
+        width: 130px;
+        background: rgba(255, 255, 255, 0.08);
+        border-left-color: #d4ee6a;
         .xcl-trigger-pill__label { opacity: 1; }
         .xcl-trigger-pill__icon  { color: #d4ee6a; }
     }
@@ -457,7 +460,7 @@ html {
 
 .xcl-trigger-pill__icon {
     flex-shrink: 0;
-    color: rgba(255, 255, 255, 0.65);
+    color: white;
     font-size: 1rem;
     transition: color 0.2s ease;
 }
