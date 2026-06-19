@@ -1,5 +1,6 @@
 @php
 use App\Models\Race;
+use App\Models\TeamEvent;
 use App\Models\User;
 
 $now = now();
@@ -17,6 +18,8 @@ $sbUpcoming = Race::where('scheduled_at', '>', $now)
     ->limit(2)
     ->get();
 $sbUpcoming->loadCount('registrations');
+
+$sbTeamEvents = TeamEvent::upcoming()->limit(2)->get();
 
 $sbGames = ['acc' => 'elo_acc', 'lmu' => 'elo_lmu', 'iracing' => 'elo_iracing'];
 $sbLeaderboards = [];
@@ -373,6 +376,7 @@ foreach ($sbGames as $game => $col) {
                         @empty
                         <p style="color:#8B9BB4;font-size:.8rem;padding:.5rem 0">No further events scheduled</p>
                         @endforelse
+
                     </div>
                     {{-- end col 2 --}}
 
@@ -446,6 +450,87 @@ foreach ($sbGames as $game => $col) {
                     {{-- end col 3 --}}
 
                 </div>
+
+                {{-- ── Separator + Full-width Real-World Racing ────────────── --}}
+                @if($sbTeamEvents->isNotEmpty())
+                <div style="border-top:1px solid rgba(255,255,255,0.08);margin:.75rem 1.5rem 0;padding:0 .25rem">
+                    <div style="display:flex;align-items:center;gap:.75rem;padding:.9rem 0 .75rem">
+                        <div class="xcl-sb-title" style="margin:0;white-space:nowrap">
+                            <span>REAL-WORLD </span><span>RACING</span>
+                        </div>
+                        <div style="flex:1;height:1px;background:rgba(255,255,255,0.07)"></div>
+                    </div>
+
+                    <div style="display:flex;gap:1rem;align-items:stretch;padding-bottom:.25rem">
+                        @foreach([0, 1] as $slot)
+                        @php $te = $sbTeamEvents->get($slot); @endphp
+
+                        @if($te)
+                        {{-- Slot filled --}}
+                        <div class="xcl-sb-up-card" style="flex:1;min-width:0"
+                             x-data="countdownTimer('{{ $te->starts_at->toIso8601String() }}')">
+
+                            <div class="xcl-sb-up-card__img-wrap" style="height:300px">
+                                <img src="{{ $te->image_url ?? '/images/home/teams/XCLusive_Placeholder_ACC.png' }}"
+                                     alt="{{ $te->title }}" loading="lazy"
+                                     class="xcl-sb-up-card__img"
+                                     style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
+                                <div class="xcl-sb-up-card__img-gradient"></div>
+
+                                <div class="xcl-sb-up-card__title">
+                                    {{ strtoupper($te->title) }}
+                                </div>
+
+                                <div class="xcl-sb-up-card__meta-row">
+                                    <div class="xcl-sb-countdown xcl-sb-countdown--small">
+                                        <span x-text="String(d).padStart(2,'0')"></span>D&nbsp;<span x-text="String(h).padStart(2,'0')"></span>H&nbsp;<span x-text="String(m).padStart(2,'0')"></span>M
+                                    </div>
+                                    <div style="font-size:.65rem;color:#9ca3af;font-weight:600">
+                                        {{ $te->starts_at->format('d M · H:i') }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="xcl-sb-up-card__footer" style="padding:.5rem .6rem">
+                                <div class="d-flex gap-1 flex-wrap align-items-center">
+                                    <span class="xcl-sb-badge xcl-sb-badge--game"
+                                          style="background:rgba(212,238,106,.15);color:#d4ee6a;border:1px solid rgba(212,238,106,.3)">
+                                        {{ TeamEvent::subjects()[$te->subject] ?? $te->subject }}
+                                    </span>
+                                    @if($te->subtitle)
+                                    <span class="xcl-sb-badge xcl-sb-badge--platform">{{ $te->subtitle }}</span>
+                                    @endif
+                                </div>
+                                @if($te->watch_url)
+                                <a href="{{ $te->watch_url }}" target="_blank" rel="noopener"
+                                   class="xcl-sb-up-card__join"
+                                   style="background:#d4ee6a;color:#0d0d0d;font-weight:800;padding:4px 10px;font-size:.65rem">
+                                    ▶ WATCH LIVE
+                                </a>
+                                @else
+                                <span class="xcl-sb-up-card__join"
+                                      style="background:rgba(212,238,106,.08);color:#4b5563;cursor:default;pointer-events:none;padding:4px 10px;font-size:.65rem">
+                                    WATCH LIVE
+                                </span>
+                                @endif
+                            </div>
+                        </div>
+
+                        @else
+                        {{-- Empty slot --}}
+                        <div style="flex:1;min-width:0;height:300px;border-radius:8px;border:1px dashed rgba(255,255,255,0.1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;background:rgba(255,255,255,0.02)">
+                            <svg width="24" height="24" fill="none" stroke="#4b5563" stroke-width="1.5" viewBox="0 0 24 24">
+                                <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+                            </svg>
+                            <span style="font-size:.7rem;font-weight:700;color:#4b5563;letter-spacing:.06em;text-transform:uppercase">No upcoming events</span>
+                        </div>
+                        @endif
+
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
             </div>
             {{-- end daily tab --}}
 

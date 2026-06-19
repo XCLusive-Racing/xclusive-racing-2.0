@@ -165,9 +165,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/event-tags/{eventTag}', [EventTagController::class, 'destroy'])->name('event-tags.destroy');
 
     // Team Events (real-world racing)
-    Route::get('/team-events',              [AdminTeamEventController::class, 'index'])->name('team-events.index');
-    Route::post('/team-events',             [AdminTeamEventController::class, 'store'])->name('team-events.store');
-    Route::delete('/team-events/{teamEvent}', [AdminTeamEventController::class, 'destroy'])->name('team-events.destroy');
+    Route::get('/team-events',                        [AdminTeamEventController::class, 'index'])->name('team-events.index');
+    Route::post('/team-events',                       [AdminTeamEventController::class, 'store'])->name('team-events.store');
+    Route::get('/team-events/{teamEvent}/edit',       [AdminTeamEventController::class, 'edit'])->name('team-events.edit');
+    Route::put('/team-events/{teamEvent}',            [AdminTeamEventController::class, 'update'])->name('team-events.update');
+    Route::delete('/team-events/{teamEvent}',         [AdminTeamEventController::class, 'destroy'])->name('team-events.destroy');
 
     // Media Library
     Route::get('/media', [AdminMediaController::class, 'index'])->name('media.index');
