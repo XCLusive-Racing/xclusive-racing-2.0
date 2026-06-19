@@ -14,6 +14,7 @@ class ProDriverController extends Controller
                 'flag'             => 'netherlands',
                 'nationality'      => 'Dutch',
                 'portrait'         => '/images/drivers/D.Schouten.png',
+                'hero_category'    => 'Porsche_Super_Cup_Banner',
                 'profile_category' => 'dirk-profile-page',
                 'bio'         => 'Dirk Schouten is a Dutch professional racing driver representing XCLusive Racing on the international motorsport stage. Competing in some of Europe\'s most prestigious single-make championships, Dirk has proven his racecraft with consistent podium finishes and a maiden class victory at Monaco. Known for his commitment to improvement and engaging presence both on and off track, he is a cornerstone of the XCLusive Racing professional programme.',
                 'socials' => [
@@ -189,7 +190,8 @@ class ProDriverController extends Controller
         $driver['slug'] = $slug;
 
         // Auto-pick the latest hero image uploaded via the media library
-        $hero           = Media::where('category', 'driver-' . $slug)
+        $heroCategory   = $driver['hero_category'] ?? ('driver-' . $slug);
+        $hero           = Media::where('category', $heroCategory)
             ->where('type', 'image')
             ->latest()
             ->first();
