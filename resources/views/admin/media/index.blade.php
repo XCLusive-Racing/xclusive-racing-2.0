@@ -230,6 +230,11 @@
                             <option value="teams"  {{ old('category') === 'teams'  ? 'selected' : '' }}>Teams</option>
                             <option value="backgrounds" {{ old('category') === 'backgrounds' ? 'selected' : '' }}>Backgrounds</option>
                             <option value="logos"  {{ old('category') === 'logos'  ? 'selected' : '' }}>Logos</option>
+                            <optgroup label="── PRO Drivers ──">
+                                <option value="driver-dirk-schouten"    {{ old('category') === 'driver-dirk-schouten'    ? 'selected' : '' }}>Dirk Schouten</option>
+                                <option value="driver-mats-van-rooijen" {{ old('category') === 'driver-mats-van-rooijen' ? 'selected' : '' }}>Mats van Rooijen</option>
+                                <option value="driver-jesse-aalbregt"   {{ old('category') === 'driver-jesse-aalbregt'   ? 'selected' : '' }}>Jesse Aalbregt</option>
+                            </optgroup>
                             <option value="other"  {{ old('category') === 'other'  ? 'selected' : '' }}>Other</option>
                         </select>
                     </div>
