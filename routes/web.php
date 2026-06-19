@@ -23,6 +23,7 @@ use App\Http\Controllers\BopController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ProDriverController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\HotlapController;
 use App\Http\Controllers\ProfileController;
@@ -52,6 +53,10 @@ Route::get('sven', function () {
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::view('/team', 'team.index')->name('team');
+
+// PRO driver profiles
+Route::get('/teams/pro',          [ProDriverController::class, 'index'])->name('teams.pro.index');
+Route::get('/teams/pro/{slug}',   [ProDriverController::class, 'show'])->name('teams.pro.show');
 Route::get('/events/sidebar-data', [EventController::class, 'getSidebarData'])->name('events.sidebar-data');
 
 // Championships - public

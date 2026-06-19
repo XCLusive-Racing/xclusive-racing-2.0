@@ -21,6 +21,7 @@
             @foreach([
                 [
                     'slug'     => 'pro',
+                    'href'     => route('teams.pro.index'),
                     'color'    => '#d4ee6a',
                     'title'    => 'Professional Drivers',
                     'desc'     => 'Our real-world racing drivers competing at the highest level of motorsport, proudly flying the XCLusive flag.',
@@ -30,6 +31,7 @@
                 ],
                 [
                     'slug'     => 'esports',
+                    'href'     => '#',
                     'color'    => '#c084fc',
                     'title'    => 'Esports Drivers',
                     'desc'     => 'Elite sim racers representing XCLusive across ACC, LMU, iRacing and more — chasing every tenth.',
@@ -39,6 +41,7 @@
                 ],
                 [
                     'slug'     => 'staff',
+                    'href'     => '#',
                     'color'    => '#3b82f6',
                     'title'    => 'Staff',
                     'desc'     => 'The team behind the team — organizers, stewards, and community managers keeping it all running.',
@@ -49,7 +52,8 @@
                 ],
             ] as $cat)
 
-            <div class="events-platform-card"
+            <div class="events-platform-card" onclick="window.location='{{ $cat['href'] }}'"
+                 style="cursor:pointer"
                  x-data="{ on: false }"
                  @mouseenter="on = true"
                  @mouseleave="on = false"

@@ -147,6 +147,19 @@ function driverCarousel() {
         drivers: [
             // ── PRO ──────────────────────────────────────────────────────
             {
+                name: 'Dirk Schouten',
+                cat: 'pro', platform: 'hybrid', platformLabel: 'Hybrid',
+                photo: '/images/drivers/D.Schouten.png',
+                flag: 'netherlands', role: 'racing',
+                socials: [
+                    { type: 'instagram', href: 'https://www.instagram.com/dirk_schouten_/' },
+                    { type: 'tiktok',    href: 'https://www.tiktok.com/@dirkschouten34' },
+                    { type: 'youtube',   href: 'https://www.youtube.com/channel/UC6PwvyoGGVmql0a2Ch5RJ9w' },
+                    { type: 'linkedin',  href: 'https://www.linkedin.com/in/dirk-schouten-690221167/' },
+                    { type: 'facebook',  href: 'https://www.facebook.com/p/Dirk-Schouten-100007931509430/' },
+                ],
+            },
+            {
                 name: 'Mats van Rooijen',
                 cat: 'pro', platform: 'hybrid', platformLabel: 'Hybrid',
                 photo: '/images/drivers/M.vanRooijen.png',
@@ -156,13 +169,6 @@ function driverCarousel() {
                     { type: 'instagram', href: 'https://www.instagram.com/matsvanrooijen_official/' },
                     { type: 'linkedin',  href: 'https://www.linkedin.com/in/mats-van-rooijen-540354314/' },
                 ],
-            },
-            {
-                name: 'Dirk Schouten',
-                cat: 'pro', platform: 'hybrid', platformLabel: 'Hybrid',
-                photo: '/images/drivers/D.Schouten.png',
-                flag: 'netherlands', role: 'racing',
-                socials: [{ type: 'twitter', href: '#' }, { type: 'instagram', href: '#' }],
             },
 
             // ── LMU ──────────────────────────────────────────────────────
@@ -178,7 +184,16 @@ function driverCarousel() {
             { name: 'Gianluca Walczak',  cat: 'lmu', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'germany',          role: 'esports', socials: [] },
             { name: 'Kyle Williams',     cat: 'lmu', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'south%20africa',   role: 'esports', socials: [] },
             { name: 'Aidan Winchester',  cat: 'lmu', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'united%20kingdom', role: 'esports', socials: [] },
-            { name: 'Jesse Aalbregt',    cat: 'lmu', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'netherlands',      role: 'esports', socials: [] },
+            {
+                name: 'Jesse Aalbregt', cat: 'pro', platform: 'hybrid', platformLabel: 'Hybrid',
+                photo: '/images/drivers/J.Aalbregt.png', flag: 'netherlands', role: 'racing',
+                socials: [
+                    { type: 'instagram', href: 'https://www.instagram.com/teamjesse81/' },
+                    { type: 'youtube',   href: 'https://www.youtube.com/@teamjesse81' },
+                    { type: 'tiktok',    href: 'https://www.tiktok.com/@teamjesse81' },
+                    { type: 'twitch',    href: 'https://www.twitch.tv/teamjesse81' },
+                ],
+            },
 
             // ── ACC ──────────────────────────────────────────────────────
             { name: 'Nat Benett',          cat: 'acc', platform: 'console', platformLabel: 'Console', photo: null, flag: 'united%20kingdom', role: 'esports', socials: [] },
@@ -260,6 +275,8 @@ function driverCarousel() {
                 linkedin:  'fa-brands fa-linkedin',
                 facebook:  'fa-brands fa-facebook',
                 twitch:    'fa-brands fa-twitch',
+                tiktok:    'fa-brands fa-tiktok',
+                youtube:   'fa-brands fa-youtube',
             }[type] || 'fa-solid fa-link';
         },
 
