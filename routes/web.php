@@ -23,6 +23,8 @@ use App\Http\Controllers\BopController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Admin\TeamEventController as AdminTeamEventController;
+use App\Http\Controllers\EsportsController;
 use App\Http\Controllers\ProDriverController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\HotlapController;
@@ -57,6 +59,9 @@ Route::view('/team', 'team.index')->name('team');
 // PRO driver profiles
 Route::get('/teams/pro',          [ProDriverController::class, 'index'])->name('teams.pro.index');
 Route::get('/teams/pro/{slug}',   [ProDriverController::class, 'show'])->name('teams.pro.show');
+
+// Esports roster
+Route::get('/teams/esports', [EsportsController::class, 'index'])->name('teams.esports.index');
 Route::get('/events/sidebar-data', [EventController::class, 'getSidebarData'])->name('events.sidebar-data');
 
 // Championships - public
@@ -158,6 +163,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Event Tags
     Route::post('/event-tags', [EventTagController::class, 'store'])->name('event-tags.store');
     Route::delete('/event-tags/{eventTag}', [EventTagController::class, 'destroy'])->name('event-tags.destroy');
+
+    // Team Events (real-world racing)
+    Route::get('/team-events',              [AdminTeamEventController::class, 'index'])->name('team-events.index');
+    Route::post('/team-events',             [AdminTeamEventController::class, 'store'])->name('team-events.store');
+    Route::delete('/team-events/{teamEvent}', [AdminTeamEventController::class, 'destroy'])->name('team-events.destroy');
 
     // Media Library
     Route::get('/media', [AdminMediaController::class, 'index'])->name('media.index');

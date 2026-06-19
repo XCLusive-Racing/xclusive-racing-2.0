@@ -24,7 +24,7 @@ class EventController extends Controller
             ->where('scheduled_at', '>', $now)
             ->when($nextEvent, fn($q) => $q->where('id', '!=', $nextEvent->id))
             ->orderBy('scheduled_at')
-            ->limit(3)
+            ->limit(2)
             ->get()
             ->map(fn($r) => [
                 'id'    => $r->id,
