@@ -14,7 +14,7 @@ $sbUpcoming = Race::where('scheduled_at', '>', $now)
     ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon'])
     ->when($sbNextEvent, fn($q) => $q->where('id', '!=', $sbNextEvent->id))
     ->orderBy('scheduled_at')
-    ->limit(4)
+    ->limit(2)
     ->get();
 $sbUpcoming->loadCount('registrations');
 
@@ -328,13 +328,16 @@ foreach ($sbGames as $game => $col) {
                              x-data="countdownTimer('{{ $event->scheduled_at->toIso8601String() }}')">
 
                             <div class="xcl-sb-up-card__img-wrap">
-                                @if($event->image)
-                                    <img src="{{ $event->image_url }}"
-                                         alt="{{ $event->title }}" loading="lazy"
-                                         class="xcl-sb-up-card__img">
-                                @else
-                                    <div class="xcl-sb-up-card__img-placeholder"></div>
-                                @endif
+                                @php
+                                    $upPlaceholder = match($event->game) {
+                                        'lmu'     => '/images/home/teams/XCLusive_Placeholder_lmu.png',
+                                        'iracing' => '/images/home/teams/XCLusive_Placeholder_iRacing.png',
+                                        default   => '/images/home/teams/XCLusive_Placeholder_ACC.png',
+                                    };
+                                @endphp
+                                <img src="{{ $event->image ? $event->image_url : $upPlaceholder }}"
+                                     alt="{{ $event->title }}" loading="lazy"
+                                     class="xcl-sb-up-card__img">
                                 <div class="xcl-sb-up-card__img-gradient"></div>
 
                                 {{-- Race icon centered on card --}}

@@ -29,24 +29,28 @@ $latestYear = (int) collect($driver['results'])
     ->filter(fn($r) => !empty($r))
     ->keys()
     ->max() ?? max(array_keys($driver['results']));
+
+$upcomingRaces = \App\Models\TeamEvent::upcoming()
+    ->forSubject($driver['slug'])
+    ->limit(3)
+    ->get();
 @endphp
 
 <main class="pro-driver-page">
 
     {{-- ── Hero ─────────────────────────────────────────────────────────────── --}}
-    <section class="pro-driver-hero"
-             @if($driver['hero'])
-             style="background-image:url('{{ $driver['hero'] }}')"
-             @endif>
+    <section class="pro-driver-hero">
 
-        <div class="pro-driver-hero__overlay"></div>
-
-        {{-- Portrait shown when no landscape hero is uploaded --}}
-        @unless($driver['hero'])
+        {{-- Hero image (landscape from media library) --}}
+        @if($driver['hero'])
+        <img src="{{ $driver['hero'] }}" alt="{{ $driver['name'] }}" class="pro-driver-hero__bg">
+        @else
         <div class="pro-driver-hero__portrait-wrap">
             <img src="{{ $driver['portrait'] }}" alt="{{ $driver['name'] }}" class="pro-driver-hero__portrait">
         </div>
-        @endunless
+        @endif
+
+        <div class="pro-driver-hero__overlay"></div>
 
         <div class="pro-driver-hero__content container-xl px-4">
 
@@ -88,6 +92,44 @@ $latestYear = (int) collect($driver['results'])
 
     {{-- ── Body ─────────────────────────────────────────────────────────────── --}}
     <div class="pro-driver-body container-xl px-4">
+
+        {{-- Upcoming Races --}}
+        @if($upcomingRaces->isNotEmpty())
+        <section class="pro-upcoming-races">
+            <div class="pro-section-label">UPCOMING RACES</div>
+            <div class="pro-upcoming-list">
+                @foreach($upcomingRaces as $race)
+                <div class="pro-upcoming-card"
+                     x-data="countdownTimer('{{ $race->starts_at->toIso8601String() }}')"
+                     @if($race->image_url) style="background-image:url('{{ $race->image_url }}');background-size:cover;background-position:center" @endif>
+                    @if($race->image_url)<div class="pro-upcoming-card__img-overlay"></div>@endif
+                    <div class="pro-upcoming-card__info">
+                        <div class="pro-upcoming-card__title">{{ $race->title }}</div>
+                        @if($race->subtitle)
+                        <div class="pro-upcoming-card__sub">{{ $race->subtitle }}</div>
+                        @endif
+                        <div class="pro-upcoming-card__date">
+                            {{ $race->starts_at->format('d M Y · H:i') }}
+                        </div>
+                    </div>
+                    <div class="pro-upcoming-card__right">
+                        <div class="pro-upcoming-countdown">
+                            <span x-text="String(d).padStart(2,'0')"></span><span class="pro-upcoming-countdown__sep">d</span>
+                            <span x-text="String(h).padStart(2,'0')"></span><span class="pro-upcoming-countdown__sep">h</span>
+                            <span x-text="String(m).padStart(2,'0')"></span><span class="pro-upcoming-countdown__sep">m</span>
+                        </div>
+                        @if($race->watch_url)
+                        <a href="{{ $race->watch_url }}" target="_blank" rel="noopener"
+                           class="pro-upcoming-watch">
+                            ▶ WATCH LIVE
+                        </a>
+                        @endif
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </section>
+        @endif
 
         {{-- Bio + Social Reach --}}
         <section class="pro-driver-about">

@@ -285,7 +285,7 @@ html {
 // Racing dropdown
 .xcl-dropdown {
     position: absolute;
-    top: calc(100% + 8px);
+    top: 100%;           // flush against the nav item — no gap to break hover
     left: 50%;
     transform: translateX(-50%);
     min-width: 160px;
@@ -298,20 +298,6 @@ html {
     padding: 4px 0;
     margin: 0;
     z-index: 1060;
-
-    &::before {
-        content: '';
-        position: absolute;
-        top: -6px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 10px;
-        height: 10px;
-        background: white;
-        border-left: 1px solid rgba(124, 58, 237, 0.2);
-        border-top: 1px solid rgba(124, 58, 237, 0.2);
-        clip-path: polygon(0 100%, 50% 0, 100% 100%);
-    }
 }
 
 .xcl-dropdown-item {
@@ -4680,10 +4666,18 @@ table.dataTable thead th {
     position: relative;
     min-height: 70vh;
     background: linear-gradient(160deg, #1a0a2e 0%, #0b0b1a 100%);
-    background-size: cover;
-    background-position: center 30%;
     display: flex;
     align-items: flex-end;
+
+    &__bg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center 85%;
+        z-index: 0;
+    }
 
     &__overlay {
         position: absolute;
@@ -5025,4 +5019,218 @@ table.dataTable thead th {
     font-style: italic;
     min-width: 36px;
     text-align: center;
+}
+
+// ── Upcoming real race cards (driver profile page) ─────────────────────────
+
+.pro-upcoming-races {
+    margin-bottom: 2.5rem;
+}
+
+.pro-upcoming-list {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+}
+
+.pro-upcoming-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    background: rgba(45,16,82,.4);
+    border: 1px solid rgba(212,238,106,.2);
+    overflow: hidden;
+
+    @media (max-width: 575px) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: .75rem;
+    }
+
+    &__info { flex: 1; min-width: 0; }
+
+    &__title {
+        font-size: .95rem;
+        font-weight: 800;
+        font-style: italic;
+        text-transform: uppercase;
+        color: white;
+        margin-bottom: .15rem;
+    }
+
+    &__sub {
+        font-size: .75rem;
+        color: rgba(255,255,255,.5);
+        margin-bottom: .2rem;
+    }
+
+    &__date {
+        font-size: .7rem;
+        font-weight: 700;
+        color: #d4ee6a;
+        letter-spacing: .04em;
+    }
+
+    &__img-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to right, rgba(11,11,26,.92) 0%, rgba(11,11,26,.7) 60%, rgba(11,11,26,.5) 100%);
+        border-radius: inherit;
+    }
+
+    &__info, &__right { position: relative; z-index: 1; }
+
+    &__right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: .4rem;
+        flex-shrink: 0;
+
+        @media (max-width: 575px) { align-items: flex-start; }
+    }
+}
+
+.pro-upcoming-countdown {
+    font-size: 1.1rem;
+    font-weight: 900;
+    font-style: italic;
+    color: white;
+    letter-spacing: .02em;
+
+    &__sep {
+        font-size: .65rem;
+        font-weight: 700;
+        color: rgba(255,255,255,.4);
+        margin: 0 .15rem 0 .05rem;
+        text-transform: uppercase;
+    }
+}
+
+.pro-upcoming-watch {
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    color: #d4ee6a;
+    text-decoration: none;
+    border: 1px solid rgba(212,238,106,.3);
+    border-radius: 4px;
+    padding: .2rem .55rem;
+    transition: background .15s;
+
+    &:hover { background: rgba(212,238,106,.15); color: #d4ee6a; }
+}
+
+// ── Esports roster page (/teams/esports) ───────────────────────────────────
+
+.esports-tabs {
+    display: flex;
+    gap: .5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.esports-tab {
+    padding: .45rem 1.1rem;
+    border-radius: 6px;
+    border: 1.5px solid rgba(255,255,255,.12);
+    background: transparent;
+    color: rgba(255,255,255,.5);
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .15s;
+
+    &--active, &:hover {
+        background: #2d1052;
+        border-color: #d4ee6a;
+        color: #d4ee6a;
+    }
+}
+
+.esports-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
+
+    @media (max-width: 575px) {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: .75rem;
+    }
+}
+
+.esports-driver-card {
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.07);
+    transition: border-color .2s, transform .2s;
+
+    &:hover {
+        border-color: rgba(212,238,106,.25);
+        transform: translateY(-2px);
+    }
+
+    &__portrait {
+        position: relative;
+        aspect-ratio: 3/4;
+        background: linear-gradient(160deg, #1a0a2e 0%, #2d1052 100%);
+        overflow: hidden;
+
+        img:first-child {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top center;
+        }
+
+        &--blank {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &::after {
+                content: '';
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                background: rgba(255,255,255,.06);
+            }
+        }
+    }
+
+    &__flag {
+        position: absolute !important;
+        top: .5rem;
+        right: .5rem;
+        height: 14px !important;
+        width: auto !important;
+        border-radius: 2px;
+        object-fit: contain !important;
+        object-position: initial !important;
+        aspect-ratio: unset !important;
+    }
+
+    &__name {
+        padding: .5rem .6rem .1rem;
+        font-size: .72rem;
+        font-weight: 800;
+        color: white;
+        line-height: 1.2;
+    }
+
+    &__role {
+        padding: 0 .6rem .5rem;
+        font-size: .6rem;
+        font-weight: 700;
+        color: rgba(255,255,255,.35);
+        text-transform: uppercase;
+        letter-spacing: .05em;
+    }
 }

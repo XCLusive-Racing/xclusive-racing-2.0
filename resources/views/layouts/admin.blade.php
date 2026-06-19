@@ -143,6 +143,14 @@
                 </svg>
                 <span x-show="!sidebarCollapsed">Bulk Create</span>
             </a>
+            <a href="{{ route('admin.team-events.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.team-events.*') ? 'active' : '' }}"
+               style="color:#d4ee6a">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6H9.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">+ Team Event</span>
+            </a>
         </div>
         @endif
 
