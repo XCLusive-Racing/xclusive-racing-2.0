@@ -75,7 +75,7 @@
                 </div>
 
                 {{-- Event image --}}
-                <div class="mb-3">
+                <div class="mb-2">
                     <label class="form-label fw-bold" style="font-size:.82rem">
                         Event Image
                         <span class="text-secondary fw-normal" style="text-transform:none">(optional · JPG/PNG/WebP)</span>
@@ -86,13 +86,20 @@
                         <img src="{{ $event->image_url }}" alt="Current image"
                              style="width:100%;height:100%;object-fit:cover">
                     </div>
-                    <div class="form-text mb-2" style="font-size:.75rem">Current image — upload a new file to replace it.</div>
+                    <div class="form-text mb-2" style="font-size:.75rem">Current image shown above — upload a file or paste a URL to replace it.</div>
                     @endif
 
                     <input type="file" name="image" accept="image/*"
                            class="form-control @error('image') is-invalid @enderror">
-                    <div class="form-text">Landscape banner recommended. Max 10 MB.</div>
+                    <div class="form-text">Upload a file. Max 10 MB.</div>
                     @error('image') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-normal text-secondary" style="font-size:.78rem">Or paste a URL from the Media Library</label>
+                    <input type="url" name="image_url" value="{{ old('image_url', str_starts_with($event->image ?? '', 'http') ? $event->image : '') }}"
+                           class="form-control @error('image_url') is-invalid @enderror"
+                           placeholder="https://…">
+                    @error('image_url') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
                 {{-- Watch link --}}

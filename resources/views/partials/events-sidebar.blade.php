@@ -452,7 +452,6 @@ foreach ($sbGames as $game => $col) {
                 </div>
 
                 {{-- ── Separator + Full-width Real-World Racing ────────────── --}}
-                @if($sbTeamEvents->isNotEmpty())
                 <div style="border-top:1px solid rgba(255,255,255,0.08);margin:.75rem 1.5rem 0;padding:0 .25rem">
                     <div style="display:flex;align-items:center;gap:.75rem;padding:.9rem 0 .75rem">
                         <div class="xcl-sb-title" style="margin:0;white-space:nowrap">
@@ -529,7 +528,6 @@ foreach ($sbGames as $game => $col) {
                         @endforeach
                     </div>
                 </div>
-                @endif
 
             </div>
             {{-- end daily tab --}}

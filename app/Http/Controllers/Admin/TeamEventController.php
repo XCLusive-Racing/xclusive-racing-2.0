@@ -23,20 +23,24 @@ class TeamEventController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'subject'   => ['required', 'in:' . implode(',', array_keys(TeamEvent::subjects()))],
-            'title'     => ['required', 'string', 'max:200'],
-            'subtitle'  => ['nullable', 'string', 'max:200'],
-            'starts_at' => ['required', 'date'],
-            'watch_url' => ['nullable', 'url', 'max:500'],
-            'image'     => ['nullable', 'image', 'max:10240'],
+            'subject'     => ['required', 'in:' . implode(',', array_keys(TeamEvent::subjects()))],
+            'title'       => ['required', 'string', 'max:200'],
+            'subtitle'    => ['nullable', 'string', 'max:200'],
+            'starts_at'   => ['required', 'date'],
+            'watch_url'   => ['nullable', 'url', 'max:500'],
+            'image'       => ['nullable', 'image', 'max:10240'],
+            'image_url'   => ['nullable', 'url', 'max:1000'],
         ]);
 
         if ($request->hasFile('image')) {
-            $file     = $request->file('image');
-            $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $file          = $request->file('image');
+            $filename      = Str::uuid() . '.' . $file->getClientOriginalExtension();
             $data['image'] = $file->storeAs('images/team-events', $filename, 'media');
+        } elseif (!empty($data['image_url'])) {
+            $data['image'] = $data['image_url'];
         }
 
+        unset($data['image_url']);
         TeamEvent::create($data);
 
         return redirect()->route('admin.team-events.index')
@@ -60,19 +64,23 @@ class TeamEventController extends Controller
             'starts_at' => ['required', 'date'],
             'watch_url' => ['nullable', 'url', 'max:500'],
             'image'     => ['nullable', 'image', 'max:10240'],
+            'image_url' => ['nullable', 'url', 'max:1000'],
         ]);
 
         if ($request->hasFile('image')) {
-            if ($teamEvent->image) {
+            if ($teamEvent->image && !str_starts_with($teamEvent->image, 'http')) {
                 Storage::disk('media')->delete($teamEvent->image);
             }
             $file          = $request->file('image');
             $filename      = Str::uuid() . '.' . $file->getClientOriginalExtension();
             $data['image'] = $file->storeAs('images/team-events', $filename, 'media');
+        } elseif (!empty($data['image_url'])) {
+            $data['image'] = $data['image_url'];
         } else {
             unset($data['image']); // keep existing
         }
 
+        unset($data['image_url']);
         $teamEvent->update($data);
 
         return redirect()->route('admin.team-events.index')
