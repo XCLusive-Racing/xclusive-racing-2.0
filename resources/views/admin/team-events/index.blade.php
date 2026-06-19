@@ -159,16 +159,23 @@
                             </div>
                         </div>
 
-                        {{-- Delete --}}
-                        <form action="{{ route('admin.team-events.destroy', $ev) }}" method="POST"
-                              onsubmit="return confirm('Delete this event?')">
-                            @csrf @method('DELETE')
-                            <button type="submit"
-                                    class="btn btn-sm fw-bold text-uppercase"
-                                    style="font-size:.68rem;padding:4px 10px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;white-space:nowrap">
-                                Delete
-                            </button>
-                        </form>
+                        {{-- Actions --}}
+                        <div class="d-flex flex-column gap-1">
+                            <a href="{{ route('admin.team-events.edit', $ev) }}"
+                               class="btn btn-sm fw-bold text-uppercase"
+                               style="font-size:.68rem;padding:4px 10px;background:#f3f0ff;color:#7c3aed;border:1px solid #ddd6fe;white-space:nowrap">
+                                Edit
+                            </a>
+                            <form action="{{ route('admin.team-events.destroy', $ev) }}" method="POST"
+                                  onsubmit="return confirm('Delete this event?')">
+                                @csrf @method('DELETE')
+                                <button type="submit"
+                                        class="btn btn-sm fw-bold text-uppercase w-100"
+                                        style="font-size:.68rem;padding:4px 10px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;white-space:nowrap">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
 
                     </div>
                     @endforeach

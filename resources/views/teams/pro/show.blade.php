@@ -94,39 +94,59 @@ $upcomingRaces = \App\Models\TeamEvent::upcoming()
     <div class="pro-driver-body container-xl px-4">
 
         {{-- Upcoming Races --}}
-        @if($upcomingRaces->isNotEmpty())
+        @if($upcomingRaces->isNotEmpty() || $driver['profile_image'])
         <section class="pro-upcoming-races">
-            <div class="pro-section-label">UPCOMING RACES</div>
-            <div class="pro-upcoming-list">
-                @foreach($upcomingRaces as $race)
-                <div class="pro-upcoming-card"
-                     x-data="countdownTimer('{{ $race->starts_at->toIso8601String() }}')"
-                     @if($race->image_url) style="background-image:url('{{ $race->image_url }}');background-size:cover;background-position:center" @endif>
-                    @if($race->image_url)<div class="pro-upcoming-card__img-overlay"></div>@endif
-                    <div class="pro-upcoming-card__info">
-                        <div class="pro-upcoming-card__title">{{ $race->title }}</div>
-                        @if($race->subtitle)
-                        <div class="pro-upcoming-card__sub">{{ $race->subtitle }}</div>
-                        @endif
-                        <div class="pro-upcoming-card__date">
-                            {{ $race->starts_at->format('d M Y · H:i') }}
-                        </div>
-                    </div>
-                    <div class="pro-upcoming-card__right">
-                        <div class="pro-upcoming-countdown">
-                            <span x-text="String(d).padStart(2,'0')"></span><span class="pro-upcoming-countdown__sep">d</span>
-                            <span x-text="String(h).padStart(2,'0')"></span><span class="pro-upcoming-countdown__sep">h</span>
-                            <span x-text="String(m).padStart(2,'0')"></span><span class="pro-upcoming-countdown__sep">m</span>
-                        </div>
-                        @if($race->watch_url)
-                        <a href="{{ $race->watch_url }}" target="_blank" rel="noopener"
-                           class="pro-upcoming-watch">
-                            ▶ WATCH LIVE
-                        </a>
-                        @endif
-                    </div>
+            <div style="display:flex;gap:1.5rem;align-items:flex-start">
+
+                {{-- Profile image box --}}
+                @if($driver['profile_image'])
+                <div style="flex:0 0 280px;border-radius:12px;overflow:hidden;border:1px solid rgba(212,238,106,0.15);box-shadow:0 4px 24px rgba(0,0,0,0.4);align-self:stretch">
+                    <img src="{{ $driver['profile_image'] }}"
+                         alt="{{ $driver['name'] }}"
+                         style="width:100%;height:100%;object-fit:cover;display:block">
                 </div>
-                @endforeach
+                @endif
+
+                {{-- Events column --}}
+                <div style="flex:1;min-width:0">
+                    <div class="pro-section-label">UPCOMING RACES</div>
+                    @if($upcomingRaces->isNotEmpty())
+                    <div class="pro-upcoming-list">
+                        @foreach($upcomingRaces as $race)
+                        <div class="pro-upcoming-card"
+                             x-data="countdownTimer('{{ $race->starts_at->toIso8601String() }}')"
+                             @if($race->image_url) style="background-image:url('{{ $race->image_url }}');background-size:cover;background-position:center" @endif>
+                            @if($race->image_url)<div class="pro-upcoming-card__img-overlay"></div>@endif
+                            <div class="pro-upcoming-card__info">
+                                <div class="pro-upcoming-card__title">{{ $race->title }}</div>
+                                @if($race->subtitle)
+                                <div class="pro-upcoming-card__sub">{{ $race->subtitle }}</div>
+                                @endif
+                                <div class="pro-upcoming-card__date">
+                                    {{ $race->starts_at->format('d M Y · H:i') }}
+                                </div>
+                            </div>
+                            <div class="pro-upcoming-card__right">
+                                <div class="pro-upcoming-countdown">
+                                    <span x-text="String(d).padStart(2,'0')"></span><span class="pro-upcoming-countdown__sep">d</span>
+                                    <span x-text="String(h).padStart(2,'0')"></span><span class="pro-upcoming-countdown__sep">h</span>
+                                    <span x-text="String(m).padStart(2,'0')"></span><span class="pro-upcoming-countdown__sep">m</span>
+                                </div>
+                                @if($race->watch_url)
+                                <a href="{{ $race->watch_url }}" target="_blank" rel="noopener"
+                                   class="pro-upcoming-watch">
+                                    ▶ WATCH LIVE
+                                </a>
+                                @endif
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @else
+                    <p style="color:#6b7280;font-size:.85rem;margin-top:.75rem">No upcoming races scheduled.</p>
+                    @endif
+                </div>
+
             </div>
         </section>
         @endif

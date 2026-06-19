@@ -31,7 +31,7 @@
                 ],
                 [
                     'slug'     => 'esports',
-                    'href'     => '#',
+                    'href'     => route('teams.esports.index'),
                     'color'    => '#c084fc',
                     'title'    => 'Esports Drivers',
                     'desc'     => 'Elite sim racers representing XCLusive across ACC, LMU, iRacing and more — chasing every tenth.',

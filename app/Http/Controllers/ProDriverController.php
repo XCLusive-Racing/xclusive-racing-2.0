@@ -10,10 +10,11 @@ class ProDriverController extends Controller
     {
         return [
             'dirk-schouten' => [
-                'name'        => 'Dirk Schouten',
-                'flag'        => 'netherlands',
-                'nationality' => 'Dutch',
-                'portrait'    => '/images/drivers/D.Schouten.png',
+                'name'             => 'Dirk Schouten',
+                'flag'             => 'netherlands',
+                'nationality'      => 'Dutch',
+                'portrait'         => '/images/drivers/D.Schouten.png',
+                'profile_category' => 'dirk-profile-page',
                 'bio'         => 'Dirk Schouten is a Dutch professional racing driver representing XCLusive Racing on the international motorsport stage. Competing in some of Europe\'s most prestigious single-make championships, Dirk has proven his racecraft with consistent podium finishes and a maiden class victory at Monaco. Known for his commitment to improvement and engaging presence both on and off track, he is a cornerstone of the XCLusive Racing professional programme.',
                 'socials' => [
                     ['type' => 'instagram', 'href' => 'https://www.instagram.com/dirk_schouten_/'],
@@ -27,7 +28,7 @@ class ProDriverController extends Controller
                     'stats' => [
                         ['type' => 'instagram', 'count' => '398.000+', 'label' => 'Instagram followers'],
                         ['type' => 'tiktok',    'count' => '230.000+', 'label' => 'TikTok followers'],
-                        ['type' => 'youtube',   'count' => '425.000',  'label' => 'YouTube subscribers'],
+                        ['type' => 'youtube',   'count' => '425.000+', 'label' => 'YouTube subscribers'],
                     ],
                 ],
                 'results' => [
@@ -193,6 +194,16 @@ class ProDriverController extends Controller
             ->latest()
             ->first();
         $driver['hero'] = $hero?->url;
+
+        // Profile photo (shown beside upcoming races)
+        $driver['profile_image'] = null;
+        if (!empty($driver['profile_category'])) {
+            $profile = Media::where('category', $driver['profile_category'])
+                ->where('type', 'image')
+                ->latest()
+                ->first();
+            $driver['profile_image'] = $profile?->url;
+        }
 
         return view('teams.pro.show', compact('driver'));
     }

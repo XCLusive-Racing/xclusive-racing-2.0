@@ -43,6 +43,42 @@ class TeamEventController extends Controller
             ->with('success', 'Team event created.');
     }
 
+    public function edit(TeamEvent $teamEvent)
+    {
+        return view('admin.team-events.edit', [
+            'event'    => $teamEvent,
+            'subjects' => TeamEvent::subjects(),
+        ]);
+    }
+
+    public function update(Request $request, TeamEvent $teamEvent)
+    {
+        $data = $request->validate([
+            'subject'   => ['required', 'in:' . implode(',', array_keys(TeamEvent::subjects()))],
+            'title'     => ['required', 'string', 'max:200'],
+            'subtitle'  => ['nullable', 'string', 'max:200'],
+            'starts_at' => ['required', 'date'],
+            'watch_url' => ['nullable', 'url', 'max:500'],
+            'image'     => ['nullable', 'image', 'max:10240'],
+        ]);
+
+        if ($request->hasFile('image')) {
+            if ($teamEvent->image) {
+                Storage::disk('media')->delete($teamEvent->image);
+            }
+            $file          = $request->file('image');
+            $filename      = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $data['image'] = $file->storeAs('images/team-events', $filename, 'media');
+        } else {
+            unset($data['image']); // keep existing
+        }
+
+        $teamEvent->update($data);
+
+        return redirect()->route('admin.team-events.index')
+            ->with('success', 'Team event updated.');
+    }
+
     public function destroy(TeamEvent $teamEvent)
     {
         if ($teamEvent->image) {
