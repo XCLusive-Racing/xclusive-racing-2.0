@@ -18,47 +18,56 @@
         <div x-show="platform === null">
             <div class="events-platform-grid mb-5">
                 @foreach([
-                    ['acc',     '#7c3aed', 'ACC Console',     'Assetto Corsa Competizione · PS5 & Xbox Series X/S', '/images/home/icons/ACC Logo.png'],
-                    ['lmu',     '#db2877', 'Le Mans Ultimate', 'Le Mans Ultimate · Premium PC Sim Racing',           '/images/home/icons/LM Logo.png'],
-                    ['iracing', '#2563eb', 'iRacing',          'iRacing · World\'s Leading Online Sim Racing',       '/images/home/icons/iR Logo.png'],
-                    ['ac',      '#16a34a', 'AC Rally',         'Assetto Corsa Rally · PC Sim Racing',                '/images/home/icons/AC R Logo.png'],
-                ] as [$game, $color, $label, $desc, $logo])
-                @php $count = $races->where('game', $game)->where('status', 'open')->count(); @endphp
+                    ['acc',     '#7c3aed', 'ACC Console',     'Assetto Corsa Competizione · PS5 & Xbox Series X/S', '/images/home/icons/ACC Logo.png',  false],
+                    ['lmu',     '#db2877', 'Le Mans Ultimate', 'Le Mans Ultimate · Premium PC Sim Racing',           '/images/home/icons/LM Logo.png',   false],
+                    ['iracing', '#2563eb', 'iRacing',          'iRacing · World\'s Leading Online Sim Racing',       '/images/home/icons/iR Logo.png',   false],
+                    ['ac',      '#16a34a', 'AC Rally',         'Assetto Corsa Rally · PC Sim Racing',                '/images/home/icons/AC R Logo.png', true],
+                ] as [$game, $color, $label, $desc, $logo, $comingSoon])
+                @php
+                    $count    = $races->where('game', $game)->where('status', 'open')->count();
+                    $hasVideo = file_exists(public_path("videos/{$game}.mp4"));
+                @endphp
 
                 <div class="events-platform-card"
                      x-data="{ on: false }"
-                     @mouseenter="on = true;  $refs.vid.play().catch(()=>{})"
-                     @mouseleave="on = false; $refs.vid.pause()"
-                     @click="selectPlatform('{{ $game }}')"
-                     :class="on ? 'events-platform-card--active' : ''">
+                     @mouseenter="on = true;  $refs.vid?.play().catch(()=>{})"
+                     @mouseleave="on = false; $refs.vid?.pause()"
+                     @if(!$comingSoon) @click="selectPlatform('{{ $game }}')" @endif
+                     :class="on ? 'events-platform-card--active' : ''"
+                     style="{{ $comingSoon ? 'cursor:default;opacity:.75' : '' }}">
 
+                    @if($hasVideo)
                     <video x-ref="vid" muted loop playsinline preload="metadata" class="events-platform-card__video">
                         <source src="/videos/{{ $game }}.mp4" type="video/mp4">
                     </video>
-
+                    @else
                     <div class="events-platform-card__gradient" style="background:linear-gradient(160deg,{{ $color }}55 0%,{{ $color }}cc 100%)"></div>
-                    <div class="events-platform-card__shadow"></div>
+                    @endif
+
                     <div class="events-platform-card__top-bar" style="background:{{ $color }}"></div>
 
-                    {{-- Game logo top-left --}}
-                    <div class="events-platform-card__logo">
-                        <img src="{{ $logo }}" alt="{{ $label }}" height="22">
+                    {{-- Count badge / coming soon top-right --}}
+                    @if($comingSoon)
+                    <div class="events-platform-card__count" style="background:rgba(0,0,0,.55);color:#d1d5db">
+                        Coming Soon
                     </div>
-
-                    {{-- Count badge top-right --}}
+                    @else
                     <div class="events-platform-card__count">
                         {{ $count }} open {{ $count === 1 ? 'event' : 'events' }}
                     </div>
+                    @endif
 
                     {{-- Bottom info --}}
                     <div class="events-platform-card__body">
                         <div class="events-platform-card__title">{!! $label !!}</div>
+                        @if(!$comingSoon)
                         <div class="events-platform-card__desc" :class="on ? 'events-platform-card__desc--visible' : ''">
                             <p>{{ $desc }}</p>
                             <span class="events-platform-card__cta" style="background:{{ $color }}">
                                 View Events →
                             </span>
                         </div>
+                        @endif
                     </div>
                 </div>
                 @endforeach
