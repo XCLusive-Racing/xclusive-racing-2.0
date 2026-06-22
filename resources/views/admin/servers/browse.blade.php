@@ -20,12 +20,9 @@ function ftpFileSize(?int $bytes): string {
 }
 @endphp
 
-<div x-data="fileBrowser({
-    showUpload: {{ $errors->has('file') ? 'true' : 'false' }},
-    showMkdir: {{ $errors->has('name') ? 'true' : 'false' }},
-    viewUrl: '{{ route('admin.servers.browse.view', $server) }}',
-    saveUrl: '{{ route('admin.servers.browse.save', $server) }}'
-})">
+<div data-file-browser
+     data-fb-view-url="{{ route('admin.servers.browse.view', $server) }}"
+     data-fb-save-url="{{ route('admin.servers.browse.save', $server) }}">
 
 {{-- Server info + breadcrumb bar --}}
 <div class="admin-card mb-3">
@@ -36,14 +33,12 @@ function ftpFileSize(?int $bytes): string {
         </div>
         @if(!$error)
         <div class="d-flex gap-2">
-            <button @click="showMkdir = !showMkdir; showUpload = false" type="button"
-                    :style="showMkdir ? 'background:#7c3aed;color:white;border:1px solid #7c3aed' : 'background:#f3e8ff;color:#7c3aed;border:1px solid #e9d5ff'"
+            <button data-fb-toggle-mkdir type="button"
                     class="btn btn-sm fw-bold text-uppercase"
-                    style="font-size:.72rem;padding:5px 14px">
+                    style="font-size:.72rem;padding:5px 14px;background:#f3e8ff;color:#7c3aed;border:1px solid #e9d5ff">
                 + New Folder
             </button>
-            <button @click="showUpload = !showUpload; showMkdir = false" type="button"
-                    :style="showUpload ? 'background:#7c3aed;color:white' : 'background:#7c3aed;color:white'"
+            <button data-fb-toggle-upload type="button"
                     class="btn btn-sm fw-black text-uppercase text-white"
                     style="font-size:.72rem;padding:5px 14px;background:#7c3aed">
                 ↑ Upload File
@@ -67,7 +62,7 @@ function ftpFileSize(?int $bytes): string {
     </div>
 
     {{-- New Folder form --}}
-    <div x-show="showMkdir" x-cloak class="px-4 py-3" style="border-bottom:1px solid #f3f4f6;background:#fafafa">
+    <div data-fb-mkdir-form class="px-4 py-3" style="{{ $errors->has('name') ? '' : 'display:none' }};border-bottom:1px solid #f3f4f6;background:#fafafa">
         <form action="{{ route('admin.servers.browse.mkdir', $server) }}" method="POST" class="d-flex gap-2 align-items-end flex-wrap">
             @csrf
             <input type="hidden" name="path" value="{{ $path }}">
@@ -80,14 +75,14 @@ function ftpFileSize(?int $bytes): string {
             </div>
             <button type="submit" class="btn btn-sm fw-black text-uppercase text-white"
                     style="background:#7c3aed;font-size:.72rem;padding:6px 16px">Create</button>
-            <button type="button" @click="showMkdir = false"
+            <button type="button" data-fb-mkdir-cancel
                     class="btn btn-sm fw-bold text-uppercase btn-outline-secondary"
                     style="font-size:.72rem;padding:6px 14px">Cancel</button>
         </form>
     </div>
 
     {{-- Upload form --}}
-    <div x-show="showUpload" x-cloak class="px-4 py-3" style="border-bottom:1px solid #f3f4f6;background:#fafafa">
+    <div data-fb-upload-form class="px-4 py-3" style="{{ $errors->has('file') ? '' : 'display:none' }};border-bottom:1px solid #f3f4f6;background:#fafafa">
         <form action="{{ route('admin.servers.browse.upload', $server) }}" method="POST" enctype="multipart/form-data"
               class="d-flex gap-2 align-items-end flex-wrap">
             @csrf
@@ -101,7 +96,7 @@ function ftpFileSize(?int $bytes): string {
             </div>
             <button type="submit" class="btn btn-sm fw-black text-uppercase text-white"
                     style="background:#7c3aed;font-size:.72rem;padding:6px 16px">Upload</button>
-            <button type="button" @click="showUpload = false"
+            <button type="button" data-fb-upload-cancel
                     class="btn btn-sm fw-bold text-uppercase btn-outline-secondary"
                     style="font-size:.72rem;padding:6px 14px">Cancel</button>
         </form>
@@ -170,6 +165,7 @@ function ftpFileSize(?int $bytes): string {
                     $entryPath = rtrim($path, '/') . '/' . $entry['name'];
                     $isDir     = $entry['type'] === 'dir';
                     $ext       = $isDir ? null : strtoupper(pathinfo($entry['name'], PATHINFO_EXTENSION) ?: 'FILE');
+                    $isJson    = !$isDir && strtolower(pathinfo($entry['name'], PATHINFO_EXTENSION)) === 'json';
                 @endphp
                 <tr>
                     {{-- Type icon --}}
@@ -188,9 +184,11 @@ function ftpFileSize(?int $bytes): string {
                                class="fw-bold text-decoration-none text-dark" style="font-size:.82rem">
                                 {{ $entry['name'] }}
                             </a>
-                        @elseif(strtolower(pathinfo($entry['name'], PATHINFO_EXTENSION)) === 'json')
+                        @elseif($isJson)
                             <button type="button"
-                                    @click="openView('{{ $entryPath }}', '{{ addslashes($entry['name']) }}')"
+                                    data-fb-view-btn
+                                    data-fb-path="{{ $entryPath }}"
+                                    data-fb-name="{{ $entry['name'] }}"
                                     class="fw-bold text-decoration-none btn btn-link p-0"
                                     style="font-family:monospace;font-size:.78rem;color:#7c3aed">
                                 {{ $entry['name'] }}
@@ -209,20 +207,21 @@ function ftpFileSize(?int $bytes): string {
                     <td class="d-none d-md-table-cell" style="font-size:.75rem;color:#6b7280">{{ $entry['modified'] ?? '—' }}</td>
 
                     {{-- Kebab menu --}}
-                    <td class="pe-3 text-end" x-data="{ open: false }" @click.outside="open = false" style="position:relative">
-                        <button @click="open = !open" type="button"
+                    <td class="pe-3 text-end" data-fb-kebab-wrap style="position:relative">
+                        <button data-fb-kebab-btn type="button"
                                 class="btn btn-sm"
-                                style="background:transparent;border:none;color:#9ca3af;font-size:1.1rem;padding:2px 6px;line-height:1;border-radius:4px"
-                                :style="open ? 'background:#f3f4f6;color:#374151' : ''">
+                                style="background:transparent;border:none;color:#9ca3af;font-size:1.1rem;padding:2px 6px;line-height:1;border-radius:4px">
                             ···
                         </button>
-                        <div x-show="open" x-cloak
-                             style="position:absolute;right:12px;top:100%;z-index:200;background:white;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);min-width:140px;padding:4px 0">
+                        <div data-fb-kebab-panel
+                             style="display:none;position:absolute;right:12px;top:100%;z-index:200;background:white;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);min-width:140px;padding:4px 0">
 
                             @if(!$isDir)
-                            @if(strtolower(pathinfo($entry['name'], PATHINFO_EXTENSION)) === 'json')
+                            @if($isJson)
                             <button type="button"
-                                    @click="open = false; openView('{{ $entryPath }}', '{{ addslashes($entry['name']) }}')"
+                                    data-fb-view-btn
+                                    data-fb-path="{{ $entryPath }}"
+                                    data-fb-name="{{ $entry['name'] }}"
                                     class="d-flex align-items-center gap-2 px-3 py-2 fw-bold text-uppercase w-100 text-start"
                                     style="font-size:.72rem;color:#7c3aed;background:none;border:none;white-space:nowrap">
                                 <span style="width:14px;text-align:center">{ }</span> View
@@ -236,7 +235,9 @@ function ftpFileSize(?int $bytes): string {
                             @endif
 
                             <button type="button"
-                                    @click="open = false; openRename('{{ $entryPath }}', '{{ addslashes($entry['name']) }}')"
+                                    data-fb-rename-btn
+                                    data-fb-path="{{ $entryPath }}"
+                                    data-fb-name="{{ $entry['name'] }}"
                                     class="d-flex align-items-center gap-2 px-3 py-2 fw-bold text-uppercase w-100 text-start"
                                     style="font-size:.72rem;color:#374151;background:none;border:none;white-space:nowrap">
                                 <span style="width:14px;text-align:center">✎</span> Rename
@@ -245,16 +246,16 @@ function ftpFileSize(?int $bytes): string {
                             @if(!$isDir)<div style="border-top:1px solid #f3f4f6;margin:3px 0"></div>@endif
 
                             <button type="button"
-                                    @click="open = false; deleteConfirm = '{{ $entryPath }}'"
+                                    data-fb-delete-btn
                                     class="d-flex align-items-center gap-2 px-3 py-2 fw-bold text-uppercase w-100 text-start"
                                     style="font-size:.72rem;color:#dc2626;background:none;border:none;white-space:nowrap">
                                 <span style="width:14px;text-align:center">✕</span> Delete
                             </button>
                         </div>
 
-                        {{-- Delete confirmation (inline, replaces menu) --}}
-                        <div x-show="deleteConfirm === '{{ $entryPath }}'"
-                             style="position:absolute;right:12px;top:100%;z-index:200;background:white;border:1px solid #fecaca;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);padding:10px 14px;white-space:nowrap">
+                        {{-- Delete confirmation (inline) --}}
+                        <div data-fb-delete-confirm
+                             style="display:none;position:absolute;right:12px;top:100%;z-index:200;background:white;border:1px solid #fecaca;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);padding:10px 14px;white-space:nowrap">
                             <div class="fw-bold text-dark mb-2" style="font-size:.75rem">Delete "{{ $entry['name'] }}"?</div>
                             <div class="d-flex gap-2">
                                 <form action="{{ route('admin.servers.browse.delete', $server) }}" method="POST" class="d-inline">
@@ -267,7 +268,7 @@ function ftpFileSize(?int $bytes): string {
                                         Delete
                                     </button>
                                 </form>
-                                <button type="button" @click="deleteConfirm = null"
+                                <button type="button" data-fb-delete-cancel
                                         class="btn btn-sm fw-bold text-uppercase btn-outline-secondary"
                                         style="font-size:.68rem;padding:4px 10px;border-radius:5px">
                                     Cancel
@@ -300,44 +301,40 @@ function ftpFileSize(?int $bytes): string {
 </div>
 @endif
 
-{{-- Edit JSON modal --}}
-<div x-show="viewModal" x-cloak
-     style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1050;display:flex;align-items:center;justify-content:center;padding:1rem"
-     @keydown.escape.window="viewModal = false"
-     @click.self="viewModal = false">
+{{-- View (JSON editor) modal --}}
+<div data-fb-view-modal
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1050;align-items:center;justify-content:center;padding:1rem">
     <div style="background:white;border-radius:12px;width:100%;max-width:860px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2)">
 
         {{-- Header --}}
         <div class="d-flex align-items-center justify-content-between px-4 py-3" style="border-bottom:1px solid #f3f4f6;flex-shrink:0">
             <div>
-                <div class="fw-black text-dark" style="font-size:.9rem;font-family:monospace" x-text="viewName"></div>
+                <div class="fw-black text-dark" style="font-size:.9rem;font-family:monospace" data-fb-view-name></div>
                 <div class="text-secondary" style="font-size:.72rem">{{ $server->name }}</div>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <span x-show="viewSaved" class="fw-bold text-success" style="font-size:.75rem">✓ Saved</span>
-                <span x-show="viewSaveError" class="fw-bold text-danger" style="font-size:.75rem" x-text="viewSaveError"></span>
-                <button type="button" @click="saveFile()"
-                        :disabled="viewLoading || viewSaving"
+                <span data-fb-view-saved class="fw-bold text-success" style="display:none;font-size:.75rem">✓ Saved</span>
+                <span data-fb-view-save-error class="fw-bold text-danger" style="display:none;font-size:.75rem"></span>
+                <button type="button" data-fb-view-save
                         class="btn btn-sm fw-black text-uppercase text-white"
                         style="background:#7c3aed;font-size:.72rem;padding:4px 14px">
-                    <span x-show="!viewSaving">Save</span>
-                    <span x-show="viewSaving">Saving…</span>
+                    <span data-fb-not-saving>Save</span>
+                    <span data-fb-saving style="display:none">Saving…</span>
                 </button>
-                <button @click="viewModal = false" type="button"
+                <button data-fb-view-close type="button"
                         style="background:none;border:none;color:#9ca3af;font-size:1.2rem;line-height:1;padding:4px 8px;cursor:pointer">✕</button>
             </div>
         </div>
 
         {{-- Body --}}
         <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;padding:1rem">
-            <div x-show="viewLoading" class="text-center py-5">
+            <div data-fb-view-loading class="text-center py-5" style="display:none">
                 <div class="text-secondary fw-bold" style="font-size:.82rem">Loading…</div>
             </div>
-            <div x-show="viewError && !viewLoading" class="text-danger fw-bold py-3" style="font-size:.82rem" x-text="viewError"></div>
-            <textarea x-show="!viewLoading && !viewError"
-                      x-model="viewContent"
+            <div data-fb-view-error class="text-danger fw-bold py-3" style="display:none;font-size:.82rem"></div>
+            <textarea data-fb-view-content
                       class="form-control font-monospace flex-grow-1"
-                      style="font-size:.78rem;line-height:1.6;resize:none;height:100%;min-height:400px"
+                      style="display:none;font-size:.78rem;line-height:1.6;resize:none;height:100%;min-height:400px"
                       spellcheck="false"></textarea>
         </div>
 
@@ -345,19 +342,17 @@ function ftpFileSize(?int $bytes): string {
 </div>
 
 {{-- Rename modal --}}
-<div x-show="renameModal" x-cloak
-     style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1050;display:flex;align-items:center;justify-content:center"
-     @keydown.escape.window="renameModal = false"
-     @click.self="renameModal = false">
+<div data-fb-rename-modal
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1050;align-items:center;justify-content:center">
     <div style="background:white;border-radius:12px;padding:1.5rem;width:420px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.2)">
         <div class="fw-black text-uppercase fst-italic text-dark mb-1" style="font-size:.9rem">Rename</div>
-        <div class="text-secondary mb-3" style="font-size:.75rem;font-family:monospace" x-text="renamePath"></div>
+        <div class="text-secondary mb-3" style="font-size:.75rem;font-family:monospace" data-fb-rename-path-display></div>
         <form action="{{ route('admin.servers.browse.rename', $server) }}" method="POST">
             @csrf
-            <input type="hidden" name="path" :value="renamePath">
+            <input type="hidden" name="path" data-fb-rename-path-input>
             <div class="mb-3">
                 <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">New Name</label>
-                <input type="text" name="newname" x-model="renameName" x-ref="renameInput"
+                <input type="text" name="newname" data-fb-rename-name-input
                        class="form-control @error('newname') is-invalid @enderror"
                        style="font-family:monospace">
                 @error('newname') <div class="invalid-feedback" style="font-size:.72rem">{{ $message }}</div> @enderror
@@ -365,7 +360,7 @@ function ftpFileSize(?int $bytes): string {
             <div class="d-flex gap-2">
                 <button type="submit" class="btn fw-black text-uppercase text-white px-4"
                         style="background:#7c3aed;font-size:.82rem">Rename</button>
-                <button type="button" @click="renameModal = false"
+                <button type="button" data-fb-rename-close
                         class="btn btn-outline-secondary fw-bold text-uppercase px-4"
                         style="font-size:.82rem">Cancel</button>
             </div>

@@ -26,24 +26,23 @@
     </section>
 
     {{-- Platform tabs + roster --}}
-    <section class="position-relative" style="z-index:1;padding-bottom:4rem"
-             x-data="{ platform: 'acc' }">
+    <section class="position-relative" style="z-index:1;padding-bottom:4rem">
 
-        <div class="container-xl px-4">
+        <div class="container-xl px-4" data-tabs data-default-tab="acc">
 
             {{-- Tabs --}}
             <div class="esports-tabs">
                 @foreach(['acc' => 'ACC · Console', 'lmu' => 'LMU · PC', 'iracing' => 'iRacing · PC'] as $key => $label)
                 <button class="esports-tab"
-                        :class="platform === '{{ $key }}' ? 'esports-tab--active' : ''"
-                        @click="platform = '{{ $key }}'">
+                        data-tab-btn="{{ $key }}"
+                        data-tab-active-class="esports-tab--active">
                     {{ $label }}
                 </button>
                 @endforeach
             </div>
 
             {{-- ACC --}}
-            <div x-show="platform === 'acc'" x-cloak>
+            <div data-tab-panel="acc" style="display:none">
                 <div class="esports-grid">
                     @foreach($drivers['acc'] as $d)
                     <div class="esports-driver-card">
@@ -64,7 +63,7 @@
             </div>
 
             {{-- LMU --}}
-            <div x-show="platform === 'lmu'" x-cloak>
+            <div data-tab-panel="lmu" style="display:none">
                 <div class="esports-grid">
                     @foreach($drivers['lmu'] as $d)
                     <div class="esports-driver-card">
@@ -85,7 +84,7 @@
             </div>
 
             {{-- iRacing --}}
-            <div x-show="platform === 'iracing'" x-cloak>
+            <div data-tab-panel="iracing" style="display:none">
                 <div class="esports-grid">
                     @foreach($drivers['iracing'] as $d)
                     <div class="esports-driver-card">

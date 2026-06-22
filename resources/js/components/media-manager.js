@@ -3,6 +3,17 @@ export default function mediaManager(config = {}) {
         uploadOpen: config.openUpload ?? false,
         typeFilter: 'all',
         categoryFilter: 'all',
+        newFolderMode: false,
+        newFolderName: '',
+
+        matches(type, category) {
+            const typeOk     = this.typeFilter === 'all' || this.typeFilter === type;
+            const categoryOk = this.categoryFilter === 'all'
+                || (this.categoryFilter === '__none__' && !category)
+                || this.categoryFilter === category;
+            return typeOk && categoryOk;
+        },
+
         async confirmDelete(url) {
             const r = await Swal.fire({
                 title: 'Delete file?',

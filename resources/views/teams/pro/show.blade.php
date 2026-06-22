@@ -114,7 +114,7 @@ $upcomingRaces = \App\Models\TeamEvent::upcoming()
                     <div class="pro-upcoming-list">
                         @foreach($upcomingRaces as $race)
                         <div class="pro-upcoming-card"
-                             x-data="countdownTimer('{{ $race->starts_at->toIso8601String() }}')"
+                             data-countdown="{{ $race->starts_at->toIso8601String() }}"
                              @if($race->image_url) style="background-image:url('{{ $race->image_url }}');background-size:cover;background-position:center" @endif>
                             @if($race->image_url)<div class="pro-upcoming-card__img-overlay"></div>@endif
                             <div class="pro-upcoming-card__info">
@@ -128,9 +128,9 @@ $upcomingRaces = \App\Models\TeamEvent::upcoming()
                             </div>
                             <div class="pro-upcoming-card__right">
                                 <div class="pro-upcoming-countdown">
-                                    <span x-text="String(d).padStart(2,'0')"></span><span class="pro-upcoming-countdown__sep">d</span>
-                                    <span x-text="String(h).padStart(2,'0')"></span><span class="pro-upcoming-countdown__sep">h</span>
-                                    <span x-text="String(m).padStart(2,'0')"></span><span class="pro-upcoming-countdown__sep">m</span>
+                                    <span data-cd-d>00</span><span class="pro-upcoming-countdown__sep">d</span>
+                                    <span data-cd-h>00</span><span class="pro-upcoming-countdown__sep">h</span>
+                                    <span data-cd-m>00</span><span class="pro-upcoming-countdown__sep">m</span>
                                 </div>
                                 @if($race->watch_url)
                                 <a href="{{ $race->watch_url }}" target="_blank" rel="noopener"
@@ -185,7 +185,7 @@ $upcomingRaces = \App\Models\TeamEvent::upcoming()
 
         {{-- Results with year slider --}}
         <section class="pro-driver-results"
-                 x-data="{ year: {{ $latestYear }} }">
+                 data-tabs data-default-tab="{{ $latestYear }}">
 
             <div class="pro-driver-results__header">
                 <div class="pro-section-label">RACE RESULTS</div>
@@ -194,8 +194,8 @@ $upcomingRaces = \App\Models\TeamEvent::upcoming()
                 <div class="pro-year-tabs">
                     @foreach(array_keys($driver['results']) as $y)
                     <button class="pro-year-tab"
-                            :class="year === {{ $y }} ? 'pro-year-tab--active' : ''"
-                            @click="year = {{ $y }}">
+                            data-tab-btn="{{ $y }}"
+                            data-tab-active-class="pro-year-tab--active">
                         {{ $y }}
                     </button>
                     @endforeach
@@ -204,7 +204,7 @@ $upcomingRaces = \App\Models\TeamEvent::upcoming()
 
             {{-- Per-year content --}}
             @foreach($driver['results'] as $year => $championships)
-            <div x-show="year === {{ $year }}" x-cloak>
+            <div data-tab-panel="{{ $year }}" style="display:none">
 
                 @if(empty($championships))
                     <div class="pro-no-results">
