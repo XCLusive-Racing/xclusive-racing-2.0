@@ -57,13 +57,14 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $data = $request->validate([
-            'name'       => 'required|string|max:255',
-            'country'    => 'nullable|string|max:100',
-            'team'       => 'nullable|string|max:255',
-            'car_number' => 'nullable|integer|min:1|max:9999',
-            'car_model'  => 'nullable|string|max:100',
-            'game'       => 'nullable|in:acc,lmu,iracing',
-            'avatar'     => 'nullable|image|max:4096',
+            'name'                    => 'required|string|max:255',
+            'country'                 => 'nullable|string|max:100',
+            'team'                    => 'nullable|string|max:255',
+            'car_number'              => 'nullable|integer|min:1|max:9999',
+            'car_model'               => 'nullable|string|max:100',
+            'game'                    => 'nullable|in:acc,lmu,iracing',
+            'display_name_preference' => 'nullable|in:name,gamertag',
+            'avatar'                  => 'nullable|image|max:4096',
         ]);
 
         if ($request->hasFile('avatar')) {

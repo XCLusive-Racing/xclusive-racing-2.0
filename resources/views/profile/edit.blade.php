@@ -34,6 +34,14 @@
                                 @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-sm-6">
+                                <label class="form-label fw-bold text-dark" style="font-size:.82rem">Show as</label>
+                                <select name="display_name_preference" class="form-select">
+                                    <option value="name" {{ old('display_name_preference', $user->display_name_preference) === 'name' ? 'selected' : '' }}>Real name</option>
+                                    <option value="gamertag" {{ old('display_name_preference', $user->display_name_preference) === 'gamertag' ? 'selected' : '' }}>Gamertag</option>
+                                </select>
+                                <div class="text-secondary mt-1" style="font-size:.72rem">How your name appears on leaderboards</div>
+                            </div>
+                            <div class="col-sm-6">
                                 <label class="form-label fw-bold text-dark" style="font-size:.82rem">Country</label>
                                 <input type="text" name="country" value="{{ old('country', $user->country) }}"
                                        class="form-control" placeholder="Netherlands">
