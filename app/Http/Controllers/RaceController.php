@@ -31,6 +31,10 @@ class RaceController extends Controller
 
     public function register(Race $race)
     {
+        if (auth()->user()->isSuspended()) {
+            return back()->with('error', 'Your account has been suspended. Please contact an administrator.');
+        }
+
         if ($race->status !== 'open') {
             return back()->with('error', 'Registration is closed for this race.');
         }

@@ -90,7 +90,7 @@
                         <input type="date" x-model="startDate" class="form-control">
                     </div>
                     <div class="col-sm-4">
-                        <label class="form-label">Start Time (UTC)</label>
+                        <label class="form-label">Start Time (BST/GMT)</label>
                         <input type="time" x-model="startTime" class="form-control">
                     </div>
                 </div>
@@ -151,7 +151,7 @@
                                 <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:36px">#</th>
                                 <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Title</th>
                                 <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Track</th>
-                                <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:200px">Date & Time (UTC)</th>
+                                <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:200px">Date & Time (BST/GMT)</th>
                                 <th class="pe-4" style="width:40px"></th>
                             </tr>
                         </thead>

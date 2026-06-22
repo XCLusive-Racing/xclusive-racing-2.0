@@ -128,6 +128,46 @@
                         </label>
                     </div>
                 </div>
+                <div class="col-sm-6" x-data="{ suspended: {{ old('is_suspended', $user->is_suspended) ? 'true' : 'false' }} }">
+                    <label class="form-label fw-bold text-dark d-block" style="font-size:.82rem">
+                        Suspended
+                        @if($user->is_suspended)
+                            @if(!$user->suspended_until)
+                                <span class="badge ms-1" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.7rem">Indefinite</span>
+                            @elseif($user->suspended_until->isFuture())
+                                <span class="badge ms-1" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-size:.7rem">Until {{ $user->suspended_until->format('d M Y H:i') }}</span>
+                            @else
+                                <span class="badge ms-1" style="background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;font-size:.7rem">Expired {{ $user->suspended_until->format('d M Y') }}</span>
+                            @endif
+                        @endif
+                    </label>
+                    <div class="form-check form-switch mt-1">
+                        <input class="form-check-input" type="checkbox" name="is_suspended" id="is_suspended" value="1"
+                               x-model="suspended"
+                               {{ old('is_suspended', $user->is_suspended) ? 'checked' : '' }}>
+                        <label class="form-check-label fw-bold text-secondary" for="is_suspended" style="font-size:.82rem">
+                            Block from registrations
+                        </label>
+                    </div>
+                    <div x-show="suspended" x-transition style="display:none" class="mt-2 d-flex flex-column gap-2">
+                        <div>
+                            <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">Suspended until <span class="fw-normal text-secondary">(leave empty for indefinite)</span></label>
+                            <input type="datetime-local" name="suspended_until"
+                                   value="{{ old('suspended_until', $user->suspended_until?->format('Y-m-d\TH:i')) }}"
+                                   class="form-control form-control-sm @error('suspended_until') is-invalid @enderror"
+                                   style="border-color:#fca5a5">
+                            @error('suspended_until')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div>
+                            <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">Reason <span class="fw-normal text-secondary">(admins only)</span></label>
+                            <textarea name="suspension_reason" rows="2"
+                                      class="form-control form-control-sm @error('suspension_reason') is-invalid @enderror"
+                                      style="border-color:#fca5a5;font-size:.82rem"
+                                      placeholder="e.g. Unsportsmanlike conduct in Round 4">{{ old('suspension_reason', $user->suspension_reason) }}</textarea>
+                            @error('suspension_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
