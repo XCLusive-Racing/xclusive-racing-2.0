@@ -43,6 +43,12 @@ $stats   = $driver->stats;
                         @if($driver->number)
                         <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.8rem">#{{ $driver->number }}</span>
                         @endif
+                        @if($isSupporter)
+                        <span class="badge fw-bold d-inline-flex align-items-center gap-1"
+                              style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;font-size:.72rem">
+                            ★ Supporter
+                        </span>
+                        @endif
                     </div>
                     <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
                         <span class="badge fw-bold text-uppercase"
