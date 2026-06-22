@@ -63,17 +63,22 @@
         <div class="section-divider mb-2"></div>
         <p class="mb-5" style="color:#6b7280;font-size:.9rem">Proud to race alongside the best in the business.</p>
         <div class="row g-4 justify-content-center">
-            @for($i = 1; $i <= 6; $i++)
+            @foreach([
+                ['boostlogo-DEF-wit-01-06.png', 'Boost'],
+                ['ds-logo-white.png',             'DS'],
+                ['logo-dark.png',                'Partner'],
+                ['Logo-White.webp',              'Partner'],
+                ['simlab-white-no-tagline-e1637234882156.png', 'SimLab'],
+                ['sunvitlogo3000X981-300x98-1.png',            'Sunvit'],
+            ] as [$file, $name])
             <div class="col-6 col-md-4 col-lg-2">
                 <div class="partner-box">
-                    <svg width="32" height="32" fill="none" viewBox="0 0 24 24" style="opacity:.25;margin-bottom:.5rem">
-                        <rect x="3" y="3" width="18" height="18" rx="2" stroke="#7c3aed" stroke-width="1.5"/>
-                        <path d="M9 12h6M12 9v6" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round"/>
-                    </svg>
-                    <span class="d-block" style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#d1d5db">Partner</span>
+                    <img src="/images/home/partners/{{ $file }}"
+                         alt="{{ $name }}"
+                         class="partner-logo">
                 </div>
             </div>
-            @endfor
+            @endforeach
         </div>
         <p class="mt-5" style="font-size:.82rem;color:#9ca3af">
             Interested in partnering with XCLusive?

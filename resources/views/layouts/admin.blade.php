@@ -75,6 +75,13 @@
 
         <div x-show="sections.events || sidebarCollapsed">
             @if(auth()->user()->canManageEvents())
+            <a href="{{ route('admin.championships.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.championships.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">Championships</span>
+            </a>
             <a href="{{ route('admin.races.index') }}"
                class="admin-nav-link {{ request()->routeIs('admin.races.index') || request()->routeIs('admin.races.show') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -135,6 +142,14 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
                 </svg>
                 <span x-show="!sidebarCollapsed">Bulk Create</span>
+            </a>
+            <a href="{{ route('admin.team-events.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.team-events.*') ? 'active' : '' }}"
+               style="color:#d4ee6a">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6H9.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/>
+                </svg>
+                <span x-show="!sidebarCollapsed">+ Team Event</span>
             </a>
         </div>
         @endif

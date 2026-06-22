@@ -20,7 +20,9 @@
 @yield('content')
 
 @include('layouts._footer')
+@unless(View::hasSection('no-sidebar'))
 @include('partials.events-sidebar')
+@endunless
 
 @stack('scripts')
 </body>

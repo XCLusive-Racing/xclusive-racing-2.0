@@ -55,31 +55,53 @@
             </div>
             @endif
 
-            {{-- Title overlay --}}
+            {{-- Title + meta --}}
             <div class="xcl-event-hero__body">
                 <h1 class="xcl-event-hero__title">{{ $race->title }}</h1>
                 <div class="xcl-event-hero__meta-row">
                     @if($race->track)
                     <span class="xcl-event-hero__meta-item">
-                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                        <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                         </svg>
                         {{ $race->track }}
                     </span>
                     @endif
                     <span class="xcl-event-hero__meta-item">
-                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                        <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/>
                         </svg>
                         {{ $race->scheduledAtUk()->format('D d M Y · H:i T') }}
                     </span>
+                    @if($race->weather)
+                    <span class="xcl-event-hero__meta-item">
+                        @if($race->weather === 'dry')
+                            <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+                        @elseif($race->weather === 'wet')
+                            <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><path d="M17.66 8L12 2.35 6.34 8C4.78 9.56 4 11.64 4 13.64s.78 4.11 2.34 5.67 3.61 2.35 5.66 2.35 4.1-.79 5.66-2.35S20 15.64 20 13.64 19.22 9.56 17.66 8z"/></svg>
+                        @else
+                            <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+                        @endif
+                        {{ ucfirst($race->weather) }}
+                    </span>
+                    @endif
+                    @if($race->time_of_day)
+                    <span class="xcl-event-hero__meta-item">
+                        @if($race->time_of_day === 'night')
+                            <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+                        @else
+                            <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+                        @endif
+                        {{ ucfirst($race->time_of_day) }}
+                    </span>
+                    @endif
                 </div>
             </div>
         </div>
 
         <div class="row g-4">
 
-            {{-- Left: info + results --}}
+            {{-- Left: about + schedule + results --}}
             <div class="col-12 col-lg-8">
 
                 {{-- Description --}}
@@ -90,7 +112,43 @@
                 </div>
                 @endif
 
-                {{-- Results --}}
+                {{-- Session Schedule --}}
+                @if($race->practice_duration || $race->qualifying_duration || $race->race_duration)
+                <div class="xcl-event-card mb-4">
+                    <h2 class="xcl-event-card__heading">SESSION SCHEDULE</h2>
+                    <div class="xcl-session-schedule">
+                        @if($race->practice_duration)
+                        <div class="xcl-session-schedule__step">
+                            <div class="xcl-session-schedule__dot"></div>
+                            <div class="xcl-session-schedule__info">
+                                <span class="xcl-session-schedule__label">PRACTICE</span>
+                                <span class="xcl-session-schedule__dur">{{ $race->practice_duration }} min</span>
+                            </div>
+                        </div>
+                        @endif
+                        @if($race->qualifying_duration)
+                        <div class="xcl-session-schedule__step">
+                            <div class="xcl-session-schedule__dot"></div>
+                            <div class="xcl-session-schedule__info">
+                                <span class="xcl-session-schedule__label">QUALIFYING</span>
+                                <span class="xcl-session-schedule__dur">{{ $race->qualifying_duration }} min</span>
+                            </div>
+                        </div>
+                        @endif
+                        @if($race->race_duration)
+                        <div class="xcl-session-schedule__step xcl-session-schedule__step--race">
+                            <div class="xcl-session-schedule__dot xcl-session-schedule__dot--race" style="border-color:{{ $race->gameColor() }};background:{{ $race->gameColor() }}22"></div>
+                            <div class="xcl-session-schedule__info">
+                                <span class="xcl-session-schedule__label xcl-session-schedule__label--race" style="color:{{ $race->gameColor() }}">RACE</span>
+                                <span class="xcl-session-schedule__dur xcl-session-schedule__dur--race">{{ $race->race_duration }} min</span>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
+
+                {{-- Race Results --}}
                 @if($race->status === 'finished' && $race->raceResults->isNotEmpty())
                 <div class="xcl-event-card">
                     <h2 class="xcl-event-card__heading">RACE RESULTS</h2>
@@ -189,6 +247,33 @@
                 </div>
                 @endif
 
+                {{-- Requirements --}}
+                @if($race->car_class || $race->sr_requirement || $race->min_rating)
+                <div class="xcl-event-card mb-4">
+                    <h3 class="xcl-event-card__heading">REQUIREMENTS</h3>
+                    <div class="xcl-event-reqs">
+                        @if($race->car_class)
+                        <div class="xcl-event-req-row">
+                            <span class="xcl-event-req-label">Car Class</span>
+                            <span class="xcl-event-req-value">{{ $race->car_class }}</span>
+                        </div>
+                        @endif
+                        @if($race->sr_requirement)
+                        <div class="xcl-event-req-row">
+                            <span class="xcl-event-req-label">Min. SR</span>
+                            <span class="xcl-event-req-value">{{ $race->sr_requirement }}</span>
+                        </div>
+                        @endif
+                        @if($race->min_rating)
+                        <div class="xcl-event-req-row">
+                            <span class="xcl-event-req-label">Min. Rating</span>
+                            <span class="xcl-event-req-value">{{ number_format((int) $race->min_rating) }}</span>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
+
                 {{-- Drivers --}}
                 <div class="xcl-event-card">
                     <h3 class="xcl-event-card__heading">
@@ -201,15 +286,22 @@
                     @if($race->registrations->isEmpty())
                         <p class="xcl-event-card__text mb-0">No drivers registered yet. Be the first!</p>
                     @else
-                        <div class="xcl-drivers-list">
-                            @foreach($race->registrations as $reg)
-                            <div class="xcl-drivers-list__item">
-                                <div class="xcl-drivers-list__avatar" style="background:{{ $race->gameColor() }}">
-                                    {{ strtoupper(substr($reg->user->name, 0, 1)) }}
-                                </div>
-                                <span class="xcl-drivers-list__name">{{ $reg->user->name }}</span>
+                        @php $driverCount = $race->registrations->count(); @endphp
+                        <div class="xcl-drivers-grid-wrap {{ $driverCount <= 8 ? 'no-overflow' : '' }}">
+                            <div class="xcl-drivers-grid">
+                                @foreach($race->registrations as $reg)
+                                <a href="{{ route('drivers.show', $reg->user) }}" class="xcl-drivers-grid__item text-decoration-none">
+                                    <div class="xcl-drivers-grid__avatar" style="{{ !$reg->user->avatarUrl() ? 'background:' . $race->gameColor() : '' }}">
+                                        @if($reg->user->avatarUrl())
+                                            <img src="{{ $reg->user->avatarUrl() }}" alt="{{ $reg->user->name }}">
+                                        @else
+                                            {{ strtoupper(substr($reg->user->name, 0, 1)) }}
+                                        @endif
+                                    </div>
+                                    <span class="xcl-drivers-grid__name">{{ $reg->user->displayName() }}</span>
+                                </a>
+                                @endforeach
                             </div>
-                            @endforeach
                         </div>
                     @endif
                 </div>

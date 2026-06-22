@@ -58,6 +58,9 @@ class DriverController extends Controller
             ->whereNotNull('rating_after')
             ->avg('rating_after');
 
-        return view('drivers.show', compact('driver', 'trackTimes', 'avgRating'));
+        $isSupporter = \App\Models\User::where('platform_id', $driver->xuid_psid)
+            ->value('is_supporter') ?? false;
+
+        return view('drivers.show', compact('driver', 'trackTimes', 'avgRating', 'isSupporter'));
     }
 }

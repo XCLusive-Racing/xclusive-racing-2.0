@@ -57,12 +57,12 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $data = $request->validate([
-            'name'       => 'required|string|max:255',
-            'country'    => 'nullable|string|max:100',
-            'team'       => 'nullable|string|max:255',
-            'car_number' => 'nullable|integer|min:1|max:9999',
-            'car_model'  => 'nullable|string|max:100',
-            'game'       => 'nullable|in:acc,lmu,iracing',
+            'name'                    => 'required|string|max:255',
+            'country'                 => 'nullable|string|max:100',
+            'team'                    => 'nullable|string|max:255',
+            'car_number'              => 'nullable|integer|min:1|max:9999',
+            'car_model'               => 'nullable|string|max:100',
+            'game'                    => 'nullable|in:acc,lmu,iracing',
             'avatar'     => 'nullable|image|max:4096',
         ]);
 
@@ -87,22 +87,26 @@ class ProfileController extends Controller
 
         unset($data['avatar']);
 
-        // Password change (optional)
-        if ($request->filled('new_password')) {
-            $request->validate([
-                'current_password' => 'required',
-                'new_password'     => 'required|min:8|confirmed',
-            ]);
-
-            if (!Hash::check($request->current_password, $user->password)) {
-                return back()->withErrors(['current_password' => 'Current password is incorrect.'])->withInput();
-            }
-
-            $data['password'] = Hash::make($request->new_password);
-        }
-
         $user->update($data);
 
-        return redirect()->route('profile')->with('success', 'Profile updated successfully.');
+        return redirect()->route('profile.edit')->with('success', 'Profile updated successfully.');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'new_password'     => 'required|min:8|confirmed',
+        ]);
+
+        $user = Auth::user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors(['current_password' => 'Current password is incorrect.']);
+        }
+
+        $user->update(['password' => Hash::make($request->new_password)]);
+
+        return redirect()->route('profile.edit')->with('success', 'Password updated successfully.');
     }
 }

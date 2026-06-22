@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\BopController as AdminBopController;
+use App\Http\Controllers\Admin\ChampionshipController as AdminChampionshipController;
+use App\Http\Controllers\ChampionshipController;
 use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
 use App\Http\Controllers\Admin\EventTagController;
 use App\Http\Controllers\Admin\FtpBrowserController;
@@ -21,6 +23,9 @@ use App\Http\Controllers\BopController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Admin\TeamEventController as AdminTeamEventController;
+use App\Http\Controllers\EsportsController;
+use App\Http\Controllers\ProDriverController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\HotlapController;
 use App\Http\Controllers\ProfileController;
@@ -49,7 +54,21 @@ Route::get('sven', function () {
 });
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::view('/team', 'team.index')->name('team');
+
+// PRO driver profiles
+Route::get('/teams/pro',          [ProDriverController::class, 'index'])->name('teams.pro.index');
+Route::get('/teams/pro/{slug}',   [ProDriverController::class, 'show'])->name('teams.pro.show');
+
+// Esports roster
+Route::get('/teams/esports', [EsportsController::class, 'index'])->name('teams.esports.index');
 Route::get('/events/sidebar-data', [EventController::class, 'getSidebarData'])->name('events.sidebar-data');
+
+// Championships - public
+Route::get('/championships', [ChampionshipController::class, 'index'])->name('championships.index');
+Route::get('/championships/{championship}', [ChampionshipController::class, 'show'])->name('championships.show');
+Route::post('/championships/{championship}/register', [ChampionshipController::class, 'register'])->name('championships.register')->middleware('auth');
+Route::delete('/championships/{championship}/unregister', [ChampionshipController::class, 'unregister'])->name('championships.unregister')->middleware('auth');
 
 // Events - public
 Route::get('/events', [RaceController::class, 'index'])->name('events.index');
@@ -102,6 +121,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     Route::post('/profile/connected-accounts', [ConnectedAccountController::class, 'store'])->name('connected-accounts.store');
     Route::delete('/profile/connected-accounts/{connectedAccount}', [ConnectedAccountController::class, 'destroy'])->name('connected-accounts.destroy');
@@ -134,9 +154,23 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/races/{race}/upload-entrylist', [AdminRaceController::class, 'uploadEntrylist'])->name('races.upload-entrylist');
     Route::delete('/races/{race}/reset-config', [AdminRaceController::class, 'resetConfig'])->name('races.reset-config');
 
+    // Championships
+    Route::resource('championships', AdminChampionshipController::class)->except(['destroy']);
+    Route::post('championships/{championship}/rounds', [AdminChampionshipController::class, 'addRound'])->name('championships.rounds.store');
+    Route::delete('championships/{championship}/rounds/{race}', [AdminChampionshipController::class, 'removeRound'])->name('championships.rounds.destroy');
+    Route::post('championships/{championship}/penalties', [AdminChampionshipController::class, 'addPenalty'])->name('championships.penalties.store');
+    Route::delete('championships/{championship}/penalties/{penalty}', [AdminChampionshipController::class, 'destroyPenalty'])->name('championships.penalties.destroy');
+
     // Event Tags
     Route::post('/event-tags', [EventTagController::class, 'store'])->name('event-tags.store');
     Route::delete('/event-tags/{eventTag}', [EventTagController::class, 'destroy'])->name('event-tags.destroy');
+
+    // Team Events (real-world racing)
+    Route::get('/team-events',                        [AdminTeamEventController::class, 'index'])->name('team-events.index');
+    Route::post('/team-events',                       [AdminTeamEventController::class, 'store'])->name('team-events.store');
+    Route::get('/team-events/{teamEvent}/edit',       [AdminTeamEventController::class, 'edit'])->name('team-events.edit');
+    Route::put('/team-events/{teamEvent}',            [AdminTeamEventController::class, 'update'])->name('team-events.update');
+    Route::delete('/team-events/{teamEvent}',         [AdminTeamEventController::class, 'destroy'])->name('team-events.destroy');
 
     // Media Library
     Route::get('/media', [AdminMediaController::class, 'index'])->name('media.index');

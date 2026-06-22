@@ -1,5 +1,6 @@
 @php
 use App\Models\Race;
+use App\Models\TeamEvent;
 use App\Models\User;
 
 $now = now();
@@ -14,9 +15,11 @@ $sbUpcoming = Race::where('scheduled_at', '>', $now)
     ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon'])
     ->when($sbNextEvent, fn($q) => $q->where('id', '!=', $sbNextEvent->id))
     ->orderBy('scheduled_at')
-    ->limit(4)
+    ->limit(2)
     ->get();
 $sbUpcoming->loadCount('registrations');
+
+$sbTeamEvents = TeamEvent::upcoming()->limit(2)->get();
 
 $sbGames = ['acc' => 'elo_acc', 'lmu' => 'elo_lmu', 'iracing' => 'elo_iracing'];
 $sbLeaderboards = [];
@@ -50,19 +53,37 @@ foreach ($sbGames as $game => $col) {
         :aria-expanded="open.toString()">
         <div class="xcl-sidebar-trigger__chevrons">
             <span class="xcl-sidebar-trigger__chevron-1">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
                      stroke="#d4ee6a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="15,18 9,12 15,6"/>
                 </svg>
             </span>
             <span class="xcl-sidebar-trigger__chevron-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
                      stroke="#d4ee6a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="15,18 9,12 15,6"/>
                 </svg>
             </span>
         </div>
-        <span class="xcl-sidebar-trigger__text" x-text="open ? 'CLOSE EVENTS' : 'UPCOMING EVENTS'"></span>
+        <span class="xcl-sidebar-trigger__text">DASHBOARD</span>
+        <div class="xcl-sidebar-trigger__socials" @click.stop>
+            <a href="{{ config('xcl.discord_url') }}" class="xcl-trigger-pill xcl-trigger-pill--discord" target="_blank" rel="noopener">
+                <span class="xcl-trigger-pill__icon"><i class="fa-brands fa-discord"></i></span>
+                <span class="xcl-trigger-pill__label">Discord</span>
+            </a>
+            <a href="#" class="xcl-trigger-pill xcl-trigger-pill--twitch">
+                <span class="xcl-trigger-pill__icon"><i class="fa-brands fa-twitch"></i></span>
+                <span class="xcl-trigger-pill__label">Twitch</span>
+            </a>
+            <a href="https://www.instagram.com/xclusive_esport/" class="xcl-trigger-pill xcl-trigger-pill--instagram" target="_blank" rel="noopener">
+                <span class="xcl-trigger-pill__icon"><i class="fa-brands fa-instagram"></i></span>
+                <span class="xcl-trigger-pill__label">Instagram</span>
+            </a>
+            <a href="#" class="xcl-trigger-pill xcl-trigger-pill--tiktok">
+                <span class="xcl-trigger-pill__icon"><i class="fa-brands fa-tiktok"></i></span>
+                <span class="xcl-trigger-pill__label">TikTok</span>
+            </a>
+        </div>
     </button>
 
     {{-- ── Backdrop ─────────────────────────────────────────────────────────── --}}
@@ -310,13 +331,16 @@ foreach ($sbGames as $game => $col) {
                              x-data="countdownTimer('{{ $event->scheduled_at->toIso8601String() }}')">
 
                             <div class="xcl-sb-up-card__img-wrap">
-                                @if($event->image)
-                                    <img src="{{ $event->image_url }}"
-                                         alt="{{ $event->title }}" loading="lazy"
-                                         class="xcl-sb-up-card__img">
-                                @else
-                                    <div class="xcl-sb-up-card__img-placeholder"></div>
-                                @endif
+                                @php
+                                    $upPlaceholder = match($event->game) {
+                                        'lmu'     => '/images/home/teams/XCLusive_Placeholder_lmu.png',
+                                        'iracing' => '/images/home/teams/XCLusive_Placeholder_iRacing.png',
+                                        default   => '/images/home/teams/XCLusive_Placeholder_ACC.png',
+                                    };
+                                @endphp
+                                <img src="{{ $event->image ? $event->image_url : $upPlaceholder }}"
+                                     alt="{{ $event->title }}" loading="lazy"
+                                     class="xcl-sb-up-card__img">
                                 <div class="xcl-sb-up-card__img-gradient"></div>
 
                                 {{-- Race icon centered on card --}}
@@ -352,6 +376,7 @@ foreach ($sbGames as $game => $col) {
                         @empty
                         <p style="color:#8B9BB4;font-size:.8rem;padding:.5rem 0">No further events scheduled</p>
                         @endforelse
+
                     </div>
                     {{-- end col 2 --}}
 
@@ -425,6 +450,85 @@ foreach ($sbGames as $game => $col) {
                     {{-- end col 3 --}}
 
                 </div>
+
+                {{-- ── Separator + Full-width Real-World Racing ────────────── --}}
+                <div style="border-top:1px solid rgba(255,255,255,0.08);margin:.75rem 1.5rem 0;padding:0 .25rem">
+                    <div style="display:flex;align-items:center;gap:.75rem;padding:.9rem 0 .75rem">
+                        <div class="xcl-sb-title" style="margin:0;white-space:nowrap">
+                            <span>REAL-WORLD </span><span>RACING</span>
+                        </div>
+                        <div style="flex:1;height:1px;background:rgba(255,255,255,0.07)"></div>
+                    </div>
+
+                    <div style="display:flex;gap:1rem;align-items:stretch;padding-bottom:.25rem">
+                        @foreach([0, 1] as $slot)
+                        @php $te = $sbTeamEvents->get($slot); @endphp
+
+                        @if($te)
+                        {{-- Slot filled --}}
+                        <div class="xcl-sb-up-card" style="flex:1;min-width:0"
+                             x-data="countdownTimer('{{ $te->starts_at->toIso8601String() }}')">
+
+                            <div class="xcl-sb-up-card__img-wrap" style="height:300px">
+                                <img src="{{ $te->image_url ?? '/images/home/teams/XCLusive_Placeholder_ACC.png' }}"
+                                     alt="{{ $te->title }}" loading="lazy"
+                                     class="xcl-sb-up-card__img"
+                                     style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
+                                <div class="xcl-sb-up-card__img-gradient"></div>
+
+                                <div class="xcl-sb-up-card__title">
+                                    {{ strtoupper($te->title) }}
+                                </div>
+
+                                <div class="xcl-sb-up-card__meta-row">
+                                    <div class="xcl-sb-countdown xcl-sb-countdown--small">
+                                        <span x-text="String(d).padStart(2,'0')"></span>D&nbsp;<span x-text="String(h).padStart(2,'0')"></span>H&nbsp;<span x-text="String(m).padStart(2,'0')"></span>M
+                                    </div>
+                                    <div style="font-size:.65rem;color:#9ca3af;font-weight:600">
+                                        {{ $te->starts_at->format('d M · H:i') }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="xcl-sb-up-card__footer" style="padding:.5rem .6rem">
+                                <div class="d-flex gap-1 flex-wrap align-items-center">
+                                    <span class="xcl-sb-badge xcl-sb-badge--game"
+                                          style="background:rgba(212,238,106,.15);color:#d4ee6a;border:1px solid rgba(212,238,106,.3)">
+                                        {{ TeamEvent::subjects()[$te->subject] ?? $te->subject }}
+                                    </span>
+                                    @if($te->subtitle)
+                                    <span class="xcl-sb-badge xcl-sb-badge--platform">{{ $te->subtitle }}</span>
+                                    @endif
+                                </div>
+                                @if($te->watch_url)
+                                <a href="{{ $te->watch_url }}" target="_blank" rel="noopener"
+                                   class="xcl-sb-up-card__join"
+                                   style="background:#d4ee6a;color:#0d0d0d;font-weight:800;padding:4px 10px;font-size:.65rem">
+                                    ▶ WATCH LIVE
+                                </a>
+                                @else
+                                <span class="xcl-sb-up-card__join"
+                                      style="background:rgba(212,238,106,.08);color:#4b5563;cursor:default;pointer-events:none;padding:4px 10px;font-size:.65rem">
+                                    WATCH LIVE
+                                </span>
+                                @endif
+                            </div>
+                        </div>
+
+                        @else
+                        {{-- Empty slot --}}
+                        <div style="flex:1;min-width:0;height:300px;border-radius:8px;border:1px dashed rgba(255,255,255,0.1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;background:rgba(255,255,255,0.02)">
+                            <svg width="24" height="24" fill="none" stroke="#4b5563" stroke-width="1.5" viewBox="0 0 24 24">
+                                <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+                            </svg>
+                            <span style="font-size:.7rem;font-weight:700;color:#4b5563;letter-spacing:.06em;text-transform:uppercase">No upcoming events</span>
+                        </div>
+                        @endif
+
+                        @endforeach
+                    </div>
+                </div>
+
             </div>
             {{-- end daily tab --}}
 
