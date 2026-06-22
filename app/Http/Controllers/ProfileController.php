@@ -63,8 +63,7 @@ class ProfileController extends Controller
             'car_number'              => 'nullable|integer|min:1|max:9999',
             'car_model'               => 'nullable|string|max:100',
             'game'                    => 'nullable|in:acc,lmu,iracing',
-            'display_name_preference' => 'nullable|in:name,gamertag',
-            'avatar'                  => 'nullable|image|max:4096',
+            'avatar'     => 'nullable|image|max:4096',
         ]);
 
         if ($request->hasFile('avatar')) {
