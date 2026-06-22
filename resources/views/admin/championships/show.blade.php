@@ -17,23 +17,23 @@
 
 @section('content')
 
-<div x-data="{ tab: 'overview' }">
+<div data-tabs data-default-tab="overview">
 
     {{-- Tabs --}}
     <div class="d-flex gap-1 mb-4 flex-wrap" style="border-bottom:2px solid #e5e7eb;padding-bottom:0">
         @foreach(['overview' => 'Overview', 'rounds' => 'Rounds (' . $rounds->count() . ')', 'standings' => 'Standings', 'registrations' => 'Registrations (' . $championship->registrations->count() . ')', 'penalties' => 'Penalties'] as $key => $label)
-        <button @click="tab='{{ $key }}'"
-                :class="tab==='{{ $key }}' ? 'border-bottom-0' : 'text-secondary'"
-                class="btn btn-sm fw-bold text-uppercase px-3 py-2"
-                style="font-size:.72rem;border-radius:6px 6px 0 0;transition:none;margin-bottom:-2px;"
-                :style="tab==='{{ $key }}' ? 'background:white;border:2px solid #e5e7eb;border-bottom:2px solid white;color:#111827' : 'background:transparent;border:none'">
+        <button data-tab-btn="{{ $key }}"
+                data-tab-active-style="background:white;border:2px solid #e5e7eb;border-bottom:2px solid white;color:#111827"
+                data-tab-inactive-style="background:transparent;border:none"
+                class="btn btn-sm fw-bold text-uppercase px-3 py-2 text-secondary"
+                style="font-size:.72rem;border-radius:6px 6px 0 0;transition:none;margin-bottom:-2px;">
             {{ $label }}
         </button>
         @endforeach
     </div>
 
     {{-- OVERVIEW --}}
-    <div x-show="tab==='overview'">
+    <div data-tab-panel="overview" style="display:none">
         <div class="row g-4">
             <div class="col-12 col-lg-8">
                 <div class="admin-card">
@@ -100,7 +100,7 @@
     </div>
 
     {{-- ROUNDS --}}
-    <div x-show="tab==='rounds'" style="display:none">
+    <div data-tab-panel="rounds" style="display:none">
         <div class="row g-4">
             <div class="col-12 col-lg-7">
                 <div class="admin-card mb-4">
@@ -200,7 +200,7 @@
     </div>
 
     {{-- STANDINGS --}}
-    <div x-show="tab==='standings'" style="display:none">
+    <div data-tab-panel="standings" style="display:none">
         <div class="admin-card">
             <div class="px-4 pt-4 pb-3">
                 <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Championship Standings</p>
@@ -246,7 +246,7 @@
     </div>
 
     {{-- REGISTRATIONS --}}
-    <div x-show="tab==='registrations'" style="display:none">
+    <div data-tab-panel="registrations" style="display:none">
         <div class="admin-card">
             <div class="px-4 pt-4 pb-3">
                 <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Registered Drivers</p>
@@ -292,7 +292,7 @@
     </div>
 
     {{-- PENALTIES --}}
-    <div x-show="tab==='penalties'" style="display:none">
+    <div data-tab-panel="penalties" style="display:none">
         <div class="row g-4">
             <div class="col-12 col-lg-7">
                 <div class="admin-card">

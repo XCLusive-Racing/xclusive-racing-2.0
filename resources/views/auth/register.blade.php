@@ -8,8 +8,7 @@
     $startStep = (old('platform') || $steamId) ? 2 : 1;
     $startPlatform = old('platform', $steamId ? 'steam' : '');
 @endphp
-<div class="xcl-auth-page py-5"
-     x-data="{ step: {{ $startStep }}, platform: '{{ $startPlatform }}' }">
+<div class="xcl-auth-page py-5" data-register>
 
     <div class="xcl-auth-page__topo" style="background-image:url('/topo.png');"></div>
     <div class="xcl-auth-card">
@@ -19,7 +18,7 @@
         </div>
 
         {{-- Step 1: Choose platform --}}
-        <div x-show="step === 1">
+        <div data-step="1" style="{{ $startStep === 2 ? 'display:none' : '' }}">
             <h1 class="fs-3 fw-black text-uppercase fst-italic text-white text-center mb-1">Choose Platform</h1>
             <p class="text-white small text-center mb-4">Select the platform you race on</p>
 
@@ -28,11 +27,11 @@
                     <i class="fa-brands fa-steam fs-5"></i>
                     Steam
                 </a>
-                <button type="button" @click="platform = 'xbox'; step = 2" class="xcl-platform-btn xcl-platform-btn--xbox">
+                <button type="button" data-select-platform="xbox" class="xcl-platform-btn xcl-platform-btn--xbox">
                     <i class="fa-brands fa-xbox fs-5"></i>
                     Xbox
                 </button>
-                <button type="button" @click="platform = 'ps5'; step = 2" class="xcl-platform-btn xcl-platform-btn--ps5">
+                <button type="button" data-select-platform="ps5" class="xcl-platform-btn xcl-platform-btn--ps5">
                     <i class="fa-brands fa-playstation fs-5"></i>
                     PlayStation
                 </button>
@@ -45,7 +44,7 @@
         </div>
 
         {{-- Step 2: Create profile --}}
-        <div x-show="step === 2">
+        <div data-step="2" style="{{ $startStep === 1 ? 'display:none' : '' }}">
             <h1 class="fs-3 fw-black text-uppercase fst-italic text-white text-center mb-1">Create Profile</h1>
             <p class="text-white-50 small text-center mb-4">Fill in your details to get started</p>
 
@@ -59,7 +58,7 @@
 
             <form method="POST" action="{{ route('register') }}">
                 @csrf
-                <input type="hidden" name="platform" :value="platform">
+                <input type="hidden" name="platform" value="{{ $startPlatform }}" data-platform-value>
 
                 @if ($steamId)
                 <div class="mb-3">
@@ -73,16 +72,17 @@
                 @else
                 <div class="mb-3">
                     <label class="form-label small fw-bold text-uppercase text-white-50 mb-1">
-                        <span x-text="platform === 'steam' ? 'Steam ID or Vanity URL' : platform === 'ps5' ? 'PSN Online ID' : 'Xbox Gamertag'"></span>
+                        <span data-platform-label>{{ $startPlatform === 'ps5' ? 'PSN Online ID' : ($startPlatform === 'xbox' ? 'Xbox Gamertag' : 'Steam ID or Vanity URL') }}</span>
                     </label>
                     <input type="text" name="gamertag" required
-                           :placeholder="platform === 'steam' ? 'SteamID64 or custom URL name' : platform === 'ps5' ? 'Your PSN Online ID' : 'Your Xbox Gamertag'"
+                           data-gamertag-input
+                           placeholder="{{ $startPlatform === 'ps5' ? 'Your PSN Online ID' : ($startPlatform === 'xbox' ? 'Your Xbox Gamertag' : 'SteamID64 or custom URL name') }}"
                            value="{{ old('gamertag') }}"
                            class="form-control xcl-auth-input @error('gamertag') is-invalid @enderror">
-                    <div class="mt-1" style="font-size:.78rem; color:rgba(255,255,255,.3);" x-show="platform === 'steam'">
+                    <div data-hint="steam" class="mt-1" style="font-size:.78rem; color:rgba(255,255,255,.3);{{ $startPlatform !== 'steam' ? 'display:none' : '' }}">
                         Enter your 17-digit SteamID64, or the name from steamcommunity.com/id/<strong>name</strong>
                     </div>
-                    <div class="mt-1" style="font-size:.78rem; color:rgba(255,255,255,.3);" x-show="platform === 'xbox'">
+                    <div data-hint="xbox" class="mt-1" style="font-size:.78rem; color:rgba(255,255,255,.3);{{ $startPlatform !== 'xbox' ? 'display:none' : '' }}">
                         Enter your Gamertag with or without the #xxxx suffix (e.g. <strong>PlayerName</strong> or <strong>PlayerName#1234</strong>)
                     </div>
                     @error('gamertag')
@@ -134,7 +134,7 @@
                 </div>
 
                 <div class="d-flex gap-3">
-                    <button type="button" @click="step = 1"
+                    <button type="button" data-back
                         class="btn flex-fill fw-black text-uppercase text-white py-3"
                         style="background:rgba(255,255,255,.06); border:1.5px solid rgba(255,255,255,.12); border-radius:10px; letter-spacing:.06em;">
                         Back

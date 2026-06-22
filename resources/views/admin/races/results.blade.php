@@ -36,8 +36,9 @@
     </div>
 </div>
 
-{{-- FTP Server Import card --}}
-<div class="admin-card mb-4" x-data="{ open: true }">
+{{-- FTP Server Import card (starts expanded) --}}
+<div data-accordions>
+<div class="admin-card mb-4" data-accordion="open">
     <div class="admin-card-header">
         <div>
             <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:1.05rem">Import via FTP Server</div>
@@ -49,15 +50,16 @@
                style="background:#f3e8ff;color:#7c3aed;border:1px solid #e9d5ff;font-size:.72rem;padding:4px 12px;border-radius:6px">
                 Manage Servers
             </a>
-            <button type="button" @click="open = !open"
+            <button data-accordion-header type="button"
                     class="btn btn-sm fw-bold text-uppercase"
                     style="background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;font-size:.72rem;padding:4px 12px;border-radius:6px;min-width:85px">
-                <span x-text="open ? '▲ Collapse' : '▼ Expand'"></span>
+                <span data-show-when-open>▲ Collapse</span>
+                <span data-show-when-closed style="display:none">▼ Expand</span>
             </button>
         </div>
     </div>
 
-    <div x-show="open" style="display:block">
+    <div data-accordion-body>
 
         @if($ftpServers->isEmpty())
         <div class="text-center py-3">
@@ -233,9 +235,11 @@
         @endif {{-- end ftpServers not empty --}}
     </div>
 </div>
+</div>
 
-{{-- Manual Upload card --}}
-<div class="admin-card mb-4" x-data="{ open: false }">
+{{-- Manual Upload card (starts collapsed) --}}
+<div data-accordions>
+<div class="admin-card mb-4" data-accordion="closed">
     <div class="admin-card-header">
         <div>
             <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:1.05rem">Manual Upload</div>
@@ -252,15 +256,16 @@
                 Quali: {{ $qualiResults->count() }} drivers
             </span>
             @endif
-            <button type="button" @click="open = !open"
+            <button data-accordion-header type="button"
                     class="btn btn-sm fw-bold text-uppercase"
                     style="background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;font-size:.72rem;padding:4px 12px;border-radius:6px;min-width:85px">
-                <span x-text="open ? '▲ Collapse' : '▼ Expand'"></span>
+                <span data-show-when-open style="display:none">▲ Collapse</span>
+                <span data-show-when-closed>▼ Expand</span>
             </button>
         </div>
     </div>
 
-    <div x-show="open" style="display:none">
+    <div data-accordion-body style="display:none">
         <form action="{{ route('admin.races.results.store', $race) }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="d-flex gap-3 align-items-end flex-wrap">
@@ -282,6 +287,7 @@
             </div>
         </form>
     </div>
+</div>
 </div>
 
 {{-- DNS Candidates card --}}
@@ -357,15 +363,16 @@
 </div>
 @endif
 
-{{-- Tabs --}}
-<div class="admin-card" x-data="{ tab: '{{ $raceResults->isNotEmpty() ? 'race' : ($qualiResults->isNotEmpty() ? 'quali' : 'race') }}' }">
+{{-- Results tabs --}}
+@php $defaultResultTab = $raceResults->isNotEmpty() ? 'race' : ($qualiResults->isNotEmpty() ? 'quali' : 'race'); @endphp
+<div class="admin-card" data-tabs data-default-tab="{{ $defaultResultTab }}">
 
     {{-- Tab nav --}}
     <div class="d-flex border-bottom px-2" style="background:#f9fafb">
-        <button @click="tab = 'race'"
-                :style="tab === 'race' ? 'color:#7c3aed;border-bottom:2px solid #7c3aed' : 'color:#9ca3af;border-bottom:2px solid transparent'"
-                class="btn btn-link fw-black text-uppercase text-decoration-none py-3 px-3"
-                style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s">
+        <button class="btn btn-link fw-black text-uppercase text-decoration-none py-3 px-3"
+                data-tab-btn="race"
+                data-tab-color="#7c3aed"
+                style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s;border-bottom:2px solid transparent">
             Race Results
             @if($raceResults->isNotEmpty())
             <span class="badge ms-1 text-white" style="background:#7c3aed;font-size:.65rem;padding:2px 7px;border-radius:10px">
@@ -373,10 +380,10 @@
             </span>
             @endif
         </button>
-        <button @click="tab = 'quali'"
-                :style="tab === 'quali' ? 'color:#2563eb;border-bottom:2px solid #2563eb' : 'color:#9ca3af;border-bottom:2px solid transparent'"
-                class="btn btn-link fw-black text-uppercase text-decoration-none py-3 px-3"
-                style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s">
+        <button class="btn btn-link fw-black text-uppercase text-decoration-none py-3 px-3"
+                data-tab-btn="quali"
+                data-tab-color="#2563eb"
+                style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s;border-bottom:2px solid transparent">
             Qualifying
             @if($qualiResults->isNotEmpty())
             <span class="badge ms-1 text-white" style="background:#2563eb;font-size:.65rem;padding:2px 7px;border-radius:10px">
@@ -384,16 +391,16 @@
             </span>
             @endif
         </button>
-        <button @click="tab = 'ratings'"
-                :style="tab === 'ratings' ? 'color:#059669;border-bottom:2px solid #059669' : 'color:#9ca3af;border-bottom:2px solid transparent'"
-                class="btn btn-link fw-black text-uppercase text-decoration-none py-3 px-3"
-                style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s">
+        <button class="btn btn-link fw-black text-uppercase text-decoration-none py-3 px-3"
+                data-tab-btn="ratings"
+                data-tab-color="#059669"
+                style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s;border-bottom:2px solid transparent">
             Ratings
         </button>
     </div>
 
     {{-- Race Results tab --}}
-    <div x-show="tab === 'race'" x-cloak>
+    <div data-tab-panel="race" style="display:none">
         @if($raceResults->isEmpty())
         <div class="p-5 text-center">
             <div style="font-size:2rem;margin-bottom:.5rem">🏁</div>
@@ -471,7 +478,7 @@
     </div>
 
     {{-- Qualifying tab --}}
-    <div x-show="tab === 'quali'" x-cloak>
+    <div data-tab-panel="quali" style="display:none">
         @if($qualiResults->isEmpty())
         <div class="p-5 text-center">
             <div style="font-size:2rem;margin-bottom:.5rem">⏱️</div>
@@ -533,7 +540,7 @@
     </div>
 
     {{-- Ratings tab --}}
-    <div x-show="tab === 'ratings'" x-cloak>
+    <div data-tab-panel="ratings" style="display:none">
         @php $ratedResults = $raceResults->whereNotNull('rating_after')->sortBy('position'); @endphp
 
         <div class="px-4 pt-3 pb-2 d-flex align-items-center justify-content-between" style="border-bottom:1px solid #f3f4f6">
@@ -627,7 +634,6 @@
         </div>
         @endif
     </div>
-
 
 </div>
 

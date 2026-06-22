@@ -52,14 +52,10 @@
                 ],
             ] as $cat)
 
-            <div class="events-platform-card" onclick="window.location='{{ $cat['href'] }}'"
-                 style="cursor:pointer"
-                 x-data="{ on: false }"
-                 @mouseenter="on = true"
-                 @mouseleave="on = false"
-                 :class="on ? 'events-platform-card--active' : ''">
+            <div class="events-platform-card" data-hover-card
+                 onclick="window.location='{{ $cat['href'] }}'"
+                 style="cursor:pointer">
 
-                {{-- Background: swap $cat['image'] src once images are ready --}}
                 @if($cat['image'])
                     <img src="{{ $cat['image'] }}" alt="{{ $cat['title'] }}" class="events-platform-card__video" style="object-position:{{ $cat['img_pos'] ?? 'center center' }};{{ isset($cat['img_zoom']) ? 'transform:scale('.$cat['img_zoom'].');transform-origin:center center;' : '' }}">
                 @else
@@ -70,17 +66,15 @@
                 <div class="events-platform-card__shadow"></div>
                 <div class="events-platform-card__top-bar" style="background:{{ $cat['color'] }}"></div>
 
-                {{-- Category logo top-left --}}
                 @if($cat['logo'])
                 <div class="events-platform-card__logo">
                     <img src="{{ $cat['logo'] }}" alt="{{ $cat['title'] }}" height="52">
                 </div>
                 @endif
 
-                {{-- Body --}}
                 <div class="events-platform-card__body">
                     <div class="events-platform-card__title">{{ $cat['title'] }}</div>
-                    <div class="events-platform-card__desc" :class="on ? 'events-platform-card__desc--visible' : ''">
+                    <div class="events-platform-card__desc">
                         <p>{{ $cat['desc'] }}</p>
                         <span class="events-platform-card__cta" style="background:{{ $cat['color'] }}">
                             View Drivers →

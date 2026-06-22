@@ -105,41 +105,43 @@
                         </div>
                         <div class="col-sm-6">
                             {{-- Event Tag --}}
-                            <script>window.__xclTags = @json($tags->map(fn($t) => ['slug'=>$t->slug,'name'=>$t->name,'color'=>$t->color]));</script>
-                            <div x-data="eventTags({ tags: window.__xclTags || [], storeUrl: '{{ route('admin.event-tags.store') }}', deleteBaseUrl: '/admin/event-tags/', csrfToken: '{{ csrf_token() }}' })">
+                            @php
+                                $tagsConfig = json_encode([
+                                    'tags'        => $tags->map(fn($t) => ['slug' => $t->slug, 'name' => $t->name, 'color' => $t->color]),
+                                    'storeUrl'    => route('admin.event-tags.store'),
+                                    'csrfToken'   => csrf_token(),
+                                    'selectedTag' => old('event_tag', $race->event_tag ?? ''),
+                                ]);
+                            @endphp
+                            <div data-tags-wrap data-config='{{ $tagsConfig }}'>
                                 <div class="d-flex align-items-center justify-content-between mb-1">
                                     <label class="form-label mb-0">Event Tag</label>
-                                    <button type="button" @click="adding = !adding"
+                                    <button type="button" data-tags-toggle
                                             class="btn btn-sm fw-bold text-uppercase"
                                             style="font-size:.68rem;padding:2px 8px;background:rgba(124,58,237,.1);color:#7c3aed;border:1px solid rgba(124,58,237,.3);border-radius:6px">
-                                        <span x-text="adding ? '✕ Cancel' : '+ New'"></span>
+                                        + New
                                     </button>
                                 </div>
-                                <select name="event_tag" class="form-select @error('event_tag') is-invalid @enderror">
+                                <select name="event_tag" class="form-select @error('event_tag') is-invalid @enderror" data-tags-select>
                                     <option value="">Select tag...</option>
-                                    <template x-for="tag in tags" :key="tag.slug">
-                                        <option :value="tag.slug" :selected="tag.slug === '{{ old('event_tag', $race->event_tag) }}'" x-text="tag.name"></option>
-                                    </template>
                                 </select>
                                 @error('event_tag') <div class="invalid-feedback">{{ $message }}</div> @enderror
 
-                                <div x-show="adding" x-transition style="display:none">
+                                <div data-tags-add-panel style="display:none">
                                     <div class="mt-2 p-3 rounded-2" style="background:#f8f5ff;border:1px solid rgba(124,58,237,.2)">
-                                        <div x-show="tagSuccess" class="alert alert-success py-1 px-2 mb-2" style="font-size:.8rem" x-text="tagSuccess"></div>
-                                        <div x-show="tagError"   class="alert alert-danger  py-1 px-2 mb-2" style="font-size:.8rem" x-text="tagError"></div>
+                                        <div data-tags-error class="alert alert-danger py-1 px-2 mb-2" style="font-size:.8rem;display:none"></div>
                                         <div class="d-flex gap-2 align-items-end">
                                             <div class="flex-grow-1">
                                                 <label class="form-label" style="font-size:.78rem">Name</label>
-                                                <input type="text" x-model="tagName" placeholder="e.g. Endurance"
-                                                       class="form-control form-control-sm" @keydown.enter.prevent="saveTag()">
+                                                <input type="text" data-tags-name placeholder="e.g. Endurance"
+                                                       class="form-control form-control-sm">
                                             </div>
                                             <div>
                                                 <label class="form-label" style="font-size:.78rem">Color</label>
-                                                <input type="color" x-model="tagColor" class="form-control form-control-sm form-control-color" style="width:46px;padding:2px">
+                                                <input type="color" data-tags-color class="form-control form-control-sm form-control-color" style="width:46px;padding:2px" value="#7B2FBE">
                                             </div>
-                                            <button type="button" @click="saveTag()" :disabled="saving"
-                                                    class="btn btn-sm fw-bold text-white" style="background:#7c3aed;white-space:nowrap"
-                                                    x-text="saving ? 'Saving…' : 'Add'"></button>
+                                            <button type="button" data-tags-save
+                                                    class="btn btn-sm fw-bold text-white" style="background:#7c3aed;white-space:nowrap">Add</button>
                                         </div>
                                     </div>
                                 </div>

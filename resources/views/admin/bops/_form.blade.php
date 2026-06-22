@@ -43,22 +43,19 @@
 </div>
 
 {{-- Ballast & Restrictor --}}
-<div class="px-4 py-3 border-bottom" x-data="{ ballast: {{ old('ballast_kg', $bop?->ballast_kg ?? 0) }} }">
+<div class="px-4 py-3 border-bottom" data-ballast-wrap>
     <div class="fw-black text-uppercase mb-3" style="font-size:.68rem;letter-spacing:.08em;color:#9ca3af">Performance Adjustment</div>
     <div class="row g-3 align-items-start">
         <div class="col-sm-5">
             <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">Ballast (kg) <span class="text-danger">*</span></label>
             <input type="number" name="ballast_kg"
-                   x-model="ballast"
+                   data-ballast-input
                    value="{{ old('ballast_kg', $bop?->ballast_kg ?? 0) }}"
                    class="form-control @error('ballast_kg') is-invalid @enderror"
                    style="font-size:.85rem"
                    min="-100" max="200">
             @error('ballast_kg')<div class="invalid-feedback">{{ $message }}</div>@enderror
-            <div class="mt-2 fw-black" style="font-size:1.1rem"
-                 :style="ballast > 0 ? 'color:#ef4444' : (ballast < 0 ? 'color:#10b981' : 'color:#9ca3af')">
-                <span x-text="ballast > 0 ? '+' + ballast + ' kg' : ballast + ' kg'"></span>
-            </div>
+            <div class="mt-2 fw-black" style="font-size:1.1rem" data-ballast-display></div>
         </div>
         <div class="col-sm-5">
             <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">Restrictor (%) <span class="text-danger">*</span></label>
