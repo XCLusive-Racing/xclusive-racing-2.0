@@ -1,63 +1,79 @@
-export default function eventTags(config) {
-    return {
-        adding: false,
-        tagName: '',
-        tagColor: '#7B2FBE',
-        saving: false,
-        tagError: '',
-        tagSuccess: '',
-        tags: config.tags || [],
-        storeUrl: config.storeUrl,
-        deleteBaseUrl: config.deleteBaseUrl,
-        csrfToken: config.csrfToken,
+import { toast } from '../lib/swal.js';
 
-        async saveTag() {
-            if (!this.tagName.trim()) return;
-            this.saving = true; this.tagError = ''; this.tagSuccess = '';
-            try {
-                const r = await fetch(this.storeUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': this.csrfToken,
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({ name: this.tagName, color: this.tagColor }),
-                });
-                const data = await r.json();
-                if (r.ok) {
-                    this.tags.push({ slug: data.slug, name: data.name, color: data.color });
-                    this.tagSuccess = data.name + ' added!';
-                    this.tagName = ''; this.tagColor = '#7B2FBE';
-                    setTimeout(() => { this.adding = false; this.tagSuccess = ''; }, 1200);
-                } else {
-                    this.tagError = data.errors?.name?.[0] || data.message || 'Failed to save tag.';
-                }
-            } catch { this.tagError = 'Network error.'; }
-            finally { this.saving = false; }
-        },
+export function initEventTags(wrap) {
+    if (!wrap) return;
 
-        async deleteTag(slug) {
-            const res = await Swal.fire({
-                title: 'Delete tag?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Delete',
-                cancelButtonText: 'Cancel',
-                reverseButtons: true,
-            });
-            if (!res.isConfirmed) return;
-            const r = await fetch(this.deleteBaseUrl + slug, {
+    const config      = JSON.parse(wrap.dataset.config);
+    const select      = wrap.querySelector('[data-tags-select]');
+    const addPanel    = wrap.querySelector('[data-tags-add-panel]');
+    const toggleBtn   = wrap.querySelector('[data-tags-toggle]');
+    const nameInput   = wrap.querySelector('[data-tags-name]');
+    const colorInput  = wrap.querySelector('[data-tags-color]');
+    const saveBtn     = wrap.querySelector('[data-tags-save]');
+    const errorEl     = wrap.querySelector('[data-tags-error]');
+
+    let tags = config.tags || [];
+    const selectedTag = config.selectedTag || '';
+
+    function renderOptions() {
+        const current = select.value || selectedTag;
+        Array.from(select.options).filter(o => o.dataset.tag).forEach(o => o.remove());
+        tags.forEach(t => {
+            const opt = new Option(t.name, t.slug);
+            opt.dataset.tag = '1';
+            if (t.slug === current) opt.selected = true;
+            select.appendChild(opt);
+        });
+    }
+
+    renderOptions();
+
+    toggleBtn?.addEventListener('click', () => {
+        const open = addPanel.style.display !== 'none';
+        addPanel.style.display = open ? 'none' : 'block';
+        toggleBtn.textContent = open ? '+ New' : '✕ Cancel';
+        if (!open) nameInput?.focus();
+    });
+
+    saveBtn?.addEventListener('click', save);
+    nameInput?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } });
+
+    async function save() {
+        const name  = nameInput.value.trim();
+        const color = colorInput?.value ?? '#7B2FBE';
+        if (!name) return;
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving…';
+        if (errorEl) errorEl.textContent = '';
+
+        try {
+            const res = await fetch(config.storeUrl, {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': this.csrfToken,
-                    'X-HTTP-Method-Override': 'DELETE',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': config.csrfToken,
                     'Accept': 'application/json',
                 },
+                body: JSON.stringify({ name, color }),
             });
-            if (r.ok) this.tags = this.tags.filter(t => t.slug !== slug);
-        },
-    };
+            const data = await res.json();
+            if (res.ok) {
+                tags.push(data);
+                renderOptions();
+                select.value = data.slug;
+                nameInput.value = '';
+                if (colorInput) colorInput.value = '#7B2FBE';
+                addPanel.style.display = 'none';
+                if (toggleBtn) toggleBtn.textContent = '+ New';
+            } else {
+                if (errorEl) errorEl.textContent = data.errors?.name?.[0] || data.message || 'Failed to save.';
+            }
+        } catch {
+            if (errorEl) errorEl.textContent = 'Network error.';
+        }
+
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Add';
+    }
 }

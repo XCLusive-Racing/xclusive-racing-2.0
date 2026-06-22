@@ -41,16 +41,14 @@ foreach ($sbGames as $game => $col) {
 
 <script>window.__xclLeaderboards = @json($sbLeaderboards);</script>
 
-<div x-data="{ ...eventsSidebar(), navbarOpen: false }" @keydown.escape.window="open = false" @open-events-sidebar.window="open = true" @navbar-toggled.window="navbarOpen = $event.detail.open; if($event.detail.open) open = false">
+<div data-events-sidebar>
 
     {{-- ── Trigger tab ──────────────────────────────────────────────────────── --}}
     <button
-        x-show="!navbarOpen"
+        data-sb-trigger
         class="xcl-sidebar-trigger"
-        :class="{ 'xcl-sidebar-trigger--open': open }"
-        @click="open = !open"
         aria-label="Toggle events panel"
-        :aria-expanded="open.toString()">
+        aria-expanded="false">
         <div class="xcl-sidebar-trigger__chevrons">
             <span class="xcl-sidebar-trigger__chevron-1">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -66,7 +64,7 @@ foreach ($sbGames as $game => $col) {
             </span>
         </div>
         <span class="xcl-sidebar-trigger__text">DASHBOARD</span>
-        <div class="xcl-sidebar-trigger__socials" @click.stop>
+        <div class="xcl-sidebar-trigger__socials">
             <a href="{{ config('xcl.discord_url') }}" class="xcl-trigger-pill xcl-trigger-pill--discord" target="_blank" rel="noopener">
                 <span class="xcl-trigger-pill__icon"><i class="fa-brands fa-discord"></i></span>
                 <span class="xcl-trigger-pill__label">Discord</span>
@@ -87,25 +85,14 @@ foreach ($sbGames as $game => $col) {
     </button>
 
     {{-- ── Backdrop ─────────────────────────────────────────────────────────── --}}
-    <div x-show="open"
-         x-transition:enter="transition-opacity ease-out duration-200"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition-opacity ease-in duration-150"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
+    <div data-sb-backdrop
          class="xcl-sidebar-overlay"
-         @click="open = false"
          style="display:none"
          aria-hidden="true">
     </div>
 
-    {{-- ── Vertical CLOSE tab (left edge of sidebar, outside overflow:hidden) ── --}}
-    <button class="xcl-sidebar__close-tab"
-            x-show="open"
-            @click="open = false"
-            aria-label="Close panel"
-            style="display:none">
+    {{-- ── Vertical CLOSE tab ───────────────────────────────────────────────── --}}
+    <button data-sb-close-tab class="xcl-sidebar__close-tab" aria-label="Close panel" style="display:none">
         <svg width="9" height="9" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path d="M18 6L6 18M6 6l12 12"/>
         </svg>
@@ -113,7 +100,7 @@ foreach ($sbGames as $game => $col) {
     </button>
 
     {{-- ── Sidebar panel ───────────────────────────────────────────────────── --}}
-    <aside class="xcl-sidebar" :class="{ 'xcl-sidebar--open': open }" aria-label="Events dashboard">
+    <aside data-sb-panel class="xcl-sidebar" aria-label="Events dashboard">
 
         {{-- Header --}}
         <div class="xcl-sidebar__header xcl-sidebar__header--v2">
@@ -121,29 +108,19 @@ foreach ($sbGames as $game => $col) {
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <span class="xcl-sidebar__logo-text">XCL EVENTS DASHBOARD</span>
                     <div class="xcl-sidebar__game-filters">
-                        <button class="xcl-sb-game-btn"
-                                :class="{ 'active': gameFilter === 'all' }"
-                                @click="gameFilter = 'all'" title="All games">
+                        <button class="xcl-sb-game-btn active" data-sb-game="all" title="All games">
                             <i class="fa-solid fa-grip"></i>
                         </button>
-                        <button class="xcl-sb-game-btn xcl-sb-game-btn--acc"
-                                :class="{ 'active': gameFilter === 'acc' }"
-                                @click="gameFilter = 'acc'" title="Assetto Corsa Competizione">
+                        <button class="xcl-sb-game-btn xcl-sb-game-btn--acc" data-sb-game="acc" title="Assetto Corsa Competizione">
                             <img src="/images/home/icons/ACC Logo.png" alt="ACC">
                         </button>
-                        <button class="xcl-sb-game-btn xcl-sb-game-btn--lmu"
-                                :class="{ 'active': gameFilter === 'lmu' }"
-                                @click="gameFilter = 'lmu'" title="Le Mans Ultimate">
+                        <button class="xcl-sb-game-btn xcl-sb-game-btn--lmu" data-sb-game="lmu" title="Le Mans Ultimate">
                             <img src="/images/home/icons/LM Logo.png" alt="LMU">
                         </button>
-                        <button class="xcl-sb-game-btn xcl-sb-game-btn--iracing"
-                                :class="{ 'active': gameFilter === 'iracing' }"
-                                @click="gameFilter = 'iracing'" title="iRacing">
+                        <button class="xcl-sb-game-btn xcl-sb-game-btn--iracing" data-sb-game="iracing" title="iRacing">
                             <img src="/images/home/icons/iR Logo.png" alt="iRacing">
                         </button>
-                        <button class="xcl-sb-game-btn xcl-sb-game-btn--ac"
-                                :class="{ 'active': gameFilter === 'ac' }"
-                                @click="gameFilter = 'ac'" title="AC Rally">
+                        <button class="xcl-sb-game-btn xcl-sb-game-btn--ac" data-sb-game="ac" title="AC Rally">
                             <img src="/images/home/icons/AC R Logo.png" alt="AC Rally">
                         </button>
                     </div>
@@ -158,19 +135,16 @@ foreach ($sbGames as $game => $col) {
 
         {{-- Tabs --}}
         <div class="xcl-sidebar-tabs" role="tablist">
-            <button class="xcl-sidebar-tab" :class="{ 'active': activeTab === 'daily' }"
-                    @click="activeTab = 'daily'" role="tab">DAILY EVENTS</button>
-            <button class="xcl-sidebar-tab" :class="{ 'active': activeTab === 'championships' }"
-                    @click="activeTab = 'championships'" role="tab">CHAMPIONSHIPS</button>
-            <button class="xcl-sidebar-tab" :class="{ 'active': activeTab === 'timetrials' }"
-                    @click="activeTab = 'timetrials'" role="tab">TIME TRIALS</button>
+            <button class="xcl-sidebar-tab active" data-sb-tab="daily" role="tab">DAILY EVENTS</button>
+            <button class="xcl-sidebar-tab" data-sb-tab="championships" role="tab">CHAMPIONSHIPS</button>
+            <button class="xcl-sidebar-tab" data-sb-tab="timetrials" role="tab">TIME TRIALS</button>
         </div>
 
         {{-- ── Scrollable content ──────────────────────────────────────────── --}}
         <div class="xcl-sidebar__content">
 
             {{-- ═══ DAILY EVENTS ══════════════════════════════════════════════ --}}
-            <div x-show="activeTab === 'daily'" x-transition>
+            <div data-sb-tab-panel="daily">
                 <div class="xcl-sidebar__grid">
 
                     {{-- ─ COLUMN 1: NEXT EVENT ──────────────────────────────── --}}
@@ -194,13 +168,14 @@ foreach ($sbGames as $game => $col) {
                                 default   => [['fa-solid fa-desktop','PC']],
                             };
                         @endphp
-                        <div x-show="gameFilter !== 'all' && gameFilter !== '{{ $sbNextEvent->game }}'" class="xcl-sb-empty" style="display:none">
-                            <p>NO <span x-text="gameFilter.toUpperCase()"></span> EVENTS</p>
+                        {{-- Shown when game filter doesn't match next event --}}
+                        <div data-sb-no-next class="xcl-sb-empty" style="display:none">
+                            <p>NO <span data-sb-no-next-game></span> EVENTS</p>
                             <p>No upcoming events for this game</p>
                         </div>
-                        <div class="xcl-sb-next"
-                             x-show="gameFilter === 'all' || gameFilter === '{{ $sbNextEvent->game }}'"
-                             x-data="countdownTimer('{{ $sbNextEvent->scheduled_at->toIso8601String() }}')">
+                        <div data-sb-next-card data-sb-game-card="{{ $sbNextEvent->game }}"
+                             class="xcl-sb-next"
+                             data-countdown="{{ $sbNextEvent->scheduled_at->toIso8601String() }}">
 
                             {{-- Hero image with overlays --}}
                             <div class="xcl-sb-next__hero">
@@ -214,7 +189,6 @@ foreach ($sbGames as $game => $col) {
 
                                 <div class="xcl-sb-next__hero-gradient"></div>
 
-                                {{-- Race icon centered on hero --}}
                                 @if($sbNextEvent->icon)
                                 <div class="xcl-sb-next__icon-overlay">
                                     <img src="{{ $sbNextEvent->icon_url }}" alt="{{ $sbNextEvent->title }}">
@@ -225,7 +199,7 @@ foreach ($sbGames as $game => $col) {
                                 <div class="xcl-sb-countdown xcl-sb-countdown--hero">
                                     <span class="xcl-sb-countdown__label">STARTS IN</span>
                                     <span class="xcl-sb-countdown__time">
-                                        <span x-text="String(d).padStart(2,'0')"></span>D&nbsp;<span x-text="String(h).padStart(2,'0')"></span>H&nbsp;<span x-text="String(m).padStart(2,'0')"></span>M&nbsp;<span x-text="String(s).padStart(2,'0')"></span>S
+                                        <span data-cd-d>00</span>D&nbsp;<span data-cd-h>00</span>H&nbsp;<span data-cd-m>00</span>M&nbsp;<span data-cd-s>00</span>S
                                     </span>
                                 </div>
 
@@ -253,7 +227,7 @@ foreach ($sbGames as $game => $col) {
                             {{-- Info below image --}}
                             <div class="xcl-sb-next__info">
 
-                                {{-- Badges row: sim, SR, status --}}
+                                {{-- Badges row --}}
                                 <div class="xcl-sb-next__badges-row">
                                     <span class="xcl-sb-badge xcl-sb-badge--game">{{ $nextGameLabel }}</span>
                                     <span class="xcl-sb-badge xcl-sb-badge--sr">4.0 SR</span>
@@ -327,8 +301,8 @@ foreach ($sbGames as $game => $col) {
                             };
                         @endphp
                         <div class="xcl-sb-up-card"
-                             x-show="gameFilter === 'all' || gameFilter === '{{ $event->game }}'"
-                             x-data="countdownTimer('{{ $event->scheduled_at->toIso8601String() }}')">
+                             data-sb-game-card="{{ $event->game }}"
+                             data-countdown="{{ $event->scheduled_at->toIso8601String() }}">
 
                             <div class="xcl-sb-up-card__img-wrap">
                                 @php
@@ -343,7 +317,6 @@ foreach ($sbGames as $game => $col) {
                                      class="xcl-sb-up-card__img">
                                 <div class="xcl-sb-up-card__img-gradient"></div>
 
-                                {{-- Race icon centered on card --}}
                                 @if($event->icon)
                                 <div class="xcl-sb-up-card__icon-overlay">
                                     <img src="{{ $event->icon_url }}" alt="{{ $event->title }}">
@@ -356,7 +329,7 @@ foreach ($sbGames as $game => $col) {
 
                                 <div class="xcl-sb-up-card__meta-row">
                                     <div class="xcl-sb-countdown xcl-sb-countdown--small">
-                                        <span x-text="String(d).padStart(2,'0')"></span>D&nbsp;<span x-text="String(h).padStart(2,'0')"></span>H&nbsp;<span x-text="String(m).padStart(2,'0')"></span>M
+                                        <span data-cd-d>00</span>D&nbsp;<span data-cd-h>00</span>H&nbsp;<span data-cd-m>00</span>M
                                     </div>
                                     <div class="xcl-sb-lobby xcl-sb-lobby--small">
                                         <i class="fa-solid fa-comments"></i>
@@ -392,8 +365,8 @@ foreach ($sbGames as $game => $col) {
                                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                             </svg>
                             <input class="xcl-sb-search__input"
+                                   data-sb-search
                                    type="text"
-                                   x-model="searchQuery"
                                    placeholder="Search driver…"
                                    autocomplete="off">
                         </div>
@@ -406,46 +379,10 @@ foreach ($sbGames as $game => $col) {
                                     <th style="text-align:right">GAIN</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <template x-if="filteredLeaderboard.length === 0">
-                                    <tr>
-                                        <td colspan="3" style="text-align:center;color:#8B9BB4;padding:1.5rem .5rem;font-size:.8rem">
-                                            No results found
-                                        </td>
-                                    </tr>
-                                </template>
-                                <template x-for="driver in paginatedLeaderboard" :key="driver.pos">
-                                    <tr :class="{ 'top-3': driver.pos <= 3 }">
-                                        <td class="xcl-lb-pos" x-text="driver.pos"></td>
-                                        <td>
-                                            <div class="xcl-lb-driver">
-                                                <div class="xcl-lb-flag-placeholder" x-text="driver.country"></div>
-                                                <span class="xcl-lb-name" x-text="driver.name"></span>
-                                                <span x-show="driver.supporter" title="Supporter"
-                                                      style="font-size:.6rem;color:#f59e0b;line-height:1">★</span>
-                                            </div>
-                                        </td>
-                                        <td class="xcl-lb-gain"
-                                            :style="driver.pos <= 3 ? 'color:#C8FF00' : 'color:#8B9BB4'"
-                                            x-text="driver.gain.toLocaleString()">
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
+                            <tbody data-sb-lb-body></tbody>
                         </table>
 
-                        <div class="xcl-sb-pagination" x-show="totalPages > 1">
-                            <button @click="currentPage = 1" :disabled="currentPage === 1">&laquo;</button>
-                            <button @click="currentPage = Math.max(1, currentPage - 1)" :disabled="currentPage === 1">&lsaquo;</button>
-                            <template x-for="p in totalPages" :key="p">
-                                <button @click="currentPage = p"
-                                        :class="{ active: currentPage === p }"
-                                        x-text="p">
-                                </button>
-                            </template>
-                            <button @click="currentPage = Math.min(totalPages, currentPage + 1)" :disabled="currentPage === totalPages">&rsaquo;</button>
-                            <button @click="currentPage = totalPages" :disabled="currentPage === totalPages">&raquo;</button>
-                        </div>
+                        <div data-sb-pagination class="xcl-sb-pagination" style="display:none"></div>
                     </div>
                     {{-- end col 3 --}}
 
@@ -465,9 +402,8 @@ foreach ($sbGames as $game => $col) {
                         @php $te = $sbTeamEvents->get($slot); @endphp
 
                         @if($te)
-                        {{-- Slot filled --}}
                         <div class="xcl-sb-up-card" style="flex:1;min-width:0"
-                             x-data="countdownTimer('{{ $te->starts_at->toIso8601String() }}')">
+                             data-countdown="{{ $te->starts_at->toIso8601String() }}">
 
                             <div class="xcl-sb-up-card__img-wrap" style="height:300px">
                                 <img src="{{ $te->image_url ?? '/images/home/teams/XCLusive_Placeholder_ACC.png' }}"
@@ -482,7 +418,7 @@ foreach ($sbGames as $game => $col) {
 
                                 <div class="xcl-sb-up-card__meta-row">
                                     <div class="xcl-sb-countdown xcl-sb-countdown--small">
-                                        <span x-text="String(d).padStart(2,'0')"></span>D&nbsp;<span x-text="String(h).padStart(2,'0')"></span>H&nbsp;<span x-text="String(m).padStart(2,'0')"></span>M
+                                        <span data-cd-d>00</span>D&nbsp;<span data-cd-h>00</span>H&nbsp;<span data-cd-m>00</span>M
                                     </div>
                                     <div style="font-size:.65rem;color:#9ca3af;font-weight:600">
                                         {{ $te->starts_at->format('d M · H:i') }}
@@ -516,7 +452,6 @@ foreach ($sbGames as $game => $col) {
                         </div>
 
                         @else
-                        {{-- Empty slot --}}
                         <div style="flex:1;min-width:0;height:300px;border-radius:8px;border:1px dashed rgba(255,255,255,0.1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;background:rgba(255,255,255,0.02)">
                             <svg width="24" height="24" fill="none" stroke="#4b5563" stroke-width="1.5" viewBox="0 0 24 24">
                                 <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
@@ -533,7 +468,7 @@ foreach ($sbGames as $game => $col) {
             {{-- end daily tab --}}
 
             {{-- ═══ CHAMPIONSHIPS ═════════════════════════════════════════════ --}}
-            <div x-show="activeTab === 'championships'" x-transition style="display:none">
+            <div data-sb-tab-panel="championships" style="display:none">
                 <div class="xcl-sb-empty">
                     <p>CHAMPIONSHIPS</p>
                     <p>Season standings coming soon</p>
@@ -541,7 +476,7 @@ foreach ($sbGames as $game => $col) {
             </div>
 
             {{-- ═══ TIME TRIALS ════════════════════════════════════════════════ --}}
-            <div x-show="activeTab === 'timetrials'" x-transition style="display:none">
+            <div data-sb-tab-panel="timetrials" style="display:none">
                 <div class="xcl-sb-empty">
                     <p>TIME TRIALS</p>
                     <p>Hotlap records coming soon</p>

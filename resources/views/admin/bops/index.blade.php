@@ -63,65 +63,71 @@
     </div>
 </div>
 
-{{-- JSON Import --}}
-<div class="admin-card mb-4" x-data="{ open: {{ session('import_error') ? 'true' : 'false' }} }">
-    <div class="d-flex align-items-center justify-content-between px-4 py-3" style="cursor:pointer" @click="open = !open">
-        <div>
-            <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.82rem">Import via JSON</div>
-            <div class="text-secondary mt-1" style="font-size:.72rem">Upload a JSON file to bulk-create or update BOP entries.</div>
+{{-- JSON Import (accordion, opens when there's an import error) --}}
+@php $importOpen = (bool) session('import_error'); @endphp
+<div data-accordions>
+    <div class="admin-card mb-4" data-accordion="{{ $importOpen ? 'open' : 'closed' }}">
+        <div data-accordion-header
+             class="d-flex align-items-center justify-content-between px-4 py-3"
+             style="cursor:pointer">
+            <div>
+                <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.82rem">Import via JSON</div>
+                <div class="text-secondary mt-1" style="font-size:.72rem">Upload a JSON file to bulk-create or update BOP entries.</div>
+            </div>
+            <svg data-accordion-arrow
+                 width="16" height="16" fill="none" stroke="#9ca3af" stroke-width="2.5" viewBox="0 0 24 24"
+                 style="transition:.2s;{{ $importOpen ? 'transform:rotate(90deg)' : '' }}">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
         </div>
-        <svg width="16" height="16" fill="none" stroke="#9ca3af" stroke-width="2.5" viewBox="0 0 24 24"
-             :style="open ? 'transform:rotate(180deg);transition:.2s' : 'transition:.2s'">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-        </svg>
-    </div>
 
-    <div x-show="open" x-cloak style="border-top:1px solid #f3f4f6">
-        <div class="px-4 py-4">
-            <form action="{{ route('admin.bops.import') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                <div class="row g-3 align-items-end">
-                    <div class="col-sm-4">
-                        <label class="form-label fw-bold text-dark" style="font-size:.78rem">Game</label>
-                        <select name="game" class="form-select form-select-sm @error('game') is-invalid @enderror">
-                            <option value="">Select game…</option>
-                            @foreach($games as $key => $label)
-                            <option value="{{ $key }}" {{ old('game') === $key ? 'selected' : '' }}>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        @error('game') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        <div data-accordion-body style="border-top:1px solid #f3f4f6;{{ $importOpen ? '' : 'display:none' }}">
+            <div class="px-4 py-4">
+                <form action="{{ route('admin.bops.import') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="row g-3 align-items-end">
+                        <div class="col-sm-4">
+                            <label class="form-label fw-bold text-dark" style="font-size:.78rem">Game</label>
+                            <select name="game" class="form-select form-select-sm @error('game') is-invalid @enderror">
+                                <option value="">Select game…</option>
+                                @foreach($games as $key => $label)
+                                <option value="{{ $key }}" {{ old('game') === $key ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            @error('game') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label fw-bold text-dark" style="font-size:.78rem">JSON File</label>
+                            <input type="file" name="json_file" accept=".json,.txt"
+                                   class="form-control form-control-sm @error('json_file') is-invalid @enderror">
+                            @error('json_file') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-sm-2">
+                            <label class="form-label fw-bold text-dark" style="font-size:.78rem">Mode</label>
+                            <select name="mode" class="form-select form-select-sm">
+                                <option value="merge">Merge</option>
+                                <option value="replace">Replace all</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-2">
+                            <button type="submit" class="btn btn-sm fw-black text-uppercase text-white w-100"
+                                    style="background:#7c3aed;font-size:.78rem;padding:7px">
+                                Import
+                            </button>
+                        </div>
                     </div>
-                    <div class="col-sm-4">
-                        <label class="form-label fw-bold text-dark" style="font-size:.78rem">JSON File</label>
-                        <input type="file" name="json_file" accept=".json,.txt"
-                               class="form-control form-control-sm @error('json_file') is-invalid @enderror">
-                        @error('json_file') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
-                    <div class="col-sm-2">
-                        <label class="form-label fw-bold text-dark" style="font-size:.78rem">Mode</label>
-                        <select name="mode" class="form-select form-select-sm">
-                            <option value="merge">Merge</option>
-                            <option value="replace">Replace all</option>
-                        </select>
-                    </div>
-                    <div class="col-sm-2">
-                        <button type="submit" class="btn btn-sm fw-black text-uppercase text-white w-100"
-                                style="background:#7c3aed;font-size:.78rem;padding:7px">
-                            Import
-                        </button>
-                    </div>
-                </div>
-            </form>
+                </form>
 
-            <div class="mt-3 p-3 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
-                <div class="fw-bold text-dark mb-1" style="font-size:.72rem">Expected JSON format</div>
-                <pre style="font-size:.72rem;color:#6b7280;margin:0;line-height:1.6">[
+                <div class="mt-3 p-3 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
+                    <div class="fw-bold text-dark mb-1" style="font-size:.72rem">Expected JSON format</div>
+                    <pre style="font-size:.72rem;color:#6b7280;margin:0;line-height:1.6">[
   { "car_model": "Ferrari 488 GT3 Evo", "track": null, "ballast_kg": 10, "restrictor": 0, "notes": "" },
   { "car_model": "Porsche 992 GT3 R",   "track": "monza", "ballast_kg": -5, "restrictor": 2 }
 ]</pre>
-                <div class="text-secondary mt-2" style="font-size:.71rem">
-                    <strong>Merge</strong> — updates existing entries (matched on car_model + track), adds new ones.<br>
-                    <strong>Replace all</strong> — deletes all existing BOP entries for the selected game first.
+                    <div class="text-secondary mt-2" style="font-size:.71rem">
+                        <strong>Merge</strong> — updates existing entries (matched on car_model + track), adds new ones.<br>
+                        <strong>Replace all</strong> — deletes all existing BOP entries for the selected game first.
+                    </div>
                 </div>
             </div>
         </div>
@@ -159,20 +165,23 @@
 </div>
 @endif
 
+{{-- Per-game BOP sections --}}
+<div data-accordions>
 @foreach($games as $gameKey => $gameLabel)
 @php
     $gameBops   = $bops->get($gameKey, collect());
     $gameActive = $gameBops->where('active', true)->count();
 @endphp
-<div class="admin-card mb-4" x-data="{ open: true }">
+<div class="admin-card mb-4" data-accordion="open">
 
     {{-- Section header --}}
     <div class="d-flex align-items-center justify-content-between px-4 py-3 flex-wrap gap-2"
          style="border-bottom:1px solid #f3f4f6">
-        <div class="d-flex align-items-center gap-2" style="cursor:pointer" @click="open = !open">
-            <svg width="14" height="14" fill="none" stroke="#9ca3af" stroke-width="2.5" viewBox="0 0 24 24"
-                 :style="open ? 'transition:.2s' : 'transform:rotate(-90deg);transition:.2s'">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        <div data-accordion-header class="d-flex align-items-center gap-2" style="cursor:pointer">
+            <svg data-accordion-arrow
+                 width="14" height="14" fill="none" stroke="#9ca3af" stroke-width="2.5" viewBox="0 0 24 24"
+                 style="transform:rotate(90deg);transition:.2s">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
             </svg>
             <h6 class="fw-black text-uppercase mb-0" style="font-size:.8rem;letter-spacing:.06em">{{ $gameLabel }}</h6>
             @if($gameBops->isNotEmpty())
@@ -203,7 +212,7 @@
         @endif
     </div>
 
-    <div x-show="open" x-transition>
+    <div data-accordion-body>
         @if($gameBops->isEmpty())
         <p class="text-secondary mb-0 px-4 py-3" style="font-size:.82rem">No BOP entries for {{ $gameLabel }} yet.</p>
         @else
@@ -258,5 +267,6 @@
 
 </div>
 @endforeach
+</div>
 
 @endsection

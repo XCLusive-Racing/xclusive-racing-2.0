@@ -128,7 +128,7 @@
                         </label>
                     </div>
                 </div>
-                <div class="col-sm-6" x-data="{ suspended: {{ old('is_suspended', $user->is_suspended) ? 'true' : 'false' }} }">
+                <div class="col-sm-6">
                     <label class="form-label fw-bold text-dark d-block" style="font-size:.82rem">
                         Suspended
                         @if($user->is_suspended)
@@ -143,13 +143,14 @@
                     </label>
                     <div class="form-check form-switch mt-1">
                         <input class="form-check-input" type="checkbox" name="is_suspended" id="is_suspended" value="1"
-                               x-model="suspended"
+                               data-controls="suspension-details"
                                {{ old('is_suspended', $user->is_suspended) ? 'checked' : '' }}>
                         <label class="form-check-label fw-bold text-secondary" for="is_suspended" style="font-size:.82rem">
                             Block from registrations
                         </label>
                     </div>
-                    <div x-show="suspended" x-transition style="display:none" class="mt-2 d-flex flex-column gap-2">
+                    <div id="suspension-details" class="mt-2 d-flex flex-column gap-2"
+                         style="display:{{ old('is_suspended', $user->is_suspended) ? 'flex' : 'none' }} !important">
                         <div>
                             <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">Suspended until <span class="fw-normal text-secondary">(leave empty for indefinite)</span></label>
                             <input type="datetime-local" name="suspended_until"

@@ -72,36 +72,29 @@ $rFactorParams = [
             <tbody>
                 @foreach($coreParams as $paramKey => $meta)
                 @php $val = isset($configs[$paramKey]) ? (float) $configs[$paramKey]->value : $meta['default']; @endphp
-                <tr x-data="ratingRow('{{ $paramKey }}', {{ $val }}, {{ $meta['step'] }})">
+                <tr data-rating-row data-rating-key="{{ $paramKey }}" data-rating-value="{{ $val }}" data-rating-step="{{ $meta['step'] }}">
                     <td class="ps-4">
                         <code style="font-size:.8rem;font-weight:700;color:#7c3aed;background:#f5f3ff;padding:2px 8px;border-radius:4px">{{ $paramKey }}</code>
                     </td>
                     <td>
                         <div class="d-flex align-items-center gap-2">
-                            <span x-show="!editing"
-                                  x-text="tempValue"
-                                  @click="editing = true; $nextTick(() => $refs.input.focus())"
+                            <span data-rating-display
                                   class="fw-bold"
                                   style="font-size:.95rem;cursor:pointer;min-width:40px"
-                                  title="Click to edit"></span>
-                            <div x-show="editing" class="d-flex align-items-center gap-1" style="display:none!important" x-cloak>
+                                  title="Click to edit">{{ $val }}</span>
+                            <div data-rating-edit-section class="d-flex align-items-center gap-1" style="display:none">
                                 <input type="number"
-                                       x-model="tempValue"
-                                       :step="inputStep"
-                                       @keydown.enter.prevent="save()"
-                                       @keydown.escape="cancel()"
+                                       data-rating-input
+                                       step="{{ $meta['step'] }}"
                                        class="form-control form-control-sm"
-                                       style="width:90px;font-weight:700"
-                                       x-ref="input">
+                                       style="width:90px;font-weight:700">
                                 <button type="button"
-                                        @click="save()"
-                                        :disabled="saving"
+                                        data-rating-save
                                         class="btn btn-sm d-flex align-items-center justify-content-center fw-bold"
-                                        style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;width:28px;height:28px;padding:0"
-                                        x-text="saving ? '…' : '✓'"></button>
+                                        style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;width:28px;height:28px;padding:0">✓</button>
                             </div>
                         </div>
-                        <div x-show="error" x-text="error" style="font-size:.72rem;color:#dc2626;margin-top:3px"></div>
+                        <div data-rating-error style="font-size:.72rem;color:#dc2626;margin-top:3px;display:none"></div>
                     </td>
                     <td class="text-secondary d-none d-md-table-cell" style="font-size:.8rem">{{ $meta['desc'] }}</td>
                     <td class="pe-4 text-end d-none d-lg-table-cell">
@@ -131,36 +124,29 @@ $rFactorParams = [
             </thead>
             <tbody>
                 @foreach($rFactorParams as $paramKey => $meta)
-                <tr x-data="ratingRow('{{ $paramKey }}', {{ $meta['value'] }}, {{ $meta['step'] }})">
+                <tr data-rating-row data-rating-key="{{ $paramKey }}" data-rating-value="{{ $meta['value'] }}" data-rating-step="{{ $meta['step'] }}">
                     <td class="ps-4">
                         <code style="font-size:.8rem;font-weight:700;color:#7c3aed;background:#f5f3ff;padding:2px 8px;border-radius:4px">{{ $paramKey }}</code>
                     </td>
                     <td>
                         <div class="d-flex align-items-center gap-2">
-                            <span x-show="!editing"
-                                  x-text="tempValue"
-                                  @click="editing = true; $nextTick(() => $refs.input.focus())"
+                            <span data-rating-display
                                   class="fw-bold"
                                   style="font-size:.95rem;cursor:pointer;min-width:40px"
-                                  title="Click to edit"></span>
-                            <div x-show="editing" class="d-flex align-items-center gap-1" style="display:none!important" x-cloak>
+                                  title="Click to edit">{{ $meta['value'] }}</span>
+                            <div data-rating-edit-section class="d-flex align-items-center gap-1" style="display:none">
                                 <input type="number"
-                                       x-model="tempValue"
-                                       :step="inputStep"
-                                       @keydown.enter.prevent="save()"
-                                       @keydown.escape="cancel()"
+                                       data-rating-input
+                                       step="{{ $meta['step'] }}"
                                        class="form-control form-control-sm"
-                                       style="width:90px;font-weight:700"
-                                       x-ref="input">
+                                       style="width:90px;font-weight:700">
                                 <button type="button"
-                                        @click="save()"
-                                        :disabled="saving"
+                                        data-rating-save
                                         class="btn btn-sm d-flex align-items-center justify-content-center fw-bold"
-                                        style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;width:28px;height:28px;padding:0"
-                                        x-text="saving ? '…' : '✓'"></button>
+                                        style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;width:28px;height:28px;padding:0">✓</button>
                             </div>
                         </div>
-                        <div x-show="error" x-text="error" style="font-size:.72rem;color:#dc2626;margin-top:3px"></div>
+                        <div data-rating-error style="font-size:.72rem;color:#dc2626;margin-top:3px;display:none"></div>
                     </td>
                     <td class="text-secondary d-none d-md-table-cell" style="font-size:.8rem">{{ $meta['desc'] }}</td>
                     <td class="pe-4 text-end d-none d-lg-table-cell">
@@ -232,17 +218,17 @@ $rFactorParams = [
             <tbody>
                 @foreach($effRatingParams as $paramKey => $meta)
                 @php $val = isset($configs[$paramKey]) ? (float) $configs[$paramKey]->value : $meta['default']; @endphp
-                <tr x-data="ratingRow('{{ $paramKey }}', {{ $val }}, {{ $meta['step'] }})">
+                <tr data-rating-row data-rating-key="{{ $paramKey }}" data-rating-value="{{ $val }}" data-rating-step="{{ $meta['step'] }}">
                     <td class="ps-4"><code style="font-size:.8rem;font-weight:700;color:#7c3aed;background:#f5f3ff;padding:2px 8px;border-radius:4px">{{ $paramKey }}</code></td>
                     <td>
                         <div class="d-flex align-items-center gap-2">
-                            <span x-show="!editing" x-text="tempValue" @click="editing = true; $nextTick(() => $refs.input.focus())" class="fw-bold" style="font-size:.95rem;cursor:pointer;min-width:40px" title="Click to edit"></span>
-                            <div x-show="editing" class="d-flex align-items-center gap-1" style="display:none!important" x-cloak>
-                                <input type="number" x-model="tempValue" :step="inputStep" @keydown.enter.prevent="save()" @keydown.escape="cancel()" class="form-control form-control-sm" style="width:90px;font-weight:700" x-ref="input">
-                                <button type="button" @click="save()" :disabled="saving" class="btn btn-sm d-flex align-items-center justify-content-center fw-bold" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;width:28px;height:28px;padding:0" x-text="saving ? '…' : '✓'"></button>
+                            <span data-rating-display class="fw-bold" style="font-size:.95rem;cursor:pointer;min-width:40px" title="Click to edit">{{ $val }}</span>
+                            <div data-rating-edit-section class="d-flex align-items-center gap-1" style="display:none">
+                                <input type="number" data-rating-input step="{{ $meta['step'] }}" class="form-control form-control-sm" style="width:90px;font-weight:700">
+                                <button type="button" data-rating-save class="btn btn-sm d-flex align-items-center justify-content-center fw-bold" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;width:28px;height:28px;padding:0">✓</button>
                             </div>
                         </div>
-                        <div x-show="error" x-text="error" style="font-size:.72rem;color:#dc2626;margin-top:3px"></div>
+                        <div data-rating-error style="font-size:.72rem;color:#dc2626;margin-top:3px;display:none"></div>
                     </td>
                     <td class="text-secondary d-none d-md-table-cell" style="font-size:.8rem">{{ $meta['desc'] }}</td>
                     <td class="pe-4 text-end d-none d-lg-table-cell"><span style="background:#fef3c7;color:#92400e;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:4px">adjustable</span></td>
@@ -271,17 +257,17 @@ $rFactorParams = [
             <tbody>
                 @foreach($prestigeParams as $paramKey => $meta)
                 @php $val = isset($configs[$paramKey]) ? (float) $configs[$paramKey]->value : $meta['default']; @endphp
-                <tr x-data="ratingRow('{{ $paramKey }}', {{ $val }}, {{ $meta['step'] }})">
+                <tr data-rating-row data-rating-key="{{ $paramKey }}" data-rating-value="{{ $val }}" data-rating-step="{{ $meta['step'] }}">
                     <td class="ps-4"><code style="font-size:.8rem;font-weight:700;color:#7c3aed;background:#f5f3ff;padding:2px 8px;border-radius:4px">{{ $paramKey }}</code></td>
                     <td>
                         <div class="d-flex align-items-center gap-2">
-                            <span x-show="!editing" x-text="tempValue" @click="editing = true; $nextTick(() => $refs.input.focus())" class="fw-bold" style="font-size:.95rem;cursor:pointer;min-width:40px" title="Click to edit"></span>
-                            <div x-show="editing" class="d-flex align-items-center gap-1" style="display:none!important" x-cloak>
-                                <input type="number" x-model="tempValue" :step="inputStep" @keydown.enter.prevent="save()" @keydown.escape="cancel()" class="form-control form-control-sm" style="width:90px;font-weight:700" x-ref="input">
-                                <button type="button" @click="save()" :disabled="saving" class="btn btn-sm d-flex align-items-center justify-content-center fw-bold" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;width:28px;height:28px;padding:0" x-text="saving ? '…' : '✓'"></button>
+                            <span data-rating-display class="fw-bold" style="font-size:.95rem;cursor:pointer;min-width:40px" title="Click to edit">{{ $val }}</span>
+                            <div data-rating-edit-section class="d-flex align-items-center gap-1" style="display:none">
+                                <input type="number" data-rating-input step="{{ $meta['step'] }}" class="form-control form-control-sm" style="width:90px;font-weight:700">
+                                <button type="button" data-rating-save class="btn btn-sm d-flex align-items-center justify-content-center fw-bold" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;width:28px;height:28px;padding:0">✓</button>
                             </div>
                         </div>
-                        <div x-show="error" x-text="error" style="font-size:.72rem;color:#dc2626;margin-top:3px"></div>
+                        <div data-rating-error style="font-size:.72rem;color:#dc2626;margin-top:3px;display:none"></div>
                     </td>
                     <td class="text-secondary d-none d-md-table-cell" style="font-size:.8rem">{{ $meta['desc'] }}</td>
                     <td class="pe-4 text-end d-none d-lg-table-cell"><span style="background:#fef3c7;color:#92400e;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:4px">adjustable</span></td>
@@ -301,20 +287,26 @@ $rFactorParams = [
         @php
         $rookieMax = isset($configs['RANK_BRONZE_MIN']) ? (int)$configs['RANK_BRONZE_MIN']->value : 2000;
         @endphp
-        <div x-data="ratingRow('RANK_ROOKIE_MIN', 0, 1)" class="text-center px-3 py-3 rounded-2 flex-shrink-0" style="background:#fef2f2;border:1px solid #fecaca;min-width:110px">
+        {{-- ROOKIE: read-only, no editing --}}
+        <div class="text-center px-3 py-3 rounded-2 flex-shrink-0" style="background:#fef2f2;border:1px solid #fecaca;min-width:110px">
             <div class="fw-black text-uppercase mb-1" style="font-size:.65rem;letter-spacing:.06em;color:#ef4444">ROOKIE</div>
             <div class="fw-bold text-secondary" style="font-size:.9rem">0 – {{ number_format($rookieMax - 1) }}</div>
         </div>
         @foreach($rankParams as $paramKey => $meta)
         @php $val = isset($configs[$paramKey]) ? (int) $configs[$paramKey]->value : $meta['default']; @endphp
-        <div x-data="ratingRow('{{ $paramKey }}', {{ $val }}, {{ $meta['step'] }})" class="text-center px-3 py-3 rounded-2 flex-shrink-0" style="border:1px solid {{ $meta['color'] }}40;background:{{ $meta['color'] }}10;min-width:110px">
+        <div data-rating-row data-rating-key="{{ $paramKey }}" data-rating-value="{{ $val }}" data-rating-step="{{ $meta['step'] }}"
+             class="text-center px-3 py-3 rounded-2 flex-shrink-0"
+             style="border:1px solid {{ $meta['color'] }}40;background:{{ $meta['color'] }}10;min-width:110px">
             <div class="fw-black text-uppercase mb-1" style="font-size:.65rem;letter-spacing:.06em;color:{{ $meta['color'] }}">{{ $meta['rank'] }}</div>
-            <span x-show="!editing" x-text="tempValue + '+'" @click="editing = true; $nextTick(() => $refs.input.focus())" class="fw-bold d-block" style="font-size:.95rem;cursor:pointer;color:{{ $meta['color'] }}" title="Click to edit"></span>
-            <div x-show="editing" class="d-flex align-items-center gap-1 justify-content-center mt-1" style="display:none!important" x-cloak>
-                <input type="number" x-model="tempValue" :step="inputStep" @keydown.enter.prevent="save()" @keydown.escape="cancel()" class="form-control form-control-sm text-center" style="width:75px;font-weight:700;font-size:.8rem" x-ref="input">
-                <button type="button" @click="save()" :disabled="saving" class="btn btn-sm fw-bold" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;padding:2px 6px;font-size:.7rem" x-text="saving ? '…' : '✓'"></button>
+            <span data-rating-display data-rating-suffix="+"
+                  class="fw-bold d-block"
+                  style="font-size:.95rem;cursor:pointer;color:{{ $meta['color'] }}"
+                  title="Click to edit">{{ $val }}+</span>
+            <div data-rating-edit-section class="d-flex align-items-center gap-1 justify-content-center mt-1" style="display:none">
+                <input type="number" data-rating-input step="{{ $meta['step'] }}" class="form-control form-control-sm text-center" style="width:75px;font-weight:700;font-size:.8rem">
+                <button type="button" data-rating-save class="btn btn-sm fw-bold" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;padding:2px 6px;font-size:.7rem">✓</button>
             </div>
-            <div x-show="error" x-text="error" style="font-size:.65rem;color:#dc2626"></div>
+            <div data-rating-error style="font-size:.65rem;color:#dc2626;display:none"></div>
         </div>
         @endforeach
     </div>
@@ -328,20 +320,21 @@ $rFactorParams = [
     <div class="px-4 pb-4 pt-2 d-flex gap-3 flex-wrap">
         @foreach($multParams as $paramKey => $meta)
         @php $val = isset($configs[$paramKey]) ? (float) $configs[$paramKey]->value : $meta['default']; @endphp
-        <div x-data="ratingRow('{{ $paramKey }}', {{ $val }}, {{ $meta['step'] }})" class="text-center px-3 py-3 rounded-2 flex-shrink-0" style="background:#f5f3ff;border:1px solid #ddd6fe;min-width:110px">
+        <div data-rating-row data-rating-key="{{ $paramKey }}" data-rating-value="{{ $val }}" data-rating-step="{{ $meta['step'] }}"
+             class="text-center px-3 py-3 rounded-2 flex-shrink-0"
+             style="background:#f5f3ff;border:1px solid #ddd6fe;min-width:110px">
             <div class="fw-black text-uppercase mb-1" style="font-size:.65rem;letter-spacing:.06em;color:#7c3aed">{{ $meta['label'] }}</div>
-            <span x-show="!editing" @click="editing = true; $nextTick(() => $refs.input.focus())" class="fw-black d-block" style="font-size:1.1rem;cursor:pointer;color:#7c3aed" title="Click to edit">
-                <span x-text="tempValue"></span>×
+            <span data-rating-display class="fw-black d-block" style="font-size:1.1rem;cursor:pointer;color:#7c3aed" title="Click to edit">
+                <span data-rating-value-text>{{ $val }}</span>×
             </span>
-            <div x-show="editing" class="d-flex align-items-center gap-1 justify-content-center mt-1" style="display:none!important" x-cloak>
-                <input type="number" x-model="tempValue" :step="inputStep" @keydown.enter.prevent="save()" @keydown.escape="cancel()" class="form-control form-control-sm text-center" style="width:70px;font-weight:700;font-size:.8rem" x-ref="input">
-                <button type="button" @click="save()" :disabled="saving" class="btn btn-sm fw-bold" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;padding:2px 6px;font-size:.7rem" x-text="saving ? '…' : '✓'"></button>
+            <div data-rating-edit-section class="d-flex align-items-center gap-1 justify-content-center mt-1" style="display:none">
+                <input type="number" data-rating-input step="{{ $meta['step'] }}" class="form-control form-control-sm text-center" style="width:70px;font-weight:700;font-size:.8rem">
+                <button type="button" data-rating-save class="btn btn-sm fw-bold" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;padding:2px 6px;font-size:.7rem">✓</button>
             </div>
-            <div x-show="error" x-text="error" style="font-size:.65rem;color:#dc2626"></div>
+            <div data-rating-error style="font-size:.65rem;color:#dc2626;display:none"></div>
         </div>
         @endforeach
     </div>
 </div>
 
 @endsection
-

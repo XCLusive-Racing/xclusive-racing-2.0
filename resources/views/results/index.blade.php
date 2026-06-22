@@ -51,7 +51,10 @@
             {{-- Results panel --}}
             <div class="col-12 col-md-8 col-lg-9">
                 @if($selected)
-                <div x-data="{ tab: 'race' }">
+                <style>
+                    .results-tab-active { color: #111827 !important; border-bottom: 2px solid #7c3aed !important; }
+                </style>
+                <div data-tabs data-default-tab="race">
 
                     {{-- Event header --}}
                     <div class="bg-white rounded-3 shadow-sm mb-3 p-3 d-flex align-items-center gap-3">
@@ -69,28 +72,28 @@
                     {{-- Tabs --}}
                     <div class="bg-white rounded-3 shadow-sm overflow-hidden">
                         <div class="d-flex border-bottom" style="background:#fafafa">
-                            <button @click="tab = 'race'"
-                                    :class="tab === 'race' ? 'text-dark border-bottom border-2 border-purple fw-bold' : 'text-secondary'"
-                                    class="px-4 py-3 border-0 bg-transparent fw-bold"
+                            <button class="px-4 py-3 border-0 bg-transparent fw-bold text-secondary"
+                                    data-tab-btn="race"
+                                    data-tab-active-class="results-tab-active"
                                     style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;cursor:pointer">
                                 Race
                             </button>
-                            <button @click="tab = 'quali'"
-                                    :class="tab === 'quali' ? 'text-dark border-bottom border-2 border-purple fw-bold' : 'text-secondary'"
-                                    class="px-4 py-3 border-0 bg-transparent fw-bold"
+                            <button class="px-4 py-3 border-0 bg-transparent fw-bold text-secondary"
+                                    data-tab-btn="quali"
+                                    data-tab-active-class="results-tab-active"
                                     style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;cursor:pointer">
                                 Qualifying
                             </button>
-                            <button @click="tab = 'rating'"
-                                    :class="tab === 'rating' ? 'text-dark border-bottom border-2 border-purple fw-bold' : 'text-secondary'"
-                                    class="px-4 py-3 border-0 bg-transparent fw-bold"
+                            <button class="px-4 py-3 border-0 bg-transparent fw-bold text-secondary"
+                                    data-tab-btn="rating"
+                                    data-tab-active-class="results-tab-active"
                                     style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;cursor:pointer">
                                 Rating
                             </button>
                         </div>
 
                         {{-- Race results --}}
-                        <div x-show="tab === 'race'">
+                        <div data-tab-panel="race" style="display:none">
                             @if($raceResults->isEmpty())
                             <p class="text-secondary text-center py-5" style="font-size:.85rem">No race results available.</p>
                             @else
@@ -133,7 +136,7 @@
                         </div>
 
                         {{-- Quali results --}}
-                        <div x-show="tab === 'quali'">
+                        <div data-tab-panel="quali" style="display:none">
                             @if($qualiResults->isEmpty())
                             <p class="text-secondary text-center py-5" style="font-size:.85rem">No qualifying results available.</p>
                             @else
@@ -167,7 +170,7 @@
                         </div>
 
                         {{-- Rating changes --}}
-                        <div x-show="tab === 'rating'">
+                        <div data-tab-panel="rating" style="display:none">
                             @php $ratingResults = $raceResults->filter(fn($r) => $r->elo_change !== null); @endphp
                             @if($ratingResults->isEmpty())
                             <p class="text-secondary text-center py-5" style="font-size:.85rem">No rating data available for this race.</p>

@@ -4,15 +4,51 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Media;
+use App\Models\MediaFolder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class MediaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $media = Media::latest()->get();
-        return view('admin.media.index', compact('media'));
+        $folders      = MediaFolder::orderBy('name')->get();
+        $activeFolder = $request->query('folder');
+        $folderSlugs  = $folders->pluck('slug');
+
+        if ($activeFolder === '__uncategorised__') {
+            $media = Media::where(fn($q) => $q->whereNull('category')->orWhereNotIn('category', $folderSlugs))->latest()->get();
+        } elseif ($activeFolder) {
+            if (!$folders->firstWhere('slug', $activeFolder)) {
+                $activeFolder = null;
+            }
+            $media = $activeFolder
+                ? Media::where('category', $activeFolder)->latest()->get()
+                : collect();
+        } else {
+            $media = collect();
+        }
+
+        return view('admin.media.index', compact('media', 'folders', 'activeFolder'));
+    }
+
+    public function storeFolder(Request $request)
+    {
+        $data = $request->validate(['name' => 'required|string|max:100']);
+        $slug = Str::slug($data['name']);
+
+        $folder = MediaFolder::firstOrCreate(['slug' => $slug], ['name' => $data['name']]);
+
+        return response()->json(['slug' => $folder->slug, 'name' => $folder->name]);
+    }
+
+    public function destroyFolder(MediaFolder $folder)
+    {
+        Media::where('category', $folder->slug)->update(['category' => null]);
+        $folder->delete();
+
+        return redirect()->route('admin.media.index')->with('success', 'Folder "' . $folder->name . '" deleted. Media moved to uncategorised.');
     }
 
     public function list()
@@ -79,7 +115,9 @@ class MediaController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.media.index')->with('success', 'Media added successfully.');
+        $folder = $request->query('folder');
+        $redirect = redirect()->route('admin.media.index', $folder ? ['folder' => $folder] : []);
+        return $redirect->with('success', 'Media added successfully.');
     }
 
     public function migrateStorage()

@@ -11,14 +11,13 @@
 
 @section('content')
 
-<form action="{{ route('admin.championships.store') }}" method="POST" enctype="multipart/form-data"
-      x-data="championshipForm()">
+<form action="{{ route('admin.championships.store') }}" method="POST" enctype="multipart/form-data">
     @csrf
 
     <div class="row g-4 align-items-start">
 
         {{-- Left column --}}
-        <div class="col-12 col-lg-8">
+        <div class="col-12 col-lg-8" data-multiclass-wrap>
 
             {{-- Basic Info --}}
             <div class="admin-card mb-4">
@@ -114,13 +113,13 @@
                             <input type="number" name="max_missed_rounds" value="{{ old('max_missed_rounds') }}"
                                    class="form-control" min="0" placeholder="No limit">
                         </div>
-                        <div class="col-sm-4" x-data="{ action: '{{ old('missed_rounds_action', 'none') }}' }">
+                        <div class="col-sm-4" data-select-conditional-wrap>
                             <label class="form-label">If limit exceeded</label>
-                            <select name="missed_rounds_action" class="form-select" x-model="action">
+                            <select name="missed_rounds_action" class="form-select" data-select-conditional>
                                 <option value="none">No penalty</option>
-                                <option value="penalise">Penalty points</option>
+                                <option value="penalise" {{ old('missed_rounds_action') === 'penalise' ? 'selected' : '' }}>Penalty points</option>
                             </select>
-                            <div x-show="action === 'penalise'" class="mt-2">
+                            <div data-show-when="penalise" class="mt-2" style="{{ old('missed_rounds_action') === 'penalise' ? '' : 'display:none' }}">
                                 <input type="number" name="missed_rounds_penalty_points"
                                        value="{{ old('missed_rounds_penalty_points') }}"
                                        class="form-control" min="1" placeholder="Points deducted per missed round">
@@ -189,7 +188,7 @@
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Race Defaults <span class="fw-normal" style="text-transform:none">(used when adding rounds)</span></p>
 
                     <div class="row g-3 mb-3">
-                        <div class="col-sm-4" x-show="!multiclass">
+                        <div class="col-sm-4" data-multiclass-hide-when-active>
                             <label class="form-label">Car Class</label>
                             <input type="text" name="car_class" value="{{ old('car_class') }}"
                                    class="form-control" placeholder="e.g. GT3">
@@ -244,52 +243,24 @@
                     <div class="mb-3">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="is_multiclass"
-                                   @change="multiclass = $event.target.checked" {{ old('is_multiclass') ? 'checked' : '' }}>
+                                   data-multiclass-checkbox {{ old('is_multiclass') ? 'checked' : '' }}>
                             <label class="form-check-label fw-bold" for="is_multiclass">Enable Multiclass</label>
                         </div>
-                        <input type="hidden" name="is_multiclass" :value="multiclass ? '1' : '0'">
+                        <input type="hidden" name="is_multiclass" data-multiclass-flag value="{{ old('is_multiclass') ? '1' : '0' }}">
                     </div>
 
-                    <div x-show="multiclass" x-transition style="display:none">
+                    <div data-multiclass-section style="{{ old('is_multiclass') ? '' : 'display:none' }}">
                         <div class="mb-3">
-                            <template x-for="(cls, i) in classes" :key="i">
-                                <div class="p-3 rounded-2 mb-2" style="background:#f9fafb;border:1px solid #e5e7eb">
-                                    <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <span class="fw-bold" style="font-size:.82rem" x-text="'Class ' + (i+1)"></span>
-                                        <button type="button" @click="classes.splice(i,1)"
-                                                class="btn btn-sm text-danger" style="font-size:.72rem;padding:2px 8px">
-                                            Remove
-                                        </button>
-                                    </div>
-                                    <div class="row g-2">
-                                        <div class="col-sm-4">
-                                            <label class="form-label" style="font-size:.78rem">Name</label>
-                                            <input type="text" x-model="cls.name" class="form-control form-control-sm" placeholder="e.g. GT3">
-                                        </div>
-                                        <div class="col-sm-2">
-                                            <label class="form-label" style="font-size:.78rem">Color</label>
-                                            <input type="color" x-model="cls.color" class="form-control form-control-sm form-control-color" style="width:100%;padding:2px">
-                                        </div>
-                                        <div class="col-sm-3">
-                                            <label class="form-label" style="font-size:.78rem">Car Class</label>
-                                            <input type="text" x-model="cls.car_class" class="form-control form-control-sm" placeholder="e.g. GT3">
-                                        </div>
-                                        <div class="col-sm-3">
-                                            <label class="form-label" style="font-size:.78rem">Max Drivers</label>
-                                            <input type="number" x-model="cls.max_drivers" class="form-control form-control-sm" placeholder="No limit" min="1">
-                                        </div>
-                                    </div>
-                                </div>
-                            </template>
+                            <div data-multiclass-list></div>
 
-                            <button type="button" @click="classes.push({name:'',color:'#db2777',car_class:'',max_drivers:'',sr_requirement:'',min_rating:''})"
+                            <button type="button" data-multiclass-add
                                     class="btn btn-sm fw-bold text-uppercase"
                                     style="background:rgba(219,39,119,.1);color:#db2777;border:1px solid rgba(219,39,119,.3);font-size:.72rem">
                                 + Add Class
                             </button>
                         </div>
 
-                        <input type="hidden" name="classes_json" :value="JSON.stringify(classes)">
+                        <input type="hidden" name="classes_json" data-multiclass-json value="[]">
                     </div>
                 </div>
             </div>
@@ -324,13 +295,3 @@
 
 @endsection
 
-@push('scripts')
-<script>
-function championshipForm() {
-    return {
-        multiclass: {{ old('is_multiclass') ? 'true' : 'false' }},
-        classes: [],
-    };
-}
-</script>
-@endpush
