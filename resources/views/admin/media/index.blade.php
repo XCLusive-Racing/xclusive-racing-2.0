@@ -31,16 +31,22 @@
 
     {{-- Existing folder cards --}}
     @foreach($folders as $folder)
+    @php $cover = $folder->cover(); @endphp
     <a href="{{ route('admin.media.index') }}?folder={{ $folder->slug }}" class="text-decoration-none">
         <div class="admin-form-card p-0 overflow-hidden"
              style="cursor:pointer;transition:transform .15s ease,box-shadow .15s ease"
              onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.12)'"
              onmouseleave="this.style.transform='';this.style.boxShadow=''">
-            <div style="aspect-ratio:4/3;background:#f9fafb;display:flex;align-items:center;justify-content:center;font-size:2.5rem">
-                📁
+            <div style="aspect-ratio:4/3;background:{{ $cover ? '#111827' : '#f9fafb' }};overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:2.5rem">
+                @if($cover)
+                    <img src="{{ $cover->url }}" alt="{{ $folder->name }}" style="width:100%;height:100%;object-fit:cover;display:block">
+                @else
+                    📁
+                @endif
             </div>
             <div class="p-3">
                 <div class="fw-black text-dark" style="font-size:.9rem">{{ $folder->name }}</div>
+                <div class="text-secondary" style="font-size:.75rem">{{ $folder->media_count }} {{ Str::plural('item', $folder->media_count) }}</div>
             </div>
         </div>
     </a>
@@ -166,6 +172,11 @@
             </p>
         </div>
     @else
+    @php
+        $moveTargets = $folders->filter(fn($f) => $f->slug !== $activeFolder);
+        $canMoveToUncat = $activeFolder !== '__uncategorised__';
+        $showMove = $moveTargets->isNotEmpty() || $canMoveToUncat;
+    @endphp
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem">
         @foreach($media as $item)
         <div class="admin-form-card p-0 overflow-hidden" data-media-item data-media-type="{{ $item->type }}">
@@ -201,6 +212,21 @@
                         Delete
                     </button>
                 </div>
+                @if($showMove)
+                <select data-media-move
+                        data-url="{{ route('admin.media.folder', $item) }}"
+                        data-csrf="{{ csrf_token() }}"
+                        class="form-select form-select-sm mt-2"
+                        style="font-size:.7rem">
+                    <option value="" disabled selected>Move to…</option>
+                    @foreach($moveTargets as $f)
+                        <option value="{{ $f->slug }}">📁 {{ $f->name }}</option>
+                    @endforeach
+                    @if($canMoveToUncat)
+                        <option value="__uncat__">📂 Uncategorised</option>
+                    @endif
+                </select>
+                @endif
             </div>
         </div>
         @endforeach

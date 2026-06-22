@@ -10,18 +10,20 @@ function esc(str) {
 
 function initSinglePicker(picker) {
     const galleryUrl    = picker.dataset.galleryUrl;
+    const foldersUrl    = picker.dataset.foldersUrl;
     const uploadUrl     = picker.dataset.uploadUrl;
     const deleteBaseUrl = picker.dataset.deleteBaseUrl;
     const csrfToken     = picker.dataset.csrfToken;
     const filterDefault = picker.dataset.filterDefault || 'all';
 
     // DOM refs
-    const previewWrap   = picker.querySelector('[data-mp-preview-wrap]');
-    const emptyWrap     = picker.querySelector('[data-mp-empty]');
-    const fileInput     = picker.querySelector('[data-mp-file-input]');
-    const pathInput     = picker.querySelector('[data-mp-path-input]');
-    const keepInput     = picker.querySelector('[data-mp-keep-input]');
-    const previewBorder = picker.querySelector('[data-mp-border]');
+    const previewWrap      = picker.querySelector('[data-mp-preview-wrap]');
+    const emptyWrap        = picker.querySelector('[data-mp-empty]');
+    const fileInput        = picker.querySelector('[data-mp-file-input]');
+    const pathInput        = picker.querySelector('[data-mp-path-input]');
+    const keepInput        = picker.querySelector('[data-mp-keep-input]');
+    const previewBorder    = picker.querySelector('[data-mp-border]');
+    const folderFilterWrap = picker.querySelector('[data-mp-folder-filter]');
 
     // Gallery modal
     const modal         = picker.querySelector('[data-mp-modal]');
@@ -35,12 +37,15 @@ function initSinglePicker(picker) {
     const uploadBtnText = picker.querySelector('[data-mp-upload-text]');
 
     // State
-    let preview       = picker.dataset.preview || '';
-    let previewType   = picker.dataset.previewType || 'image';
-    let galleryItems  = [];
-    let galleryFilter = filterDefault;
-    let searchQuery   = '';
-    let galleryLoaded = false;
+    let preview             = picker.dataset.preview || '';
+    let previewType         = picker.dataset.previewType || 'image';
+    let galleryItems        = [];
+    let galleryFilter       = filterDefault;
+    let galleryFolderFilter = 'all';
+    let searchQuery         = '';
+    let galleryLoaded       = false;
+    let foldersLoaded       = false;
+    let folderList          = [];
 
     // ── Preview helpers ───────────────────────────────────────────────────────
     function renderPreview() {
@@ -117,9 +122,18 @@ function initSinglePicker(picker) {
         if (grid)      grid.style.display      = 'none';
         if (emptyEl)   emptyEl.style.display   = 'none';
         try {
-            const r = await fetch(galleryUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-            galleryItems  = await r.json();
+            const fetches = [fetch(galleryUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })];
+            if (!foldersLoaded && foldersUrl) {
+                fetches.push(fetch(foldersUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } }));
+            }
+            const [galleryResp, foldersResp] = await Promise.all(fetches);
+            galleryItems  = await galleryResp.json();
             galleryLoaded = true;
+            if (foldersResp) {
+                folderList    = await foldersResp.json();
+                foldersLoaded = true;
+                renderFolderFilter();
+            }
         } catch {
             galleryItems = [];
         }
@@ -128,15 +142,54 @@ function initSinglePicker(picker) {
         renderGallery();
     }
 
+    function renderFolderFilter() {
+        if (!folderFilterWrap || !folderList.length) return;
+
+        const idleStyle   = 'font-size:.62rem;padding:.15rem .45rem;background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb';
+        const activeStyle = 'font-size:.62rem;padding:.15rem .45rem;background:#111827;color:white;border:1px solid #111827';
+
+        const allBtn = `<button type="button" data-mp-folder="all" class="btn btn-sm fw-bold text-uppercase"
+            style="${activeStyle}">All</button>`;
+
+        const folderBtns = folderList.map(f => `
+            <button type="button" data-mp-folder="${esc(f.slug)}" class="btn btn-sm fw-bold text-uppercase"
+                style="${idleStyle}">📁 ${esc(f.name)}</button>
+        `).join('');
+
+        const uncatBtn = `<button type="button" data-mp-folder="__uncat__" class="btn btn-sm fw-bold text-uppercase"
+            style="${idleStyle}">📂 Uncat</button>`;
+
+        folderFilterWrap.innerHTML = allBtn + folderBtns + uncatBtn;
+        folderFilterWrap.style.display = '';
+
+        folderFilterWrap.querySelectorAll('[data-mp-folder]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                galleryFolderFilter = btn.dataset.mpFolder;
+                applyFolderFilterStyles();
+                renderGallery();
+            });
+        });
+    }
+
+    function applyFolderFilterStyles() {
+        if (!folderFilterWrap) return;
+        const idleStyle   = 'font-size:.62rem;padding:.15rem .45rem;background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb';
+        const activeStyle = 'font-size:.62rem;padding:.15rem .45rem;background:#111827;color:white;border:1px solid #111827';
+        folderFilterWrap.querySelectorAll('[data-mp-folder]').forEach(btn => {
+            btn.setAttribute('style', btn.dataset.mpFolder === galleryFolderFilter ? activeStyle : idleStyle);
+        });
+    }
+
     function getFiltered() {
         return galleryItems.filter(i => {
-            const matchType = galleryFilter === 'all' || i.type === galleryFilter;
-            if (!searchQuery) return matchType;
+            const matchType   = galleryFilter === 'all' || i.type === galleryFilter;
+            const matchFolder = galleryFolderFilter === 'all' ||
+                (galleryFolderFilter === '__uncat__' ? !i.folder : i.folder === galleryFolderFilter);
+            if (!matchType || !matchFolder) return false;
+            if (!searchQuery) return true;
             const q = searchQuery.toLowerCase();
-            return matchType && (
-                (i.original_name || '').toLowerCase().includes(q) ||
-                (i.title || '').toLowerCase().includes(q)
-            );
+            return (i.original_name || '').toLowerCase().includes(q) ||
+                   (i.title || '').toLowerCase().includes(q);
         });
     }
 

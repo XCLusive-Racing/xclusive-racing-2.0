@@ -78,6 +78,7 @@ function initFolderCreate(wrap) {
                 <div style="aspect-ratio:4/3;background:#f9fafb;display:flex;align-items:center;justify-content:center;font-size:2.5rem">📁</div>
                 <div class="p-3">
                     <div class="fw-black text-dark" style="font-size:.9rem">${esc(name)}</div>
+                    <div class="text-secondary" style="font-size:.75rem">0 items</div>
                 </div>
             </div>
         `;
@@ -114,6 +115,32 @@ function initMediaGrid(wrap) {
             if (!deleteForm) return;
             deleteForm.action = btn.dataset.url;
             deleteForm.submit();
+        });
+    });
+
+    wrap.querySelectorAll('[data-media-move]').forEach(select => {
+        select.addEventListener('change', async () => {
+            const folder = select.value === '__uncat__' ? '' : select.value;
+            const url    = select.dataset.url;
+            const csrf   = select.dataset.csrf;
+            const card   = select.closest('[data-media-item]');
+            try {
+                const r = await fetch(url, {
+                    method:  'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest' },
+                    body:    JSON.stringify({ folder }),
+                });
+                if (r.ok) {
+                    card?.remove();
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: 'Media moved.' } }));
+                } else {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'error', message: 'Failed to move media.' } }));
+                    select.value = '';
+                }
+            } catch {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'error', message: 'Network error.' } }));
+                select.value = '';
+            }
         });
     });
 

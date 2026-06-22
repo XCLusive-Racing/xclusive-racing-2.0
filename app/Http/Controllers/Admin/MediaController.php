@@ -13,7 +13,7 @@ class MediaController extends Controller
 {
     public function index(Request $request)
     {
-        $folders      = MediaFolder::orderBy('name')->get();
+        $folders      = MediaFolder::withCount('media')->orderBy('name')->get();
         $activeFolder = $request->query('folder');
         $folderSlugs  = $folders->pluck('slug');
 
@@ -58,12 +58,29 @@ class MediaController extends Controller
             'url'           => $m->url,
             'path'          => $m->path,
             'type'          => $m->type,
+            'folder'        => $m->category,
             'original_name' => $m->original_name,
             'title'         => $m->title,
             'size'          => $m->formatted_size,
         ]);
 
         return response()->json($media);
+    }
+
+    public function listFolders()
+    {
+        return response()->json(
+            MediaFolder::orderBy('name')->get(['id', 'name', 'slug'])
+        );
+    }
+
+    public function updateFolder(Request $request, Media $media)
+    {
+        $request->validate(['folder' => 'nullable|string|max:100']);
+        $folder = $request->input('folder');
+        $media->update(['category' => ($folder && $folder !== '__uncat__') ? $folder : null]);
+
+        return response()->json(['ok' => true]);
     }
 
     public function store(Request $request)

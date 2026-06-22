@@ -180,6 +180,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/media/migrate-storage', [AdminMediaController::class, 'migrateStorage'])->name('media.migrate-storage');
     Route::post('/media/folders', [AdminMediaController::class, 'storeFolder'])->name('media.folders.store');
     Route::delete('/media/folders/{folder}', [AdminMediaController::class, 'destroyFolder'])->name('media.folders.destroy');
+    Route::get('/media/folders/list', [AdminMediaController::class, 'listFolders'])->name('media.folders.list');
+    Route::patch('/media/{media}/folder', [AdminMediaController::class, 'updateFolder'])->name('media.folder');
 
     // BOPs
     Route::get('/bops', [AdminBopController::class, 'index'])->name('bops.index');

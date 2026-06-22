@@ -11,6 +11,7 @@
      data-preview="{{ $currentUrl }}"
      data-preview-type="{{ $currentType }}"
      data-gallery-url="{{ route('admin.media.list') }}"
+     data-folders-url="{{ route('admin.media.folders.list') }}"
      data-upload-url="{{ route('admin.media.store') }}"
      data-delete-base-url="{{ url('admin/media') }}/"
      data-csrf-token="{{ csrf_token() }}"
@@ -144,6 +145,9 @@
                     </button>
                     @endforeach
                 </div>
+
+                {{-- Folder filter (populated by JS) --}}
+                <div data-mp-folder-filter class="d-flex gap-1 flex-wrap" style="display:none"></div>
 
                 <input type="text" data-mp-search placeholder="Search..." class="form-control form-control-sm" style="width:160px">
 
