@@ -174,8 +174,12 @@
                     <div class="row g-3">
                         <div class="col-sm-4">
                             <label class="form-label">Car Class</label>
-                            <input type="text" name="car_class" value="{{ old('car_class', $race->car_class) }}"
-                                   class="form-control" placeholder="e.g. GT3, GT4, LMP2">
+                            <select name="car_class" class="form-select">
+                                <option value="">— Not set —</option>
+                                @foreach(['GT2', 'GT3', 'GT4', 'M2'] as $cls)
+                                    <option value="{{ $cls }}" {{ old('car_class', $race->car_class) === $cls ? 'selected' : '' }}>{{ $cls }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="col-sm-4">
                             <label class="form-label">Weather</label>

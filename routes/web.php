@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
 use App\Http\Controllers\Admin\EventTagController;
 use App\Http\Controllers\Admin\FtpBrowserController;
 use App\Http\Controllers\Admin\FtpServerController;
+use App\Http\Controllers\Admin\EventFormatController;
 use App\Http\Controllers\Admin\RatingConfigController;
 use App\Http\Controllers\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Admin\RaceController as AdminRaceController;
@@ -234,4 +235,7 @@ Route::middleware(['auth', 'role:owner'])->prefix('admin')->name('admin.')->grou
     // Rating Config
     Route::get('/rating-config', [RatingConfigController::class, 'index'])->name('rating-config.index');
     Route::patch('/rating-config/{key}', [RatingConfigController::class, 'update'])->name('rating-config.update');
+
+    // Event Formats
+    Route::resource('event-formats', EventFormatController::class);
 });
