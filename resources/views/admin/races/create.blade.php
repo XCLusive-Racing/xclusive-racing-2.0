@@ -320,6 +320,53 @@ $tagsConfig = json_encode([
                 </div>
             </div>
 
+            {{-- gPortal Server & Slot --}}
+            @if($servers->isNotEmpty())
+            <div class="admin-card mb-4">
+                <div class="px-4 py-3">
+                    <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">gPortal Server <span class="fw-normal" style="text-transform:none">(optional)</span></p>
+                    <p class="text-secondary mb-3" style="font-size:.75rem">Assign a server slot — config will be auto-pushed 10 minutes before the reset.</p>
+
+                    <div class="mb-3">
+                        <label class="form-label">Server</label>
+                        <select name="ftp_server_id" id="gp-server" class="form-select">
+                            <option value="">— No server assigned —</option>
+                            @foreach($servers as $srv)
+                                <option value="{{ $srv->id }}"
+                                        data-type="{{ $srv->server_type }}"
+                                        {{ old('ftp_server_id') == $srv->id ? 'selected' : '' }}>
+                                    {{ $srv->name }}
+                                    @if($srv->server_type === 'rolling')
+                                        (resets every {{ $srv->reset_interval_minutes }}min from {{ str_pad($srv->reset_start_hour,2,'0',STR_PAD_LEFT) }}:00)
+                                    @else
+                                        (manual restart)
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Rolling slot picker --}}
+                    <div id="gp-slot-picker" style="display:none">
+                        <label class="form-label">Race Slot (UTC)</label>
+                        <div id="gp-slot-grid" class="d-flex gap-2 flex-wrap mb-2" style="max-height:260px;overflow-y:auto"></div>
+                        <input type="hidden" name="slot_time" id="gp-slot-value" value="{{ old('slot_time') }}">
+                        <div id="gp-slot-selected" class="small fw-bold" style="color:#7c3aed;display:none"></div>
+                        @error('slot_time') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                    </div>
+
+                    {{-- Scheduled server: free datetime --}}
+                    <div id="gp-scheduled-picker" style="display:none">
+                        <label class="form-label">Race Slot (UTC)</label>
+                        <input type="datetime-local" name="slot_time" id="gp-scheduled-value"
+                               value="{{ old('slot_time') }}"
+                               class="form-control" style="max-width:240px">
+                        @error('slot_time') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <div class="d-flex gap-2">
                 <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">Create Event</button>
                 <a href="{{ route('admin.races.index') }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4">Cancel</a>
@@ -753,6 +800,132 @@ $tagsConfig = json_encode([
         updateTrackInput(oldGame);
         if (oldGame === 'acc') updateTrackHint(trackSelect.value);
     }
+})();
+
+// ── gPortal Slot Picker ───────────────────────────────────────────────────────
+(function () {
+    const serverEl    = document.getElementById('gp-server');
+    if (!serverEl) return;
+
+    const slotPicker  = document.getElementById('gp-slot-picker');
+    const schedPicker = document.getElementById('gp-scheduled-picker');
+    const slotGrid    = document.getElementById('gp-slot-grid');
+    const slotValue   = document.getElementById('gp-slot-value');
+    const slotLabel   = document.getElementById('gp-slot-selected');
+
+    const serverSlots = @json($serverSlots ?? []);
+    const DAYS        = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    // Convert a UTC 'YYYY-MM-DD HH:MM' string to Europe/London display time
+    function toLocalTime(utcSlot) {
+        const d = new Date(utcSlot.replace(' ', 'T') + ':00Z');
+        return d.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function toLocalDateLabel(utcSlot) {
+        const d = new Date(utcSlot.replace(' ', 'T') + ':00Z');
+        return DAYS[d.toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short' }).slice(0,3).indexOf(d.toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short' }))]
+            || d.toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short' });
+    }
+
+    function toLocalDayKey(utcSlot) {
+        const d = new Date(utcSlot.replace(' ', 'T') + ':00Z');
+        return d.toLocaleDateString('en-CA', { timeZone: 'Europe/London' }); // YYYY-MM-DD in London tz
+    }
+
+    function toLocalDayHeader(utcSlot) {
+        const d = new Date(utcSlot.replace(' ', 'T') + ':00Z');
+        const weekday = d.toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short' });
+        const day     = d.toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: '2-digit', month: '2-digit' });
+        return weekday + ' ' + day;
+    }
+
+    function buildSlotGrid(serverId) {
+        slotGrid.innerHTML = '';
+        const data = serverSlots[serverId];
+        if (!data || !data.slots.length) return;
+
+        const taken    = data.takenSlots || [];
+        const selected = slotValue ? slotValue.value : '';
+
+        // Group slots by London date (a UTC slot at 23:00 might be next day in BST)
+        const byDate = {};
+        const headers = {};
+        data.slots.forEach(slot => {
+            const key = toLocalDayKey(slot);
+            if (!byDate[key]) { byDate[key] = []; headers[key] = toLocalDayHeader(slot); }
+            byDate[key].push(slot);
+        });
+
+        Object.entries(byDate).forEach(([dateKey, slots]) => {
+            const col = document.createElement('div');
+            col.style.cssText = 'min-width:90px';
+
+            const dayLabel = document.createElement('div');
+            dayLabel.className = 'fw-black text-uppercase mb-1';
+            dayLabel.style.cssText = 'font-size:.68rem;letter-spacing:.06em;color:#9ca3af';
+            dayLabel.textContent = headers[dateKey];
+            col.appendChild(dayLabel);
+
+            slots.forEach(slot => {
+                const displayTime = toLocalTime(slot);
+                const isTaken     = taken.includes(slot);
+                const isSelected  = selected === slot;
+
+                const btn = document.createElement('button');
+                btn.type        = 'button';
+                btn.textContent = displayTime;
+                btn.className   = 'btn btn-sm fw-bold mb-1 d-block w-100';
+                btn.style.cssText = 'font-size:.72rem;border-radius:6px;padding:3px 6px;' + (
+                    isTaken    ? 'background:#f3f4f6;color:#d1d5db;cursor:not-allowed;border:1px solid #e5e7eb' :
+                    isSelected ? 'background:#7c3aed;color:#fff;border:1px solid #7c3aed' :
+                                 'background:#f8f5ff;color:#7c3aed;border:1px solid rgba(124,58,237,.3)'
+                );
+
+                if (!isTaken) {
+                    btn.addEventListener('click', () => {
+                        slotValue.value = slot; // store UTC value
+                        slotLabel.textContent  = '✓ ' + displayTime + ' (GMT/BST)';
+                        slotLabel.style.display = '';
+                        buildSlotGrid(serverId);
+                    });
+                } else {
+                    btn.disabled = true;
+                    btn.title    = 'Already taken';
+                }
+
+                col.appendChild(btn);
+            });
+
+            slotGrid.appendChild(col);
+        });
+    }
+
+    function onServerChange() {
+        const opt    = serverEl.options[serverEl.selectedIndex];
+        const type   = opt ? opt.dataset.type : null;
+        const id     = serverEl.value;
+
+        slotPicker.style.display  = '';
+        schedPicker.style.display = 'none';
+        slotGrid.innerHTML        = '';
+
+        if (!id) {
+            slotPicker.style.display = 'none';
+            return;
+        }
+
+        if (type === 'scheduled') {
+            slotPicker.style.display  = 'none';
+            schedPicker.style.display = '';
+        } else {
+            slotPicker.style.display  = '';
+            buildSlotGrid(id);
+        }
+    }
+
+    serverEl.addEventListener('change', onServerChange);
+    onServerChange();
 })();
 </script>
 

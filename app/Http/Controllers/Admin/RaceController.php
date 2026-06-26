@@ -114,7 +114,7 @@ class RaceController extends Controller
                         'lastName'       => $lastName,
                         'shortName'      => $shortName,
                         'playerID'       => $user->platform_id ?? '',
-                        'driverCategory' => $user->ratingClass($race->game) + 1,
+                        'driverCategory' => $user->ratingClass($race->game),
                     ],
                 ],
                 'raceNumber'          => is_numeric($user->car_number) ? (int) $user->car_number : '',
@@ -202,7 +202,17 @@ class RaceController extends Controller
         $prefillDate = $request->date('date')?->format('Y-m-d\TH:i');
         $tags    = EventTag::orderBy('name')->get();
         $formats = EventFormat::orderBy('game')->orderBy('sort_order')->get();
-        return view('admin.races.create', compact('prefillDate', 'tags', 'formats'));
+
+        $servers = FtpServer::where('active', true)->orderBy('name')->get();
+        $serverSlots = $servers->mapWithKeys(fn($s) => [
+            $s->id => [
+                'type'       => $s->server_type,
+                'slots'      => $s->slotsForDays(7),
+                'takenSlots' => $s->takenSlots(),
+            ],
+        ]);
+
+        return view('admin.races.create', compact('prefillDate', 'tags', 'formats', 'servers', 'serverSlots'));
     }
 
     public function store(Request $request)
@@ -231,6 +241,8 @@ class RaceController extends Controller
             'icon'                 => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
             'icon_path'            => 'nullable|string|max:500',
             'is_multiclass'        => 'nullable|boolean',
+            'ftp_server_id'        => 'nullable|exists:ftp_servers,id',
+            'slot_time'            => 'nullable|date',
         ]);
 
         // Sync duration_key from format if format selected
@@ -249,6 +261,14 @@ class RaceController extends Controller
         $data['icon']          = $this->resolveIcon($request);
         $data['is_multiclass'] = $request->boolean('is_multiclass');
         unset($data['image_path'], $data['icon_path']);
+
+        if (!empty($data['ftp_server_id']) && !empty($data['slot_time'])) {
+            $data['slot_time']          = \Carbon\Carbon::parse($data['slot_time'])->utc();
+            $data['config_push_status'] = 'pending';
+        } else {
+            $data['ftp_server_id'] = null;
+            $data['slot_time']     = null;
+        }
 
         $race = Race::create($data);
 

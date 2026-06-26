@@ -139,6 +139,56 @@
                         </div>
                     </div>
 
+                    {{-- gPortal auto-push status --}}
+                    @if($race->ftpServer)
+                    <div class="col-12">
+                        @php
+                            $pushStatus = $race->config_push_status;
+                            $statusColors = [
+                                'pushed'  => ['bg' => '#f0fdf4', 'border' => '#bbf7d0', 'text' => '#166534', 'badge' => '#16a34a'],
+                                'pending' => ['bg' => '#fffbeb', 'border' => '#fde68a', 'text' => '#92400e', 'badge' => '#d97706'],
+                                'failed'  => ['bg' => '#fef2f2', 'border' => '#fecaca', 'text' => '#991b1b', 'badge' => '#ef4444'],
+                            ];
+                            $sc = $statusColors[$pushStatus] ?? ['bg'=>'#f9fafb','border'=>'#f3f4f6','text'=>'#374151','badge'=>'#9ca3af'];
+                        @endphp
+                        <div class="p-3 rounded-2" style="background:{{ $sc['bg'] }};border:1px solid {{ $sc['border'] }}">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div>
+                                    <div class="fw-black text-uppercase fst-italic mb-1" style="font-size:.78rem;color:#374151">
+                                        gPortal Auto-Push
+                                    </div>
+                                    <div style="font-size:.8rem;color:#6b7280">
+                                        <strong style="color:#374151">{{ $race->ftpServer->name }}</strong>
+                                        @if($race->slot_time)
+                                            · Slot: <strong style="color:#374151">{{ $race->slot_time->timezone('Europe/London')->format('d M Y H:i T') }}</strong>
+                                        @endif
+                                    </div>
+                                    @if($race->config_pushed_at)
+                                    <div style="font-size:.73rem;color:#9ca3af;margin-top:2px">
+                                        Last push: {{ $race->config_pushed_at->diffForHumans() }}
+                                    </div>
+                                    @endif
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    @if($pushStatus)
+                                    <span class="badge fw-bold text-uppercase" style="background:{{ $sc['badge'] }};color:#fff;font-size:.65rem;padding:4px 10px;border-radius:8px">
+                                        {{ $pushStatus }}
+                                    </span>
+                                    @endif
+                                    <form action="{{ route('admin.races.push-config', $race) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <input type="hidden" name="server_id" value="{{ $race->ftpServer->id }}">
+                                        <button type="submit" class="btn btn-sm fw-bold text-uppercase text-white"
+                                                style="background:#7c3aed;font-size:.72rem;padding:5px 12px">
+                                            Re-push →
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
                     {{-- Quick push --}}
                     @if($ftpServers->isNotEmpty())
                     <div class="col-12">

@@ -82,8 +82,46 @@
                         <input type="text" name="cfg_path" value="{{ old('cfg_path', '/cfg') }}"
                                class="form-control @error('cfg_path') is-invalid @enderror"
                                style="font-family:monospace">
-                        <div class="form-text" style="font-size:.72rem;color:#9ca3af">Directory where ACC config files are pushed (entrylist.json, configuration.json, settings.json).</div>
+                        <div class="form-text" style="font-size:.72rem;color:#9ca3af">Directory where ACC config files are pushed (entrylist.json, event.json, settings.json).</div>
                         @error('cfg_path') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+                </div>
+
+                <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+                    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Reset Schedule</p>
+
+                    <div class="mb-3">
+                        <label class="form-label">Server Type</label>
+                        <select name="server_type" id="srv-type" class="form-select @error('server_type') is-invalid @enderror">
+                            <option value="rolling" {{ old('server_type','rolling') === 'rolling' ? 'selected' : '' }}>Rolling resets (SERVER 1 / 2 / 3)</option>
+                            <option value="scheduled" {{ old('server_type') === 'scheduled' ? 'selected' : '' }}>Manual restart (SERVER 4)</option>
+                        </select>
+                        @error('server_type') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div id="rolling-fields">
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label class="form-label">First Reset Hour (UTC)</label>
+                                <select name="reset_start_hour" class="form-select @error('reset_start_hour') is-invalid @enderror">
+                                    @for($h = 0; $h < 24; $h++)
+                                        <option value="{{ $h }}" {{ old('reset_start_hour', 0) == $h ? 'selected' : '' }}>
+                                            {{ str_pad($h, 2, '0', STR_PAD_LEFT) }}:00
+                                        </option>
+                                    @endfor
+                                </select>
+                                <div class="form-text" style="font-size:.72rem;color:#9ca3af">SERVER 1 = 00:00 · SERVER 2/3 = 01:00</div>
+                                @error('reset_start_hour') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label">Reset Interval (minutes)</label>
+                                <input type="number" name="reset_interval_minutes" value="{{ old('reset_interval_minutes', 120) }}"
+                                       class="form-control @error('reset_interval_minutes') is-invalid @enderror"
+                                       min="30" max="1440">
+                                <div class="form-text" style="font-size:.72rem;color:#9ca3af">All servers = 120 min</div>
+                                @error('reset_interval_minutes') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -100,5 +138,18 @@
         </div>
     </div>
 </form>
+
+@push('scripts')
+<script>
+(function () {
+    const typeEl  = document.getElementById('srv-type');
+    const rolling = document.getElementById('rolling-fields');
+    if (!typeEl || !rolling) return;
+    function toggle() { rolling.style.display = typeEl.value === 'rolling' ? '' : 'none'; }
+    typeEl.addEventListener('change', toggle);
+    toggle();
+})();
+</script>
+@endpush
 
 @endsection

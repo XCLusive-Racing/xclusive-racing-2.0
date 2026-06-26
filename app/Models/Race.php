@@ -9,14 +9,16 @@ use Illuminate\Support\Facades\Storage;
 
 class Race extends Model
 {
-    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon', 'duration_key', 'practice_duration', 'qualifying_duration', 'race_duration', 'car_class', 'sr_requirement', 'min_rating', 'max_rating', 'weather', 'time_of_day', 'config_overrides', 'championship_id', 'round_number', 'is_multiclass', 'event_format_id'];
+    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon', 'duration_key', 'practice_duration', 'qualifying_duration', 'race_duration', 'car_class', 'sr_requirement', 'min_rating', 'max_rating', 'weather', 'time_of_day', 'config_overrides', 'championship_id', 'round_number', 'is_multiclass', 'event_format_id', 'ftp_server_id', 'slot_time', 'config_pushed_at', 'config_push_status'];
 
     protected function casts(): array
     {
         return [
-            'scheduled_at'     => 'datetime',
-            'config_overrides' => 'array',
-            'is_multiclass'    => 'boolean',
+            'scheduled_at'       => 'datetime',
+            'config_overrides'   => 'array',
+            'is_multiclass'      => 'boolean',
+            'slot_time'          => 'datetime',
+            'config_pushed_at'   => 'datetime',
         ];
     }
 
@@ -38,6 +40,11 @@ class Race extends Model
     public function eventFormat(): BelongsTo
     {
         return $this->belongsTo(\App\Models\EventFormat::class);
+    }
+
+    public function ftpServer(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\FtpServer::class, 'ftp_server_id');
     }
 
     public function championship(): BelongsTo
