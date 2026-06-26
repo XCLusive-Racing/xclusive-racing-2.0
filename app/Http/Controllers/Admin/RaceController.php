@@ -140,8 +140,13 @@ class RaceController extends Controller
 
     public function bulkCreate()
     {
+        return redirect()->route('admin.races.create', ['tab' => 'bulk']);
+    }
+
+    public function customCreate()
+    {
         $tags = EventTag::orderBy('name')->get();
-        return view('admin.races.bulk-create', compact('tags'));
+        return view('admin.races.custom-create', compact('tags'));
     }
 
     public function bulkStore(Request $request)

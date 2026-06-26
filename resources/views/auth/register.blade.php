@@ -133,6 +133,23 @@
                            class="form-control xcl-auth-input">
                 </div>
 
+                <div class="mb-4">
+                    <label class="d-flex align-items-start gap-2" style="cursor:pointer">
+                        <input type="checkbox" name="privacy_accepted" value="1"
+                               {{ old('privacy_accepted') ? 'checked' : '' }}
+                               class="mt-1 flex-shrink-0 @error('privacy_accepted') is-invalid @enderror"
+                               style="accent-color:#7c3aed;width:16px;height:16px;">
+                        <span style="font-size:.85rem;color:rgba(255,255,255,.6);line-height:1.5">
+                            I have read and agree to the
+                            <a href="{{ route('privacy') }}" target="_blank"
+                               class="text-decoration-none fw-bold" style="color:#a78bfa">Privacy Policy</a>
+                        </span>
+                    </label>
+                    @error('privacy_accepted')
+                        <div class="small text-danger mt-1">{{ $message }}</div>
+                    @enderror
+                </div>
+
                 <div class="d-flex gap-3">
                     <button type="button" data-back
                         class="btn flex-fill fw-black text-uppercase text-white py-3"

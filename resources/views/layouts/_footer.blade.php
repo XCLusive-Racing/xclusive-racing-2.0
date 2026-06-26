@@ -89,6 +89,8 @@
         <div class="container-xl d-flex align-items-center justify-content-between flex-wrap gap-2">
             <span style="color:#4b5563;font-size:.78rem">
                 &copy; {{ date('Y') }} XCLusive Gaming Events. All rights reserved.
+                &nbsp;&middot;&nbsp;
+                <a href="{{ route('privacy') }}" class="text-decoration-none" style="color:#6b7280">Privacy Policy</a>
             </span>
             <span class="fw-black text-uppercase fst-italic" style="font-size:.72rem;color:#4b5563;letter-spacing:.06em">
                 THE LION IS BORN TO DOMINATE

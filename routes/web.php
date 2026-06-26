@@ -56,6 +56,7 @@ Route::get('sven', function () {
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::view('/team', 'team.index')->name('team');
+Route::view('/privacy', 'privacy')->name('privacy');
 
 // PRO driver profiles
 Route::get('/teams/pro',          [ProDriverController::class, 'index'])->name('teams.pro.index');
@@ -139,6 +140,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/races/create', [AdminRaceController::class, 'create'])->name('races.create');
     Route::get('/races/bulk-create', [AdminRaceController::class, 'bulkCreate'])->name('races.bulk-create');
     Route::post('/races/bulk-store', [AdminRaceController::class, 'bulkStore'])->name('races.bulk-store');
+    Route::get('/races/custom-create', [AdminRaceController::class, 'customCreate'])->name('races.custom-create');
     Route::post('/races', [AdminRaceController::class, 'store'])->name('races.store');
     Route::get('/races/{race}', [AdminRaceController::class, 'show'])->name('races.show');
     Route::get('/races/{race}/entry-list', [AdminRaceController::class, 'downloadEntryList'])->name('races.entry-list');

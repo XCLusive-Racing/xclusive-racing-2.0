@@ -26,6 +26,8 @@ export function initEventsSidebar() {
     function setOpen(val) {
         open = val;
         sidebar?.classList.toggle('xcl-sidebar--open', open);
+        trigger?.classList.toggle('xcl-sidebar-trigger--open', open);
+        trigger?.setAttribute('aria-expanded', open ? 'true' : 'false');
         if (backdrop) backdrop.style.display = open ? '' : 'none';
         if (closeTab) closeTab.style.display = open ? '' : 'none';
         document.body.style.overflow = open ? 'hidden' : '';

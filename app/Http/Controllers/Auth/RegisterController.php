@@ -24,11 +24,12 @@ class RegisterController extends Controller
         $steamOAuth = $request->platform === 'steam' && session('steam_platform_id');
 
         $rules = [
-            'email'    => 'required|email|unique:users',
-            'password' => 'required|min:8|confirmed',
-            'country'  => 'required|string|max:100',
-            'platform' => 'required|in:steam,ps5,xbox',
-            'team'     => 'nullable|string|max:255',
+            'email'            => 'required|email|unique:users',
+            'password'         => 'required|min:8|confirmed',
+            'country'          => 'required|string|max:100',
+            'platform'         => 'required|in:steam,ps5,xbox',
+            'team'             => 'nullable|string|max:255',
+            'privacy_accepted' => 'accepted',
         ];
 
         if (!$steamOAuth) {
@@ -71,14 +72,15 @@ class RegisterController extends Controller
             // Imported placeholder — driver claims their account by linking email + password
             if (str_ends_with($existing->email, '@import.local')) {
                 $existing->update([
-                    'name'              => $profile['name'],
-                    'platform_id'       => $profile['platform_id'],
-                    'platform'          => $request->platform,
-                    'email'             => $request->email,
-                    'password'          => Hash::make($request->password),
-                    'country'           => $request->country,
-                    'team'              => $request->team ?? $existing->team,
-                    'must_set_password' => false,
+                    'name'                => $profile['name'],
+                    'platform_id'         => $profile['platform_id'],
+                    'platform'            => $request->platform,
+                    'email'               => $request->email,
+                    'password'            => Hash::make($request->password),
+                    'country'             => $request->country,
+                    'team'                => $request->team ?? $existing->team,
+                    'must_set_password'   => false,
+                    'privacy_accepted_at' => now(),
                 ]);
                 Auth::login($existing);
                 return redirect()->route('profile');
@@ -88,16 +90,17 @@ class RegisterController extends Controller
         }
 
         $user = User::create([
-            'name'        => $profile['name'],
-            'email'       => $request->email,
-            'password'    => Hash::make($request->password),
-            'country'     => $request->country,
-            'platform'    => $request->platform,
-            'platform_id' => $profile['platform_id'],
-            'team'        => $request->team,
-            'elo_acc'     => 1500,
-            'elo_lmu'     => 1500,
-            'elo_iracing' => 1500,
+            'name'                => $profile['name'],
+            'email'               => $request->email,
+            'password'            => Hash::make($request->password),
+            'country'             => $request->country,
+            'platform'            => $request->platform,
+            'platform_id'         => $profile['platform_id'],
+            'team'                => $request->team,
+            'elo_acc'             => 1500,
+            'elo_lmu'             => 1500,
+            'elo_iracing'         => 1500,
+            'privacy_accepted_at' => now(),
         ]);
 
         Auth::login($user);
