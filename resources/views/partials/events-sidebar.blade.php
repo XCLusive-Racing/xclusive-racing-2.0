@@ -91,14 +91,6 @@ foreach ($sbGames as $game => $col) {
          aria-hidden="true">
     </div>
 
-    {{-- ── Vertical CLOSE tab ───────────────────────────────────────────────── --}}
-    <button data-sb-close-tab class="xcl-sidebar__close-tab" aria-label="Close panel" style="display:none">
-        <svg width="9" height="9" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-        <span>CLOSE</span>
-    </button>
-
     {{-- ── Sidebar panel ───────────────────────────────────────────────────── --}}
     <aside data-sb-panel class="xcl-sidebar" aria-label="Events dashboard">
 
