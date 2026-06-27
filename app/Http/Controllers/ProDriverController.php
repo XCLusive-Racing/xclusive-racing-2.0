@@ -168,8 +168,69 @@ class ProDriverController extends Controller
                     ['type' => 'twitch',    'href' => 'https://www.twitch.tv/teamjesse81'],
                 ],
                 'results' => [
-                    2025 => [],
                     2026 => [],
+                    2025 => [],
+                    2024 => [
+                        [
+                            'championship' => 'Karting',
+                            'standing'     => '',
+                            'races' => [
+                                ['track' => 'Coppa delle Industrie', 'positions' => ['P8']],
+                                ['track' => 'Circuit Franciacorta',  'positions' => ['P8']],
+                                ['track' => 'Circuit Lonato',        'positions' => ['P2']],
+                            ],
+                        ],
+                    ],
+                    2023 => [
+                        [
+                            'championship' => 'Rotax Minimax',
+                            'standing'     => 'Vice Champion',
+                            'races' => [
+                                ['track' => 'Venray',      'positions' => ['P1']],
+                                ['track' => 'Emmen',       'positions' => ['P2']],
+                                ['track' => 'Emmen',       'positions' => ['P1']],
+                                ['track' => 'Vledderveen', 'positions' => ['P2']],
+                                ['track' => 'Venray',      'positions' => ['P1']],
+                                ['track' => 'Assen',       'positions' => ['P3']],
+                            ],
+                        ],
+                        [
+                            'championship' => 'DKM',
+                            'standing'     => '',
+                            'races' => [
+                                ['track' => 'Vledderveen', 'positions' => ['P1']],
+                                ['track' => 'Assen',       'positions' => ['P3']],
+                                ['track' => 'Vledderveen', 'positions' => ['P2']],
+                            ],
+                        ],
+                        [
+                            'championship' => 'NK Karting',
+                            'standing'     => '',
+                            'races' => [
+                                ['track' => 'Kerpen',  'positions' => ['P5 Overall', 'P4 Rookie']],
+                                ['track' => 'Assen',   'positions' => ['P7 Overall', 'P3 Rookie']],
+                                ['track' => 'Dankern', 'positions' => ['P2 Overall', 'P2 Rookie']],
+                                ['track' => 'Genk',    'positions' => ['P9 Overall', 'P5 Rookie']],
+                            ],
+                        ],
+                        [
+                            'championship' => 'Rotax Eurotropy',
+                            'standing'     => 'P12',
+                            'races'        => [],
+                        ],
+                    ],
+                    2022 => [
+                        [
+                            'championship' => 'Dutch Open Parolin Rocky',
+                            'standing'     => '',
+                            'races' => [
+                                ['track' => 'Meppel',          'positions' => ['P2 Overall', 'P1 Rookie']],
+                                ['track' => 'Emmen (R2 & R3)', 'positions' => ['P2 Overall', 'P1 Rookie']],
+                                ['track' => 'Vledderveen',     'positions' => ['P4 Overall', 'P2 Rookie']],
+                                ['track' => 'Spa',             'positions' => ['P5 Overall', 'P3 Rookie']],
+                            ],
+                        ],
+                    ],
                 ],
             ],
         ];

@@ -226,6 +226,7 @@ $upcomingRaces = \App\Models\TeamEvent::upcoming()
                         </div>
 
                         {{-- Race results table --}}
+                        @if(!empty($champ['races']))
                         <div class="pro-race-table">
                             <div class="pro-race-table__head">
                                 <span>CIRCUIT</span>
@@ -249,6 +250,7 @@ $upcomingRaces = \App\Models\TeamEvent::upcoming()
                             </div>
                             @endforeach
                         </div>
+                        @endif
 
                     </div>
                     @endforeach
