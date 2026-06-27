@@ -45,32 +45,30 @@
     </div>
 </div>
 
+@php $defaultTab = request('server') ? 'results' : 'info'; @endphp
 {{-- Main tabs --}}
-<div x-data="{ tab: '{{ request('server') ? 'results' : 'info' }}' }">
+<div data-tabs data-default-tab="{{ $defaultTab }}">
 
     <div class="admin-card">
 
         {{-- Tab nav --}}
         <div class="d-flex border-bottom px-2" style="background:#f9fafb">
-            <button @click="tab = 'info'"
-                    :style="tab === 'info' ? 'color:#7c3aed;border-bottom:2px solid #7c3aed' : 'color:#9ca3af;border-bottom:2px solid transparent'"
+            <button data-tab-btn="info"
                     class="btn btn-link fw-black text-uppercase text-decoration-none py-3 px-3"
-                    style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s">
+                    style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s;border-bottom:2px solid transparent">
                 Info
             </button>
-            <button @click="tab = 'config'"
-                    :style="tab === 'config' ? 'color:#7c3aed;border-bottom:2px solid #7c3aed' : 'color:#9ca3af;border-bottom:2px solid transparent'"
+            <button data-tab-btn="config"
                     class="btn btn-link fw-black text-uppercase text-decoration-none py-3 px-3"
-                    style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s">
+                    style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s;border-bottom:2px solid transparent">
                 Config
                 @if($race->hasAnyConfigOverride())
                 <span class="badge ms-1" style="background:#f59e0b;color:white;font-size:.62rem;padding:2px 6px;border-radius:10px">custom</span>
                 @endif
             </button>
-            <button @click="tab = 'entries'"
-                    :style="tab === 'entries' ? 'color:#7c3aed;border-bottom:2px solid #7c3aed' : 'color:#9ca3af;border-bottom:2px solid transparent'"
+            <button data-tab-btn="entries"
                     class="btn btn-link fw-black text-uppercase text-decoration-none py-3 px-3"
-                    style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s">
+                    style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s;border-bottom:2px solid transparent">
                 Entry List
                 @if($registrations->isNotEmpty())
                 <span class="badge ms-1" style="background:#7c3aed;color:white;font-size:.65rem;padding:2px 7px;border-radius:10px">
@@ -82,10 +80,9 @@
                 </span>
                 @endif
             </button>
-            <button @click="tab = 'results'"
-                    :style="tab === 'results' ? 'color:#7c3aed;border-bottom:2px solid #7c3aed' : 'color:#9ca3af;border-bottom:2px solid transparent'"
+            <button data-tab-btn="results"
                     class="btn btn-link fw-black text-uppercase text-decoration-none py-3 px-3"
-                    style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s">
+                    style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s;border-bottom:2px solid transparent">
                 Results
                 @if($raceResults->isNotEmpty())
                 <span class="badge ms-1" style="background:#059669;color:white;font-size:.65rem;padding:2px 7px;border-radius:10px">
@@ -96,7 +93,7 @@
         </div>
 
         {{-- INFO TAB --}}
-        <div x-show="tab === 'info'" x-cloak>
+        <div data-tab-panel="info" style="display:none">
             <div class="px-4 py-4">
                 <div class="row g-4">
 
@@ -142,6 +139,56 @@
                         </div>
                     </div>
 
+                    {{-- gPortal auto-push status --}}
+                    @if($race->ftpServer)
+                    <div class="col-12">
+                        @php
+                            $pushStatus = $race->config_push_status;
+                            $statusColors = [
+                                'pushed'  => ['bg' => '#f0fdf4', 'border' => '#bbf7d0', 'text' => '#166534', 'badge' => '#16a34a'],
+                                'pending' => ['bg' => '#fffbeb', 'border' => '#fde68a', 'text' => '#92400e', 'badge' => '#d97706'],
+                                'failed'  => ['bg' => '#fef2f2', 'border' => '#fecaca', 'text' => '#991b1b', 'badge' => '#ef4444'],
+                            ];
+                            $sc = $statusColors[$pushStatus] ?? ['bg'=>'#f9fafb','border'=>'#f3f4f6','text'=>'#374151','badge'=>'#9ca3af'];
+                        @endphp
+                        <div class="p-3 rounded-2" style="background:{{ $sc['bg'] }};border:1px solid {{ $sc['border'] }}">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div>
+                                    <div class="fw-black text-uppercase fst-italic mb-1" style="font-size:.78rem;color:#374151">
+                                        gPortal Auto-Push
+                                    </div>
+                                    <div style="font-size:.8rem;color:#6b7280">
+                                        <strong style="color:#374151">{{ $race->ftpServer->name }}</strong>
+                                        @if($race->slot_time)
+                                            · Slot: <strong style="color:#374151">{{ $race->slot_time->timezone('Europe/London')->format('d M Y H:i T') }}</strong>
+                                        @endif
+                                    </div>
+                                    @if($race->config_pushed_at)
+                                    <div style="font-size:.73rem;color:#9ca3af;margin-top:2px">
+                                        Last push: {{ $race->config_pushed_at->diffForHumans() }}
+                                    </div>
+                                    @endif
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    @if($pushStatus)
+                                    <span class="badge fw-bold text-uppercase" style="background:{{ $sc['badge'] }};color:#fff;font-size:.65rem;padding:4px 10px;border-radius:8px">
+                                        {{ $pushStatus }}
+                                    </span>
+                                    @endif
+                                    <form action="{{ route('admin.races.push-config', $race) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <input type="hidden" name="server_id" value="{{ $race->ftpServer->id }}">
+                                        <button type="submit" class="btn btn-sm fw-bold text-uppercase text-white"
+                                                style="background:#7c3aed;font-size:.72rem;padding:5px 12px">
+                                            Re-push →
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
                     {{-- Quick push --}}
                     @if($ftpServers->isNotEmpty())
                     <div class="col-12">
@@ -154,7 +201,7 @@
                                 @else
                                     auto-generated config
                                 @endif
-                                to the selected server. To review or edit first, use the <button type="button" @click="tab = 'config'" class="btn btn-link p-0 fw-bold text-decoration-none" style="font-size:.75rem;color:#7c3aed;vertical-align:baseline">Config tab</button>.
+                                to the selected server. To review or edit first, use the <button type="button" data-activate-tab="config" class="btn btn-link p-0 fw-bold text-decoration-none" style="font-size:.75rem;color:#7c3aed;vertical-align:baseline">Config tab</button>.
                             </div>
 
                             @if(session('success'))
@@ -214,7 +261,7 @@
         </div>
 
         {{-- CONFIG TAB --}}
-        <div x-show="tab === 'config'" x-cloak>
+        <div data-tab-panel="config" style="display:none">
             @php
                 $configFiles = [
                     'entrylist.json' => json_encode($configData->entryList($race),     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
@@ -272,19 +319,21 @@
             </div>
 
             {{-- Config file editors --}}
+            <div data-accordions>
             @foreach(['entrylist.json', 'event.json', 'settings.json'] as $filename)
             @php
                 $hasOverride = $race->hasConfigOverride($filename);
                 $content     = $hasOverride ? $race->configFile($filename) : $configFiles[$filename];
             @endphp
-            <div x-data="{ open: '{{ $filename === 'entrylist.json' ? 'true' : 'false' }}' }" style="border-bottom:1px solid #f3f4f6">
+            @php $isDefaultOpen = $filename === 'entrylist.json'; @endphp
+            <div data-accordion="{{ $isDefaultOpen ? 'open' : 'closed' }}" style="border-bottom:1px solid #f3f4f6">
 
                 {{-- File header --}}
                 <div class="d-flex align-items-center justify-content-between px-4 py-3"
-                     style="cursor:pointer;background:{{ $hasOverride ? '#fffbeb' : '#f9fafb' }}"
-                     @click="open = open === 'true' ? 'false' : 'true'">
+                     data-accordion-header
+                     style="cursor:pointer;background:{{ $hasOverride ? '#fffbeb' : '#f9fafb' }}">
                     <div class="d-flex align-items-center gap-3">
-                        <svg :style="open === 'true' ? 'transform:rotate(90deg)' : ''" style="transition:transform .15s;flex-shrink:0" width="14" height="14" viewBox="0 0 20 20" fill="currentColor" class="text-secondary"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+                        <svg data-accordion-arrow style="transition:transform .15s;flex-shrink:0;transform:{{ $isDefaultOpen ? 'rotate(90deg)' : '' }}" width="14" height="14" viewBox="0 0 20 20" fill="currentColor" class="text-secondary"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
                         <span class="fw-black text-dark" style="font-family:monospace;font-size:.875rem">{{ $filename }}</span>
                         @if($hasOverride)
                         <span class="badge" style="background:#fef3c7;color:#92400e;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">custom</span>
@@ -292,7 +341,7 @@
                         <span class="badge" style="background:#f3f4f6;color:#6b7280;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">auto</span>
                         @endif
                     </div>
-                    <div class="d-flex gap-2" @click.stop>
+                    <div class="d-flex gap-2" onclick="event.stopPropagation()">
                         @if($hasOverride)
                         <form action="{{ route('admin.races.reset-config', $race) }}" method="POST" onsubmit="return confirm('Reset {{ $filename }} to auto-generated?')">
                             @csrf @method('DELETE')
@@ -307,7 +356,7 @@
                 </div>
 
                 {{-- Editor --}}
-                <div x-show="open === 'true'" x-cloak>
+                <div data-accordion-body style="{{ $isDefaultOpen ? '' : 'display:none' }}">
                     <form action="{{ route('admin.races.save-config', $race) }}" method="POST">
                         @csrf
                         <input type="hidden" name="file" value="{{ $filename }}">
@@ -330,12 +379,13 @@
 
             </div>
             @endforeach
+            </div>{{-- /data-accordions --}}
 
         </div>
         {{-- END Config tab --}}
 
         {{-- ENTRY LIST TAB --}}
-        <div x-show="tab === 'entries'" x-cloak>
+        <div data-tab-panel="entries" style="display:none">
             <div class="d-flex align-items-center justify-content-between px-4 py-3" style="border-bottom:1px solid #f3f4f6">
                 <span class="fw-black text-uppercase fst-italic text-secondary" style="font-size:.72rem;letter-spacing:.08em">
                     {{ $registrations->count() }} {{ $registrations->count() === 1 ? 'driver' : 'drivers' }} registered
@@ -486,7 +536,7 @@
         </div>
 
         {{-- RESULTS TAB --}}
-        <div x-show="tab === 'results'" x-cloak>
+        <div data-tab-panel="results" style="display:none">
 
             {{-- FTP Import --}}
             <div class="px-4 pt-4 pb-0">
@@ -647,37 +697,34 @@
 
             {{-- Results sub-tabs --}}
             @php $defaultSubtab = $raceResults->isNotEmpty() ? 'race' : ($qualiResults->isNotEmpty() ? 'quali' : 'race'); @endphp
-            <div x-data="{ subtab: '{{ $defaultSubtab }}' }" style="border-top:1px solid #f3f4f6">
+            <div data-tabs data-default-tab="{{ $defaultSubtab }}" style="border-top:1px solid #f3f4f6">
 
                 <div class="d-flex px-2" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
-                    <button @click="subtab = 'race'"
-                            :style="subtab === 'race' ? 'color:#059669;border-bottom:2px solid #059669' : 'color:#9ca3af;border-bottom:2px solid transparent'"
+                    <button data-tab-btn="race" data-tab-color="#059669"
                             class="btn btn-link fw-black text-uppercase text-decoration-none py-2 px-3"
-                            style="font-size:.75rem;border-radius:0;letter-spacing:.05em;transition:color .15s">
+                            style="font-size:.75rem;border-radius:0;letter-spacing:.05em;transition:color .15s;border-bottom:2px solid transparent">
                         Race
                         @if($raceResults->isNotEmpty())
                         <span class="badge ms-1" style="background:#059669;color:white;font-size:.6rem;padding:2px 6px;border-radius:10px">{{ $raceResults->count() }}</span>
                         @endif
                     </button>
-                    <button @click="subtab = 'quali'"
-                            :style="subtab === 'quali' ? 'color:#2563eb;border-bottom:2px solid #2563eb' : 'color:#9ca3af;border-bottom:2px solid transparent'"
+                    <button data-tab-btn="quali" data-tab-color="#2563eb"
                             class="btn btn-link fw-black text-uppercase text-decoration-none py-2 px-3"
-                            style="font-size:.75rem;border-radius:0;letter-spacing:.05em;transition:color .15s">
+                            style="font-size:.75rem;border-radius:0;letter-spacing:.05em;transition:color .15s;border-bottom:2px solid transparent">
                         Qualifying
                         @if($qualiResults->isNotEmpty())
                         <span class="badge ms-1" style="background:#2563eb;color:white;font-size:.6rem;padding:2px 6px;border-radius:10px">{{ $qualiResults->count() }}</span>
                         @endif
                     </button>
-                    <button @click="subtab = 'ratings'"
-                            :style="subtab === 'ratings' ? 'color:#7c3aed;border-bottom:2px solid #7c3aed' : 'color:#9ca3af;border-bottom:2px solid transparent'"
+                    <button data-tab-btn="ratings"
                             class="btn btn-link fw-black text-uppercase text-decoration-none py-2 px-3"
-                            style="font-size:.75rem;border-radius:0;letter-spacing:.05em;transition:color .15s">
+                            style="font-size:.75rem;border-radius:0;letter-spacing:.05em;transition:color .15s;border-bottom:2px solid transparent">
                         Ratings
                     </button>
                 </div>
 
                 {{-- Race sub-tab --}}
-                <div x-show="subtab === 'race'" x-cloak>
+                <div data-tab-panel="race" style="display:none">
                     @if($raceResults->isEmpty())
                     <div class="p-5 text-center">
                         <div class="fw-bold text-dark" style="font-size:.95rem">No race results yet</div>
@@ -750,7 +797,7 @@
                 </div>
 
                 {{-- Qualifying sub-tab --}}
-                <div x-show="subtab === 'quali'" x-cloak>
+                <div data-tab-panel="quali" style="display:none">
                     @if($qualiResults->isEmpty())
                     <div class="p-5 text-center">
                         <div class="fw-bold text-dark" style="font-size:.95rem">No qualifying results yet</div>
@@ -811,7 +858,7 @@
                 </div>
 
                 {{-- Ratings sub-tab --}}
-                <div x-show="subtab === 'ratings'" x-cloak>
+                <div data-tab-panel="ratings" style="display:none">
                     @php $ratedResults = $raceResults->whereNotNull('rating_after')->sortBy('position'); @endphp
                     @if($ratedResults->isEmpty())
                     <div class="p-5 text-center">

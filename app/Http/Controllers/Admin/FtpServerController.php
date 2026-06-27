@@ -24,16 +24,22 @@ class FtpServerController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name'     => 'required|string|max:150',
-            'host'     => 'required|string|max:255',
-            'port'     => 'required|integer|min:1|max:65535',
-            'username' => 'required|string|max:100',
-            'password' => 'required|string|max:255',
-            'path'     => 'required|string|max:255',
-            'cfg_path' => 'nullable|string|max:255',
+            'name'                    => 'required|string|max:150',
+            'host'                    => 'required|string|max:255',
+            'port'                    => 'required|integer|min:1|max:65535',
+            'username'                => 'required|string|max:100',
+            'password'                => 'required|string|max:255',
+            'path'                    => 'required|string|max:255',
+            'cfg_path'                => 'nullable|string|max:255',
+            'server_type'             => 'required|in:rolling,scheduled',
+            'reset_start_hour'        => 'required_if:server_type,rolling|integer|min:0|max:23',
+            'reset_interval_minutes'  => 'required_if:server_type,rolling|integer|min:30|max:1440',
         ]);
 
-        FtpServer::create($request->only('name', 'host', 'port', 'username', 'password', 'path', 'cfg_path'));
+        FtpServer::create($request->only(
+            'name', 'host', 'port', 'username', 'password', 'path', 'cfg_path',
+            'server_type', 'reset_start_hour', 'reset_interval_minutes'
+        ));
 
         return redirect()->route('admin.servers.index')->with('success', 'Server added.');
     }
@@ -46,12 +52,15 @@ class FtpServerController extends Controller
     public function update(Request $request, FtpServer $ftpServer)
     {
         $rules = [
-            'name'     => 'required|string|max:150',
-            'host'     => 'required|string|max:255',
-            'port'     => 'required|integer|min:1|max:65535',
-            'username' => 'required|string|max:100',
-            'path'     => 'required|string|max:255',
-            'cfg_path' => 'nullable|string|max:255',
+            'name'                    => 'required|string|max:150',
+            'host'                    => 'required|string|max:255',
+            'port'                    => 'required|integer|min:1|max:65535',
+            'username'                => 'required|string|max:100',
+            'path'                    => 'required|string|max:255',
+            'cfg_path'                => 'nullable|string|max:255',
+            'server_type'             => 'required|in:rolling,scheduled',
+            'reset_start_hour'        => 'required_if:server_type,rolling|integer|min:0|max:23',
+            'reset_interval_minutes'  => 'required_if:server_type,rolling|integer|min:30|max:1440',
         ];
 
         if ($request->filled('password')) {
@@ -60,7 +69,10 @@ class FtpServerController extends Controller
 
         $request->validate($rules);
 
-        $data           = $request->only('name', 'host', 'port', 'username', 'path', 'cfg_path');
+        $data = $request->only(
+            'name', 'host', 'port', 'username', 'path', 'cfg_path',
+            'server_type', 'reset_start_hour', 'reset_interval_minutes'
+        );
         $data['active'] = $request->boolean('active');
 
         if ($request->filled('password')) {

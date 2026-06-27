@@ -22,32 +22,105 @@ import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
 import '@fortawesome/fontawesome-free/css/solid.min.css';
 import '@fortawesome/fontawesome-free/css/brands.min.css';
 
-import Alpine from 'alpinejs';
 import * as bootstrap from 'bootstrap';
 import Swal from 'sweetalert2';
-import xcMediaPicker from './components/media-picker.js';
-import eventTags from './components/event-tags.js';
-import eventsFilter from './components/events-filter.js';
-import { eventsSidebar, countdownTimer } from './components/events-sidebar.js';
-import mediaManager from './components/media-manager.js';
-import fileBrowser from './components/file-browser.js';
-import { xcToasts, xcDeleteSubmit, ratingRow, testConnection, previewAvatar } from './xcl-admin.js';
 
-window.Alpine    = Alpine;
-window.bootstrap = bootstrap;
-window.Swal      = Swal;
+import { xcDeleteSubmit, testConnection, previewAvatar } from './xcl-admin.js';
+
+// Vanilla JS modules
+import { init as initAdminLayout } from './pages/admin/layout.js';
+import { initNavbar } from './pages/navbar.js';
+import { initEventsFilter } from './components/events-filter.js';
+import { initEventTags } from './components/event-tags.js';
+import { initCountdownTimers } from './components/countdown-timer.js';
+import { initPasswordToggles } from './components/password-toggle.js';
+import { initCheckboxToggles } from './components/toggle.js';
+import { initTabs, initAccordions, initActivateTab } from './components/tabs.js';
+import { initRegister } from './pages/auth/register.js';
+import { initTeamCards } from './pages/team.js';
+import { initImageUploads } from './components/image-upload.js';
+import { initCalendar } from './pages/calendar.js';
+import { initMeetTeam } from './components/meet-team-carousel.js';
+import { initMulticlass } from './components/multiclass.js';
+import { initBulkCreate } from './pages/admin/bulk-create.js';
+import { initMediaIndex } from './pages/admin/media.js';
+import { initRatingRows } from './pages/admin/rating.js';
+import { initFileBrowser } from './pages/admin/file-browser.js';
+import { initEventsSidebar } from './components/events-sidebar.js';
+import { initMediaPickers } from './components/media-picker.js';
+
+window.bootstrap      = bootstrap;
+window.Swal           = Swal;
 window.xcDeleteSubmit = xcDeleteSubmit;
 window.testConnection = testConnection;
 window.previewAvatar  = previewAvatar;
 
-Alpine.data('xcMediaPicker',  xcMediaPicker);
-Alpine.data('eventTags',      eventTags);
-Alpine.data('xcToasts',       xcToasts);
-Alpine.data('eventsFilter',   eventsFilter);
-Alpine.data('eventsSidebar',  eventsSidebar);
-Alpine.data('countdownTimer', countdownTimer);
-Alpine.data('mediaManager',   mediaManager);
-Alpine.data('fileBrowser',    fileBrowser);
-Alpine.data('ratingRow',      ratingRow);
+// Toast system — listens for 'toast' custom events dispatched by JS modules and the flash bridge
+window.addEventListener('toast', e => {
+    Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3500,
+        timerProgressBar: true,
+    }).fire({
+        icon: e.detail?.type === 'success' ? 'success' : 'error',
+        title: e.detail?.message ?? '',
+    });
+});
 
-Alpine.start();
+// Vanilla JS init — runs on every page after DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    initAdminLayout();
+    initNavbar();
+    initEventsFilter();
+    initCountdownTimers();
+    initPasswordToggles();
+    initCheckboxToggles();
+    document.querySelectorAll('[data-tags-wrap]').forEach(el => initEventTags(el));
+    document.querySelectorAll('[data-tabs]').forEach(wrap => {
+        initTabs(wrap, wrap.dataset.defaultTab);
+    });
+    document.querySelectorAll('[data-accordions]').forEach(wrap => {
+        initAccordions(wrap);
+    });
+    initActivateTab();
+    initRegister();
+    initTeamCards();
+    initImageUploads();
+    initCalendar();
+    initMeetTeam();
+    document.querySelectorAll('[data-multiclass-wrap]').forEach(el => initMulticlass(el));
+    document.querySelectorAll('[data-bulk-wrap]').forEach(el => initBulkCreate(el));
+    initMediaIndex();
+    initRatingRows();
+    initFileBrowser();
+    initEventsSidebar();
+    initMediaPickers();
+
+    // Generic: show/hide element based on a select's current value
+    document.querySelectorAll('[data-select-conditional]').forEach(select => {
+        const scope = select.closest('[data-select-conditional-wrap]') || select.parentElement;
+        function applyConditional() {
+            scope.querySelectorAll('[data-show-when]').forEach(el => {
+                el.style.display = el.dataset.showWhen === select.value ? '' : 'none';
+            });
+        }
+        select.addEventListener('change', applyConditional);
+        applyConditional();
+    });
+
+    // Ballast live display (bops form)
+    document.querySelectorAll('[data-ballast-wrap]').forEach(wrap => {
+        const input   = wrap.querySelector('[data-ballast-input]');
+        const display = wrap.querySelector('[data-ballast-display]');
+        if (!input || !display) return;
+        function updateBallast() {
+            const v = parseFloat(input.value) || 0;
+            display.textContent = v > 0 ? '+' + v + ' kg' : v + ' kg';
+            display.style.color = v > 0 ? '#ef4444' : (v < 0 ? '#10b981' : '#9ca3af');
+        }
+        input.addEventListener('input', updateBallast);
+        updateBallast();
+    });
+});

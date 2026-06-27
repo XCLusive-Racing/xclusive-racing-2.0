@@ -23,7 +23,7 @@ class AccServerConfigService
                         'lastName'       => $lastName,
                         'shortName'      => $shortName,
                         'playerID'       => $user->platform_id ?? '',
-                        'driverCategory' => $user->ratingClass($race->game) + 1,
+                        'driverCategory' => $user->ratingClass($race->game),
                     ],
                 ],
                 'raceNumber'          => is_numeric($user->car_number) ? (int) $user->car_number : 0,

@@ -15,13 +15,19 @@
             <h1 class="fs-4 fw-black text-uppercase fst-italic text-dark mb-0">Edit Profile</h1>
         </div>
 
-        <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
-            @csrf @method('PUT')
+        @if(session('success'))
+        <div class="alert py-2 px-3 mb-3 rounded-2" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;font-size:.82rem">
+            {{ session('success') }}
+        </div>
+        @endif
 
-            <div class="row g-4">
+        <div class="row g-4 mb-5">
 
-                {{-- LEFT COLUMN --}}
-                <div class="col-12 col-lg-6 d-flex flex-column gap-4">
+            {{-- LEFT COLUMN: profile form --}}
+            <div class="col-12 col-lg-6">
+                <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data"
+                      class="d-flex flex-column gap-4">
+                    @csrf @method('PUT')
 
                     {{-- Identity --}}
                     <div class="bg-white rounded-3 shadow-sm p-4">
@@ -110,12 +116,24 @@
                         </div>
                     </div>
 
-                </div>
+                    {{-- Save --}}
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn fw-black text-uppercase text-white px-4 py-2"
+                                style="background:#7c3aed">Save Changes</button>
+                        <a href="{{ route('profile') }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4 py-2">
+                            Cancel
+                        </a>
+                    </div>
 
-                {{-- RIGHT COLUMN --}}
-                <div class="col-12 col-lg-6 d-flex flex-column gap-4">
+                </form>
+            </div>
 
-                    {{-- Password --}}
+            {{-- RIGHT COLUMN: password + connected accounts --}}
+            <div class="col-12 col-lg-6 d-flex flex-column gap-4">
+
+                {{-- Password form --}}
+                <form action="{{ route('profile.password') }}" method="POST">
+                    @csrf @method('PUT')
                     <div class="bg-white rounded-3 shadow-sm p-4">
                         <h2 class="fw-black text-uppercase fst-italic text-dark mb-1" style="font-size:1rem">Change Password</h2>
                         <p class="text-secondary mb-3" style="font-size:.82rem">Leave blank to keep your current password</p>
@@ -137,164 +155,140 @@
                                 <input type="password" name="new_password_confirmation" autocomplete="new-password"
                                        class="form-control">
                             </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn fw-black text-uppercase text-white px-4 py-2"
+                                        style="background:#7c3aed">Update Password</button>
+                            </div>
                         </div>
                     </div>
+                </form>
 
-                </div>
-            </div>
+                {{-- Connected Accounts --}}
+                <div class="bg-white rounded-3 shadow-sm p-4">
+                    <h2 class="fw-black text-uppercase fst-italic text-dark mb-1" style="font-size:1rem">Connected Accounts</h2>
+                    <p class="text-secondary mb-4" style="font-size:.82rem">Link your gaming and social accounts to your profile.</p>
 
-            <div class="d-flex gap-2 mt-4 mb-4">
-                <button type="submit" class="btn fw-black text-uppercase text-white px-4 py-2"
-                        style="background:#7c3aed">Save Changes</button>
-                <a href="{{ route('profile') }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4 py-2">
-                    Cancel
-                </a>
-            </div>
+                    @error('discord')<div class="alert py-2 px-3 mb-3 rounded-2" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:.82rem">{{ $message }}</div>@enderror
+                    @error('steam')<div class="alert py-2 px-3 mb-3 rounded-2" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:.82rem">{{ $message }}</div>@enderror
 
-        </form>
+                    <div class="d-flex flex-column gap-3">
 
-        {{-- Connected Accounts (outside main form to avoid nested forms) --}}
-        <div class="row g-4 mb-5">
-            <div class="col-12 col-lg-6 offset-lg-6">
-                    {{-- Connected Accounts --}}
-                    <div class="bg-white rounded-3 shadow-sm p-4 flex-grow-1">
-                        <h2 class="fw-black text-uppercase fst-italic text-dark mb-1" style="font-size:1rem">Connected Accounts</h2>
-                        <p class="text-secondary mb-4" style="font-size:.82rem">Link your gaming and social accounts to your profile.</p>
-
-                        @if(session('success'))
-                        <div class="alert py-2 px-3 mb-3 rounded-2" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;font-size:.82rem">
-                            {{ session('success') }}
+                        {{-- Discord --}}
+                        @php $discord = $user->connectedAccount('discord') @endphp
+                        <div class="d-flex align-items-center gap-3 p-3 rounded-2" style="border:1px solid #e5e7eb">
+                            <div class="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
+                                 style="width:40px;height:40px;background:#5865F2;color:#fff;font-size:1.2rem">
+                                <i class="fa-brands fa-discord"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold text-dark" style="font-size:.88rem">Discord</div>
+                                <div class="text-secondary" style="font-size:.78rem">{{ $discord?->username ?? 'Not connected' }}</div>
+                            </div>
+                            @if($discord)
+                            <form action="{{ route('connected-accounts.destroy', $discord) }}" method="POST">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="btn btn-sm fw-bold text-uppercase"
+                                        style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.72rem">Disconnect</button>
+                            </form>
+                            @else
+                            <a href="{{ route('auth.discord') }}" class="btn btn-sm fw-bold text-uppercase text-white"
+                               style="background:#5865F2;font-size:.72rem">Connect</a>
+                            @endif
                         </div>
-                        @endif
-                        @error('discord')<div class="alert py-2 px-3 mb-3 rounded-2" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:.82rem">{{ $message }}</div>@enderror
-                        @error('steam')<div class="alert py-2 px-3 mb-3 rounded-2" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:.82rem">{{ $message }}</div>@enderror
 
-                        <div class="d-flex flex-column gap-3">
-
-                            {{-- Discord --}}
-                            @php $discord = $user->connectedAccount('discord') @endphp
-                            <div class="d-flex align-items-center gap-3 p-3 rounded-2" style="border:1px solid #e5e7eb">
-                                <div class="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
-                                     style="width:40px;height:40px;background:#5865F2;color:#fff;font-size:1.2rem">
-                                    <i class="fa-brands fa-discord"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold text-dark" style="font-size:.88rem">Discord</div>
-                                    <div class="text-secondary" style="font-size:.78rem">{{ $discord?->username ?? 'Not connected' }}</div>
-                                </div>
-                                @if($discord)
-                                <form action="{{ route('connected-accounts.destroy', $discord) }}" method="POST">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-sm fw-bold text-uppercase"
-                                            style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.72rem">
-                                        Disconnect
-                                    </button>
-                                </form>
-                                @else
-                                <a href="{{ route('auth.discord') }}" class="btn btn-sm fw-bold text-uppercase text-white"
-                                   style="background:#5865F2;font-size:.72rem">Connect</a>
-                                @endif
+                        {{-- Steam --}}
+                        @php $steam = $user->connectedAccount('steam') @endphp
+                        <div class="d-flex align-items-center gap-3 p-3 rounded-2" style="border:1px solid #e5e7eb">
+                            <div class="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
+                                 style="width:40px;height:40px;background:#1b2838;color:#c7d5e0;font-size:1.2rem">
+                                <i class="fa-brands fa-steam"></i>
                             </div>
-
-                            {{-- Steam --}}
-                            @php $steam = $user->connectedAccount('steam') @endphp
-                            <div class="d-flex align-items-center gap-3 p-3 rounded-2" style="border:1px solid #e5e7eb">
-                                <div class="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
-                                     style="width:40px;height:40px;background:#1b2838;color:#c7d5e0;font-size:1.2rem">
-                                    <i class="fa-brands fa-steam"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold text-dark" style="font-size:.88rem">Steam</div>
-                                    <div class="text-secondary" style="font-size:.78rem">{{ $steam?->username ?? 'Not connected' }}</div>
-                                </div>
-                                @if($steam)
-                                <form action="{{ route('connected-accounts.destroy', $steam) }}" method="POST">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-sm fw-bold text-uppercase"
-                                            style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.72rem">
-                                        Disconnect
-                                    </button>
-                                </form>
-                                @else
-                                <a href="{{ route('auth.steam') }}" class="btn btn-sm fw-bold text-uppercase text-white"
-                                   style="background:#1b2838;font-size:.72rem">Connect</a>
-                                @endif
+                            <div class="flex-grow-1">
+                                <div class="fw-bold text-dark" style="font-size:.88rem">Steam</div>
+                                <div class="text-secondary" style="font-size:.78rem">{{ $steam?->username ?? 'Not connected' }}</div>
                             </div>
+                            @if($steam)
+                            <form action="{{ route('connected-accounts.destroy', $steam) }}" method="POST">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="btn btn-sm fw-bold text-uppercase"
+                                        style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.72rem">Disconnect</button>
+                            </form>
+                            @else
+                            <a href="{{ route('auth.steam') }}" class="btn btn-sm fw-bold text-uppercase text-white"
+                               style="background:#1b2838;font-size:.72rem">Connect</a>
+                            @endif
+                        </div>
 
-                            {{-- Xbox --}}
-                            @php $xbox = $user->connectedAccount('xbox') @endphp
-                            <div class="d-flex align-items-start gap-3 p-3 rounded-2" style="border:1px solid #e5e7eb">
-                                <div class="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
-                                     style="width:40px;height:40px;background:#107c10;color:#fff;font-size:1.2rem">
-                                    <i class="fa-brands fa-xbox"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold text-dark" style="font-size:.88rem">Xbox</div>
-                                    @if($xbox)
-                                    <div class="text-secondary" style="font-size:.78rem">{{ $xbox->username }}</div>
-                                    @else
-                                    <div class="text-secondary mb-2" style="font-size:.78rem">Not connected</div>
-                                    <form action="{{ route('connected-accounts.store') }}" method="POST" class="d-flex gap-2 flex-wrap">
-                                        @csrf
-                                        <input type="hidden" name="provider" value="xbox">
-                                        <input type="text" name="username" placeholder="Gamertag"
-                                               class="form-control form-control-sm @error('xbox_username') is-invalid @enderror"
-                                               style="font-size:.8rem">
-                                        <button type="submit" class="btn btn-sm fw-bold text-uppercase text-white flex-shrink-0"
-                                                style="background:#107c10;font-size:.72rem">Connect</button>
-                                        @error('xbox_username')<div class="invalid-feedback w-100">{{ $message }}</div>@enderror
-                                    </form>
-                                    @endif
-                                </div>
+                        {{-- Xbox --}}
+                        @php $xbox = $user->connectedAccount('xbox') @endphp
+                        <div class="d-flex align-items-start gap-3 p-3 rounded-2" style="border:1px solid #e5e7eb">
+                            <div class="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
+                                 style="width:40px;height:40px;background:#107c10;color:#fff;font-size:1.2rem">
+                                <i class="fa-brands fa-xbox"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold text-dark" style="font-size:.88rem">Xbox</div>
                                 @if($xbox)
-                                <form action="{{ route('connected-accounts.destroy', $xbox) }}" method="POST">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-sm fw-bold text-uppercase"
-                                            style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.72rem">
-                                        Disconnect
-                                    </button>
+                                <div class="text-secondary" style="font-size:.78rem">{{ $xbox->username }}</div>
+                                @else
+                                <div class="text-secondary mb-2" style="font-size:.78rem">Not connected</div>
+                                <form action="{{ route('connected-accounts.store') }}" method="POST" class="d-flex gap-2 flex-wrap">
+                                    @csrf
+                                    <input type="hidden" name="provider" value="xbox">
+                                    <input type="text" name="username" placeholder="Gamertag"
+                                           class="form-control form-control-sm @error('xbox_username') is-invalid @enderror"
+                                           style="font-size:.8rem">
+                                    <button type="submit" class="btn btn-sm fw-bold text-uppercase text-white flex-shrink-0"
+                                            style="background:#107c10;font-size:.72rem">Connect</button>
+                                    @error('xbox_username')<div class="invalid-feedback w-100">{{ $message }}</div>@enderror
                                 </form>
                                 @endif
                             </div>
-
-                            {{-- PlayStation --}}
-                            @php $psn = $user->connectedAccount('psn') @endphp
-                            <div class="d-flex align-items-start gap-3 p-3 rounded-2" style="border:1px solid #e5e7eb">
-                                <div class="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
-                                     style="width:40px;height:40px;background:#00439c;color:#fff;font-size:1.2rem">
-                                    <i class="fa-brands fa-playstation"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold text-dark" style="font-size:.88rem">PlayStation</div>
-                                    @if($psn)
-                                    <div class="text-secondary" style="font-size:.78rem">{{ $psn->username }}</div>
-                                    @else
-                                    <div class="text-secondary mb-2" style="font-size:.78rem">Not connected</div>
-                                    <form action="{{ route('connected-accounts.store') }}" method="POST" class="d-flex gap-2 flex-wrap">
-                                        @csrf
-                                        <input type="hidden" name="provider" value="psn">
-                                        <input type="text" name="username" placeholder="PSN Online ID"
-                                               class="form-control form-control-sm @error('psn_username') is-invalid @enderror"
-                                               style="font-size:.8rem">
-                                        <button type="submit" class="btn btn-sm fw-bold text-uppercase text-white flex-shrink-0"
-                                                style="background:#00439c;font-size:.72rem">Connect</button>
-                                        @error('psn_username')<div class="invalid-feedback w-100">{{ $message }}</div>@enderror
-                                    </form>
-                                    @endif
-                                </div>
-                                @if($psn)
-                                <form action="{{ route('connected-accounts.destroy', $psn) }}" method="POST">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-sm fw-bold text-uppercase"
-                                            style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.72rem">
-                                        Disconnect
-                                    </button>
-                                </form>
-                                @endif
-                            </div>
-
+                            @if($xbox)
+                            <form action="{{ route('connected-accounts.destroy', $xbox) }}" method="POST">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="btn btn-sm fw-bold text-uppercase"
+                                        style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.72rem">Disconnect</button>
+                            </form>
+                            @endif
                         </div>
+
+                        {{-- PlayStation --}}
+                        @php $psn = $user->connectedAccount('psn') @endphp
+                        <div class="d-flex align-items-start gap-3 p-3 rounded-2" style="border:1px solid #e5e7eb">
+                            <div class="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
+                                 style="width:40px;height:40px;background:#00439c;color:#fff;font-size:1.2rem">
+                                <i class="fa-brands fa-playstation"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold text-dark" style="font-size:.88rem">PlayStation</div>
+                                @if($psn)
+                                <div class="text-secondary" style="font-size:.78rem">{{ $psn->username }}</div>
+                                @else
+                                <div class="text-secondary mb-2" style="font-size:.78rem">Not connected</div>
+                                <form action="{{ route('connected-accounts.store') }}" method="POST" class="d-flex gap-2 flex-wrap">
+                                    @csrf
+                                    <input type="hidden" name="provider" value="psn">
+                                    <input type="text" name="username" placeholder="PSN Online ID"
+                                           class="form-control form-control-sm @error('psn_username') is-invalid @enderror"
+                                           style="font-size:.8rem">
+                                    <button type="submit" class="btn btn-sm fw-bold text-uppercase text-white flex-shrink-0"
+                                            style="background:#00439c;font-size:.72rem">Connect</button>
+                                    @error('psn_username')<div class="invalid-feedback w-100">{{ $message }}</div>@enderror
+                                </form>
+                                @endif
+                            </div>
+                            @if($psn)
+                            <form action="{{ route('connected-accounts.destroy', $psn) }}" method="POST">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="btn btn-sm fw-bold text-uppercase"
+                                        style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.72rem">Disconnect</button>
+                            </form>
+                            @endif
+                        </div>
+
                     </div>
+                </div>
 
             </div>
         </div>
@@ -302,4 +296,3 @@
     </div>
 </main>
 @endsection
-

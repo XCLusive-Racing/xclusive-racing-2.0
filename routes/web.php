@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
 use App\Http\Controllers\Admin\EventTagController;
 use App\Http\Controllers\Admin\FtpBrowserController;
 use App\Http\Controllers\Admin\FtpServerController;
+use App\Http\Controllers\Admin\EventFormatController;
 use App\Http\Controllers\Admin\RatingConfigController;
 use App\Http\Controllers\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Admin\RaceController as AdminRaceController;
@@ -55,6 +56,7 @@ Route::get('sven', function () {
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::view('/team', 'team.index')->name('team');
+Route::view('/privacy', 'privacy')->name('privacy');
 
 // PRO driver profiles
 Route::get('/teams/pro',          [ProDriverController::class, 'index'])->name('teams.pro.index');
@@ -121,6 +123,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     Route::post('/profile/connected-accounts', [ConnectedAccountController::class, 'store'])->name('connected-accounts.store');
     Route::delete('/profile/connected-accounts/{connectedAccount}', [ConnectedAccountController::class, 'destroy'])->name('connected-accounts.destroy');
@@ -137,6 +140,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/races/create', [AdminRaceController::class, 'create'])->name('races.create');
     Route::get('/races/bulk-create', [AdminRaceController::class, 'bulkCreate'])->name('races.bulk-create');
     Route::post('/races/bulk-store', [AdminRaceController::class, 'bulkStore'])->name('races.bulk-store');
+    Route::get('/races/custom-create', [AdminRaceController::class, 'customCreate'])->name('races.custom-create');
     Route::post('/races', [AdminRaceController::class, 'store'])->name('races.store');
     Route::get('/races/{race}', [AdminRaceController::class, 'show'])->name('races.show');
     Route::get('/races/{race}/entry-list', [AdminRaceController::class, 'downloadEntryList'])->name('races.entry-list');
@@ -177,6 +181,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/media', [AdminMediaController::class, 'store'])->name('media.store');
     Route::delete('/media/{media}', [AdminMediaController::class, 'destroy'])->name('media.destroy');
     Route::post('/media/migrate-storage', [AdminMediaController::class, 'migrateStorage'])->name('media.migrate-storage');
+    Route::post('/media/folders', [AdminMediaController::class, 'storeFolder'])->name('media.folders.store');
+    Route::delete('/media/folders/{folder}', [AdminMediaController::class, 'destroyFolder'])->name('media.folders.destroy');
+    Route::get('/media/folders/list', [AdminMediaController::class, 'listFolders'])->name('media.folders.list');
+    Route::patch('/media/{media}/folder', [AdminMediaController::class, 'updateFolder'])->name('media.folder');
+    Route::patch('/media/{media}', [AdminMediaController::class, 'update'])->name('media.update');
 
     // BOPs
     Route::get('/bops', [AdminBopController::class, 'index'])->name('bops.index');
@@ -229,4 +238,7 @@ Route::middleware(['auth', 'role:owner'])->prefix('admin')->name('admin.')->grou
     // Rating Config
     Route::get('/rating-config', [RatingConfigController::class, 'index'])->name('rating-config.index');
     Route::patch('/rating-config/{key}', [RatingConfigController::class, 'update'])->name('rating-config.update');
+
+    // Event Formats
+    Route::resource('event-formats', EventFormatController::class);
 });

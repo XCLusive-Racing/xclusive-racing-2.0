@@ -3,7 +3,9 @@
 @section('title', 'Calendar ' . $current->format('F Y') . ' - XCLusive Racing')
 
 @section('content')
-<main class="events-page xcl-page pb-5 px-3" x-data="xclCalendar()" x-init="init()">
+<main class="events-page xcl-page pb-5 px-3"
+      data-cal
+      data-my-ids='@json($myRaceIds->keys()->values())'>
     <div class="about-section__topo" style="background-image:url('/topo.png')"></div>
 
     <div class="container-xl" style="position:relative;z-index:1">
@@ -23,15 +25,15 @@
                 @auth
                 {{-- View toggle --}}
                 <div class="xcl-cal-toggle me-2">
-                    <button @click="view = 'all'" :class="view === 'all' ? 'xcl-cal-toggle__btn--active' : ''" class="xcl-cal-toggle__btn">All Events</button>
-                    <button @click="view = 'mine'" :class="view === 'mine' ? 'xcl-cal-toggle__btn--active' : ''" class="xcl-cal-toggle__btn">My Schedule</button>
+                    <button data-cal-view="all" class="xcl-cal-toggle__btn xcl-cal-toggle__btn--active">All Events</button>
+                    <button data-cal-view="mine" class="xcl-cal-toggle__btn">My Schedule</button>
                 </div>
                 @endauth
 
                 {{-- Game filter --}}
-                <button @click="filter = 'all'" :class="filter === 'all' ? 'xcl-filter-btn--active' : ''" class="xcl-filter-btn fw-bold text-uppercase">All</button>
-                @foreach([['acc','#7c3aed','ACC'],['lmu','#db2777','LMU'],['iracing','#2563eb','iRacing'],['ac','#16a34a','AC Rally']] as [$g,$c,$l])
-                <button @click="filter = '{{ $g }}'" :class="filter === '{{ $g }}' ? 'xcl-filter-btn--active' : ''" class="xcl-filter-btn fw-bold text-uppercase">{{ $l }}</button>
+                <button data-cal-filter="all" class="xcl-filter-btn fw-bold text-uppercase xcl-filter-btn--active">All</button>
+                @foreach([['acc','ACC'],['lmu','LMU'],['iracing','iRacing'],['ac','AC Rally']] as [$g,$l])
+                <button data-cal-filter="{{ $g }}" class="xcl-filter-btn fw-bold text-uppercase">{{ $l }}</button>
                 @endforeach
             </div>
 
@@ -105,7 +107,9 @@
                     <div class="xcl-cal__daynr {{ $isToday ? 'xcl-cal__daynr--today' : '' }}">{{ $day->day }}</div>
 
                     @foreach($dayRaces as $race)
-                    <div x-show="(filter === 'all' || filter === '{{ $race->game }}') && (view === 'all' || myIds.includes({{ $race->id }}))"
+                    <div data-cal-pill
+                         data-cal-game="{{ $race->game }}"
+                         data-cal-race-id="{{ $race->id }}"
                          class="xcl-cal__pill {{ $race->championship_id ? 'xcl-cal__pill--championship' : '' }} {{ $myRaceIds->has($race->id) ? 'xcl-cal__pill--mine' : '' }}"
                          style="--game-color:{{ $race->gameColor() }}"
                          title="{{ $race->title }} · {{ $race->scheduledAtUk()->format('H:i') }} UK">
@@ -154,7 +158,9 @@
                 </div>
                 <div class="d-flex flex-column gap-2">
                     @foreach($dayRaces as $race)
-                    <div x-show="(filter === 'all' || filter === '{{ $race->game }}') && (view === 'all' || myIds.includes({{ $race->id }}))">
+                    <div data-cal-pill
+                         data-cal-game="{{ $race->game }}"
+                         data-cal-race-id="{{ $race->id }}">
                         <a href="{{ route('events.show', $race) }}" class="xcl-cal__mobile-event text-decoration-none d-flex align-items-center gap-3 {{ $myRaceIds->has($race->id) ? 'xcl-cal__mobile-event--mine' : '' }}">
                             <div class="xcl-cal__mobile-bar" style="background:{{ $race->gameColor() }}"></div>
                             <div class="flex-grow-1">
@@ -180,19 +186,3 @@
     </div>
 </main>
 @endsection
-
-@push('scripts')
-<script>
-function xclCalendar() {
-    return {
-        filter: 'all',
-        view: 'all',
-        myIds: @json($myRaceIds->keys()->values()),
-        init() {
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('view') === 'mine') this.view = 'mine';
-        }
-    };
-}
-</script>
-@endpush

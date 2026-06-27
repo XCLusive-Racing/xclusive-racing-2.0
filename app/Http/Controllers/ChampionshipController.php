@@ -32,6 +32,10 @@ class ChampionshipController extends Controller
     {
         $user = $request->user();
 
+        if ($user->isSuspended()) {
+            return back()->with('error', 'Your account has been suspended. Please contact an administrator.');
+        }
+
         if ($championship->status !== 'active' || !$championship->registration_open) {
             return back()->with('error', 'Registration is not open.');
         }

@@ -1,5 +1,5 @@
-{{-- Hoofdnavigatiebalk: Bootstrap navbar met Alpine.js hamburger toggle --}}
-<nav class="navbar navbar-xcl navbar-expand-md fixed-top" x-data="{ open: false }">
+{{-- Hoofdnavigatiebalk: vanilla JS hamburger toggle + hover dropdowns --}}
+<nav class="navbar navbar-xcl navbar-expand-md fixed-top">
     <div class="navbar-xcl__topo" style="background-image:url('/topo.png');"></div>
     <div class="container-fluid px-5 align-content-center">
 
@@ -9,9 +9,7 @@
         </a>
 
         {{-- Hamburger --}}
-        <button class="navbar-toggler border-0" type="button"
-                @click="open = !open; $dispatch('navbar-toggled', { open: open })"
-                aria-label="Toggle navigation">
+        <button class="navbar-toggler border-0" type="button" aria-label="Toggle navigation">
             <svg width="24" height="24" fill="none" stroke="#7c3aed"
                  stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
@@ -23,7 +21,7 @@
             <img src="/images/home/brand/xclusive_racing_logo.png" alt="XCLusive" height="28">
         </a>
 
-        <div class="collapse navbar-collapse" :class="{ 'show': open }">
+        <div class="collapse navbar-collapse">
 
             {{-- Mobile: Profile + Admin at top of hamburger menu --}}
             @auth
@@ -54,20 +52,10 @@
                 </li>
 
                 {{-- TEAM --}}
-                <li class="nav-item position-relative"
-                    x-data="{ dd: false }"
-                    @mouseenter="dd = true"
-                    @mouseleave="dd = false"
-                    @click.outside="dd = false">
-                    <a class="nav-link" href="{{ route('team') }}">TEAM</a>
-                    <ul x-show="dd"
-                        x-transition:enter="transition ease-out duration-150"
-                        x-transition:enter-start="opacity-0 translate-y-1"
-                        x-transition:enter-end="opacity-100 translate-y-0"
-                        x-transition:leave="transition ease-in duration-100"
-                        x-transition:leave-start="opacity-100"
-                        x-transition:leave-end="opacity-0"
-                        class="xcl-dropdown">
+                <li class="nav-item position-relative" data-dropdown>
+                    <a class="nav-link" href="{{ route('team') }}" data-dropdown-toggle>TEAM</a>
+                    <ul class="xcl-dropdown" data-dropdown-menu
+                        style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li><a class="xcl-dropdown-item" href="{{ route('teams.pro.index') }}">PROFESSIONAL</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('teams.esports.index') }}">ESPORTS</a></li>
                         <li><a class="xcl-dropdown-item" href="#">STAFF</a></li>
@@ -76,20 +64,10 @@
                 </li>
 
                 {{-- XCL EVENTS --}}
-                <li class="nav-item position-relative"
-                    x-data="{ dd: false }"
-                    @mouseenter="dd = true"
-                    @mouseleave="dd = false"
-                    @click.outside="dd = false">
-                    <a class="nav-link" href="#">XCL EVENTS</a>
-                    <ul x-show="dd"
-                        x-transition:enter="transition ease-out duration-150"
-                        x-transition:enter-start="opacity-0 translate-y-1"
-                        x-transition:enter-end="opacity-100 translate-y-0"
-                        x-transition:leave="transition ease-in duration-100"
-                        x-transition:leave-start="opacity-100"
-                        x-transition:leave-end="opacity-0"
-                        class="xcl-dropdown">
+                <li class="nav-item position-relative" data-dropdown>
+                    <a class="nav-link" href="#" data-dropdown-toggle>XCL EVENTS</a>
+                    <ul class="xcl-dropdown" data-dropdown-menu
+                        style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li><a class="xcl-dropdown-item" href="{{ route('events.index') }}">EVENTS</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('calendar') }}">CALENDAR</a></li>
                     </ul>
@@ -100,20 +78,10 @@
                 </li>
 
                 {{-- SHOP --}}
-                <li class="nav-item position-relative"
-                    x-data="{ dd: false }"
-                    @mouseenter="dd = true"
-                    @mouseleave="dd = false"
-                    @click.outside="dd = false">
-                    <a class="nav-link" href="#">SHOP</a>
-                    <ul x-show="dd"
-                        x-transition:enter="transition ease-out duration-150"
-                        x-transition:enter-start="opacity-0 translate-y-1"
-                        x-transition:enter-end="opacity-100 translate-y-0"
-                        x-transition:leave="transition ease-in duration-100"
-                        x-transition:leave-start="opacity-100"
-                        x-transition:leave-end="opacity-0"
-                        class="xcl-dropdown">
+                <li class="nav-item position-relative" data-dropdown>
+                    <a class="nav-link" href="#" data-dropdown-toggle>SHOP</a>
+                    <ul class="xcl-dropdown" data-dropdown-menu
+                        style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li><a class="xcl-dropdown-item" href="https://raven.gg/stores/xclusive-esports/" target="_blank">MERCHANDISE</a></li>
                         <li><a class="xcl-dropdown-item" href="#">COACHING</a></li>
                         <li><a class="xcl-dropdown-item" href="#">SETUPS</a></li>
@@ -122,20 +90,10 @@
                 </li>
 
                 {{-- RACING --}}
-                <li class="nav-item position-relative"
-                    x-data="{ dd: false }"
-                    @mouseenter="dd = true"
-                    @mouseleave="dd = false"
-                    @click.outside="dd = false">
-                    <a class="nav-link" href="#">RACING</a>
-                    <ul x-show="dd"
-                        x-transition:enter="transition ease-out duration-150"
-                        x-transition:enter-start="opacity-0 translate-y-1"
-                        x-transition:enter-end="opacity-100 translate-y-0"
-                        x-transition:leave="transition ease-in duration-100"
-                        x-transition:leave-start="opacity-100"
-                        x-transition:leave-end="opacity-0"
-                        class="xcl-dropdown">
+                <li class="nav-item position-relative" data-dropdown>
+                    <a class="nav-link" href="#" data-dropdown-toggle>RACING</a>
+                    <ul class="xcl-dropdown" data-dropdown-menu
+                        style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li><a class="xcl-dropdown-item" href="{{ route('championships.index') }}">CHAMPIONSHIPS</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('drivers.index') }}">LEADERBOARD</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('results.index') }}">RESULTS</a></li>

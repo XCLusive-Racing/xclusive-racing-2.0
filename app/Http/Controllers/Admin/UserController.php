@@ -43,12 +43,22 @@ class UserController extends Controller
             'team'                   => 'nullable|string|max:100',
             'display_name_preference'=> 'nullable|in:gamertag,name',
             'is_supporter'           => 'nullable|boolean',
+            'is_suspended'           => 'nullable|boolean',
+            'suspension_reason'      => 'nullable|string|max:500',
+            'suspended_until'        => 'nullable|date|after:now',
             'elo_acc'     => 'required|integer|min:0',
             'elo_lmu'     => 'required|integer|min:0',
             'elo_iracing' => 'required|integer|min:0',
         ]);
 
         $data['is_supporter'] = $request->boolean('is_supporter');
+        $data['is_suspended'] = $request->boolean('is_suspended');
+
+        if (!$data['is_suspended']) {
+            $data['suspended_until'] = null;
+            $data['suspension_reason'] = null;
+        }
+
         $user->update(\Illuminate\Support\Arr::except($data, ['roles']));
 
         if ($user->id !== auth()->id()) {

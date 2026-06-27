@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\EventFormat;
 use App\Models\EventTag;
 use App\Models\FtpImportedFile;
 use App\Models\FtpServer;
@@ -113,7 +114,7 @@ class RaceController extends Controller
                         'lastName'       => $lastName,
                         'shortName'      => $shortName,
                         'playerID'       => $user->platform_id ?? '',
-                        'driverCategory' => $user->ratingClass($race->game) + 1,
+                        'driverCategory' => $user->ratingClass($race->game),
                     ],
                 ],
                 'raceNumber'          => is_numeric($user->car_number) ? (int) $user->car_number : '',
@@ -139,8 +140,13 @@ class RaceController extends Controller
 
     public function bulkCreate()
     {
+        return redirect()->route('admin.races.create', ['tab' => 'bulk']);
+    }
+
+    public function customCreate()
+    {
         $tags = EventTag::orderBy('name')->get();
-        return view('admin.races.bulk-create', compact('tags'));
+        return view('admin.races.custom-create', compact('tags'));
     }
 
     public function bulkStore(Request $request)
@@ -194,8 +200,19 @@ class RaceController extends Controller
     public function create(Request $request)
     {
         $prefillDate = $request->date('date')?->format('Y-m-d\TH:i');
-        $tags = EventTag::orderBy('name')->get();
-        return view('admin.races.create', compact('prefillDate', 'tags'));
+        $tags    = EventTag::orderBy('name')->get();
+        $formats = EventFormat::orderBy('game')->orderBy('sort_order')->get();
+
+        $servers = FtpServer::where('active', true)->orderBy('name')->get();
+        $serverSlots = $servers->mapWithKeys(fn($s) => [
+            $s->id => [
+                'type'       => $s->server_type,
+                'slots'      => $s->slotsForDays(7),
+                'takenSlots' => $s->takenSlots(),
+            ],
+        ]);
+
+        return view('admin.races.create', compact('prefillDate', 'tags', 'formats', 'servers', 'serverSlots'));
     }
 
     public function store(Request $request)
@@ -206,6 +223,7 @@ class RaceController extends Controller
             'track'                => 'required|string|max:255',
             'scheduled_at'         => 'required|date',
             'event_tag'            => 'required|exists:event_tags,slug',
+            'event_format_id'      => 'nullable|exists:event_formats,id',
             'duration_key'         => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
             'practice_duration'    => 'nullable|integer|min:1|max:999',
             'qualifying_duration'  => 'nullable|integer|min:1|max:999',
@@ -213,6 +231,7 @@ class RaceController extends Controller
             'car_class'            => 'nullable|string|max:50',
             'sr_requirement'       => 'nullable|in:none,5,7',
             'min_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
+            'max_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
             'max_drivers'          => 'nullable|integer|min:1',
@@ -222,13 +241,34 @@ class RaceController extends Controller
             'icon'                 => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
             'icon_path'            => 'nullable|string|max:500',
             'is_multiclass'        => 'nullable|boolean',
+            'ftp_server_id'        => 'nullable|exists:ftp_servers,id',
+            'slot_time'            => 'nullable|date',
         ]);
 
-        $data['scheduled_at'] = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
-        $data['image']        = $this->resolveMedia($request);
-        $data['icon']         = $this->resolveIcon($request);
+        // Sync duration_key from format if format selected
+        if (!empty($data['event_format_id'])) {
+            $fmt = EventFormat::find($data['event_format_id']);
+            if ($fmt) {
+                $data['duration_key']        = null;
+                $data['practice_duration']   = $fmt->practice_mins ?: null;
+                $data['qualifying_duration'] = $fmt->quali_mins ?: null;
+                $data['race_duration']       = $fmt->race1_mins ?: null;
+            }
+        }
+
+        $data['scheduled_at']  = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
+        $data['image']         = $this->resolveMedia($request);
+        $data['icon']          = $this->resolveIcon($request);
         $data['is_multiclass'] = $request->boolean('is_multiclass');
         unset($data['image_path'], $data['icon_path']);
+
+        if (!empty($data['ftp_server_id']) && !empty($data['slot_time'])) {
+            $data['slot_time']          = \Carbon\Carbon::parse($data['slot_time'])->utc();
+            $data['config_push_status'] = 'pending';
+        } else {
+            $data['ftp_server_id'] = null;
+            $data['slot_time']     = null;
+        }
 
         $race = Race::create($data);
 

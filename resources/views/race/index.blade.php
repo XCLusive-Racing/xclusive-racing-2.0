@@ -3,7 +3,7 @@
 @section('title', 'XCL Events - ' . config('xcl.name'))
 
 @section('content')
-<main class="events-page xcl-page pb-5 px-3" x-data="eventsFilter()">
+<main class="events-page xcl-page pb-5 px-3" data-events-filter>
     <div class="about-section__topo" style="background-image:url('/topo.png')"></div>
 
     <div class="container-xl" style="position:relative;z-index:1">
@@ -14,51 +14,54 @@
             <div class="section-divider" style="margin-left:0"></div>
         </div>
 
-        {{-- ── Platform selector ───────────────────────────────────────────────── --}}
-        <div x-show="platform === null">
+        {{-- ── Platform selector (shown when no platform selected) ────────────── --}}
+        <div data-platform-selector>
             <div class="events-platform-grid mb-5">
                 @foreach([
-                    ['acc',     '#7c3aed', 'ACC Console',     'Assetto Corsa Competizione · PS5 & Xbox Series X/S', '/images/home/icons/ACC Logo.png'],
-                    ['lmu',     '#db2877', 'Le Mans Ultimate', 'Le Mans Ultimate · Premium PC Sim Racing',           '/images/home/icons/LM Logo.png'],
-                    ['iracing', '#2563eb', 'iRacing',          'iRacing · World\'s Leading Online Sim Racing',       '/images/home/icons/iR Logo.png'],
-                    ['ac',      '#16a34a', 'AC Rally',         'Assetto Corsa Rally · PC Sim Racing',                '/images/home/icons/AC R Logo.png'],
-                ] as [$game, $color, $label, $desc, $logo])
-                @php $count = $races->where('game', $game)->where('status', 'open')->count(); @endphp
+                    ['acc',     '#7c3aed', 'ACC Console',     'Assetto Corsa Competizione · PS5 & Xbox Series X/S', '/images/home/icons/ACC Logo.png',  false],
+                    ['lmu',     '#db2877', 'Le Mans Ultimate', 'Le Mans Ultimate · Premium PC Sim Racing',           '/images/home/icons/LM Logo.png',   false],
+                    ['iracing', '#2563eb', 'iRacing',          'iRacing · World\'s Leading Online Sim Racing',       '/images/home/icons/iR Logo.png',   false],
+                    ['ac',      '#16a34a', 'AC Rally',         'Assetto Corsa Rally · PC Sim Racing',                '/images/home/icons/AC R Logo.png', true],
+                ] as [$game, $color, $label, $desc, $logo, $comingSoon])
+                @php
+                    $count    = $races->where('game', $game)->where('status', 'open')->count();
+                    $hasVideo = file_exists(public_path("videos/{$game}.mp4"));
+                @endphp
 
                 <div class="events-platform-card"
-                     x-data="{ on: false }"
-                     @mouseenter="on = true;  $refs.vid.play().catch(()=>{})"
-                     @mouseleave="on = false; $refs.vid.pause()"
-                     @click="selectPlatform('{{ $game }}')"
-                     :class="on ? 'events-platform-card--active' : ''">
+                     data-platform-card="{{ $comingSoon ? '' : $game }}"
+                     style="{{ $comingSoon ? 'cursor:default;opacity:.75' : 'cursor:pointer' }}">
 
-                    <video x-ref="vid" muted loop playsinline preload="metadata" class="events-platform-card__video">
+                    @if($hasVideo)
+                    <video muted loop playsinline preload="metadata" class="events-platform-card__video">
                         <source src="/videos/{{ $game }}.mp4" type="video/mp4">
                     </video>
-
+                    @else
                     <div class="events-platform-card__gradient" style="background:linear-gradient(160deg,{{ $color }}55 0%,{{ $color }}cc 100%)"></div>
-                    <div class="events-platform-card__shadow"></div>
+                    @endif
+
                     <div class="events-platform-card__top-bar" style="background:{{ $color }}"></div>
 
-                    {{-- Game logo top-left --}}
-                    <div class="events-platform-card__logo">
-                        <img src="{{ $logo }}" alt="{{ $label }}" height="22">
+                    @if($comingSoon)
+                    <div class="events-platform-card__count" style="background:rgba(0,0,0,.55);color:#d1d5db">
+                        Coming Soon
                     </div>
-
-                    {{-- Count badge top-right --}}
+                    @else
                     <div class="events-platform-card__count">
                         {{ $count }} open {{ $count === 1 ? 'event' : 'events' }}
                     </div>
+                    @endif
 
-                    {{-- Bottom info --}}
                     <div class="events-platform-card__body">
                         <div class="events-platform-card__title">{!! $label !!}</div>
-                        <div class="events-platform-card__desc" :class="on ? 'events-platform-card__desc--visible' : ''">
+                        @if(!$comingSoon)
+                        <div class="events-platform-card__desc">
                             <p>{{ $desc }}</p>
                             <span class="events-platform-card__cta" style="background:{{ $color }}">
                                 View Events →
                             </span>
                         </div>
+                        @endif
                     </div>
                 </div>
                 @endforeach
@@ -69,10 +72,10 @@
             @endguest
         </div>
 
-        {{-- ── Platform selected: event list ───────────────────────────────────── --}}
-        <div x-show="platform !== null" x-cloak>
+        {{-- ── Platform selected: event list (hidden initially) ──────────────── --}}
+        <div data-events-list style="display:none">
 
-            <button @click="platform = null" class="events-back-btn mb-4">
+            <button data-back-btn class="events-back-btn mb-4">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5M12 5l-7 7 7 7"/>
                 </svg>
@@ -81,19 +84,17 @@
 
             {{-- Event type filter --}}
             <div class="d-flex gap-2 flex-wrap mb-4">
-                <button @click="eventFilter = 'all'"
-                        :class="eventFilter === 'all' ? 'xcl-filter-btn--active' : ''"
-                        class="xcl-filter-btn fw-bold text-uppercase">All</button>
+                <button data-event-filter="all"
+                        class="xcl-filter-btn fw-bold text-uppercase xcl-filter-btn--active">All</button>
                 @foreach($eventTags as $tag)
-                <button @click="eventFilter = '{{ $tag->slug }}'"
-                        :class="eventFilter === '{{ $tag->slug }}' ? 'xcl-filter-btn--active' : ''"
+                <button data-event-filter="{{ $tag->slug }}"
                         class="xcl-filter-btn fw-bold text-uppercase">{{ $tag->name }}</button>
                 @endforeach
             </div>
 
             @foreach(['acc', 'lmu', 'iracing', 'ac'] as $game)
             @php $gameRaces = $races->where('game', $game); @endphp
-            <div x-show="platform === '{{ $game }}'">
+            <div data-game-section="{{ $game }}" style="display:none">
 
                 @if($gameRaces->isEmpty())
                 <div class="events-empty">
@@ -123,7 +124,10 @@
                             default   => strtoupper($race->game),
                         };
                     @endphp
-                    <div class="col" x-show="matchesEventFilter('{{ $race->event_tag ?? 'daily' }}', '{{ $race->scheduled_at->toIso8601String() }}')">
+                    <div class="col"
+                         data-event-card
+                         data-tag="{{ $race->event_tag ?? 'daily' }}"
+                         data-date="{{ $race->scheduled_at->toIso8601String() }}">
                         <div class="xcl-ec2">
                             <div class="xcl-ec2__img-wrap">
                                 @if($race->image)
@@ -161,12 +165,10 @@
                 </div>
 
                 <div class="text-center mt-5">
-                    <button x-show="weeksShown === 1" @click="weeksShown = 2" class="xcl-load-btn">
-                        LOAD MORE
-                    </button>
-                    <button x-show="weeksShown === 2" @click="weeksShown = 1" class="xcl-load-btn">
-                        LOAD LESS
-                    </button>
+                    <button data-load-more data-load-at-weeks="1" data-target-weeks="2"
+                            class="xcl-load-btn">LOAD MORE</button>
+                    <button data-load-more data-load-at-weeks="2" data-target-weeks="1"
+                            class="xcl-load-btn" style="display:none">LOAD LESS</button>
                 </div>
                 @endif
             </div>

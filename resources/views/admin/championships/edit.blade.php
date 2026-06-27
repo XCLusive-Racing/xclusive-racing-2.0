@@ -11,15 +11,24 @@
 
 @section('content')
 
-<form action="{{ route('admin.championships.update', $championship) }}" method="POST" enctype="multipart/form-data"
-      x-data="championshipForm()">
+<form action="{{ route('admin.championships.update', $championship) }}" method="POST" enctype="multipart/form-data">
     @csrf
     @method('PUT')
 
     <div class="row g-4 align-items-start">
 
         {{-- Left column --}}
-        <div class="col-12 col-lg-8">
+        @php
+            $existingClasses = $championship->classes->map(fn($c) => [
+                'name'        => $c->name,
+                'color'       => $c->color,
+                'car_class'   => $c->car_class,
+                'max_drivers' => $c->max_drivers,
+            ])->values()->toArray();
+        @endphp
+        <div class="col-12 col-lg-8"
+             data-multiclass-wrap
+             data-multiclass-initial-classes='@json($existingClasses)'>
 
             {{-- Basic Info --}}
             <div class="admin-card mb-4">
@@ -114,13 +123,14 @@
                                    value="{{ old('max_missed_rounds', $championship->max_missed_rounds) }}"
                                    class="form-control" min="0" placeholder="No limit">
                         </div>
-                        <div class="col-sm-4" x-data="{ action: '{{ old('missed_rounds_action', $championship->missed_rounds_action ?? 'none') }}' }">
+                        @php $penaltyAction = old('missed_rounds_action', $championship->missed_rounds_action ?? 'none'); @endphp
+                        <div class="col-sm-4" data-select-conditional-wrap>
                             <label class="form-label">If limit exceeded</label>
-                            <select name="missed_rounds_action" class="form-select" x-model="action">
-                                <option value="none">No penalty</option>
-                                <option value="penalise">Penalty points</option>
+                            <select name="missed_rounds_action" class="form-select" data-select-conditional>
+                                <option value="none" {{ $penaltyAction === 'none' ? 'selected' : '' }}>No penalty</option>
+                                <option value="penalise" {{ $penaltyAction === 'penalise' ? 'selected' : '' }}>Penalty points</option>
                             </select>
-                            <div x-show="action === 'penalise'" class="mt-2">
+                            <div data-show-when="penalise" class="mt-2" style="{{ $penaltyAction === 'penalise' ? '' : 'display:none' }}">
                                 <input type="number" name="missed_rounds_penalty_points"
                                        value="{{ old('missed_rounds_penalty_points', $championship->missed_rounds_penalty_points) }}"
                                        class="form-control" min="1" placeholder="Points deducted per missed round">
@@ -188,7 +198,7 @@
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Race Defaults</p>
 
                     <div class="row g-3 mb-3">
-                        <div class="col-sm-4" x-show="!multiclass">
+                        <div class="col-sm-4" data-multiclass-hide-when-active>
                             <label class="form-label">Car Class</label>
                             <input type="text" name="car_class" value="{{ old('car_class', $championship->car_class) }}" class="form-control">
                         </div>
@@ -237,45 +247,24 @@
                     <div class="mb-3">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="is_multiclass"
-                                   @change="multiclass = $event.target.checked"
+                                   data-multiclass-checkbox
                                    {{ old('is_multiclass', $championship->is_multiclass) ? 'checked' : '' }}>
                             <label class="form-check-label fw-bold" for="is_multiclass">Enable Multiclass</label>
                         </div>
-                        <input type="hidden" name="is_multiclass" :value="multiclass ? '1' : '0'">
+                        <input type="hidden" name="is_multiclass" data-multiclass-flag
+                               value="{{ old('is_multiclass', $championship->is_multiclass) ? '1' : '0' }}">
                     </div>
 
-                    <div x-show="multiclass" x-transition style="{{ $championship->is_multiclass ? '' : 'display:none' }}">
-                        <template x-for="(cls, i) in classes" :key="i">
-                            <div class="p-3 rounded-2 mb-2" style="background:#f9fafb;border:1px solid #e5e7eb">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="fw-bold" style="font-size:.82rem" x-text="'Class ' + (i+1)"></span>
-                                    <button type="button" @click="classes.splice(i,1)"
-                                            class="btn btn-sm text-danger" style="font-size:.72rem;padding:2px 8px">Remove</button>
-                                </div>
-                                <div class="row g-2">
-                                    <div class="col-sm-4">
-                                        <input type="text" x-model="cls.name" class="form-control form-control-sm" placeholder="Name">
-                                    </div>
-                                    <div class="col-sm-2">
-                                        <input type="color" x-model="cls.color" class="form-control form-control-sm form-control-color" style="width:100%;padding:2px">
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <input type="text" x-model="cls.car_class" class="form-control form-control-sm" placeholder="Car class">
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <input type="number" x-model="cls.max_drivers" class="form-control form-control-sm" placeholder="Max drivers" min="1">
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
+                    <div data-multiclass-section style="{{ old('is_multiclass', $championship->is_multiclass) ? '' : 'display:none' }}">
+                        <div data-multiclass-list></div>
 
-                        <button type="button" @click="classes.push({name:'',color:'#db2777',car_class:'',max_drivers:''})"
+                        <button type="button" data-multiclass-add
                                 class="btn btn-sm fw-bold text-uppercase"
                                 style="background:rgba(219,39,119,.1);color:#db2777;border:1px solid rgba(219,39,119,.3);font-size:.72rem">
                             + Add Class
                         </button>
 
-                        <input type="hidden" name="classes_json" :value="JSON.stringify(classes)">
+                        <input type="hidden" name="classes_json" data-multiclass-json value="[]">
                     </div>
                 </div>
             </div>
@@ -311,13 +300,3 @@
 
 @endsection
 
-@push('scripts')
-<script>
-function championshipForm() {
-    return {
-        multiclass: {{ $championship->is_multiclass ? 'true' : 'false' }},
-        classes: @json($championship->classes->map(fn($c) => ['name' => $c->name, 'color' => $c->color, 'car_class' => $c->car_class, 'max_drivers' => $c->max_drivers])),
-    };
-}
-</script>
-@endpush
