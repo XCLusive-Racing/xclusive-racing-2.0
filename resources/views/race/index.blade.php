@@ -130,11 +130,13 @@
                          data-date="{{ $race->scheduled_at->toIso8601String() }}">
                         <div class="xcl-ec2">
                             <div class="xcl-ec2__img-wrap">
+                                {{-- Track image: full-bleed background --}}
                                 @if($race->image)
-                                    <img src="{{ $race->image_url }}" alt="{{ $race->title }}" loading="lazy" class="xcl-ec2__img">
+                                    <img src="{{ $race->image_url }}" alt="{{ $race->track ?? '' }}" loading="lazy" class="xcl-ec2__img">
                                 @else
                                     <div class="xcl-ec2__img-placeholder"></div>
                                 @endif
+                                {{-- Format image: centered overlay (max 60% of card width) --}}
                                 <div class="xcl-ec2__badge-wrap">
                                     @if($race->icon)
                                     <div class="xcl-ec2__icon-badge">
