@@ -185,6 +185,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/media/folders/{folder}', [AdminMediaController::class, 'destroyFolder'])->name('media.folders.destroy');
     Route::get('/media/folders/list', [AdminMediaController::class, 'listFolders'])->name('media.folders.list');
     Route::patch('/media/{media}/folder', [AdminMediaController::class, 'updateFolder'])->name('media.folder');
+    Route::patch('/media/{media}', [AdminMediaController::class, 'update'])->name('media.update');
 
     // BOPs
     Route::get('/bops', [AdminBopController::class, 'index'])->name('bops.index');

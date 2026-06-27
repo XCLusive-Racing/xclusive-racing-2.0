@@ -118,6 +118,62 @@ function initMediaGrid(wrap) {
         });
     });
 
+    wrap.querySelectorAll('[data-media-edit]').forEach(btn => {
+        const card       = btn.closest('[data-media-item]');
+        const titleEl    = card?.querySelector('[data-media-title]');
+        const renameEl   = card?.querySelector('[data-media-rename]');
+        const input      = card?.querySelector('[data-media-rename-input]');
+        const saveBtn    = card?.querySelector('[data-media-rename-save]');
+        const cancelBtn  = card?.querySelector('[data-media-rename-cancel]');
+
+        function showRename() {
+            if (input) input.value = titleEl?.textContent.trim() ?? '';
+            renameEl && (renameEl.style.display = '');
+            titleEl  && (titleEl.style.display  = 'none');
+            btn.style.display = 'none';
+            input?.focus();
+        }
+
+        function hideRename() {
+            renameEl && (renameEl.style.display = 'none');
+            titleEl  && (titleEl.style.display  = '');
+            btn.style.display = '';
+        }
+
+        btn.addEventListener('click', showRename);
+        cancelBtn?.addEventListener('click', hideRename);
+        input?.addEventListener('keydown', e => {
+            if (e.key === 'Enter')  { e.preventDefault(); doSave(); }
+            if (e.key === 'Escape') hideRename();
+        });
+
+        async function doSave() {
+            const title = input?.value.trim() ?? '';
+            if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
+            try {
+                const r = await fetch(btn.dataset.url, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': btn.dataset.csrf, 'Accept': 'application/json' },
+                    body: JSON.stringify({ title }),
+                });
+                const data = await r.json();
+                if (r.ok && data.ok) {
+                    if (titleEl) titleEl.textContent = data.title;
+                    if (input)   input.value         = data.title;
+                    hideRename();
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: 'Name updated.' } }));
+                } else {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'error', message: 'Failed to save.' } }));
+                }
+            } catch {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'error', message: 'Network error.' } }));
+            }
+            if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
+        }
+
+        saveBtn?.addEventListener('click', doSave);
+    });
+
     wrap.querySelectorAll('[data-media-move]').forEach(select => {
         select.addEventListener('change', async () => {
             const folder = select.value === '__uncat__' ? '' : select.value;
@@ -147,10 +203,20 @@ function initMediaGrid(wrap) {
     applyFilter();
 }
 
+function formatFileSize(bytes) {
+    if (bytes < 1024)        return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
 function initUploadModal(modal) {
-    const tabBtns   = modal.querySelectorAll('[data-modal-tab]');
-    const panels    = modal.querySelectorAll('[data-modal-panel]');
-    const fileInput = modal.querySelector('[data-media-file-input]');
+    const tabBtns    = modal.querySelectorAll('[data-modal-tab]');
+    const panels     = modal.querySelectorAll('[data-modal-panel]');
+    const fileInput  = modal.querySelector('[data-media-file-input]');
+    const dropzone   = modal.querySelector('[data-upload-dropzone]');
+    const fileList   = modal.querySelector('[data-upload-filelist]');
+    const uploadForm = modal.querySelector('[data-modal-panel="upload"]');
+    const submitBtn  = uploadForm?.querySelector('[data-upload-submit]');
 
     function switchTab(source) {
         tabBtns.forEach(btn => {
@@ -163,9 +229,7 @@ function initUploadModal(modal) {
         });
     }
 
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.modalTab));
-    });
+    tabBtns.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.modalTab)));
 
     modal.querySelectorAll('[data-media-type-radio]').forEach(radio => {
         radio.addEventListener('change', () => {
@@ -175,6 +239,104 @@ function initUploadModal(modal) {
                 : 'image/*';
         });
     });
+
+    // ── Drag-drop zone ───────────────────────────────────────────────────────
+    let selectedFiles = [];
+
+    function renderFileList() {
+        if (!fileList) return;
+        if (!selectedFiles.length) { fileList.innerHTML = ''; return; }
+        fileList.innerHTML = selectedFiles.map((f, i) => `
+            <li data-file-idx="${i}"
+                style="display:flex;align-items:center;gap:.5rem;padding:.3rem .5rem;border-radius:5px;background:#f9fafb;margin-bottom:.25rem;font-size:.75rem">
+                <span data-file-status style="flex-shrink:0;font-size:.85rem">&#128206;</span>
+                <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</span>
+                <span style="flex-shrink:0;color:#9ca3af;font-size:.68rem">${formatFileSize(f.size)}</span>
+            </li>`).join('');
+        if (submitBtn) submitBtn.textContent = selectedFiles.length > 1 ? `Upload (${selectedFiles.length} files)` : 'Upload';
+    }
+
+    function handleFiles(files) {
+        selectedFiles = [...files];
+        renderFileList();
+    }
+
+    if (dropzone && fileInput) {
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        dropzone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropzone.style.borderColor = '#7c3aed';
+            dropzone.style.background  = '#f5f3ff';
+        });
+        ['dragleave', 'dragend'].forEach(ev => dropzone.addEventListener(ev, () => {
+            dropzone.style.borderColor = '#d1d5db';
+            dropzone.style.background  = '';
+        }));
+        dropzone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropzone.style.borderColor = '#d1d5db';
+            dropzone.style.background  = '';
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+    }
+
+    // ── Multi-file AJAX upload ───────────────────────────────────────────────
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', async e => {
+            if (!selectedFiles.length) return; // no files picked — let browser validate
+            e.preventDefault();
+
+            const action   = uploadForm.action;
+            const csrf     = uploadForm.querySelector('[name="_token"]')?.value ?? csrfToken();
+            const type     = uploadForm.querySelector('[name="type"]:checked')?.value ?? 'image';
+            const category = uploadForm.querySelector('[name="category"]')?.value ?? '';
+            const title    = uploadForm.querySelector('[name="title"]')?.value ?? '';
+
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Uploading…'; }
+
+            let errors = 0;
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const li       = fileList?.querySelector(`[data-file-idx="${i}"]`);
+                const statusEl = li?.querySelector('[data-file-status]');
+                if (statusEl) statusEl.textContent = '⏳';
+
+                const fd = new FormData();
+                fd.append('_token', csrf);
+                fd.append('source', 'upload');
+                fd.append('file', selectedFiles[i]);
+                fd.append('type', type);
+                if (category) fd.append('category', category);
+                if (title)    fd.append('title', title);
+
+                try {
+                    const r = await fetch(action, {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        body: fd,
+                    });
+                    if (r.ok) {
+                        if (statusEl) statusEl.textContent = '✅';
+                    } else {
+                        const data = await r.json().catch(() => ({}));
+                        if (statusEl) { statusEl.textContent = '❌'; li.title = data.message ?? 'Upload failed'; }
+                        errors++;
+                    }
+                } catch {
+                    if (statusEl) statusEl.textContent = '❌';
+                    errors++;
+                }
+            }
+
+            if (submitBtn) {
+                submitBtn.disabled    = false;
+                submitBtn.textContent = errors ? `Done (${errors} error${errors > 1 ? 's' : ''}) — reloading…` : 'Done! Reloading…';
+            }
+            setTimeout(() => location.reload(), 900);
+        });
+    }
 
     switchTab(modal.dataset.activeTab || 'upload');
 }

@@ -170,6 +170,14 @@ class MediaController extends Controller
             ->with('success', "Storage migrated: {$moved} file(s) moved to public/uploads.");
     }
 
+    public function update(Request $request, Media $media)
+    {
+        $request->validate(['title' => 'nullable|string|max:255']);
+        $media->update(['title' => $request->input('title') ?: null]);
+        $display = $media->fresh()->title ?: $media->original_name;
+        return response()->json(['ok' => true, 'title' => $display]);
+    }
+
     public function destroy(Media $media)
     {
         if ($media->path) {

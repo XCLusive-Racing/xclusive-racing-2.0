@@ -201,16 +201,36 @@
                 @endif
             </div>
             <div class="p-3">
-                <div class="fw-bold text-dark text-truncate mb-1" style="font-size:.82rem" title="{{ $item->original_name }}">
+                <div class="fw-bold text-dark text-truncate mb-1" style="font-size:.82rem"
+                     data-media-title title="{{ $item->original_name }}">
                     {{ $item->title ?: $item->original_name }}
+                </div>
+                <div data-media-rename style="display:none;margin-bottom:.5rem">
+                    <input type="text" data-media-rename-input class="form-control form-control-sm"
+                           style="font-size:.75rem" value="{{ e($item->title ?: $item->original_name) }}">
+                    <div class="d-flex gap-1 mt-1">
+                        <button type="button" data-media-rename-save class="btn btn-sm fw-black text-uppercase text-white"
+                                style="font-size:.65rem;padding:2px 10px;background:#7c3aed">Save</button>
+                        <button type="button" data-media-rename-cancel class="btn btn-sm btn-outline-secondary fw-bold text-uppercase"
+                                style="font-size:.65rem;padding:2px 8px">Cancel</button>
+                    </div>
                 </div>
                 <div class="d-flex align-items-center justify-content-between">
                     <span class="text-secondary" style="font-size:.70rem">{{ $item->formatted_size }}&nbsp;&middot;&nbsp;{{ $item->created_at->format('d M Y') }}</span>
-                    <button type="button" class="btn btn-sm fw-bold text-uppercase"
-                            style="font-size:.68rem;padding:3px 8px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca"
-                            data-media-delete data-url="{{ route('admin.media.destroy', $item) }}">
-                        Delete
-                    </button>
+                    <div class="d-flex gap-1">
+                        <button type="button" class="btn btn-sm fw-bold text-uppercase"
+                                style="font-size:.68rem;padding:3px 8px;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe"
+                                data-media-edit
+                                data-url="{{ route('admin.media.update', $item) }}"
+                                data-csrf="{{ csrf_token() }}">
+                            Edit
+                        </button>
+                        <button type="button" class="btn btn-sm fw-bold text-uppercase"
+                                style="font-size:.68rem;padding:3px 8px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca"
+                                data-media-delete data-url="{{ route('admin.media.destroy', $item) }}">
+                            Delete
+                        </button>
+                    </div>
                 </div>
                 @if($showMove)
                 <select data-media-move
@@ -296,12 +316,19 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">File <span class="text-danger">*</span></label>
-                        <input type="file" name="file" data-media-file-input
-                               accept="{{ old('type','image') === 'video' ? 'video/mp4,video/webm,video/quicktime,video/x-matroska' : 'image/*' }}"
-                               class="form-control @error('file') is-invalid @enderror" required>
-                        <div class="form-text">Images & Icons: JPG, PNG, GIF, WebP, SVG · Video: MP4, WebM, MOV, MKV · Max 200 MB</div>
-                        @error('file')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <label class="form-label">File(s) <span class="text-danger">*</span></label>
+                        <div data-upload-dropzone
+                             style="border:2px dashed #d1d5db;border-radius:8px;padding:1.5rem 1rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;user-select:none">
+                            <div style="font-size:1.6rem;margin-bottom:.35rem">&#128194;</div>
+                            <div style="font-weight:700;font-size:.82rem;color:#374151">Drag &amp; drop files here</div>
+                            <div style="font-size:.72rem;color:#9ca3af;margin-top:.2rem">or click to browse &mdash; multiple files supported</div>
+                            <input type="file" name="file" multiple data-media-file-input
+                                   accept="{{ old('type','image') === 'video' ? 'video/mp4,video/webm,video/quicktime,video/x-matroska' : 'image/*' }}"
+                                   style="display:none">
+                        </div>
+                        <ul data-upload-filelist style="margin:.5rem 0 0;padding:0;list-style:none"></ul>
+                        <div class="form-text">Images &amp; Icons: JPG, PNG, GIF, WebP, SVG &middot; Video: MP4, WebM, MOV, MKV &middot; Max 200 MB per file</div>
+                        @error('file')<div class="text-danger mt-1" style="font-size:.82rem">{{ $message }}</div>@enderror
                     </div>
 
                     <div class="mb-4">
@@ -313,7 +340,7 @@
                     </div>
 
                     <div class="d-flex gap-2">
-                        <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">Upload</button>
+                        <button type="submit" data-upload-submit class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">Upload</button>
                         <button type="button" class="btn btn-outline-secondary fw-bold text-uppercase px-4"
                                 onclick="document.getElementById('upload-modal').style.display='none'">Cancel</button>
                     </div>
