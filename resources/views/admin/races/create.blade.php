@@ -46,6 +46,13 @@ $tagsConfig = json_encode([
     'csrfToken'   => csrf_token(),
     'selectedTag' => old('event_tag', ''),
 ]);
+
+// Attach derived slug to each format so JS can detect endurance
+$formatsWithSlug = $formats->groupBy('game')->map(
+    fn($g) => $g->map(fn($f) => array_merge($f->toArray(), [
+        'slug' => \Illuminate\Support\Str::slug($f->name, '_'),
+    ]))->values()
+);
 @endphp
 
 {{-- Tab bar --}}
@@ -71,21 +78,13 @@ $tagsConfig = json_encode([
 
     <div class="row g-4 align-items-start">
 
-        {{-- Left --}}
-        <div class="col-12 col-lg-8">
+        {{-- Left (full width — media is auto-assigned) --}}
+        <div class="col-12">
 
             {{-- Section 1: Event --}}
             <div class="admin-card mb-4">
                 <div class="px-4 pt-4 pb-3">
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Event</p>
-
-                    <div class="mb-3">
-                        <label class="form-label">Title <span class="text-danger">*</span></label>
-                        <input type="text" name="title" value="{{ old('title') }}"
-                               class="form-control @error('title') is-invalid @enderror"
-                               placeholder="e.g. Round 1 — Monza Sprint">
-                        @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
 
                     <div class="row g-3">
                         <div class="col-sm-5">
@@ -120,6 +119,20 @@ $tagsConfig = json_encode([
                             <span>Pitstop: <strong id="ce-fi-pitstop"></strong></span>
                             <span>Server: <strong id="ce-fi-server"></strong></span>
                         </div>
+                    </div>
+
+                    {{-- Endurance duration — only shown when Endurance format is selected --}}
+                    <div id="ce-endurance-wrap" class="mt-3" style="display:none">
+                        <label class="form-label">Duration <span class="text-danger">*</span></label>
+                        <select name="endurance_duration" id="ce-endurance-duration" class="form-select" style="max-width:200px">
+                            <option value="">Select duration…</option>
+                            <option value="4h"  {{ old('endurance_duration') === '4h'  ? 'selected' : '' }}>4 Hours</option>
+                            <option value="6h"  {{ old('endurance_duration') === '6h'  ? 'selected' : '' }}>6 Hours</option>
+                            <option value="8h"  {{ old('endurance_duration') === '8h'  ? 'selected' : '' }}>8 Hours</option>
+                            <option value="10h" {{ old('endurance_duration') === '10h' ? 'selected' : '' }}>10 Hours</option>
+                            <option value="12h" {{ old('endurance_duration') === '12h' ? 'selected' : '' }}>12 Hours</option>
+                            <option value="24h" {{ old('endurance_duration') === '24h' ? 'selected' : '' }}>24 Hours</option>
+                        </select>
                     </div>
                 </div>
 
@@ -370,19 +383,6 @@ $tagsConfig = json_encode([
             <div class="d-flex gap-2">
                 <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">Create Event</button>
                 <a href="{{ route('admin.races.index') }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4">Cancel</a>
-            </div>
-        </div>
-
-        {{-- Right: media --}}
-        <div class="col-12 col-lg-4">
-            <div class="admin-card mb-4">
-                <div class="px-4 pt-4 pb-3">
-                    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Media</p>
-                    <x-media-picker name="image" label="Background Image" />
-                    <div class="mt-3">
-                        <x-media-picker name="icon" label="Event Icon" currentType="icon" filterDefault="icon" />
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -685,7 +685,7 @@ $tagsConfig = json_encode([
 
 // ── Format Event JS ────────────────────────────────────────────────────────
 (function () {
-    const formats  = @json($formats->groupBy('game'));
+    const formats  = @json($formatsWithSlug);
     const tracks   = @json($accTracks);
     const oldGame  = '{{ old('game') }}';
     const oldFmt   = '{{ old('event_format_id') }}';
@@ -730,20 +730,31 @@ $tagsConfig = json_encode([
         fmtInfo.style.display = '';
     }
 
+    const enduranceWrap = document.getElementById('ce-endurance-wrap');
+
+    function setEnduranceVisible(slug) {
+        if (enduranceWrap) enduranceWrap.style.display = slug === 'endurance' ? '' : 'none';
+    }
+
     function updateFormats(game) {
         fmtEl.innerHTML = '<option value="">— Select format —</option>';
         showFormatInfo(null);
+        setEnduranceVisible('');
         if (!game || !formats[game]) return;
         formats[game].sort((a, b) => a.sort_order - b.sort_order).forEach(f => {
             const opt = document.createElement('option');
             opt.value = f.id;
             opt.textContent = f.name;
+            opt.dataset.slug = f.slug;
             if (String(f.id) === oldFmt) opt.selected = true;
             fmtEl.appendChild(opt);
         });
         if (oldFmt) {
             const selected = (formats[game] || []).find(f => String(f.id) === oldFmt);
-            if (selected) showFormatInfo(selected);
+            if (selected) {
+                showFormatInfo(selected);
+                setEnduranceVisible(selected.slug);
+            }
         }
     }
 
@@ -787,6 +798,7 @@ $tagsConfig = json_encode([
     fmtEl.addEventListener('change', () => {
         const fmt = (formats[gameEl.value] || []).find(f => String(f.id) === fmtEl.value);
         showFormatInfo(fmt || null);
+        setEnduranceVisible(fmt?.slug ?? '');
     });
     trackSelect.addEventListener('change', () => updateTrackHint(trackSelect.value));
 

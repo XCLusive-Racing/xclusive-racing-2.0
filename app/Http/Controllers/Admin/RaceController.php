@@ -7,6 +7,7 @@ use App\Models\EventFormat;
 use App\Models\EventTag;
 use App\Models\FtpImportedFile;
 use App\Models\FtpServer;
+use App\Models\Media;
 use App\Models\Race;
 use App\Models\RaceClass;
 use App\Services\AccServerConfigService;
@@ -215,15 +216,49 @@ class RaceController extends Controller
         return view('admin.races.create', compact('prefillDate', 'tags', 'formats', 'servers', 'serverSlots'));
     }
 
+    // Track name → background image filename in media library
+    private const TRACK_IMAGE_MAP = [
+        'Barcelona'      => 'Barcelona.png',
+        'Brands Hatch'   => 'Brands.png',
+        'COTA'           => 'COTA.png',
+        'Donington'      => 'Donington.png',
+        'Hungaroring'    => 'Hungaroring.png',
+        'Imola'          => 'Imola.png',
+        'Indianapolis'   => 'Indy.png',
+        'Kyalami'        => 'Kyalami.png',
+        'Laguna Seca'    => 'Laguna Seca.png',
+        'Misano'         => 'Misano.png',
+        'Monza'          => 'Monza.png',
+        'Mount Panorama' => 'Bathurst.png',
+        'Nürburgring'    => 'Nurburgring.png',
+        'Nordschleife'   => 'Nords.png',
+        'Oulton Park'    => 'Oulton.png',
+        'Paul Ricard'    => 'Paul Ricard.png',
+        'Red Bull Ring'  => 'RBR.png',
+        'Silverstone'    => 'Silverstone.png',
+        'Snetterton'     => 'Snetterton.png',
+        'Spa'            => 'Spa.png',
+        'Suzuka'         => 'Suzuka.png',
+        'Valencia'       => 'Valencia.png',
+        'Watkins Glen'   => 'Watkins.png',
+        'Zandvoort'      => 'Zandvoort.png',
+        'Zolder'         => 'Zolder.png',
+    ];
+
+    // Format slug override map (for slugs that differ from Str::slug(name))
+    private const FORMAT_IMAGE_OVERRIDES = [
+        'multiclass' => 'multiclass_race',
+    ];
+
     public function store(Request $request)
     {
         $data = $request->validate([
-            'title'                => 'required|string|max:255',
             'game'                 => 'required|in:acc,lmu,iracing,ac',
             'track'                => 'required|string|max:255',
             'scheduled_at'         => 'required|date',
             'event_tag'            => 'required|exists:event_tags,slug',
-            'event_format_id'      => 'nullable|exists:event_formats,id',
+            'event_format_id'      => 'required|exists:event_formats,id',
+            'endurance_duration'   => 'nullable|in:4h,6h,8h,10h,12h,24h',
             'duration_key'         => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
             'practice_duration'    => 'nullable|integer|min:1|max:999',
             'qualifying_duration'  => 'nullable|integer|min:1|max:999',
@@ -236,31 +271,42 @@ class RaceController extends Controller
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
             'max_drivers'          => 'nullable|integer|min:1',
             'description'          => 'nullable|string',
-            'image'                => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',
-            'image_path'           => 'nullable|string|max:500',
-            'icon'                 => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
-            'icon_path'            => 'nullable|string|max:500',
             'is_multiclass'        => 'nullable|boolean',
             'ftp_server_id'        => 'nullable|exists:ftp_servers,id',
             'slot_time'            => 'nullable|date',
         ]);
 
-        // Sync duration_key from format if format selected
-        if (!empty($data['event_format_id'])) {
-            $fmt = EventFormat::find($data['event_format_id']);
-            if ($fmt) {
-                $data['duration_key']        = null;
-                $data['practice_duration']   = $fmt->practice_mins ?: null;
-                $data['qualifying_duration'] = $fmt->quali_mins ?: null;
-                $data['race_duration']       = $fmt->race1_mins ?: null;
+        // Derive title and media from format + track
+        $fmt = EventFormat::find($data['event_format_id']);
+        if ($fmt) {
+            $data['title']           = $fmt->name;
+            $data['duration_key']    = null;
+            $data['practice_duration']   = $fmt->practice_mins ?: null;
+            $data['qualifying_duration'] = $fmt->quali_mins ?: null;
+            $data['race_duration']       = $fmt->race1_mins ?: null;
+
+            $formatSlug = Str::slug($fmt->name, '_');
+            if ($formatSlug === 'endurance' && !empty($data['endurance_duration'])) {
+                $formatImageKey = $data['endurance_duration'] . '_endurance';
+            } else {
+                $formatImageKey = self::FORMAT_IMAGE_OVERRIDES[$formatSlug] ?? $formatSlug;
             }
+
+            // Format image → icon field (centered overlay on card)
+            $data['icon'] = Media::where('title', $formatImageKey)
+                ->orWhere('original_name', 'like', $formatImageKey . '%')
+                ->value('path');
         }
 
+        // Track image → image field (full-bleed card background)
+        $trackFilename    = self::TRACK_IMAGE_MAP[$data['track']] ?? null;
+        $data['image']    = $trackFilename
+            ? Media::where('original_name', $trackFilename)->value('path')
+            : null;
+
         $data['scheduled_at']  = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
-        $data['image']         = $this->resolveMedia($request);
-        $data['icon']          = $this->resolveIcon($request);
         $data['is_multiclass'] = $request->boolean('is_multiclass');
-        unset($data['image_path'], $data['icon_path']);
+        unset($data['endurance_duration']);
 
         if (!empty($data['ftp_server_id']) && !empty($data['slot_time'])) {
             $data['slot_time']          = \Carbon\Carbon::parse($data['slot_time'])->utc();
