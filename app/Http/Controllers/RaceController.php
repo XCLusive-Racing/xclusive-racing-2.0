@@ -23,7 +23,7 @@ class RaceController extends Controller
 
     public function show(Race $race)
     {
-        $race->load(['registrations.user', 'raceResults.user']);
+        $race->load(['registrations.user', 'raceResults.user', 'eventFormat']);
         $isRegistered = auth()->check() && $race->isRegistered(auth()->user());
 
         return view('race.show', compact('race', 'isRegistered'));

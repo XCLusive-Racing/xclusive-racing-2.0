@@ -78,8 +78,8 @@ $formatsWithSlug = $formats->groupBy('game')->map(
 
     <div class="row g-4 align-items-start">
 
-        {{-- Left (full width — media is auto-assigned) --}}
-        <div class="col-12">
+        {{-- Left column --}}
+        <div class="col-12 col-xl-8">
 
             {{-- Section 1: Event --}}
             <div class="admin-card mb-4">
@@ -216,10 +216,15 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                                 <label class="form-check-label fw-bold" for="ce-sr-toggle">Safety Rating (SR)</label>
                             </div>
                             <div id="ce-sr-panel" style="{{ old('sr_requirement') ? '' : 'display:none' }}">
-                                <select name="sr_requirement" class="form-select form-select-sm" style="max-width:280px">
+                                <select name="sr_requirement" id="ce-sr-select" class="form-select form-select-sm" style="max-width:300px">
                                     <option value="">— No requirement —</option>
-                                    <option value="5" {{ old('sr_requirement') === '5' ? 'selected' : '' }}>SR ≥ 5.0 (grade B+)</option>
-                                    <option value="7" {{ old('sr_requirement') === '7' ? 'selected' : '' }}>SR ≥ 7.0 (grade X+)</option>
+                                    <option value="3" {{ old('sr_requirement') === '3' ? 'selected' : '' }}>SR 3.0+  ·  Grade B</option>
+                                    <option value="4" {{ old('sr_requirement') === '4' ? 'selected' : '' }}>SR 4.0+  ·  Grade B</option>
+                                    <option value="5" {{ old('sr_requirement') === '5' ? 'selected' : '' }}>SR 5.0+  ·  Grade A</option>
+                                    <option value="6" {{ old('sr_requirement') === '6' ? 'selected' : '' }}>SR 6.0+  ·  Grade A</option>
+                                    <option value="7" {{ old('sr_requirement') === '7' ? 'selected' : '' }}>SR 7.0+  ·  Grade X</option>
+                                    <option value="8" {{ old('sr_requirement') === '8' ? 'selected' : '' }}>SR 8.0+  ·  Grade Y</option>
+                                    <option value="9" {{ old('sr_requirement') === '9' ? 'selected' : '' }}>SR 9.0+  ·  Grade Z</option>
                                 </select>
                             </div>
                         </div>
@@ -230,7 +235,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                                 <label class="form-check-label fw-bold" for="ce-minrating-toggle">XCL Rating (Min)</label>
                             </div>
                             <div id="ce-minrating-panel" style="{{ old('min_rating') ? '' : 'display:none' }}">
-                                <select name="min_rating" class="form-select form-select-sm" style="max-width:280px">
+                                <select name="min_rating" id="ce-minrating-select" class="form-select form-select-sm" style="max-width:280px">
                                     <option value="">— No minimum —</option>
                                     @foreach(['rookie','bronze','silver','gold','platinum','alien'] as $r)
                                         <option value="{{ $r }}" {{ old('min_rating') === $r ? 'selected' : '' }}>{{ ucfirst($r) }}+</option>
@@ -295,8 +300,8 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                         </div>
                         <div class="col-sm-6">
                             <label class="form-label">Car Class <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
-                            <select name="car_class" class="form-select">
-                                <option value="">— Not set —</option>
+                            <select name="car_class" id="ce-car-class" class="form-select">
+                                <option value="" {{ !old('car_class') ? 'selected' : '' }}>Open</option>
                                 @foreach(['GT2', 'GT3', 'GT4', 'M2'] as $cls)
                                     <option value="{{ $cls }}" {{ old('car_class') === $cls ? 'selected' : '' }}>{{ $cls }}</option>
                                 @endforeach
@@ -383,6 +388,106 @@ $formatsWithSlug = $formats->groupBy('game')->map(
             <div class="d-flex gap-2">
                 <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">Create Event</button>
                 <a href="{{ route('admin.races.index') }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4">Cancel</a>
+            </div>
+        </div>
+
+        {{-- ── Live Event Preview ──────────────────────────────────────────── --}}
+        <div class="col-12 col-xl-4">
+            <div style="position:sticky;top:80px">
+
+                <p style="font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af;margin-bottom:.75rem">Preview</p>
+
+                <div id="ce-preview" style="border-radius:14px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18);border:1px solid rgba(124,58,237,.2)">
+
+                    {{-- Image area --}}
+                    <div style="position:relative;height:185px;overflow:hidden;background:#111827">
+                        <img id="prev-track-img" src="" alt="" loading="lazy"
+                             style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none">
+                        <div id="prev-track-placeholder"
+                             style="position:absolute;inset:0;background:linear-gradient(135deg,#1e1e3a 0%,#2d1b69 100%)"></div>
+
+                        {{-- Format image / text badge --}}
+                        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+                            <img id="prev-format-img" src="" alt=""
+                                 style="max-width:60%;max-height:80%;object-fit:contain;display:none;filter:drop-shadow(0 3px 18px rgba(0,0,0,.85))">
+                            <div id="prev-format-text-badge"
+                                 style="display:none;padding:8px 18px;background:rgba(0,0,0,.6);border-radius:8px;text-align:center">
+                                <div id="prev-format-name"
+                                     style="font-weight:900;font-style:italic;text-transform:uppercase;color:#fff;font-size:1rem;letter-spacing:.05em"></div>
+                            </div>
+                        </div>
+
+                        {{-- Platform badges top-right --}}
+                        <div id="prev-platforms" style="position:absolute;top:8px;right:8px;display:flex;gap:4px"></div>
+                    </div>
+
+                    {{-- Card body --}}
+                    <div style="background:#111827;border-top:1px solid rgba(255,255,255,.07);padding:12px 14px 14px">
+
+                        {{-- Format info block --}}
+                        <div id="prev-fmt-block" style="display:none;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.07)">
+                            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+                                <span id="prev-fmt-name-label"
+                                      style="font-size:.75rem;font-weight:900;font-style:italic;text-transform:uppercase;color:#7c3aed;letter-spacing:.04em"></span>
+                                <span id="prev-fmt-xclr"
+                                      style="font-size:.67rem;font-weight:700;color:#7c3aed;letter-spacing:.02em"></span>
+                            </div>
+                            <div id="prev-fmt-pills" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px"></div>
+                            <div id="prev-fmt-meta" style="font-size:.67rem;color:#6b7280;line-height:1.5"></div>
+                        </div>
+
+                        <div id="prev-time"
+                             style="font-size:.72rem;font-weight:900;color:#d4ee6a;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">— / — —</div>
+
+                        <div id="prev-meta"
+                             style="font-size:.72rem;color:#9ca3af;margin-bottom:10px">—</div>
+
+                        {{-- Badges --}}
+                        <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+                            <span id="prev-game-badge"
+                                  style="display:none;font-size:.65rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:4px;color:#fff"></span>
+                            {{-- SR tier badge --}}
+                            <span id="prev-sr-badge" style="display:none;align-items:center;gap:4px">
+                                <span id="prev-sr-circle"
+                                      style="width:20px;height:20px;border-radius:50%;background:#1a1a2e;border:2px solid #dc2626;display:inline-flex;align-items:center;justify-content:center;color:#dc2626;font-size:.58rem;font-weight:900;flex-shrink:0">B</span>
+                                <span id="prev-sr-text"
+                                      style="font-size:.65rem;font-weight:900;color:#e5e7eb;white-space:nowrap">SR 5.0+</span>
+                            </span>
+                            {{-- XCL Rating tier badge --}}
+                            <span id="prev-xcl-badge"
+                                  style="display:none;font-size:.63rem;font-weight:900;text-transform:capitalize;padding:2px 8px;border-radius:4px;border:1px solid rgba(205,127,50,.4);background:rgba(205,127,50,.15);color:#cd7f32"></span>
+                            <span id="prev-open-badge"
+                                  style="display:none;font-size:.65rem;font-weight:900;text-transform:uppercase;padding:2px 8px;border-radius:4px;background:rgba(212,238,106,.12);color:#d4ee6a;border:1px solid rgba(212,238,106,.25)">OPEN</span>
+                        </div>
+
+                        {{-- Details --}}
+                        <div style="display:flex;flex-direction:column;gap:5px;font-size:.75rem">
+                            <div style="display:flex;gap:10px">
+                                <span style="color:#6b7280;width:58px;flex-shrink:0">CLASS</span>
+                                <span id="prev-class" style="color:#e5e7eb;font-weight:600">Open</span>
+                            </div>
+                            <div style="display:flex;gap:10px">
+                                <span style="color:#6b7280;width:58px;flex-shrink:0">TRACK</span>
+                                <span id="prev-track-name" style="color:#e5e7eb;font-weight:600">—</span>
+                            </div>
+                            <div style="display:flex;gap:10px">
+                                <span style="color:#6b7280;width:58px;flex-shrink:0">WEATHER</span>
+                                <span id="prev-weather" style="color:#e5e7eb;font-weight:600">—</span>
+                            </div>
+                        </div>
+
+                        {{-- Duration + Date row --}}
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,255,255,.07)">
+                            <span id="prev-duration"
+                                  style="display:none;font-size:.68rem;font-weight:900;text-transform:uppercase;color:#111827;background:#d4ee6a;border-radius:999px;padding:2px 10px"></span>
+                            <span id="prev-date" style="font-size:.7rem;color:#9ca3af;margin-left:auto">—</span>
+                        </div>
+
+                    </div>
+                </div>
+
+                <p style="font-size:.68rem;color:#9ca3af;margin-top:.6rem;text-align:center;letter-spacing:.02em">Updates as you fill in the form</p>
+
             </div>
         </div>
 
@@ -712,8 +817,8 @@ $formatsWithSlug = $formats->groupBy('game')->map(
         document.getElementById('ce-fi-server').textContent    = fmt.server_preference || '—';
 
         let pitstop = 'None';
-        if (fmt.pitstop_type === 'fuel_only' && fmt.pitstop_count > 0) {
-            pitstop = 'Fuel Only (' + fmt.pitstop_count + 'x';
+        if (fmt.pitstop_count > 0) {
+            pitstop = 'Required (' + fmt.pitstop_count + 'x';
             if (fmt.min_stop_secs) pitstop += ', min ' + fmt.min_stop_secs + 's';
             pitstop += ')';
         }
@@ -938,6 +1043,277 @@ $formatsWithSlug = $formats->groupBy('game')->map(
 
     serverEl.addEventListener('change', onServerChange);
     onServerChange();
+})();
+
+// ── Live Event Preview ──────────────────────────────────────────────────────
+(function () {
+    const formats              = @json($formatsWithSlug);
+    const trackPreviewUrls     = @json($trackPreviewUrls ?? []);
+    const formatPreviewUrls    = @json($formatPreviewUrls ?? []);
+    const endurancePreviewUrls = @json($endurancePreviewUrls ?? []);
+
+    const $ = id => document.getElementById(id);
+    const prev = {
+        trackImg:      $('prev-track-img'),
+        trackPh:       $('prev-track-placeholder'),
+        formatImg:     $('prev-format-img'),
+        formatTextBdg: $('prev-format-text-badge'),
+        formatName:    $('prev-format-name'),
+        platforms:     $('prev-platforms'),
+        time:          $('prev-time'),
+        meta:          $('prev-meta'),
+        gameBadge:     $('prev-game-badge'),
+        srBadge:       $('prev-sr-badge'),
+        srCircle:      $('prev-sr-circle'),
+        srText:        $('prev-sr-text'),
+        xclBadge:      $('prev-xcl-badge'),
+        openBadge:     $('prev-open-badge'),
+        classEl:       $('prev-class'),
+        trackName:     $('prev-track-name'),
+        weatherEl:     $('prev-weather'),
+        duration:      $('prev-duration'),
+        date:          $('prev-date'),
+    };
+
+    const gameColors  = { acc: '#7c3aed', lmu: '#db2877', iracing: '#2563eb', ac: '#16a34a' };
+    const gameLabels  = { acc: 'ACC', lmu: 'LMU', iracing: 'iRACING', ac: 'AC RALLY' };
+    const wxIcons     = { dry: '☀', wet: '🌧', mixed: '⛅', random: '🎲' };
+    const wxLabels    = { dry: 'Dry', wet: 'Wet', mixed: 'Mixed', random: 'Random' };
+    const platBadges  = {
+        acc:     [{ icon: 'fa-brands fa-playstation', label: 'PS5' }, { icon: 'fa-brands fa-xbox', label: 'Xbox' }],
+        lmu:     [{ icon: 'fa-brands fa-windows', label: 'PC' }],
+        iracing: [{ icon: 'fa-brands fa-windows', label: 'PC' }],
+        ac:      [{ icon: 'fa-brands fa-windows', label: 'PC' }],
+    };
+    const srTierMap = {
+        '3': ['B', '#dc2626'], '4': ['B', '#dc2626'],
+        '5': ['A', '#16a34a'], '6': ['A', '#16a34a'],
+        '7': ['X', '#2563eb'],
+        '8': ['Y', '#eab308'],
+        '9': ['Z', '#7c3aed'],
+    };
+    const xclColors = {
+        rookie: '#ef4444', bronze: '#cd7f32', silver: '#9ca3af',
+        gold: '#f59e0b', platinum: '#7c3aed', alien: '#10b981',
+    };
+
+    function updatePreview() {
+        const gameEl      = $('ce-game');
+        const fmtEl       = $('ce-format');
+        const trackSelEl  = $('ce-track-select');
+        const trackTxtEl  = $('ce-track-text');
+        const carClassEl  = $('ce-car-class');
+        const endurEl     = $('ce-endurance-duration');
+        const srToggle    = $('ce-sr-toggle');
+        const srSelect    = $('ce-sr-select');
+        const minToggle   = $('ce-minrating-toggle');
+        const minSelect   = $('ce-minrating-select');
+        const maxToggle   = $('ce-maxrating-toggle');
+        const weatherSel  = document.querySelector('[name="weather"]');
+        const schedEl     = document.querySelector('[name="scheduled_at"]');
+
+        const game      = gameEl  ? gameEl.value  : '';
+        const fmtId     = fmtEl   ? fmtEl.value   : '';
+        const fmtOpt    = (fmtEl && fmtId) ? fmtEl.options[fmtEl.selectedIndex] : null;
+        const fmtSlug   = fmtOpt  ? (fmtOpt.dataset.slug || '') : '';
+        const fmtName   = fmtOpt  ? fmtOpt.textContent.trim() : '';
+        const fmtData   = (formats[game] || []).find(f => String(f.id) === fmtId);
+        const track     = (game === 'acc' && trackSelEl && trackSelEl.style.display !== 'none')
+                            ? (trackSelEl.value || '')
+                            : (trackTxtEl ? trackTxtEl.value : '');
+        const weather   = weatherSel  ? weatherSel.value  : '';
+        const carClass  = carClassEl  ? carClassEl.value  : '';
+        const schedVal  = schedEl     ? schedEl.value     : '';
+        const endurDur  = endurEl     ? endurEl.value     : '';
+        const srOn      = srToggle    ? srToggle.checked  : false;
+        const srVal     = (srOn && srSelect) ? srSelect.value : '';
+        const minOn     = minToggle   ? minToggle.checked : false;
+        const minVal    = (minOn && minSelect) ? minSelect.value : '';
+        const maxOn     = maxToggle   ? maxToggle.checked : false;
+
+        // Track background
+        const trackUrl = trackPreviewUrls[track] || '';
+        if (trackUrl && prev.trackImg) {
+            prev.trackImg.src           = trackUrl;
+            prev.trackImg.style.display = '';
+            if (prev.trackPh) prev.trackPh.style.display = 'none';
+        } else {
+            if (prev.trackImg) prev.trackImg.style.display = 'none';
+            if (prev.trackPh) prev.trackPh.style.display  = '';
+        }
+
+        // Format overlay image / text fallback
+        let fmtUrl = '';
+        if (fmtSlug === 'endurance' && endurDur) {
+            fmtUrl = endurancePreviewUrls[endurDur] || formatPreviewUrls[fmtId] || '';
+        } else if (fmtId) {
+            fmtUrl = formatPreviewUrls[fmtId] || '';
+        }
+        if (fmtUrl && prev.formatImg) {
+            prev.formatImg.src           = fmtUrl;
+            prev.formatImg.style.display = '';
+            if (prev.formatTextBdg) prev.formatTextBdg.style.display = 'none';
+        } else if (fmtName && prev.formatTextBdg) {
+            if (prev.formatImg) prev.formatImg.style.display = 'none';
+            if (prev.formatName) prev.formatName.textContent = fmtName;
+            prev.formatTextBdg.style.display = '';
+        } else {
+            if (prev.formatImg)     prev.formatImg.style.display     = 'none';
+            if (prev.formatTextBdg) prev.formatTextBdg.style.display = 'none';
+        }
+
+        // Platform badges
+        if (prev.platforms) {
+            prev.platforms.innerHTML = '';
+            (platBadges[game] || []).forEach(p => {
+                const s = document.createElement('span');
+                s.style.cssText = 'display:inline-flex;align-items:center;gap:3px;font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:4px;background:rgba(255,255,255,.12);color:#e5e7eb';
+                s.innerHTML = `<i class="${p.icon}" style="font-size:.7rem"></i>${p.label}`;
+                prev.platforms.appendChild(s);
+            });
+        }
+
+        // Time / date / meta
+        if (schedVal) {
+            const d       = new Date(schedVal);
+            const dayStr  = d.toLocaleDateString('en-GB', { weekday: 'long' }).toUpperCase();
+            const timeStr = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+            const dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            if (prev.time) prev.time.textContent = dayStr + ' / ' + timeStr;
+            if (prev.date) prev.date.textContent = dateStr;
+            if (prev.meta) prev.meta.textContent = dateStr + (track ? ' | ' + track : '');
+        } else {
+            if (prev.time) prev.time.textContent = '— / — —';
+            if (prev.meta) prev.meta.textContent = track || '—';
+            if (prev.date) prev.date.textContent = '—';
+        }
+
+        // Game badge
+        if (game && prev.gameBadge) {
+            prev.gameBadge.textContent      = gameLabels[game] || game.toUpperCase();
+            prev.gameBadge.style.background = gameColors[game] || '#374151';
+            prev.gameBadge.style.display    = '';
+        } else if (prev.gameBadge) {
+            prev.gameBadge.style.display = 'none';
+        }
+
+        // SR tier badge
+        if (prev.srBadge) {
+            if (srOn && srVal && srTierMap[srVal]) {
+                const [letter, color] = srTierMap[srVal];
+                if (prev.srCircle) { prev.srCircle.textContent = letter; prev.srCircle.style.borderColor = color; prev.srCircle.style.color = color; }
+                if (prev.srText)   prev.srText.textContent = 'SR ' + srVal + '.0+';
+                prev.srBadge.style.display = 'inline-flex';
+            } else if (srOn) {
+                if (prev.srCircle) { prev.srCircle.textContent = 'SR'; prev.srCircle.style.borderColor = '#9ca3af'; prev.srCircle.style.color = '#9ca3af'; }
+                if (prev.srText)   prev.srText.textContent = 'SR';
+                prev.srBadge.style.display = 'inline-flex';
+            } else {
+                prev.srBadge.style.display = 'none';
+            }
+        }
+
+        // XCL Rating badge
+        if (prev.xclBadge) {
+            if (minOn && minVal && xclColors[minVal]) {
+                const color = xclColors[minVal];
+                prev.xclBadge.textContent        = minVal.charAt(0).toUpperCase() + minVal.slice(1) + '+';
+                prev.xclBadge.style.color        = color;
+                prev.xclBadge.style.background   = color + '22';
+                prev.xclBadge.style.borderColor  = color + '66';
+                prev.xclBadge.style.display      = '';
+            } else {
+                prev.xclBadge.style.display = 'none';
+            }
+        }
+
+        // OPEN badge (only when no SR and no XCL rating)
+        if (prev.openBadge) prev.openBadge.style.display = (!srOn && !minOn && !maxOn) ? '' : 'none';
+
+        // Car class / track / weather
+        if (prev.classEl)   prev.classEl.textContent  = carClass || 'Open';
+        if (prev.trackName) prev.trackName.textContent = track    || '—';
+        if (prev.weatherEl) {
+            const icon  = wxIcons[weather]  || '';
+            const label = wxLabels[weather] || (weather ? weather : '—');
+            prev.weatherEl.textContent = icon ? icon + ' ' + label : label;
+        }
+
+        // Duration badge
+        if (prev.duration) {
+            if (fmtSlug === 'endurance' && endurDur) {
+                prev.duration.textContent   = endurDur.toUpperCase();
+                prev.duration.style.display = '';
+            } else if (fmtData && fmtData.race1_mins) {
+                prev.duration.textContent   = fmtData.race1_mins + ' MIN';
+                prev.duration.style.display = '';
+            } else {
+                prev.duration.style.display = 'none';
+            }
+        }
+
+        // Format info block
+        const fmtBlock = $('prev-fmt-block');
+        if (fmtBlock) {
+            if (fmtData) {
+                const nameLabel = $('prev-fmt-name-label');
+                const xclrEl   = $('prev-fmt-xclr');
+                const pillsEl  = $('prev-fmt-pills');
+                const metaEl   = $('prev-fmt-meta');
+
+                if (nameLabel) nameLabel.textContent = fmtName;
+                if (xclrEl)   xclrEl.textContent = fmtData.xcl_r_multiplier
+                    ? '×' + parseFloat(fmtData.xcl_r_multiplier).toFixed(1) + ' XCL-R'
+                    : '';
+
+                if (pillsEl) {
+                    pillsEl.innerHTML = '';
+                    const sessions = [
+                        { key: 'P',  mins: fmtData.practice_mins, bg: '#1f2937', color: '#9ca3af' },
+                        { key: 'Q',  mins: fmtData.quali_mins,    bg: '#292524', color: '#f59e0b' },
+                        { key: fmtData.race2_mins ? 'R1' : 'R', mins: fmtData.race1_mins, bg: '#2e1065', color: '#a78bfa' },
+                        { key: 'Q2', mins: fmtData.quali2_mins,   bg: '#292524', color: '#f59e0b' },
+                        { key: 'R2', mins: fmtData.race2_mins,    bg: '#2e1065', color: '#a78bfa' },
+                    ];
+                    sessions.forEach(function (s) {
+                        if (!s.mins) return;
+                        const pill = document.createElement('span');
+                        pill.style.cssText = 'font-size:.7rem;font-weight:600;border-radius:6px;padding:3px 8px;background:' + s.bg + ';color:' + s.color;
+                        pill.textContent   = s.key + ' ' + s.mins + "'";
+                        pillsEl.appendChild(pill);
+                    });
+                }
+
+                if (metaEl) {
+                    const formation = fmtData.formation_type
+                        ? fmtData.formation_type.charAt(0).toUpperCase() + fmtData.formation_type.slice(1)
+                        : '—';
+                    const pitstop = fmtData.pitstop_count > 0
+                        ? 'Required (' + fmtData.pitstop_count + 'x)'
+                        : 'Not required';
+                    metaEl.textContent = 'Formation: ' + formation + ' Pitstop: ' + pitstop;
+                }
+
+                fmtBlock.style.display = '';
+            } else {
+                fmtBlock.style.display = 'none';
+            }
+        }
+    }
+
+    // Bind change/input listeners
+    ['ce-game','ce-format','ce-car-class','ce-sr-toggle','ce-sr-select',
+     'ce-minrating-toggle','ce-minrating-select','ce-maxrating-toggle',
+     'ce-endurance-duration','ce-track-select']
+        .forEach(id => { const el = $(id); if (el) el.addEventListener('change', updatePreview); });
+    const wEl = document.querySelector('[name="weather"]');
+    const sEl = document.querySelector('[name="scheduled_at"]');
+    const tEl = $('ce-track-text');
+    if (wEl) wEl.addEventListener('change', updatePreview);
+    if (sEl) sEl.addEventListener('change', updatePreview);
+    if (tEl) tEl.addEventListener('input', updatePreview);
+
+    updatePreview();
 })();
 </script>
 

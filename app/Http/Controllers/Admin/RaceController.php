@@ -213,7 +213,34 @@ class RaceController extends Controller
             ],
         ]);
 
-        return view('admin.races.create', compact('prefillDate', 'tags', 'formats', 'servers', 'serverSlots'));
+        // Build preview image URLs for the live preview panel
+        $trackFilenames   = array_values(self::TRACK_IMAGE_MAP);
+        $trackMediaByName = Media::whereIn('original_name', $trackFilenames)->get()->keyBy('original_name');
+        $trackPreviewUrls = collect(self::TRACK_IMAGE_MAP)
+            ->map(fn($fname) => $trackMediaByName->get($fname)?->url)
+            ->all();
+
+        $formatPreviewUrls = [];
+        foreach ($formats as $fmt) {
+            $slug = Str::slug($fmt->name, '_');
+            $key  = self::FORMAT_IMAGE_OVERRIDES[$slug] ?? $slug;
+            $formatPreviewUrls[$fmt->id] = Media::where('title', $key)
+                ->orWhere('original_name', 'like', $key . '%')
+                ->first()?->url;
+        }
+
+        $endurancePreviewUrls = [];
+        foreach (['4h', '6h', '8h', '10h', '12h', '24h'] as $dur) {
+            $key = $dur . '_endurance';
+            $endurancePreviewUrls[$dur] = Media::where('title', $key)
+                ->orWhere('original_name', 'like', $key . '%')
+                ->first()?->url;
+        }
+
+        return view('admin.races.create', compact(
+            'prefillDate', 'tags', 'formats', 'servers', 'serverSlots',
+            'trackPreviewUrls', 'formatPreviewUrls', 'endurancePreviewUrls'
+        ));
     }
 
     // Track name → background image filename in media library
@@ -264,7 +291,7 @@ class RaceController extends Controller
             'qualifying_duration'  => 'nullable|integer|min:1|max:999',
             'race_duration'        => 'nullable|integer|min:1|max:999',
             'car_class'            => 'nullable|string|max:50',
-            'sr_requirement'       => 'nullable|in:none,5,7',
+            'sr_requirement'       => 'nullable|in:3,4,5,6,7,8,9',
             'min_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'max_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
@@ -353,7 +380,7 @@ class RaceController extends Controller
             'qualifying_duration'  => 'nullable|integer|min:1|max:999',
             'race_duration'        => 'nullable|integer|min:1|max:999',
             'car_class'            => 'nullable|string|max:50',
-            'sr_requirement'       => 'nullable|in:none,5,7',
+            'sr_requirement'       => 'nullable|in:3,4,5,6,7,8,9',
             'min_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
@@ -472,6 +499,16 @@ class RaceController extends Controller
         $race->update(['config_overrides' => $overrides]);
 
         return back()->with('config_success', '"' . $request->input('file') . '" saved.');
+    }
+
+    public function destroy(Race $race)
+    {
+        $race->registrations()->delete();
+        $race->results()->delete();
+        $race->delete();
+
+        return redirect()->route('admin.races.index')
+            ->with('success', '"' . $race->title . '" has been deleted.');
     }
 
     public function resetConfig(Request $request, Race $race)
