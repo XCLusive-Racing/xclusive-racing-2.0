@@ -113,38 +113,74 @@
                 @endif
 
                 {{-- Session Schedule --}}
-                @if($race->practice_duration || $race->qualifying_duration || $race->race_duration)
+                @php
+                    $fmt      = $race->eventFormat;
+                    $pracMins = $fmt ? $fmt->practice_mins  : $race->practice_duration;
+                    $qualiMins = $fmt ? $fmt->quali_mins    : $race->qualifying_duration;
+                    $race1Mins = $fmt ? $fmt->race1_mins    : $race->race_duration;
+                    $quali2Mins = $fmt ? $fmt->quali2_mins  : null;
+                    $race2Mins  = $fmt ? $fmt->race2_mins   : null;
+                    $hasPitstop = $fmt && $fmt->pitstop_count > 0;
+                    $pitstopLabel = $hasPitstop
+                        ? ('Required (' . $fmt->pitstop_count . 'x' . ($fmt->min_stop_secs ? ', min ' . $fmt->min_stop_secs . 's' : '') . ')')
+                        : 'None';
+                @endphp
+                @if($pracMins || $qualiMins || $race1Mins || $fmt)
                 <div class="xcl-event-card mb-4">
                     <h2 class="xcl-event-card__heading">SESSION SCHEDULE</h2>
                     <div class="xcl-session-schedule">
-                        @if($race->practice_duration)
+                        @if($pracMins)
                         <div class="xcl-session-schedule__step">
                             <div class="xcl-session-schedule__dot"></div>
                             <div class="xcl-session-schedule__info">
                                 <span class="xcl-session-schedule__label">PRACTICE</span>
-                                <span class="xcl-session-schedule__dur">{{ $race->practice_duration }} min</span>
+                                <span class="xcl-session-schedule__dur">{{ $pracMins }} min</span>
                             </div>
                         </div>
                         @endif
-                        @if($race->qualifying_duration)
+                        @if($qualiMins)
                         <div class="xcl-session-schedule__step">
                             <div class="xcl-session-schedule__dot"></div>
                             <div class="xcl-session-schedule__info">
-                                <span class="xcl-session-schedule__label">QUALIFYING</span>
-                                <span class="xcl-session-schedule__dur">{{ $race->qualifying_duration }} min</span>
+                                <span class="xcl-session-schedule__label">{{ $race2Mins ? 'QUALIFYING 1' : 'QUALIFYING' }}</span>
+                                <span class="xcl-session-schedule__dur">{{ $qualiMins }} min</span>
                             </div>
                         </div>
                         @endif
-                        @if($race->race_duration)
+                        @if($race1Mins)
                         <div class="xcl-session-schedule__step xcl-session-schedule__step--race">
                             <div class="xcl-session-schedule__dot xcl-session-schedule__dot--race" style="border-color:{{ $race->gameColor() }};background:{{ $race->gameColor() }}22"></div>
                             <div class="xcl-session-schedule__info">
-                                <span class="xcl-session-schedule__label xcl-session-schedule__label--race" style="color:{{ $race->gameColor() }}">RACE</span>
-                                <span class="xcl-session-schedule__dur xcl-session-schedule__dur--race">{{ $race->race_duration }} min</span>
+                                <span class="xcl-session-schedule__label xcl-session-schedule__label--race" style="color:{{ $race->gameColor() }}">{{ $race2Mins ? 'RACE 1' : 'RACE' }}</span>
+                                <span class="xcl-session-schedule__dur xcl-session-schedule__dur--race">{{ $race1Mins }} min</span>
+                            </div>
+                        </div>
+                        @endif
+                        @if($quali2Mins)
+                        <div class="xcl-session-schedule__step">
+                            <div class="xcl-session-schedule__dot"></div>
+                            <div class="xcl-session-schedule__info">
+                                <span class="xcl-session-schedule__label">QUALIFYING 2</span>
+                                <span class="xcl-session-schedule__dur">{{ $quali2Mins }} min</span>
+                            </div>
+                        </div>
+                        @endif
+                        @if($race2Mins)
+                        <div class="xcl-session-schedule__step xcl-session-schedule__step--race">
+                            <div class="xcl-session-schedule__dot xcl-session-schedule__dot--race" style="border-color:{{ $race->gameColor() }};background:{{ $race->gameColor() }}22"></div>
+                            <div class="xcl-session-schedule__info">
+                                <span class="xcl-session-schedule__label xcl-session-schedule__label--race" style="color:{{ $race->gameColor() }}">RACE 2</span>
+                                <span class="xcl-session-schedule__dur xcl-session-schedule__dur--race">{{ $race2Mins }} min</span>
                             </div>
                         </div>
                         @endif
                     </div>
+                    @if($fmt)
+                    <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between">
+                        <span style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em">Pit Stops</span>
+                        <span style="font-size:.75rem;font-weight:700;color:{{ $hasPitstop ? '#f59e0b' : '#6b7280' }}">{{ $pitstopLabel }}</span>
+                    </div>
+                    @endif
                 </div>
                 @endif
 
@@ -259,15 +295,28 @@
                         </div>
                         @endif
                         @if($race->sr_requirement)
+                        @php [$srLetter, $srColor] = $race->srTier(); @endphp
                         <div class="xcl-event-req-row">
                             <span class="xcl-event-req-label">Min. SR</span>
-                            <span class="xcl-event-req-value">{{ $race->sr_requirement }}</span>
+                            <span class="xcl-event-req-value">
+                                <span style="display:inline-flex;align-items:center;gap:5px">
+                                    <span style="width:20px;height:20px;border-radius:50%;background:#0f0f1a;border:2px solid {{ $srColor }};display:inline-flex;align-items:center;justify-content:center;color:{{ $srColor }};font-size:.58rem;font-weight:900;flex-shrink:0">{{ $srLetter }}</span>
+                                    <span style="font-weight:700;color:#e5e7eb">SR {{ $race->sr_requirement }}.0+</span>
+                                </span>
+                            </span>
                         </div>
                         @endif
                         @if($race->min_rating)
+                        @php [$xclName, $xclColor] = $race->xclTierInfo(); @endphp
                         <div class="xcl-event-req-row">
-                            <span class="xcl-event-req-label">Min. Rating</span>
-                            <span class="xcl-event-req-value">{{ number_format((int) $race->min_rating) }}</span>
+                            <span class="xcl-event-req-label">Min. XCL Rating</span>
+                            <span class="xcl-event-req-value">
+                                @if($xclName)
+                                <span style="font-size:.75rem;font-weight:900;text-transform:capitalize;padding:2px 10px;border-radius:4px;border:1px solid {{ $xclColor }}66;background:{{ $xclColor }}22;color:{{ $xclColor }}">{{ $xclName }}+</span>
+                                @else
+                                {{ $race->min_rating }}
+                                @endif
+                            </span>
                         </div>
                         @endif
                     </div>

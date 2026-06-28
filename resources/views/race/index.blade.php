@@ -159,6 +159,23 @@
                                     {{ $race->scheduledAtUk()->format('D, M d') }}
                                     @if($race->track) | {{ $race->track }} @endif
                                 </div>
+                                @php
+                                    [$srLetter, $srColor] = $race->srTier();
+                                    [$xclName,  $xclColor] = $race->xclTierInfo();
+                                @endphp
+                                @if($srLetter || $xclName)
+                                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;align-items:center">
+                                    @if($srLetter)
+                                    <span style="display:inline-flex;align-items:center;gap:4px">
+                                        <span style="width:18px;height:18px;border-radius:50%;background:#0f0f1a;border:2px solid {{ $srColor }};display:inline-flex;align-items:center;justify-content:center;color:{{ $srColor }};font-size:.5rem;font-weight:900;flex-shrink:0">{{ $srLetter }}</span>
+                                        <span style="font-size:.6rem;font-weight:900;color:#e5e7eb;white-space:nowrap">SR {{ $race->sr_requirement }}.0+</span>
+                                    </span>
+                                    @endif
+                                    @if($xclName)
+                                    <span style="font-size:.6rem;font-weight:900;text-transform:capitalize;padding:2px 7px;border-radius:4px;border:1px solid {{ $xclColor }}66;background:{{ $xclColor }}22;color:{{ $xclColor }}">{{ $xclName }}+</span>
+                                    @endif
+                                </div>
+                                @endif
                                 <a href="{{ route('events.show', $race) }}" class="xcl-see-event-btn">SEE EVENT</a>
                             </div>
                         </div>

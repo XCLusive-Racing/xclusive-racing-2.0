@@ -135,4 +135,31 @@ class Race extends Model
             default   => '#6b7280',
         };
     }
+
+    /** Returns [letter, hex-color] for the SR tier badge. */
+    public function srTier(): array
+    {
+        if (!$this->sr_requirement) return ['', '#9ca3af'];
+        $val = (float) $this->sr_requirement;
+        if ($val >= 9.0) return ['Z', '#7c3aed'];
+        if ($val >= 8.0) return ['Y', '#eab308'];
+        if ($val >= 7.0) return ['X', '#2563eb'];
+        if ($val >= 5.0) return ['A', '#16a34a'];
+        if ($val >= 3.0) return ['B', '#dc2626'];
+        return ['D', '#6b7280'];
+    }
+
+    /** Returns [display-name, hex-color] for the XCL Rating tier badge. */
+    public function xclTierInfo(): array
+    {
+        return match ($this->min_rating) {
+            'rookie'   => ['Rookie',   '#ef4444'],
+            'bronze'   => ['Bronze',   '#cd7f32'],
+            'silver'   => ['Silver',   '#9ca3af'],
+            'gold'     => ['Gold',     '#f59e0b'],
+            'platinum' => ['Platinum', '#7c3aed'],
+            'alien'    => ['Alien',    '#10b981'],
+            default    => ['',         '#6b7280'],
+        };
+    }
 }

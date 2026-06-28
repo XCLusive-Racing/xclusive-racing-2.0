@@ -156,6 +156,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/races/{race}/save-config', [AdminRaceController::class, 'saveConfig'])->name('races.save-config');
     Route::post('/races/{race}/upload-entrylist', [AdminRaceController::class, 'uploadEntrylist'])->name('races.upload-entrylist');
     Route::delete('/races/{race}/reset-config', [AdminRaceController::class, 'resetConfig'])->name('races.reset-config');
+    Route::delete('/races/{race}', [AdminRaceController::class, 'destroy'])->name('races.destroy');
 
     // Championships
     Route::resource('championships', AdminChampionshipController::class)->except(['destroy']);
