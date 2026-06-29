@@ -93,6 +93,10 @@ class Race extends Model
 
     public function isFull(): bool
     {
+        if ($this->is_multiclass && $this->raceClasses->isNotEmpty()) {
+            return $this->raceClasses->every(fn($cls) => $cls->isFull());
+        }
+
         if ($this->max_drivers === null) {
             return false;
         }
