@@ -129,10 +129,10 @@
                         <div class="text-center flex-shrink-0"
                              style="width:48px;background:#7c3aed;border-radius:8px;padding:6px 4px;color:white">
                             <div style="font-size:.6rem;font-weight:800;letter-spacing:.08em;opacity:.8">
-                                {{ strtoupper($ev->starts_at->format('M')) }}
+                                {{ strtoupper($ev->starts_at->timezone('Europe/London')->format('M')) }}
                             </div>
                             <div style="font-size:1.2rem;font-weight:900;line-height:1">
-                                {{ $ev->starts_at->format('d') }}
+                                {{ $ev->starts_at->timezone('Europe/London')->format('d') }}
                             </div>
                         </div>
 
@@ -152,7 +152,7 @@
                                     {{ $subjects[$ev->subject] ?? $ev->subject }}
                                 </span>
                                 <span style="font-size:.72rem;color:#6b7280">
-                                    {{ $ev->starts_at->format('d M Y · H:i') }}
+                                    {{ $ev->starts_at->timezone('Europe/London')->format('d M Y · H:i T') }}
                                 </span>
                                 @if($ev->watch_url)
                                 <a href="{{ $ev->watch_url }}" target="_blank"

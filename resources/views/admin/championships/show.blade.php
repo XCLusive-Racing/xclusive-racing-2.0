@@ -280,7 +280,7 @@
                                     @endif
                                 </td>
                                 @endif
-                                <td class="text-secondary" style="font-size:.78rem">{{ $reg->created_at->format('d M Y') }}</td>
+                                <td class="text-secondary" style="font-size:.78rem">{{ $reg->created_at->timezone('Europe/London')->format('d M Y') }}</td>
                             </tr>
                             @endforeach
                         </tbody>

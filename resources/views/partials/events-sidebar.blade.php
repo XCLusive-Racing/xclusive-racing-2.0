@@ -413,7 +413,7 @@ foreach ($sbGames as $game => $col) {
                                         <span data-cd-d>00</span>D&nbsp;<span data-cd-h>00</span>H&nbsp;<span data-cd-m>00</span>M
                                     </div>
                                     <div style="font-size:.65rem;color:#9ca3af;font-weight:600">
-                                        {{ $te->starts_at->format('d M · H:i') }}
+                                        {{ $te->starts_at->timezone('Europe/London')->format('d M · H:i T') }}
                                     </div>
                                 </div>
                             </div>

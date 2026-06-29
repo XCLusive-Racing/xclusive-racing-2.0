@@ -158,7 +158,7 @@
                         <div class="col-sm-4">
                             <label class="form-label">Deadline</label>
                             <input type="datetime-local" name="registration_deadline"
-                                   value="{{ old('registration_deadline', $championship->registration_deadline?->format('Y-m-d\TH:i')) }}"
+                                   value="{{ old('registration_deadline', $championship->registration_deadline?->timezone('Europe/London')->format('Y-m-d\TH:i')) }}"
                                    class="form-control">
                         </div>
                         <div class="col-sm-4">

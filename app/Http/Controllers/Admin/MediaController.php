@@ -43,6 +43,21 @@ class MediaController extends Controller
         return response()->json(['slug' => $folder->slug, 'name' => $folder->name]);
     }
 
+    public function renameFolder(Request $request, MediaFolder $folder)
+    {
+        $data    = $request->validate(['name' => 'required|string|max:100']);
+        $newSlug = Str::slug($data['name']);
+        $oldSlug = $folder->slug;
+
+        if ($newSlug !== $oldSlug) {
+            Media::where('category', $oldSlug)->update(['category' => $newSlug]);
+        }
+
+        $folder->update(['name' => $data['name'], 'slug' => $newSlug]);
+
+        return response()->json(['slug' => $folder->slug, 'name' => $folder->name]);
+    }
+
     public function destroyFolder(MediaFolder $folder)
     {
         Media::where('category', $folder->slug)->update(['category' => null]);

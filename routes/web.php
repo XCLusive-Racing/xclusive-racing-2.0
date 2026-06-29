@@ -183,6 +183,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/media/{media}', [AdminMediaController::class, 'destroy'])->name('media.destroy');
     Route::post('/media/migrate-storage', [AdminMediaController::class, 'migrateStorage'])->name('media.migrate-storage');
     Route::post('/media/folders', [AdminMediaController::class, 'storeFolder'])->name('media.folders.store');
+    Route::patch('/media/folders/{folder}', [AdminMediaController::class, 'renameFolder'])->name('media.folders.rename');
     Route::delete('/media/folders/{folder}', [AdminMediaController::class, 'destroyFolder'])->name('media.folders.destroy');
     Route::get('/media/folders/list', [AdminMediaController::class, 'listFolders'])->name('media.folders.list');
     Route::patch('/media/{media}/folder', [AdminMediaController::class, 'updateFolder'])->name('media.folder');

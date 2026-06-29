@@ -278,54 +278,6 @@
                 ];
             @endphp
 
-            {{-- Push bar --}}
-            <div class="px-4 pt-4 pb-3" style="border-bottom:1px solid #f3f4f6">
-
-                @if(session('config_success'))
-                <div class="alert py-2 px-3 mb-3" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;font-size:.8rem;border-radius:8px">
-                    {{ session('config_success') }}
-                </div>
-                @endif
-                @if(session('config_error'))
-                <div class="alert py-2 px-3 mb-3" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:.8rem;border-radius:8px">
-                    {{ session('config_error') }}
-                </div>
-                @endif
-
-                <div class="d-flex align-items-center gap-3 flex-wrap">
-                    <div>
-                        <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.82rem">Push Config to Server</div>
-                        <div class="text-secondary mt-1" style="font-size:.75rem">
-                            @if($race->hasAnyConfigOverride())
-                                Pushes your <span style="color:#f59e0b;font-weight:700">saved custom config</span> files.
-                            @else
-                                Pushes auto-generated config files.
-                            @endif
-                        </div>
-                    </div>
-                    @if($ftpServers->isNotEmpty())
-                    <form action="{{ route('admin.races.push-config', $race) }}" method="POST" class="d-flex gap-2 align-items-center ms-auto flex-wrap">
-                        @csrf
-                        <select name="server_id" class="form-select form-select-sm" style="min-width:220px">
-                            <option value="">Select server…</option>
-                            @foreach($ftpServers as $ftpServer)
-                            <option value="{{ $ftpServer->id }}">{{ $ftpServer->name }} — {{ $ftpServer->cfg_path }}</option>
-                            @endforeach
-                        </select>
-                        <button type="submit" class="btn btn-sm fw-black text-uppercase text-white flex-shrink-0"
-                                style="background:#7c3aed;font-size:.78rem;padding:7px 18px">
-                            Push All →
-                        </button>
-                    </form>
-                    @else
-                    <div class="ms-auto">
-                        <a href="{{ route('admin.servers.create') }}" class="btn btn-sm fw-bold text-uppercase"
-                           style="background:#7c3aed;color:white;font-size:.72rem">+ Add FTP Server</a>
-                    </div>
-                    @endif
-                </div>
-            </div>
-
             {{-- Config file editors --}}
             <div data-accordions>
             @foreach(['entrylist.json', 'event.json', 'settings.json'] as $filename)
@@ -533,7 +485,7 @@
                             </td>
                             <td class="text-secondary" style="font-size:.82rem">{{ $reg->user->team ?? '—' }}</td>
                             <td class="pe-4 text-end text-secondary" style="font-size:.78rem">
-                                {{ $reg->created_at->format('d M Y') }}
+                                {{ $reg->created_at->timezone('Europe/London')->format('d M Y') }}
                             </td>
                         </tr>
                         @endforeach
