@@ -166,6 +166,14 @@
                                     @if($race->config_pushed_at)
                                     <div style="font-size:.73rem;color:#9ca3af;margin-top:2px">
                                         Last push: {{ $race->config_pushed_at->diffForHumans() }}
+                                        @if($race->config_push_attempts > 0)
+                                        · {{ $race->config_push_attempts }} attempt{{ $race->config_push_attempts !== 1 ? 's' : '' }}
+                                        @endif
+                                    </div>
+                                    @endif
+                                    @if($race->config_push_error)
+                                    <div class="mt-1 px-2 py-1 rounded" style="font-size:.7rem;color:#991b1b;background:#fef2f2;border:1px solid #fecaca;word-break:break-word">
+                                        {{ $race->config_push_error }}
                                     </div>
                                     @endif
                                 </div>

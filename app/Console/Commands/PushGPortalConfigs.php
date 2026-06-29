@@ -6,24 +6,41 @@ use App\Models\Race;
 use App\Services\AccServerConfigService;
 use App\Services\FtpService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PushGPortalConfigs extends Command
 {
     protected $signature   = 'gportal:push-configs';
-    protected $description = 'Auto-push ACC server config to gPortal 10 minutes before a race slot';
+    protected $description = 'Auto-push ACC server config to gPortal before a race slot, with safety repush and retry logic';
 
     public function handle(AccServerConfigService $config, FtpService $ftp): void
     {
-        $pushWindowStart = now()->subMinutes(2);
-        $pushWindowEnd   = now()->addMinutes(12);
+        $now = now();
 
-        $races = Race::whereNotNull('ftp_server_id')
+        // Phase 1: normal push — pending/failed races, up to 30min before slot, retry until 10min after
+        $normalRaces = Race::whereNotNull('ftp_server_id')
             ->whereNotNull('slot_time')
             ->whereIn('config_push_status', ['pending', 'failed', null])
-            ->whereBetween('slot_time', [$pushWindowStart, $pushWindowEnd])
+            ->where('config_push_attempts', '<', 15)
+            ->whereBetween('slot_time', [$now->copy()->subMinutes(30), $now->copy()->addMinutes(10)])
             ->with('ftpServer')
             ->get();
+
+        // Phase 2: safety repush — already pushed, but within 2min of slot and last push was >5min ago
+        // Catches server crashes/restarts between initial push and race start
+        $safetyRaces = Race::whereNotNull('ftp_server_id')
+            ->whereNotNull('slot_time')
+            ->where('config_push_status', 'pushed')
+            ->whereBetween('slot_time', [$now->copy()->subMinutes(2), $now->copy()->addMinutes(1)])
+            ->where(function ($q) use ($now) {
+                $q->whereNull('config_pushed_at')
+                  ->orWhere('config_pushed_at', '<', $now->copy()->subMinutes(5));
+            })
+            ->with('ftpServer')
+            ->get();
+
+        $races = $normalRaces->merge($safetyRaces)->unique('id');
 
         if ($races->isEmpty()) {
             return;
@@ -35,7 +52,10 @@ class PushGPortalConfigs extends Command
                 continue;
             }
 
-            Log::info("gPortal auto-push: race #{$race->id} ({$race->title}) → {$server->name}");
+            $isSafetyPush = $race->config_push_status === 'pushed';
+            $label        = $isSafetyPush ? 'safety-repush' : 'auto-push';
+
+            Log::info("gPortal {$label}: race #{$race->id} ({$race->title}) → {$server->name}");
 
             $files = [
                 'entrylist.json' => json_encode(
@@ -59,8 +79,15 @@ class PushGPortalConfigs extends Command
             ];
 
             if (!$ftp->connect($server)) {
-                Log::error("gPortal auto-push: could not connect to {$server->host}");
-                $race->update(['config_push_status' => 'failed']);
+                $error = "Could not connect to {$server->host}:{$server->port}";
+                Log::error("gPortal {$label}: {$error} for race #{$race->id}");
+
+                Race::where('id', $race->id)->update([
+                    'config_push_status'   => 'failed',
+                    'config_push_error'    => $error,
+                    'config_pushed_at'     => now(),
+                    'config_push_attempts' => DB::raw('config_push_attempts + 1'),
+                ]);
                 continue;
             }
 
@@ -73,14 +100,35 @@ class PushGPortalConfigs extends Command
                 }
             }
 
+            // Verify the push by reading back event.json
+            if (empty($failed)) {
+                $verify = $ftp->getFileContent("{$cfgPath}/event.json");
+                if ($verify === false || strlen(trim($verify)) < 10) {
+                    $failed[] = 'event.json (verification read-back failed)';
+                }
+            }
+
             $ftp->disconnect();
 
             if ($failed) {
-                Log::error("gPortal auto-push: failed files — " . implode(', ', $failed));
-                $race->update(['config_push_status' => 'failed', 'config_pushed_at' => now()]);
+                $error = 'Upload failed: ' . implode(', ', $failed);
+                Log::error("gPortal {$label}: {$error} for race #{$race->id}");
+
+                Race::where('id', $race->id)->update([
+                    'config_push_status'   => 'failed',
+                    'config_push_error'    => $error,
+                    'config_pushed_at'     => now(),
+                    'config_push_attempts' => DB::raw('config_push_attempts + 1'),
+                ]);
             } else {
-                Log::info("gPortal auto-push: success for race #{$race->id}");
-                $race->update(['config_push_status' => 'pushed', 'config_pushed_at' => now()]);
+                Log::info("gPortal {$label}: success for race #{$race->id}");
+
+                Race::where('id', $race->id)->update([
+                    'config_push_status'   => 'pushed',
+                    'config_push_error'    => null,
+                    'config_pushed_at'     => now(),
+                    'config_push_attempts' => 0,
+                ]);
             }
         }
     }

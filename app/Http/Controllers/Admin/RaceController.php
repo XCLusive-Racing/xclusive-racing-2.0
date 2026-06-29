@@ -455,10 +455,23 @@ class RaceController extends Controller
         $ftp->disconnect();
 
         if ($failed) {
-            return back()->with('error', 'Failed to upload: ' . implode(', ', $failed));
+            $error = 'Failed to upload: ' . implode(', ', $failed);
+            $race->update([
+                'config_push_status' => 'failed',
+                'config_push_error'  => $error,
+                'config_pushed_at'   => now(),
+            ]);
+            return back()->with('error', $error);
         }
 
-        return back()->with('success', 'Config pushed to ' . $server->name . ' — entrylist.json, configuration.json, settings.json uploaded.');
+        $race->update([
+            'config_push_status'   => 'pushed',
+            'config_push_error'    => null,
+            'config_pushed_at'     => now(),
+            'config_push_attempts' => 0,
+        ]);
+
+        return back()->with('success', 'Config pushed to ' . $server->name . ' — entrylist.json, event.json, settings.json uploaded.');
     }
 
     public function uploadEntrylist(Request $request, Race $race)
