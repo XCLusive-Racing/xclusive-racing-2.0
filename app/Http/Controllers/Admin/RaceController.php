@@ -51,9 +51,22 @@ class RaceController extends Controller
                 $ftp = new FtpService();
                 if ($ftp->connect($selectedServer)) {
                     $result      = $ftp->listFiles($selectedServer->path);
-                    $ftpFiles    = $result['json'];
                     $ftpAllFiles = $result['all'];
                     $ftp->disconnect();
+
+                    // Only show files from around this race's session (filename = YYMMDD_HHMMSS_*.json)
+                    $cutoff = $race->scheduled_at->subHours(2);
+                    $ftpFiles = array_values(array_filter($result['json'], function ($file) use ($cutoff) {
+                        $parts = explode('_', pathinfo($file['name'], PATHINFO_FILENAME));
+                        if (count($parts) < 2 || strlen($parts[0]) !== 6 || !is_numeric($parts[0])) return true;
+                        $dp = $parts[0]; $tp = $parts[1];
+                        $fileTime = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s',
+                            '20'.substr($dp,0,2).'-'.substr($dp,2,2).'-'.substr($dp,4,2).' '.
+                            substr($tp,0,2).':'.substr($tp,2,2).':'.(strlen($tp)>=6 ? substr($tp,4,2) : '00'),
+                            'UTC'
+                        );
+                        return $fileTime !== false && $fileTime >= $cutoff;
+                    }));
                 } else {
                     $ftpError = 'Could not connect to ' . $selectedServer->host . '.';
                 }

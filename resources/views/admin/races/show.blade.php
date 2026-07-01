@@ -604,8 +604,14 @@
                 @if($selectedServer && !$ftpError)
                 <div class="mb-4" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
                     <div class="d-flex align-items-center justify-content-between px-3 py-2" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
-                        <span class="fw-black text-uppercase fst-italic text-dark" style="font-size:.75rem">{{ $selectedServer->name }}</span>
-                        <span class="text-secondary" style="font-size:.72rem;font-family:monospace">{{ $selectedServer->path }}</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fw-black text-uppercase fst-italic text-dark" style="font-size:.75rem">{{ $selectedServer->name }}</span>
+                            <span class="text-secondary" style="font-size:.72rem;font-family:monospace">{{ $selectedServer->path }}</span>
+                        </div>
+                        <a href="{{ request()->url() }}" class="btn btn-sm fw-bold text-uppercase"
+                           style="font-size:.68rem;padding:2px 10px;color:#6b7280;border:1px solid #e5e7eb;border-radius:6px;background:#fff">
+                            ✕ Deselect
+                        </a>
                     </div>
                     @if(empty($ftpFiles))
                     <div class="p-3">
