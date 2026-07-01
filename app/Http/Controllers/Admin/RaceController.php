@@ -160,7 +160,14 @@ class RaceController extends Controller
     public function customCreate()
     {
         $tags = EventTag::orderBy('name')->get();
-        return view('admin.races.custom-create', compact('tags'));
+
+        $trackFilenames   = array_values(self::TRACK_IMAGE_MAP);
+        $trackMediaByName = Media::whereIn('original_name', $trackFilenames)->get()->keyBy('original_name');
+        $trackPreviewUrls = collect(self::TRACK_IMAGE_MAP)
+            ->map(fn($fname) => $trackMediaByName->get($fname)?->url)
+            ->all();
+
+        return view('admin.races.custom-create', compact('tags', 'trackPreviewUrls'));
     }
 
     public function bulkStore(Request $request)

@@ -602,30 +602,30 @@
                 @endif
 
                 @if($selectedServer && !$ftpError)
-                <div class="mb-4">
-                    @if(empty($ftpFiles))
-                    <div class="p-3 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
-                        <div class="text-secondary" style="font-size:.82rem">No result files found for this race on <strong>{{ $selectedServer->name }}</strong>.</div>
-                    </div>
-                    @else
+                @php
+                    $raceFiles  = collect($ftpFiles)->filter(fn($f) => \App\Services\FtpService::parseFilename($f['name'])['session'] === 'Race')->take(10)->values();
+                    $qualiFiles = collect($ftpFiles)->filter(fn($f) => \App\Services\FtpService::parseFilename($f['name'])['session'] === 'Qualifying')->take(10)->values();
+                @endphp
+                @if($raceFiles->isEmpty() && $qualiFiles->isEmpty())
+                <div class="mb-4 p-3 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
+                    <div class="text-secondary" style="font-size:.82rem">No Race or Qualifying files found for this race on <strong>{{ $selectedServer->name }}</strong>.</div>
+                </div>
+                @else
+
+                @foreach([['Race', $raceFiles, '#d1fae5', '#065f46'], ['Qualifying', $qualiFiles, '#dbeafe', '#1e40af']] as [$label, $files, $bg, $color])
+                @if($files->isNotEmpty())
+                <div class="mb-3">
+                    <p class="fw-black text-uppercase fst-italic mb-2" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">{{ $label }}</p>
                     <div class="d-flex flex-column gap-2">
-                        @foreach($ftpFiles as $file)
+                        @foreach($files as $file)
                         @php
                             $parsed     = \App\Services\FtpService::parseFilename($file['name']);
                             $isImported = in_array($file['name'], $importedFiles);
-                            $isRace     = $parsed['session'] === 'Race';
-                            $isQuali    = $parsed['session'] === 'Qualifying';
                         @endphp
                         <div class="d-flex align-items-center justify-content-between px-4 py-3 rounded-2"
                              style="background:{{ $isImported ? '#f9fafb' : 'white' }};border:1px solid {{ $isImported ? '#f3f4f6' : '#e5e7eb' }};opacity:{{ $isImported ? '.6' : '1' }}">
                             <div class="d-flex align-items-center gap-3">
-                                @if($isRace)
-                                    <span class="fw-black text-uppercase" style="font-size:.75rem;padding:4px 12px;border-radius:6px;background:#d1fae5;color:#065f46;letter-spacing:.04em">Race</span>
-                                @elseif($isQuali)
-                                    <span class="fw-black text-uppercase" style="font-size:.75rem;padding:4px 12px;border-radius:6px;background:#dbeafe;color:#1e40af;letter-spacing:.04em">Qualifying</span>
-                                @else
-                                    <span class="fw-black text-uppercase" style="font-size:.75rem;padding:4px 12px;border-radius:6px;background:#f3f4f6;color:#6b7280;letter-spacing:.04em">Unknown</span>
-                                @endif
+                                <span class="fw-black text-uppercase" style="font-size:.75rem;padding:4px 12px;border-radius:6px;background:{{ $bg }};color:{{ $color }};letter-spacing:.04em">{{ $label }}</span>
                                 <span class="text-secondary" style="font-size:.8rem">{{ $parsed['date'] !== '—' ? $parsed['date'] : ($file['modified'] ?? '—') }}</span>
                             </div>
                             @if($isImported)
@@ -644,8 +644,11 @@
                         </div>
                         @endforeach
                     </div>
-                    @endif
                 </div>
+                @endif
+                @endforeach
+
+                @endif
                 @endif
 
                 @endif {{-- end ftpServers not empty --}}
