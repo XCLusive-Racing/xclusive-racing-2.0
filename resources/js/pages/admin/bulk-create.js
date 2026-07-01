@@ -20,7 +20,6 @@ export function initBulkCreate(wrap) {
 
     // Shared elements
     const baseNameInput     = wrap.querySelector('[data-bulk-base-name]');
-    const defaultTrackInput = wrap.querySelector('[data-bulk-default-track]');
     const generateBtn       = wrap.querySelector('[data-bulk-generate]');
     const noDateHint        = wrap.querySelector('[data-bulk-no-date]');
     const eventsSection     = wrap.querySelector('[data-bulk-events-section]');
@@ -30,6 +29,14 @@ export function initBulkCreate(wrap) {
 
     let events = [];
     let mode   = 'regular';
+
+    function getDefaultTrack() {
+        const sel = document.getElementById('ce-track-select');
+        const txt = document.getElementById('ce-track-text');
+        if (sel && sel.style.display !== 'none' && sel.value) return sel.value;
+        if (txt && txt.style.display !== 'none' && txt.value) return txt.value;
+        return '';
+    }
 
     function esc(str) {
         return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -149,7 +156,7 @@ export function initBulkCreate(wrap) {
         const date     = startDateInput.value;
         const time     = startTimeInput?.value || '20:00';
         const baseName = baseNameInput?.value ?? 'Round';
-        const defTrack = defaultTrackInput?.value ?? '';
+        const defTrack = getDefaultTrack();
         const days     = intervalDays();
 
         events = Array.from({ length: n }, (_, i) => {
@@ -176,7 +183,7 @@ export function initBulkCreate(wrap) {
         const time     = weekTimeInput?.value || '20:00';
         const nWeeks   = Math.min(Math.max(parseInt(weekCountInput?.value) || 1, 1), 12);
         const baseName = baseNameInput?.value ?? 'Round';
-        const defTrack = defaultTrackInput?.value ?? '';
+        const defTrack = getDefaultTrack();
         const [th, tm] = time.split(':').map(Number);
 
         // Find Monday of the week containing weekStartInput.value
@@ -218,7 +225,7 @@ export function initBulkCreate(wrap) {
         const baseName = baseNameInput?.value ?? 'Round';
         events.push({
             title:        baseName ? baseName + ' ' + (events.length + 1) : '',
-            track:        defaultTrackInput?.value ?? '',
+            track:        getDefaultTrack(),
             scheduled_at: nextDate,
         });
         render();

@@ -55,34 +55,32 @@ $formatsWithSlug = $formats->groupBy('game')->map(
 );
 @endphp
 
-{{-- Tab bar --}}
+{{-- Mode toggle --}}
 <div class="d-flex mb-4" style="border-bottom:2px solid #e5e7eb">
-    <button type="button" data-tab-btn="single"
+    <button type="button" data-mode-btn="single"
             class="btn fw-black text-uppercase rounded-0 border-0 px-4 py-2"
             style="font-size:.76rem;letter-spacing:.08em;margin-bottom:-2px">
-        Format Event
+        Single Event
     </button>
-    <button type="button" data-tab-btn="bulk"
+    <button type="button" data-mode-btn="bulk"
             class="btn fw-black text-uppercase rounded-0 border-0 px-4 py-2"
             style="font-size:.76rem;letter-spacing:.08em;margin-bottom:-2px">
         Bulk Schedule
     </button>
 </div>
 
-{{-- ═══════════════════════════════════════════════════════════
-     TAB: FORMAT EVENT (single event, format-based)
-════════════════════════════════════════════════════════════════ --}}
-<div data-tab-content="single">
-<form action="{{ route('admin.races.store') }}" method="POST" enctype="multipart/form-data">
+<form id="ce-form" action="{{ route('admin.races.store') }}" method="POST" enctype="multipart/form-data">
     @csrf
+    <input type="hidden" name="_mode" id="ce-mode-input" value="{{ old('_mode', 'single') }}">
 
     <div class="row g-4 align-items-start">
 
-        {{-- Left column --}}
-        <div class="col-12 col-xl-8">
+        {{-- ── Left column ──────────────────────────────────────────────────── --}}
+        <div class="col-12 col-xl-8" data-bulk-wrap>
 
-            {{-- Section 1: Event --}}
             <div class="admin-card mb-4">
+
+                {{-- ── Event ─────────────────────────────────────────────────── --}}
                 <div class="px-4 pt-4 pb-3">
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Event</p>
 
@@ -98,6 +96,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                             </select>
                             @error('game')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
+
                         <div class="col-sm-7">
                             <label class="form-label">Format <span class="text-danger">*</span></label>
                             <select name="event_format_id" id="ce-format" class="form-select @error('event_format_id') is-invalid @enderror">
@@ -107,7 +106,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                         </div>
                     </div>
 
-                    {{-- Format info card --}}
+                    {{-- Format info: both modes --}}
                     <div id="ce-format-info" class="mt-3 p-3 rounded-3" style="display:none;background:#f8f5ff;border:1px solid rgba(124,58,237,.2)">
                         <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
                             <span id="ce-fi-name" class="fw-black text-uppercase fst-italic" style="color:#7c3aed;font-size:.85rem"></span>
@@ -121,22 +120,24 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                         </div>
                     </div>
 
-                    {{-- Endurance duration — only shown when Endurance format is selected --}}
-                    <div id="ce-endurance-wrap" class="mt-3" style="display:none">
-                        <label class="form-label">Duration <span class="text-danger">*</span></label>
-                        <select name="endurance_duration" id="ce-endurance-duration" class="form-select" style="max-width:200px">
-                            <option value="">Select duration…</option>
-                            <option value="4h"  {{ old('endurance_duration') === '4h'  ? 'selected' : '' }}>4 Hours</option>
-                            <option value="6h"  {{ old('endurance_duration') === '6h'  ? 'selected' : '' }}>6 Hours</option>
-                            <option value="8h"  {{ old('endurance_duration') === '8h'  ? 'selected' : '' }}>8 Hours</option>
-                            <option value="10h" {{ old('endurance_duration') === '10h' ? 'selected' : '' }}>10 Hours</option>
-                            <option value="12h" {{ old('endurance_duration') === '12h' ? 'selected' : '' }}>12 Hours</option>
-                            <option value="24h" {{ old('endurance_duration') === '24h' ? 'selected' : '' }}>24 Hours</option>
-                        </select>
+                    {{-- Endurance: single only --}}
+                    <div data-mode-single>
+                        <div id="ce-endurance-wrap" class="mt-3" style="display:none">
+                            <label class="form-label">Duration <span class="text-danger">*</span></label>
+                            <select name="endurance_duration" id="ce-endurance-duration" class="form-select" style="max-width:200px">
+                                <option value="">Select duration…</option>
+                                <option value="4h"  {{ old('endurance_duration') === '4h'  ? 'selected' : '' }}>4 Hours</option>
+                                <option value="6h"  {{ old('endurance_duration') === '6h'  ? 'selected' : '' }}>6 Hours</option>
+                                <option value="8h"  {{ old('endurance_duration') === '8h'  ? 'selected' : '' }}>8 Hours</option>
+                                <option value="10h" {{ old('endurance_duration') === '10h' ? 'selected' : '' }}>10 Hours</option>
+                                <option value="12h" {{ old('endurance_duration') === '12h' ? 'selected' : '' }}>12 Hours</option>
+                                <option value="24h" {{ old('endurance_duration') === '24h' ? 'selected' : '' }}>24 Hours</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                {{-- Track / Weather / Time --}}
+                {{-- ── Track & Conditions ────────────────────────────────────── --}}
                 <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Track & Conditions</p>
 
@@ -183,29 +184,131 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                     </div>
                 </div>
 
-                {{-- Schedule --}}
+                {{-- ── Schedule ────────────────────────────────────────────────── --}}
                 <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Schedule</p>
 
-                    <div class="row g-3">
-                        <div class="col-sm-7">
-                            <label class="form-label">Date & Time (BST) <span class="text-danger">*</span></label>
-                            <input type="datetime-local" name="scheduled_at"
-                                   value="{{ old('scheduled_at', $prefillDate ? $prefillDate . 'T20:00' : '') }}"
-                                   class="form-control @error('scheduled_at') is-invalid @enderror">
-                            @error('scheduled_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    {{-- Single schedule panel --}}
+                    <div data-mode-single>
+                        <div class="row g-3">
+                            <div class="col-sm-7">
+                                <label class="form-label">Date & Time (BST) <span class="text-danger">*</span></label>
+                                <input type="datetime-local" name="scheduled_at"
+                                       value="{{ old('scheduled_at', $prefillDate ? $prefillDate . 'T20:00' : '') }}"
+                                       class="form-control @error('scheduled_at') is-invalid @enderror">
+                                @error('scheduled_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-sm-5" id="ce-drivers-wrap" style="display:none">
+                                <label class="form-label">Max Drivers</label>
+                                <input type="text" id="ce-drivers-display" class="form-control" readonly
+                                       style="background:#f9fafb;color:#374151;cursor:default">
+                                <input type="hidden" name="max_drivers" id="ce-max-drivers">
+                                <div class="form-text">Determined by track</div>
+                            </div>
                         </div>
-                        <div class="col-sm-5" id="ce-drivers-wrap" style="display:none">
-                            <label class="form-label">Max Drivers</label>
-                            <input type="text" id="ce-drivers-display" class="form-control" readonly
-                                   style="background:#f9fafb;color:#374151;cursor:default">
-                            <input type="hidden" name="max_drivers" id="ce-max-drivers">
-                            <div class="form-text">Determined by track</div>
+                    </div>
+
+                    {{-- Bulk schedule panel --}}
+                    <div data-mode-bulk style="display:none">
+
+                        {{-- Regular/Week mode toggle --}}
+                        <div class="d-flex gap-2 mb-4">
+                            <button type="button" data-bulk-mode="regular"
+                                    class="btn btn-sm fw-bold text-uppercase px-3"
+                                    style="font-size:.72rem;background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px">
+                                Regular
+                            </button>
+                            <button type="button" data-bulk-mode="week"
+                                    class="btn btn-sm fw-bold text-uppercase px-3"
+                                    style="font-size:.72rem;background:transparent;color:#9ca3af;border:1px solid #e5e7eb;border-radius:6px">
+                                Week Schedule
+                            </button>
                         </div>
+
+                        {{-- Regular interval panel --}}
+                        <div data-bulk-regular-panel>
+                            <div class="row g-3 mb-3">
+                                <div class="col-sm-4">
+                                    <label class="form-label">Number of Events</label>
+                                    <input type="number" data-bulk-count value="8" min="1" max="20" class="form-control">
+                                </div>
+                                <div class="col-sm-4">
+                                    <label class="form-label">Start Date</label>
+                                    <input type="date" data-bulk-start-date class="form-control">
+                                </div>
+                                <div class="col-sm-4">
+                                    <label class="form-label">Start Time (BST/GMT)</label>
+                                    <input type="time" data-bulk-start-time value="20:00" class="form-control">
+                                </div>
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-sm-4">
+                                    <label class="form-label">Interval</label>
+                                    <select data-bulk-interval class="form-select">
+                                        <option value="7">Weekly (7 days)</option>
+                                        <option value="14">Bi-weekly (14 days)</option>
+                                        <option value="custom">Custom</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-4" data-bulk-custom-interval-wrap style="display:none">
+                                    <label class="form-label">Days between events</label>
+                                    <input type="number" data-bulk-custom-interval value="7" min="1" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Week schedule panel --}}
+                        <div data-bulk-week-panel style="display:none">
+                            <div class="row g-3 mb-3">
+                                <div class="col-sm-4">
+                                    <label class="form-label">Start Date</label>
+                                    <input type="date" data-bulk-week-start class="form-control">
+                                </div>
+                                <div class="col-sm-4">
+                                    <label class="form-label">Time (BST/GMT)</label>
+                                    <input type="time" data-bulk-week-time value="20:00" class="form-control">
+                                </div>
+                                <div class="col-sm-4">
+                                    <label class="form-label">Number of Weeks</label>
+                                    <input type="number" data-bulk-week-count value="1" min="1" max="12" class="form-control">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label d-block">Race Days</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach([0=>'Mon',1=>'Tue',2=>'Wed',3=>'Thu',4=>'Fri',5=>'Sat',6=>'Sun'] as $offset => $day)
+                                    <label data-bulk-day-label
+                                           class="d-flex align-items-center gap-1 px-3 py-1 rounded-pill fw-bold"
+                                           style="cursor:pointer;border:1px solid #e5e7eb;font-size:.8rem;user-select:none;background:#fff;color:#374151;transition:all .15s">
+                                        <input type="checkbox" data-bulk-day="{{ $offset }}" class="d-none">
+                                        {{ $day }}
+                                    </label>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Shared generator inputs --}}
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-4">
+                                <label class="form-label">Base Name</label>
+                                <input type="text" data-bulk-base-name value="Round" class="form-control" placeholder="e.g. Round">
+                            </div>
+                        </div>
+
+                        <div>
+                            <button type="button" data-bulk-generate disabled
+                                    class="btn fw-black text-uppercase text-white px-4"
+                                    style="background:#7c3aed">
+                                Generate Schedule
+                            </button>
+                            <span data-bulk-no-date class="text-secondary ms-2" style="font-size:.78rem">Pick a start date first</span>
+                        </div>
+
                     </div>
                 </div>
 
-                {{-- Requirements --}}
+                {{-- ── Requirements ──────────────────────────────────────────── --}}
                 <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Requirements <span class="fw-normal" style="text-transform:none">(optional — all off by default)</span></p>
 
@@ -261,7 +364,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                     </div>
                 </div>
 
-                {{-- Additional --}}
+                {{-- ── Additional ──────────────────────────────────────────────── --}}
                 <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Additional</p>
 
@@ -298,6 +401,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                                 </div>
                             </div>
                         </div>
+
                         <div class="col-sm-6">
                             <label class="form-label">Car Class <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
                             <select name="car_class" id="ce-car-class" class="form-select">
@@ -315,8 +419,8 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                     </div>
                 </div>
 
-                {{-- Multiclass --}}
-                <div class="px-4 py-3" style="border-top:1px solid #f3f4f6" data-multiclass-wrap>
+                {{-- ── Multiclass (single only) ────────────────────────────────── --}}
+                <div class="px-4 py-3" style="border-top:1px solid #f3f4f6" data-mode-single data-multiclass-wrap>
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Multiclass <span class="fw-normal" style="text-transform:none">(optional)</span></p>
                     <div class="mb-3">
                         <div class="form-check form-switch">
@@ -336,11 +440,12 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                         <input type="hidden" name="classes_json" data-multiclass-json value="[]">
                     </div>
                 </div>
+
             </div>
 
-            {{-- gPortal Server & Slot --}}
+            {{-- ── gPortal Server & Slot (single only) ─────────────────────── --}}
             @if($servers->isNotEmpty())
-            <div class="admin-card mb-4">
+            <div class="admin-card mb-4" data-mode-single>
                 <div class="px-4 py-3">
                     <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">gPortal Server <span class="fw-normal" style="text-transform:none">(optional)</span></p>
                     <p class="text-secondary mb-3" style="font-size:.75rem">Assign a server slot — config will be auto-pushed 10 minutes before the reset.</p>
@@ -364,7 +469,6 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                         </select>
                     </div>
 
-                    {{-- Rolling slot picker --}}
                     <div id="gp-slot-picker" style="display:none">
                         <label class="form-label">Race Slot (UTC)</label>
                         <div id="gp-slot-grid" class="d-flex gap-2 flex-wrap mb-2" style="max-height:260px;overflow-y:auto"></div>
@@ -373,7 +477,6 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                         @error('slot_time') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                     </div>
 
-                    {{-- Scheduled server: free datetime --}}
                     <div id="gp-scheduled-picker" style="display:none">
                         <label class="form-label">Race Slot (UTC)</label>
                         <input type="datetime-local" name="slot_time" id="gp-scheduled-value"
@@ -385,13 +488,49 @@ $formatsWithSlug = $formats->groupBy('game')->map(
             </div>
             @endif
 
+            {{-- ── Bulk events table (managed by bulk JS) ───────────────────── --}}
+            <div data-bulk-events-section style="display:none">
+                <div class="admin-card mb-4">
+                    <div class="px-4 pt-4 pb-2 d-flex align-items-center justify-content-between">
+                        <p class="fw-black text-uppercase fst-italic mb-0" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">
+                            Events — <span data-bulk-count-display>0</span> races
+                        </p>
+                        <button type="button" data-bulk-add-row
+                                class="btn btn-sm fw-bold text-uppercase"
+                                style="font-size:.68rem;padding:3px 10px;background:rgba(124,58,237,.1);color:#7c3aed;border:1px solid rgba(124,58,237,.3);border-radius:6px">
+                            + Add Row
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0" style="font-size:.875rem">
+                            <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+                                <tr>
+                                    <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:36px">#</th>
+                                    <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Title</th>
+                                    <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Track</th>
+                                    <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:200px">Date & Time (BST/GMT)</th>
+                                    <th class="pe-4" style="width:40px"></th>
+                                </tr>
+                            </thead>
+                            <tbody data-bulk-tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {{-- ── Submit ───────────────────────────────────────────────────── --}}
             <div class="d-flex gap-2">
-                <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">Create Event</button>
+                <button type="submit" id="ce-submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">
+                    <span id="ce-btn-single">Create Event</span>
+                    <span id="ce-btn-bulk" style="display:none">Create <span data-bulk-count-display>0</span> Races</span>
+                </button>
                 <a href="{{ route('admin.races.index') }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4">Cancel</a>
             </div>
+
         </div>
 
-        {{-- ── Live Event Preview ──────────────────────────────────────────── --}}
+        {{-- ── Live Event Preview ────────────────────────────────────────────── --}}
         <div class="col-12 col-xl-4">
             <div style="position:sticky;top:80px">
 
@@ -399,14 +538,12 @@ $formatsWithSlug = $formats->groupBy('game')->map(
 
                 <div id="ce-preview" style="border-radius:14px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18);border:1px solid rgba(124,58,237,.2)">
 
-                    {{-- Image area --}}
                     <div style="position:relative;height:185px;overflow:hidden;background:#111827">
                         <img id="prev-track-img" src="" alt="" loading="lazy"
                              style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none">
                         <div id="prev-track-placeholder"
                              style="position:absolute;inset:0;background:linear-gradient(135deg,#1e1e3a 0%,#2d1b69 100%)"></div>
 
-                        {{-- Format image / text badge --}}
                         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
                             <img id="prev-format-img" src="" alt=""
                                  style="max-width:60%;max-height:80%;object-fit:contain;display:none;filter:drop-shadow(0 3px 18px rgba(0,0,0,.85))">
@@ -417,14 +554,11 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                             </div>
                         </div>
 
-                        {{-- Platform badges top-right --}}
                         <div id="prev-platforms" style="position:absolute;top:8px;right:8px;display:flex;gap:4px"></div>
                     </div>
 
-                    {{-- Card body --}}
                     <div style="background:#111827;border-top:1px solid rgba(255,255,255,.07);padding:12px 14px 14px">
 
-                        {{-- Format info block --}}
                         <div id="prev-fmt-block" style="display:none;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.07)">
                             <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
                                 <span id="prev-fmt-name-label"
@@ -442,25 +576,21 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                         <div id="prev-meta"
                              style="font-size:.72rem;color:#9ca3af;margin-bottom:10px">—</div>
 
-                        {{-- Badges --}}
                         <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
                             <span id="prev-game-badge"
                                   style="display:none;font-size:.65rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:4px;color:#fff"></span>
-                            {{-- SR tier badge --}}
                             <span id="prev-sr-badge" style="display:none;align-items:center;gap:4px">
                                 <span id="prev-sr-circle"
                                       style="width:20px;height:20px;border-radius:50%;background:#1a1a2e;border:2px solid #dc2626;display:inline-flex;align-items:center;justify-content:center;color:#dc2626;font-size:.58rem;font-weight:900;flex-shrink:0">B</span>
                                 <span id="prev-sr-text"
                                       style="font-size:.65rem;font-weight:900;color:#e5e7eb;white-space:nowrap">SR 5.0+</span>
                             </span>
-                            {{-- XCL Rating tier badge --}}
                             <span id="prev-xcl-badge"
                                   style="display:none;font-size:.63rem;font-weight:900;text-transform:capitalize;padding:2px 8px;border-radius:4px;border:1px solid rgba(205,127,50,.4);background:rgba(205,127,50,.15);color:#cd7f32"></span>
                             <span id="prev-open-badge"
                                   style="display:none;font-size:.65rem;font-weight:900;text-transform:uppercase;padding:2px 8px;border-radius:4px;background:rgba(212,238,106,.12);color:#d4ee6a;border:1px solid rgba(212,238,106,.25)">OPEN</span>
                         </div>
 
-                        {{-- Details --}}
                         <div style="display:flex;flex-direction:column;gap:5px;font-size:.75rem">
                             <div style="display:flex;gap:10px">
                                 <span style="color:#6b7280;width:58px;flex-shrink:0">CLASS</span>
@@ -476,7 +606,6 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                             </div>
                         </div>
 
-                        {{-- Duration + Date row --}}
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,255,255,.07)">
                             <span id="prev-duration"
                                   style="display:none;font-size:.68rem;font-weight:900;text-transform:uppercase;color:#111827;background:#d4ee6a;border-radius:999px;padding:2px 10px"></span>
@@ -493,299 +622,60 @@ $formatsWithSlug = $formats->groupBy('game')->map(
 
     </div>
 </form>
-</div>
-
-{{-- ═══════════════════════════════════════════════════════════
-     TAB: BULK SCHEDULE
-════════════════════════════════════════════════════════════════ --}}
-<div data-tab-content="bulk" style="display:none">
-<div data-bulk-wrap>
-<form action="{{ route('admin.races.bulk-store') }}" method="POST">
-@csrf
-<input type="hidden" name="_tab" value="bulk">
-
-<div class="row g-4 align-items-start">
-
-    {{-- Left: generator + events --}}
-    <div class="col-12 col-lg-8">
-
-        {{-- Schedule Generator --}}
-        <div class="admin-card mb-4">
-            <div class="px-4 pt-4 pb-2">
-                <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Schedule Generator</p>
-
-                {{-- Mode toggle --}}
-                <div class="d-flex gap-2 mb-4">
-                    <button type="button" data-bulk-mode="regular"
-                            class="btn btn-sm fw-bold text-uppercase px-3"
-                            style="font-size:.72rem;background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px">
-                        Regular
-                    </button>
-                    <button type="button" data-bulk-mode="week"
-                            class="btn btn-sm fw-bold text-uppercase px-3"
-                            style="font-size:.72rem;background:transparent;color:#9ca3af;border:1px solid #e5e7eb;border-radius:6px">
-                        Week Schedule
-                    </button>
-                </div>
-
-                {{-- Regular interval panel --}}
-                <div data-bulk-regular-panel>
-                    <div class="row g-3 mb-3">
-                        <div class="col-sm-4">
-                            <label class="form-label">Number of Events</label>
-                            <input type="number" data-bulk-count value="8" min="1" max="20" class="form-control">
-                        </div>
-                        <div class="col-sm-4">
-                            <label class="form-label">Start Date</label>
-                            <input type="date" data-bulk-start-date class="form-control">
-                        </div>
-                        <div class="col-sm-4">
-                            <label class="form-label">Start Time (BST/GMT)</label>
-                            <input type="time" data-bulk-start-time value="20:00" class="form-control">
-                        </div>
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-sm-4">
-                            <label class="form-label">Interval</label>
-                            <select data-bulk-interval class="form-select">
-                                <option value="7">Weekly (7 days)</option>
-                                <option value="14">Bi-weekly (14 days)</option>
-                                <option value="custom">Custom</option>
-                            </select>
-                        </div>
-                        <div class="col-sm-4" data-bulk-custom-interval-wrap style="display:none">
-                            <label class="form-label">Days between events</label>
-                            <input type="number" data-bulk-custom-interval value="7" min="1" class="form-control">
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Week schedule panel --}}
-                <div data-bulk-week-panel style="display:none">
-                    <div class="row g-3 mb-3">
-                        <div class="col-sm-4">
-                            <label class="form-label">Start Date</label>
-                            <input type="date" data-bulk-week-start class="form-control">
-                        </div>
-                        <div class="col-sm-4">
-                            <label class="form-label">Time (BST/GMT)</label>
-                            <input type="time" data-bulk-week-time value="20:00" class="form-control">
-                        </div>
-                        <div class="col-sm-4">
-                            <label class="form-label">Number of Weeks</label>
-                            <input type="number" data-bulk-week-count value="1" min="1" max="12" class="form-control">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label d-block">Race Days</label>
-                        <div class="d-flex flex-wrap gap-2">
-                            @foreach([0=>'Mon',1=>'Tue',2=>'Wed',3=>'Thu',4=>'Fri',5=>'Sat',6=>'Sun'] as $offset => $day)
-                            <label data-bulk-day-label
-                                   class="d-flex align-items-center gap-1 px-3 py-1 rounded-pill fw-bold"
-                                   style="cursor:pointer;border:1px solid #e5e7eb;font-size:.8rem;user-select:none;background:#fff;color:#374151;transition:all .15s">
-                                <input type="checkbox" data-bulk-day="{{ $offset }}" class="d-none">
-                                {{ $day }}
-                            </label>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Shared: base name + default track --}}
-                <div class="row g-3 mb-3">
-                    <div class="col-sm-4">
-                        <label class="form-label">Base Name</label>
-                        <input type="text" data-bulk-base-name value="Round" class="form-control" placeholder="e.g. Round">
-                    </div>
-                    <div class="col-sm-4">
-                        <label class="form-label">Default Track</label>
-                        <input type="text" data-bulk-default-track class="form-control" placeholder="e.g. Monza">
-                    </div>
-                </div>
-            </div>
-
-            <div class="px-4 pb-4">
-                <button type="button" data-bulk-generate disabled
-                        class="btn fw-black text-uppercase text-white px-4"
-                        style="background:#7c3aed">
-                    Generate Schedule
-                </button>
-                <span data-bulk-no-date class="text-secondary ms-2" style="font-size:.78rem">Pick a start date first</span>
-            </div>
-        </div>
-
-        {{-- Events list --}}
-        <div data-bulk-events-section style="display:none">
-            <div class="admin-card mb-4">
-                <div class="px-4 pt-4 pb-2 d-flex align-items-center justify-content-between">
-                    <p class="fw-black text-uppercase fst-italic mb-0" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">
-                        Events — <span data-bulk-count-display>0</span> races
-                    </p>
-                    <button type="button" data-bulk-add-row
-                            class="btn btn-sm fw-bold text-uppercase"
-                            style="font-size:.68rem;padding:3px 10px;background:rgba(124,58,237,.1);color:#7c3aed;border:1px solid rgba(124,58,237,.3);border-radius:6px">
-                        + Add Row
-                    </button>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table align-middle mb-0" style="font-size:.875rem">
-                        <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
-                            <tr>
-                                <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:36px">#</th>
-                                <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Title</th>
-                                <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Track</th>
-                                <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:200px">Date & Time (BST/GMT)</th>
-                                <th class="pe-4" style="width:40px"></th>
-                            </tr>
-                        </thead>
-                        <tbody data-bulk-tbody></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="d-flex gap-2">
-                <button type="submit"
-                        class="btn fw-black text-uppercase text-white px-4"
-                        style="background:#7c3aed">
-                    Create <span data-bulk-count-display>0</span> Races
-                </button>
-                <a href="{{ route('admin.races.index') }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4">
-                    Cancel
-                </a>
-            </div>
-        </div>
-
-    </div>
-
-    {{-- Right: shared settings --}}
-    <div class="col-12 col-lg-4">
-        <div class="admin-card mb-4">
-            <div class="px-4 pt-4 pb-2">
-                <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Shared Settings</p>
-
-                <div class="mb-3">
-                    <label class="form-label">Game</label>
-                    <select name="game" class="form-select @error('game') is-invalid @enderror" required>
-                        <option value="">Select game...</option>
-                        <option value="acc"     {{ old('game') === 'acc'     ? 'selected' : '' }}>ACC Console</option>
-                        <option value="lmu"     {{ old('game') === 'lmu'     ? 'selected' : '' }}>Le Mans Ultimate</option>
-                        <option value="iracing" {{ old('game') === 'iracing' ? 'selected' : '' }}>iRacing</option>
-                        <option value="ac"      {{ old('game') === 'ac'      ? 'selected' : '' }}>AC Rally</option>
-                    </select>
-                    @error('game') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Multiplier</label>
-                    <select name="duration_key" class="form-select @error('duration_key') is-invalid @enderror">
-                        <option value="">1.0× (default)</option>
-                        <option value="15"   {{ old('duration_key') === '15'   ? 'selected' : '' }}>0.6×</option>
-                        <option value="20"   {{ old('duration_key') === '20'   ? 'selected' : '' }}>0.8×</option>
-                        <option value="30"   {{ old('duration_key') === '30'   ? 'selected' : '' }}>1.0×</option>
-                        <option value="30+"  {{ old('duration_key') === '30+'  ? 'selected' : '' }}>1.2×</option>
-                        <option value="30++" {{ old('duration_key') === '30++' ? 'selected' : '' }}>1.3×</option>
-                        <option value="45"   {{ old('duration_key') === '45'   ? 'selected' : '' }}>1.5×</option>
-                        <option value="45+"  {{ old('duration_key') === '45+'  ? 'selected' : '' }}>1.6×</option>
-                        <option value="60"   {{ old('duration_key') === '60'   ? 'selected' : '' }}>2.0×</option>
-                        <option value="60+"  {{ old('duration_key') === '60+'  ? 'selected' : '' }}>2.1×</option>
-                        <option value="90"   {{ old('duration_key') === '90'   ? 'selected' : '' }}>2.5×</option>
-                        <option value="90+"  {{ old('duration_key') === '90+'  ? 'selected' : '' }}>2.6×</option>
-                    </select>
-                    @error('duration_key') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Max Drivers <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
-                    <input type="number" name="max_drivers" value="{{ old('max_drivers') }}"
-                           class="form-control @error('max_drivers') is-invalid @enderror"
-                           min="1">
-                    @error('max_drivers') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
-            </div>
-
-            <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-                <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Event Tag</p>
-
-                @php
-                    $bulkTagsConfig = json_encode([
-                        'tags'        => $tags->map(fn($t) => ['slug' => $t->slug, 'name' => $t->name, 'color' => $t->color]),
-                        'storeUrl'    => route('admin.event-tags.store'),
-                        'csrfToken'   => csrf_token(),
-                        'selectedTag' => old('event_tag', ''),
-                    ]);
-                @endphp
-                <div data-tags-wrap data-config='{{ $bulkTagsConfig }}'>
-                    <div class="d-flex align-items-center justify-content-between mb-1">
-                        <label class="form-label mb-0">Tag</label>
-                        <button type="button" data-tags-toggle
-                                class="btn btn-sm fw-bold text-uppercase"
-                                style="font-size:.68rem;padding:2px 8px;background:rgba(124,58,237,.1);color:#7c3aed;border:1px solid rgba(124,58,237,.3);border-radius:6px">
-                            + New
-                        </button>
-                    </div>
-                    <select name="event_tag" class="form-select @error('event_tag') is-invalid @enderror" data-tags-select required>
-                        <option value="">Select tag...</option>
-                    </select>
-                    @error('event_tag') <div class="invalid-feedback">{{ $message }}</div> @enderror
-
-                    <div data-tags-add-panel style="display:none">
-                        <div class="mt-2 p-3 rounded-2" style="background:#f8f5ff;border:1px solid rgba(124,58,237,.2)">
-                            <div data-tags-error class="alert alert-danger py-1 px-2 mb-2" style="font-size:.8rem;display:none"></div>
-                            <div class="d-flex gap-2 align-items-end">
-                                <div class="flex-grow-1">
-                                    <label class="form-label" style="font-size:.78rem">Name</label>
-                                    <input type="text" data-tags-name class="form-control form-control-sm">
-                                </div>
-                                <div>
-                                    <label class="form-label" style="font-size:.78rem">Color</label>
-                                    <input type="color" data-tags-color class="form-control form-control-sm form-control-color" style="width:46px;padding:2px" value="#7B2FBE">
-                                </div>
-                                <button type="button" data-tags-save
-                                        class="btn btn-sm fw-bold text-white" style="background:#7c3aed;white-space:nowrap">Add</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-                <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Description <span class="fw-normal" style="text-transform:none">(optional)</span></p>
-                <textarea name="description" rows="3"
-                          class="form-control @error('description') is-invalid @enderror"
-                          placeholder="Applies to all events...">{{ old('description') }}</textarea>
-                @error('description') <div class="invalid-feedback">{{ $message }}</div> @enderror
-            </div>
-
-        </div>
-    </div>
-
-</div>
-</form>
-</div>
-</div>
 
 <script>
 (function () {
-    // ── Tab switching ──────────────────────────────────────────────────────
-    function switchTab(tab) {
-        document.querySelectorAll('[data-tab-btn]').forEach(btn => {
-            const active = btn.dataset.tabBtn === tab;
+    // ── Mode switching ──────────────────────────────────────────────────────
+    const form            = document.getElementById('ce-form');
+    const singleUrl       = '{{ route('admin.races.store') }}';
+    const bulkUrl         = '{{ route('admin.races.bulk-store') }}';
+    const modeInput       = document.getElementById('ce-mode-input');
+    const singleMaxDrivers = document.getElementById('ce-max-drivers');
+    const btnSingle       = document.getElementById('ce-btn-single');
+    const btnBulk         = document.getElementById('ce-btn-bulk');
+    const bulkEventsSection = document.querySelector('[data-bulk-events-section]');
+
+    function switchMode(mode) {
+        const isBulk = mode === 'bulk';
+        if (form)     form.action = isBulk ? bulkUrl : singleUrl;
+        if (modeInput) modeInput.value = mode;
+
+        document.querySelectorAll('[data-mode-single]').forEach(el => el.style.display = isBulk ? 'none' : '');
+        document.querySelectorAll('[data-mode-bulk]').forEach(el => el.style.display = isBulk ? '' : 'none');
+
+        // Disable single-only hidden inputs to prevent duplicate submissions
+        if (singleMaxDrivers) singleMaxDrivers.disabled = isBulk;
+
+        // Bulk events section: hide on single, restore if rows exist on bulk
+        if (bulkEventsSection) {
+            if (!isBulk) {
+                bulkEventsSection.style.display = 'none';
+            } else {
+                const tbody = bulkEventsSection.querySelector('[data-bulk-tbody]');
+                if (tbody && tbody.children.length > 0) bulkEventsSection.style.display = '';
+            }
+        }
+
+        // Submit button labels
+        if (btnSingle) btnSingle.style.display = isBulk ? 'none' : '';
+        if (btnBulk)   btnBulk.style.display   = isBulk ? ''     : 'none';
+
+        // Mode buttons
+        document.querySelectorAll('[data-mode-btn]').forEach(btn => {
+            const active = btn.dataset.modeBtn === mode;
             btn.style.color        = active ? '#7c3aed' : '#9ca3af';
             btn.style.borderBottom = active ? '2px solid #7c3aed' : '2px solid transparent';
         });
-        document.querySelectorAll('[data-tab-content]').forEach(el => {
-            el.style.display = el.dataset.tabContent === tab ? '' : 'none';
-        });
-        history.replaceState(null, '', location.pathname + '?tab=' + tab);
+
+        history.replaceState(null, '', location.pathname + '?mode=' + mode);
     }
 
-    document.querySelectorAll('[data-tab-btn]').forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tabBtn));
+    document.querySelectorAll('[data-mode-btn]').forEach(btn => {
+        btn.addEventListener('click', () => switchMode(btn.dataset.modeBtn));
     });
 
-    const initTab = new URLSearchParams(location.search).get('tab') || '{{ old('_tab', 'single') }}';
-    switchTab(initTab);
+    const initMode = new URLSearchParams(location.search).get('mode') || '{{ old('_mode', 'single') }}';
+    switchMode(initMode);
 })();
 
 // ── Format Event JS ────────────────────────────────────────────────────────
@@ -933,7 +823,6 @@ $formatsWithSlug = $formats->groupBy('game')->map(
     const serverSlots = @json($serverSlots ?? []);
     const DAYS        = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-    // Convert a UTC 'YYYY-MM-DD HH:MM' string to Europe/London display time
     function toLocalTime(utcSlot) {
         const d = new Date(utcSlot.replace(' ', 'T') + ':00Z');
         return d.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' });
@@ -947,7 +836,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
 
     function toLocalDayKey(utcSlot) {
         const d = new Date(utcSlot.replace(' ', 'T') + ':00Z');
-        return d.toLocaleDateString('en-CA', { timeZone: 'Europe/London' }); // YYYY-MM-DD in London tz
+        return d.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
     }
 
     function toLocalDayHeader(utcSlot) {
@@ -965,7 +854,6 @@ $formatsWithSlug = $formats->groupBy('game')->map(
         const taken    = data.takenSlots || [];
         const selected = slotValue ? slotValue.value : '';
 
-        // Group slots by London date (a UTC slot at 23:00 might be next day in BST)
         const byDate = {};
         const headers = {};
         data.slots.forEach(slot => {
@@ -1001,7 +889,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
 
                 if (!isTaken) {
                     btn.addEventListener('click', () => {
-                        slotValue.value = slot; // store UTC value
+                        slotValue.value = slot;
                         slotLabel.textContent  = '✓ ' + displayTime + ' (GMT/BST)';
                         slotLabel.style.display = '';
                         buildSlotGrid(serverId);
@@ -1227,7 +1115,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
             }
         }
 
-        // OPEN badge (only when no SR and no XCL rating)
+        // OPEN badge
         if (prev.openBadge) prev.openBadge.style.display = (!srOn && !minOn && !maxOn) ? '' : 'none';
 
         // Car class / track / weather
@@ -1279,7 +1167,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                         if (!s.mins) return;
                         const pill = document.createElement('span');
                         pill.style.cssText = 'font-size:.7rem;font-weight:600;border-radius:6px;padding:3px 8px;background:' + s.bg + ';color:' + s.color;
-                        pill.textContent   = s.key + ' ' + s.mins + "'";
+                        pill.textContent   = s.key + ' ' + s.mins + "'";
                         pillsEl.appendChild(pill);
                     });
                 }
@@ -1291,7 +1179,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                     const pitstop = fmtData.pitstop_count > 0
                         ? 'Required (' + fmtData.pitstop_count + 'x)'
                         : 'Not required';
-                    metaEl.textContent = 'Formation: ' + formation + ' Pitstop: ' + pitstop;
+                    metaEl.textContent = 'Formation: ' + formation + ' Pitstop: ' + pitstop;
                 }
 
                 fmtBlock.style.display = '';
