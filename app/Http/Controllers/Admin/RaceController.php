@@ -51,8 +51,8 @@ class RaceController extends Controller
                 $ftp = new FtpService();
                 if ($ftp->connect($selectedServer)) {
                     $result      = $ftp->listFiles($selectedServer->path);
-                    $ftpFiles    = $result['json'];
                     $ftpAllFiles = $result['all'];
+                    $ftpFiles    = $result['json'];
                     $ftp->disconnect();
                 } else {
                     $ftpError = 'Could not connect to ' . $selectedServer->host . '.';
@@ -147,7 +147,14 @@ class RaceController extends Controller
     public function customCreate()
     {
         $tags = EventTag::orderBy('name')->get();
-        return view('admin.races.custom-create', compact('tags'));
+
+        $trackFilenames   = array_values(self::TRACK_IMAGE_MAP);
+        $trackMediaByName = Media::whereIn('original_name', $trackFilenames)->get()->keyBy('original_name');
+        $trackPreviewUrls = collect(self::TRACK_IMAGE_MAP)
+            ->map(fn($fname) => $trackMediaByName->get($fname)?->url)
+            ->all();
+
+        return view('admin.races.custom-create', compact('tags', 'trackPreviewUrls'));
     }
 
     public function bulkStore(Request $request)
@@ -155,6 +162,7 @@ class RaceController extends Controller
         $request->validate([
             'game'                 => 'required|in:acc,lmu,iracing,ac',
             'event_tag'            => 'required|exists:event_tags,slug',
+            'event_format_id'      => 'nullable|exists:event_formats,id',
             'duration_key'         => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
             'practice_duration'    => 'nullable|integer|min:1|max:999',
             'qualifying_duration'  => 'nullable|integer|min:1|max:999',
@@ -162,6 +170,9 @@ class RaceController extends Controller
             'car_class'            => 'nullable|string|max:50',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
+            'sr_requirement'       => 'nullable|numeric|in:3,4,5,6,7,8,9',
+            'min_rating'           => 'nullable|string|in:rookie,bronze,silver,gold,platinum,alien',
+            'max_rating'           => 'nullable|string|in:rookie,bronze,silver,gold,platinum,alien',
             'max_drivers'          => 'nullable|integer|min:1',
             'description'          => 'nullable|string',
             'events'               => 'required|array|min:1|max:20',
@@ -173,6 +184,7 @@ class RaceController extends Controller
         $shared = [
             'game'                 => $request->game,
             'event_tag'            => $request->event_tag,
+            'event_format_id'      => $request->event_format_id ?: null,
             'duration_key'         => $request->duration_key ?: null,
             'practice_duration'    => $request->practice_duration ?: null,
             'qualifying_duration'  => $request->qualifying_duration ?: null,
@@ -180,6 +192,9 @@ class RaceController extends Controller
             'car_class'            => $request->car_class ?: null,
             'weather'              => $request->weather ?: null,
             'time_of_day'          => $request->time_of_day ?: null,
+            'sr_requirement'       => $request->sr_requirement ?: null,
+            'min_rating'           => $request->min_rating ?: null,
+            'max_rating'           => $request->max_rating ?: null,
             'max_drivers'          => $request->max_drivers ?: null,
             'description'          => $request->description ?: null,
             'status'               => 'open',

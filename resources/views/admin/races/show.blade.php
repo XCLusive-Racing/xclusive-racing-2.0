@@ -524,7 +524,7 @@
                     @foreach($ftpServers as $server)
                     @php $isSelected = $selectedServer?->id === $server->id; @endphp
                     <div class="col-12 col-md-6 col-lg-4">
-                        <a href="{{ request()->fullUrlWithQuery(['server' => $server->id]) }}"
+                        <a href="{{ $isSelected ? request()->url() : request()->fullUrlWithQuery(['server' => $server->id]) }}"
                            class="text-decoration-none d-block h-100">
                             <div style="background:{{ $isSelected ? '#faf5ff' : 'white' }};border:{{ $isSelected ? '2px solid #7c3aed' : '1px solid #e5e7eb' }};border-radius:12px;padding:1rem 1.25rem;cursor:pointer;height:100%;min-height:80px">
                                 <div class="d-flex justify-content-between align-items-start">
@@ -562,72 +562,53 @@
                 @endif
 
                 @if($selectedServer && !$ftpError)
-                <div class="mb-4" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
-                    <div class="d-flex align-items-center justify-content-between px-3 py-2" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
-                        <span class="fw-black text-uppercase fst-italic text-dark" style="font-size:.75rem">{{ $selectedServer->name }}</span>
-                        <span class="text-secondary" style="font-size:.72rem;font-family:monospace">{{ $selectedServer->path }}</span>
-                    </div>
-                    @if(empty($ftpFiles))
-                    <div class="p-3">
-                        <div class="fw-bold text-dark" style="font-size:.82rem">No JSON files found in <code>{{ $selectedServer->path }}</code></div>
-                    </div>
-                    @else
-                    <div class="table-responsive">
-                        <table class="table align-middle mb-0" style="font-size:.82rem">
-                            <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
-                                <tr>
-                                    <th class="fw-bold text-uppercase ps-3" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">File</th>
-                                    <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Session</th>
-                                    <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:140px">Date</th>
-                                    <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:75px">Size</th>
-                                    <th class="fw-bold text-uppercase text-end pe-3" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:120px">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($ftpFiles as $file)
-                                @php
-                                    $parsed     = \App\Services\FtpService::parseFilename($file['name']);
-                                    $isImported = in_array($file['name'], $importedFiles);
-                                    $sizeKb     = $file['size'] !== null ? round($file['size'] / 1024, 1) . ' KB' : '—';
-                                @endphp
-                                <tr style="{{ $isImported ? 'opacity:.5' : '' }}">
-                                    <td class="ps-3">
-                                        <div class="fw-bold text-dark" style="font-size:.78rem;font-family:monospace">{{ $file['name'] }}</div>
-                                    </td>
-                                    <td>
-                                        @if($parsed['session'] === 'Race')
-                                            <span class="badge" style="background:#d1fae5;color:#065f46;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">Race</span>
-                                        @elseif($parsed['session'] === 'Qualifying')
-                                            <span class="badge" style="background:#dbeafe;color:#1e40af;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">Quali</span>
-                                        @else
-                                            <span class="badge" style="background:#f3f4f6;color:#6b7280;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">?</span>
-                                        @endif
-                                    </td>
-                                    <td style="font-size:.75rem;color:#6b7280">{{ $parsed['date'] !== '—' ? $parsed['date'] : ($file['modified'] ?? '—') }}</td>
-                                    <td style="font-size:.75rem;color:#6b7280;font-family:monospace">{{ $sizeKb }}</td>
-                                    <td class="text-end pe-3">
-                                        @if($isImported)
-                                            <span class="badge" style="background:#f0fdf4;color:#16a34a;font-size:.68rem;padding:4px 10px;border-radius:5px;font-weight:700">✓ Imported</span>
-                                        @else
-                                            <form action="{{ route('admin.races.results.ftp', $race) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                <input type="hidden" name="server_id" value="{{ $selectedServer->id }}">
-                                                <input type="hidden" name="filename" value="{{ $file['name'] }}">
-                                                <button type="submit"
-                                                        class="btn btn-sm fw-black text-uppercase text-white"
-                                                        style="background:#7c3aed;font-size:.68rem;padding:4px 14px;border-radius:6px">
-                                                    Import
-                                                </button>
-                                            </form>
-                                        @endif
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    @endif
+                @php
+                    $raceFiles  = collect($ftpFiles)->filter(fn($f) => \App\Services\FtpService::parseFilename($f['name'])['session'] === 'Race')->take(10)->values();
+                    $qualiFiles = collect($ftpFiles)->filter(fn($f) => \App\Services\FtpService::parseFilename($f['name'])['session'] === 'Qualifying')->take(10)->values();
+                @endphp
+                @if($raceFiles->isEmpty() && $qualiFiles->isEmpty())
+                <div class="mb-4 p-3 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
+                    <div class="text-secondary" style="font-size:.82rem">No Race or Qualifying files found for this race on <strong>{{ $selectedServer->name }}</strong>.</div>
                 </div>
+                @else
+
+                @foreach([['Race', $raceFiles, '#d1fae5', '#065f46'], ['Qualifying', $qualiFiles, '#dbeafe', '#1e40af']] as [$label, $files, $bg, $color])
+                @if($files->isNotEmpty())
+                <div class="mb-3">
+                    <p class="fw-black text-uppercase fst-italic mb-2" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">{{ $label }}</p>
+                    <div class="d-flex flex-column gap-2">
+                        @foreach($files as $file)
+                        @php
+                            $parsed     = \App\Services\FtpService::parseFilename($file['name']);
+                            $isImported = in_array($file['name'], $importedFiles);
+                        @endphp
+                        <div class="d-flex align-items-center justify-content-between px-4 py-3 rounded-2"
+                             style="background:{{ $isImported ? '#f9fafb' : 'white' }};border:1px solid {{ $isImported ? '#f3f4f6' : '#e5e7eb' }};opacity:{{ $isImported ? '.6' : '1' }}">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="fw-black text-uppercase" style="font-size:.75rem;padding:4px 12px;border-radius:6px;background:{{ $bg }};color:{{ $color }};letter-spacing:.04em">{{ $label }}</span>
+                                <span class="text-secondary" style="font-size:.8rem">{{ $parsed['date'] !== '—' ? $parsed['date'] : ($file['modified'] ?? '—') }}</span>
+                            </div>
+                            @if($isImported)
+                                <span class="fw-bold" style="font-size:.75rem;color:#16a34a">✓ Imported</span>
+                            @else
+                                <form action="{{ route('admin.races.results.ftp', $race) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <input type="hidden" name="server_id" value="{{ $selectedServer->id }}">
+                                    <input type="hidden" name="filename" value="{{ $file['name'] }}">
+                                    <button type="submit" class="btn btn-sm fw-black text-uppercase text-white"
+                                            style="background:#7c3aed;font-size:.72rem;padding:5px 16px;border-radius:6px">
+                                        Import
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+                @endforeach
+
+                @endif
                 @endif
 
                 @endif {{-- end ftpServers not empty --}}

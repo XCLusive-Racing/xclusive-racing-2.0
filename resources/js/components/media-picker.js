@@ -48,6 +48,13 @@ function initSinglePicker(picker) {
     let folderList          = [];
 
     // ── Preview helpers ───────────────────────────────────────────────────────
+    function dispatchChange() {
+        picker.dispatchEvent(new CustomEvent('mp:change', {
+            bubbles: true,
+            detail: { url: preview, type: previewType, name: picker.dataset.name || '' },
+        }));
+    }
+
     function renderPreview() {
         if (previewBorder) previewBorder.style.borderColor = preview ? '#7c3aed' : '';
 
@@ -83,6 +90,7 @@ function initSinglePicker(picker) {
         if (pathInput) pathInput.value = '';
         if (fileInput) fileInput.value = '';
         renderPreview();
+        dispatchChange();
     }
 
     // ── File input (direct upload) ────────────────────────────────────────────
@@ -93,6 +101,7 @@ function initSinglePicker(picker) {
         previewType = f.type.startsWith('video/') ? 'video' : 'image';
         if (pathInput) pathInput.value = '';
         renderPreview();
+        dispatchChange();
     });
 
     // Button wiring in preview wrap
@@ -257,6 +266,7 @@ function initSinglePicker(picker) {
         if (fileInput) fileInput.value = '';
         closeGallery();
         renderPreview();
+        dispatchChange();
     }
 
     async function deleteItem(item) {
@@ -321,6 +331,7 @@ function initSinglePicker(picker) {
             if (uploadBtnText) uploadBtnText.style.display = '';
             closeGallery();
             renderPreview();
+            dispatchChange();
         }
     });
 

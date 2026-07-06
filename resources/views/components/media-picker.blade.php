@@ -8,6 +8,7 @@
 
 <div class="mb-4"
      data-media-picker
+     data-name="{{ $name }}"
      data-preview="{{ $currentUrl }}"
      data-preview-type="{{ $currentType }}"
      data-gallery-url="{{ route('admin.media.list') }}"
