@@ -28,7 +28,7 @@
                         <label class="form-label">Title <span class="text-danger">*</span></label>
                         <input type="text" id="cr-title" name="title" value="{{ old('title') }}"
                                class="form-control @error('title') is-invalid @enderror"
-                               placeholder="e.g. Open Practice — Spa">
+                               placeholder="e.g. Spa 24h" required>
                         @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 
@@ -318,6 +318,8 @@
                         </div>
 
                         <div id="crp-platforms" style="position:absolute;top:8px;right:8px;display:flex;gap:4px"></div>
+                        <img id="crp-icon-img" src="" alt=""
+                             style="position:absolute;bottom:8px;left:8px;width:34px;height:34px;object-fit:contain;border-radius:7px;background:rgba(0,0,0,.45);padding:4px;display:none">
                     </div>
 
                     <div style="background:#111827;border-top:1px solid rgba(255,255,255,.07);padding:12px 14px 14px">
@@ -428,7 +430,10 @@
         weatherEl:     $('crp-weather'),
         duration:      $('crp-duration'),
         date:          $('crp-date'),
+        iconImg:       $('crp-icon-img'),
     };
+
+    let customBgUrl = '';
 
     const gameColors = { acc: '#7c3aed', lmu: '#db2877', iracing: '#2563eb', ac: '#16a34a' };
     const gameLabels = { acc: 'ACC', lmu: 'LMU', iracing: 'iRACING', ac: 'AC RALLY' };
@@ -477,10 +482,10 @@
         const minVal = minOn && minSelect ? minSelect.value : '';
         const maxOn = maxToggle ? maxToggle.checked : false;
 
-        // Track background
-        const trackUrl = trackPreviewUrls[track] || '';
-        if (trackUrl && prev.trackImg) {
-            prev.trackImg.src = trackUrl;
+        // Track background (custom bg image overrides track image)
+        const bgUrl = customBgUrl || trackPreviewUrls[track] || '';
+        if (bgUrl && prev.trackImg) {
+            prev.trackImg.src = bgUrl;
             prev.trackImg.style.display = '';
             if (prev.trackPh) prev.trackPh.style.display = 'none';
         } else {
@@ -612,6 +617,24 @@
         .forEach(id => { const el = $(id); if (el) el.addEventListener('input', updatePreview); });
     const schedEl = $('cr-scheduled-at');
     if (schedEl) schedEl.addEventListener('change', updatePreview);
+
+    document.addEventListener('mp:change', e => {
+        const { name, url } = e.detail;
+        if (name === 'image') {
+            customBgUrl = url || '';
+            updatePreview();
+        } else if (name === 'icon') {
+            if (prev.iconImg) {
+                if (url) {
+                    prev.iconImg.src = url;
+                    prev.iconImg.style.display = '';
+                } else {
+                    prev.iconImg.style.display = 'none';
+                    prev.iconImg.src = '';
+                }
+            }
+        }
+    });
 
     updatePreview();
 })();
