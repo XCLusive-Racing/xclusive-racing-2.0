@@ -21,11 +21,20 @@
                 <div class="px-4 pt-4 pb-2">
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Server Info</p>
 
-                    <div class="mb-3">
-                        <label class="form-label">Server Name</label>
-                        <input type="text" name="name" value="{{ old('name', $server->name) }}"
-                               class="form-control @error('name') is-invalid @enderror">
-                        @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-9">
+                            <label class="form-label">Server Name</label>
+                            <input type="text" name="name" value="{{ old('name', $server->name) }}"
+                                   class="form-control @error('name') is-invalid @enderror">
+                            @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-sm-3">
+                            <label class="form-label">Server No. <span class="fw-normal text-secondary" style="text-transform:none">(gPortal)</span></label>
+                            <input type="number" name="server_number" value="{{ old('server_number', $server->server_number) }}"
+                                   min="1" max="9" placeholder="1–4"
+                                   class="form-control @error('server_number') is-invalid @enderror">
+                            @error('server_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
                     </div>
                 </div>
 
@@ -96,6 +105,48 @@
                             Server is active
                         </label>
                         <div class="form-text" style="font-size:.72rem;color:#9ca3af">Inactive servers are hidden from the import selector.</div>
+                    </div>
+                </div>
+
+                <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+                    <p class="fw-black text-uppercase fst-italic mb-2" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Config Defaults</p>
+                    <p class="text-secondary mb-3" style="font-size:.75rem">
+                        JSON defaults pushed to gPortal. Leave blank to use the built-in defaults.
+                        <strong>serverName</strong>, <strong>password</strong>, <strong>maxCarSlots</strong>, <strong>safetyRatingRequirement</strong>, <strong>racecraftRatingRequirement</strong> and <strong>carGroup</strong> are always computed automatically.
+                    </p>
+
+                    @php
+                        $service = app(\App\Services\AccServerConfigService::class);
+                        $settingsPlaceholder  = json_encode($service->defaultSettings(),    JSON_PRETTY_PRINT);
+                        $eventrulesPlaceholder = json_encode($service->defaultEventRules(), JSON_PRETTY_PRINT);
+                        $assistrulesPlaceholder = json_encode($service->defaultAssistRules(), JSON_PRETTY_PRINT);
+                    @endphp
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" style="font-size:.82rem">settings.json</label>
+                        <textarea name="settings_defaults" rows="6"
+                                  class="form-control @error('settings_defaults') is-invalid @enderror"
+                                  style="font-family:monospace;font-size:.78rem"
+                                  placeholder="{{ $settingsPlaceholder }}">{{ old('settings_defaults', $server->settings_defaults ? json_encode($server->settings_defaults, JSON_PRETTY_PRINT) : '') }}</textarea>
+                        @error('settings_defaults')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" style="font-size:.82rem">eventrules.json</label>
+                        <textarea name="eventrules_defaults" rows="5"
+                                  class="form-control @error('eventrules_defaults') is-invalid @enderror"
+                                  style="font-family:monospace;font-size:.78rem"
+                                  placeholder="{{ $eventrulesPlaceholder }}">{{ old('eventrules_defaults', $server->eventrules_defaults ? json_encode($server->eventrules_defaults, JSON_PRETTY_PRINT) : '') }}</textarea>
+                        @error('eventrules_defaults')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label fw-bold" style="font-size:.82rem">assistrules.json</label>
+                        <textarea name="assistrules_defaults" rows="5"
+                                  class="form-control @error('assistrules_defaults') is-invalid @enderror"
+                                  style="font-family:monospace;font-size:.78rem"
+                                  placeholder="{{ $assistrulesPlaceholder }}">{{ old('assistrules_defaults', $server->assistrules_defaults ? json_encode($server->assistrules_defaults, JSON_PRETTY_PRINT) : '') }}</textarea>
+                        @error('assistrules_defaults')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
 

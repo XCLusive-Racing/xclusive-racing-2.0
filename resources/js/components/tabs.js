@@ -1,11 +1,16 @@
 export function initTabs(wrap, defaultTab) {
     if (!wrap) return;
 
-    const buttons = wrap.querySelectorAll(':scope > * [data-tab-btn], [data-tab-nav] [data-tab-btn]');
-    const panels  = wrap.querySelectorAll(':scope > [data-tab-panel]');
+    // Scope to only this wrap level — exclude buttons/panels inside nested [data-tabs]
+    const buttons = [...wrap.querySelectorAll('[data-tab-btn]')].filter(
+        el => el.closest('[data-tabs]') === wrap
+    );
+    const panels = [...wrap.querySelectorAll('[data-tab-panel]')].filter(
+        el => el.closest('[data-tabs]') === wrap
+    );
 
     function activateTab(tabId) {
-        wrap.querySelectorAll('[data-tab-btn]').forEach(btn => {
+        buttons.forEach(btn => {
             const active = btn.dataset.tabBtn === tabId;
             if (btn.dataset.tabActiveClass) {
                 btn.classList.toggle(btn.dataset.tabActiveClass, active);
@@ -20,17 +25,17 @@ export function initTabs(wrap, defaultTab) {
                 btn.style.borderBottom = active ? `2px solid ${btn.dataset.tabColor || '#7c3aed'}` : '2px solid transparent';
             }
         });
-        wrap.querySelectorAll('[data-tab-panel]').forEach(panel => {
+        panels.forEach(panel => {
             panel.style.display = panel.dataset.tabPanel === tabId ? '' : 'none';
         });
         wrap.dataset.activeTab = tabId;
     }
 
-    wrap.querySelectorAll('[data-tab-btn]').forEach(btn => {
+    buttons.forEach(btn => {
         btn.addEventListener('click', () => activateTab(btn.dataset.tabBtn));
     });
 
-    activateTab(defaultTab || wrap.querySelector('[data-tab-btn]')?.dataset.tabBtn);
+    activateTab(defaultTab || buttons[0]?.dataset.tabBtn);
 }
 
 export function initAccordions(wrap) {

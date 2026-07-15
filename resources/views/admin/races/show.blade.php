@@ -614,8 +614,14 @@
 
                 @foreach([['Race', $raceFiles, '#d1fae5', '#065f46'], ['Qualifying', $qualiFiles, '#dbeafe', '#1e40af']] as [$label, $files, $bg, $color])
                 @if($files->isNotEmpty())
-                <div class="mb-3">
-                    <p class="fw-black text-uppercase fst-italic mb-2" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">{{ $label }}</p>
+                <details open class="mb-3 ftp-group">
+                    <summary class="fw-black text-uppercase fst-italic mb-2"
+                             style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px">
+                        <svg style="width:10px;height:10px;flex-shrink:0;transition:transform .15s" viewBox="0 0 10 10" fill="currentColor">
+                            <path d="M2 3l3 4 3-4H2z"/>
+                        </svg>
+                        {{ $label }}
+                    </summary>
                     <div class="d-flex flex-column gap-2">
                         @foreach($files as $file)
                         @php
@@ -644,7 +650,7 @@
                         </div>
                         @endforeach
                     </div>
-                </div>
+                </details>
                 @endif
                 @endforeach
 
@@ -746,9 +752,6 @@
                                             </div>
                                             <div>
                                                 <div class="fw-bold">{{ $result->displayName() }}</div>
-                                                @if(!$result->user_id && $result->player_id)
-                                                <div class="text-secondary" style="font-size:.65rem">{{ $result->player_id }}</div>
-                                                @endif
                                             </div>
                                         </div>
                                     </td>
@@ -815,9 +818,6 @@
                                             </div>
                                             <div>
                                                 <div class="fw-bold">{{ $result->displayName() }}</div>
-                                                @if(!$result->user_id && $result->player_id)
-                                                <div class="text-secondary" style="font-size:.68rem">{{ $result->player_id }}</div>
-                                                @endif
                                             </div>
                                         </div>
                                     </td>
@@ -910,5 +910,12 @@
 
     </div>
 </div>
+
+@push('head')
+<style>
+details.ftp-group > summary svg { transform: rotate(0deg); transition: transform .15s; }
+details.ftp-group:not([open]) > summary svg { transform: rotate(-90deg); }
+</style>
+@endpush
 
 @endsection

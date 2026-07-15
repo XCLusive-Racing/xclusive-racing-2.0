@@ -21,7 +21,11 @@ class PsnLookupService
             }
 
             try {
-                $response = Http::timeout(15)->get('https://psnlookupxcl.netlify.app/api/psn', [
+                $client = Http::timeout(15);
+                if (app()->environment('local')) {
+                    $client = $client->withoutVerifying();
+                }
+                $response = $client->get('https://psnlookupxcl.netlify.app/api/psn', [
                     'username' => $username,
                     'key'      => config('services.psn_lookup.api_key'),
                 ]);

@@ -155,11 +155,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/races/{race}/push-config', [AdminRaceController::class, 'pushConfig'])->name('races.push-config');
     Route::post('/races/{race}/save-config', [AdminRaceController::class, 'saveConfig'])->name('races.save-config');
     Route::post('/races/{race}/upload-entrylist', [AdminRaceController::class, 'uploadEntrylist'])->name('races.upload-entrylist');
+    Route::delete('/races/bulk-destroy', [AdminRaceController::class, 'bulkDestroy'])->name('races.bulk-destroy');
     Route::delete('/races/{race}/reset-config', [AdminRaceController::class, 'resetConfig'])->name('races.reset-config');
     Route::delete('/races/{race}', [AdminRaceController::class, 'destroy'])->name('races.destroy');
 
     // Championships
     Route::resource('championships', AdminChampionshipController::class)->except(['destroy']);
+    Route::get('championships/{championship}/rounds/create', [AdminChampionshipController::class, 'roundCreate'])->name('championships.rounds.create');
     Route::post('championships/{championship}/rounds', [AdminChampionshipController::class, 'addRound'])->name('championships.rounds.store');
     Route::delete('championships/{championship}/rounds/{race}', [AdminChampionshipController::class, 'removeRound'])->name('championships.rounds.destroy');
     Route::post('championships/{championship}/penalties', [AdminChampionshipController::class, 'addPenalty'])->name('championships.penalties.store');

@@ -4,30 +4,35 @@ export function initRegister() {
 
     const step1 = wrap.querySelector('[data-step="1"]');
     const step2 = wrap.querySelector('[data-step="2"]');
-    const platformInput = wrap.querySelector('[data-platform-value]');
-    const platformLabel = wrap.querySelector('[data-platform-label]');
-    const gamertag = wrap.querySelector('[data-gamertag-input]');
-    const steamHint = wrap.querySelector('[data-hint="steam"]');
-    const xboxHint  = wrap.querySelector('[data-hint="xbox"]');
-    const backBtn   = wrap.querySelector('[data-back]');
+    const platformInput  = wrap.querySelector('[data-platform-value]');
+    const platformLabel  = wrap.querySelector('[data-platform-label]');
+    const gamertag       = wrap.querySelector('[data-gamertag-input]');
+    const steamHint      = wrap.querySelector('[data-hint="steam"]');
+    const xboxHint       = wrap.querySelector('[data-hint="xbox"]');
+    const psnIdWrap      = wrap.querySelector('[data-psn-account-id-wrap]');
+    const psnIdInput     = wrap.querySelector('[data-psn-account-id-input]');
+    const backBtn        = wrap.querySelector('[data-back]');
 
     function goToStep2(platform) {
         if (platformInput) platformInput.value = platform;
         step1.style.display = 'none';
         step2.style.display = '';
 
-        const labels = { steam: 'Steam ID or Vanity URL', ps5: 'PSN Online ID', xbox: 'Xbox Gamertag' };
+        const labels = { steam: 'Steam ID or Vanity URL', ps5: 'Gamertag', xbox: 'Xbox Gamertag' };
         if (platformLabel) platformLabel.textContent = labels[platform] || 'Username';
 
         const placeholders = {
             steam: 'SteamID64 or custom URL name',
-            ps5:   'Your PSN Online ID',
+            ps5:   'Your PSN Gamertag',
             xbox:  'Your Xbox Gamertag',
         };
         if (gamertag) gamertag.placeholder = placeholders[platform] || '';
 
         if (steamHint) steamHint.style.display = platform === 'steam' ? '' : 'none';
         if (xboxHint)  xboxHint.style.display  = platform === 'xbox'  ? '' : 'none';
+
+        if (psnIdWrap)  psnIdWrap.style.display  = platform === 'ps5' ? '' : 'none';
+        if (psnIdInput) psnIdInput.required       = platform === 'ps5';
     }
 
     wrap.querySelectorAll('[data-select-platform]').forEach(btn => {

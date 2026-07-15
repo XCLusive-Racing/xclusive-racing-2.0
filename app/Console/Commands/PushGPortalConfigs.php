@@ -53,9 +53,11 @@ class PushGPortalConfigs extends Command
                 'settings.json' => json_encode(
                     $race->configFile('settings.json')
                         ? json_decode($race->configFile('settings.json'), true)
-                        : $config->settings($race),
+                        : $config->settings($race, $server),
                     JSON_PRETTY_PRINT
                 ),
+                'eventrules.json'  => json_encode($config->eventRules($server), JSON_PRETTY_PRINT),
+                'assistrules.json' => json_encode($config->assistRules($server), JSON_PRETTY_PRINT),
             ];
 
             if (!$ftp->connect($server)) {

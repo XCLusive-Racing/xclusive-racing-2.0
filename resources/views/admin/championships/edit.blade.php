@@ -56,7 +56,7 @@
                         <div class="col-sm-4">
                             <label class="form-label">Season</label>
                             <input type="number" name="season" value="{{ old('season', $championship->season) }}"
-                                   class="form-control @error('season') is-invalid @enderror" min="2020" max="2099">
+                                   class="form-control @error('season') is-invalid @enderror" min="1" max="999">
                             @error('season') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-sm-4">
