@@ -259,7 +259,7 @@ class RaceController extends Controller
     }
 
     // Track name → background image filename in media library
-    private const TRACK_IMAGE_MAP = [
+    public const TRACK_IMAGE_MAP = [
         'Barcelona'      => 'Barcelona.png',
         'Brands Hatch'   => 'Brands.png',
         'COTA'           => 'COTA.png',
@@ -432,16 +432,20 @@ class RaceController extends Controller
     {
         $request->validate(['server_id' => 'required|exists:ftp_servers,id']);
 
+        $server = FtpServer::findOrFail($request->server_id);
+
         $files = [
-            'entrylist.json' => $request->input('entrylist_json')
+            'entrylist.json'  => $request->input('entrylist_json')
                 ?? $race->configFile('entrylist.json')
                 ?? json_encode($config->entryList($race), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-            'event.json'     => $request->input('event_json')
+            'event.json'      => $request->input('event_json')
                 ?? $race->configFile('event.json')
                 ?? json_encode($config->configuration($race), JSON_PRETTY_PRINT),
-            'settings.json'  => $request->input('settings_json')
+            'settings.json'   => $request->input('settings_json')
                 ?? $race->configFile('settings.json')
-                ?? json_encode($config->settings($race), JSON_PRETTY_PRINT),
+                ?? json_encode($config->settings($race, $server), JSON_PRETTY_PRINT),
+            'eventrules.json'  => json_encode($config->eventRules($server), JSON_PRETTY_PRINT),
+            'assistrules.json' => json_encode($config->assistRules($server), JSON_PRETTY_PRINT),
         ];
 
         foreach ($files as $filename => $content) {
@@ -451,8 +455,7 @@ class RaceController extends Controller
             }
         }
 
-        $server = FtpServer::findOrFail($request->server_id);
-        $ftp    = new FtpService();
+        $ftp = new FtpService();
 
         if (!$ftp->connect($server)) {
             return back()->with('error', 'Could not connect to ' . $server->host . '.');
@@ -486,7 +489,7 @@ class RaceController extends Controller
             'config_push_attempts' => 0,
         ]);
 
-        return back()->with('success', 'Config pushed to ' . $server->name . ' — entrylist.json, event.json, settings.json uploaded.');
+        return back()->with('success', 'Config pushed to ' . $server->name . ' — entrylist.json, event.json, settings.json, eventrules.json, assistrules.json uploaded.');
     }
 
     public function uploadEntrylist(Request $request, Race $race)
@@ -529,10 +532,21 @@ class RaceController extends Controller
         return back()->with('config_success', '"' . $request->input('file') . '" saved.');
     }
 
+    public function bulkDestroy(Request $request)
+    {
+        $races = Race::whereIn('id', $request->input('ids', []))->get();
+        foreach ($races as $race) {
+            $race->registrations()->delete();
+            $race->delete();
+        }
+        $count = $races->count();
+        return redirect()->route('admin.races.index')
+            ->with('success', $count . ' event' . ($count !== 1 ? 's' : '') . ' deleted.');
+    }
+
     public function destroy(Race $race)
     {
         $race->registrations()->delete();
-        $race->results()->delete();
         $race->delete();
 
         return redirect()->route('admin.races.index')

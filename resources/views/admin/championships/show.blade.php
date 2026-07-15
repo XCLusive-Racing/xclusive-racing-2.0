@@ -152,47 +152,13 @@
 
             <div class="col-12 col-lg-5">
                 <div class="admin-card">
-                    <div class="px-4 pt-4 pb-3">
+                    <div class="px-4 py-4 text-center">
                         <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Add Round</p>
-
-                        <form method="POST" action="{{ route('admin.championships.rounds.store', $championship) }}">
-                            @csrf
-                            <div class="mb-3">
-                                <label class="form-label">Title</label>
-                                <input type="text" name="title" class="form-control form-control-sm" placeholder="e.g. Round 1 — Monza">
-                            </div>
-                            <div class="row g-2 mb-3">
-                                <div class="col-sm-6">
-                                    <label class="form-label">Track</label>
-                                    <input type="text" name="track" class="form-control form-control-sm" placeholder="e.g. Monza">
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="form-label">Round #</label>
-                                    <input type="number" name="round_number" class="form-control form-control-sm" placeholder="Auto" min="1">
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Date & Time (BST)</label>
-                                <input type="datetime-local" name="scheduled_at" class="form-control form-control-sm">
-                            </div>
-                            <div class="row g-2 mb-3">
-                                <div class="col-sm-4">
-                                    <label class="form-label">Practice <span class="text-secondary">(min)</span></label>
-                                    <input type="number" name="practice_duration" class="form-control form-control-sm" placeholder="{{ $championship->practice_duration ?? '' }}">
-                                </div>
-                                <div class="col-sm-4">
-                                    <label class="form-label">Quali <span class="text-secondary">(min)</span></label>
-                                    <input type="number" name="qualifying_duration" class="form-control form-control-sm" placeholder="{{ $championship->qualifying_duration ?? '' }}">
-                                </div>
-                                <div class="col-sm-4">
-                                    <label class="form-label">Race <span class="text-secondary">(min)</span></label>
-                                    <input type="number" name="race_duration" class="form-control form-control-sm" placeholder="{{ $championship->race_duration ?? '' }}">
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-sm fw-bold text-uppercase text-white w-100" style="background:#db2777">
-                                Add Round
-                            </button>
-                        </form>
+                        <p class="text-secondary mb-3" style="font-size:.875rem">Create a new round with full settings, live preview and media.</p>
+                        <a href="{{ route('admin.championships.rounds.create', $championship) }}"
+                           class="btn fw-black text-uppercase text-white w-100" style="background:#db2777;font-size:.82rem">
+                            + Add Round
+                        </a>
                     </div>
                 </div>
             </div>

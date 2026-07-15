@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class FtpServer extends Model
 {
     protected $fillable = [
-        'name', 'host', 'port', 'username', 'password', 'path', 'cfg_path', 'active',
+        'name', 'server_number', 'host', 'port', 'username', 'password', 'path', 'cfg_path', 'active',
         'server_type', 'reset_start_hour', 'reset_interval_minutes',
+        'settings_defaults', 'eventrules_defaults', 'assistrules_defaults',
     ];
 
     protected $casts = [
@@ -18,6 +19,9 @@ class FtpServer extends Model
         'port'                    => 'integer',
         'reset_start_hour'        => 'integer',
         'reset_interval_minutes'  => 'integer',
+        'settings_defaults'       => 'array',
+        'eventrules_defaults'     => 'array',
+        'assistrules_defaults'    => 'array',
     ];
 
     public function importedFiles(): HasMany

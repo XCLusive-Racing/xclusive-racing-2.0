@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Championship;
 use App\Models\ChampionshipPenalty;
+use App\Models\Media;
 use App\Models\Race;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -33,7 +34,7 @@ class ChampionshipController extends Controller
         $data = $request->validate([
             'name'                   => 'required|string|max:255',
             'game'                   => 'required|in:acc,lmu,iracing,ac',
-            'season'                 => 'required|integer|min:2020|max:2099',
+            'season'                 => 'required|integer|min:1|max:999',
             'status'                 => 'required|in:draft,active,finished',
             'description'            => 'nullable|string',
             'image'                  => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:20480',
@@ -99,7 +100,7 @@ class ChampionshipController extends Controller
         $data = $request->validate([
             'name'                   => 'required|string|max:255',
             'game'                   => 'required|in:acc,lmu,iracing,ac',
-            'season'                 => 'required|integer|min:2020|max:2099',
+            'season'                 => 'required|integer|min:1|max:999',
             'status'                 => 'required|in:draft,active,finished',
             'description'            => 'nullable|string',
             'image'                  => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:20480',
@@ -150,6 +151,17 @@ class ChampionshipController extends Controller
             ->with('success', 'Championship updated successfully!');
     }
 
+    public function roundCreate(Championship $championship)
+    {
+        $trackFilenames   = array_values(RaceController::TRACK_IMAGE_MAP);
+        $trackMediaByName = Media::whereIn('original_name', $trackFilenames)->get()->keyBy('original_name');
+        $trackPreviewUrls = collect(RaceController::TRACK_IMAGE_MAP)
+            ->map(fn($fname) => $trackMediaByName->get($fname)?->url)
+            ->all();
+
+        return view('admin.championships.round-create', compact('championship', 'trackPreviewUrls'));
+    }
+
     public function addRound(Request $request, Championship $championship)
     {
         $data = $request->validate([
@@ -165,6 +177,10 @@ class ChampionshipController extends Controller
             'weather'             => 'nullable|in:dry,wet,mixed,random',
             'time_of_day'         => 'nullable|in:day,dusk,night,dynamic',
             'duration_key'        => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
+            'sr_requirement'      => 'nullable|in:3,4,5,6,7,8,9',
+            'min_rating'          => 'nullable|in:rookie,bronze,silver,gold,platinum,alien',
+            'max_rating'          => 'nullable|in:rookie,bronze,silver,gold,platinum,alien',
+            'description'         => 'nullable|string',
         ]);
 
         $data['championship_id'] = $championship->id;
@@ -172,6 +188,8 @@ class ChampionshipController extends Controller
         $data['status']          = 'open';
         $data['is_championship'] = true;
         $data['scheduled_at']    = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
+        $data['image']           = $this->resolveMedia($request);
+        $data['icon']            = $this->resolveIcon($request);
 
         if (!$data['round_number']) {
             $data['round_number'] = $championship->rounds()->max('round_number') + 1;

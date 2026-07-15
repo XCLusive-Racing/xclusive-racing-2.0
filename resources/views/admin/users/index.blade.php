@@ -16,8 +16,9 @@
                 <tr>
                     <th class="fw-bold text-uppercase ps-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Driver</th>
                     <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">ID</th>
-                    <th class="fw-bold text-uppercase text-center d-none d-sm-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Rating</th>
-                    <th class="fw-bold text-uppercase text-center d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">SR</th>
+                    <th class="fw-bold text-uppercase d-none d-sm-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Connected</th>
+                    <th class="fw-bold text-uppercase d-none d-sm-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Status</th>
+                    <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Joined</th>
                     <th class="fw-bold text-uppercase d-none d-lg-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Team / Quote</th>
                     <th class="fw-bold text-uppercase d-none d-sm-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Role</th>
                     <th class="pe-4" style="min-width:100px"></th>
@@ -56,16 +57,27 @@
                             <span class="text-secondary">—</span>
                         @endif
                     </td>
-                    <td class="text-center fw-bold d-none d-sm-table-cell" style="color:#7c3aed;font-size:.85rem">
-                        {{ $user->elo_acc ?? '—' }}
+                    <td class="d-none d-sm-table-cell">
+                        <div class="d-flex gap-2 align-items-center">
+                            @forelse($user->connectedAccounts as $account)
+                                <span title="{{ $account->providerLabel() }}"
+                                      style="color:{{ $account->providerColor() }};font-size:1rem">{!! $account->providerIcon() !!}</span>
+                            @empty
+                                <span class="text-secondary">—</span>
+                            @endforelse
+                        </div>
                     </td>
-                    <td class="text-center fw-bold d-none d-md-table-cell" style="font-size:.85rem">
-                        @if($user->sr_acc)
-                            @php $grade = $user->srGrade('acc'); @endphp
-                            <span style="color:{{ $grade['color'] }}">{{ number_format($user->sr_acc, 2) }}</span>
+                    <td class="d-none d-sm-table-cell">
+                        @if($user->is_suspended)
+                            <span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:4px;background:#fee2e2;color:#dc2626">Suspended</span>
+                        @elseif($user->is_supporter)
+                            <span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:4px;background:#fef3c7;color:#d97706">★ Supporter</span>
                         @else
                             <span class="text-secondary">—</span>
                         @endif
+                    </td>
+                    <td class="d-none d-md-table-cell" style="font-size:.8rem;color:#6b7280">
+                        {{ $user->created_at->format('d M Y') }}
                     </td>
                     <td class="text-secondary d-none d-lg-table-cell" style="font-size:.82rem">{{ $user->team ?? '—' }}</td>
                     <td class="d-none d-sm-table-cell">
@@ -107,8 +119,8 @@
         $(function () {
             $('#users-table').DataTable({
                 pageLength: 25,
-                order: [[5, 'asc'], [0, 'asc']],
-                columnDefs: [{ orderable: false, targets: 6 }],
+                order: [[6, 'asc'], [0, 'asc']],
+                columnDefs: [{ orderable: false, targets: [2, 7] }],
                 language: {
                     search: '', searchPlaceholder: 'Search users…',
                     lengthMenu: 'Show _MENU_ users',

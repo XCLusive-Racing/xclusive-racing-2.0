@@ -12,7 +12,10 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with('roles')->orderBy('name')->get();
+        $users = User::with(['roles', 'connectedAccounts'])
+            ->select(['id','name','email','banner','platform','platform_id','team','is_supporter','is_suspended','created_at'])
+            ->orderBy('name')
+            ->get();
         $roles = Role::orderBy('id')->get();
 
         return view('admin.users.index', compact('users', 'roles'));
