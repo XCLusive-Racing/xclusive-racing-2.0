@@ -83,7 +83,7 @@
                 <span>Calendar</span>
             </a>
             @endif
-            @if(auth()->user()->hasAnyRole(['owner', 'admin']))
+            @if(auth()->user()->canManageEvents())
             <a href="{{ route('admin.media.index') }}"
                class="admin-nav-link {{ request()->routeIs('admin.media.*') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -166,7 +166,7 @@
             @endif
         </div>
 
-        @if(auth()->user()->hasAnyRole(['owner', 'admin']))
+        @if(auth()->user()->canManageEvents())
         {{-- Configuration --}}
         <div class="admin-nav-section-header" data-section="ftp">
             <span>Configuration</span>

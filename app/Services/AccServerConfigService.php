@@ -79,6 +79,11 @@ class AccServerConfigService
 
         [$rain, $cloudLevel, $weatherRandomness] = $this->weatherParams($race->weather);
 
+        if ($race->weather_randomness !== null) {
+            $wr = $race->weather_randomness;
+            $weatherRandomness = $wr === 'random' ? rand(0, 7) : (int) $wr;
+        }
+
         return [
             'track'                     => $this->trackSlug($race->track),
             'preRaceWaitingTimeSeconds' => 60,

@@ -169,12 +169,15 @@ class RaceController extends Controller
             'race_duration'        => 'nullable|integer|min:1|max:999',
             'car_class'            => 'nullable|string|max:50',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
+            'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
             'sr_requirement'       => 'nullable|numeric|in:3,4,5,6,7,8,9',
             'min_rating'           => 'nullable|string|in:rookie,bronze,silver,gold,platinum,alien',
             'max_rating'           => 'nullable|string|in:rookie,bronze,silver,gold,platinum,alien',
             'max_drivers'          => 'nullable|integer|min:1',
             'description'          => 'nullable|string',
+            'is_multiclass'        => 'nullable|boolean',
+            'classes_json'         => 'nullable|string',
             'events'               => 'required|array|min:1|max:20',
             'events.*.title'           => 'required|string|max:255',
             'events.*.track'           => 'required|string|max:255',
@@ -191,6 +194,7 @@ class RaceController extends Controller
             'race_duration'        => $request->race_duration ?: null,
             'car_class'            => $request->car_class ?: null,
             'weather'              => $request->weather ?: null,
+            'weather_randomness'   => $request->weather_randomness ?: null,
             'time_of_day'          => $request->time_of_day ?: null,
             'sr_requirement'       => $request->sr_requirement ?: null,
             'min_rating'           => $request->min_rating ?: null,
@@ -200,12 +204,20 @@ class RaceController extends Controller
             'status'               => 'open',
         ];
 
+        $races = [];
         foreach ($request->events as $event) {
-            Race::create(array_merge($shared, [
+            $races[] = Race::create(array_merge($shared, [
                 'title'        => $event['title'],
                 'track'        => $event['track'],
                 'scheduled_at' => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $event['scheduled_at'], 'Europe/London')->utc(),
             ]));
+        }
+
+        if ($request->boolean('is_multiclass')) {
+            $classesJson = json_decode($request->input('classes_json', '[]'), true) ?: [];
+            foreach ($races as $race) {
+                $this->syncRaceClasses($request, $race);
+            }
         }
 
         $count = count($request->events);
@@ -310,6 +322,7 @@ class RaceController extends Controller
             'min_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'max_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
+            'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
             'max_drivers'          => 'nullable|integer|min:1',
             'description'          => 'nullable|string',
@@ -398,6 +411,7 @@ class RaceController extends Controller
             'sr_requirement'       => 'nullable|in:3,4,5,6,7,8,9',
             'min_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
+            'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
             'max_drivers'          => 'nullable|integer|min:1',
             'description'          => 'nullable|string',

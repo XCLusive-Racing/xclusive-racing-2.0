@@ -182,7 +182,7 @@
                             </select>
                         </div>
                         <div class="col-sm-4">
-                            <label class="form-label">Weather</label>
+                            <label class="form-label">Rain</label>
                             <select name="weather" class="form-select">
                                 <option value="">— Not set —</option>
                                 <option value="dry"    {{ old('weather', $race->weather) === 'dry'    ? 'selected' : '' }}>Dry</option>
@@ -199,6 +199,24 @@
                                 <option value="dusk"    {{ old('time_of_day', $race->time_of_day) === 'dusk'    ? 'selected' : '' }}>Dusk</option>
                                 <option value="night"   {{ old('time_of_day', $race->time_of_day) === 'night'   ? 'selected' : '' }}>Night</option>
                                 <option value="dynamic" {{ old('time_of_day', $race->time_of_day) === 'dynamic' ? 'selected' : '' }}>Dynamic</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-1">
+                        <div class="col-12">
+                            <label class="form-label">Weather</label>
+                            <select name="weather_randomness" class="form-select" style="max-width:360px">
+                                <option value="">— Not set —</option>
+                                <option value="random" {{ old('weather_randomness', $race->weather_randomness) === 'random' ? 'selected' : '' }}>Randomize each push</option>
+                                <option value="0"      {{ old('weather_randomness', $race->weather_randomness) === '0'      ? 'selected' : '' }}>0 — Static weather</option>
+                                <option value="1"      {{ old('weather_randomness', $race->weather_randomness) === '1'      ? 'selected' : '' }}>1 — Realistic (very low)</option>
+                                <option value="2"      {{ old('weather_randomness', $race->weather_randomness) === '2'      ? 'selected' : '' }}>2 — Realistic (low)</option>
+                                <option value="3"      {{ old('weather_randomness', $race->weather_randomness) === '3'      ? 'selected' : '' }}>3 — Realistic</option>
+                                <option value="4"      {{ old('weather_randomness', $race->weather_randomness) === '4'      ? 'selected' : '' }}>4 — Realistic (high)</option>
+                                <option value="5"      {{ old('weather_randomness', $race->weather_randomness) === '5'      ? 'selected' : '' }}>5 — Sensational (low)</option>
+                                <option value="6"      {{ old('weather_randomness', $race->weather_randomness) === '6'      ? 'selected' : '' }}>6 — Sensational</option>
+                                <option value="7"      {{ old('weather_randomness', $race->weather_randomness) === '7'      ? 'selected' : '' }}>7 — Sensational (high)</option>
                             </select>
                         </div>
                     </div>

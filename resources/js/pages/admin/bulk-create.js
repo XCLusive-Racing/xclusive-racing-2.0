@@ -1,34 +1,18 @@
 export function initBulkCreate(wrap) {
     if (!wrap) return;
 
-    // Regular mode elements
-    const countInput          = wrap.querySelector('[data-bulk-count]');
-    const startDateInput      = wrap.querySelector('[data-bulk-start-date]');
-    const startTimeInput      = wrap.querySelector('[data-bulk-start-time]');
-    const intervalSelect      = wrap.querySelector('[data-bulk-interval]');
-    const customIntervalWrap  = wrap.querySelector('[data-bulk-custom-interval-wrap]');
-    const customIntervalInput = wrap.querySelector('[data-bulk-custom-interval]');
-
-    // Week schedule elements
-    const weekStartInput  = wrap.querySelector('[data-bulk-week-start]');
-    const weekTimeInput   = wrap.querySelector('[data-bulk-week-time]');
+    const startDateInput  = wrap.querySelector('[data-bulk-start-date]');
+    const startTimeInput  = wrap.querySelector('[data-bulk-start-time]');
     const weekCountInput  = wrap.querySelector('[data-bulk-week-count]');
     const dayCheckboxes   = wrap.querySelectorAll('[data-bulk-day]');
-    const regularPanel    = wrap.querySelector('[data-bulk-regular-panel]');
-    const weekPanel       = wrap.querySelector('[data-bulk-week-panel]');
-    const modeBtns        = wrap.querySelectorAll('[data-bulk-mode]');
-
-    // Shared elements
-    const baseNameInput     = wrap.querySelector('[data-bulk-base-name]');
-    const generateBtn       = wrap.querySelector('[data-bulk-generate]');
-    const noDateHint        = wrap.querySelector('[data-bulk-no-date]');
-    const eventsSection     = wrap.querySelector('[data-bulk-events-section]');
-    const countDisplays     = wrap.querySelectorAll('[data-bulk-count-display]');
-    const addRowBtn         = wrap.querySelector('[data-bulk-add-row]');
-    const tbody             = wrap.querySelector('[data-bulk-tbody]');
+    const generateBtn     = wrap.querySelector('[data-bulk-generate]');
+    const noDateHint      = wrap.querySelector('[data-bulk-no-date]');
+    const eventsSection   = wrap.querySelector('[data-bulk-events-section]');
+    const countDisplays   = wrap.querySelectorAll('[data-bulk-count-display]');
+    const addRowBtn       = wrap.querySelector('[data-bulk-add-row]');
+    const tbody           = wrap.querySelector('[data-bulk-tbody]');
 
     let events = [];
-    let mode   = 'regular';
 
     function getDefaultTrack() {
         const sel = document.getElementById('ce-track-select');
@@ -49,51 +33,27 @@ export function initBulkCreate(wrap) {
              + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     }
 
-    function intervalDays() {
-        const v = intervalSelect?.value ?? '7';
-        return v === 'custom' ? (parseInt(customIntervalInput?.value) || 7) : parseInt(v) || 7;
-    }
-
-    function canGenerate() {
-        if (mode === 'week') {
-            return !!weekStartInput?.value && Array.from(dayCheckboxes).some(cb => cb.checked);
-        }
-        return !!startDateInput?.value;
-    }
+    function hasDate()  { return !!startDateInput?.value; }
+    function hasDays()  { return Array.from(dayCheckboxes).some(cb => cb.checked); }
+    function canGenerate() { return hasDate() && hasDays(); }
 
     function updateCounts() {
         countDisplays.forEach(el => { el.textContent = events.length; });
         const ok = canGenerate();
         if (generateBtn) generateBtn.disabled = !ok;
         if (noDateHint) {
-            noDateHint.style.display = ok ? 'none' : '';
-            noDateHint.textContent   = mode === 'week'
-                ? 'Pick a start date and select at least one day'
-                : 'Pick a start date first';
+            if (ok) {
+                noDateHint.style.display = 'none';
+            } else {
+                noDateHint.style.display = '';
+                noDateHint.textContent   = !hasDate()
+                    ? 'Pick a start date first'
+                    : 'Select at least one race day';
+            }
         }
     }
 
-    // ── Mode switching ──────────────────────────────────────────────────
-    function setMode(m) {
-        mode = m;
-        if (regularPanel) regularPanel.style.display = m === 'regular' ? '' : 'none';
-        if (weekPanel)    weekPanel.style.display     = m === 'week'    ? '' : 'none';
-
-        modeBtns.forEach(btn => {
-            const active = btn.dataset.bulkMode === m;
-            btn.style.background   = active ? '#7c3aed' : 'transparent';
-            btn.style.color        = active ? '#fff'    : '#9ca3af';
-            btn.style.borderColor  = active ? '#7c3aed' : '#e5e7eb';
-        });
-
-        updateCounts();
-    }
-
-    modeBtns.forEach(btn => {
-        btn.addEventListener('click', () => setMode(btn.dataset.bulkMode));
-    });
-
-    // ── Day checkbox pill styling ────────────────────────────────────────
+    // Day checkbox pill styling
     dayCheckboxes.forEach(cb => {
         const label = cb.closest('[data-bulk-day-label]');
         cb.addEventListener('change', () => {
@@ -106,17 +66,14 @@ export function initBulkCreate(wrap) {
         });
     });
 
-    // ── Row rendering ────────────────────────────────────────────────────
+    // Row rendering — title hidden, mirrors track
     function renderRow(i) {
         const ev = events[i];
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td class="ps-4 text-secondary fw-bold" style="font-size:.8rem">${i + 1}</td>
             <td>
-                <input type="text" name="events[${i}][title]" value="${esc(ev.title)}"
-                       class="form-control form-control-sm" data-field="title" required>
-            </td>
-            <td>
+                <input type="hidden" name="events[${i}][title]" data-field="title" value="${esc(ev.title)}">
                 <input type="text" name="events[${i}][track]" value="${esc(ev.track)}"
                        class="form-control form-control-sm" data-field="track" required>
             </td>
@@ -132,9 +89,19 @@ export function initBulkCreate(wrap) {
                 </button>
             </td>
         `;
-        tr.querySelectorAll('[data-field]').forEach(input => {
-            input.addEventListener('input', () => { events[i][input.dataset.field] = input.value; });
+
+        const titleHidden = tr.querySelector('[data-field="title"]');
+        const trackInput  = tr.querySelector('[data-field="track"]');
+        const dateInput   = tr.querySelector('[data-field="scheduled_at"]');
+
+        // Track drives title automatically
+        trackInput.addEventListener('input', () => {
+            events[i].track = trackInput.value;
+            events[i].title = trackInput.value;
+            titleHidden.value = trackInput.value;
         });
+        dateInput.addEventListener('input', () => { events[i].scheduled_at = dateInput.value; });
+
         tr.querySelector('[data-remove]').addEventListener('click', () => {
             events.splice(i, 1);
             render();
@@ -149,63 +116,36 @@ export function initBulkCreate(wrap) {
         updateCounts();
     }
 
-    // ── Generate: regular mode ───────────────────────────────────────────
+    // Generate: find each selected day on or after start date, repeat for N weeks
     function generate() {
-        if (!startDateInput?.value) return;
-        const n        = Math.min(Math.max(parseInt(countInput?.value) || 1, 1), 20);
-        const date     = startDateInput.value;
-        const time     = startTimeInput?.value || '20:00';
-        const baseName = baseNameInput?.value ?? 'Round';
-        const defTrack = getDefaultTrack();
-        const days     = intervalDays();
-
-        events = Array.from({ length: n }, (_, i) => {
-            const d = new Date(date + 'T' + time);
-            d.setDate(d.getDate() + i * days);
-            return { title: baseName ? baseName + ' ' + (i + 1) : '', track: defTrack, scheduled_at: formatDate(d) };
-        });
-
-        if (eventsSection) eventsSection.style.display = '';
-        render();
-    }
-
-    // ── Generate: week schedule mode ─────────────────────────────────────
-    function generateWeek() {
-        if (!weekStartInput?.value) return;
+        if (!canGenerate()) return;
 
         const checkedDays = Array.from(dayCheckboxes)
             .filter(cb => cb.checked)
-            .map(cb => parseInt(cb.dataset.bulkDay))
+            .map(cb => parseInt(cb.dataset.bulkDay)) // 0=Mon … 6=Sun
             .sort((a, b) => a - b);
 
-        if (checkedDays.length === 0) return;
-
-        const time     = weekTimeInput?.value || '20:00';
-        const nWeeks   = Math.min(Math.max(parseInt(weekCountInput?.value) || 1, 1), 12);
-        const baseName = baseNameInput?.value ?? 'Round';
-        const defTrack = getDefaultTrack();
+        const nWeeks  = Math.min(Math.max(parseInt(weekCountInput?.value) || 1, 1), 52);
+        const time    = startTimeInput?.value || '20:00';
         const [th, tm] = time.split(':').map(Number);
+        const defTrack = getDefaultTrack();
 
-        // Find Monday of the week containing weekStartInput.value
-        const seed    = new Date(weekStartInput.value + 'T12:00');
-        const jsDay   = seed.getDay(); // 0=Sun … 6=Sat
-        const toMon   = jsDay === 0 ? -6 : 1 - jsDay;
-        const monday  = new Date(seed);
+        // Find Monday of the week containing start date
+        const seed   = new Date(startDateInput.value + 'T12:00');
+        const jsDay  = seed.getDay(); // 0=Sun…6=Sat
+        const toMon  = jsDay === 0 ? -6 : 1 - jsDay;
+        const monday = new Date(seed);
         monday.setDate(monday.getDate() + toMon);
 
         events = [];
-        let counter = 1;
         for (let w = 0; w < nWeeks; w++) {
             checkedDays.forEach(dayOffset => {
                 const d = new Date(monday);
                 d.setDate(d.getDate() + w * 7 + dayOffset);
                 d.setHours(th, tm, 0, 0);
-                events.push({
-                    title:        baseName ? baseName + ' ' + counter : '',
-                    track:        defTrack,
-                    scheduled_at: formatDate(d),
-                });
-                counter++;
+                // Skip dates before start date
+                if (d < seed) return;
+                events.push({ title: defTrack, track: defTrack, scheduled_at: formatDate(d) });
             });
         }
 
@@ -213,41 +153,24 @@ export function initBulkCreate(wrap) {
         render();
     }
 
-    // ── Add row ──────────────────────────────────────────────────────────
     function addRow() {
-        const last   = events[events.length - 1];
+        const last = events[events.length - 1];
         let nextDate = '';
         if (last?.scheduled_at) {
             const d = new Date(last.scheduled_at);
-            d.setDate(d.getDate() + (mode === 'week' ? 7 : intervalDays()));
+            d.setDate(d.getDate() + 7);
             nextDate = formatDate(d);
         }
-        const baseName = baseNameInput?.value ?? 'Round';
-        events.push({
-            title:        baseName ? baseName + ' ' + (events.length + 1) : '',
-            track:        getDefaultTrack(),
-            scheduled_at: nextDate,
-        });
+        const defTrack = getDefaultTrack();
+        events.push({ title: defTrack, track: defTrack, scheduled_at: nextDate });
         render();
     }
 
-    // ── Event listeners ──────────────────────────────────────────────────
-    intervalSelect?.addEventListener('change', () => {
-        if (customIntervalWrap) {
-            customIntervalWrap.style.display = intervalSelect.value === 'custom' ? '' : 'none';
-        }
-    });
-
-    startDateInput?.addEventListener('input', updateCounts);
-    weekStartInput?.addEventListener('input', updateCounts);
-    weekCountInput?.addEventListener('input', updateCounts);
-
-    generateBtn?.addEventListener('click', () => {
-        if (mode === 'week') generateWeek();
-        else generate();
-    });
-
+    generateBtn?.addEventListener('click', generate);
     addRowBtn?.addEventListener('click', addRow);
+
+    ['input', 'change'].forEach(ev => startDateInput?.addEventListener(ev, updateCounts));
+    ['input', 'change'].forEach(ev => weekCountInput?.addEventListener(ev, updateCounts));
 
     updateCounts();
 }

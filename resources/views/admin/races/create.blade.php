@@ -55,19 +55,14 @@ $formatsWithSlug = $formats->groupBy('game')->map(
 );
 @endphp
 
-{{-- Mode toggle --}}
-<div class="d-flex mb-4" style="border-bottom:2px solid #e5e7eb">
-    <button type="button" data-mode-btn="single"
-            class="btn fw-black text-uppercase rounded-0 border-0 px-4 py-2"
-            style="font-size:.76rem;letter-spacing:.08em;margin-bottom:-2px">
-        Single Event
-    </button>
-    <button type="button" data-mode-btn="bulk"
-            class="btn fw-black text-uppercase rounded-0 border-0 px-4 py-2"
-            style="font-size:.76rem;letter-spacing:.08em;margin-bottom:-2px">
-        Bulk Schedule
-    </button>
-</div>
+<style>
+[data-step-nav].active .ce-step-circle { background:#7c3aed; border-color:#7c3aed; color:#fff; }
+[data-step-nav].active > div > span { color:#7c3aed; }
+[data-step-nav].done .ce-step-circle { background:#7c3aed; border-color:#7c3aed; color:#fff; }
+[data-step-nav].done > div > span { color:#374151; }
+[data-step-nav].done .ce-step-connector,
+[data-step-nav].active .ce-step-connector { background:#7c3aed; }
+</style>
 
 <form id="ce-form" action="{{ route('admin.races.store') }}" method="POST" enctype="multipart/form-data">
     @csrf
@@ -78,202 +73,267 @@ $formatsWithSlug = $formats->groupBy('game')->map(
         {{-- ── Left column ──────────────────────────────────────────────────── --}}
         <div class="col-12 col-xl-8" data-bulk-wrap>
 
-            <div class="admin-card mb-4">
-
-                {{-- ── Event ─────────────────────────────────────────────────── --}}
-                <div class="px-4 pt-4 pb-3">
-                    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Event</p>
-
-                    <div class="row g-3">
-                        <div class="col-sm-5">
-                            <label class="form-label">Game <span class="text-danger">*</span></label>
-                            <select name="game" id="ce-game" class="form-select @error('game') is-invalid @enderror">
-                                <option value="">Select game…</option>
-                                <option value="acc"     {{ old('game') === 'acc'     ? 'selected' : '' }}>ACC Console</option>
-                                <option value="lmu"     {{ old('game') === 'lmu'     ? 'selected' : '' }}>Le Mans Ultimate</option>
-                                <option value="iracing" {{ old('game') === 'iracing' ? 'selected' : '' }}>iRacing</option>
-                                <option value="ac"      {{ old('game') === 'ac'      ? 'selected' : '' }}>AC Rally</option>
-                            </select>
-                            @error('game')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        </div>
-
-                        <div class="col-sm-7">
-                            <label class="form-label">Format <span class="text-danger">*</span></label>
-                            <select name="event_format_id" id="ce-format" class="form-select @error('event_format_id') is-invalid @enderror">
-                                <option value="">— Select game first —</option>
-                            </select>
-                            @error('event_format_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        </div>
+            {{-- ── Stepper nav ──────────────────────────────────────────────── --}}
+            <div id="ce-stepper-nav" class="d-flex align-items-center mb-4">
+                @foreach([1 => 'Game & Format', 2 => 'Schedule', 3 => 'Drivers', 4 => 'Details'] as $n => $label)
+                <div data-step-nav="{{ $n }}" class="d-flex align-items-center {{ $n < 4 ? 'flex-grow-1' : '' }}">
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0" style="white-space:nowrap">
+                        <div class="ce-step-circle fw-black" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;border:2px solid #e5e7eb;background:#fff;color:#9ca3af;transition:all .2s">{{ $n }}</div>
+                        <span class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;transition:color .2s">{{ $label }}</span>
                     </div>
+                    @if($n < 4)
+                    <div class="ce-step-connector" style="flex:1;height:2px;background:#e5e7eb;margin:0 12px;min-width:12px;transition:background .2s"></div>
+                    @endif
+                </div>
+                @endforeach
+            </div>
 
-                    {{-- Format info: both modes --}}
-                    <div id="ce-format-info" class="mt-3 p-3 rounded-3" style="display:none;background:#f8f5ff;border:1px solid rgba(124,58,237,.2)">
-                        <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
-                            <span id="ce-fi-name" class="fw-black text-uppercase fst-italic" style="color:#7c3aed;font-size:.85rem"></span>
-                            <span id="ce-fi-xcl" class="fw-black" style="color:#7c3aed;font-size:.9rem"></span>
-                        </div>
-                        <div class="d-flex flex-wrap gap-2 mb-2" id="ce-fi-sessions" style="font-size:.78rem"></div>
-                        <div class="d-flex flex-wrap gap-3" style="font-size:.75rem;color:#6b7280">
-                            <span>Formation: <strong id="ce-fi-formation"></strong></span>
-                            <span>Pitstop: <strong id="ce-fi-pitstop"></strong></span>
-                            <span>Server: <strong id="ce-fi-server"></strong></span>
-                        </div>
-                    </div>
+            {{-- ══════════════════════════════════════════════════════════════ --}}
+            {{-- STEP 1 — Game & Format                                        --}}
+            {{-- ══════════════════════════════════════════════════════════════ --}}
+            <div data-step-panel="1" style="display:none">
 
-                    {{-- Endurance: single only --}}
-                    <div data-mode-single>
-                        <div id="ce-endurance-wrap" class="mt-3" style="display:none">
-                            <label class="form-label">Duration <span class="text-danger">*</span></label>
-                            <select name="endurance_duration" id="ce-endurance-duration" class="form-select" style="max-width:200px">
-                                <option value="">Select duration…</option>
-                                <option value="4h"  {{ old('endurance_duration') === '4h'  ? 'selected' : '' }}>4 Hours</option>
-                                <option value="6h"  {{ old('endurance_duration') === '6h'  ? 'selected' : '' }}>6 Hours</option>
-                                <option value="8h"  {{ old('endurance_duration') === '8h'  ? 'selected' : '' }}>8 Hours</option>
-                                <option value="10h" {{ old('endurance_duration') === '10h' ? 'selected' : '' }}>10 Hours</option>
-                                <option value="12h" {{ old('endurance_duration') === '12h' ? 'selected' : '' }}>12 Hours</option>
-                                <option value="24h" {{ old('endurance_duration') === '24h' ? 'selected' : '' }}>24 Hours</option>
-                            </select>
-                        </div>
-                    </div>
+                {{-- Mode toggle --}}
+                <div class="d-flex mb-4" style="border-bottom:2px solid #e5e7eb">
+                    <button type="button" data-mode-btn="single"
+                            class="btn fw-black text-uppercase rounded-0 border-0 px-4 py-2"
+                            style="font-size:.76rem;letter-spacing:.08em;margin-bottom:-2px">
+                        Single Event
+                    </button>
+                    <button type="button" data-mode-btn="bulk"
+                            class="btn fw-black text-uppercase rounded-0 border-0 px-4 py-2"
+                            style="font-size:.76rem;letter-spacing:.08em;margin-bottom:-2px">
+                        Bulk Schedule
+                    </button>
                 </div>
 
-                {{-- ── Track & Conditions ────────────────────────────────────── --}}
-                <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-                    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Track & Conditions</p>
+                <div class="admin-card mb-4">
+                    {{-- ── Event ──────────────────────────────────────────── --}}
+                    <div class="px-4 pt-4 pb-3">
+                        <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Event</p>
 
-                    <div class="row g-3">
-                        <div class="col-sm-5">
-                            <label class="form-label">Track <span class="text-danger">*</span></label>
-                            <select id="ce-track-select" name="track" class="form-select @error('track') is-invalid @enderror" style="display:none">
-                                <option value="">Select track…</option>
-                                @foreach($accTracks as $track => $limits)
-                                    <option value="{{ $track }}"
-                                            data-min="{{ $limits['min'] }}"
-                                            data-max="{{ $limits['max'] }}"
-                                            {{ old('track') === $track ? 'selected' : '' }}>
-                                        {{ $track }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <input id="ce-track-text" type="text" name="track" value="{{ old('track') }}"
-                                   class="form-control @error('track') is-invalid @enderror"
-                                   placeholder="e.g. Monza">
-                            <div id="ce-track-hint" class="form-text" style="display:none"></div>
-                            @error('track')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        </div>
-                        <div class="col-sm-4">
-                            <label class="form-label">Weather</label>
-                            <select name="weather" class="form-select">
-                                <option value="">— Not set —</option>
-                                <option value="dry"    {{ old('weather') === 'dry'    ? 'selected' : '' }}>Dry</option>
-                                <option value="wet"    {{ old('weather') === 'wet'    ? 'selected' : '' }}>Wet</option>
-                                <option value="mixed"  {{ old('weather') === 'mixed'  ? 'selected' : '' }}>Mixed</option>
-                                <option value="random" {{ old('weather') === 'random' ? 'selected' : '' }}>Random</option>
-                            </select>
-                        </div>
-                        <div class="col-sm-3">
-                            <label class="form-label">In-game Time</label>
-                            <select name="time_of_day" class="form-select">
-                                <option value="">— Not set —</option>
-                                <option value="day"     {{ old('time_of_day') === 'day'     ? 'selected' : '' }}>Day</option>
-                                <option value="dusk"    {{ old('time_of_day') === 'dusk'    ? 'selected' : '' }}>Dusk</option>
-                                <option value="night"   {{ old('time_of_day') === 'night'   ? 'selected' : '' }}>Night</option>
-                                <option value="dynamic" {{ old('time_of_day') === 'dynamic' ? 'selected' : '' }}>Dynamic</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- ── Schedule ────────────────────────────────────────────────── --}}
-                <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-                    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Schedule</p>
-
-                    {{-- Single schedule panel --}}
-                    <div data-mode-single>
                         <div class="row g-3">
-                            <div class="col-sm-7">
-                                <label class="form-label">Date & Time (BST) <span class="text-danger">*</span></label>
-                                <input type="datetime-local" name="scheduled_at"
-                                       value="{{ old('scheduled_at', $prefillDate ? $prefillDate . 'T20:00' : '') }}"
-                                       class="form-control @error('scheduled_at') is-invalid @enderror">
-                                @error('scheduled_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <div class="col-sm-5">
+                                <label class="form-label">Game <span class="text-danger">*</span></label>
+                                <select name="game" id="ce-game" class="form-select @error('game') is-invalid @enderror">
+                                    <option value="">Select game…</option>
+                                    <option value="acc"     {{ old('game') === 'acc'     ? 'selected' : '' }}>ACC Console</option>
+                                    <option value="lmu"     {{ old('game') === 'lmu'     ? 'selected' : '' }}>Le Mans Ultimate</option>
+                                    <option value="iracing" {{ old('game') === 'iracing' ? 'selected' : '' }}>iRacing</option>
+                                    <option value="ac"      {{ old('game') === 'ac'      ? 'selected' : '' }}>AC Rally</option>
+                                </select>
+                                @error('game')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
-                            <div class="col-sm-5" id="ce-drivers-wrap" style="display:none">
-                                <label class="form-label">Max Drivers</label>
-                                <input type="text" id="ce-drivers-display" class="form-control" readonly
-                                       style="background:#f9fafb;color:#374151;cursor:default">
-                                <input type="hidden" name="max_drivers" id="ce-max-drivers">
-                                <div class="form-text">Determined by track</div>
+
+                            <div class="col-sm-7">
+                                <label class="form-label">Format <span class="text-danger">*</span></label>
+                                <select name="event_format_id" id="ce-format" class="form-select @error('event_format_id') is-invalid @enderror">
+                                    <option value="">— Select game first —</option>
+                                </select>
+                                @error('event_format_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                        </div>
+
+                        {{-- Format info: both modes --}}
+                        <div id="ce-format-info" class="mt-3 p-3 rounded-3" style="display:none;background:#f8f5ff;border:1px solid rgba(124,58,237,.2)">
+                            <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                                <span id="ce-fi-name" class="fw-black text-uppercase fst-italic" style="color:#7c3aed;font-size:.85rem"></span>
+                                <span id="ce-fi-xcl" class="fw-black" style="color:#7c3aed;font-size:.9rem"></span>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mb-2" id="ce-fi-sessions" style="font-size:.78rem"></div>
+                            <div class="d-flex flex-wrap gap-3" style="font-size:.75rem;color:#6b7280">
+                                <span>Formation: <strong id="ce-fi-formation"></strong></span>
+                                <span>Pitstop: <strong id="ce-fi-pitstop"></strong></span>
+                                <span>Server: <strong id="ce-fi-server"></strong></span>
+                            </div>
+                        </div>
+
+                        {{-- Endurance: single only --}}
+                        <div data-mode-single>
+                            <div id="ce-endurance-wrap" class="mt-3" style="display:none">
+                                <label class="form-label">Duration <span class="text-danger">*</span></label>
+                                <select name="endurance_duration" id="ce-endurance-duration" class="form-select" style="max-width:200px">
+                                    <option value="">Select duration…</option>
+                                    <option value="4h"  {{ old('endurance_duration') === '4h'  ? 'selected' : '' }}>4 Hours</option>
+                                    <option value="6h"  {{ old('endurance_duration') === '6h'  ? 'selected' : '' }}>6 Hours</option>
+                                    <option value="8h"  {{ old('endurance_duration') === '8h'  ? 'selected' : '' }}>8 Hours</option>
+                                    <option value="10h" {{ old('endurance_duration') === '10h' ? 'selected' : '' }}>10 Hours</option>
+                                    <option value="12h" {{ old('endurance_duration') === '12h' ? 'selected' : '' }}>12 Hours</option>
+                                    <option value="24h" {{ old('endurance_duration') === '24h' ? 'selected' : '' }}>24 Hours</option>
+                                </select>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    {{-- Bulk schedule panel --}}
-                    <div data-mode-bulk style="display:none">
+            </div>{{-- /step 1 --}}
 
-                        {{-- Regular/Week mode toggle --}}
-                        <div class="d-flex gap-2 mb-4">
-                            <button type="button" data-bulk-mode="regular"
-                                    class="btn btn-sm fw-bold text-uppercase px-3"
-                                    style="font-size:.72rem;background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px">
-                                Regular
-                            </button>
-                            <button type="button" data-bulk-mode="week"
-                                    class="btn btn-sm fw-bold text-uppercase px-3"
-                                    style="font-size:.72rem;background:transparent;color:#9ca3af;border:1px solid #e5e7eb;border-radius:6px">
-                                Week Schedule
-                            </button>
+            {{-- ══════════════════════════════════════════════════════════════ --}}
+            {{-- STEP 2 — Schedule                                             --}}
+            {{-- ══════════════════════════════════════════════════════════════ --}}
+            <div data-step-panel="2" style="display:none">
+
+                <div class="admin-card mb-4">
+
+                    {{-- ── Track & Conditions ──────────────────────────────── --}}
+                    <div class="px-4 pt-4 pb-3">
+                        <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Track & Conditions</p>
+
+                        <div class="row g-3">
+                            <div class="col-sm-5">
+                                <label class="form-label">Track <span class="text-danger">*</span></label>
+                                <select id="ce-track-select" name="track" class="form-select @error('track') is-invalid @enderror" style="display:none">
+                                    <option value="">Select track…</option>
+                                    @foreach($accTracks as $track => $limits)
+                                        <option value="{{ $track }}"
+                                                data-min="{{ $limits['min'] }}"
+                                                data-max="{{ $limits['max'] }}"
+                                                {{ old('track') === $track ? 'selected' : '' }}>
+                                            {{ $track }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <input id="ce-track-text" type="text" name="track" value="{{ old('track') }}"
+                                       class="form-control @error('track') is-invalid @enderror"
+                                       placeholder="e.g. Monza">
+                                <div id="ce-track-hint" class="form-text" style="display:none"></div>
+                                @error('track')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label">Rain</label>
+                                <select name="weather" class="form-select">
+                                    <option value="">— Not set —</option>
+                                    <option value="dry"    {{ old('weather') === 'dry'    ? 'selected' : '' }}>Dry</option>
+                                    <option value="wet"    {{ old('weather') === 'wet'    ? 'selected' : '' }}>Wet</option>
+                                    <option value="mixed"  {{ old('weather') === 'mixed'  ? 'selected' : '' }}>Mixed</option>
+                                    <option value="random" {{ old('weather') === 'random' ? 'selected' : '' }}>Random</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-3">
+                                <label class="form-label">In-game Time</label>
+                                <select name="time_of_day" class="form-select">
+                                    <option value="">— Not set —</option>
+                                    <option value="day"     {{ old('time_of_day') === 'day'     ? 'selected' : '' }}>Day</option>
+                                    <option value="dusk"    {{ old('time_of_day') === 'dusk'    ? 'selected' : '' }}>Dusk</option>
+                                    <option value="night"   {{ old('time_of_day') === 'night'   ? 'selected' : '' }}>Night</option>
+                                    <option value="dynamic" {{ old('time_of_day') === 'dynamic' ? 'selected' : '' }}>Dynamic</option>
+                                </select>
+                            </div>
                         </div>
 
-                        {{-- Regular interval panel --}}
-                        <div data-bulk-regular-panel>
-                            <div class="row g-3 mb-3">
-                                <div class="col-sm-4">
-                                    <label class="form-label">Number of Events</label>
-                                    <input type="number" data-bulk-count value="8" min="1" max="20" class="form-control">
+                        <div class="mt-3">
+                            <label class="form-label">Weather</label>
+                            <div class="d-flex align-items-end gap-3 flex-wrap" id="ce-weather-pills">
+
+                                {{-- Randomize --}}
+                                <div>
+                                    <div class="fw-bold text-uppercase mb-1" style="font-size:.6rem;letter-spacing:.06em;color:#9ca3af">&nbsp;</div>
+                                    <label data-wr-label="random"
+                                           class="d-flex align-items-center px-3 py-1 rounded-pill fw-bold"
+                                           style="cursor:pointer;border:1px solid #e5e7eb;font-size:.8rem;user-select:none;background:#fff;color:#374151;transition:all .15s">
+                                        <input type="radio" name="weather_randomness" value="random" class="d-none"
+                                               data-wr-color="#7c3aed"
+                                               {{ old('weather_randomness') === 'random' ? 'checked' : '' }}>
+                                        Randomize
+                                    </label>
                                 </div>
+
+                                {{-- Static --}}
+                                <div>
+                                    <div class="fw-bold text-uppercase mb-1" style="font-size:.6rem;letter-spacing:.06em;color:#6b7280">Static</div>
+                                    <div class="d-flex gap-1">
+                                        <label data-wr-label="0"
+                                               class="d-flex align-items-center justify-content-center fw-black rounded"
+                                               style="cursor:pointer;width:34px;height:34px;border:2px solid #e5e7eb;font-size:.85rem;user-select:none;background:#fff;color:#9ca3af;transition:all .15s">
+                                            <input type="radio" name="weather_randomness" value="0" class="d-none"
+                                                   data-wr-color="#6b7280" {{ old('weather_randomness') === '0' ? 'checked' : '' }}>
+                                            0
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {{-- Realistic --}}
+                                <div>
+                                    <div class="fw-bold text-uppercase mb-1" style="font-size:.6rem;letter-spacing:.06em;color:#2563eb">Realistic</div>
+                                    <div class="d-flex gap-1">
+                                        @foreach(['1','2','3','4'] as $n)
+                                        <label data-wr-label="{{ $n }}"
+                                               class="d-flex align-items-center justify-content-center fw-black rounded"
+                                               style="cursor:pointer;width:34px;height:34px;border:2px solid #e5e7eb;font-size:.85rem;user-select:none;background:#fff;color:#9ca3af;transition:all .15s">
+                                            <input type="radio" name="weather_randomness" value="{{ $n }}" class="d-none"
+                                                   data-wr-color="#2563eb" {{ old('weather_randomness') === $n ? 'checked' : '' }}>
+                                            {{ $n }}
+                                        </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                {{-- Sensational --}}
+                                <div>
+                                    <div class="fw-bold text-uppercase mb-1" style="font-size:.6rem;letter-spacing:.06em;color:#ea580c">Sensational</div>
+                                    <div class="d-flex gap-1">
+                                        @foreach(['5','6','7'] as $n)
+                                        <label data-wr-label="{{ $n }}"
+                                               class="d-flex align-items-center justify-content-center fw-black rounded"
+                                               style="cursor:pointer;width:34px;height:34px;border:2px solid #e5e7eb;font-size:.85rem;user-select:none;background:#fff;color:#9ca3af;transition:all .15s">
+                                            <input type="radio" name="weather_randomness" value="{{ $n }}" class="d-none"
+                                                   data-wr-color="#ea580c" {{ old('weather_randomness') === $n ? 'checked' : '' }}>
+                                            {{ $n }}
+                                        </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                            </div>
+                            {{-- hidden fallback so "none selected" posts empty string --}}
+                            <input type="radio" name="weather_randomness" value="" class="d-none"
+                                   {{ old('weather_randomness', '') === '' ? 'checked' : '' }}>
+                        </div>
+                    </div>
+
+                    {{-- ── Schedule ─────────────────────────────────────────── --}}
+                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+                        <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Schedule</p>
+
+                        {{-- Single schedule panel --}}
+                        <div data-mode-single>
+                            <div class="row g-3">
+                                <div class="col-sm-7">
+                                    <label class="form-label">Date & Time (BST) <span class="text-danger">*</span></label>
+                                    <input type="datetime-local" name="scheduled_at"
+                                           value="{{ old('scheduled_at', $prefillDate ? $prefillDate . 'T20:00' : '') }}"
+                                           class="form-control @error('scheduled_at') is-invalid @enderror">
+                                    @error('scheduled_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-sm-5" id="ce-drivers-wrap" style="display:none">
+                                    <label class="form-label">Max Drivers</label>
+                                    <input type="text" id="ce-drivers-display" class="form-control" readonly
+                                           style="background:#f9fafb;color:#374151;cursor:default">
+                                    <input type="hidden" name="max_drivers" id="ce-max-drivers">
+                                    <div class="form-text">Determined by track</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Bulk schedule panel --}}
+                        <div data-mode-bulk style="display:none">
+
+                            <div class="row g-3 mb-4">
                                 <div class="col-sm-4">
                                     <label class="form-label">Start Date</label>
                                     <input type="date" data-bulk-start-date class="form-control">
                                 </div>
                                 <div class="col-sm-4">
-                                    <label class="form-label">Start Time (BST/GMT)</label>
-                                    <input type="time" data-bulk-start-time value="20:00" class="form-control">
-                                </div>
-                            </div>
-                            <div class="row g-3 mb-3">
-                                <div class="col-sm-4">
-                                    <label class="form-label">Interval</label>
-                                    <select data-bulk-interval class="form-select">
-                                        <option value="7">Weekly (7 days)</option>
-                                        <option value="14">Bi-weekly (14 days)</option>
-                                        <option value="custom">Custom</option>
-                                    </select>
-                                </div>
-                                <div class="col-sm-4" data-bulk-custom-interval-wrap style="display:none">
-                                    <label class="form-label">Days between events</label>
-                                    <input type="number" data-bulk-custom-interval value="7" min="1" class="form-control">
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Week schedule panel --}}
-                        <div data-bulk-week-panel style="display:none">
-                            <div class="row g-3 mb-3">
-                                <div class="col-sm-4">
-                                    <label class="form-label">Start Date</label>
-                                    <input type="date" data-bulk-week-start class="form-control">
-                                </div>
-                                <div class="col-sm-4">
                                     <label class="form-label">Time (BST/GMT)</label>
-                                    <input type="time" data-bulk-week-time value="20:00" class="form-control">
+                                    <input type="time" data-bulk-start-time value="20:00" class="form-control">
                                 </div>
                                 <div class="col-sm-4">
                                     <label class="form-label">Number of Weeks</label>
-                                    <input type="number" data-bulk-week-count value="1" min="1" max="12" class="form-control">
+                                    <input type="number" data-bulk-week-count value="1" min="1" max="52" class="form-control">
                                 </div>
                             </div>
-                            <div class="mb-3">
+
+                            <div class="mb-4">
                                 <label class="form-label d-block">Race Days</label>
                                 <div class="d-flex flex-wrap gap-2">
                                     @foreach([0=>'Mon',1=>'Tue',2=>'Wed',3=>'Thu',4=>'Fri',5=>'Sat',6=>'Sun'] as $offset => $day)
@@ -286,242 +346,267 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                                     @endforeach
                                 </div>
                             </div>
-                        </div>
 
-                        {{-- Shared generator inputs --}}
-                        <div class="row g-3 mb-3">
-                            <div class="col-sm-4">
-                                <label class="form-label">Base Name</label>
-                                <input type="text" data-bulk-base-name value="Round" class="form-control" placeholder="e.g. Round">
+                            <div>
+                                <button type="button" data-bulk-generate disabled
+                                        class="btn fw-black text-uppercase text-white px-4"
+                                        style="background:#7c3aed">
+                                    Generate Schedule
+                                </button>
+                                <span data-bulk-no-date class="text-secondary ms-2" style="font-size:.78rem"></span>
                             </div>
-                        </div>
 
-                        <div>
-                            <button type="button" data-bulk-generate disabled
-                                    class="btn fw-black text-uppercase text-white px-4"
-                                    style="background:#7c3aed">
-                                Generate Schedule
+                        </div>
+                    </div>
+
+                </div>
+
+                {{-- ── Bulk events table (managed by bulk JS) ─────────────── --}}
+                <div data-bulk-events-section style="display:none">
+                    <div class="admin-card mb-4">
+                        <div class="px-4 pt-4 pb-2 d-flex align-items-center justify-content-between">
+                            <p class="fw-black text-uppercase fst-italic mb-0" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">
+                                Events — <span data-bulk-count-display>0</span> races
+                            </p>
+                            <button type="button" data-bulk-add-row
+                                    class="btn btn-sm fw-bold text-uppercase"
+                                    style="font-size:.68rem;padding:3px 10px;background:rgba(124,58,237,.1);color:#7c3aed;border:1px solid rgba(124,58,237,.3);border-radius:6px">
+                                + Add Row
                             </button>
-                            <span data-bulk-no-date class="text-secondary ms-2" style="font-size:.78rem">Pick a start date first</span>
                         </div>
 
-                    </div>
-                </div>
-
-                {{-- ── Requirements ──────────────────────────────────────────── --}}
-                <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-                    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Requirements <span class="fw-normal" style="text-transform:none">(optional — all off by default)</span></p>
-
-                    <div class="d-flex flex-column gap-3">
-                        <div>
-                            <div class="form-check form-switch mb-1">
-                                <input class="form-check-input" type="checkbox" id="ce-sr-toggle" {{ old('sr_requirement') ? 'checked' : '' }}>
-                                <label class="form-check-label fw-bold" for="ce-sr-toggle">Safety Rating (SR)</label>
-                            </div>
-                            <div id="ce-sr-panel" style="{{ old('sr_requirement') ? '' : 'display:none' }}">
-                                <select name="sr_requirement" id="ce-sr-select" class="form-select form-select-sm" style="max-width:300px">
-                                    <option value="">— No requirement —</option>
-                                    <option value="3" {{ old('sr_requirement') === '3' ? 'selected' : '' }}>SR 3.0+  ·  Grade B</option>
-                                    <option value="4" {{ old('sr_requirement') === '4' ? 'selected' : '' }}>SR 4.0+  ·  Grade B</option>
-                                    <option value="5" {{ old('sr_requirement') === '5' ? 'selected' : '' }}>SR 5.0+  ·  Grade A</option>
-                                    <option value="6" {{ old('sr_requirement') === '6' ? 'selected' : '' }}>SR 6.0+  ·  Grade A</option>
-                                    <option value="7" {{ old('sr_requirement') === '7' ? 'selected' : '' }}>SR 7.0+  ·  Grade X</option>
-                                    <option value="8" {{ old('sr_requirement') === '8' ? 'selected' : '' }}>SR 8.0+  ·  Grade Y</option>
-                                    <option value="9" {{ old('sr_requirement') === '9' ? 'selected' : '' }}>SR 9.0+  ·  Grade Z</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div class="form-check form-switch mb-1">
-                                <input class="form-check-input" type="checkbox" id="ce-minrating-toggle" {{ old('min_rating') ? 'checked' : '' }}>
-                                <label class="form-check-label fw-bold" for="ce-minrating-toggle">XCL Rating (Min)</label>
-                            </div>
-                            <div id="ce-minrating-panel" style="{{ old('min_rating') ? '' : 'display:none' }}">
-                                <select name="min_rating" id="ce-minrating-select" class="form-select form-select-sm" style="max-width:280px">
-                                    <option value="">— No minimum —</option>
-                                    @foreach(['rookie','bronze','silver','gold','platinum','alien'] as $r)
-                                        <option value="{{ $r }}" {{ old('min_rating') === $r ? 'selected' : '' }}>{{ ucfirst($r) }}+</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div class="form-check form-switch mb-1">
-                                <input class="form-check-input" type="checkbox" id="ce-maxrating-toggle" {{ old('max_rating') ? 'checked' : '' }}>
-                                <label class="form-check-label fw-bold" for="ce-maxrating-toggle">XCL Rating (Max)</label>
-                            </div>
-                            <div id="ce-maxrating-panel" style="{{ old('max_rating') ? '' : 'display:none' }}">
-                                <select name="max_rating" class="form-select form-select-sm" style="max-width:280px">
-                                    <option value="">— No maximum —</option>
-                                    @foreach(['rookie','bronze','silver','gold','platinum','alien'] as $r)
-                                        <option value="{{ $r }}" {{ old('max_rating') === $r ? 'selected' : '' }}>{{ ucfirst($r) }} max</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0" style="font-size:.875rem">
+                                <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+                                    <tr>
+                                        <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:36px">#</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Track</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:200px">Date & Time (BST/GMT)</th>
+                                        <th class="pe-4" style="width:40px"></th>
+                                    </tr>
+                                </thead>
+                                <tbody data-bulk-tbody></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
 
-                {{-- ── Additional ──────────────────────────────────────────────── --}}
-                <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-                    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Additional</p>
+            </div>{{-- /step 2 --}}
 
-                    <div class="row g-3 mb-3">
-                        <div class="col-sm-6">
-                            <div data-tags-wrap data-config='{{ $tagsConfig }}'>
-                                <div class="d-flex align-items-center justify-content-between mb-1">
-                                    <label class="form-label mb-0">Event Tag <span class="text-danger">*</span></label>
-                                    <button type="button" data-tags-toggle
-                                            class="btn btn-sm fw-bold text-uppercase"
-                                            style="font-size:.68rem;padding:2px 8px;background:rgba(124,58,237,.1);color:#7c3aed;border:1px solid rgba(124,58,237,.3);border-radius:6px">
-                                        + New
-                                    </button>
+            {{-- ══════════════════════════════════════════════════════════════ --}}
+            {{-- STEP 3 — Drivers                                              --}}
+            {{-- ══════════════════════════════════════════════════════════════ --}}
+            <div data-step-panel="3" style="display:none">
+
+                <div class="admin-card mb-4">
+
+                    {{-- ── Requirements ────────────────────────────────────── --}}
+                    <div class="px-4 pt-4 pb-3">
+                        <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Requirements <span class="fw-normal" style="text-transform:none">(optional — all off by default)</span></p>
+
+                        <div class="d-flex flex-column gap-3">
+                            <div>
+                                <div class="form-check form-switch mb-1">
+                                    <input class="form-check-input" type="checkbox" id="ce-sr-toggle" {{ old('sr_requirement') ? 'checked' : '' }}>
+                                    <label class="form-check-label fw-bold" for="ce-sr-toggle">Safety Rating (SR)</label>
                                 </div>
-                                <select name="event_tag" class="form-select @error('event_tag') is-invalid @enderror" data-tags-select>
-                                    <option value="">Select tag…</option>
-                                </select>
-                                @error('event_tag')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                <div data-tags-add-panel style="display:none">
-                                    <div class="mt-2 p-3 rounded-2" style="background:#f8f5ff;border:1px solid rgba(124,58,237,.2)">
-                                        <div data-tags-error class="alert alert-danger py-1 px-2 mb-2" style="font-size:.8rem;display:none"></div>
-                                        <div class="d-flex gap-2 align-items-end">
-                                            <div class="flex-grow-1">
-                                                <label class="form-label" style="font-size:.78rem">Name</label>
-                                                <input type="text" data-tags-name placeholder="e.g. Endurance" class="form-control form-control-sm">
+                                <div id="ce-sr-panel" style="{{ old('sr_requirement') ? '' : 'display:none' }}">
+                                    <select name="sr_requirement" id="ce-sr-select" class="form-select form-select-sm" style="max-width:300px">
+                                        <option value="">— No requirement —</option>
+                                        <option value="3" {{ old('sr_requirement') === '3' ? 'selected' : '' }}>SR 3.0+  ·  Grade B</option>
+                                        <option value="4" {{ old('sr_requirement') === '4' ? 'selected' : '' }}>SR 4.0+  ·  Grade B</option>
+                                        <option value="5" {{ old('sr_requirement') === '5' ? 'selected' : '' }}>SR 5.0+  ·  Grade A</option>
+                                        <option value="6" {{ old('sr_requirement') === '6' ? 'selected' : '' }}>SR 6.0+  ·  Grade A</option>
+                                        <option value="7" {{ old('sr_requirement') === '7' ? 'selected' : '' }}>SR 7.0+  ·  Grade X</option>
+                                        <option value="8" {{ old('sr_requirement') === '8' ? 'selected' : '' }}>SR 8.0+  ·  Grade Y</option>
+                                        <option value="9" {{ old('sr_requirement') === '9' ? 'selected' : '' }}>SR 9.0+  ·  Grade Z</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="form-check form-switch mb-1">
+                                    <input class="form-check-input" type="checkbox" id="ce-minrating-toggle" {{ old('min_rating') ? 'checked' : '' }}>
+                                    <label class="form-check-label fw-bold" for="ce-minrating-toggle">XCL Rating (Min)</label>
+                                </div>
+                                <div id="ce-minrating-panel" style="{{ old('min_rating') ? '' : 'display:none' }}">
+                                    <select name="min_rating" id="ce-minrating-select" class="form-select form-select-sm" style="max-width:280px">
+                                        <option value="">— No minimum —</option>
+                                        @foreach(['rookie','bronze','silver','gold','platinum','alien'] as $r)
+                                            <option value="{{ $r }}" {{ old('min_rating') === $r ? 'selected' : '' }}>{{ ucfirst($r) }}+</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="form-check form-switch mb-1">
+                                    <input class="form-check-input" type="checkbox" id="ce-maxrating-toggle" {{ old('max_rating') ? 'checked' : '' }}>
+                                    <label class="form-check-label fw-bold" for="ce-maxrating-toggle">XCL Rating (Max)</label>
+                                </div>
+                                <div id="ce-maxrating-panel" style="{{ old('max_rating') ? '' : 'display:none' }}">
+                                    <select name="max_rating" class="form-select form-select-sm" style="max-width:280px">
+                                        <option value="">— No maximum —</option>
+                                        @foreach(['rookie','bronze','silver','gold','platinum','alien'] as $r)
+                                            <option value="{{ $r }}" {{ old('max_rating') === $r ? 'selected' : '' }}>{{ ucfirst($r) }} max</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ── Car Class ────────────────────────────────────────── --}}
+                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+                        <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Car Class</p>
+                        <label class="form-label">Car Class <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
+                        <select name="car_class" id="ce-car-class" class="form-select" style="max-width:200px">
+                            <option value="" {{ !old('car_class') ? 'selected' : '' }}>Open</option>
+                            @foreach(['GT2', 'GT3', 'GT4', 'M2'] as $cls)
+                                <option value="{{ $cls }}" {{ old('car_class') === $cls ? 'selected' : '' }}>{{ $cls }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- ── Multiclass (both single and bulk) ───────────────── --}}
+                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6" data-multiclass-wrap>
+                        <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Multiclass <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></p>
+
+                        <input type="hidden" name="is_multiclass" data-multiclass-flag value="{{ old('is_multiclass', '0') }}">
+                        <input type="hidden" name="classes_json" data-multiclass-json value="{{ old('classes_json', '[]') }}">
+
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            @foreach([
+                                'GT3' => ['color' => '#7c3aed', 'label' => 'GT3'],
+                                'GT4' => ['color' => '#2563eb', 'label' => 'GT4'],
+                                'GT2' => ['color' => '#db2777', 'label' => 'GT2'],
+                                'M2'  => ['color' => '#16a34a', 'label' => 'M2'],
+                            ] as $cls => $meta)
+                            <label data-mc-label="{{ $cls }}"
+                                   class="d-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
+                                   style="cursor:pointer;border:2px solid #e5e7eb;font-size:.85rem;user-select:none;background:#fff;color:#374151;transition:all .15s">
+                                <input type="checkbox" data-mc-class="{{ $cls }}" data-mc-color="{{ $meta['color'] }}" class="d-none"
+                                       {{ in_array($cls, old('selected_classes', [])) ? 'checked' : '' }}>
+                                <span style="width:10px;height:10px;border-radius:50%;background:{{ $meta['color'] }};flex-shrink:0"></span>
+                                {{ $meta['label'] }}
+                            </label>
+                            @endforeach
+                        </div>
+
+                        {{-- Per-class max drivers (shown per selected class) --}}
+                        <div data-mc-drivers-wrap class="d-flex flex-wrap gap-3" style="display:none"></div>
+
+                        <div class="text-secondary mt-2" style="font-size:.75rem" data-mc-hint>Select one or more classes to enable multiclass</div>
+                    </div>
+
+                </div>
+
+            </div>{{-- /step 3 --}}
+
+            {{-- ══════════════════════════════════════════════════════════════ --}}
+            {{-- STEP 4 — Details                                              --}}
+            {{-- ══════════════════════════════════════════════════════════════ --}}
+            <div data-step-panel="4" style="display:none">
+
+                <div class="admin-card mb-4">
+
+                    {{-- ── Additional ──────────────────────────────────────── --}}
+                    <div class="px-4 pt-4 pb-3">
+                        <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Additional</p>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-6">
+                                <div data-tags-wrap data-config='{{ $tagsConfig }}'>
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <label class="form-label mb-0">Event Tag <span class="text-danger">*</span></label>
+                                        <button type="button" data-tags-toggle
+                                                class="btn btn-sm fw-bold text-uppercase"
+                                                style="font-size:.68rem;padding:2px 8px;background:rgba(124,58,237,.1);color:#7c3aed;border:1px solid rgba(124,58,237,.3);border-radius:6px">
+                                            + New
+                                        </button>
+                                    </div>
+                                    <select name="event_tag" class="form-select @error('event_tag') is-invalid @enderror" data-tags-select>
+                                        <option value="">Select tag…</option>
+                                    </select>
+                                    @error('event_tag')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    <div data-tags-add-panel style="display:none">
+                                        <div class="mt-2 p-3 rounded-2" style="background:#f8f5ff;border:1px solid rgba(124,58,237,.2)">
+                                            <div data-tags-error class="alert alert-danger py-1 px-2 mb-2" style="font-size:.8rem;display:none"></div>
+                                            <div class="d-flex gap-2 align-items-end">
+                                                <div class="flex-grow-1">
+                                                    <label class="form-label" style="font-size:.78rem">Name</label>
+                                                    <input type="text" data-tags-name placeholder="e.g. Endurance" class="form-control form-control-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="form-label" style="font-size:.78rem">Color</label>
+                                                    <input type="color" data-tags-color class="form-control form-control-sm form-control-color" style="width:46px;padding:2px" value="#7B2FBE">
+                                                </div>
+                                                <button type="button" data-tags-save class="btn btn-sm fw-bold text-white" style="background:#7c3aed;white-space:nowrap">Add</button>
                                             </div>
-                                            <div>
-                                                <label class="form-label" style="font-size:.78rem">Color</label>
-                                                <input type="color" data-tags-color class="form-control form-control-sm form-control-color" style="width:46px;padding:2px" value="#7B2FBE">
-                                            </div>
-                                            <button type="button" data-tags-save class="btn btn-sm fw-bold text-white" style="background:#7c3aed;white-space:nowrap">Add</button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="col-sm-6">
-                            <label class="form-label">Car Class <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
-                            <select name="car_class" id="ce-car-class" class="form-select">
-                                <option value="" {{ !old('car_class') ? 'selected' : '' }}>Open</option>
-                                @foreach(['GT2', 'GT3', 'GT4', 'M2'] as $cls)
-                                    <option value="{{ $cls }}" {{ old('car_class') === $cls ? 'selected' : '' }}>{{ $cls }}</option>
+                        <div>
+                            <label class="form-label">Description <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
+                            <textarea name="description" rows="3" class="form-control" placeholder="Additional event info…">{{ old('description') }}</textarea>
+                        </div>
+                    </div>
+
+                    {{-- ── gPortal Server & Slot (single only) ─────────────── --}}
+                    @if($servers->isNotEmpty())
+                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6" data-mode-single>
+                        <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">gPortal Server <span class="fw-normal" style="text-transform:none">(optional)</span></p>
+                        <p class="text-secondary mb-3" style="font-size:.75rem">Assign a server slot — config will be auto-pushed 10 minutes before the reset.</p>
+
+                        <div class="mb-3">
+                            <label class="form-label">Server</label>
+                            <select name="ftp_server_id" id="gp-server" class="form-select">
+                                <option value="">— No server assigned —</option>
+                                @foreach($servers as $srv)
+                                    <option value="{{ $srv->id }}"
+                                            data-type="{{ $srv->server_type }}"
+                                            {{ old('ftp_server_id') == $srv->id ? 'selected' : '' }}>
+                                        {{ $srv->name }}
+                                        @if($srv->server_type === 'rolling')
+                                            (resets every {{ $srv->reset_interval_minutes }}min from {{ str_pad($srv->reset_start_hour,2,'0',STR_PAD_LEFT) }}:00)
+                                        @else
+                                            (manual restart)
+                                        @endif
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
-                    </div>
 
-                    <div>
-                        <label class="form-label">Description <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
-                        <textarea name="description" rows="3" class="form-control" placeholder="Additional event info…">{{ old('description') }}</textarea>
-                    </div>
-                </div>
-
-                {{-- ── Multiclass (single only) ────────────────────────────────── --}}
-                <div class="px-4 py-3" style="border-top:1px solid #f3f4f6" data-mode-single data-multiclass-wrap>
-                    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Multiclass <span class="fw-normal" style="text-transform:none">(optional)</span></p>
-                    <div class="mb-3">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="is_multiclass_race"
-                                   data-multiclass-checkbox {{ old('is_multiclass') ? 'checked' : '' }}>
-                            <label class="form-check-label fw-bold" for="is_multiclass_race">Enable Multiclass</label>
+                        <div id="gp-slot-picker" style="display:none">
+                            <label class="form-label">Race Slot (BST/GMT)</label>
+                            <div id="gp-slot-grid" class="d-flex gap-2 flex-wrap mb-2" style="max-height:260px;overflow-y:auto"></div>
+                            <input type="hidden" name="slot_time" id="gp-slot-value" value="{{ old('slot_time') }}">
+                            <div id="gp-slot-selected" class="small fw-bold" style="color:#7c3aed;display:none"></div>
+                            @error('slot_time') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                         </div>
-                        <input type="hidden" name="is_multiclass" data-multiclass-flag value="{{ old('is_multiclass') ? '1' : '0' }}">
+
+                        <div id="gp-scheduled-picker" style="display:none">
+                            <label class="form-label">Race Slot (BST/GMT)</label>
+                            <input type="datetime-local" id="gp-scheduled-display"
+                                   class="form-control" style="max-width:240px">
+                            <input type="hidden" name="slot_time" id="gp-scheduled-value" value="{{ old('slot_time') }}">
+                            @error('slot_time') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                        </div>
                     </div>
-                    <div data-multiclass-section style="{{ old('is_multiclass') ? '' : 'display:none' }}">
-                        <div data-multiclass-list></div>
-                        <button type="button" data-multiclass-add
-                                class="btn btn-sm fw-bold text-uppercase"
-                                style="background:rgba(219,39,119,.1);color:#db2777;border:1px solid rgba(219,39,119,.3);font-size:.72rem">
-                            + Add Class
-                        </button>
-                        <input type="hidden" name="classes_json" data-multiclass-json value="[]">
-                    </div>
+                    @endif
+
                 </div>
 
-            </div>
+            </div>{{-- /step 4 --}}
 
-            {{-- ── gPortal Server & Slot (single only) ─────────────────────── --}}
-            @if($servers->isNotEmpty())
-            <div class="admin-card mb-4" data-mode-single>
-                <div class="px-4 py-3">
-                    <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">gPortal Server <span class="fw-normal" style="text-transform:none">(optional)</span></p>
-                    <p class="text-secondary mb-3" style="font-size:.75rem">Assign a server slot — config will be auto-pushed 10 minutes before the reset.</p>
-
-                    <div class="mb-3">
-                        <label class="form-label">Server</label>
-                        <select name="ftp_server_id" id="gp-server" class="form-select">
-                            <option value="">— No server assigned —</option>
-                            @foreach($servers as $srv)
-                                <option value="{{ $srv->id }}"
-                                        data-type="{{ $srv->server_type }}"
-                                        {{ old('ftp_server_id') == $srv->id ? 'selected' : '' }}>
-                                    {{ $srv->name }}
-                                    @if($srv->server_type === 'rolling')
-                                        (resets every {{ $srv->reset_interval_minutes }}min from {{ str_pad($srv->reset_start_hour,2,'0',STR_PAD_LEFT) }}:00)
-                                    @else
-                                        (manual restart)
-                                    @endif
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div id="gp-slot-picker" style="display:none">
-                        <label class="form-label">Race Slot (UTC)</label>
-                        <div id="gp-slot-grid" class="d-flex gap-2 flex-wrap mb-2" style="max-height:260px;overflow-y:auto"></div>
-                        <input type="hidden" name="slot_time" id="gp-slot-value" value="{{ old('slot_time') }}">
-                        <div id="gp-slot-selected" class="small fw-bold" style="color:#7c3aed;display:none"></div>
-                        @error('slot_time') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div id="gp-scheduled-picker" style="display:none">
-                        <label class="form-label">Race Slot (UTC)</label>
-                        <input type="datetime-local" name="slot_time" id="gp-scheduled-value"
-                               value="{{ old('slot_time') }}"
-                               class="form-control" style="max-width:240px">
-                        @error('slot_time') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
-                    </div>
-                </div>
-            </div>
-            @endif
-
-            {{-- ── Bulk events table (managed by bulk JS) ───────────────────── --}}
-            <div data-bulk-events-section style="display:none">
-                <div class="admin-card mb-4">
-                    <div class="px-4 pt-4 pb-2 d-flex align-items-center justify-content-between">
-                        <p class="fw-black text-uppercase fst-italic mb-0" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">
-                            Events — <span data-bulk-count-display>0</span> races
-                        </p>
-                        <button type="button" data-bulk-add-row
-                                class="btn btn-sm fw-bold text-uppercase"
-                                style="font-size:.68rem;padding:3px 10px;background:rgba(124,58,237,.1);color:#7c3aed;border:1px solid rgba(124,58,237,.3);border-radius:6px">
-                            + Add Row
-                        </button>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table align-middle mb-0" style="font-size:.875rem">
-                            <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
-                                <tr>
-                                    <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:36px">#</th>
-                                    <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Title</th>
-                                    <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Track</th>
-                                    <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:200px">Date & Time (BST/GMT)</th>
-                                    <th class="pe-4" style="width:40px"></th>
-                                </tr>
-                            </thead>
-                            <tbody data-bulk-tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            {{-- ── Submit ───────────────────────────────────────────────────── --}}
-            <div class="d-flex gap-2">
-                <button type="submit" id="ce-submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">
+            {{-- ── Stepper navigation buttons ───────────────────────────────── --}}
+            <div class="d-flex align-items-center gap-2 mt-4">
+                <button type="button" id="ce-step-prev" style="display:none" class="btn btn-outline-secondary fw-bold text-uppercase px-4">← Back</button>
+                <button type="button" id="ce-step-next" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">Next →</button>
+                <button type="submit" id="ce-submit" style="display:none;background:#7c3aed" class="btn fw-black text-uppercase text-white px-4">
                     <span id="ce-btn-single">Create Event</span>
                     <span id="ce-btn-bulk" style="display:none">Create <span data-bulk-count-display>0</span> Races</span>
                 </button>
@@ -1202,6 +1287,110 @@ $formatsWithSlug = $formats->groupBy('game')->map(
     if (tEl) tEl.addEventListener('input', updatePreview);
 
     updatePreview();
+})();
+</script>
+
+<script>
+// ── Rain & Weather pills ──────────────────────────────────────────────────────
+(function () {
+    function initPills(containerSelector, inputSelector) {
+        const container = document.querySelector(containerSelector);
+        if (!container) return;
+        const radios = container.querySelectorAll(inputSelector);
+
+        function applyStyles() {
+            radios.forEach(radio => {
+                const label = radio.closest('label');
+                if (!label) return;
+                const color = radio.dataset.wrColor || radio.dataset.rainColor || '#7c3aed';
+                if (radio.checked) {
+                    label.style.borderColor = color;
+                    label.style.background  = color + '18';
+                    label.style.color       = color;
+                } else {
+                    label.style.borderColor = '#e5e7eb';
+                    label.style.background  = '#fff';
+                    label.style.color       = '#374151';
+                }
+            });
+        }
+
+        radios.forEach(r => r.addEventListener('change', applyStyles));
+        applyStyles();
+    }
+
+    initPills('#ce-weather-pills', 'input[type="radio"]');
+})();
+
+// ── Stepper ──────────────────────────────────────────────────────────────────
+(function () {
+    const panels   = document.querySelectorAll('[data-step-panel]');
+    const navItems = document.querySelectorAll('[data-step-nav]');
+    const prevBtn  = document.getElementById('ce-step-prev');
+    const nextBtn  = document.getElementById('ce-step-next');
+    const submitBtn = document.getElementById('ce-submit');
+    let current = 1;
+
+    function showStep(n) {
+        panels.forEach(p => p.style.display = p.dataset.stepPanel == n ? '' : 'none');
+        navItems.forEach(ni => {
+            const step   = parseInt(ni.dataset.stepNav);
+            const isDone = step < n;
+            ni.classList.toggle('active', step === n);
+            ni.classList.toggle('done', isDone);
+            const circle = ni.querySelector('.ce-step-circle');
+            if (circle) circle.textContent = isDone ? '✓' : step;
+        });
+        current = n;
+        if (prevBtn)   prevBtn.style.display   = n === 1 ? 'none' : '';
+        if (nextBtn)   nextBtn.style.display   = n === panels.length ? 'none' : '';
+        if (submitBtn) submitBtn.style.display = n === panels.length ? '' : 'none';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function canAdvance() {
+        if (current === 1) {
+            const game = document.getElementById('ce-game');
+            const fmt  = document.getElementById('ce-format');
+            return game?.value && fmt?.value;
+        }
+        if (current === 2) {
+            const mode = document.getElementById('ce-mode-input')?.value;
+            if (mode === 'bulk') {
+                // Need at least 1 generated event
+                return document.querySelectorAll('[data-bulk-tbody] tr').length > 0;
+            }
+            const track = document.querySelector('[name="track"]');
+            const dt    = document.querySelector('[name="scheduled_at"]');
+            return track?.value && dt?.value;
+        }
+        return true; // steps 3+ always can advance
+    }
+
+    nextBtn?.addEventListener('click', () => {
+        if (!canAdvance()) {
+            // Highlight missing fields briefly
+            const panel = document.querySelector(`[data-step-panel="${current}"]`);
+            panel?.querySelectorAll(':required:invalid').forEach(el => {
+                el.style.outline = '2px solid #dc2626';
+                setTimeout(() => el.style.outline = '', 2000);
+            });
+            return;
+        }
+        showStep(current + 1);
+    });
+
+    prevBtn?.addEventListener('click', () => showStep(current - 1));
+
+    navItems.forEach(ni => {
+        ni.style.cursor = 'pointer';
+        ni.addEventListener('click', () => {
+            const step = parseInt(ni.dataset.stepNav);
+            if (step < current) showStep(step); // can go back freely
+        });
+    });
+
+    showStep(1);
 })();
 </script>
 
