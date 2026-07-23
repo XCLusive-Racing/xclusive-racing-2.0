@@ -166,6 +166,41 @@
             @endif
         </div>
 
+        @if(auth()->user()->canBroadcast())
+        {{-- Content --}}
+        <div class="admin-nav-section-header" data-section="content">
+            <span>Content</span>
+            <svg data-section-arrow width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="transition:transform .2s">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </div>
+        <div class="admin-nav-section-divider" style="display:none"></div>
+
+        <div data-section-content="content">
+            <a href="{{ route('admin.news.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.news.index') || request()->routeIs('admin.news.edit') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+                </svg>
+                <span>All Articles</span>
+            </a>
+            <a href="{{ route('admin.news.create') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.news.create') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                </svg>
+                <span>Create Article</span>
+            </a>
+            <a href="{{ route('admin.news.tags.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.news.tags.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/>
+                </svg>
+                <span>Tags</span>
+            </a>
+        </div>
+        @endif
+
         @if(auth()->user()->hasAnyRole(['owner', 'admin']))
         {{-- Configuration --}}
         <div class="admin-nav-section-header" data-section="ftp">

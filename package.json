@@ -20,6 +20,7 @@
         "@fortawesome/fontawesome-free": "^7.2.0",
         "@popperjs/core": "^2.11.8",
         "bootstrap": "^5.3.8",
+        "easymde": "^2.21.0",
         "sweetalert2": "^11.26.25"
     }
 }

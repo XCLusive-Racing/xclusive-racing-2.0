@@ -74,7 +74,42 @@
             <ul class="navbar-nav mx-auto gap-md-5">
                 <li class="nav-item"><a class="nav-link" href="{{ url('/#about') }}">ABOUT</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ route('team') }}">TEAM</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url('/events') }}">XCL EVENTS</a></li>
+                <li class="nav-item position-relative" data-dropdown>
+                    <div class="d-flex align-items-center">
+                        <a class="nav-link pe-1" href="{{ url('/events') }}">XCL EVENTS</a>
+                        <button class="nav-link fw-bold d-flex align-items-center border-0 bg-transparent px-0" data-dropdown-toggle>
+                            <svg class="xcl-dropdown-arrow" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="transition:.2s">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <ul class="xcl-dropdown" data-dropdown-menu style="display:none">
+                        <li>
+                            <a class="xcl-dropdown-item" href="{{ url('/events?type=daily-racing') }}">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                DAILY RACING
+                            </a>
+                        </li>
+                        <li>
+                            <a class="xcl-dropdown-item" href="{{ url('/events?type=time-trial') }}">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                TIME TRIALS
+                            </a>
+                        </li>
+                        <li>
+                            <a class="xcl-dropdown-item" href="{{ url('/events?type=championship') }}">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                                CHAMPIONSHIPS
+                            </a>
+                        </li>
+                        <li>
+                            <a class="xcl-dropdown-item" href="{{ url('/events?view=calendar') }}">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                CALENDAR
+                            </a>
+                        </li>
+                    </ul>
+                </li>
                 <li class="nav-item"><a class="nav-link" href="{{ url('/#partners') }}">PARTNERS</a></li>
                 <li class="nav-item"><a class="nav-link" href="https://raven.gg/stores/xclusive-esports/" target="_blank">MERCHANDISE</a></li>
                 <li class="nav-item position-relative" data-dropdown>

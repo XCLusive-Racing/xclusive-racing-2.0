@@ -65,16 +65,22 @@
 
                 {{-- XCL EVENTS --}}
                 <li class="nav-item position-relative" data-dropdown>
-                    <a class="nav-link" href="#" data-dropdown-toggle>XCL EVENTS</a>
+                    <a class="nav-link" href="{{ route('events.index') }}" data-dropdown-toggle>XCL EVENTS</a>
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
-                        <li><a class="xcl-dropdown-item" href="{{ route('events.index') }}">EVENTS</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ url('/events?type=daily-racing') }}">DAILY RACING</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ url('/events?type=time-trial') }}">TIME TRIALS</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('championships.index') }}">CHAMPIONSHIPS</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('calendar') }}">CALENDAR</a></li>
                     </ul>
                 </li>
 
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url('/#partners') }}">PARTNERS</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link xcl-nav-news" href="{{ route('news.index') }}">NEWS</a>
                 </li>
 
                 {{-- SHOP --}}

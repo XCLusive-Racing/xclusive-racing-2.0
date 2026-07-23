@@ -10,6 +10,9 @@ use App\Http\Controllers\Admin\FtpServerController;
 use App\Http\Controllers\Admin\EventFormatController;
 use App\Http\Controllers\Admin\RatingConfigController;
 use App\Http\Controllers\Admin\MediaController as AdminMediaController;
+use App\Http\Controllers\Admin\NewsArticleController;
+use App\Http\Controllers\Admin\NewsTagController;
+use App\Http\Controllers\NewsController;
 use App\Http\Controllers\Admin\RaceController as AdminRaceController;
 use App\Http\Controllers\Admin\RaceResultController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
@@ -71,6 +74,10 @@ Route::get('/championships', [ChampionshipController::class, 'index'])->name('ch
 Route::get('/championships/{championship}', [ChampionshipController::class, 'show'])->name('championships.show');
 Route::post('/championships/{championship}/register', [ChampionshipController::class, 'register'])->name('championships.register')->middleware('auth');
 Route::delete('/championships/{championship}/unregister', [ChampionshipController::class, 'unregister'])->name('championships.unregister')->middleware('auth');
+
+// News - public
+Route::get('/news',         [NewsController::class, 'index'])->name('news.index');
+Route::get('/news/{slug}',  [NewsController::class, 'show'])->name('news.show');
 
 // Events - public
 Route::get('/events', [RaceController::class, 'index'])->name('events.index');
@@ -232,6 +239,20 @@ Route::middleware(['auth', 'role:owner,moderator'])->prefix('admin')->name('admi
     Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
     Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+});
+
+// News — broadcaster, admin, owner
+Route::middleware(['auth', 'role:owner,admin,broadcaster'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/news',                       [NewsArticleController::class, 'index'])->name('news.index');
+    Route::get('/news/create',                [NewsArticleController::class, 'create'])->name('news.create');
+    Route::post('/news',                      [NewsArticleController::class, 'store'])->name('news.store');
+    Route::get('/news/{newsArticle}/edit',    [NewsArticleController::class, 'edit'])->name('news.edit');
+    Route::put('/news/{newsArticle}',         [NewsArticleController::class, 'update'])->name('news.update');
+    Route::delete('/news/{newsArticle}',      [NewsArticleController::class, 'destroy'])->name('news.destroy');
+
+    Route::get('/news/tags',                  [NewsTagController::class, 'index'])->name('news.tags.index');
+    Route::post('/news/tags',                 [NewsTagController::class, 'store'])->name('news.tags.store');
+    Route::delete('/news/tags/{newsTag}',     [NewsTagController::class, 'destroy'])->name('news.tags.destroy');
 });
 
 // Owner only

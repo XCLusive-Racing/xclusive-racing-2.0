@@ -22,6 +22,9 @@ import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
 import '@fortawesome/fontawesome-free/css/solid.min.css';
 import '@fortawesome/fontawesome-free/css/brands.min.css';
 
+import EasyMDE from 'easymde';
+import 'easymde/dist/easymde.min.css';
+
 import * as bootstrap from 'bootstrap';
 import Swal from 'sweetalert2';
 
@@ -97,6 +100,23 @@ document.addEventListener('DOMContentLoaded', () => {
     initFileBrowser();
     initEventsSidebar();
     initMediaPickers();
+
+    // EasyMDE rich text editor
+    const richEl = document.querySelector('.rich-editor');
+    if (richEl) {
+        new EasyMDE({
+            element: richEl,
+            spellChecker: false,
+            autosave: { enabled: false },
+            toolbar: [
+                'bold', 'italic', 'heading', '|',
+                'quote', 'unordered-list', 'ordered-list', '|',
+                'link', 'image', '|',
+                'preview', 'side-by-side', 'fullscreen', '|',
+                'guide',
+            ],
+        });
+    }
 
     // Generic: show/hide element based on a select's current value
     document.querySelectorAll('[data-select-conditional]').forEach(select => {

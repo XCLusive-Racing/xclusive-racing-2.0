@@ -269,6 +269,15 @@ html {
         color: #4c1d95 !important;
         &:hover { color: #7c3aed !important; }
     }
+
+    .xcl-nav-news {
+        &:hover {
+            color: #cc0000 !important;
+            text-decoration: underline;
+            text-decoration-color: #cc0000;
+            text-underline-offset: 4px;
+        }
+    }
 }
 
 .navbar-xcl__topo {
