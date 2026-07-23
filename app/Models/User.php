@@ -66,10 +66,16 @@ class User extends Authenticatable
     public function isSteward(): bool      { return $this->hasRole('steward'); }
     public function isDriver(): bool       { return $this->hasRole('driver'); }
     public function isSuperAdmin(): bool   { return $this->isOwner(); }
+    public function isBroadcaster(): bool  { return $this->hasRole('broadcaster'); }
 
     public function canManage(): bool
     {
         return $this->hasAnyRole(['owner', 'admin', 'event_manager']);
+    }
+
+    public function canBroadcast(): bool
+    {
+        return $this->hasAnyRole(['owner', 'admin', 'broadcaster']);
     }
 
     public function canSeeUsers(): bool
