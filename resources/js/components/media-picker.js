@@ -15,6 +15,7 @@ function initSinglePicker(picker) {
     const deleteBaseUrl = picker.dataset.deleteBaseUrl;
     const csrfToken     = picker.dataset.csrfToken;
     const filterDefault = picker.dataset.filterDefault || 'all';
+    const uploadFolder  = picker.dataset.uploadFolder || '';
 
     // DOM refs
     const previewWrap      = picker.querySelector('[data-mp-preview-wrap]');
@@ -317,6 +318,7 @@ function initSinglePicker(picker) {
             const fd = new FormData();
             fd.append('file', f);
             fd.append('_token', csrfToken);
+            if (uploadFolder) fd.append('category', uploadFolder);
             const r = await fetch(uploadUrl, { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
             if (r.ok) {
                 const data = await r.json();

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class NewsArticle extends Model
@@ -53,6 +54,12 @@ class NewsArticle extends Model
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(NewsTag::class, 'news_article_tag', 'article_id', 'tag_id');
+    }
+
+    public function getCoverImageUrlAttribute(): ?string
+    {
+        if (!$this->cover_image) return null;
+        return Storage::disk('media')->url($this->cover_image);
     }
 
     public function scopePublished(Builder $query): Builder

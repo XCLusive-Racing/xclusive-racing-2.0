@@ -1,4 +1,4 @@
-@props(['name' => 'image', 'label' => 'Image', 'current' => null, 'currentType' => 'image', 'optional' => true, 'filterDefault' => 'all'])
+@props(['name' => 'image', 'label' => 'Image', 'current' => null, 'currentType' => 'image', 'optional' => true, 'filterDefault' => 'all', 'folder' => null])
 
 @php
     $currentUrl  = $current ? \Illuminate\Support\Facades\Storage::disk('media')->url($current) : '';
@@ -16,7 +16,8 @@
      data-upload-url="{{ route('admin.media.store') }}"
      data-delete-base-url="{{ url('admin/media') }}/"
      data-csrf-token="{{ csrf_token() }}"
-     data-filter-default="{{ $filterDefault }}">
+     data-filter-default="{{ $filterDefault }}"
+     data-upload-folder="{{ $folder ?? '' }}">
 
     <label class="form-label">
         {{ $label }}
