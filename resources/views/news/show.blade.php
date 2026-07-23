@@ -146,8 +146,8 @@
     <a href="{{ route('news.index') }}" class="news-back-link">← Back to News</a>
 
     {{-- Cover image --}}
-    @if($article->cover_image)
-        <img src="{{ $article->cover_image }}" alt="{{ $article->title }}" class="news-cover">
+    @if($article->cover_image_url)
+        <img src="{{ $article->cover_image_url }}" alt="{{ $article->title }}" class="news-cover">
     @endif
 
     {{-- Tags --}}

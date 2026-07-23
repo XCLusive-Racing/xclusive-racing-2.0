@@ -351,7 +351,7 @@
     <a href="{{ route('news.show', $featured->slug) }}" class="news-featured mb-4 d-block"
        style="margin-bottom:40px!important">
         <div class="news-featured__bg"
-             style="background-image:url('{{ $featured->cover_image ?: '/images/home/brand/xclusive_racing_logo_lion.png' }}')"></div>
+             style="background-image:url('{{ $featured->cover_image_url ?: '/images/home/brand/xclusive_racing_logo_lion.png' }}')"></div>
         <div class="news-featured__overlay"></div>
         <div class="news-featured__content">
             @if($featured->tags->isNotEmpty())
@@ -418,8 +418,8 @@
         @foreach($articles as $article)
         <div class="col-sm-6 col-lg-4">
             <a href="{{ route('news.show', $article->slug) }}" class="news-card text-decoration-none d-flex">
-                @if($article->cover_image)
-                    <img src="{{ $article->cover_image }}" alt="{{ $article->title }}" class="news-card__cover">
+                @if($article->cover_image_url)
+                    <img src="{{ $article->cover_image_url }}" alt="{{ $article->title }}" class="news-card__cover">
                 @else
                     <div class="news-card__cover-placeholder">
                         <img src="/images/home/brand/xclusive_racing_logo_lion.png" alt="" height="40"

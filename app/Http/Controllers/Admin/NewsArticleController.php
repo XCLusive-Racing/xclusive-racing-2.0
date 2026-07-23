@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Media;
 use App\Models\NewsArticle;
 use App\Models\NewsTag;
 use App\Models\User;
@@ -58,13 +59,15 @@ class NewsArticleController extends Controller
             'slug'         => 'nullable|string|max:255|unique:news_articles,slug',
             'excerpt'      => 'nullable|string|max:200',
             'body'         => 'nullable|string',
-            'cover_image'  => 'nullable|string|max:500',
+            'cover_image'  => 'nullable|image|max:10240',
             'status'       => 'required|in:draft,published',
             'published_at' => 'nullable|date',
             'tags'         => 'nullable|array',
             'tags.*'       => 'integer|exists:news_tags,id',
             'author_id'    => 'nullable|integer|exists:users,id',
         ]);
+
+        $data['cover_image'] = $this->resolveImage($request);
 
         $data['author_id']    = ($user->isAdmin() || $user->isOwner()) && !empty($data['author_id'])
             ? $data['author_id']
@@ -108,13 +111,15 @@ class NewsArticleController extends Controller
             'slug'         => 'nullable|string|max:255|unique:news_articles,slug,' . $newsArticle->id,
             'excerpt'      => 'nullable|string|max:200',
             'body'         => 'nullable|string',
-            'cover_image'  => 'nullable|string|max:500',
+            'cover_image'  => 'nullable|image|max:10240',
             'status'       => 'required|in:draft,published',
             'published_at' => 'nullable|date',
             'tags'         => 'nullable|array',
             'tags.*'       => 'integer|exists:news_tags,id',
             'author_id'    => 'nullable|integer|exists:users,id',
         ]);
+
+        $data['cover_image'] = $this->resolveImage($request, $newsArticle->cover_image);
 
         if ($user->isAdmin() || $user->isOwner()) {
             $data['author_id'] = $data['author_id'] ?? $newsArticle->author_id;
@@ -145,6 +150,24 @@ class NewsArticleController extends Controller
 
         return redirect()->route('admin.news.index')
             ->with('success', 'Article deleted.');
+    }
+
+    private function resolveImage(Request $request, ?string $existing = null): ?string
+    {
+        if ($request->hasFile('cover_image')) {
+            $media = Media::createFromUpload($request->file('cover_image'), 'image', 'news');
+            return $media->path;
+        }
+
+        if ($request->filled('cover_image_path')) {
+            return $request->input('cover_image_path');
+        }
+
+        if ($request->input('cover_image_keep') === '0') {
+            return null;
+        }
+
+        return $existing;
     }
 
     private function authorizeArticle(NewsArticle $article): void

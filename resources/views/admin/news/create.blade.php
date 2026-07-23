@@ -10,7 +10,7 @@
 
 @section('content')
 
-<form action="{{ route('admin.news.store') }}" method="POST" id="article-form">
+<form action="{{ route('admin.news.store') }}" method="POST" id="article-form" enctype="multipart/form-data">
 @csrf
 
 <div class="row g-4">
@@ -101,19 +101,12 @@
         <div class="admin-card mb-4">
             <div class="px-4 pt-4 pb-3">
                 <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Cover Image</p>
-
-                <div class="mb-2">
-                    <input type="text" name="cover_image" id="cover-image-input"
-                           value="{{ old('cover_image') }}"
-                           class="form-control @error('cover_image') is-invalid @enderror"
-                           placeholder="/images/... or https://...">
-                    @error('cover_image')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div id="cover-preview" class="{{ old('cover_image') ? '' : 'd-none' }} mb-2">
-                    <img id="cover-preview-img" src="{{ old('cover_image') }}" alt="Preview"
-                         class="img-fluid rounded-2" style="max-height:160px;object-fit:cover;width:100%">
-                </div>
-                <p class="text-secondary mb-0" style="font-size:.72rem">Enter a URL or path from the media library.</p>
+                <x-media-picker
+                    name="cover_image"
+                    label="Cover Image"
+                    :current="old('cover_image_path')"
+                    folder="news"
+                    filterDefault="image" />
             </div>
         </div>
 
@@ -187,19 +180,6 @@
         publishedAtWrap.style.display = statusSelect.value === 'published' ? '' : 'none';
     });
 
-    // Cover image preview
-    const coverInput   = document.getElementById('cover-image-input');
-    const coverPreview = document.getElementById('cover-preview');
-    const coverImg     = document.getElementById('cover-preview-img');
 
-    coverInput.addEventListener('input', () => {
-        const val = coverInput.value.trim();
-        if (val) {
-            coverImg.src = val;
-            coverPreview.classList.remove('d-none');
-        } else {
-            coverPreview.classList.add('d-none');
-        }
-    });
 </script>
 @endpush
