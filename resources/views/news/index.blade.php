@@ -5,15 +5,9 @@
 
 @push('head')
 <style>
-/* ── News page – white topo background, TRTN red #cc0000 ────────── */
+/* ── News page ───────────────────────────────────────────────────── */
 .news-page {
-    background-color: #ffffff;
-    background-image: url('/topo.png');
-    background-attachment: fixed;
-    background-repeat: repeat;
-    background-size: auto;
-    min-height: 100vh;
-    padding-top: 80px;
+    /* background handled by .xcl-page + .about-section__topo */
 }
 
 /* Hero bar */
@@ -333,7 +327,8 @@
 @endpush
 
 @section('content')
-<div class="news-page">
+<main class="xcl-page news-page pb-5 px-3" style="background:white">
+<div class="about-section__topo" style="background-image:url('/topo.png')"></div>
 <div class="container-xl px-3 px-md-4" style="padding-top:60px;padding-bottom:60px;position:relative;z-index:1">
 
     {{-- ── Page header ──────────────────────────────────────────── --}}
@@ -472,4 +467,5 @@
 
 </div>
 </div>
+</main>
 @endsection

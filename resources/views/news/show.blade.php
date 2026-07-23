@@ -7,13 +7,7 @@
 <style>
 /* ── News detail – TRTN red #cc0000 accent ──────────────────────── */
 .news-show-page {
-    background-color: #ffffff;
-    background-image: url('/topo.png');
-    background-attachment: fixed;
-    background-repeat: repeat;
-    background-size: auto;
-    min-height: 100vh;
-    padding-top: 100px;
+    /* background handled by .xcl-page + .about-section__topo */
 }
 
 /* Cover image */
@@ -143,7 +137,8 @@
 @endpush
 
 @section('content')
-<div class="news-show-page">
+<main class="xcl-page news-show-page pb-5 px-3" style="background:white">
+<div class="about-section__topo" style="background-image:url('/topo.png')"></div>
 <div class="container-xl px-3 px-md-4 py-5" style="position:relative;z-index:1">
 <div class="row justify-content-center">
 <div class="col-lg-10 col-xl-9">
@@ -204,4 +199,5 @@
 </div>
 </div>
 </div>
+</main>
 @endsection
