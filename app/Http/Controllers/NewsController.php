@@ -11,9 +11,23 @@ class NewsController extends Controller
 {
     public function index(Request $request): View
     {
+        $tags      = NewsTag::orderBy('name')->get();
+        $activeTag = $request->tag;
+
+        // Featured = most recent published article (no filters applied)
+        $featured = NewsArticle::with(['author', 'tags'])
+            ->published()
+            ->latest('published_at')
+            ->first();
+
         $query = NewsArticle::with(['author', 'tags'])
             ->published()
             ->latest('published_at');
+
+        // Exclude featured from grid
+        if ($featured) {
+            $query->where('id', '!=', $featured->id);
+        }
 
         if ($request->filled('tag')) {
             $query->whereHas('tags', fn($q) => $q->where('slug', $request->tag));
@@ -27,11 +41,9 @@ class NewsController extends Controller
             );
         }
 
-        $articles    = $query->paginate(9)->withQueryString();
-        $tags        = NewsTag::orderBy('name')->get();
-        $activeTag   = $request->tag;
+        $articles = $query->paginate(9)->withQueryString();
 
-        return view('news.index', compact('articles', 'tags', 'activeTag'));
+        return view('news.index', compact('articles', 'tags', 'activeTag', 'featured'));
     }
 
     public function show(string $slug): View
