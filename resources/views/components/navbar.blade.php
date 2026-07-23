@@ -51,6 +51,10 @@
                     <a class="nav-link" href="{{ url('/#about') }}">ABOUT</a>
                 </li>
 
+                <li class="nav-item">
+                    <a class="nav-link xcl-nav-news" href="{{ route('news.index') }}">NEWS</a>
+                </li>
+
                 {{-- TEAM --}}
                 <li class="nav-item position-relative" data-dropdown>
                     <a class="nav-link" href="{{ route('team') }}" data-dropdown-toggle>TEAM</a>
@@ -77,10 +81,6 @@
 
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url('/#partners') }}">PARTNERS</a>
-                </li>
-
-                <li class="nav-item">
-                    <a class="nav-link xcl-nav-news" href="{{ route('news.index') }}">NEWS</a>
                 </li>
 
                 {{-- SHOP --}}
