@@ -335,14 +335,11 @@
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
         <div class="news-hero">
             <h1 class="news-hero__heading">NEWS</h1>
-            <p class="news-hero__sub">Latest from XCLusive Racing</p>
+            <p class="news-hero__sub">Latest news from TRTN</p>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <div class="news-trtn-badge">
-                <img src="/images/trtn/TRTN Logo 1.png" alt="TRTN" height="20"
-                     style="object-fit:contain;filter:brightness(0) invert(1)">
-            </div>
-            <span class="news-trtn-powered">Powered by TRTN</span>
+        <div style="background:#cc0000;border-radius:8px;padding:.6rem 1.4rem;display:inline-flex;align-items:center">
+            <img src="/images/trtn/trtn - wide.png" alt="TRTN" height="32"
+                 style="object-fit:contain;filter:brightness(0) invert(1)">
         </div>
     </div>
 
