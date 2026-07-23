@@ -337,11 +337,30 @@
             <h1 class="news-hero__heading">NEWS</h1>
             <p class="news-hero__sub">Latest news from TRTN</p>
         </div>
-        <div style="background:#cc0000;border-radius:8px;padding:.6rem 1.4rem;display:inline-flex;align-items:center">
-            <img src="/images/trtn/trtn - wide.png" alt="TRTN" height="32"
-                 style="object-fit:contain;filter:brightness(0) invert(1)">
+        <div class="d-flex flex-column align-items-end gap-2">
+            <div style="background:#cc0000;border-radius:8px;padding:.6rem 1.4rem;display:inline-flex;align-items:center">
+                <img src="/images/trtn/trtn - wide.png" alt="TRTN" height="32"
+                     style="object-fit:contain;filter:brightness(0) invert(1)">
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="news-trtn-powered">Powered by TRTN</span>
+                <a href="{{ route('live') }}"
+                   style="background:#cc0000;color:#fff;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;padding:.4rem 1rem;border-radius:6px;text-decoration:none;display:inline-flex;align-items:center;gap:.45rem">
+                    <span style="width:7px;height:7px;background:#fff;border-radius:50%;animation:xcl-live-pulse 1.2s ease-in-out infinite;flex-shrink:0"></span>
+                    LIVE BROADCAST
+                </a>
+            </div>
         </div>
     </div>
+
+    @push('head')
+    <style>
+    @keyframes xcl-live-pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50%       { opacity: .4; transform: scale(.75); }
+    }
+    </style>
+    @endpush
 
     {{-- ── Featured article ─────────────────────────────────────── --}}
     @if($featured)
