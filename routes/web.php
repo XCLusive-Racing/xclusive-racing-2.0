@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\RatingConfigController;
 use App\Http\Controllers\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Admin\NewsArticleController;
 use App\Http\Controllers\Admin\NewsTagController;
+use App\Http\Controllers\LiveController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\Admin\RaceController as AdminRaceController;
 use App\Http\Controllers\Admin\RaceResultController;
@@ -78,6 +79,9 @@ Route::delete('/championships/{championship}/unregister', [ChampionshipControlle
 // News - public
 Route::get('/news',         [NewsController::class, 'index'])->name('news.index');
 Route::get('/news/{slug}',  [NewsController::class, 'show'])->name('news.show');
+
+// Live broadcasts
+Route::get('/live', [LiveController::class, 'index'])->name('live');
 
 // Events - public
 Route::get('/events', [RaceController::class, 'index'])->name('events.index');
