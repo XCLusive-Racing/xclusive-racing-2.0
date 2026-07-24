@@ -51,8 +51,13 @@
                     <a class="nav-link" href="{{ url('/#about') }}">ABOUT</a>
                 </li>
 
-                <li class="nav-item">
-                    <a class="nav-link xcl-nav-news" href="{{ route('news.index') }}">NEWS</a>
+                {{-- NEWS --}}
+                <li class="nav-item position-relative" data-dropdown>
+                    <a class="nav-link xcl-nav-news" href="{{ route('news.index') }}" data-dropdown-toggle>NEWS</a>
+                    <ul class="xcl-dropdown" data-dropdown-menu
+                        style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
+                        <li><a class="xcl-dropdown-item" href="/news/broadcasts">BROADCASTS</a></li>
+                    </ul>
                 </li>
 
                 {{-- TEAM --}}
@@ -113,9 +118,10 @@
             {{-- Right: Discord + auth (desktop only) --}}
             <div class="d-none d-md-flex align-items-center gap-3">
 
-                <a href="{{ config('xcl.discord_url') }}" target="_blank"
-                   class="btn btn-sm fw-bold text-white d-none d-md-inline-flex bg-xcl-purple">
-                    JOIN DISCORD
+                <a href="https://paypal.me/xcl789" target="_blank" rel="noopener"
+                   class="btn btn-sm fw-bold text-white d-none d-md-inline-flex align-items-center gap-2 bg-xcl-purple">
+                    <i class="fa-brands fa-paypal"></i>
+                    SUPPORT
                 </a>
 
                 @auth
