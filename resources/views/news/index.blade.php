@@ -335,7 +335,7 @@
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
         <div class="news-hero">
             <h1 class="news-hero__heading">NEWS</h1>
-            <p class="news-hero__sub">Latest news from TRTN</p>
+            <p class="news-hero__sub">Latest news on XCLusive Racing</p>
         </div>
         <div class="d-flex flex-column align-items-end gap-2">
             <div style="background:#cc0000;border-radius:8px;padding:.6rem 1.4rem;display:inline-flex;align-items:center">

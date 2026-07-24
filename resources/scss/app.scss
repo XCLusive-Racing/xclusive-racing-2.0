@@ -119,6 +119,14 @@ html {
 .xcl-topbar > .xcl-topbar-label          { color: #e879a0; }
 .xcl-topbar-platform > .xcl-topbar-label { color: #a78bfa; }
 
+// Wraps the 4 game badges so they can be regrouped/resized independently
+// of the topbar's own gap-2 (needed once badges are shown on mobile too).
+.xcl-topbar-games {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; // matches .xcl-topbar's Bootstrap gap-2, unchanged from before wrapping
+}
+
 // Platform selector group (right side of topbar)
 .xcl-topbar-platform {
     display: flex;
@@ -352,7 +360,6 @@ html {
     transform: translateY(-50%) translateX(0);
     width: 42px;
     height: auto;
-    min-height: fit-content;
     background: #1a0a2e;
     border: none;
     border-left: 3px solid #d4ee6a;
@@ -365,7 +372,7 @@ html {
     align-items: center;
     justify-content: center;
     gap: 4px;
-    padding: 10px 0 16px;
+    padding: 10px 0 8px;
     outline: none;
     overflow: visible;
     box-shadow: -3px 0 16px rgba(26, 10, 46, .7);
@@ -489,6 +496,37 @@ html {
     color: white;
     font-size: 1rem;
     transition: color 0.2s ease;
+    overflow: visible;
+}
+
+.xcl-trigger-pill__img {
+    width: 28px;
+    height: auto;
+    min-width: 28px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+// TRTN pill inherits the shared .xcl-trigger-pill background/border-left
+// hover (identical to Discord/Twitch/Instagram/TikTok) — only the logo
+// tints TRTN red on hover, label stays the shared lime like other rows.
+.xcl-trigger-pill--trtn {
+    padding-left: 11px; // larger logo — nudged left, between the default 15px and 8px
+
+    img { filter: brightness(0) invert(1); }
+
+    &:hover img {
+        filter: brightness(0) saturate(100%)
+                invert(13%) sepia(97%) saturate(4840%)
+                hue-rotate(357deg) brightness(89%) contrast(120%);
+    }
+
+    &:hover .xcl-trigger-pill__label { color: #d4ee6a; }
+}
+
+.xcl-sidebar-trigger__divider {
+    width: 100%;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .xcl-trigger-pill__label {
@@ -3658,6 +3696,35 @@ body.admin-body {
         -webkit-overflow-scrolling: touch;
         flex-wrap: nowrap;
         &::-webkit-scrollbar { display: none; }
+    }
+
+    // Game badges on mobile: icons only, no hover-swap (touch has no hover),
+    // tight fixed gap instead of the desktop overlap trick.
+    .xcl-topbar-games {
+        gap: 4px;
+    }
+
+    .xcl-game-badge {
+        margin-right: 0;
+        padding: 2px 4px;
+
+        .xcl-badge-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .xcl-badge-text {
+            display: none;
+        }
+
+        .xcl-badge-default {
+            max-width: none;
+            opacity: 1;
+        }
+
+        .xcl-badge-hover {
+            display: none;
+        }
     }
 
     // Hero: centreer achtergrond en maak ramp minder steil

@@ -81,6 +81,11 @@ foreach ($sbGames as $game => $col) {
                 <span class="xcl-trigger-pill__icon"><i class="fa-brands fa-tiktok"></i></span>
                 <span class="xcl-trigger-pill__label">TikTok</span>
             </a>
+            <div class="xcl-sidebar-trigger__divider"></div>
+            <a href="{{ route('news.index') }}" class="xcl-trigger-pill xcl-trigger-pill--trtn">
+                <span class="xcl-trigger-pill__icon"><img src="/images/trtn/TRTN Logo 1.png" alt="" class="xcl-trigger-pill__img"></span>
+                <span class="xcl-trigger-pill__label">TRTN</span>
+            </a>
         </div>
     </button>
 
