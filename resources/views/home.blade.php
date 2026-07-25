@@ -13,23 +13,23 @@
                     <span class="hero-home__heading--accent">RACING LEGENDS</span><br>
                     ARE FORGED
                 </h1>
-                <p class="hero-home__sub fs-5 mb-5">
+                <p class="hero-home__sub">
                     Born on console. Built for global competition.<br><span style="display:block;margin-top:0.5em"></span><span class="fw-black xcl-gradient-text"><span style="font-size:1.2em">XCL</span>USIVE</span> is the home of premier sim racing events, a trusted community, and the <span class="fw-black xcl-gradient-text"><span style="font-size:1.2em">XCL</span>USIVE <span style="font-size:1.2em">R</span>ACING</span> team.<br><span style="display:block;margin-top:0.5em"></span>This is where champions are made.
                 </p>
-                <div class="d-flex gap-3 flex-wrap justify-content-center justify-content-lg-start">
+                <div class="hero-home__cta-row d-flex flex-wrap justify-content-center justify-content-lg-start">
                     @auth
                         <a href="{{ route('profile') }}"
-                           class="btn fw-black text-uppercase text-white px-5 py-3 fs-5"
+                           class="btn hero-home__cta fw-black text-uppercase text-white"
                            style="background:#7c3aed;">MY PROFILE</a>
                         <a href="{{ route('events.index') }}"
-                           class="btn fw-black text-uppercase px-5 py-3 fs-5"
+                           class="btn hero-home__cta fw-black text-uppercase"
                            style="border:2px solid rgba(255,255,255,.3);color:white;">SEE EVENTS</a>
                     @else
                         <a href="{{ route('register') }}"
-                           class="btn fw-black text-uppercase text-white px-5 py-3 fs-5"
+                           class="btn hero-home__cta fw-black text-uppercase text-white"
                            style="background:#7c3aed;">JOIN NOW</a>
                         <a href="#"
-                           class="btn fw-black text-uppercase px-5 py-3 fs-5"
+                           class="btn hero-home__cta fw-black text-uppercase"
                            style="border:2px solid rgba(255,255,255,.3);color:white;"
                            onclick="event.preventDefault();window.dispatchEvent(new CustomEvent('open-events-sidebar'))">SEE EVENTS</a>
                     @endauth

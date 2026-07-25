@@ -8,43 +8,39 @@
 
     <div class="xcl-topbar-games d-flex align-items-center">
         {{-- ACC --}}
-        <a href="https://www.assettocorsa.net/competizione/" target="_blank"
-           class="xcl-game-badge xcl-game-acc" title="Assetto Corsa Competizione">
-            <span class="xcl-badge-default">
+        <div class="play-on-item">
+            <a href="https://www.assettocorsa.net/competizione/" target="_blank"
+               class="xcl-game-badge xcl-game-acc">
                 <img src="/images/home/icons/ACC Logo.png" class="xcl-badge-icon" alt="ACC">
                 <span class="xcl-badge-text">ACC</span>
-            </span>
-            <img src="/images/home/logos/ACC-logo.png" class="xcl-badge-hover" alt="ACC">
-        </a>
+            </a>
+        </div>
 
         {{-- Le Mans Ultimate --}}
-        <a href="https://www.lemansultimate.com/" target="_blank"
-           class="xcl-game-badge xcl-game-lmu" title="Le Mans Ultimate">
-            <span class="xcl-badge-default">
+        <div class="play-on-item">
+            <a href="https://www.lemansultimate.com/" target="_blank"
+               class="xcl-game-badge xcl-game-lmu">
                 <img src="/images/home/icons/LM Logo.png" class="xcl-badge-icon" alt="LMU">
                 <span class="xcl-badge-text">LMU</span>
-            </span>
-            <img src="/images/home/logos/LeMans-Logo.png" class="xcl-badge-hover" alt="Le Mans Ultimate">
-        </a>
+            </a>
+        </div>
 
         {{-- iRacing --}}
-        <a href="https://www.iracing.com/" target="_blank"
-           class="xcl-game-badge xcl-game-iracing" title="iRacing">
-            <span class="xcl-badge-default">
+        <div class="play-on-item">
+            <a href="https://www.iracing.com/" target="_blank"
+               class="xcl-game-badge xcl-game-iracing">
                 <img src="/images/home/icons/iR Logo.png" class="xcl-badge-icon" alt="iRacing">
                 <span class="xcl-badge-text">iRACING</span>
-            </span>
-            <img src="/images/home/logos/iracing-logo-white.png" class="xcl-badge-hover" alt="iRacing">
-        </a>
+            </a>
+        </div>
 
         {{-- AC Rally --}}
-        <a href="#" class="xcl-game-badge xcl-game-acrally" title="AC Rally">
-            <span class="xcl-badge-default">
+        <div class="play-on-item">
+            <a href="#" class="xcl-game-badge xcl-game-acrally">
                 <img src="/images/home/icons/AC R Logo.png" class="xcl-badge-icon" alt="AC Rally">
                 <span class="xcl-badge-text">AC RALLY</span>
-            </span>
-            <img src="/images/home/logos/ACRally-logo.png" class="xcl-badge-hover" alt="AC Rally">
-        </a>
+            </a>
+        </div>
     </div>
 
     {{-- ── Desktop only: platform icon badges + PLATFORM label ───────────────── --}}
@@ -64,16 +60,11 @@
         <span class="xcl-topbar-label">PLATFORM</span>
     </div>
 
-    {{-- ── Mobile only: Sign In link (guests) + platform icons ─────────────────── --}}
-    {{-- "MY PROFILE" moved to the hamburger menu — see navbar.blade.php mobile block --}}
-    <div class="d-flex d-md-none align-items-center justify-content-between w-100">
-        @guest
-            <a href="{{ route('login') }}"
-               class="btn btn-sm fw-bold text-uppercase text-white rounded-1 px-3"
-               style="background:rgba(124,58,237,.8);font-size:.7rem;padding-top:2px;padding-bottom:2px">
-                SIGN IN
-            </a>
-        @endguest
+    {{-- ── Mobile only: platform icons ──────────────────────────────────────────
+         Sign In moved to the white navbar's right zone (see navbar.blade.php's
+         .xcl-mobile-nav-row) — the dark top bar on mobile is now icons only.
+         "MY PROFILE" is likewise in the hamburger menu — see navbar.blade.php. --}}
+    <div class="d-flex d-md-none align-items-center w-100">
         <div class="d-flex align-items-center gap-1 ms-auto">
             <div class="xcl-platform-badge">
                 <img src="/images/platforms/steam.png" class="xcl-platform-icon" alt="Steam">

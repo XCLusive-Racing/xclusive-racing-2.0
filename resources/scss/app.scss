@@ -121,10 +121,13 @@ html {
 
 // Wraps the 4 game badges so they can be regrouped/resized independently
 // of the topbar's own gap-2 (needed once badges are shown on mobile too).
+// gap is 0 on purpose: each .play-on-item carries its own spacing as padding
+// so the hover targets sit edge-to-edge with no dead zone between them
+// (see .play-on-item below — that dead zone was cause #1 of the old flicker).
 .xcl-topbar-games {
     display: flex;
     align-items: center;
-    gap: 0.5rem; // matches .xcl-topbar's Bootstrap gap-2, unchanged from before wrapping
+    gap: 0;
 }
 
 // Platform selector group (right side of topbar)
@@ -179,64 +182,59 @@ html {
     }
 }
 
-.xcl-game-badge {
-    display: inline-flex;
+// ─── PLAY ON game badges ──────────────────────────────────────────────────
+// Base rules below are shared by mobile AND desktop: icon-only, static,
+// fixed footprint. Desktop then layers the expand-on-hover behaviour on
+// top inside a `min-width: 768px` media query further down, so touch
+// devices (which never match that query) get zero animation/JS-free hover
+// — this is the explicit mobile guard requested.
+
+// One hover target per badge. Its own padding IS the spacing between icons
+// (the container below sets gap: 0), so hover zones touch edge-to-edge with
+// no bare topbar background between them — that dead zone was flicker
+// cause #1 in the earlier attempt.
+.play-on-item {
+    position: relative;
+    display: flex;
     align-items: center;
-    overflow: hidden;
-    padding: 3px 8px;
+    flex-shrink: 0;
+    padding: 0 2px;
+}
+
+// The pill itself: icon + label live inside it, in normal flow. Its width
+// is an explicit pixel value (not auto) so it has two concrete values to
+// transition between — that's what makes the background genuinely grow to
+// contain the label instead of the text escaping it. overflow: hidden
+// clips whichever part of the label doesn't fit yet mid-transition.
+.xcl-game-badge {
+    display: flex;
+    align-items: center;
     border-radius: 3px;
-    font-weight: 800;
-    font-size: 0.65rem;
-    margin-right: -2px;
-
-    &:not(:hover) {
-        transition-delay: 0.15s;
-    }
-    letter-spacing: 0.08em;
     text-decoration: none;
+    opacity: 0.85;
+    overflow: hidden;
     white-space: nowrap;
+    will-change: width;
+    transition: width .25s ease, opacity .15s ease;
 
-    // Ingeklapte staat: icon + tekst label
-    .xcl-badge-default {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        max-width: 120px;
-        opacity: 1;
-        overflow: hidden;
-        transition: max-width .35s ease, opacity .2s ease;
-        flex-shrink: 0;
-    }
-
-    // Klein icoon altijd zichtbaar
     .xcl-badge-icon {
         height: 18px;
         width: auto;
         object-fit: contain;
+        display: block;
         flex-shrink: 0;
     }
 
-    // Volledig logo: verborgen tot hover
-    .xcl-badge-hover {
-        max-width: 0;
-        height: 20px;
-        opacity: 0;
-        overflow: hidden;
-        object-fit: contain;
-        transition: max-width .35s ease, opacity .2s .15s ease;
-        flex-shrink: 0;
-        display: block;
+    // Title label: hidden by default at every breakpoint (mobile never
+    // gets the rule further down that makes it visible — structural
+    // guard, not just a visual one) and always non-wrapping once shown.
+    .xcl-badge-text {
+        display: none;
+        white-space: nowrap;
     }
 
     &:hover {
-        .xcl-badge-default {
-            max-width: 0;
-            opacity: 0;
-        }
-        .xcl-badge-hover {
-            max-width: 130px;
-            opacity: 1;
-        }
+        opacity: 1;
     }
 
     &.xcl-game-acc {
@@ -258,6 +256,62 @@ html {
         background: rgba(22,163,74,0.2);
         color: #4ade80;
         border: 1px solid rgba(22,163,74,0.4);
+    }
+}
+
+// ─── Desktop-only: expand-on-hover reveal ──────────────────────────────
+// Wrapped in this media query so none of it can ever apply on touch/mobile
+// widths — the explicit guard, on top of `.xcl-badge-text` being
+// `display:none` by default above.
+//
+// This is a genuine width grow in normal flow: the pill's own `width`
+// transitions from a fixed resting value (icon + padding only) to a fixed
+// per-game hover value (icon + label, via --pill-hover-w). Because it's
+// real layout width — not an absolutely-positioned overlay — the
+// background always fully contains the label, and later icons in the row
+// shift right to make room. That reflow is intentional here; flicker is
+// instead prevented by removing the dead zone: `.play-on-item` (not the
+// inner pill) is the hover trigger, and the container's `gap: 0` plus the
+// item's own padding keep hover zones contiguous no matter how wide the
+// hovered pill grows.
+@media (min-width: 768px) {
+    .play-on-item {
+        padding: 0 3px;
+    }
+
+    .xcl-game-badge {
+        width: 28px; // resting: icon (18px) + 5px horizontal padding each side
+        padding: 0 5px;
+
+        .xcl-badge-text {
+            margin-left: 6px;
+        }
+
+        &.xcl-game-acc      { --pill-hover-w: 62px; }
+        &.xcl-game-lmu      { --pill-hover-w: 62px; }
+        &.xcl-game-iracing  { --pill-hover-w: 90px; }
+        &.xcl-game-acrally  { --pill-hover-w: 102px; }
+    }
+
+    // Qualified with `.xcl-game-badge` (not a bare `.xcl-badge-text`) so this
+    // matches the base rule's specificity (0,0,2,0) and actually wins — a
+    // bare class here loses to `.xcl-game-badge .xcl-badge-text { display:
+    // none }` above regardless of media query or source order.
+    .xcl-game-badge .xcl-badge-text {
+        display: inline-flex;
+        align-items: center;
+        font-weight: 800;
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+    }
+
+    // Trigger lives on the outer .play-on-item, not the inner pill, so the
+    // whole padded hover zone (including the gap-free space between icons)
+    // reliably drives the expand — hovering the item's own padding still
+    // counts, even where the pill itself doesn't yet cover that pixel.
+    .play-on-item:hover .xcl-game-badge {
+        width: var(--pill-hover-w);
+        opacity: 1;
     }
 }
 
@@ -430,38 +484,66 @@ html {
     &:hover { background: #2d1052; }
 
     @media (max-width: 767px) {
-        // Full-width bottom bar — panel slides up from here
+        // Floating tab at the bottom — same dark purple + lime accent as the
+        // desktop tab, but shaped like an actual tab: margin off the left/
+        // right screen edges, rounded top corners, and the bottom edge left
+        // square/borderless so it visually "flows into" the screen edge
+        // instead of looking like a full-width strip.
+        position: fixed;
         top: auto;
         bottom: 0;
-        left: 0;
-        right: 0;
-        width: 100%;
-        height: 48px;
+        left: 14px;
+        right: 14px;
+        width: auto;
+        height: 52px;
         min-height: unset;
         transform: none;
         flex-direction: row;
+        align-items: center;
         justify-content: center;
         gap: 10px;
-        border-left: none;
-        border-top: 3px solid #d4ee6a;
-        border-radius: 0;
-        padding: 0 16px;
+        border: 3px solid #d4ee6a;
+        border-bottom: none;
+        border-radius: 14px 14px 0 0;
+        padding: 0 12px;
+        z-index: 100;
 
         &__text {
             writing-mode: horizontal-tb;
             transform: none;
-            font-size: 0.82rem;
+            font-size: 0.8rem;
+            margin-right: 8px; // extra breathing room before the social icons
         }
 
-        // Left-pointing chevrons rotated to face up
-        &__chevrons { transform: rotate(-90deg); }
-        &--open &__chevrons { transform: rotate(-90deg); }
+        // Chevrons point up (this bar's panel opens upward) instead of the
+        // old rotate(-90deg), which actually pointed them down — that was
+        // the original "rotated wrong" bug.
+        &__chevrons {
+            flex-direction: row;
+            transform: rotate(90deg);
+        }
 
         // Panel covers the trigger when open — hide it
         &--open { display: none !important; }
 
-        // Social pills don't fit the horizontal bar
-        &__socials { display: none; }
+        // Social icons: shown horizontally, upright, in the same row as
+        // DASHBOARD — replaces the old `display: none` that hid them
+        // outright.
+        &__socials {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            width: auto;
+            gap: 6px;
+            margin-top: 0;
+        }
+
+        // A horizontal rule doesn't read as a divider in a single row —
+        // the layout order (Discord/Twitch/Instagram/TikTok, then TRTN)
+        // already separates the two groups visually via spacing.
+        &__divider {
+            display: none;
+        }
     }
 }
 
@@ -488,6 +570,40 @@ html {
         border-left-color: #d4ee6a;
         .xcl-trigger-pill__label { opacity: 1; }
         .xcl-trigger-pill__icon  { color: #d4ee6a; }
+    }
+
+    // Mobile: no hover, so a tap toggles this floating label bubble above
+    // the icon instead of the desktop's inline leftward width-expand —
+    // same idea (reveal the name), different direction and mechanism since
+    // touch has no hover state to drive it. JS (events-sidebar.js) toggles
+    // `.is-active` on tap and auto-clears it after 2s / on tap elsewhere.
+    @media (max-width: 767px) {
+        position: relative;
+        width: auto;
+        justify-content: center;
+        overflow: visible;
+        border-radius: 6px;
+        border-left: none;
+        padding: 6px;
+        gap: 0;
+        transition: background 0.2s ease;
+
+        &:hover {
+            width: auto;
+            background: transparent;
+            border-left-color: transparent;
+            .xcl-trigger-pill__label { opacity: 0; }
+            .xcl-trigger-pill__icon  { color: white; }
+        }
+
+        &.is-active {
+            background: rgba(45, 16, 82, 0.6);
+
+            .xcl-trigger-pill__label {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
     }
 }
 
@@ -522,6 +638,12 @@ html {
     }
 
     &:hover .xcl-trigger-pill__label { color: #d4ee6a; }
+
+    // Mobile tap-bubble stays white like every other icon's label — only
+    // the desktop inline reveal uses the lime accent for TRTN.
+    @media (max-width: 767px) {
+        &.is-active .xcl-trigger-pill__label { color: white; }
+    }
 }
 
 .xcl-sidebar-trigger__divider {
@@ -539,6 +661,24 @@ html {
     color: #d4ee6a;
     opacity: 0;
     transition: opacity 0.15s ease 0.15s;
+
+    // Floating bubble above the icon instead of the desktop's inline
+    // leftward reveal — positioned relative to .xcl-trigger-pill (which
+    // gets `position: relative` in its own mobile override above).
+    @media (max-width: 767px) {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        transform: translateX(-50%) translateY(4px);
+        background: rgba(124, 58, 237, 0.9);
+        border: 1px solid #d4ee6a;
+        border-radius: 6px;
+        padding: 4px 10px;
+        color: white;
+        pointer-events: none;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        z-index: 1;
+    }
 }
 
 // ── Social icon strip: sits below the trigger tab, same lime border ──────────
@@ -1470,8 +1610,22 @@ html {
 .hero-home__sub {
     color: white;
     max-width: 460px;
+    font-size: 1.25rem; // matches the fs-5 utility this used to carry inline
+    margin-bottom: 3rem; // matches the mb-5 utility this used to carry inline
 
     @media (max-width: 991px) { max-width: 100%; }
+}
+
+// Own class instead of the inline px-5/py-3/fs-5 Bootstrap utilities these
+// buttons used to carry, so mobile can shrink them without an !important
+// fight against Bootstrap's own !important utility rules.
+.hero-home__cta-row {
+    gap: 1rem; // matches the gap-3 utility this used to carry inline
+}
+
+.hero-home__cta {
+    padding: 1rem 3rem; // matches the old py-3 px-5
+    font-size: 1.25rem; // matches the old fs-5
 }
 
 .hero-home__heading--accent {
@@ -3678,39 +3832,32 @@ body.admin-body {
         &::-webkit-scrollbar { display: none; }
     }
 
-    // Game badges on mobile: icons only, no hover-swap (touch has no hover),
-    // tight fixed gap instead of the desktop overlap trick.
-    .xcl-topbar-games {
-        gap: 4px;
+    // Game badges on mobile: icons only, static, no hover reveal — the
+    // expand-on-hover rules live in a `min-width: 768px` query further up
+    // and simply never match here, so nothing can move on tap/touch.
+    .play-on-item {
+        padding: 0 2px;
     }
 
     .xcl-game-badge {
-        margin-right: 0;
         padding: 2px 4px;
 
         .xcl-badge-icon {
             width: 20px;
             height: 20px;
         }
-
-        .xcl-badge-text {
-            display: none;
-        }
-
-        .xcl-badge-default {
-            max-width: none;
-            opacity: 1;
-        }
-
-        .xcl-badge-hover {
-            display: none;
-        }
     }
 
     // Hero: centreer achtergrond en maak ramp minder steil
     .hero-home {
+        // Mobile header (topbar + navbar) is shorter than desktop's, so the
+        // desktop-sized 116px gap left too much dead space above the heading.
+        // padding-top < padding-bottom shifts the vertically-centered content
+        // block (heading/copy/buttons) upward within the hero, opening up
+        // more room below the buttons for the scroll-down arrow.
+        padding-top: 45px;
         background-position: center center;
-        padding-bottom: 4rem;
+        padding-bottom: 4.5rem;
         clip-path: polygon(0 0, 100% 0, 100% 100%, 0 97%);
 
         // Donkere overlay voor leesbaarheid op mobiel
@@ -3724,6 +3871,11 @@ body.admin-body {
 
         // Zorg dat content boven de overlay blijft
         .container-xl { position: relative; z-index: 1; }
+    }
+
+    // Scroll-down arrow: nudged up further per request (34px + 50px).
+    .hero-scroll-indicator {
+        bottom: 84px;
     }
 
     // Ramp kleiner op mobiel
@@ -3752,15 +3904,80 @@ body.admin-body {
         .display-4 { font-size: 2rem; }
     }
 
-    // Hero heading kleiner
+    // Hero heading + sub copy kleiner
     .hero-home__heading {
-        font-size: 3rem;
+        // Fluid, not flat: a flat 1.25rem across the whole 0-767px range
+        // meant a phone at 767px (20px text) sat right next to a tablet at
+        // 768px rendering the desktop clamp's floor of 2.5rem/40px — a
+        // jarring double-size jump at the breakpoint. Same 5vw factor as
+        // the desktop clamp() below means both sides meet at ~the same
+        // value right at 768px instead of snapping; 1.25rem still caps the
+        // small-phone floor so narrow screens look the same as before.
+        font-size: clamp(1.25rem, 5vw, 2.5rem);
+
+        // Force "RACING LEGENDS" onto one line rather than letting it wrap
+        // mid-phrase — the reduced font-size above should already leave it
+        // enough room, this is just a guarantee.
+        &--accent {
+            white-space: nowrap;
+        }
+    }
+
+    .hero-home__sub {
+        font-size: 1.1rem;
+        margin-bottom: 1.25rem; // tighter gap to the buttons (was the inline mb-5's 3rem)
+    }
+
+    // CTA buttons: sized to sit side by side instead of stacking on
+    // ~360-390px screens (they used to carry the desktop-sized px-5/py-3/fs-5
+    // utilities, which alone were wide enough to force a wrap). Bumped 20%
+    // up from the original shrink (0.55rem/1.1rem/0.75rem) per request.
+    .hero-home__cta-row {
+        gap: 0.5rem;
+    }
+
+    .hero-home__cta {
+        padding: 0.66rem 1.32rem;
+        font-size: 0.9rem;
     }
 
     // Navbar: minder padding op small screens
     .navbar-xcl .container-fluid {
         padding-left: 1rem !important;
         padding-right: 1rem !important;
+    }
+
+    // Mobile navbar row: hamburger (left) | logo (center) | Sign In (right).
+    // grid-template-columns: 1fr auto 1fr keeps the logo visually centered on
+    // the bar itself regardless of how wide the hamburger or Sign In button
+    // are — including when Sign In is absent (logged-in users), where a
+    // flex + margin:auto approach would pull the logo off-centre because
+    // the leftover space on each side would no longer match.
+    .xcl-mobile-nav-row {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        width: 100%;
+
+        // Grid's default justify-items: stretch would otherwise stretch the
+        // button/link to fill its whole column — pin each to its natural
+        // size at the correct edge instead.
+        .navbar-toggler {
+            justify-self: start;
+        }
+
+        &__logo {
+            justify-self: center;
+        }
+
+        &__logo-img {
+            height: 24px; // trimmed from the old 28px so it clears the Sign In button on ~360px screens
+            width: auto;
+        }
+
+        &__right {
+            justify-self: end;
+        }
     }
 
     // Racing dropdown: inline flow op mobiel (geen absolute positionering)
@@ -3870,13 +4087,11 @@ body.admin-body {
 
 // ─── XS (<480px) extra tweaks ─────────────────────────────────────────────────
 @media (max-width: 480px) {
-    .hero-home__sub {
-        font-size: .9rem;
-    }
-
-    .hero-home__heading {
-        font-size: 2.5rem;
-    }
+    // .hero-home__sub / .hero-home__heading used to be overridden here too,
+    // but that predates the hero redesign in the max-width:767px block above
+    // and was silently winning (later in the cascade) on every phone under
+    // 480px — undoing that block's sizing/clamp() work exactly where it
+    // matters most. Removed; the 767px block now owns mobile hero sizing.
 
     // Merch & partners sections: minder padding
     .merch-section .merch-cta,
