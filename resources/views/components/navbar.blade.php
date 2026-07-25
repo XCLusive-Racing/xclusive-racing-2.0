@@ -8,18 +8,31 @@
             <img src="/images/home/brand/xclusive_racing_logo.png" alt="XCLusive" height="40">
         </a>
 
-        {{-- Hamburger --}}
-        <button class="navbar-toggler border-0" type="button" aria-label="Toggle navigation">
-            <svg width="24" height="24" fill="none" stroke="#7c3aed"
-                 stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
-            </svg>
-        </button>
+        {{-- Mobile: 3-column row — hamburger (left) | logo (center) | Sign In (right).
+             Sign In lives here (not the dark top bar) only on mobile; desktop
+             keeps its own Sign In further down in the collapse, untouched. --}}
+        <div class="xcl-mobile-nav-row d-md-none">
+            <button class="navbar-toggler border-0" type="button" aria-label="Toggle navigation">
+                <svg width="24" height="24" fill="none" stroke="#7c3aed"
+                     stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
 
-        {{-- Mobile logo --}}
-        <a href="{{ url('/') }}" class="d-md-none ms-2">
-            <img src="/images/home/brand/xclusive_racing_logo.png" alt="XCLusive" height="28">
-        </a>
+            <a href="{{ url('/') }}" class="xcl-mobile-nav-row__logo">
+                <img src="/images/home/brand/xclusive_racing_logo.png" alt="XCLusive" class="xcl-mobile-nav-row__logo-img">
+            </a>
+
+            <div class="xcl-mobile-nav-row__right">
+                @guest
+                    <a href="{{ route('login') }}"
+                       class="btn btn-sm fw-bold text-uppercase text-white rounded-1 px-3"
+                       style="background:rgba(124,58,237,.8);font-size:.7rem;padding-top:2px;padding-bottom:2px">
+                        SIGN IN
+                    </a>
+                @endguest
+            </div>
+        </div>
 
         <div class="collapse navbar-collapse">
 

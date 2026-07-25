@@ -47,6 +47,49 @@ export function initEventsSidebar() {
         if (navbarOpen) setOpen(false);
     });
 
+    // ── Mobile: tap-to-reveal labels on the bottom bar's social pills ──────────
+    // Desktop reveals the label inline on :hover and click just follows the
+    // link. Touch has no hover, so a tap instead shows the label bubble
+    // above the icon (see .xcl-trigger-pill's mobile CSS) and only lets the
+    // link navigate on a second tap; it also auto-collapses after 2s or on
+    // a tap anywhere else.
+    const isMobilePills = () => window.matchMedia('(max-width: 767px)').matches;
+    let activePill      = null;
+    let activePillTimer = null;
+
+    function collapsePill() {
+        activePill?.classList.remove('is-active');
+        clearTimeout(activePillTimer);
+        activePill = null;
+        activePillTimer = null;
+    }
+
+    wrap.querySelectorAll('.xcl-trigger-pill').forEach(pill => {
+        pill.addEventListener('click', e => {
+            if (!isMobilePills()) return;
+
+            // These pills live inside the trigger <button>, which toggles the
+            // dashboard panel on click — stop that firing when tapping a pill.
+            e.stopPropagation();
+
+            if (pill.classList.contains('is-active')) {
+                // Already showing its label — let this tap follow the link.
+                collapsePill();
+                return;
+            }
+
+            e.preventDefault();
+            collapsePill();
+            pill.classList.add('is-active');
+            activePill = pill;
+            activePillTimer = setTimeout(collapsePill, 2000);
+        });
+    });
+
+    document.addEventListener('click', e => {
+        if (activePill && !activePill.contains(e.target)) collapsePill();
+    });
+
     // ── Game filter ───────────────────────────────────────────────────────────
     function setGameFilter(game) {
         gameFilter = game;
