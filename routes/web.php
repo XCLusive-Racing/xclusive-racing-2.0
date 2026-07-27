@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ApplicationController as AdminApplicationController;
 use App\Http\Controllers\Admin\BopController as AdminBopController;
 use App\Http\Controllers\Admin\ChampionshipController as AdminChampionshipController;
 use App\Http\Controllers\ChampionshipController;
@@ -36,6 +37,7 @@ use App\Http\Controllers\HotlapController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RaceController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\TeamApplicationController;
 use App\Http\Controllers\ResultsController;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
@@ -60,6 +62,8 @@ Route::get('sven', function () {
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::view('/team', 'team.index')->name('team');
+Route::view('/team/join', 'team.join')->name('team.join');
+Route::post('/team/apply', [TeamApplicationController::class, 'store'])->name('team.apply');
 Route::view('/privacy', 'privacy')->name('privacy');
 
 // PRO driver profiles
@@ -260,6 +264,12 @@ Route::middleware(['auth', 'role:owner,admin,broadcaster'])->prefix('admin')->na
     Route::get('/news/tags',                  [NewsTagController::class, 'index'])->name('news.tags.index');
     Route::post('/news/tags',                 [NewsTagController::class, 'store'])->name('news.tags.store');
     Route::delete('/news/tags/{newsTag}',     [NewsTagController::class, 'destroy'])->name('news.tags.destroy');
+});
+
+// Team Applications — admin, owner only
+Route::middleware(['auth', 'role:owner,admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/applications', [AdminApplicationController::class, 'index'])->name('applications.index');
+    Route::get('/applications/{application}', [AdminApplicationController::class, 'show'])->name('applications.show');
 });
 
 // Owner only

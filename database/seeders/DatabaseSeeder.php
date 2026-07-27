@@ -53,5 +53,6 @@ class DatabaseSeeder extends Seeder
             'team'        => null,
         ]);
 
+        $this->call(NewsTagSeeder::class);
     }
 }

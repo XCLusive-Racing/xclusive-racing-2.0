@@ -93,6 +93,8 @@
             subtext="Follow our results, rating progress, and race history across every event"
             button="VIEW STATS →"
             href="/stats"
+            button2="JOIN THE TEAM →"
+            :href2="route('team.join')"
         />
 
     </div>

@@ -60,8 +60,13 @@
                     <a class="nav-link" href="{{ url('/') }}">HOME</a>
                 </li>
 
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url('/#about') }}">ABOUT</a>
+                {{-- ABOUT --}}
+                <li class="nav-item position-relative" data-dropdown>
+                    <a class="nav-link" href="{{ url('/#about') }}" data-dropdown-toggle>ABOUT</a>
+                    <ul class="xcl-dropdown" data-dropdown-menu
+                        style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
+                        <li><a class="xcl-dropdown-item" href="{{ url('/#partners') }}">PARTNERS</a></li>
+                    </ul>
                 </li>
 
                 {{-- NEWS --}}
@@ -81,13 +86,13 @@
                         <li><a class="xcl-dropdown-item" href="{{ route('teams.pro.index') }}">PROFESSIONAL</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('teams.esports.index') }}">ESPORTS</a></li>
                         <li><a class="xcl-dropdown-item" href="#">STAFF</a></li>
-                        <li><a class="xcl-dropdown-item" href="#">JOIN THE TEAM</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('team.join') }}">JOIN THE TEAM</a></li>
                     </ul>
                 </li>
 
                 {{-- XCL EVENTS --}}
                 <li class="nav-item position-relative" data-dropdown>
-                    <a class="nav-link" href="{{ route('events.index') }}" data-dropdown-toggle>XCL EVENTS</a>
+                    <a class="nav-link" href="{{ route('events.index') }}" data-dropdown-toggle>EVENTS</a>
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li><a class="xcl-dropdown-item" href="{{ url('/events?type=daily-racing') }}">DAILY RACING</a></li>
@@ -97,8 +102,16 @@
                     </ul>
                 </li>
 
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url('/#partners') }}">PARTNERS</a>
+                {{-- RACING --}}
+                <li class="nav-item position-relative" data-dropdown>
+                    <a class="nav-link" href="#" data-dropdown-toggle>RACING</a>
+                    <ul class="xcl-dropdown" data-dropdown-menu
+                        style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
+                        <li><a class="xcl-dropdown-item" href="{{ route('drivers.index') }}">LEADERBOARD</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('results.index') }}">RESULTS</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('bop.index') }}">BOPs</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('reports.index') }}">REPORTS</a></li>
+                    </ul>
                 </li>
 
                 {{-- SHOP --}}
@@ -109,20 +122,6 @@
                         <li><a class="xcl-dropdown-item" href="https://raven.gg/stores/xclusive-esports/" target="_blank">MERCHANDISE</a></li>
                         <li><a class="xcl-dropdown-item" href="#">COACHING</a></li>
                         <li><a class="xcl-dropdown-item" href="#">SETUPS</a></li>
-                        <li><a class="xcl-dropdown-item" href="#">EVENTS</a></li>
-                    </ul>
-                </li>
-
-                {{-- RACING --}}
-                <li class="nav-item position-relative" data-dropdown>
-                    <a class="nav-link" href="#" data-dropdown-toggle>RACING</a>
-                    <ul class="xcl-dropdown" data-dropdown-menu
-                        style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
-                        <li><a class="xcl-dropdown-item" href="{{ route('championships.index') }}">CHAMPIONSHIPS</a></li>
-                        <li><a class="xcl-dropdown-item" href="{{ route('drivers.index') }}">LEADERBOARD</a></li>
-                        <li><a class="xcl-dropdown-item" href="{{ route('results.index') }}">RESULTS</a></li>
-                        <li><a class="xcl-dropdown-item" href="{{ route('bop.index') }}">BOPs</a></li>
-                        <li><a class="xcl-dropdown-item" href="{{ route('reports.index') }}">REPORTS</a></li>
                     </ul>
                 </li>
 
