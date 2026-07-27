@@ -3,9 +3,9 @@
 
     <div class="container position-relative" style="max-width:960px;z-index:1;">
 
-        <div class="text-center mb-5">
+        <div class="text-center about-section__header">
             <img src="/images/home/brand/xclusive_racing_logo_lion.png"
-                 alt="XCLusive" class="mb-5 d-block mx-auto" style="margin-top:10px;height:clamp(120px,18vw,220px);width:auto" loading="lazy">
+                 alt="XCLusive" class="d-block mx-auto about-section__logo" style="margin-top:10px;height:clamp(120px,18vw,220px);width:auto" loading="lazy">
             <h2 class="display-4 fw-black text-uppercase fst-italic mb-3 about-section__heading">OUR LEGACY</h2>
             <div class="section-divider"></div>
         </div>
@@ -13,10 +13,10 @@
         <div class="row g-4 g-md-5 align-items-center">
 
             <div class="col-md-6">
-                <p class="fs-5 text-dark mb-4">
+                <p class="about-section__text text-dark">
                     It started with a community. Xbox Community League, <span class="fw-black xcl-gradient-text"><span style="font-size:1.2em">XCL</span></span>, was built as a home for console sim racers who wanted more than casual lobbies. At the heart of it was our own <span class="fw-black xcl-gradient-text"><span style="font-size:1.2em">XCL</span></span> Rating system, built to identify the truly fastest and most consistent drivers. It was a standard. And from that standard, <span class="fw-black xcl-gradient-text"><span style="font-size:1.2em">XCL</span>USIVE <span style="font-size:1.2em">E</span>SPORTS</span> was born.
                 </p>
-                <p class="fs-5 text-dark">
+                <p class="about-section__text text-dark mb-0">
                     <span class="fw-black xcl-gradient-text"><span style="font-size:1.2em">XCL</span>USIVE <span style="font-size:1.2em">R</span>ACING</span> is your new home for competitive virtual motorsport. Join the race.
                 </p>
             </div>

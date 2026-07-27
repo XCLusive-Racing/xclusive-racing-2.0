@@ -7,7 +7,7 @@
     <div class="container-xl px-4 position-relative h-100" style="z-index:1;">
         <div class="row align-items-center g-3 g-lg-5 h-100 py-5">
             {{-- Left: copy --}}
-            <div class="col-lg-6 animate-fade-in text-center text-lg-start">
+            <div class="col-lg-6 animate-fade-in text-start">
                 <h1 class="hero-home__heading fw-black text-uppercase fst-italic lh-1 mb-4">
                     WHERE<br>
                     <span class="hero-home__heading--accent">RACING LEGENDS</span><br>
@@ -16,7 +16,7 @@
                 <p class="hero-home__sub">
                     Born on console. Built for global competition.<br><span style="display:block;margin-top:0.5em"></span><span class="fw-black xcl-gradient-text"><span style="font-size:1.2em">XCL</span>USIVE</span> is the home of premier sim racing events, a trusted community, and the <span class="fw-black xcl-gradient-text"><span style="font-size:1.2em">XCL</span>USIVE <span style="font-size:1.2em">R</span>ACING</span> team.<br><span style="display:block;margin-top:0.5em"></span>This is where champions are made.
                 </p>
-                <div class="hero-home__cta-row d-flex flex-wrap justify-content-center justify-content-lg-start">
+                <div class="hero-home__cta-row d-flex flex-wrap justify-content-start">
                     @auth
                         <a href="{{ route('profile') }}"
                            class="btn hero-home__cta fw-black text-uppercase text-white"
@@ -69,16 +69,22 @@
                 ['logo-dark.png',                'Partner'],
                 ['Logo-White.webp',              'Partner'],
                 ['simlab-white-no-tagline-e1637234882156.png', 'SimLab'],
-                ['sunvitlogo3000X981-300x98-1.png',            'Sunvit'],
             ] as [$file, $name])
             <div class="col-6 col-md-4 col-lg-2">
                 <div class="partner-box">
                     <img src="/images/home/partners/{{ $file }}"
                          alt="{{ $name }}"
-                         class="partner-logo">
+                         class="partner-logo @if($file === 'logo-dark.png') partner-logo--invert @endif">
                 </div>
             </div>
             @endforeach
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="partner-box">
+                    <img src="/images/trtn/TRTN Logo 1.png"
+                         alt="TRTN"
+                         class="partner-logo">
+                </div>
+            </div>
         </div>
         <p class="mt-5" style="font-size:.82rem;color:#9ca3af">
             Interested in partnering with XCLusive?

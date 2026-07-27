@@ -1,9 +1,15 @@
 @php
+use App\Models\NewsArticle;
 use App\Models\Race;
 use App\Models\TeamEvent;
 use App\Models\User;
 
 $now = now();
+
+$tickerArticles = NewsArticle::published()
+    ->orderBy('published_at', 'desc')
+    ->limit(5)
+    ->get();
 
 $sbNextEvent = Race::where('scheduled_at', '>', $now)
     ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon'])
@@ -129,6 +135,41 @@ foreach ($sbGames as $game => $col) {
                 </div>
             </div>
         </div>
+
+        {{-- News ticker --}}
+        @if($tickerArticles->count() > 0)
+        <div class="xcl-news-ticker">
+            <div class="xcl-news-ticker__brand">
+                <span class="xcl-news-ticker__brand-badge">
+                    <img src="/images/trtn/TRTN Logo 1.png" alt="TRTN" class="xcl-news-ticker__brand-logo">
+                </span>
+                <span class="xcl-news-ticker__divider"></span>
+            </div>
+            <div class="xcl-news-ticker__track">
+                {{-- Two identical copies back to back, animated 0% -> -50%,
+                     so the loop is seamless — there's never a moment with
+                     nothing on screen, regardless of article count. --}}
+                <div class="xcl-news-ticker__scroll">
+                    <div class="xcl-news-ticker__content">
+                        @foreach($tickerArticles as $article)
+                            <a href="{{ route('news.show', $article->slug) }}" class="xcl-news-ticker__item">{{ $article->title }}</a>
+                            @if(!$loop->last)
+                                <span class="xcl-news-ticker__dot">&#9679;</span>
+                            @endif
+                        @endforeach
+                    </div>
+                    <div class="xcl-news-ticker__content" aria-hidden="true">
+                        @foreach($tickerArticles as $article)
+                            <a href="{{ route('news.show', $article->slug) }}" class="xcl-news-ticker__item" tabindex="-1">{{ $article->title }}</a>
+                            @if(!$loop->last)
+                                <span class="xcl-news-ticker__dot">&#9679;</span>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
 
         {{-- Tabs --}}
         <div class="xcl-sidebar-tabs" role="tablist">
@@ -284,6 +325,7 @@ foreach ($sbGames as $game => $col) {
                             <span>UPCOMING </span><span>EVENTS</span>
                         </div>
 
+                        <div class="xcl-sb-up-list">
                         @forelse($sbUpcoming as $event)
                         @php
                             $upPlatLabel = match($event->game) {
@@ -346,6 +388,7 @@ foreach ($sbGames as $game => $col) {
                         @empty
                         <p style="color:#8B9BB4;font-size:.8rem;padding:.5rem 0">No further events scheduled</p>
                         @endforelse
+                        </div>
 
                     </div>
                     {{-- end col 2 --}}
@@ -368,17 +411,20 @@ foreach ($sbGames as $game => $col) {
                                    autocomplete="off">
                         </div>
 
-                        <table class="xcl-sb-lb-table">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>DRIVER</th>
-                                    <th style="text-align:right">GAIN</th>
-                                </tr>
-                            </thead>
-                            <tbody data-sb-lb-body></tbody>
-                        </table>
+                        <div class="xcl-sb-lb-scroll">
+                            <table class="xcl-sb-lb-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>DRIVER</th>
+                                        <th style="text-align:right">GAIN</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-sb-lb-body></tbody>
+                            </table>
+                        </div>
 
+                        {{-- Pagination sits below the cropped table so it's never clipped --}}
                         <div data-sb-pagination class="xcl-sb-pagination" style="display:none"></div>
                     </div>
                     {{-- end col 3 --}}
@@ -386,7 +432,7 @@ foreach ($sbGames as $game => $col) {
                 </div>
 
                 {{-- ── Separator + Full-width Real-World Racing ────────────── --}}
-                <div style="border-top:1px solid rgba(255,255,255,0.08);margin:.75rem 1.5rem 0;padding:0 .25rem">
+                <div style="border-top:1px solid rgba(255,255,255,0.08);margin-top:16px;margin-left:1.5rem;margin-right:1.5rem;padding:0 .25rem">
                     <div style="display:flex;align-items:center;gap:.75rem;padding:.9rem 0 .75rem">
                         <div class="xcl-sb-title" style="margin:0;white-space:nowrap">
                             <span>REAL-WORLD </span><span>RACING</span>

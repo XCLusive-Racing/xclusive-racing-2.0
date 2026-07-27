@@ -400,6 +400,70 @@ html {
     &:hover { border-color: #7c3aed; }
 }
 
+// ─── Join The Team page ────────────────────────────────────────────────────
+.role-filter-btn {
+    background: white;
+    border: 1.5px solid #e5e7eb;
+    color: #374151;
+    border-radius: 999px;
+    padding: 6px 18px;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+
+    &:hover { border-color: #7c3aed; color: #7c3aed; }
+
+    &.active {
+        background: #7c3aed;
+        border-color: #7c3aed;
+        color: white;
+    }
+}
+
+.role-card {
+    background: white;
+    border-radius: 12px;
+    border-top: 3px solid transparent;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, .06);
+    transition: border-color .2s ease, box-shadow .2s ease;
+
+    &:hover {
+        border-top-color: #7c3aed;
+        box-shadow: 0 8px 24px rgba(124, 58, 237, .14);
+    }
+}
+
+.role-badge {
+    display: inline-block;
+    padding: .2rem .55rem;
+    border-radius: 4px;
+    color: white;
+    font-size: .65rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+}
+
+.apply-form-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, .06);
+    padding: 2rem;
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #7c3aed;
+        box-shadow: 0 0 0 .2rem rgba(124, 58, 237, .15);
+    }
+
+    .form-check-input:checked {
+        background-color: #7c3aed;
+        border-color: #7c3aed;
+    }
+}
+
 // ─── Events Sidebar (900 px wide) ─────────────────────────────────────────────
 
 @keyframes bounceLeft {
@@ -485,15 +549,14 @@ html {
 
     @media (max-width: 767px) {
         // Floating tab at the bottom — same dark purple + lime accent as the
-        // desktop tab, but shaped like an actual tab: margin off the left/
-        // right screen edges, rounded top corners, and the bottom edge left
-        // square/borderless so it visually "flows into" the screen edge
-        // instead of looking like a full-width strip.
+        // desktop tab. Only the top edge carries the lime line (matching the
+        // single-sided border-left treatment on the desktop tab) — no lime
+        // running down the sides into the bottom of the screen.
         position: fixed;
         top: auto;
         bottom: 0;
-        left: 14px;
-        right: 14px;
+        left: 6px;
+        right: 6px;
         width: auto;
         height: 52px;
         min-height: unset;
@@ -502,8 +565,8 @@ html {
         align-items: center;
         justify-content: center;
         gap: 10px;
-        border: 3px solid #d4ee6a;
-        border-bottom: none;
+        border-top: 3px solid #d4ee6a;
+        border-left: none; // clears the desktop rule's border-left, which otherwise still applied here
         border-radius: 14px 14px 0 0;
         padding: 0 12px;
         z-index: 100;
@@ -511,8 +574,8 @@ html {
         &__text {
             writing-mode: horizontal-tb;
             transform: none;
-            font-size: 0.8rem;
-            margin-right: 8px; // extra breathing room before the social icons
+            font-size: 0.7rem;
+            margin-right: 6px; // extra breathing room before the social icons
         }
 
         // Chevrons point up (this bar's panel opens upward) instead of the
@@ -521,6 +584,15 @@ html {
         &__chevrons {
             flex-direction: row;
             transform: rotate(90deg);
+
+            svg {
+                width: 16px;
+                height: 16px;
+            }
+        }
+
+        &__chevron-2 {
+            margin-left: -11px; // scaled with the smaller chevron svg above (was -14px at 20px)
         }
 
         // Panel covers the trigger when open — hide it
@@ -603,6 +675,15 @@ html {
                 opacity: 1;
                 transform: translateX(-50%) translateY(0);
             }
+        }
+
+        .xcl-trigger-pill__icon {
+            font-size: .85rem;
+        }
+
+        .xcl-trigger-pill__img {
+            width: 22px;
+            min-width: 22px;
         }
     }
 }
@@ -877,7 +958,7 @@ html {
 }
 
 .xcl-sidebar__logo-text {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 800;
     font-style: italic;
     font-size: 1.05rem;
@@ -917,7 +998,7 @@ html {
         border: none;
         border-bottom: 2px solid transparent;
         color: rgba(255,255,255,.35);
-        font-family: 'Barlow Condensed', sans-serif;
+        font-family: 'Poppins', sans-serif;
         font-weight: 800;
         font-style: italic;
         font-size: .92rem;
@@ -949,13 +1030,18 @@ html {
 // 3-column grid inside sidebar
 .xcl-sidebar__grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: stretch;
     min-height: 100%;
+    margin-bottom: 16px; // space before the Real-World Racing strip below
 
     @media (max-width: 768px) { grid-template-columns: 1fr; }
 }
 
 .xcl-sb-col {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
     border-right: 1px solid #1F2937;
     padding: 1.25rem;
 
@@ -968,9 +1054,20 @@ html {
     }
 }
 
+// Weekly Leaderboard (10 rows + header) is normally the tallest column, so
+// it naturally defines the row height — flex:1 just lets its table area
+// claim the rest of the column after the title/search bar, right down to
+// the shared bottom line. The other two columns stretch UP to match it
+// (see .xcl-sb-next / .xcl-sb-up-list below) rather than this being cropped
+// down to them.
+.xcl-sb-lb-scroll {
+    flex: 1;
+    min-height: 0;
+}
+
 // Column section titles
 .xcl-sb-title {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 1.2rem;
     font-weight: 800;
     font-style: italic;
@@ -1274,7 +1371,7 @@ html {
         background: #111827;
         border: 1px solid #2D3748;
         color: white;
-        font-family: 'DM Sans', sans-serif;
+        font-family: 'Poppins', sans-serif;
         font-size: .82rem;
         padding: .5rem .75rem .5rem 2.25rem;
         outline: none;
@@ -1294,7 +1391,7 @@ html {
     font-size: .8rem;
 
     thead th {
-        font-family: 'Rajdhani', sans-serif;
+        font-family: 'Poppins', sans-serif;
         font-size: .7rem;
         font-weight: 700;
         letter-spacing: .1em;
@@ -1334,7 +1431,7 @@ html {
     }
 
     .xcl-lb-pos {
-        font-family: 'Rajdhani', sans-serif;
+        font-family: 'Poppins', sans-serif;
         font-weight: 700;
         font-size: .85rem;
         color: #8B9BB4;
@@ -1372,7 +1469,7 @@ html {
     }
 
     .xcl-lb-name {
-        font-family: 'DM Sans', sans-serif;
+        font-family: 'Poppins', sans-serif;
         font-weight: 600;
         font-size: .8rem;
         color: #FFFFFF;
@@ -1383,7 +1480,7 @@ html {
     }
 
     .xcl-lb-gain {
-        font-family: 'Rajdhani', sans-serif;
+        font-family: 'Poppins', sans-serif;
         font-weight: 700;
         font-size: .85rem;
         text-align: right;
@@ -1406,7 +1503,7 @@ html {
         border: 1px solid #1F2937;
         border-radius: 0;
         color: #8B9BB4;
-        font-family: 'Rajdhani', sans-serif;
+        font-family: 'Poppins', sans-serif;
         font-weight: 700;
         font-size: .78rem;
         cursor: pointer;
@@ -1436,8 +1533,19 @@ html {
     padding: 3rem 1.25rem;
     text-align: center;
 
+    // Only takes effect when used directly inside a flex column (e.g. as
+    // column 1's "no next event" fallback) — centers it in the stretched
+    // column instead of leaving it pinned to the top. No-op elsewhere
+    // (championships/time-trials tab panels aren't flex containers).
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+
     p:first-child {
-        font-family: 'Rajdhani', sans-serif;
+        font-family: 'Poppins', sans-serif;
         font-weight: 700;
         font-size: 1rem;
         color: #C8FF00;
@@ -1551,6 +1659,14 @@ html {
 
     .partner-box:hover & {
         opacity: 1;
+    }
+
+    // HYPNOS's logo file (logo-dark.png) is dark navy, unlike the other
+    // partner files which are already white — recolor it the same way the
+    // TRTN sidebar icon does, since it'd otherwise be near-invisible on
+    // .partner-box's dark background.
+    &--invert {
+        filter: brightness(0) invert(1);
     }
 }
 
@@ -1687,12 +1803,26 @@ html {
     padding-bottom: 5rem !important;
 
     &__heading {
+        font-size: clamp(1.7rem, 3.2vw, 2.6rem); // same size as .mt-heading (MEET OUR TEAM), replacing Bootstrap's larger display-4 default
         display: inline-block;
         padding-right: 0.15em;
         background: linear-gradient(90deg, #8435e4, #5f2866, #732cad);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
+    }
+
+    &__header {
+        margin-bottom: 3rem; // matches the old mb-5 utility this wrapper carried inline
+    }
+
+    &__logo {
+        margin-bottom: 3rem; // matches the old mb-5 utility this carried inline
+    }
+
+    &__text {
+        font-size: 1.25rem; // matches the old fs-5 utility these paragraphs carried inline
+        margin-bottom: 1.5rem; // matches the old mb-4 between the two paragraphs
     }
 }
 
@@ -3884,18 +4014,85 @@ body.admin-body {
         margin-top: -3vh;
     }
 
-    // About section: minder padding
+    // About section (OUR LEGACY): minder padding, and the stacked
+    // mb-5/mb-5/mb-4 gaps tightened up. Heading size no longer overridden
+    // here — it now matches .mt-heading at every breakpoint via the base
+    // .about-section__heading rule, same as MEET OUR TEAM.
     .about-section {
         padding-top: 2rem !important;
         padding-bottom: 2rem !important;
+
+        &__header {
+            margin-bottom: 1.5rem;
+        }
+
+        &__logo {
+            margin-bottom: 1.25rem;
+        }
+
+        &__text {
+            font-size: 1.1rem; // matches .hero-home__sub
+            margin-bottom: .75rem;
+        }
     }
 
-    // Meet-team: geen diagonale clip-path op mobiel (te agressief op klein scherm)
+    // Stat rows inside the legacy card: same idea, less dead space between them
+    .about-stats-card__row {
+        margin-bottom: .75rem !important;
+        padding-bottom: .75rem !important;
+    }
+
+    // Meet-team: same diagonal crossover as desktop (and as the hero->legacy
+    // ramp), just scaled down to 3vh instead of 8vh so it isn't too steep on
+    // a short mobile viewport. This one clip-path slants BOTH the top edge
+    // (Our Legacy -> Meet Our Team) and the bottom edge (Meet Our Team ->
+    // Partners) at once.
     .meet-team-section {
-        clip-path: none;
-        margin-top: 0;
-        padding-top: 3rem !important;
-        padding-bottom: 3rem !important;
+        clip-path: polygon(0 0, 100% 3vh, 100% 100%, 0 calc(100% - 3vh));
+        margin-top: -3vh;
+        padding-top: calc(3rem + 3vh) !important;
+        padding-bottom: calc(3rem + 3vh) !important;
+    }
+
+    // Tighten the gap above the filter tabs so they sit higher
+    .mt-header {
+        margin-bottom: 1.75rem !important;
+    }
+
+    // Filter tabs: smaller, and reflowed into a fixed 3x2 grid —
+    // row 1: ALL / PRO / STAFF, row 2: LMU / IRACING / ACC — instead of
+    // wrapping in DOM order, which split awkwardly at this width.
+    .mt-filter-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+
+    .mt-filter-btn {
+        padding: 5px 8px;
+        font-size: 0.68rem;
+
+        // DOM order is ALL, PRO, LMU, ACC, IRACING, STAFF — reordered per
+        // the grid above via `order` so the markup/desktop order stays put.
+        &:nth-child(1) { order: 1; } // ALL
+        &:nth-child(2) { order: 2; } // PRO
+        &:nth-child(6) { order: 3; } // STAFF
+        &:nth-child(3) { order: 4; } // LMU
+        &:nth-child(5) { order: 5; } // IRACING
+        &:nth-child(4) { order: 6; } // ACC
+    }
+
+    // Role legend: stacked instead of wrapped, and reordered to
+    // Professional / Esports / Staff per request (DOM order is Esports
+    // first, to match the filter tabs' PRO-then-others convention elsewhere).
+    .mt-legend-row {
+        flex-direction: column;
+        align-items: center;
+        gap: .5rem;
+
+        [data-legend="pro"]     { order: 1; }
+        [data-legend="esports"] { order: 2; }
+        [data-legend="staff"]   { order: 3; }
     }
 
 
@@ -3913,7 +4110,8 @@ body.admin-body {
         // the desktop clamp() below means both sides meet at ~the same
         // value right at 768px instead of snapping; 1.25rem still caps the
         // small-phone floor so narrow screens look the same as before.
-        font-size: clamp(1.25rem, 5vw, 2.5rem);
+        // (Doubled to clamp(2.5rem, 10vw, 5rem), then trimmed 10% per request.)
+        font-size: clamp(2.25rem, 9vw, 4.5rem);
 
         // Force "RACING LEGENDS" onto one line rather than letting it wrap
         // mid-phrase — the reduced font-size above should already leave it
@@ -4228,9 +4426,106 @@ table.dataTable thead th {
     .xcl-sidebar__game-filters { gap: .3rem; }
 }
 
+// ── News ticker ────────────────────────────────────────────────────────────
+.xcl-news-ticker {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    background: #0d0a1a;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.xcl-news-ticker__brand {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    height: 100%;
+    padding: 0 .75rem 0 1rem;
+    flex-shrink: 0;
+}
+
+.xcl-news-ticker__brand-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #cc0000;
+    border-radius: 4px;
+    padding: .25rem .6rem;
+}
+
+.xcl-news-ticker__brand-logo {
+    height: 16px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+}
+
+.xcl-news-ticker__divider {
+    width: 2px;
+    height: 22px;
+    background: #cc0000;
+    flex-shrink: 0;
+}
+
+.xcl-news-ticker__track {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+
+    &:hover .xcl-news-ticker__scroll {
+        animation-play-state: paused;
+    }
+}
+
+// Two identical .xcl-news-ticker__content copies sit side by side inside
+// this, and it scrolls exactly half its own (double-wide) width — so the
+// instant the first copy has fully scrolled off, the second is sitting in
+// exactly the position the first started in. No jump, no empty beat.
+@keyframes ticker-scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+.xcl-news-ticker__scroll {
+    display: flex;
+    align-items: center;
+    gap: 2.5rem; // same as the inter-item gap, so the seam between the two copies reads like any other gap
+    width: max-content;
+    animation: ticker-scroll 80s linear infinite;
+    will-change: transform;
+}
+
+.xcl-news-ticker__content {
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+    white-space: nowrap;
+}
+
+.xcl-news-ticker__item {
+    color: white;
+    font-size: .85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    text-decoration: none;
+    transition: color .15s ease;
+
+    &:hover { color: #d4ee6a; }
+}
+
+.xcl-news-ticker__dot {
+    color: #cc0000;
+    font-size: .5rem;
+    flex-shrink: 0;
+}
+
 // Powered-by sponsor label
 .xcl-sb-powered-by {
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: .68rem;
     font-weight: 700;
     letter-spacing: .12em;
@@ -4286,6 +4581,16 @@ table.dataTable thead th {
     &:hover { background: #6D28D9; color: white; }
 
     @media (max-width: 767px) { display: none !important; }
+}
+
+// Fills the rest of .xcl-sb-col's height (hero image keeps its own fixed
+// aspect-ratio; .xcl-sb-next__info below absorbs any extra space so the
+// card's bottom — and its JOIN EVENT button — reaches the shared line).
+.xcl-sb-next {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
 }
 
 // ── Next Event: hero image block ──────────────────────────────────────────────
@@ -4349,7 +4654,7 @@ table.dataTable thead th {
     bottom: 2.25rem;
     left: .75rem;
     right: .75rem;
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 800;
     font-style: italic;
     font-size: 1.5rem;
@@ -4377,7 +4682,7 @@ table.dataTable thead th {
     border: 1px solid rgba(255,255,255,.2);
     border-radius: 3px;
     padding: 2px 6px;
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: .6rem;
     font-weight: 700;
     color: rgba(255,255,255,.85);
@@ -4401,7 +4706,7 @@ table.dataTable thead th {
         gap: 1px;
 
         .xcl-sb-countdown__label {
-            font-family: 'Rajdhani', sans-serif;
+            font-family: 'Poppins', sans-serif;
             font-size: .58rem;
             font-weight: 700;
             letter-spacing: .12em;
@@ -4412,7 +4717,7 @@ table.dataTable thead th {
         }
 
         .xcl-sb-countdown__time {
-            font-family: 'Rajdhani', sans-serif;
+            font-family: 'Poppins', sans-serif;
             font-weight: 700;
             font-size: .88rem;
             color: white;
@@ -4424,7 +4729,7 @@ table.dataTable thead th {
     &--small {
         display: inline-flex;
         align-items: center;
-        font-family: 'Rajdhani', sans-serif;
+        font-family: 'Poppins', sans-serif;
         font-weight: 700;
         font-size: .78rem;
         color: #C8FF00;
@@ -4443,7 +4748,7 @@ table.dataTable thead th {
     border: 1px solid rgba(255,255,255,.15);
     border-radius: 3px;
     padding: .2rem .5rem;
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 700;
     font-size: .8rem;
     color: white;
@@ -4469,7 +4774,13 @@ table.dataTable thead th {
 
 // ── Info block below hero ─────────────────────────────────────────────────────
 
-.xcl-sb-next__info { padding: 0 .05rem; }
+.xcl-sb-next__info {
+    padding: 0 .05rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
 
 .xcl-sb-next__badges-row {
     display: flex;
@@ -4483,7 +4794,7 @@ table.dataTable thead th {
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 700;
     font-size: .68rem;
     letter-spacing: .08em;
@@ -4539,7 +4850,7 @@ table.dataTable thead th {
 }
 
 .xcl-sb-next__detail-label {
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: .72rem;
     font-weight: 700;
     letter-spacing: .1em;
@@ -4549,7 +4860,7 @@ table.dataTable thead th {
 }
 
 .xcl-sb-next__detail-value {
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: .85rem;
     font-weight: 700;
     color: white;
@@ -4574,7 +4885,7 @@ table.dataTable thead th {
     background: rgba(200,255,0,.1);
     border: 1px solid rgba(200,255,0,.25);
     color: #C8FF00;
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 700;
     font-size: .7rem;
     letter-spacing: .1em;
@@ -4587,7 +4898,7 @@ table.dataTable thead th {
 }
 
 .xcl-sb-next__next-time {
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: .75rem;
     font-weight: 700;
     color: rgba(255,255,255,.55);
@@ -4600,11 +4911,12 @@ table.dataTable thead th {
 .xcl-sb-next__join-btn {
     display: block;
     width: 100%;
+    margin-top: auto; // absorbs any leftover height in .xcl-sb-next__info, keeping the button pinned to the bottom
     background: #7B2FBE;
     color: white;
     text-align: center;
     padding: .6rem .75rem;
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 700;
     font-size: 1rem;
     text-transform: uppercase;
@@ -4615,6 +4927,15 @@ table.dataTable thead th {
 
     &:hover  { background: #6D28D9; color: white; }
     &:active { transform: scale(.98); }
+}
+
+// Fills the rest of .xcl-sb-col's height, same as .xcl-sb-next does for
+// column 1, so column 2's box also reaches the shared bottom line.
+.xcl-sb-up-list {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
 }
 
 // ── Upcoming event stacked cards ──────────────────────────────────────────────
@@ -4685,7 +5006,7 @@ table.dataTable thead th {
         bottom: 1.6rem;
         left: .55rem;
         right: .55rem;
-        font-family: 'Barlow Condensed', sans-serif;
+        font-family: 'Poppins', sans-serif;
         font-weight: 800;
         font-style: italic;
         font-size: 1rem;
@@ -4719,7 +5040,7 @@ table.dataTable thead th {
         flex-shrink: 0;
         background: #7B2FBE;
         color: white;
-        font-family: 'Rajdhani', sans-serif;
+        font-family: 'Poppins', sans-serif;
         font-weight: 700;
         font-size: .75rem;
         letter-spacing: .1em;

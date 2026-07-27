@@ -10,6 +10,13 @@
 @section('content')
 
 <div class="admin-card">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <label class="d-flex align-items-center gap-2 fw-bold" style="font-size:.82rem;cursor:pointer">
+            <input type="checkbox" id="filter-roles-only" class="form-check-input" style="cursor:pointer">
+            Show only members with roles
+        </label>
+        <span id="roles-only-count" class="text-secondary" style="font-size:.78rem"></span>
+    </div>
     <div class="table-responsive">
         <table id="users-table" class="table table-hover align-middle mb-0 w-100" style="font-size:.875rem">
             <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
@@ -25,7 +32,7 @@
             </thead>
             <tbody>
                 @foreach($users as $user)
-                <tr>
+                <tr data-has-roles="{{ $user->roles->pluck('slug')->reject(fn($slug) => $slug === 'driver')->isNotEmpty() ? '1' : '0' }}">
                     <td class="ps-4">
                         <div class="d-flex align-items-center gap-2">
                             @if($user->banner)
@@ -70,7 +77,7 @@
                     <td class="text-secondary d-none d-lg-table-cell" style="font-size:.82rem">{{ $user->team ?? '—' }}</td>
                     <td class="d-none d-sm-table-cell">
                         @php
-                            $roleColors = ['owner'=>['#f3e8ff','#7c3aed'],'admin'=>['#fce7f3','#db2777'],'moderator'=>['#dbeafe','#2563eb'],'event_manager'=>['#fef3c7','#d97706'],'steward'=>['#e0f2fe','#0891b2'],'driver'=>['#d1fae5','#059669']];
+                            $roleColors = ['owner'=>['#f3e8ff','#7c3aed'],'admin'=>['#fce7f3','#db2777'],'moderator'=>['#dbeafe','#2563eb'],'event_manager'=>['#fef3c7','#d97706'],'steward'=>['#e0f2fe','#0891b2'],'driver'=>['#d1fae5','#059669'],'broadcaster'=>['#ffe4e6','#e11d48']];
                         @endphp
                         <div class="d-flex flex-wrap gap-1">
                         @foreach($user->roles->sortBy('id') as $role)
@@ -105,7 +112,19 @@
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <script>
         $(function () {
-            $('#users-table').DataTable({
+            const totalWithRoles = $('#users-table tbody tr[data-has-roles="1"]').length;
+            $('#roles-only-count').text(totalWithRoles + ' member' + (totalWithRoles === 1 ? '' : 's') + ' with roles assigned');
+
+            // Custom filter: when the checkbox is on, only keep rows whose
+            // <tr data-has-roles> is "1" — i.e. anyone with at least one
+            // role beyond the (unassigned-by-default) baseline.
+            $.fn.dataTable.ext.search.push(function (settings, data, rowIndex, rowNode) {
+                if (settings.nTable.id !== 'users-table') return true;
+                if (!$('#filter-roles-only').is(':checked')) return true;
+                return $(rowNode).data('has-roles') == 1;
+            });
+
+            const table = $('#users-table').DataTable({
                 pageLength: 25,
                 order: [[5, 'asc'], [0, 'asc']],
                 columnDefs: [{ orderable: false, targets: 6 }],
@@ -116,6 +135,8 @@
                     paginate: { previous: '‹', next: '›' },
                 },
             });
+
+            $('#filter-roles-only').on('change', () => table.draw());
         });
     </script>
 @endpush

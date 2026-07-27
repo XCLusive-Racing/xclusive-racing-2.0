@@ -5,7 +5,7 @@
     <div class="container-xl position-relative" style="z-index:1;">
 
         {{-- ── Header ────────────────────────────────────────────────────────────── --}}
-        <div class="text-center mb-5">
+        <div class="text-center mb-5 mt-header">
             <p class="mt-eyebrow">EST. 2023 · XCL</p>
             <h2 class="mt-heading fw-black fst-italic text-uppercase mb-0">
                 MEET OUR TEAM
@@ -14,7 +14,7 @@
         </div>
 
         {{-- ── Filter Tabs ──────────────────────────────────────────────────────── --}}
-        <div class="d-flex justify-content-center gap-2 mb-4 flex-wrap">
+        <div class="d-flex justify-content-center gap-2 mb-4 flex-wrap mt-filter-row">
             @foreach([
                 ['all',     'ALL'],
                 ['pro',     'PRO'],
@@ -61,18 +61,18 @@
         {{-- ── CTA Buttons ──────────────────────────────────────────────────────── --}}
         <div class="d-flex justify-content-center gap-3 mb-4 flex-wrap">
             <a href="/teams"    class="mt-cta-btn">FULL ROSTER</a>
-            <a href="/register" class="mt-cta-btn">JOIN THE TEAM</a>
+            <a href="{{ route('team.join') }}" class="mt-cta-btn">JOIN THE TEAM</a>
         </div>
 
         {{-- ── Role Legend ──────────────────────────────────────────────────────── --}}
-        <div class="d-flex justify-content-center flex-wrap gap-4">
-            <span class="mt-legend-item">
+        <div class="d-flex justify-content-center flex-wrap gap-4 mt-legend-row">
+            <span class="mt-legend-item" data-legend="esports">
                 <span class="mt-legend-dot" style="background:rgba(192,132,252,0.85);"></span>ESPORTS DRIVERS
             </span>
-            <span class="mt-legend-item">
+            <span class="mt-legend-item" data-legend="pro">
                 <span class="mt-legend-dot" style="background:#d4ee6a;"></span>PROFESSIONAL DRIVERS
             </span>
-            <span class="mt-legend-item">
+            <span class="mt-legend-item" data-legend="staff">
                 <span class="mt-legend-dot" style="background:#3b82f6;"></span>STAFF
             </span>
         </div>
