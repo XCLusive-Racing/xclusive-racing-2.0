@@ -62,7 +62,15 @@
 
                 {{-- ABOUT --}}
                 <li class="nav-item position-relative" data-dropdown>
-                    <a class="nav-link" href="{{ url('/#about') }}" data-dropdown-toggle>ABOUT</a>
+                    <div class="xcl-nav-item-row">
+                        <a class="nav-link" href="{{ url('/#about') }}">ABOUT</a>
+                        <button type="button" class="xcl-nav-chevron d-md-none" data-mobile-dropdown-toggle
+                                aria-expanded="false" aria-label="Toggle ABOUT submenu">
+                            <svg class="xcl-nav-chevron__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li><a class="xcl-dropdown-item" href="{{ url('/#partners') }}">PARTNERS</a></li>
@@ -71,7 +79,15 @@
 
                 {{-- NEWS --}}
                 <li class="nav-item position-relative" data-dropdown>
-                    <a class="nav-link xcl-nav-news" href="{{ route('news.index') }}" data-dropdown-toggle>NEWS</a>
+                    <div class="xcl-nav-item-row">
+                        <a class="nav-link xcl-nav-news" href="{{ route('news.index') }}">NEWS</a>
+                        <button type="button" class="xcl-nav-chevron d-md-none" data-mobile-dropdown-toggle
+                                aria-expanded="false" aria-label="Toggle NEWS submenu">
+                            <svg class="xcl-nav-chevron__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li><a class="xcl-dropdown-item" href="/news/broadcasts">BROADCASTS</a></li>
@@ -80,7 +96,15 @@
 
                 {{-- TEAM --}}
                 <li class="nav-item position-relative" data-dropdown>
-                    <a class="nav-link" href="{{ route('team') }}" data-dropdown-toggle>TEAM</a>
+                    <div class="xcl-nav-item-row">
+                        <a class="nav-link" href="{{ route('team') }}">TEAM</a>
+                        <button type="button" class="xcl-nav-chevron d-md-none" data-mobile-dropdown-toggle
+                                aria-expanded="false" aria-label="Toggle TEAM submenu">
+                            <svg class="xcl-nav-chevron__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li><a class="xcl-dropdown-item" href="{{ route('teams.pro.index') }}">PROFESSIONAL</a></li>
@@ -92,7 +116,15 @@
 
                 {{-- XCL EVENTS --}}
                 <li class="nav-item position-relative" data-dropdown>
-                    <a class="nav-link" href="{{ route('events.index') }}" data-dropdown-toggle>EVENTS</a>
+                    <div class="xcl-nav-item-row">
+                        <a class="nav-link" href="{{ route('events.index') }}">EVENTS</a>
+                        <button type="button" class="xcl-nav-chevron d-md-none" data-mobile-dropdown-toggle
+                                aria-expanded="false" aria-label="Toggle EVENTS submenu">
+                            <svg class="xcl-nav-chevron__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li><a class="xcl-dropdown-item" href="{{ url('/events?type=daily-racing') }}">DAILY RACING</a></li>
@@ -104,7 +136,15 @@
 
                 {{-- RACING --}}
                 <li class="nav-item position-relative" data-dropdown>
-                    <a class="nav-link" href="#" data-dropdown-toggle>RACING</a>
+                    <div class="xcl-nav-item-row">
+                        <a class="nav-link" href="#">RACING</a>
+                        <button type="button" class="xcl-nav-chevron d-md-none" data-mobile-dropdown-toggle
+                                aria-expanded="false" aria-label="Toggle RACING submenu">
+                            <svg class="xcl-nav-chevron__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li><a class="xcl-dropdown-item" href="{{ route('drivers.index') }}">LEADERBOARD</a></li>
@@ -116,7 +156,15 @@
 
                 {{-- SHOP --}}
                 <li class="nav-item position-relative" data-dropdown>
-                    <a class="nav-link" href="#" data-dropdown-toggle>SHOP</a>
+                    <div class="xcl-nav-item-row">
+                        <a class="nav-link" href="#">SHOP</a>
+                        <button type="button" class="xcl-nav-chevron d-md-none" data-mobile-dropdown-toggle
+                                aria-expanded="false" aria-label="Toggle SHOP submenu">
+                            <svg class="xcl-nav-chevron__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li><a class="xcl-dropdown-item" href="https://raven.gg/stores/xclusive-esports/" target="_blank">MERCHANDISE</a></li>
