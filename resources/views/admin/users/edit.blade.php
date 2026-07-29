@@ -58,7 +58,7 @@
                     <label class="form-label fw-bold text-dark" style="font-size:.82rem">Roles</label>
                     @if($user->id === auth()->id())
                         <div class="d-flex flex-wrap gap-1 mt-1">
-                            @foreach($user->roles->sortBy('id') as $role)
+                            @foreach($user->roles->sortBy('sort_order') as $role)
                                 <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.78rem;padding:4px 10px;border-radius:6px">{{ $role->name }}</span>
                             @endforeach
                         </div>
@@ -83,7 +83,7 @@
                         {{-- Mobile: read-only badges + hidden inputs to preserve roles on submit --}}
                         <div class="d-md-none mt-1">
                             <div class="d-flex flex-wrap gap-1">
-                                @forelse($user->roles->sortBy('id') as $role)
+                                @forelse($user->roles->sortBy('sort_order') as $role)
                                     <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.78rem;padding:4px 10px;border-radius:6px">{{ $role->name }}</span>
                                 @empty
                                     <span class="text-secondary" style="font-size:.8rem">No roles assigned</span>

@@ -80,7 +80,7 @@
                             $roleColors = ['owner'=>['#f3e8ff','#7c3aed'],'admin'=>['#fce7f3','#db2777'],'moderator'=>['#dbeafe','#2563eb'],'event_manager'=>['#fef3c7','#d97706'],'steward'=>['#e0f2fe','#0891b2'],'driver'=>['#d1fae5','#059669'],'broadcaster'=>['#ffe4e6','#e11d48']];
                         @endphp
                         <div class="d-flex flex-wrap gap-1">
-                        @foreach($user->roles->sortBy('id') as $role)
+                        @foreach($user->roles->sortBy('sort_order') as $role)
                             @php $rc = $roleColors[$role->slug] ?? ['#f3f4f6','#374151']; @endphp
                             <span class="badge fw-bold" style="background:{{ $rc[0] }};color:{{ $rc[1] }};font-size:.7rem;padding:4px 8px;border-radius:6px">
                                 {{ $role->name }}

@@ -105,6 +105,15 @@ foreach ($sbGames as $game => $col) {
     {{-- ── Sidebar panel ───────────────────────────────────────────────────── --}}
     <aside data-sb-panel class="xcl-sidebar" aria-label="Events dashboard">
 
+        {{-- Mobile-only close button (bottom-sheet layout has no edge close-tab) --}}
+        <button data-sb-close-tab class="xcl-sidebar__mobile-close" aria-label="Close dashboard">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        </button>
+
         {{-- Header --}}
         <div class="xcl-sidebar__header xcl-sidebar__header--v2">
             <div class="xcl-sidebar__header-top">

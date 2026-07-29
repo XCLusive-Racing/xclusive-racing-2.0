@@ -13,7 +13,7 @@ class UserController extends Controller
     public function index()
     {
         $users = User::with('roles')->orderBy('name')->get();
-        $roles = Role::orderBy('id')->get();
+        $roles = Role::orderBy('sort_order')->get();
 
         return view('admin.users.index', compact('users', 'roles'));
     }
@@ -21,7 +21,7 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $user->load('roles');
-        $roles = Role::orderBy('id')->get();
+        $roles = Role::orderBy('sort_order')->get();
 
         return view('admin.users.edit', compact('user', 'roles'));
     }
