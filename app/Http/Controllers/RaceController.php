@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\EventTag;
 use App\Models\Race;
+use App\Models\RaceClass;
 use App\Models\RaceRegistration;
+use Illuminate\Http\Request;
 
 class RaceController extends Controller
 {
@@ -23,13 +25,19 @@ class RaceController extends Controller
 
     public function show(Race $race)
     {
-        $race->load(['registrations.user', 'raceResults.user', 'eventFormat']);
-        $isRegistered = auth()->check() && $race->isRegistered(auth()->user());
+        $race->load(['raceClasses', 'registrations.user', 'registrations.raceClass', 'raceResults.user', 'eventFormat']);
+        $isRegistered = false;
+        $myRegistration = null;
 
-        return view('race.show', compact('race', 'isRegistered'));
+        if (auth()->check()) {
+            $myRegistration = $race->registrations->firstWhere('user_id', auth()->id());
+            $isRegistered = $myRegistration !== null;
+        }
+
+        return view('race.show', compact('race', 'isRegistered', 'myRegistration'));
     }
 
-    public function register(Race $race)
+    public function register(Request $request, Race $race)
     {
         if (auth()->user()->isSuspended()) {
             return back()->with('error', 'Your account has been suspended. Please contact an administrator.');
@@ -39,17 +47,36 @@ class RaceController extends Controller
             return back()->with('error', 'Registration is closed for this race.');
         }
 
-        if ($race->isFull()) {
-            return back()->with('error', 'This race is full.');
-        }
-
         if ($race->isRegistered(auth()->user())) {
             return back()->with('error', 'You are already registered for this race.');
         }
 
+        $raceClassId = null;
+
+        if ($race->is_multiclass && $race->raceClasses->isNotEmpty()) {
+            $validated = $request->validate([
+                'race_class_id' => ['required', 'integer'],
+            ]);
+
+            $raceClass = RaceClass::where('id', $validated['race_class_id'])
+                ->where('race_id', $race->id)
+                ->firstOrFail();
+
+            if ($raceClass->isFull()) {
+                return back()->with('error', 'The selected class is full.');
+            }
+
+            $raceClassId = $raceClass->id;
+        } else {
+            if ($race->isFull()) {
+                return back()->with('error', 'This race is full.');
+            }
+        }
+
         RaceRegistration::create([
-            'race_id' => $race->id,
-            'user_id' => auth()->id(),
+            'race_id'       => $race->id,
+            'user_id'       => auth()->id(),
+            'race_class_id' => $raceClassId,
         ]);
 
         return back()->with('success', 'You have been registered for ' . $race->title . '!');

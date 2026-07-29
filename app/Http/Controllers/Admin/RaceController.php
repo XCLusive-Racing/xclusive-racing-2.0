@@ -169,12 +169,15 @@ class RaceController extends Controller
             'race_duration'        => 'nullable|integer|min:1|max:999',
             'car_class'            => 'nullable|string|max:50',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
+            'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
             'sr_requirement'       => 'nullable|numeric|in:3,4,5,6,7,8,9',
             'min_rating'           => 'nullable|string|in:rookie,bronze,silver,gold,platinum,alien',
             'max_rating'           => 'nullable|string|in:rookie,bronze,silver,gold,platinum,alien',
             'max_drivers'          => 'nullable|integer|min:1',
             'description'          => 'nullable|string',
+            'is_multiclass'        => 'nullable|boolean',
+            'classes_json'         => 'nullable|string',
             'events'               => 'required|array|min:1|max:20',
             'events.*.title'           => 'required|string|max:255',
             'events.*.track'           => 'required|string|max:255',
@@ -191,6 +194,7 @@ class RaceController extends Controller
             'race_duration'        => $request->race_duration ?: null,
             'car_class'            => $request->car_class ?: null,
             'weather'              => $request->weather ?: null,
+            'weather_randomness'   => $request->weather_randomness ?: null,
             'time_of_day'          => $request->time_of_day ?: null,
             'sr_requirement'       => $request->sr_requirement ?: null,
             'min_rating'           => $request->min_rating ?: null,
@@ -200,12 +204,20 @@ class RaceController extends Controller
             'status'               => 'open',
         ];
 
+        $races = [];
         foreach ($request->events as $event) {
-            Race::create(array_merge($shared, [
+            $races[] = Race::create(array_merge($shared, [
                 'title'        => $event['title'],
                 'track'        => $event['track'],
                 'scheduled_at' => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $event['scheduled_at'], 'Europe/London')->utc(),
             ]));
+        }
+
+        if ($request->boolean('is_multiclass')) {
+            $classesJson = json_decode($request->input('classes_json', '[]'), true) ?: [];
+            foreach ($races as $race) {
+                $this->syncRaceClasses($request, $race);
+            }
         }
 
         $count = count($request->events);
@@ -259,7 +271,7 @@ class RaceController extends Controller
     }
 
     // Track name → background image filename in media library
-    private const TRACK_IMAGE_MAP = [
+    public const TRACK_IMAGE_MAP = [
         'Barcelona'      => 'Barcelona.png',
         'Brands Hatch'   => 'Brands.png',
         'COTA'           => 'COTA.png',
@@ -310,6 +322,7 @@ class RaceController extends Controller
             'min_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'max_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
+            'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
             'max_drivers'          => 'nullable|integer|min:1',
             'description'          => 'nullable|string',
@@ -398,6 +411,7 @@ class RaceController extends Controller
             'sr_requirement'       => 'nullable|in:3,4,5,6,7,8,9',
             'min_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
+            'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
             'max_drivers'          => 'nullable|integer|min:1',
             'description'          => 'nullable|string',
@@ -432,16 +446,20 @@ class RaceController extends Controller
     {
         $request->validate(['server_id' => 'required|exists:ftp_servers,id']);
 
+        $server = FtpServer::findOrFail($request->server_id);
+
         $files = [
-            'entrylist.json' => $request->input('entrylist_json')
+            'entrylist.json'  => $request->input('entrylist_json')
                 ?? $race->configFile('entrylist.json')
                 ?? json_encode($config->entryList($race), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-            'event.json'     => $request->input('event_json')
+            'event.json'      => $request->input('event_json')
                 ?? $race->configFile('event.json')
                 ?? json_encode($config->configuration($race), JSON_PRETTY_PRINT),
-            'settings.json'  => $request->input('settings_json')
+            'settings.json'   => $request->input('settings_json')
                 ?? $race->configFile('settings.json')
-                ?? json_encode($config->settings($race), JSON_PRETTY_PRINT),
+                ?? json_encode($config->settings($race, $server), JSON_PRETTY_PRINT),
+            'eventrules.json'  => json_encode($config->eventRules($server), JSON_PRETTY_PRINT),
+            'assistrules.json' => json_encode($config->assistRules($server), JSON_PRETTY_PRINT),
         ];
 
         foreach ($files as $filename => $content) {
@@ -451,8 +469,7 @@ class RaceController extends Controller
             }
         }
 
-        $server = FtpServer::findOrFail($request->server_id);
-        $ftp    = new FtpService();
+        $ftp = new FtpService();
 
         if (!$ftp->connect($server)) {
             return back()->with('error', 'Could not connect to ' . $server->host . '.');
@@ -470,10 +487,23 @@ class RaceController extends Controller
         $ftp->disconnect();
 
         if ($failed) {
-            return back()->with('error', 'Failed to upload: ' . implode(', ', $failed));
+            $error = 'Failed to upload: ' . implode(', ', $failed);
+            $race->update([
+                'config_push_status' => 'failed',
+                'config_push_error'  => $error,
+                'config_pushed_at'   => now(),
+            ]);
+            return back()->with('error', $error);
         }
 
-        return back()->with('success', 'Config pushed to ' . $server->name . ' — entrylist.json, configuration.json, settings.json uploaded.');
+        $race->update([
+            'config_push_status'   => 'pushed',
+            'config_push_error'    => null,
+            'config_pushed_at'     => now(),
+            'config_push_attempts' => 0,
+        ]);
+
+        return back()->with('success', 'Config pushed to ' . $server->name . ' — entrylist.json, event.json, settings.json, eventrules.json, assistrules.json uploaded.');
     }
 
     public function uploadEntrylist(Request $request, Race $race)
@@ -516,10 +546,21 @@ class RaceController extends Controller
         return back()->with('config_success', '"' . $request->input('file') . '" saved.');
     }
 
+    public function bulkDestroy(Request $request)
+    {
+        $races = Race::whereIn('id', $request->input('ids', []))->get();
+        foreach ($races as $race) {
+            $race->registrations()->delete();
+            $race->delete();
+        }
+        $count = $races->count();
+        return redirect()->route('admin.races.index')
+            ->with('success', $count . ' event' . ($count !== 1 ? 's' : '') . ' deleted.');
+    }
+
     public function destroy(Race $race)
     {
         $race->registrations()->delete();
-        $race->results()->delete();
         $race->delete();
 
         return redirect()->route('admin.races.index')

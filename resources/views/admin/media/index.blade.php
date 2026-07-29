@@ -32,24 +32,33 @@
     {{-- Existing folder cards --}}
     @foreach($folders as $folder)
     @php $cover = $folder->cover(); @endphp
-    <a href="{{ route('admin.media.index') }}?folder={{ $folder->slug }}" class="text-decoration-none">
-        <div class="admin-form-card p-0 overflow-hidden"
-             style="cursor:pointer;transition:transform .15s ease,box-shadow .15s ease"
-             onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.12)'"
-             onmouseleave="this.style.transform='';this.style.boxShadow=''">
-            <div style="aspect-ratio:4/3;background:{{ $cover ? '#111827' : '#f9fafb' }};overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:2.5rem">
-                @if($cover)
-                    <img src="{{ $cover->url }}" alt="{{ $folder->name }}" style="width:100%;height:100%;object-fit:cover;display:block">
-                @else
-                    📁
-                @endif
-            </div>
-            <div class="p-3">
+    <div class="admin-form-card p-0 overflow-hidden"
+         style="transition:transform .15s ease,box-shadow .15s ease"
+         onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.12)'"
+         onmouseleave="this.style.transform='';this.style.boxShadow=''">
+        <a href="{{ route('admin.media.index') }}?folder={{ $folder->slug }}" class="text-decoration-none d-block"
+           style="aspect-ratio:4/3;background:{{ $cover ? '#111827' : '#f9fafb' }};overflow:hidden;display:flex!important;align-items:center;justify-content:center;font-size:2.5rem">
+            @if($cover)
+                <img src="{{ $cover->url }}" alt="{{ $folder->name }}" style="width:100%;height:100%;object-fit:cover;display:block">
+            @else
+                📁
+            @endif
+        </a>
+        <div class="p-3 d-flex align-items-center justify-content-between gap-2">
+            <div>
                 <div class="fw-black text-dark" style="font-size:.9rem">{{ $folder->name }}</div>
                 <div class="text-secondary" style="font-size:.75rem">{{ $folder->media_count }} {{ Str::plural('item', $folder->media_count) }}</div>
             </div>
+            <button class="btn btn-sm flex-shrink-0"
+                    style="background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;padding:3px 8px;font-size:.7rem"
+                    data-folder-rename-btn
+                    data-folder-id="{{ $folder->id }}"
+                    data-folder-name="{{ $folder->name }}"
+                    data-rename-url="{{ route('admin.media.folders.rename', $folder) }}">
+                ✏️
+            </button>
         </div>
-    </a>
+    </div>
     @endforeach
 
     {{-- Uncategorised card --}}
@@ -151,6 +160,14 @@
                     style="font-size:.72rem;border-radius:6px">YouTube</button>
 
             @if($currentFolder)
+            <button data-folder-rename-btn
+                    data-folder-id="{{ $currentFolder->id }}"
+                    data-folder-name="{{ $currentFolder->name }}"
+                    data-rename-url="{{ route('admin.media.folders.rename', $currentFolder) }}"
+                    class="btn btn-sm fw-bold text-uppercase"
+                    style="font-size:.72rem;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:6px">
+                Rename
+            </button>
             <form action="{{ route('admin.media.folders.destroy', $currentFolder) }}" method="POST"
                   onsubmit="return confirm('Delete folder «{{ $currentFolder->name }}»? Media will become uncategorised.')">
                 @csrf @method('DELETE')
@@ -216,7 +233,7 @@
                     </div>
                 </div>
                 <div class="d-flex align-items-center justify-content-between">
-                    <span class="text-secondary" style="font-size:.70rem">{{ $item->formatted_size }}&nbsp;&middot;&nbsp;{{ $item->created_at->format('d M Y') }}</span>
+                    <span class="text-secondary" style="font-size:.70rem">{{ $item->formatted_size }}&nbsp;&middot;&nbsp;{{ $item->created_at->timezone('Europe/London')->format('d M Y') }}</span>
                     <div class="d-flex gap-1">
                         <button type="button" class="btn btn-sm fw-bold text-uppercase"
                                 style="font-size:.68rem;padding:3px 8px;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe"

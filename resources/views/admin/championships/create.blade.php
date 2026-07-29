@@ -46,9 +46,9 @@
                         </div>
                         <div class="col-sm-4">
                             <label class="form-label">Season</label>
-                            <input type="number" name="season" value="{{ old('season', date('Y')) }}"
+                            <input type="number" name="season" value="{{ old('season', 1) }}"
                                    class="form-control @error('season') is-invalid @enderror"
-                                   min="2020" max="2099">
+                                   min="1" max="999">
                             @error('season') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-sm-4">

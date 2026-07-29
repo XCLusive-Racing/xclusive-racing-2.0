@@ -25,6 +25,7 @@ class FtpServerController extends Controller
     {
         $request->validate([
             'name'                    => 'required|string|max:150',
+            'server_number'           => 'nullable|integer|min:1|max:9',
             'host'                    => 'required|string|max:255',
             'port'                    => 'required|integer|min:1|max:65535',
             'username'                => 'required|string|max:100',
@@ -37,7 +38,7 @@ class FtpServerController extends Controller
         ]);
 
         FtpServer::create($request->only(
-            'name', 'host', 'port', 'username', 'password', 'path', 'cfg_path',
+            'name', 'server_number', 'host', 'port', 'username', 'password', 'path', 'cfg_path',
             'server_type', 'reset_start_hour', 'reset_interval_minutes'
         ));
 
@@ -53,6 +54,7 @@ class FtpServerController extends Controller
     {
         $rules = [
             'name'                    => 'required|string|max:150',
+            'server_number'           => 'nullable|integer|min:1|max:9',
             'host'                    => 'required|string|max:255',
             'port'                    => 'required|integer|min:1|max:65535',
             'username'                => 'required|string|max:100',
@@ -61,6 +63,9 @@ class FtpServerController extends Controller
             'server_type'             => 'required|in:rolling,scheduled',
             'reset_start_hour'        => 'required_if:server_type,rolling|integer|min:0|max:23',
             'reset_interval_minutes'  => 'required_if:server_type,rolling|integer|min:30|max:1440',
+            'settings_defaults'       => 'nullable|string',
+            'eventrules_defaults'     => 'nullable|string',
+            'assistrules_defaults'    => 'nullable|string',
         ];
 
         if ($request->filled('password')) {
@@ -70,10 +75,23 @@ class FtpServerController extends Controller
         $request->validate($rules);
 
         $data = $request->only(
-            'name', 'host', 'port', 'username', 'path', 'cfg_path',
+            'name', 'server_number', 'host', 'port', 'username', 'path', 'cfg_path',
             'server_type', 'reset_start_hour', 'reset_interval_minutes'
         );
         $data['active'] = $request->boolean('active');
+
+        foreach (['settings_defaults', 'eventrules_defaults', 'assistrules_defaults'] as $field) {
+            $raw = trim($request->input($field, ''));
+            if ($raw === '') {
+                $data[$field] = null;
+            } else {
+                $decoded = json_decode($raw, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    return back()->withInput()->withErrors([$field => 'Invalid JSON: ' . json_last_error_msg()]);
+                }
+                $data[$field] = $decoded;
+            }
+        }
 
         if ($request->filled('password')) {
             $data['password'] = $request->input('password');

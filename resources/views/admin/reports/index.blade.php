@@ -41,7 +41,7 @@
                         </span>
                     </td>
                     <td class="text-secondary d-none d-lg-table-cell" style="font-size:.78rem">
-                        {{ $report->created_at->format('d M Y') }}
+                        {{ $report->created_at->timezone('Europe/London')->format('d M Y') }}
                     </td>
                     <td class="text-end pe-3">
                         <a href="{{ route('admin.reports.show', $report) }}"

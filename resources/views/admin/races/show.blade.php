@@ -166,6 +166,14 @@
                                     @if($race->config_pushed_at)
                                     <div style="font-size:.73rem;color:#9ca3af;margin-top:2px">
                                         Last push: {{ $race->config_pushed_at->diffForHumans() }}
+                                        @if($race->config_push_attempts > 0)
+                                        · {{ $race->config_push_attempts }} attempt{{ $race->config_push_attempts !== 1 ? 's' : '' }}
+                                        @endif
+                                    </div>
+                                    @endif
+                                    @if($race->config_push_error)
+                                    <div class="mt-1 px-2 py-1 rounded" style="font-size:.7rem;color:#991b1b;background:#fef2f2;border:1px solid #fecaca;word-break:break-word">
+                                        {{ $race->config_push_error }}
                                     </div>
                                     @endif
                                 </div>
@@ -269,54 +277,6 @@
                     'settings.json'  => json_encode($configData->settings($race),      JSON_PRETTY_PRINT),
                 ];
             @endphp
-
-            {{-- Push bar --}}
-            <div class="px-4 pt-4 pb-3" style="border-bottom:1px solid #f3f4f6">
-
-                @if(session('config_success'))
-                <div class="alert py-2 px-3 mb-3" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;font-size:.8rem;border-radius:8px">
-                    {{ session('config_success') }}
-                </div>
-                @endif
-                @if(session('config_error'))
-                <div class="alert py-2 px-3 mb-3" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:.8rem;border-radius:8px">
-                    {{ session('config_error') }}
-                </div>
-                @endif
-
-                <div class="d-flex align-items-center gap-3 flex-wrap">
-                    <div>
-                        <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.82rem">Push Config to Server</div>
-                        <div class="text-secondary mt-1" style="font-size:.75rem">
-                            @if($race->hasAnyConfigOverride())
-                                Pushes your <span style="color:#f59e0b;font-weight:700">saved custom config</span> files.
-                            @else
-                                Pushes auto-generated config files.
-                            @endif
-                        </div>
-                    </div>
-                    @if($ftpServers->isNotEmpty())
-                    <form action="{{ route('admin.races.push-config', $race) }}" method="POST" class="d-flex gap-2 align-items-center ms-auto flex-wrap">
-                        @csrf
-                        <select name="server_id" class="form-select form-select-sm" style="min-width:220px">
-                            <option value="">Select server…</option>
-                            @foreach($ftpServers as $ftpServer)
-                            <option value="{{ $ftpServer->id }}">{{ $ftpServer->name }} — {{ $ftpServer->cfg_path }}</option>
-                            @endforeach
-                        </select>
-                        <button type="submit" class="btn btn-sm fw-black text-uppercase text-white flex-shrink-0"
-                                style="background:#7c3aed;font-size:.78rem;padding:7px 18px">
-                            Push All →
-                        </button>
-                    </form>
-                    @else
-                    <div class="ms-auto">
-                        <a href="{{ route('admin.servers.create') }}" class="btn btn-sm fw-bold text-uppercase"
-                           style="background:#7c3aed;color:white;font-size:.72rem">+ Add FTP Server</a>
-                    </div>
-                    @endif
-                </div>
-            </div>
 
             {{-- Config file editors --}}
             <div data-accordions>
@@ -525,7 +485,7 @@
                             </td>
                             <td class="text-secondary" style="font-size:.82rem">{{ $reg->user->team ?? '—' }}</td>
                             <td class="pe-4 text-end text-secondary" style="font-size:.78rem">
-                                {{ $reg->created_at->format('d M Y') }}
+                                {{ $reg->created_at->timezone('Europe/London')->format('d M Y') }}
                             </td>
                         </tr>
                         @endforeach
@@ -614,8 +574,14 @@
 
                 @foreach([['Race', $raceFiles, '#d1fae5', '#065f46'], ['Qualifying', $qualiFiles, '#dbeafe', '#1e40af']] as [$label, $files, $bg, $color])
                 @if($files->isNotEmpty())
-                <div class="mb-3">
-                    <p class="fw-black text-uppercase fst-italic mb-2" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">{{ $label }}</p>
+                <details open class="mb-3 ftp-group">
+                    <summary class="fw-black text-uppercase fst-italic mb-2"
+                             style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px">
+                        <svg style="width:10px;height:10px;flex-shrink:0;transition:transform .15s" viewBox="0 0 10 10" fill="currentColor">
+                            <path d="M2 3l3 4 3-4H2z"/>
+                        </svg>
+                        {{ $label }}
+                    </summary>
                     <div class="d-flex flex-column gap-2">
                         @foreach($files as $file)
                         @php
@@ -644,7 +610,7 @@
                         </div>
                         @endforeach
                     </div>
-                </div>
+                </details>
                 @endif
                 @endforeach
 
@@ -746,9 +712,6 @@
                                             </div>
                                             <div>
                                                 <div class="fw-bold">{{ $result->displayName() }}</div>
-                                                @if(!$result->user_id && $result->player_id)
-                                                <div class="text-secondary" style="font-size:.65rem">{{ $result->player_id }}</div>
-                                                @endif
                                             </div>
                                         </div>
                                     </td>
@@ -815,9 +778,6 @@
                                             </div>
                                             <div>
                                                 <div class="fw-bold">{{ $result->displayName() }}</div>
-                                                @if(!$result->user_id && $result->player_id)
-                                                <div class="text-secondary" style="font-size:.68rem">{{ $result->player_id }}</div>
-                                                @endif
                                             </div>
                                         </div>
                                     </td>
@@ -910,5 +870,12 @@
 
     </div>
 </div>
+
+@push('head')
+<style>
+details.ftp-group > summary svg { transform: rotate(0deg); transition: transform .15s; }
+details.ftp-group:not([open]) > summary svg { transform: rotate(-90deg); }
+</style>
+@endpush
 
 @endsection

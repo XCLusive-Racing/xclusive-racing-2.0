@@ -21,11 +21,20 @@
                 <div class="px-4 pt-4 pb-2">
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Server Info</p>
 
-                    <div class="mb-3">
-                        <label class="form-label">Server Name</label>
-                        <input type="text" name="name" value="{{ old('name') }}"
-                               class="form-control @error('name') is-invalid @enderror">
-                        @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-9">
+                            <label class="form-label">Server Name</label>
+                            <input type="text" name="name" value="{{ old('name') }}"
+                                   class="form-control @error('name') is-invalid @enderror">
+                            @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-sm-3">
+                            <label class="form-label">Server No. <span class="fw-normal text-secondary" style="text-transform:none">(gPortal)</span></label>
+                            <input type="number" name="server_number" value="{{ old('server_number') }}"
+                                   min="1" max="9" placeholder="1–4"
+                                   class="form-control @error('server_number') is-invalid @enderror">
+                            @error('server_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
                     </div>
                 </div>
 

@@ -68,7 +68,7 @@
                 <div class="mb-3">
                     <label class="form-label fw-bold" style="font-size:.82rem">Race Start <span class="text-danger">*</span></label>
                     <input type="datetime-local" name="starts_at"
-                           value="{{ old('starts_at', $event->starts_at->format('Y-m-d\TH:i')) }}"
+                           value="{{ old('starts_at', $event->starts_at->timezone('Europe/London')->format('Y-m-d\TH:i')) }}"
                            class="form-control @error('starts_at') is-invalid @enderror" required>
                     <div class="form-text">Enter in your local time zone.</div>
                     @error('starts_at') <div class="invalid-feedback">{{ $message }}</div> @enderror

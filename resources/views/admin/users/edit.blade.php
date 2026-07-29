@@ -27,7 +27,7 @@
         @endif
         <div>
             <div class="fw-black text-dark" style="font-size:1rem">{{ $user->name }}</div>
-            <div class="text-secondary" style="font-size:.8rem">Member since {{ $user->created_at->format('d M Y') }}</div>
+            <div class="text-secondary" style="font-size:.8rem">Member since {{ $user->created_at->timezone('Europe/London')->format('d M Y') }}</div>
         </div>
     </div>
 </div>
@@ -135,9 +135,9 @@
                             @if(!$user->suspended_until)
                                 <span class="badge ms-1" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.7rem">Indefinite</span>
                             @elseif($user->suspended_until->isFuture())
-                                <span class="badge ms-1" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-size:.7rem">Until {{ $user->suspended_until->format('d M Y H:i') }}</span>
+                                <span class="badge ms-1" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-size:.7rem">Until {{ $user->suspended_until->timezone('Europe/London')->format('d M Y H:i T') }}</span>
                             @else
-                                <span class="badge ms-1" style="background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;font-size:.7rem">Expired {{ $user->suspended_until->format('d M Y') }}</span>
+                                <span class="badge ms-1" style="background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;font-size:.7rem">Expired {{ $user->suspended_until->timezone('Europe/London')->format('d M Y') }}</span>
                             @endif
                         @endif
                     </label>
@@ -154,7 +154,7 @@
                         <div>
                             <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">Suspended until <span class="fw-normal text-secondary">(leave empty for indefinite)</span></label>
                             <input type="datetime-local" name="suspended_until"
-                                   value="{{ old('suspended_until', $user->suspended_until?->format('Y-m-d\TH:i')) }}"
+                                   value="{{ old('suspended_until', $user->suspended_until?->timezone('Europe/London')->format('Y-m-d\TH:i')) }}"
                                    class="form-control form-control-sm @error('suspended_until') is-invalid @enderror"
                                    style="border-color:#fca5a5">
                             @error('suspended_until')<div class="invalid-feedback">{{ $message }}</div>@enderror

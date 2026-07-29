@@ -32,6 +32,7 @@ export function initEventTags(wrap) {
         const open = addPanel.style.display !== 'none';
         addPanel.style.display = open ? 'none' : 'block';
         toggleBtn.textContent = open ? '+ New' : '✕ Cancel';
+        if (open && errorEl) { errorEl.textContent = ''; errorEl.style.display = 'none'; }
         if (!open) nameInput?.focus();
     });
 
@@ -64,13 +65,14 @@ export function initEventTags(wrap) {
                 select.value = data.slug;
                 nameInput.value = '';
                 if (colorInput) colorInput.value = '#7B2FBE';
+                if (errorEl) { errorEl.textContent = ''; errorEl.style.display = 'none'; }
                 addPanel.style.display = 'none';
                 if (toggleBtn) toggleBtn.textContent = '+ New';
             } else {
-                if (errorEl) errorEl.textContent = data.errors?.name?.[0] || data.message || 'Failed to save.';
+                if (errorEl) { errorEl.textContent = data.errors?.name?.[0] || data.message || 'Failed to save.'; errorEl.style.display = 'block'; }
             }
         } catch {
-            if (errorEl) errorEl.textContent = 'Network error.';
+            if (errorEl) { errorEl.textContent = 'Network error.'; errorEl.style.display = 'block'; }
         }
 
         saveBtn.disabled = false;

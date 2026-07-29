@@ -16,34 +16,26 @@
 
 @section('content')
 
-@if(session('success'))
-<div class="alert border-0 text-white fw-bold mb-4 rounded-3 d-flex align-items-center gap-2"
-     style="background:#16a34a;font-size:.85rem">
-    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-    {{ session('success') }}
-</div>
-@endif
 
-{{-- Delete confirmation modal --}}
-<div id="delete-modal"
-     style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);align-items:center;justify-content:center">
-    <div style="background:#111827;border:1px solid #374151;border-radius:12px;padding:28px 32px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5)">
-        <h5 class="fw-black text-uppercase mb-1" style="color:#f9fafb;font-size:.95rem;letter-spacing:.05em">Delete Event</h5>
-        <p id="delete-modal-body" style="color:#9ca3af;font-size:.85rem;margin:10px 0 24px"></p>
-        <div class="d-flex gap-2 justify-content-end">
-            <button onclick="closeDeleteModal()"
-                    style="background:#1f2937;border:1px solid #374151;color:#d1d5db;font-size:.8rem;font-weight:700;text-transform:uppercase;padding:8px 18px;border-radius:6px;cursor:pointer">
-                Cancel
-            </button>
-            <form id="delete-form" method="POST" style="margin:0">
-                @csrf
-                @method('DELETE')
-                <button type="submit"
-                        style="background:#dc2626;border:none;color:white;font-size:.8rem;font-weight:700;text-transform:uppercase;padding:8px 18px;border-radius:6px;cursor:pointer">
-                    Yes, Delete
-                </button>
-            </form>
-        </div>
+{{-- Bulk delete form --}}
+<form id="bulk-form" action="{{ route('admin.races.bulk-destroy') }}" method="POST" style="display:none">
+    @csrf
+    @method('DELETE')
+</form>
+
+{{-- Bulk action bar (hidden until selection) --}}
+<div id="bulk-bar"
+     style="display:none;background:#111827;border:1px solid #374151;border-radius:10px;padding:12px 20px;margin-bottom:16px;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+    <span id="bulk-count" style="color:#f9fafb;font-size:.85rem;font-weight:700"></span>
+    <div class="d-flex gap-2">
+        <button type="button" onclick="clearSelection()"
+                style="background:#1f2937;border:1px solid #374151;color:#9ca3af;font-size:.78rem;font-weight:700;text-transform:uppercase;padding:6px 14px;border-radius:6px;cursor:pointer">
+            Deselect All
+        </button>
+        <button type="button" onclick="confirmBulkDelete()"
+                style="background:#dc2626;border:none;color:white;font-size:.78rem;font-weight:700;text-transform:uppercase;padding:6px 14px;border-radius:6px;cursor:pointer">
+            Delete Selected
+        </button>
     </div>
 </div>
 
@@ -83,7 +75,11 @@
         <table id="races-table" class="table table-hover align-middle mb-0 w-100" style="font-size:.875rem">
             <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
                 <tr>
-                    <th class="fw-bold text-uppercase ps-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Race</th>
+                    <th class="ps-4" style="width:36px">
+                        <input type="checkbox" id="select-all"
+                               style="width:15px;height:15px;cursor:pointer;accent-color:#7c3aed">
+                    </th>
+                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Race</th>
                     <th class="fw-bold text-uppercase d-none d-sm-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Game</th>
                     <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Date</th>
                     <th class="fw-bold text-uppercase text-center d-none d-lg-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Drivers</th>
@@ -95,6 +91,10 @@
                 @foreach($races as $race)
                 <tr>
                     <td class="ps-4">
+                        <input type="checkbox" class="race-checkbox" value="{{ $race->id }}"
+                               style="width:15px;height:15px;cursor:pointer;accent-color:#7c3aed">
+                    </td>
+                    <td>
                         <div class="fw-bold text-dark">{{ $race->title }}</div>
                         <div class="text-secondary" style="font-size:.78rem">{{ $race->track }}</div>
                         {{-- Mobile: game badge + date inline --}}
@@ -134,12 +134,16 @@
                                style="background:#7c3aed;font-size:.72rem;padding:5px 12px;border-radius:6px">
                                 Open
                             </a>
-                            <button type="button"
-                                    onclick="confirmDelete({{ $race->id }}, {{ json_encode($race->title) }})"
-                                    class="btn btn-sm fw-bold text-uppercase"
-                                    style="background:#1f2937;border:1px solid #374151;color:#ef4444;font-size:.72rem;padding:5px 10px;border-radius:6px">
-                                Delete
-                            </button>
+                            <form action="{{ route('admin.races.destroy', $race) }}" method="POST" style="margin:0">
+                                @csrf
+                                @method('DELETE')
+                                <button type="button"
+                                        onclick="xcDeleteSubmit(this.closest('form'), 'Delete event?', '\'{{ addslashes($race->title) }}\' and all registrations will be removed. Results are preserved.')"
+                                        class="btn btn-sm fw-bold text-uppercase"
+                                        style="background:#1f2937;border:1px solid #374151;color:#ef4444;font-size:.72rem;padding:5px 10px;border-radius:6px">
+                                    Delete
+                                </button>
+                            </form>
                         </div>
                     </td>
                 </tr>
@@ -161,9 +165,9 @@
         $(function () {
             table = $('#races-table').DataTable({
                 pageLength: 10,
-                order: [[2, 'desc']],
+                order: [[3, 'desc']],
                 columnDefs: [
-                    { orderable: false, targets: 5 },
+                    { orderable: false, targets: [0, 6] },
                 ],
                 language: {
                     search: '',
@@ -177,6 +181,77 @@
             });
         });
 
+        // Select all (across all pages)
+        document.getElementById('select-all').addEventListener('change', function () {
+            document.querySelectorAll('.race-checkbox').forEach(cb => cb.checked = this.checked);
+            updateBulkBar();
+        });
+
+        document.addEventListener('change', function (e) {
+            if (e.target.classList.contains('race-checkbox')) {
+                const all   = document.querySelectorAll('.race-checkbox');
+                const checked = document.querySelectorAll('.race-checkbox:checked');
+                document.getElementById('select-all').indeterminate = checked.length > 0 && checked.length < all.length;
+                document.getElementById('select-all').checked = checked.length === all.length && all.length > 0;
+                updateBulkBar();
+            }
+        });
+
+        function updateBulkBar() {
+            const count = document.querySelectorAll('.race-checkbox:checked').length;
+            const bar   = document.getElementById('bulk-bar');
+            bar.style.display = count > 0 ? 'flex' : 'none';
+            document.getElementById('bulk-count').textContent =
+                count + ' event' + (count !== 1 ? 's' : '') + ' selected';
+        }
+
+        function clearSelection() {
+            document.querySelectorAll('.race-checkbox').forEach(cb => cb.checked = false);
+            document.getElementById('select-all').checked = false;
+            document.getElementById('select-all').indeterminate = false;
+            updateBulkBar();
+        }
+
+        async function confirmBulkDelete() {
+            const checked = document.querySelectorAll('.race-checkbox:checked');
+            if (!checked.length) return;
+            const count = checked.length;
+
+            const result = await Swal.fire({
+                title: 'Delete ' + count + ' event' + (count !== 1 ? 's' : '') + '?',
+                text: 'All registrations will be removed. Results are preserved.',
+                icon: 'warning',
+                background: '#111827',
+                color: '#f9fafb',
+                iconColor: '#ef4444',
+                showCancelButton: true,
+                confirmButtonText: 'Delete',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#C8FF00',
+                reverseButtons: true,
+                focusCancel: true,
+                didOpen: (popup) => {
+                    popup.style.border = '1px solid #374151';
+                    popup.style.borderRadius = '12px';
+                    const cancel = popup.querySelector('.swal2-cancel');
+                    if (cancel) { cancel.style.color = '#0B0B1A'; cancel.style.fontWeight = '800'; }
+                },
+            });
+            if (!result.isConfirmed) return;
+
+            const form = document.getElementById('bulk-form');
+            form.querySelectorAll('input[name="ids[]"]').forEach(el => el.remove());
+            checked.forEach(cb => {
+                const input = document.createElement('input');
+                input.type  = 'hidden';
+                input.name  = 'ids[]';
+                input.value = cb.value;
+                form.appendChild(input);
+            });
+            form.submit();
+        }
+
         const filterIds = {
             '':                 'filter-all',
             'ACC Console':      'filter-acc',
@@ -184,23 +259,8 @@
             'iRacing':          'filter-iracing',
         };
 
-        function confirmDelete(id, title) {
-            document.getElementById('delete-modal-body').textContent =
-                'Are you sure you want to delete "' + title + '"? This will also remove all registrations and results. This cannot be undone.';
-            document.getElementById('delete-form').action = '/admin/races/' + id;
-            document.getElementById('delete-modal').style.display = 'flex';
-        }
-
-        function closeDeleteModal() {
-            document.getElementById('delete-modal').style.display = 'none';
-        }
-
-        document.getElementById('delete-modal').addEventListener('click', function (e) {
-            if (e.target === this) closeDeleteModal();
-        });
-
         function filterGame(game) {
-            table.column(1).search(game, false, false).draw();
+            table.column(2).search(game, false, false).draw();
 
             Object.entries(filterIds).forEach(([key, id]) => {
                 const btn    = document.getElementById(id);

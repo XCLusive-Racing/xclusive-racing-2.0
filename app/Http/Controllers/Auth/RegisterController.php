@@ -36,6 +36,10 @@ class RegisterController extends Controller
             $rules['gamertag'] = 'required|string|max:255';
         }
 
+        if ($request->platform === 'ps5') {
+            $rules['psn_account_id'] = 'required|string|max:30';
+        }
+
         $request->validate($rules);
 
         if ($steamOAuth) {
@@ -49,6 +53,17 @@ class RegisterController extends Controller
                 $profile = $lookup->lookup($request->platform, $request->gamertag);
             } catch (\RuntimeException $e) {
                 return back()->withInput()->withErrors(['gamertag' => $e->getMessage()]);
+            }
+
+            if ($request->platform === 'ps5') {
+                $enteredId = preg_replace('/\D/', '', $request->psn_account_id);
+                $lookedUpId = ltrim(substr($profile['platform_id'], 1), '0');
+                $enteredIdNorm = ltrim($enteredId, '0');
+                if ($enteredIdNorm !== $lookedUpId) {
+                    return back()->withInput()->withErrors([
+                        'psn_account_id' => 'PSN Account ID does not match the account found for this gamertag.',
+                    ]);
+                }
             }
         }
 

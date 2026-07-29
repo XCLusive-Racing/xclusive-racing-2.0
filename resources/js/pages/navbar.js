@@ -44,12 +44,12 @@ export function initNavbar() {
 
     function showDropdown(menu) {
         menu.style.display = 'block';
-        requestAnimationFrame(() => { menu.style.opacity = '1'; menu.style.transform = 'translateY(0)'; });
+        requestAnimationFrame(() => { menu.style.opacity = '1'; menu.style.transform = 'translateX(-50%) translateY(0)'; });
     }
 
     function hideDropdown(menu) {
         menu.style.opacity = '0';
-        menu.style.transform = 'translateY(4px)';
+        menu.style.transform = 'translateX(-50%) translateY(4px)';
         setTimeout(() => { if (menu.style.opacity === '0') menu.style.display = 'none'; }, 100);
     }
 

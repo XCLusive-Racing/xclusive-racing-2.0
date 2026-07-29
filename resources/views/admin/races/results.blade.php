@@ -135,8 +135,16 @@
                     </span>
                     <span class="text-secondary ms-2" style="font-size:.72rem;font-family:monospace">{{ $selectedServer->path }}</span>
                 </div>
-                <span class="text-secondary" style="font-size:.72rem">Newest first</span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-secondary" style="font-size:.72rem">Newest first</span>
+                    <button type="button" id="ftp-files-toggle"
+                            class="btn btn-sm fw-bold text-uppercase"
+                            style="background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;font-size:.68rem;padding:3px 10px;border-radius:6px;min-width:75px">
+                        ▲ Hide
+                    </button>
+                </div>
             </div>
+            <div id="ftp-files-content">
 
             @if(empty($ftpFiles))
             <div class="p-3 rounded-3" style="background:#f9fafb;border:1px solid #e5e7eb">
@@ -229,6 +237,7 @@
                 </table>
             </div>
             @endif
+            </div>{{-- #ftp-files-content --}}
         </div>
         @endif
 
@@ -636,5 +645,19 @@
     </div>
 
 </div>
+
+<script>
+(function () {
+    const toggle  = document.getElementById('ftp-files-toggle');
+    const content = document.getElementById('ftp-files-content');
+    if (!toggle || !content) return;
+
+    toggle.addEventListener('click', function () {
+        const open = content.style.display !== 'none';
+        content.style.display = open ? 'none' : '';
+        toggle.textContent    = open ? '▼ Show' : '▲ Hide';
+    });
+})();
+</script>
 
 @endsection

@@ -247,6 +247,11 @@
                         @if($isRegistered)
                             <div class="xcl-event-reg-status xcl-event-reg-status--registered mb-3">
                                 You are registered for this race!
+                                @if($race->is_multiclass && $myRegistration?->raceClass)
+                                <span class="d-block mt-1" style="font-size:.78rem;font-weight:700;color:{{ $myRegistration->raceClass->color }}">
+                                    Class: {{ $myRegistration->raceClass->name }}
+                                </span>
+                                @endif
                             </div>
                             @if($race->status === 'open')
                             <form action="{{ route('events.unregister', $race) }}" method="POST">
@@ -261,6 +266,20 @@
                             @else
                                 <form action="{{ route('events.register', $race) }}" method="POST">
                                     @csrf
+                                    @if($race->is_multiclass && $race->raceClasses->isNotEmpty())
+                                    <div class="mb-3">
+                                        <label class="xcl-event-card__text mb-1 d-block" style="font-size:.82rem">Select Class</label>
+                                        <select name="race_class_id" class="form-select form-select-sm" required
+                                                style="background:#1f2937;border-color:#374151;color:#e5e7eb">
+                                            <option value="">Choose your class...</option>
+                                            @foreach($race->raceClasses as $cls)
+                                            <option value="{{ $cls->id }}" {{ $cls->isFull() ? 'disabled' : '' }}>
+                                                {{ $cls->name }}{{ $cls->car_class ? ' (' . $cls->car_class . ')' : '' }}{{ $cls->isFull() ? ' — Full' : '' }}
+                                            </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    @endif
                                     <button type="submit" class="xcl-event-reg-btn w-100"
                                             style="background:{{ $race->gameColor() }}">
                                         REGISTER NOW →
@@ -347,7 +366,14 @@
                                             {{ strtoupper(substr($reg->user->name, 0, 1)) }}
                                         @endif
                                     </div>
-                                    <span class="xcl-drivers-grid__name">{{ $reg->user->displayName() }}</span>
+                                    <div class="xcl-drivers-grid__info">
+                                        <span class="xcl-drivers-grid__name">{{ $reg->user->displayName() }}</span>
+                                        @if($race->is_multiclass && $reg->raceClass)
+                                        <span class="xcl-drivers-grid__class-badge" style="background:{{ $reg->raceClass->color }}22;color:{{ $reg->raceClass->color }};border:1px solid {{ $reg->raceClass->color }}44">
+                                            {{ $reg->raceClass->name }}
+                                        </span>
+                                        @endif
+                                    </div>
                                 </a>
                                 @endforeach
                             </div>

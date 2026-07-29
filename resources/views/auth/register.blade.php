@@ -72,11 +72,11 @@
                 @else
                 <div class="mb-3">
                     <label class="form-label small fw-bold text-uppercase text-white-50 mb-1">
-                        <span data-platform-label>{{ $startPlatform === 'ps5' ? 'PSN Online ID' : ($startPlatform === 'xbox' ? 'Xbox Gamertag' : 'Steam ID or Vanity URL') }}</span>
+                        <span data-platform-label>{{ $startPlatform === 'ps5' ? 'Gamertag' : ($startPlatform === 'xbox' ? 'Xbox Gamertag' : 'Steam ID or Vanity URL') }}</span>
                     </label>
                     <input type="text" name="gamertag" required
                            data-gamertag-input
-                           placeholder="{{ $startPlatform === 'ps5' ? 'Your PSN Online ID' : ($startPlatform === 'xbox' ? 'Your Xbox Gamertag' : 'SteamID64 or custom URL name') }}"
+                           placeholder="{{ $startPlatform === 'ps5' ? 'Your PSN Gamertag' : ($startPlatform === 'xbox' ? 'Your Xbox Gamertag' : 'SteamID64 or custom URL name') }}"
                            value="{{ old('gamertag') }}"
                            class="form-control xcl-auth-input @error('gamertag') is-invalid @enderror">
                     <div data-hint="steam" class="mt-1" style="font-size:.78rem; color:rgba(255,255,255,.3);{{ $startPlatform !== 'steam' ? 'display:none' : '' }}">
@@ -86,6 +86,23 @@
                         Enter your Gamertag with or without the #xxxx suffix (e.g. <strong>PlayerName</strong> or <strong>PlayerName#1234</strong>)
                     </div>
                     @error('gamertag')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                {{-- PSN Account ID — only shown for ps5 --}}
+                <div class="mb-3" data-psn-account-id-wrap style="{{ $startPlatform !== 'ps5' ? 'display:none' : '' }}">
+                    <label class="form-label small fw-bold text-uppercase text-white-50 mb-1">PSN Account ID</label>
+                    <input type="text" name="psn_account_id"
+                           data-psn-account-id-input
+                           placeholder="e.g. 1264925427550018923"
+                           value="{{ old('psn_account_id') }}"
+                           inputmode="numeric"
+                           class="form-control xcl-auth-input @error('psn_account_id') is-invalid @enderror">
+                    <div class="mt-1" style="font-size:.78rem;color:rgba(255,255,255,.3)">
+                        Your numeric PSN ID — found in your PSN profile URL or via PSN lookup.
+                    </div>
+                    @error('psn_account_id')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
@@ -135,7 +152,7 @@
 
                 <div class="mb-4">
                     <label class="d-flex align-items-start gap-2" style="cursor:pointer">
-                        <input type="checkbox" name="privacy_accepted" value="1"
+                        <input type="checkbox" name="privacy_accepted" value="1" required
                                {{ old('privacy_accepted') ? 'checked' : '' }}
                                class="mt-1 flex-shrink-0 @error('privacy_accepted') is-invalid @enderror"
                                style="accent-color:#7c3aed;width:16px;height:16px;">

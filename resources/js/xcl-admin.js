@@ -20,13 +20,22 @@ export async function xcDeleteSubmit(form, title, text = '') {
         title,
         text,
         icon: 'warning',
+        background: '#111827',
+        color: '#f9fafb',
+        iconColor: '#ef4444',
         showCancelButton: true,
         confirmButtonText: 'Delete',
         cancelButtonText: 'Cancel',
         confirmButtonColor: '#dc2626',
-        cancelButtonColor: '#6b7280',
+        cancelButtonColor: '#C8FF00',
         reverseButtons: true,
         focusCancel: true,
+        didOpen: (popup) => {
+            popup.style.border = '1px solid #374151';
+            popup.style.borderRadius = '12px';
+            const cancel = popup.querySelector('.swal2-cancel');
+            if (cancel) { cancel.style.color = '#0B0B1A'; cancel.style.fontWeight = '800'; }
+        },
     });
     if (result.isConfirmed) form.submit();
 }

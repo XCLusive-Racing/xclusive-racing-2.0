@@ -187,7 +187,7 @@
 
                             @if($championship->registration_deadline)
                             <p style="color:#9ca3af;font-size:.75rem" class="mb-3">
-                                Deadline: {{ $championship->registration_deadline->format('d M Y, H:i') }}
+                                Deadline: {{ $championship->registration_deadline->timezone('Europe/London')->format('d M Y, H:i T') }}
                             </p>
                             @endif
 

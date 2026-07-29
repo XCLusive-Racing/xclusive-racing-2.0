@@ -341,9 +341,39 @@ function initUploadModal(modal) {
     switchTab(modal.dataset.activeTab || 'upload');
 }
 
+function initFolderRename() {
+    document.querySelectorAll('[data-folder-rename-btn]').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const current = btn.dataset.folderName;
+            const name    = prompt('Rename folder:', current);
+            if (!name || name.trim() === '' || name.trim() === current) return;
+
+            fetch(btn.dataset.renameUrl, {
+                method:  'PATCH',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken(), 'Accept': 'application/json' },
+                body:    JSON.stringify({ name: name.trim() }),
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.slug) {
+                    const url = new URL(location.href);
+                    url.searchParams.set('folder', data.slug);
+                    location.href = url.toString();
+                }
+            })
+            .catch(() => alert('Could not rename folder.'));
+        });
+    });
+}
+
 export function initMediaIndex() {
     const folderNewWrap = document.querySelector('[data-folder-new-wrap]');
     if (folderNewWrap) initFolderCreate(folderNewWrap);
+
+    initFolderRename();
 
     const mediaGrid = document.querySelector('[data-media-grid]');
     if (mediaGrid) initMediaGrid(mediaGrid);
