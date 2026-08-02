@@ -9,7 +9,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE media MODIFY COLUMN type ENUM('image','icon','video','youtube') NOT NULL DEFAULT 'image'");
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            Schema::table('media', function (Blueprint $table) {
+                $table->enum('type', ['image', 'icon', 'video', 'youtube'])->default('image')->change();
+            });
+        } else {
+            DB::statement("ALTER TABLE media MODIFY COLUMN type ENUM('image','icon','video','youtube') NOT NULL DEFAULT 'image'");
+        }
 
         Schema::table('media', function (Blueprint $table) {
             $table->string('youtube_id', 20)->nullable()->after('type');
@@ -27,7 +33,13 @@ return new class extends Migration
             $table->dropColumn(['youtube_id', 'category']);
         });
 
-        DB::statement("ALTER TABLE media MODIFY COLUMN type ENUM('image','video') NOT NULL DEFAULT 'image'");
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            Schema::table('media', function (Blueprint $table) {
+                $table->enum('type', ['image', 'video'])->default('image')->change();
+            });
+        } else {
+            DB::statement("ALTER TABLE media MODIFY COLUMN type ENUM('image','video') NOT NULL DEFAULT 'image'");
+        }
 
         Schema::table('media', function (Blueprint $table) {
             $table->string('filename')->nullable(false)->change();
