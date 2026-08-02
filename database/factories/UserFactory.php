@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -67,5 +68,14 @@ class UserFactory extends Factory
     public function manager(): static
     {
         return $this->state(fn (array $attributes) => ['role' => 'manager']);
+    }
+
+    public function broadcaster(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            $user->roles()->syncWithoutDetaching(
+                Role::where('slug', 'broadcaster')->pluck('id')
+            );
+        });
     }
 }
