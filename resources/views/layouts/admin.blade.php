@@ -154,7 +154,7 @@
         </div>
         @endif
 
-        @if(auth()->user()->canManageEvents())
+        @if(auth()->user()->canManageEvents() || auth()->user()->canModerateReports())
         {{-- Racing --}}
         <div class="admin-nav-section-header" data-section="racing">
             <span>Racing</span>
@@ -165,6 +165,7 @@
         <div class="admin-nav-section-divider" style="display:none"></div>
 
         <div data-section-content="racing">
+            @if(auth()->user()->canManageEvents())
             <a href="{{ route('admin.bops.index') }}"
                class="admin-nav-link {{ request()->routeIs('admin.bops.*') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -172,6 +173,8 @@
                 </svg>
                 <span>BOPs</span>
             </a>
+            @endif
+            @if(auth()->user()->canModerateReports())
             <a href="{{ route('admin.reports.index') }}"
                class="admin-nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -179,6 +182,7 @@
                 </svg>
                 <span>Reports</span>
             </a>
+            @endif
         </div>
         @endif
 

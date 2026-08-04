@@ -44,8 +44,8 @@
                     <x-rank-avatar :user="auth()->user()" :size="28" :badge="false" />
                     PROFILE
                 </a>
-                @if(auth()->user()->canManage())
-                <a href="{{ route('admin.races.index') }}"
+                @if(auth()->user()->canAccessAdminPanel())
+                <a href="{{ route(auth()->user()->adminLandingRoute()) }}"
                    class="btn btn-sm fw-bold text-uppercase text-white bg-xcl-purple ms-auto">
                     ADMIN
                 </a>
@@ -185,8 +185,8 @@
                 </a>
 
                 @auth
-                    @if(auth()->user()->canManage())
-                        <a href="{{ route('admin.races.index') }}"
+                    @if(auth()->user()->canAccessAdminPanel())
+                        <a href="{{ route(auth()->user()->adminLandingRoute()) }}"
                            class="btn btn-sm fw-bold text-uppercase text-white d-none d-md-inline-flex bg-xcl-purple">
                             ADMIN
                         </a>
