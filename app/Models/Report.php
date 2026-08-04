@@ -8,9 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Report extends Model
 {
     protected $fillable = [
-        'user_id', 'race_id', 'reported_driver_name',
+        'user_id', 'race_id', 'reported_driver_name', 'reporter_driver_name',
         'lap_number', 'incident_corner', 'description',
-        'video_url', 'status', 'admin_notes', 'reviewed_by',
+        'video_url', 'clip_good_driver_url', 'clip_bad_driver_url', 'clip_heli_url',
+        'status', 'admin_notes', 'reviewed_by',
     ];
 
     public static function statuses(): array

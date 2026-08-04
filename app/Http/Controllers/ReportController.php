@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Driver;
 use App\Models\Race;
 use App\Models\Report;
 use Illuminate\Http\Request;
@@ -20,7 +21,15 @@ class ReportController extends Controller
             ->orderBy('scheduled_at', 'desc')
             ->get();
 
-        return view('reports.index', compact('reports', 'races'));
+        $driverNames = Driver::whereNotNull('gamertag')
+            ->orderBy('gamertag')
+            ->pluck('gamertag')
+            ->unique()
+            ->values();
+
+        $myGamertag = $this->myGamertag(auth()->user());
+
+        return view('reports.index', compact('reports', 'races', 'driverNames', 'myGamertag'));
     }
 
     public function store(Request $request)
@@ -28,17 +37,32 @@ class ReportController extends Controller
         $data = $request->validate([
             'race_id'               => 'nullable|exists:races,id',
             'reported_driver_name'  => 'required|string|max:100',
+            'reporter_driver_name'  => 'nullable|string|max:100',
             'lap_number'            => 'nullable|integer|min:1|max:999',
             'incident_corner'       => 'nullable|string|max:50',
             'description'           => 'required|string|min:20|max:2000',
             'video_url'             => 'nullable|url|max:500',
+            'clip_good_driver_url'  => 'nullable|url|max:500',
+            'clip_bad_driver_url'   => 'nullable|url|max:500',
+            'clip_heli_url'         => 'nullable|url|max:500',
         ]);
 
         $data['user_id'] = auth()->id();
+        $data['reporter_driver_name'] = $data['reporter_driver_name'] ?: $this->myGamertag(auth()->user());
 
         Report::create($data);
 
         return redirect()->route('reports.index')
             ->with('success', 'Your report has been submitted and is pending review.');
+    }
+
+    private function myGamertag(\App\Models\User $user): string
+    {
+        $driver = Driver::where('xuid_psid', $user->platform_id)
+            ->orWhere('xuid_psid', 'T_' . strtolower($user->name))
+            ->orWhere('gamertag', $user->name)
+            ->first();
+
+        return $driver->gamertag ?? $user->displayName();
     }
 }

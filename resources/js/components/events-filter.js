@@ -3,7 +3,6 @@ export function initEventsFilter() {
     if (!wrap) return;
 
     let platform    = null;
-    let weeksShown  = 1;
     let eventFilter = 'all';
 
     const platformSelector = wrap.querySelector('[data-platform-selector]');
@@ -12,13 +11,10 @@ export function initEventsFilter() {
     const filterBtns       = wrap.querySelectorAll('[data-event-filter]');
 
     function matchesEventFilter(tag, dateStr) {
-        const now    = new Date();
-        const d      = new Date(dateStr);
+        const now = new Date();
+        const d   = new Date(dateStr);
         if (d < now) return false;
-        if (eventFilter !== 'all') return tag === eventFilter;
-        const cutoff = new Date(now);
-        cutoff.setDate(cutoff.getDate() + weeksShown * 7);
-        return d <= cutoff;
+        return eventFilter === 'all' || tag === eventFilter;
     }
 
     function apply() {
@@ -31,10 +27,6 @@ export function initEventsFilter() {
 
         filterBtns.forEach(btn => {
             btn.classList.toggle('xcl-filter-btn--active', btn.dataset.eventFilter === eventFilter);
-        });
-
-        wrap.querySelectorAll('[data-load-more]').forEach(btn => {
-            btn.style.display = btn.dataset.loadAtWeeks === String(weeksShown) ? '' : 'none';
         });
 
         wrap.querySelectorAll('[data-event-card]').forEach(card => {
@@ -50,7 +42,6 @@ export function initEventsFilter() {
         if (game) {
             card.addEventListener('click', () => {
                 platform    = game;
-                weeksShown  = 1;
                 eventFilter = 'all';
                 apply();
             });
@@ -72,7 +63,6 @@ export function initEventsFilter() {
 
     backBtn?.addEventListener('click', () => {
         platform    = null;
-        weeksShown  = 1;
         eventFilter = 'all';
         apply();
     });
@@ -80,13 +70,6 @@ export function initEventsFilter() {
     filterBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             eventFilter = btn.dataset.eventFilter;
-            apply();
-        });
-    });
-
-    wrap.querySelectorAll('[data-load-more]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            weeksShown = parseInt(btn.dataset.targetWeeks, 10);
             apply();
         });
     });

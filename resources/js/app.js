@@ -51,6 +51,7 @@ import { initRatingRows } from './pages/admin/rating.js';
 import { initFileBrowser } from './pages/admin/file-browser.js';
 import { initEventsSidebar } from './components/events-sidebar.js';
 import { initMediaPickers } from './components/media-picker.js';
+import { initDriverSearch } from './components/driver-search.js';
 
 window.bootstrap      = bootstrap;
 window.Swal           = Swal;
@@ -100,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initFileBrowser();
     initEventsSidebar();
     initMediaPickers();
+    initDriverSearch();
 
     // EasyMDE rich text editor
     const richEl = document.querySelector('.rich-editor');

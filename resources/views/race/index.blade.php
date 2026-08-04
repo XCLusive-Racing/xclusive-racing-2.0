@@ -182,13 +182,6 @@
                     </div>
                     @endforeach
                 </div>
-
-                <div class="text-center mt-5">
-                    <button data-load-more data-load-at-weeks="1" data-target-weeks="2"
-                            class="xcl-load-btn">LOAD MORE</button>
-                    <button data-load-more data-load-at-weeks="2" data-target-weeks="1"
-                            class="xcl-load-btn" style="display:none">LOAD LESS</button>
-                </div>
                 @endif
             </div>
             @endforeach
