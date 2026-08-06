@@ -88,6 +88,27 @@ class User extends Authenticatable
         return $this->hasAnyRole(['owner', 'admin', 'event_manager']);
     }
 
+    public function canModerateReports(): bool
+    {
+        return $this->canManageEvents() || $this->isSteward();
+    }
+
+    public function canAccessAdminPanel(): bool
+    {
+        return $this->hasAnyRole(['owner', 'admin', 'moderator', 'event_manager', 'steward', 'broadcaster']);
+    }
+
+    public function adminLandingRoute(): string
+    {
+        return match (true) {
+            $this->canManage()     => 'admin.races.index',
+            $this->canSeeUsers()   => 'admin.users.index',
+            $this->isSteward()     => 'admin.reports.index',
+            $this->canBroadcast()  => 'admin.news.index',
+            default                => 'home',
+        };
+    }
+
     public function displayName(): string
     {
         if ($this->display_name_preference === 'gamertag' && $this->platform_id) {

@@ -34,10 +34,11 @@ class FtpServer extends Model
         return $this->hasMany(\App\Models\Race::class, 'ftp_server_id');
     }
 
-    public function takenSlots(): array
+    public function takenSlots(?int $excludeRaceId = null): array
     {
         return $this->races()
             ->whereNotNull('slot_time')
+            ->when($excludeRaceId, fn($q) => $q->where('id', '!=', $excludeRaceId))
             ->pluck('slot_time')
             ->map(fn($t) => \Carbon\Carbon::parse($t)->utc()->format('Y-m-d H:i'))
             ->toArray();

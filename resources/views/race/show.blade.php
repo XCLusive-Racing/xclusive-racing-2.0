@@ -273,8 +273,14 @@
                                                 style="background:#1f2937;border-color:#374151;color:#e5e7eb">
                                             <option value="">Choose your class...</option>
                                             @foreach($race->raceClasses as $cls)
+                                            @php
+                                                $clsReqs = array_filter([
+                                                    $cls->sr_requirement ? 'SR ' . $cls->sr_requirement . '.0+' : null,
+                                                    $cls->min_rating ? ($cls->xclTierInfo()[0] ?: $cls->min_rating) . '+' : null,
+                                                ]);
+                                            @endphp
                                             <option value="{{ $cls->id }}" {{ $cls->isFull() ? 'disabled' : '' }}>
-                                                {{ $cls->name }}{{ $cls->car_class ? ' (' . $cls->car_class . ')' : '' }}{{ $cls->isFull() ? ' — Full' : '' }}
+                                                {{ $cls->name }}{{ $cls->car_class ? ' (' . $cls->car_class . ')' : '' }}{{ $clsReqs ? ' — ' . implode(' · ', $clsReqs) : '' }}{{ $cls->isFull() ? ' — Full' : '' }}
                                             </option>
                                             @endforeach
                                         </select>
@@ -303,7 +309,12 @@
                 @endif
 
                 {{-- Requirements --}}
-                @if($race->car_class || $race->sr_requirement || $race->min_rating)
+                @php
+                    $classesWithReqs = $race->is_multiclass
+                        ? $race->raceClasses->filter(fn($c) => $c->sr_requirement || $c->min_rating)
+                        : collect();
+                @endphp
+                @if($race->car_class || $race->sr_requirement || $race->min_rating || $classesWithReqs->isNotEmpty())
                 <div class="xcl-event-card mb-4">
                     <h3 class="xcl-event-card__heading">REQUIREMENTS</h3>
                     <div class="xcl-event-reqs">
@@ -336,6 +347,29 @@
                                 {{ $race->min_rating }}
                                 @endif
                             </span>
+                        </div>
+                        @endif
+
+                        @if($classesWithReqs->isNotEmpty())
+                        <div class="mt-2 pt-2" style="border-top:1px solid rgba(255,255,255,.08)">
+                            <span class="xcl-event-req-label d-block mb-2">Per Class</span>
+                            @foreach($classesWithReqs as $cls)
+                            @php [$clsSrLetter, $clsSrColor] = $cls->srTier(); [$clsXclName, $clsXclColor] = $cls->xclTierInfo(); @endphp
+                            <div class="xcl-event-req-row">
+                                <span class="xcl-event-req-label" style="color:{{ $cls->color }}">{{ $cls->name }}</span>
+                                <span class="xcl-event-req-value d-flex gap-2 align-items-center">
+                                    @if($cls->sr_requirement)
+                                    <span style="display:inline-flex;align-items:center;gap:4px">
+                                        <span style="width:16px;height:16px;border-radius:50%;background:#0f0f1a;border:2px solid {{ $clsSrColor }};display:inline-flex;align-items:center;justify-content:center;color:{{ $clsSrColor }};font-size:.5rem;font-weight:900;flex-shrink:0">{{ $clsSrLetter }}</span>
+                                        <span style="font-size:.75rem;font-weight:700;color:#e5e7eb">SR {{ $cls->sr_requirement }}.0+</span>
+                                    </span>
+                                    @endif
+                                    @if($cls->min_rating)
+                                    <span style="font-size:.68rem;font-weight:900;text-transform:capitalize;padding:1px 8px;border-radius:4px;border:1px solid {{ $clsXclColor }}66;background:{{ $clsXclColor }}22;color:{{ $clsXclColor }}">{{ $clsXclName ?: $cls->min_rating }}+</span>
+                                    @endif
+                                </span>
+                            </div>
+                            @endforeach
                         </div>
                         @endif
                     </div>

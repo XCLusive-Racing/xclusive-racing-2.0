@@ -159,8 +159,9 @@
 
                     <div class="col-sm-7 px-0">
                         <label class="form-label">Date & Time (BST) <span class="text-danger">*</span></label>
-                        <input type="datetime-local" id="cr-scheduled-at" name="scheduled_at"
+                        <input type="text" id="cr-scheduled-at" name="scheduled_at" data-flatpickr data-min-today="true"
                                value="{{ old('scheduled_at') }}"
+                               placeholder="Select date & time…"
                                class="form-control @error('scheduled_at') is-invalid @enderror">
                         @error('scheduled_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
@@ -271,23 +272,32 @@
                 {{-- Multiclass --}}
                 <div class="px-4 py-3" style="border-top:1px solid #f3f4f6" data-multiclass-wrap>
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Multiclass <span class="fw-normal" style="text-transform:none">(optional)</span></p>
-                    <div class="mb-3">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="cr_multiclass"
-                                   data-multiclass-checkbox {{ old('is_multiclass') ? 'checked' : '' }}>
-                            <label class="form-check-label fw-bold" for="cr_multiclass">Enable Multiclass</label>
-                        </div>
-                        <input type="hidden" name="is_multiclass" data-multiclass-flag value="{{ old('is_multiclass') ? '1' : '0' }}">
+
+                    <input type="hidden" name="is_multiclass" data-multiclass-flag value="{{ old('is_multiclass', '0') }}">
+                    <input type="hidden" name="classes_json" data-multiclass-json value="{{ old('classes_json', '[]') }}">
+
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        @foreach([
+                            'GT3' => ['color' => '#7c3aed', 'label' => 'GT3'],
+                            'GT4' => ['color' => '#2563eb', 'label' => 'GT4'],
+                            'GT2' => ['color' => '#db2777', 'label' => 'GT2'],
+                            'M2'  => ['color' => '#16a34a', 'label' => 'M2'],
+                        ] as $cls => $meta)
+                        <label data-mc-label="{{ $cls }}"
+                               class="d-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
+                               style="cursor:pointer;border:2px solid #e5e7eb;font-size:.85rem;user-select:none;background:#fff;color:#374151;transition:all .15s">
+                            <input type="checkbox" data-mc-class="{{ $cls }}" data-mc-color="{{ $meta['color'] }}" class="d-none"
+                                   {{ in_array($cls, old('selected_classes', [])) ? 'checked' : '' }}>
+                            <span style="width:10px;height:10px;border-radius:50%;background:{{ $meta['color'] }};flex-shrink:0"></span>
+                            {{ $meta['label'] }}
+                        </label>
+                        @endforeach
                     </div>
-                    <div data-multiclass-section style="{{ old('is_multiclass') ? '' : 'display:none' }}">
-                        <div data-multiclass-list></div>
-                        <button type="button" data-multiclass-add
-                                class="btn btn-sm fw-bold text-uppercase"
-                                style="background:rgba(219,39,119,.1);color:#db2777;border:1px solid rgba(219,39,119,.3);font-size:.72rem">
-                            + Add Class
-                        </button>
-                        <input type="hidden" name="classes_json" data-multiclass-json value="[]">
-                    </div>
+
+                    {{-- Per-class max drivers (shown per selected class) --}}
+                    <div data-mc-drivers-wrap class="d-flex flex-wrap gap-3" style="display:none"></div>
+
+                    <div class="text-secondary mt-2" style="font-size:.75rem" data-mc-hint>Select one or more classes to enable multiclass</div>
                 </div>
             </div>
 
@@ -591,7 +601,8 @@
         if (prev.openBadge) prev.openBadge.style.display = (!srOn && !minOn && !maxOn) ? '' : 'none';
 
         // Class / track / weather
-        if (prev.classEl)   prev.classEl.textContent  = carClass || 'Open';
+        const mcClasses = Array.from(document.querySelectorAll('[data-mc-class]:checked')).map(cb => cb.dataset.mcClass);
+        if (prev.classEl) prev.classEl.textContent = mcClasses.length ? mcClasses.join(' + ') : (carClass || 'Open');
         if (prev.trackName) prev.trackName.textContent = track    || '—';
         if (prev.weatherEl) {
             const icon  = wxIcons[weather]  || '';
@@ -617,6 +628,7 @@
         .forEach(id => { const el = $(id); if (el) el.addEventListener('input', updatePreview); });
     const schedEl = $('cr-scheduled-at');
     if (schedEl) schedEl.addEventListener('change', updatePreview);
+    document.querySelectorAll('[data-mc-class]').forEach(cb => cb.addEventListener('change', updatePreview));
 
     document.addEventListener('mp:change', e => {
         const { name, url } = e.detail;

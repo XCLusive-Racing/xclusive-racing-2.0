@@ -36,7 +36,7 @@
                     <div class="px-4 py-3 border-bottom" style="background:#fafafa">
                         <span class="fw-black text-uppercase" style="font-size:.78rem;letter-spacing:.06em">Submit Report</span>
                     </div>
-                    <form method="POST" action="{{ route('reports.store') }}" class="p-4">
+                    <form method="POST" action="{{ route('reports.store') }}" class="p-4" data-driver-names="{{ json_encode($driverNames) }}">
                         @csrf
 
                         <div class="mb-3">
@@ -53,12 +53,23 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold" style="font-size:.8rem">Driver being reported <span class="text-danger">*</span></label>
-                            <input type="text" name="reported_driver_name"
+                            <label class=
+                                           "form-label fw-bold" style="font-size:.8rem">Submitted against <span class="text-danger">*</span></label>
+                            <input type="text" name="reported_driver_name" data-driver-search autocomplete="off"
                                    value="{{ old('reported_driver_name') }}"
                                    class="form-control form-control-sm @error('reported_driver_name') is-invalid @enderror"
-                                   placeholder="Gamertag / driver name">
+                                   placeholder="Start typing a driver name...">
                             @error('reported_driver_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <div class="form-text" style="font-size:.72rem">Pick from the list so we can find the right driver spelling matters.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold" style="font-size:.8rem">Your username</label>
+                            <input type="text" name="reporter_driver_name" data-driver-search autocomplete="off"
+                                   value="{{ old('reporter_driver_name', $myGamertag) }}"
+                                   class="form-control form-control-sm @error('reporter_driver_name') is-invalid @enderror"
+                                   placeholder="Your driver name">
+                            @error('reporter_driver_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
 
                         <div class="row g-2 mb-3">
@@ -86,12 +97,31 @@
                             @error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label fw-bold" style="font-size:.8rem">Video / clip URL</label>
-                            <input type="url" name="video_url" value="{{ old('video_url') }}"
-                                   class="form-control form-control-sm @error('video_url') is-invalid @enderror"
+                        <div class="mb-3">
+                            <label class="form-label fw-bold" style="font-size:.8rem">Clip 1</label>
+                            <input type="url" name="clip_good_driver_url" value="{{ old('clip_good_driver_url') }}"
+                                   class="form-control form-control-sm @error('clip_good_driver_url') is-invalid @enderror"
                                    placeholder="https://youtube.com/...">
-                            @error('video_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            @error('clip_good_driver_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <div class="form-text" style="font-size:.72rem">Footage from your driver&rsquo;s point of view.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold" style="font-size:.8rem">Clip 2</label>
+                            <input type="url" name="clip_bad_driver_url" value="{{ old('clip_bad_driver_url') }}"
+                                   class="form-control form-control-sm @error('clip_bad_driver_url') is-invalid @enderror"
+                                   placeholder="https://youtube.com/...">
+                            @error('clip_bad_driver_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <div class="form-text" style="font-size:.72rem">Footage from the Accused driver&rsquo;s point of view.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold" style="font-size:.8rem">Clip 3</label>
+                            <input type="url" name="clip_heli_url" value="{{ old('clip_heli_url') }}"
+                                   class="form-control form-control-sm @error('clip_heli_url') is-invalid @enderror"
+                                   placeholder="https://youtube.com/...">
+                            @error('clip_heli_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <div class="form-text" style="font-size:.72rem">Heli / overview footage of the incident.</div>
                         </div>
 
                         <button type="submit" class="btn fw-bold text-white w-100" style="background:#7c3aed;font-size:.85rem">

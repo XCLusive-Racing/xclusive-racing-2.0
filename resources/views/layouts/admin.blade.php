@@ -51,6 +51,12 @@
         </div>
 
         {{-- Management --}}
+        @php
+            $showManagementSection = auth()->user()->canManageEvents()
+                || auth()->user()->canSeeUsers()
+                || auth()->user()->hasAnyRole(['owner', 'admin']);
+        @endphp
+        @if($showManagementSection)
         <div class="admin-nav-section-header" data-section="events">
             <span>Management</span>
             <svg data-section-arrow width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="transition:transform .2s">
@@ -111,6 +117,7 @@
             </a>
             @endif
         </div>
+        @endif
 
         @if(auth()->user()->canManageEvents())
         {{-- Events --}}
@@ -147,6 +154,7 @@
         </div>
         @endif
 
+        @if(auth()->user()->canManageEvents() || auth()->user()->canModerateReports())
         {{-- Racing --}}
         <div class="admin-nav-section-header" data-section="racing">
             <span>Racing</span>
@@ -165,6 +173,8 @@
                 </svg>
                 <span>BOPs</span>
             </a>
+            @endif
+            @if(auth()->user()->canModerateReports())
             <a href="{{ route('admin.reports.index') }}"
                class="admin-nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -174,6 +184,7 @@
             </a>
             @endif
         </div>
+        @endif
 
         @if(auth()->user()->canBroadcast())
         {{-- Content --}}

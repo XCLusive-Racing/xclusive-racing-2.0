@@ -221,11 +221,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/bops/toggle-game', [AdminBopController::class, 'toggleGame'])->name('bops.toggle-game');
     Route::post('/bops/{bop}/toggle', [AdminBopController::class, 'toggle'])->name('bops.toggle');
 
-    // Reports
-    Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/{report}', [AdminReportController::class, 'show'])->name('reports.show');
-    Route::patch('/reports/{report}/status', [AdminReportController::class, 'updateStatus'])->name('reports.status');
-
     // FTP Servers
     Route::get('/servers', [FtpServerController::class, 'index'])->name('servers.index');
     Route::get('/servers/create', [FtpServerController::class, 'create'])->name('servers.create');
@@ -244,6 +239,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/servers/{ftpServer}/browse/delete', [FtpBrowserController::class, 'delete'])->name('servers.browse.delete');
     Route::post('/servers/{ftpServer}/browse/rename', [FtpBrowserController::class, 'rename'])->name('servers.browse.rename');
     Route::post('/servers/{ftpServer}/browse/save', [FtpBrowserController::class, 'save'])->name('servers.browse.save');
+});
+
+// Reports — owner, admin, event_manager, steward
+Route::middleware(['auth', 'role:owner,admin,event_manager,steward'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/{report}', [AdminReportController::class, 'show'])->name('reports.show');
+    Route::patch('/reports/{report}/status', [AdminReportController::class, 'updateStatus'])->name('reports.status');
 });
 
 // Owner + moderator — Users

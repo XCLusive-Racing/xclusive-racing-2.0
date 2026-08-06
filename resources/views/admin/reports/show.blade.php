@@ -31,8 +31,12 @@
                     <div class="fw-bold mt-1">{{ $report->user->name ?? '—' }}</div>
                 </div>
                 <div class="col-sm-6">
-                    <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af">Reported Driver</div>
+                    <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af">Submitted Against</div>
                     <div class="fw-bold mt-1">{{ $report->reported_driver_name }}</div>
+                </div>
+                <div class="col-sm-6">
+                    <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af">Your Username</div>
+                    <div class="fw-bold mt-1">{{ $report->reporter_driver_name ?? '—' }}</div>
                 </div>
                 <div class="col-sm-6">
                     <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af">Race</div>
@@ -55,13 +59,27 @@
                 </div>
             </div>
 
-            @if($report->video_url)
+            @if($report->video_url || $report->clip_good_driver_url || $report->clip_bad_driver_url || $report->clip_heli_url)
             <div>
                 <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af" class="mb-2">Evidence</div>
-                <a href="{{ $report->video_url }}" target="_blank" rel="noopener"
-                   class="btn btn-sm btn-outline-secondary fw-bold" style="font-size:.78rem">
-                    View Video / Clip →
-                </a>
+                <div class="d-flex flex-wrap gap-2">
+                    @if($report->video_url)
+                    <a href="{{ $report->video_url }}" target="_blank" rel="noopener"
+                       class="btn btn-sm btn-outline-secondary fw-bold" style="font-size:.78rem">Video / Clip →</a>
+                    @endif
+                    @if($report->clip_good_driver_url)
+                    <a href="{{ $report->clip_good_driver_url }}" target="_blank" rel="noopener"
+                       class="btn btn-sm btn-outline-secondary fw-bold" style="font-size:.78rem">Clip 1 →</a>
+                    @endif
+                    @if($report->clip_bad_driver_url)
+                    <a href="{{ $report->clip_bad_driver_url }}" target="_blank" rel="noopener"
+                       class="btn btn-sm btn-outline-secondary fw-bold" style="font-size:.78rem">Clip 2 →</a>
+                    @endif
+                    @if($report->clip_heli_url)
+                    <a href="{{ $report->clip_heli_url }}" target="_blank" rel="noopener"
+                       class="btn btn-sm btn-outline-secondary fw-bold" style="font-size:.78rem">Clip 3 →</a>
+                    @endif
+                </div>
             </div>
             @endif
         </div>
