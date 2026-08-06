@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('gportal:push-configs')->everyMinute();
+Schedule::command('gportal:import-results')->everyFifteenMinutes();
