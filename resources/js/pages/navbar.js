@@ -52,14 +52,29 @@ export function initNavbar() {
         });
     });
 
+    // Desktop's .xcl-dropdown is absolutely positioned and centered via
+    // translateX(-50%); mobile's media query flattens it to position:static
+    // with transform:none. Inline styles always beat that stylesheet rule,
+    // so the two open/close states must branch on viewport — otherwise the
+    // mobile accordion inherits the desktop translateX and renders shifted
+    // off to the side instead of inline below the row.
+    function isMobileNav() {
+        return window.matchMedia('(max-width: 767px)').matches;
+    }
+
     function showDropdown(menu) {
         menu.style.display = 'block';
-        requestAnimationFrame(() => { menu.style.opacity = '1'; menu.style.transform = 'translateX(-50%) translateY(0)'; });
+        if (isMobileNav()) {
+            menu.style.transform = 'none';
+            requestAnimationFrame(() => { menu.style.opacity = '1'; });
+        } else {
+            requestAnimationFrame(() => { menu.style.opacity = '1'; menu.style.transform = 'translateX(-50%) translateY(0)'; });
+        }
     }
 
     function hideDropdown(menu) {
         menu.style.opacity = '0';
-        menu.style.transform = 'translateX(-50%) translateY(4px)';
+        menu.style.transform = isMobileNav() ? 'none' : 'translateX(-50%) translateY(4px)';
         setTimeout(() => { if (menu.style.opacity === '0') menu.style.display = 'none'; }, 100);
     }
 

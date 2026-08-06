@@ -75,6 +75,12 @@ const drivers = [
     { name: 'Michael Martinz',  cat: 'iracing', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'austria', role: 'esports', socials: [] },
     { name: 'Parker Soukup',    cat: 'iracing', platform: 'pc', platformLabel: 'PC', photo: '/images/drivers/P.Soukup.png', flag: 'usa', role: 'esports', socials: [] },
     { name: 'André Damrat',     cat: 'iracing', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'germany', role: 'esports', socials: [] },
+
+    // ── Coaches (DriveLab) ───────────────────────────────────────
+    { name: 'Nikodem Wisniewski', cat: 'coach', platform: 'pc',      platformLabel: 'PC',      photo: '/images/coaches/nikodem.avif', flag: null, role: 'coach', socials: [] },
+    { name: 'Dominik Blajer',     cat: 'coach', platform: 'pc',      platformLabel: 'PC',      photo: '/images/coaches/dominik.avif', flag: null, role: 'coach', socials: [] },
+    { name: 'Przemysław Lemanek', cat: 'coach', platform: 'pc',      platformLabel: 'PC',      photo: '/images/coaches/przemek.avif', flag: null, role: 'coach', socials: [] },
+    { name: 'Dorian Castelli',    cat: 'coach', platform: 'console', platformLabel: 'Console', photo: '/images/coaches/dorian.png',   flag: null, role: 'coach', socials: [] },
 ];
 
 const socialIconMap = {
@@ -89,16 +95,16 @@ const socialIconMap = {
 };
 
 const gameBadgeLabel = cat =>
-    ({ lmu: 'LMU', acc: 'ACC', iracing: 'IRACING', pro: 'PRO', staff: 'STAFF' }[cat] || cat.toUpperCase());
+    ({ lmu: 'LMU', acc: 'ACC', iracing: 'IRACING', pro: 'PRO', staff: 'STAFF', coach: 'COACH' }[cat] || cat.toUpperCase());
 
 const platformBadgeClass = platform =>
     ({ pc: 'mt-badge--pc', hybrid: 'mt-badge--hybrid', xbox: 'mt-badge--xbox', ps5: 'mt-badge--ps5', console: 'mt-badge--console' }[platform] || '');
 
 const roleLabel = role =>
-    ({ esports: 'Esports Driver', racing: 'Professional Driver', staff: 'Staff' }[role] || role);
+    ({ esports: 'Esports Driver', racing: 'Professional Driver', staff: 'Staff', coach: 'Coach' }[role] || role);
 
 const roleClass = role =>
-    ({ esports: 'mt-driver-role--esports', racing: 'mt-driver-role--racing', staff: 'mt-driver-role--staff' }[role] || '');
+    ({ esports: 'mt-driver-role--esports', racing: 'mt-driver-role--racing', staff: 'mt-driver-role--staff', coach: 'mt-driver-role--coach' }[role] || '');
 
 function renderCard(driver) {
     const socialsHtml = driver.socials.map(s => {
@@ -156,7 +162,7 @@ export function initMeetTeam() {
     let current = 0;
 
     const getPerPage    = () => window.innerWidth >= 768 ? 5 : 2;
-    const getFiltered   = () => filter === 'all' ? drivers : drivers.filter(d => d.cat === filter);
+    const getFiltered   = () => filter === 'all' ? drivers : drivers.filter(d => d.role === filter);
     const getMaxCurrent = () => Math.max(0, getFiltered().length + 1 - getPerPage());
 
     function updateTrack() {

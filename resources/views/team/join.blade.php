@@ -76,6 +76,11 @@
             'categories' => ['Esports'],
             'desc'       => 'Active across any sim racing title, with the connections to spot talented drivers. Scout new recruits and help train and develop them once they join.',
         ],
+        'livery-designers' => [
+            'title'      => 'Livery Designer',
+            'categories' => ['Esports', 'Media', 'Operations'],
+            'desc'       => 'Design liveries for our esports and race cars across ACC, LMU, and iRacing — keeping the XCLusive look sharp and consistent across every series.',
+        ],
     ];
 
     // Normalize every role's category list to the canonical order.

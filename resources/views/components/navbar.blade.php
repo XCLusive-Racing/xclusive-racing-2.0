@@ -90,7 +90,7 @@
                     </div>
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
-                        <li><a class="xcl-dropdown-item" href="/news/broadcasts">BROADCASTS</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('live') }}">BROADCASTS</a></li>
                     </ul>
                 </li>
 
@@ -110,6 +110,7 @@
                         <li><a class="xcl-dropdown-item" href="{{ route('teams.pro.index') }}">PROFESSIONAL</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('teams.esports.index') }}">ESPORTS</a></li>
                         <li><a class="xcl-dropdown-item" href="#">STAFF</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('coaching.index') }}">COACHING</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('team.join') }}">JOIN THE TEAM</a></li>
                     </ul>
                 </li>
@@ -168,7 +169,7 @@
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li><a class="xcl-dropdown-item" href="https://raven.gg/stores/xclusive-esports/" target="_blank">MERCHANDISE</a></li>
-                        <li><a class="xcl-dropdown-item" href="#">COACHING</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('coaching.index') }}">COACHING</a></li>
                         <li><a class="xcl-dropdown-item" href="#">SETUPS</a></li>
                     </ul>
                 </li>

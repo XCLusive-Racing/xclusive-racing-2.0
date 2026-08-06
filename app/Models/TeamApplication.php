@@ -22,6 +22,7 @@ class TeamApplication extends Model
         'ambassadors'           => 'Ambassadors',
         'relationship-managers' => 'Relationship Managers',
         'scouts'                => 'Scouts',
+        'livery-designers'      => 'Livery Designer',
     ];
 
     protected $fillable = [

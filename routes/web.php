@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ApplicationController as AdminApplicationControll
 use App\Http\Controllers\Admin\BopController as AdminBopController;
 use App\Http\Controllers\Admin\ChampionshipController as AdminChampionshipController;
 use App\Http\Controllers\ChampionshipController;
+use App\Http\Controllers\CoachingController;
 use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
 use App\Http\Controllers\Admin\EventTagController;
 use App\Http\Controllers\Admin\FtpBrowserController;
@@ -64,6 +65,7 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::view('/team', 'team.index')->name('team');
 Route::view('/team/join', 'team.join')->name('team.join');
 Route::post('/team/apply', [TeamApplicationController::class, 'store'])->name('team.apply');
+Route::get('/coaching', [CoachingController::class, 'index'])->name('coaching.index');
 Route::view('/privacy', 'privacy')->name('privacy');
 
 // PRO driver profiles

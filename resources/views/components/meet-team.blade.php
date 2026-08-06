@@ -17,10 +17,9 @@
         <div class="d-flex justify-content-center gap-2 mb-4 flex-wrap mt-filter-row">
             @foreach([
                 ['all',     'ALL'],
-                ['pro',     'PRO'],
-                ['lmu',     'LMU'],
-                ['acc',     'ACC'],
-                ['iracing', 'IRACING'],
+                ['racing',  'PRO'],
+                ['esports', 'ESPORTS'],
+                ['coach',   'COACH'],
                 ['staff',   'STAFF'],
             ] as [$val, $label])
             <button class="mt-filter-btn" data-filter-btn data-filter-val="{{ $val }}">
@@ -74,6 +73,9 @@
             </span>
             <span class="mt-legend-item" data-legend="staff">
                 <span class="mt-legend-dot" style="background:#3b82f6;"></span>STAFF
+            </span>
+            <span class="mt-legend-item" data-legend="coach">
+                <span class="mt-legend-dot" style="background:#f97316;"></span>COACHES
             </span>
         </div>
 

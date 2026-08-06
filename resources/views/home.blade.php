@@ -64,17 +64,15 @@
         <p class="mb-5" style="color:#6b7280;font-size:.9rem">Proud to race alongside the best in the business.</p>
         <div class="row g-4 justify-content-center">
             @foreach([
-                ['boostlogo-DEF-wit-01-06.png', 'Boost'],
-                ['ds-logo-white.png',             'DS'],
-                ['logo-dark.png',                'Partner'],
-                ['Logo-White.webp',              'Partner'],
-                ['simlab-white-no-tagline-e1637234882156.png', 'SimLab'],
+                ['/images/home/partners/boostlogo-DEF-wit-01-06.png', 'Boost'],
+                ['/images/home/partners/ds-logo-white.png',           'DS'],
+                ['/images/partners/drivelab-logo.avif',                'DriveLab'],
+                ['/images/home/partners/Logo-White.webp',              'Partner'],
+                ['/images/home/partners/simlab-white-no-tagline-e1637234882156.png', 'SimLab'],
             ] as [$file, $name])
             <div class="col-6 col-md-4 col-lg-2">
                 <div class="partner-box">
-                    <img src="/images/home/partners/{{ $file }}"
-                         alt="{{ $name }}"
-                         class="partner-logo @if($file === 'logo-dark.png') partner-logo--invert @endif">
+                    <img src="{{ $file }}" alt="{{ $name }}" class="partner-logo">
                 </div>
             </div>
             @endforeach

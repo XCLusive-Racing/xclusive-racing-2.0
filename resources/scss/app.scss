@@ -1666,14 +1666,6 @@ html {
     .partner-box:hover & {
         opacity: 1;
     }
-
-    // HYPNOS's logo file (logo-dark.png) is dark navy, unlike the other
-    // partner files which are already white — recolor it the same way the
-    // TRTN sidebar icon does, since it'd otherwise be near-invisible on
-    // .partner-box's dark background.
-    &--invert {
-        filter: brightness(0) invert(1);
-    }
 }
 
 // Footer
@@ -3757,6 +3749,7 @@ body.admin-body {
     &--racing  { color: #d4ee6a; font-weight: 700; }
     &--staff   { color: #3b82f6; font-weight: 700; }
     &--captain { color: #eab308; font-weight: 700; }
+    &--coach   { color: #f97316; font-weight: 700; }
 }
 
 // +29 more card
@@ -4085,9 +4078,9 @@ body.admin-body {
         margin-bottom: 1.75rem !important;
     }
 
-    // Filter tabs: smaller, and reflowed into a fixed 3x2 grid —
-    // row 1: ALL / PRO / STAFF, row 2: LMU / IRACING / ACC — instead of
-    // wrapping in DOM order, which split awkwardly at this width.
+    // Filter tabs: smaller, and reflowed into a 3-column grid — DOM order is
+    // already ALL / PRO / ESPORTS / COACH / STAFF, so it wraps naturally
+    // (row 1: ALL, PRO, ESPORTS; row 2: COACH, STAFF) with no reordering needed.
     .mt-filter-row {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -4097,19 +4090,10 @@ body.admin-body {
     .mt-filter-btn {
         padding: 5px 8px;
         font-size: 0.68rem;
-
-        // DOM order is ALL, PRO, LMU, ACC, IRACING, STAFF — reordered per
-        // the grid above via `order` so the markup/desktop order stays put.
-        &:nth-child(1) { order: 1; } // ALL
-        &:nth-child(2) { order: 2; } // PRO
-        &:nth-child(6) { order: 3; } // STAFF
-        &:nth-child(3) { order: 4; } // LMU
-        &:nth-child(5) { order: 5; } // IRACING
-        &:nth-child(4) { order: 6; } // ACC
     }
 
     // Role legend: stacked instead of wrapped, and reordered to
-    // Professional / Esports / Staff per request (DOM order is Esports
+    // Professional / Esports / Coach / Staff per request (DOM order is Esports
     // first, to match the filter tabs' PRO-then-others convention elsewhere).
     .mt-legend-row {
         flex-direction: column;
@@ -4118,7 +4102,8 @@ body.admin-body {
 
         [data-legend="pro"]     { order: 1; }
         [data-legend="esports"] { order: 2; }
-        [data-legend="staff"]   { order: 3; }
+        [data-legend="coach"]   { order: 3; }
+        [data-legend="staff"]   { order: 4; }
     }
 
 
@@ -5956,5 +5941,362 @@ table.dataTable thead th {
         color: rgba(255,255,255,.35);
         text-transform: uppercase;
         letter-spacing: .05em;
+    }
+}
+
+// ─── Coaching page ─────────────────────────────────────────────────────────
+
+// Hero: darker blue-leaning gradient (nods to DriveLab's brand blue) that
+// resolves into the site's usual purple/wine — this one opens the page
+// (right under the fixed header) so it carries its own 116px offset
+// instead of the mid-page diagonal-overlap trick .meet-team-section uses.
+.coaching-hero {
+    background: linear-gradient(120deg, #050b1f 0%, #150a3d 40%, #3d0a5c 75%, #6b0d47 100%);
+    padding-top: 156px;
+    padding-bottom: 3rem;
+    position: relative;
+    overflow: hidden;
+    color: white;
+}
+
+.coaching-hero__partner-logo {
+    max-height: 64px;
+    width: auto;
+    filter: drop-shadow(0 4px 16px rgba(0,0,0,.35));
+}
+
+.coaching-hero__badge {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.6);
+}
+
+// Game + platform filter bar (reuses .mt-filter-btn's pill look)
+.coaching-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem 2.5rem;
+    justify-content: center;
+}
+
+.coaching-filter-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+.coaching-filter-label {
+    font-size: .7rem;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.45);
+    margin-right: .25rem;
+}
+
+// Light variant: filter bar sits on the white "Meet the Coaches" section,
+// so .mt-filter-btn's white-on-transparent pill (built for dark sections)
+// needs a purple-on-white treatment instead.
+.coaching-filter-bar--light {
+    .coaching-filter-label {
+        color: #9ca3af;
+    }
+
+    .mt-filter-btn {
+        color: #4c1d95;
+        border-color: rgba(124, 58, 237, .3);
+
+        &.mt-filter-btn--active,
+        &:hover {
+            background: #7c3aed;
+            border-color: #7c3aed;
+            color: white;
+        }
+    }
+}
+
+// Extra breathing room before the dark .meet-team-section pulls up into
+// this section via its -8vh margin-top
+.coaching-setups-section {
+    padding-bottom: 6rem !important;
+}
+
+// Shared purple CTA button (coach cards + package cards)
+.xcl-coaching-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: #7c3aed;
+    color: white;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    font-size: .8rem;
+    padding: .65rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    border: none;
+    transition: background .2s;
+
+    &:hover {
+        background: #6b21c9;
+        color: white;
+    }
+}
+
+// Coach bio card — photo top, achievements + games + book button below
+.coach-card {
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(160deg, #1a0a2e 0%, #2d1052 100%);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: transform .25s ease, border-color .2s ease;
+
+    &:hover {
+        transform: translateY(-4px);
+        border-color: rgba(124,58,237,.4);
+    }
+
+    &__photo-wrap {
+        position: relative;
+        aspect-ratio: 3/4;
+        background: linear-gradient(160deg, #1a0a2e 0%, #2d1052 100%);
+        overflow: hidden;
+    }
+
+    &__photo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
+        transform-origin: 50% 0%;
+        display: block;
+    }
+
+    &__photo-fallback {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.75rem;
+        font-weight: 900;
+        color: rgba(255,255,255,.15);
+    }
+
+    &__body {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        padding: 1.25rem 1.25rem 1.5rem;
+    }
+
+    // Same gradient family as .about-section__heading ("OUR LEGACY"), lightened
+    // for legibility against this card's dark background — the original
+    // deep-purple recipe is tuned for text-on-white and reads muddy here.
+    &__name {
+        font-size: 1.15rem;
+        font-weight: 900;
+        font-style: italic;
+        text-transform: uppercase;
+        line-height: 1.15;
+        margin-bottom: .75rem;
+        display: inline-block;
+        background: linear-gradient(90deg, #c084fc, #a78bfa, #d8b4fe);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    &__achievements {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 1rem;
+        flex: 1;
+
+        li {
+            position: relative;
+            padding: .35rem 0 .35rem 1.1rem;
+            font-size: .85rem;
+            color: white;
+            border-bottom: 1px solid rgba(255,255,255,.06);
+
+            &::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: .7rem;
+                width: 5px;
+                height: 5px;
+                border-radius: 50%;
+                background: #7c3aed;
+            }
+
+            &:last-child { border-bottom: none; }
+        }
+    }
+
+    &__games {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .4rem;
+        margin-bottom: 1rem;
+    }
+}
+
+// Trusted setup creators — dark cards on the white bio section, same idea
+// as the dark .events-platform-card treatment used on the white Team page
+.setup-card {
+    background: linear-gradient(160deg, #1a0a2e 0%, #2d1052 100%);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    padding: 1.5rem;
+    color: white;
+    transition: transform .2s ease, border-color .2s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        border-color: rgba(124,58,237,.4);
+    }
+
+    &__title {
+        font-size: 1.1rem;
+        font-weight: 900;
+        font-style: italic;
+        text-transform: uppercase;
+        margin-bottom: .15rem;
+    }
+
+    &__by {
+        font-size: .72rem;
+        font-weight: 700;
+        color: rgba(255,255,255,.5);
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        margin-bottom: .85rem;
+    }
+
+    &__desc {
+        font-size: .88rem;
+        color: rgba(255,255,255,.75);
+        margin-bottom: 1rem;
+    }
+
+    &__link {
+        font-size: .75rem;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #c084fc;
+        text-decoration: none;
+
+        &:hover { color: #d8b4fe; }
+    }
+}
+
+// Session package card — small circular coach avatar + vertical tier badge
+// along the right edge
+.package-card {
+    position: relative;
+    background: linear-gradient(160deg, #1a0a2e 0%, #2d1052 100%);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    overflow: hidden;
+    padding: 1.5rem 3rem 1.5rem 1.5rem;
+    color: white;
+    transition: transform .2s ease, border-color .2s ease;
+
+    &:hover {
+        transform: translateY(-3px);
+        border-color: rgba(124,58,237,.4);
+    }
+
+    &__avatar {
+        position: absolute;
+        top: 1.25rem;
+        right: 3.25rem;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        object-fit: cover;
+        object-position: top center;
+        border: 2px solid rgba(255,255,255,.15);
+    }
+
+    &__avatar-fallback {
+        position: absolute;
+        top: 1.25rem;
+        right: 3.25rem;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.06);
+        border: 2px solid rgba(255,255,255,.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .8rem;
+        font-weight: 900;
+        color: rgba(255,255,255,.4);
+    }
+
+    &__badge {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 2.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        font-size: .72rem;
+        font-weight: 900;
+        letter-spacing: .18em;
+        text-transform: uppercase;
+        color: white;
+
+        &--pro { background: #7c3aed; }
+        &--ultimate { background: #db2777; }
+    }
+
+    &__coach {
+        padding-right: 2.5rem;
+        font-size: 1rem;
+        font-weight: 900;
+        font-style: italic;
+        text-transform: uppercase;
+        margin-bottom: .35rem;
+    }
+
+    &__price {
+        font-size: 1.6rem;
+        font-weight: 900;
+        color: #c084fc;
+    }
+
+    &__duration {
+        font-size: .8rem;
+        color: rgba(255,255,255,.5);
+        margin-bottom: .65rem;
+    }
+
+    &__desc {
+        font-size: .82rem;
+        color: rgba(255,255,255,.7);
+        margin-bottom: 1rem;
+    }
+
+    &__games {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .4rem;
+        margin-bottom: 1rem;
     }
 }
