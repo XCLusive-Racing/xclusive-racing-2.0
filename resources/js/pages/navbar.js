@@ -34,32 +34,47 @@ export function initNavbar() {
             hoverTimer = setTimeout(() => hideDropdown(menu), 80);
         });
 
-        // Mobile: chevron button expands/collapses the sub-items inline.
-        // Separate from the nav-link itself so tapping the item's text still
-        // navigates — hover doesn't exist on touch, so without this the
-        // dropdown items were unreachable on mobile.
+        // Mobile: both the chevron and the nav-link text itself expand/collapse
+        // the sub-items inline — tapping the item never navigates on mobile,
+        // since hover doesn't exist on touch and the item's own destination
+        // usually isn't repeated as a sub-item.
         const chevron = item.querySelector('[data-mobile-dropdown-toggle]');
-        chevron?.addEventListener('click', e => {
+        const navLink = item.querySelector('.nav-link');
+
+        function toggleMobileDropdown(e) {
             e.preventDefault();
             e.stopPropagation();
-            const isOpen = chevron.classList.contains('is-open');
+            const isOpen = chevron?.classList.contains('is-open');
             closeAllDropdowns();
             if (!isOpen) {
                 showDropdown(menu);
-                chevron.classList.add('is-open');
-                chevron.setAttribute('aria-expanded', 'true');
+                chevron?.classList.add('is-open');
+                chevron?.setAttribute('aria-expanded', 'true');
             }
+        }
+
+        chevron?.addEventListener('click', toggleMobileDropdown);
+        navLink?.addEventListener('click', e => {
+            if (isMobileNav()) toggleMobileDropdown(e);
         });
     });
 
+    // Desktop dropdowns are absolutely positioned and centred under the nav
+    // item via translateX(-50%). Mobile drops that (position: static, inline
+    // flow via CSS) — keeping the -50% there shifts the whole box out of view.
+    const isMobileNav = () => window.matchMedia('(max-width: 767.98px)').matches;
+
     function showDropdown(menu) {
         menu.style.display = 'block';
-        requestAnimationFrame(() => { menu.style.opacity = '1'; menu.style.transform = 'translateX(-50%) translateY(0)'; });
+        requestAnimationFrame(() => {
+            menu.style.opacity   = '1';
+            menu.style.transform = isMobileNav() ? 'translateY(0)' : 'translateX(-50%) translateY(0)';
+        });
     }
 
     function hideDropdown(menu) {
-        menu.style.opacity = '0';
-        menu.style.transform = 'translateX(-50%) translateY(4px)';
+        menu.style.opacity   = '0';
+        menu.style.transform = isMobileNav() ? 'translateY(4px)' : 'translateX(-50%) translateY(4px)';
         setTimeout(() => { if (menu.style.opacity === '0') menu.style.display = 'none'; }, 100);
     }
 

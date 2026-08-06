@@ -229,7 +229,7 @@ class RaceController extends Controller
     {
         $prefillDate = $request->date('date')?->format('Y-m-d\TH:i');
         $tags    = EventTag::orderBy('name')->get();
-        $formats = EventFormat::orderBy('game')->orderBy('sort_order')->get();
+        $race    = null;
 
         $servers = FtpServer::where('active', true)->orderBy('name')->get();
         $serverSlots = $servers->mapWithKeys(fn($s) => [
@@ -240,7 +240,17 @@ class RaceController extends Controller
             ],
         ]);
 
-        // Build preview image URLs for the live preview panel
+        return view('admin.races.form', array_merge(
+            compact('race', 'prefillDate', 'tags', 'servers', 'serverSlots'),
+            $this->formatBuilderData()
+        ));
+    }
+
+    // Shared preview/media data for the create+edit form (also used by edit())
+    private function formatBuilderData(): array
+    {
+        $formats = EventFormat::orderBy('game')->orderBy('sort_order')->get();
+
         $trackFilenames   = array_values(self::TRACK_IMAGE_MAP);
         $trackMediaByName = Media::whereIn('original_name', $trackFilenames)->get()->keyBy('original_name');
         $trackPreviewUrls = collect(self::TRACK_IMAGE_MAP)
@@ -264,10 +274,42 @@ class RaceController extends Controller
                 ->first()?->url;
         }
 
-        return view('admin.races.create', compact(
-            'prefillDate', 'tags', 'formats', 'servers', 'serverSlots',
-            'trackPreviewUrls', 'formatPreviewUrls', 'endurancePreviewUrls'
-        ));
+        return compact('formats', 'trackPreviewUrls', 'formatPreviewUrls', 'endurancePreviewUrls');
+    }
+
+    // Derives title/durations/icon from the chosen Format + track image, for format-based races.
+    // Custom races (no event_format_id) keep whatever title/durations/image were submitted directly.
+    private function deriveFormatFields(array $data): array
+    {
+        if (!empty($data['event_format_id'])) {
+            $fmt = EventFormat::find($data['event_format_id']);
+            if ($fmt) {
+                $data['title']               = $fmt->name;
+                $data['duration_key']        = null;
+                $data['practice_duration']   = $fmt->practice_mins ?: null;
+                $data['qualifying_duration'] = $fmt->quali_mins ?: null;
+                $data['race_duration']       = $fmt->race1_mins ?: null;
+
+                $formatSlug = Str::slug($fmt->name, '_');
+                if ($formatSlug === 'endurance' && !empty($data['endurance_duration'])) {
+                    $formatImageKey = $data['endurance_duration'] . '_endurance';
+                } else {
+                    $formatImageKey = self::FORMAT_IMAGE_OVERRIDES[$formatSlug] ?? $formatSlug;
+                }
+
+                $data['icon'] = Media::where('title', $formatImageKey)
+                    ->orWhere('original_name', 'like', $formatImageKey . '%')
+                    ->value('path');
+            }
+
+            $trackFilename = self::TRACK_IMAGE_MAP[$data['track']] ?? null;
+            $data['image'] = $trackFilename
+                ? Media::where('original_name', $trackFilename)->value('path')
+                : null;
+        }
+
+        unset($data['endurance_duration']);
+        return $data;
     }
 
     // Track name → background image filename in media library
@@ -311,12 +353,13 @@ class RaceController extends Controller
             'track'                => 'required|string|max:255',
             'scheduled_at'         => 'required|date',
             'event_tag'            => 'required|exists:event_tags,slug',
-            'event_format_id'      => 'required|exists:event_formats,id',
+            'event_format_id'      => 'nullable|exists:event_formats,id',
+            'title'                => 'required_without:event_format_id|string|max:255',
             'endurance_duration'   => 'nullable|in:4h,6h,8h,10h,12h,24h',
             'duration_key'         => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
             'practice_duration'    => 'nullable|integer|min:1|max:999',
             'qualifying_duration'  => 'nullable|integer|min:1|max:999',
-            'race_duration'        => 'nullable|integer|min:1|max:999',
+            'race_duration'        => 'required_without:event_format_id|integer|min:1|max:999',
             'car_class'            => 'nullable|string|max:50',
             'sr_requirement'       => 'nullable|in:3,4,5,6,7,8,9',
             'min_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
@@ -329,46 +372,40 @@ class RaceController extends Controller
             'is_multiclass'        => 'nullable|boolean',
             'ftp_server_id'        => 'nullable|exists:ftp_servers,id',
             'slot_time'            => 'nullable|date',
+            'image'                => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',
+            'image_path'           => 'nullable|string|max:500',
+            'icon'                 => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
+            'icon_path'            => 'nullable|string|max:500',
         ]);
-
-        // Derive title and media from format + track
-        $fmt = EventFormat::find($data['event_format_id']);
-        if ($fmt) {
-            $data['title']           = $fmt->name;
-            $data['duration_key']    = null;
-            $data['practice_duration']   = $fmt->practice_mins ?: null;
-            $data['qualifying_duration'] = $fmt->quali_mins ?: null;
-            $data['race_duration']       = $fmt->race1_mins ?: null;
-
-            $formatSlug = Str::slug($fmt->name, '_');
-            if ($formatSlug === 'endurance' && !empty($data['endurance_duration'])) {
-                $formatImageKey = $data['endurance_duration'] . '_endurance';
-            } else {
-                $formatImageKey = self::FORMAT_IMAGE_OVERRIDES[$formatSlug] ?? $formatSlug;
-            }
-
-            // Format image → icon field (centered overlay on card)
-            $data['icon'] = Media::where('title', $formatImageKey)
-                ->orWhere('original_name', 'like', $formatImageKey . '%')
-                ->value('path');
-        }
-
-        // Track image → image field (full-bleed card background)
-        $trackFilename    = self::TRACK_IMAGE_MAP[$data['track']] ?? null;
-        $data['image']    = $trackFilename
-            ? Media::where('original_name', $trackFilename)->value('path')
-            : null;
 
         $data['scheduled_at']  = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
         $data['is_multiclass'] = $request->boolean('is_multiclass');
-        unset($data['endurance_duration']);
 
-        if (!empty($data['ftp_server_id']) && !empty($data['slot_time'])) {
-            $data['slot_time']          = \Carbon\Carbon::parse($data['slot_time'])->utc();
-            $data['config_push_status'] = 'pending';
+        $data = $this->deriveFormatFields($data);
+
+        if (empty($data['event_format_id'])) {
+            // Custom race — no format to derive art from, use whatever was uploaded/selected
+            $data['image'] = $this->resolveMedia($request);
+            $data['icon']  = $this->resolveIcon($request);
+        }
+        unset($data['image_path'], $data['icon_path']);
+
+        if (!empty($data['ftp_server_id'])) {
+            $server = FtpServer::find($data['ftp_server_id']);
+
+            if ($server && $server->server_type === 'scheduled') {
+                // No fixed slot grid on this server — the race's own date & time is the slot.
+                $data['slot_time']          = $data['scheduled_at']->copy();
+                $data['config_push_status'] = 'pending';
+            } elseif (!empty($data['slot_time'])) {
+                $data['slot_time']          = \Carbon\Carbon::parse($data['slot_time'])->utc();
+                $data['config_push_status'] = 'pending';
+            } else {
+                $data['ftp_server_id'] = null;
+                $data['slot_time']     = null;
+            }
         } else {
-            $data['ftp_server_id'] = null;
-            $data['slot_time']     = null;
+            $data['slot_time'] = null;
         }
 
         $race = Race::create($data);
@@ -385,8 +422,23 @@ class RaceController extends Controller
                 ->with('error', 'Past races cannot be edited. You can still manage results.');
         }
 
-        $tags = EventTag::orderBy('name')->get();
-        return view('admin.races.edit', compact('race', 'tags'));
+        $race->load('raceClasses');
+        $tags        = EventTag::orderBy('name')->get();
+        $prefillDate = null;
+
+        $servers = FtpServer::where('active', true)->orderBy('name')->get();
+        $serverSlots = $servers->mapWithKeys(fn($s) => [
+            $s->id => [
+                'type'       => $s->server_type,
+                'slots'      => $s->slotsForDays(7),
+                'takenSlots' => $s->takenSlots($race->id),
+            ],
+        ]);
+
+        return view('admin.races.form', array_merge(
+            compact('race', 'prefillDate', 'tags', 'servers', 'serverSlots'),
+            $this->formatBuilderData()
+        ));
     }
 
     public function update(Request $request, Race $race)
@@ -397,19 +449,22 @@ class RaceController extends Controller
         }
 
         $data = $request->validate([
-            'title'                => 'required|string|max:255',
             'game'                 => 'required|in:acc,lmu,iracing,ac',
             'track'                => 'required|string|max:255',
             'scheduled_at'         => 'required|date',
             'status'               => 'required|in:open,closed,finished',
             'event_tag'            => 'required|exists:event_tags,slug',
+            'event_format_id'      => 'nullable|exists:event_formats,id',
+            'title'                => 'required_without:event_format_id|string|max:255',
+            'endurance_duration'   => 'nullable|in:4h,6h,8h,10h,12h,24h',
             'duration_key'         => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
             'practice_duration'    => 'nullable|integer|min:1|max:999',
             'qualifying_duration'  => 'nullable|integer|min:1|max:999',
-            'race_duration'        => 'nullable|integer|min:1|max:999',
+            'race_duration'        => 'required_without:event_format_id|integer|min:1|max:999',
             'car_class'            => 'nullable|string|max:50',
             'sr_requirement'       => 'nullable|in:3,4,5,6,7,8,9',
             'min_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
+            'max_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
             'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
@@ -422,16 +477,41 @@ class RaceController extends Controller
             'icon_path'            => 'nullable|string|max:500',
             'icon_keep'            => 'nullable|in:0,1',
             'is_multiclass'        => 'nullable|boolean',
+            'ftp_server_id'        => 'nullable|exists:ftp_servers,id',
+            'slot_time'            => 'nullable|date',
         ]);
 
         $data['scheduled_at']  = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
         $data['is_multiclass'] = $request->boolean('is_multiclass');
 
-        $resolvedImage  = $this->resolveMedia($request);
-        $data['image']  = $resolvedImage ?? ($request->input('image_keep') === '0' ? null : $race->image);
+        $data = $this->deriveFormatFields($data);
 
-        $resolvedIcon   = $this->resolveIcon($request);
-        $data['icon']   = $resolvedIcon ?? ($request->input('icon_keep') === '0' ? null : $race->icon);
+        if (!empty($data['ftp_server_id'])) {
+            $server = FtpServer::find($data['ftp_server_id']);
+
+            if ($server && $server->server_type === 'scheduled') {
+                $data['slot_time']          = $data['scheduled_at']->copy();
+                $data['config_push_status'] = 'pending';
+            } elseif (!empty($data['slot_time'])) {
+                $data['slot_time']          = \Carbon\Carbon::parse($data['slot_time'])->utc();
+                $data['config_push_status'] = 'pending';
+            } else {
+                $data['ftp_server_id'] = null;
+                $data['slot_time']     = null;
+            }
+        } else {
+            $data['slot_time'] = null;
+        }
+
+        if (empty($data['event_format_id'])) {
+            // Custom race — respect manual media upload/keep controls
+            $resolvedImage = $this->resolveMedia($request);
+            $data['image'] = $resolvedImage ?? ($request->input('image_keep') === '0' ? null : $race->image);
+
+            $resolvedIcon  = $this->resolveIcon($request);
+            $data['icon']  = $resolvedIcon ?? ($request->input('icon_keep') === '0' ? null : $race->icon);
+        }
+        // else: image/icon already derived from track/format inside deriveFormatFields()
 
         unset($data['image_path'], $data['image_keep'], $data['icon_path'], $data['icon_keep']);
 
@@ -596,11 +676,13 @@ class RaceController extends Controller
 
         foreach ($classes as $i => $class) {
             $race->raceClasses()->create([
-                'name'        => $class['name'] ?? 'Class ' . ($i + 1),
-                'color'       => $class['color'] ?? '#db2777',
-                'car_class'   => $class['car_class'] ?? null,
-                'max_drivers' => $class['max_drivers'] ?? null,
-                'sort_order'  => $i,
+                'name'           => $class['name'] ?? 'Class ' . ($i + 1),
+                'color'          => $class['color'] ?? '#db2777',
+                'car_class'      => $class['car_class'] ?? null,
+                'max_drivers'    => $class['max_drivers'] ?? null,
+                'sr_requirement' => $class['sr_requirement'] ?? null,
+                'min_rating'     => $class['min_rating'] ?? null,
+                'sort_order'     => $i,
             ]);
         }
     }

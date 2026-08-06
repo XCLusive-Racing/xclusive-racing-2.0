@@ -73,6 +73,7 @@
                     </div>
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
+                        <li class="d-md-none"><a class="xcl-dropdown-item" href="{{ url('/#about') }}">OVERVIEW</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ url('/#partners') }}">PARTNERS</a></li>
                     </ul>
                 </li>
@@ -90,6 +91,7 @@
                     </div>
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
+                        <li class="d-md-none"><a class="xcl-dropdown-item" href="{{ route('news.index') }}">OVERVIEW</a></li>
                         <li><a class="xcl-dropdown-item" href="/news/broadcasts">BROADCASTS</a></li>
                     </ul>
                 </li>
@@ -107,6 +109,7 @@
                     </div>
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
+                        <li class="d-md-none"><a class="xcl-dropdown-item" href="{{ route('team') }}">OVERVIEW</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('teams.pro.index') }}">PROFESSIONAL</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('teams.esports.index') }}">ESPORTS</a></li>
                         <li><a class="xcl-dropdown-item" href="#">STAFF</a></li>
@@ -127,7 +130,7 @@
                     </div>
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
-                        <li><a class="xcl-dropdown-item" href="{{ url('/events?type=daily-racing') }}">DAILY RACING</a></li>
+                        <li class="d-md-none"><a class="xcl-dropdown-item" href="{{ route('events.index') }}">OVERVIEW</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ url('/events?type=time-trial') }}">TIME TRIALS</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('championships.index') }}">CHAMPIONSHIPS</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('calendar') }}">CALENDAR</a></li>

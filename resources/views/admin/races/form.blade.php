@@ -1,7 +1,12 @@
 @extends('layouts.admin')
 
-@section('title', 'Create Event')
-@section('page-title', 'Create Event')
+@php
+$isEdit = isset($race) && $race;
+$hasFormat = $isEdit ? (bool) $race->event_format_id : true;
+@endphp
+
+@section('title', $isEdit ? 'Edit Race' : 'Create Event')
+@section('page-title', $isEdit ? 'Edit Race' : 'Create Event')
 
 @section('page-actions')
     <a href="{{ route('admin.races.index') }}" class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.78rem">
@@ -44,7 +49,7 @@ $tagsConfig = json_encode([
     'tags'        => $tags->map(fn($t) => ['slug' => $t->slug, 'name' => $t->name, 'color' => $t->color]),
     'storeUrl'    => route('admin.event-tags.store'),
     'csrfToken'   => csrf_token(),
-    'selectedTag' => old('event_tag', ''),
+    'selectedTag' => old('event_tag', $isEdit ? $race->event_tag : ''),
 ]);
 
 // Attach derived slug to each format so JS can detect endurance
@@ -53,6 +58,15 @@ $formatsWithSlug = $formats->groupBy('game')->map(
         'slug' => \Illuminate\Support\Str::slug($f->name, '_'),
     ]))->values()
 );
+
+// Existing per-class values (edit only) — keyed by car_class, feeds the multiclass panels
+$mcExisting = $isEdit
+    ? $race->raceClasses->filter(fn($c) => $c->car_class)->keyBy('car_class')->map(fn($c) => [
+        'max_drivers'    => $c->max_drivers,
+        'sr_requirement' => $c->sr_requirement,
+        'min_rating'     => $c->min_rating,
+    ])
+    : collect();
 @endphp
 
 <style>
@@ -64,8 +78,9 @@ $formatsWithSlug = $formats->groupBy('game')->map(
 [data-step-nav].active .ce-step-connector { background:#7c3aed; }
 </style>
 
-<form id="ce-form" action="{{ route('admin.races.store') }}" method="POST" enctype="multipart/form-data">
+<form id="ce-form" action="{{ $isEdit ? route('admin.races.update', $race) : route('admin.races.store') }}" method="POST" enctype="multipart/form-data">
     @csrf
+    @if($isEdit) @method('PUT') @endif
     <input type="hidden" name="_mode" id="ce-mode-input" value="{{ old('_mode', 'single') }}">
 
     <div class="row g-4 align-items-start">
@@ -93,6 +108,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
             {{-- ══════════════════════════════════════════════════════════════ --}}
             <div data-step-panel="1" style="display:none">
 
+                @unless($isEdit)
                 {{-- Mode toggle --}}
                 <div class="d-flex mb-4" style="border-bottom:2px solid #e5e7eb">
                     <button type="button" data-mode-btn="single"
@@ -106,6 +122,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                         Bulk Schedule
                     </button>
                 </div>
+                @endunless
 
                 <div class="admin-card mb-4">
                     {{-- ── Event ──────────────────────────────────────────── --}}
@@ -117,10 +134,10 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                                 <label class="form-label">Game <span class="text-danger">*</span></label>
                                 <select name="game" id="ce-game" class="form-select @error('game') is-invalid @enderror">
                                     <option value="">Select game…</option>
-                                    <option value="acc"     {{ old('game') === 'acc'     ? 'selected' : '' }}>ACC Console</option>
-                                    <option value="lmu"     {{ old('game') === 'lmu'     ? 'selected' : '' }}>Le Mans Ultimate</option>
-                                    <option value="iracing" {{ old('game') === 'iracing' ? 'selected' : '' }}>iRacing</option>
-                                    <option value="ac"      {{ old('game') === 'ac'      ? 'selected' : '' }}>AC Rally</option>
+                                    <option value="acc"     {{ old('game', $isEdit ? $race->game : '') === 'acc'     ? 'selected' : '' }}>ACC Console</option>
+                                    <option value="lmu"     {{ old('game', $isEdit ? $race->game : '') === 'lmu'     ? 'selected' : '' }}>Le Mans Ultimate</option>
+                                    <option value="iracing" {{ old('game', $isEdit ? $race->game : '') === 'iracing' ? 'selected' : '' }}>iRacing</option>
+                                    <option value="ac"      {{ old('game', $isEdit ? $race->game : '') === 'ac'      ? 'selected' : '' }}>AC Rally</option>
                                 </select>
                                 @error('game')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
@@ -163,6 +180,48 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                                 </select>
                             </div>
                         </div>
+
+                        @if($isEdit && !$hasFormat)
+                        {{-- Custom race — no Format on record. Pick one above to convert it, or fill these in manually. --}}
+                        <div class="mt-3 p-3 rounded-3" style="background:#fefce8;border:1px solid #fde047">
+                            <p class="fw-black text-uppercase fst-italic mb-2" style="font-size:.7rem;letter-spacing:.06em;color:#854d0e">Custom Race — no format assigned</p>
+
+                            <div class="mb-2">
+                                <label class="form-label">Title <span class="text-danger">*</span></label>
+                                <input type="text" name="title" value="{{ old('title', $race->title) }}"
+                                       class="form-control @error('title') is-invalid @enderror">
+                                @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col-4">
+                                    <label class="form-label">Practice <span class="fw-normal text-secondary">(min)</span></label>
+                                    <input type="number" name="practice_duration" value="{{ old('practice_duration', $race->practice_duration) }}"
+                                           class="form-control" min="1" max="999">
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label">Qualifying <span class="fw-normal text-secondary">(min)</span></label>
+                                    <input type="number" name="qualifying_duration" value="{{ old('qualifying_duration', $race->qualifying_duration) }}"
+                                           class="form-control" min="1" max="999">
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label">Race <span class="text-danger">*</span> <span class="fw-normal text-secondary">(min)</span></label>
+                                    <input type="number" name="race_duration" value="{{ old('race_duration', $race->race_duration) }}"
+                                           class="form-control @error('race_duration') is-invalid @enderror" min="1" max="999">
+                                    @error('race_duration')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                            </div>
+
+                            <div class="mt-2">
+                                <label class="form-label">Rating Multiplier</label>
+                                <select name="duration_key" class="form-select" style="max-width:220px">
+                                    @foreach(['' => '1.0× (default)', '15' => '0.6×', '20' => '0.8×', '30' => '1.0×', '30+' => '1.2×', '30++' => '1.3×', '45' => '1.5×', '45+' => '1.6×', '60' => '2.0×', '60+' => '2.1×', '90' => '2.5×', '90+' => '2.6×'] as $val => $label)
+                                        <option value="{{ $val }}" {{ old('duration_key', $race->duration_key ?? '') === $val ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
 
@@ -188,12 +247,12 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                                         <option value="{{ $track }}"
                                                 data-min="{{ $limits['min'] }}"
                                                 data-max="{{ $limits['max'] }}"
-                                                {{ old('track') === $track ? 'selected' : '' }}>
+                                                {{ old('track', $isEdit ? $race->track : '') === $track ? 'selected' : '' }}>
                                             {{ $track }}
                                         </option>
                                     @endforeach
                                 </select>
-                                <input id="ce-track-text" type="text" name="track" value="{{ old('track') }}"
+                                <input id="ce-track-text" type="text" name="track" value="{{ old('track', $isEdit ? $race->track : '') }}"
                                        class="form-control @error('track') is-invalid @enderror"
                                        placeholder="e.g. Monza">
                                 <div id="ce-track-hint" class="form-text" style="display:none"></div>
@@ -203,20 +262,20 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                                 <label class="form-label">Rain</label>
                                 <select name="weather" class="form-select">
                                     <option value="">— Not set —</option>
-                                    <option value="dry"    {{ old('weather') === 'dry'    ? 'selected' : '' }}>Dry</option>
-                                    <option value="wet"    {{ old('weather') === 'wet'    ? 'selected' : '' }}>Wet</option>
-                                    <option value="mixed"  {{ old('weather') === 'mixed'  ? 'selected' : '' }}>Mixed</option>
-                                    <option value="random" {{ old('weather') === 'random' ? 'selected' : '' }}>Random</option>
+                                    <option value="dry"    {{ old('weather', $isEdit ? $race->weather : '') === 'dry'    ? 'selected' : '' }}>Dry</option>
+                                    <option value="wet"    {{ old('weather', $isEdit ? $race->weather : '') === 'wet'    ? 'selected' : '' }}>Wet</option>
+                                    <option value="mixed"  {{ old('weather', $isEdit ? $race->weather : '') === 'mixed'  ? 'selected' : '' }}>Mixed</option>
+                                    <option value="random" {{ old('weather', $isEdit ? $race->weather : '') === 'random' ? 'selected' : '' }}>Random</option>
                                 </select>
                             </div>
                             <div class="col-sm-3">
                                 <label class="form-label">In-game Time</label>
                                 <select name="time_of_day" class="form-select">
                                     <option value="">— Not set —</option>
-                                    <option value="day"     {{ old('time_of_day') === 'day'     ? 'selected' : '' }}>Day</option>
-                                    <option value="dusk"    {{ old('time_of_day') === 'dusk'    ? 'selected' : '' }}>Dusk</option>
-                                    <option value="night"   {{ old('time_of_day') === 'night'   ? 'selected' : '' }}>Night</option>
-                                    <option value="dynamic" {{ old('time_of_day') === 'dynamic' ? 'selected' : '' }}>Dynamic</option>
+                                    <option value="day"     {{ old('time_of_day', $isEdit ? $race->time_of_day : '') === 'day'     ? 'selected' : '' }}>Day</option>
+                                    <option value="dusk"    {{ old('time_of_day', $isEdit ? $race->time_of_day : '') === 'dusk'    ? 'selected' : '' }}>Dusk</option>
+                                    <option value="night"   {{ old('time_of_day', $isEdit ? $race->time_of_day : '') === 'night'   ? 'selected' : '' }}>Night</option>
+                                    <option value="dynamic" {{ old('time_of_day', $isEdit ? $race->time_of_day : '') === 'dynamic' ? 'selected' : '' }}>Dynamic</option>
                                 </select>
                             </div>
                         </div>
@@ -233,7 +292,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                                            style="cursor:pointer;border:1px solid #e5e7eb;font-size:.8rem;user-select:none;background:#fff;color:#374151;transition:all .15s">
                                         <input type="radio" name="weather_randomness" value="random" class="d-none"
                                                data-wr-color="#7c3aed"
-                                               {{ old('weather_randomness') === 'random' ? 'checked' : '' }}>
+                                               {{ old('weather_randomness', $isEdit ? $race->weather_randomness : '') === 'random' ? 'checked' : '' }}>
                                         Randomize
                                     </label>
                                 </div>
@@ -246,7 +305,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                                                class="d-flex align-items-center justify-content-center fw-black rounded"
                                                style="cursor:pointer;width:34px;height:34px;border:2px solid #e5e7eb;font-size:.85rem;user-select:none;background:#fff;color:#9ca3af;transition:all .15s">
                                             <input type="radio" name="weather_randomness" value="0" class="d-none"
-                                                   data-wr-color="#6b7280" {{ old('weather_randomness') === '0' ? 'checked' : '' }}>
+                                                   data-wr-color="#6b7280" {{ old('weather_randomness', $isEdit ? $race->weather_randomness : '') === '0' ? 'checked' : '' }}>
                                             0
                                         </label>
                                     </div>
@@ -261,7 +320,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                                                class="d-flex align-items-center justify-content-center fw-black rounded"
                                                style="cursor:pointer;width:34px;height:34px;border:2px solid #e5e7eb;font-size:.85rem;user-select:none;background:#fff;color:#9ca3af;transition:all .15s">
                                             <input type="radio" name="weather_randomness" value="{{ $n }}" class="d-none"
-                                                   data-wr-color="#2563eb" {{ old('weather_randomness') === $n ? 'checked' : '' }}>
+                                                   data-wr-color="#2563eb" {{ old('weather_randomness', $isEdit ? $race->weather_randomness : '') === $n ? 'checked' : '' }}>
                                             {{ $n }}
                                         </label>
                                         @endforeach
@@ -277,7 +336,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                                                class="d-flex align-items-center justify-content-center fw-black rounded"
                                                style="cursor:pointer;width:34px;height:34px;border:2px solid #e5e7eb;font-size:.85rem;user-select:none;background:#fff;color:#9ca3af;transition:all .15s">
                                             <input type="radio" name="weather_randomness" value="{{ $n }}" class="d-none"
-                                                   data-wr-color="#ea580c" {{ old('weather_randomness') === $n ? 'checked' : '' }}>
+                                                   data-wr-color="#ea580c" {{ old('weather_randomness', $isEdit ? $race->weather_randomness : '') === $n ? 'checked' : '' }}>
                                             {{ $n }}
                                         </label>
                                         @endforeach
@@ -287,7 +346,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                             </div>
                             {{-- hidden fallback so "none selected" posts empty string --}}
                             <input type="radio" name="weather_randomness" value="" class="d-none"
-                                   {{ old('weather_randomness', '') === '' ? 'checked' : '' }}>
+                                   {{ old('weather_randomness', $isEdit ? ($race->weather_randomness ?? '') : '') === '' ? 'checked' : '' }}>
                         </div>
                     </div>
 
@@ -300,8 +359,9 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                             <div class="row g-3">
                                 <div class="col-sm-7">
                                     <label class="form-label">Date & Time (BST) <span class="text-danger">*</span></label>
-                                    <input type="datetime-local" name="scheduled_at"
-                                           value="{{ old('scheduled_at', $prefillDate ? $prefillDate . 'T20:00' : '') }}"
+                                    <input type="text" name="scheduled_at" data-flatpickr {{ $isEdit ? '' : 'data-min-today="true"' }}
+                                           value="{{ old('scheduled_at', $isEdit ? $race->scheduledAtUk()->format('Y-m-d\TH:i') : ($prefillDate ? $prefillDate . 'T20:00' : '')) }}"
+                                           placeholder="Select date & time…"
                                            class="form-control @error('scheduled_at') is-invalid @enderror">
                                     @error('scheduled_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
@@ -309,13 +369,28 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                                     <label class="form-label">Max Drivers</label>
                                     <input type="text" id="ce-drivers-display" class="form-control" readonly
                                            style="background:#f9fafb;color:#374151;cursor:default">
-                                    <input type="hidden" name="max_drivers" id="ce-max-drivers">
+                                    <input type="hidden" name="max_drivers" id="ce-max-drivers" value="{{ old('max_drivers', $isEdit ? $race->max_drivers : '') }}">
                                     <div class="form-text">Determined by track</div>
                                 </div>
                             </div>
+
+                            @if($isEdit)
+                            <div class="row g-3 mt-1">
+                                <div class="col-sm-4">
+                                    <label class="form-label">Status</label>
+                                    <select name="status" class="form-select @error('status') is-invalid @enderror">
+                                        <option value="open"     {{ old('status', $race->status) === 'open'     ? 'selected' : '' }}>Open</option>
+                                        <option value="closed"   {{ old('status', $race->status) === 'closed'   ? 'selected' : '' }}>Closed</option>
+                                        <option value="finished" {{ old('status', $race->status) === 'finished' ? 'selected' : '' }}>Finished</option>
+                                    </select>
+                                    @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                            </div>
+                            @endif
                         </div>
 
                         {{-- Bulk schedule panel --}}
+                        @unless($isEdit)
                         <div data-mode-bulk style="display:none">
 
                             <div class="row g-3 mb-4">
@@ -357,11 +432,53 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                             </div>
 
                         </div>
+                        @endunless
                     </div>
+
+                    {{-- ── gPortal Server & Slot (single only) ─────────────── --}}
+                    @if($servers->isNotEmpty())
+                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6" data-mode-single>
+                        <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">gPortal Server <span class="fw-normal" style="text-transform:none">(optional)</span></p>
+                        <p class="text-secondary mb-3" style="font-size:.75rem">Assign a server slot — config will be auto-pushed 10 minutes before the reset.</p>
+
+                        <div class="mb-3">
+                            <label class="form-label">Server</label>
+                            <select name="ftp_server_id" id="gp-server" class="form-select"
+                                    data-server-slots="{{ json_encode($serverSlots ?? []) }}">
+                                <option value="">— No server assigned —</option>
+                                @foreach($servers as $srv)
+                                    <option value="{{ $srv->id }}"
+                                            data-type="{{ $srv->server_type }}"
+                                            {{ old('ftp_server_id', $isEdit ? $race->ftp_server_id : '') == $srv->id ? 'selected' : '' }}>
+                                        {{ $srv->name }}
+                                        @if($srv->server_type === 'rolling')
+                                            (resets every {{ $srv->reset_interval_minutes }}min from {{ str_pad($srv->reset_start_hour,2,'0',STR_PAD_LEFT) }}:00)
+                                        @else
+                                            (manual restart)
+                                        @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div id="gp-slot-picker" style="display:none">
+                            <label class="form-label">Race Slot (BST/GMT)</label>
+                            <div id="gp-slot-grid" class="d-flex gap-2 flex-wrap mb-2" style="max-height:260px;overflow-y:auto"></div>
+                            <input type="hidden" name="slot_time" id="gp-slot-value" value="{{ old('slot_time', $isEdit ? $race->slot_time?->format('Y-m-d H:i') : '') }}">
+                            <div id="gp-slot-selected" class="small fw-bold" style="color:#7c3aed;display:none"></div>
+                            @error('slot_time') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div id="gp-scheduled-note" class="small text-secondary" style="display:none">
+                            This server restarts manually — its race slot follows the date &amp; time set above.
+                        </div>
+                    </div>
+                    @endif
 
                 </div>
 
                 {{-- ── Bulk events table (managed by bulk JS) ─────────────── --}}
+                @unless($isEdit)
                 <div data-bulk-events-section style="display:none">
                     <div class="admin-card mb-4">
                         <div class="px-4 pt-4 pb-2 d-flex align-items-center justify-content-between">
@@ -390,6 +507,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                         </div>
                     </div>
                 </div>
+                @endunless
 
             </div>{{-- /step 2 --}}
 
@@ -407,33 +525,14 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                         <div class="d-flex flex-column gap-3">
                             <div>
                                 <div class="form-check form-switch mb-1">
-                                    <input class="form-check-input" type="checkbox" id="ce-sr-toggle" {{ old('sr_requirement') ? 'checked' : '' }}>
+                                    <input class="form-check-input" type="checkbox" id="ce-sr-toggle" {{ old('sr_requirement', $isEdit ? $race->sr_requirement : '') ? 'checked' : '' }}>
                                     <label class="form-check-label fw-bold" for="ce-sr-toggle">Safety Rating (SR)</label>
                                 </div>
-                                <div id="ce-sr-panel" style="{{ old('sr_requirement') ? '' : 'display:none' }}">
+                                <div id="ce-sr-panel" style="{{ old('sr_requirement', $isEdit ? $race->sr_requirement : '') ? '' : 'display:none' }}">
                                     <select name="sr_requirement" id="ce-sr-select" class="form-select form-select-sm" style="max-width:300px">
                                         <option value="">— No requirement —</option>
-                                        <option value="3" {{ old('sr_requirement') === '3' ? 'selected' : '' }}>SR 3.0+  ·  Grade B</option>
-                                        <option value="4" {{ old('sr_requirement') === '4' ? 'selected' : '' }}>SR 4.0+  ·  Grade B</option>
-                                        <option value="5" {{ old('sr_requirement') === '5' ? 'selected' : '' }}>SR 5.0+  ·  Grade A</option>
-                                        <option value="6" {{ old('sr_requirement') === '6' ? 'selected' : '' }}>SR 6.0+  ·  Grade A</option>
-                                        <option value="7" {{ old('sr_requirement') === '7' ? 'selected' : '' }}>SR 7.0+  ·  Grade X</option>
-                                        <option value="8" {{ old('sr_requirement') === '8' ? 'selected' : '' }}>SR 8.0+  ·  Grade Y</option>
-                                        <option value="9" {{ old('sr_requirement') === '9' ? 'selected' : '' }}>SR 9.0+  ·  Grade Z</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div>
-                                <div class="form-check form-switch mb-1">
-                                    <input class="form-check-input" type="checkbox" id="ce-minrating-toggle" {{ old('min_rating') ? 'checked' : '' }}>
-                                    <label class="form-check-label fw-bold" for="ce-minrating-toggle">XCL Rating (Min)</label>
-                                </div>
-                                <div id="ce-minrating-panel" style="{{ old('min_rating') ? '' : 'display:none' }}">
-                                    <select name="min_rating" id="ce-minrating-select" class="form-select form-select-sm" style="max-width:280px">
-                                        <option value="">— No minimum —</option>
-                                        @foreach(['rookie','bronze','silver','gold','platinum','alien'] as $r)
-                                            <option value="{{ $r }}" {{ old('min_rating') === $r ? 'selected' : '' }}>{{ ucfirst($r) }}+</option>
+                                        @foreach(['3','4','5','6','7','8','9'] as $sr)
+                                        <option value="{{ $sr }}" {{ old('sr_requirement', $isEdit ? $race->sr_requirement : '') === $sr ? 'selected' : '' }}>SR {{ $sr }}.0+</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -441,14 +540,29 @@ $formatsWithSlug = $formats->groupBy('game')->map(
 
                             <div>
                                 <div class="form-check form-switch mb-1">
-                                    <input class="form-check-input" type="checkbox" id="ce-maxrating-toggle" {{ old('max_rating') ? 'checked' : '' }}>
+                                    <input class="form-check-input" type="checkbox" id="ce-minrating-toggle" {{ old('min_rating', $isEdit ? $race->min_rating : '') ? 'checked' : '' }}>
+                                    <label class="form-check-label fw-bold" for="ce-minrating-toggle">XCL Rating (Min)</label>
+                                </div>
+                                <div id="ce-minrating-panel" style="{{ old('min_rating', $isEdit ? $race->min_rating : '') ? '' : 'display:none' }}">
+                                    <select name="min_rating" id="ce-minrating-select" class="form-select form-select-sm" style="max-width:280px">
+                                        <option value="">— No minimum —</option>
+                                        @foreach(['rookie','bronze','silver','gold','platinum','alien'] as $r)
+                                            <option value="{{ $r }}" {{ old('min_rating', $isEdit ? $race->min_rating : '') === $r ? 'selected' : '' }}>{{ ucfirst($r) }}+</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="form-check form-switch mb-1">
+                                    <input class="form-check-input" type="checkbox" id="ce-maxrating-toggle" {{ old('max_rating', $isEdit ? $race->max_rating : '') ? 'checked' : '' }}>
                                     <label class="form-check-label fw-bold" for="ce-maxrating-toggle">XCL Rating (Max)</label>
                                 </div>
-                                <div id="ce-maxrating-panel" style="{{ old('max_rating') ? '' : 'display:none' }}">
+                                <div id="ce-maxrating-panel" style="{{ old('max_rating', $isEdit ? $race->max_rating : '') ? '' : 'display:none' }}">
                                     <select name="max_rating" class="form-select form-select-sm" style="max-width:280px">
                                         <option value="">— No maximum —</option>
                                         @foreach(['rookie','bronze','silver','gold','platinum','alien'] as $r)
-                                            <option value="{{ $r }}" {{ old('max_rating') === $r ? 'selected' : '' }}>{{ ucfirst($r) }} max</option>
+                                            <option value="{{ $r }}" {{ old('max_rating', $isEdit ? $race->max_rating : '') === $r ? 'selected' : '' }}>{{ ucfirst($r) }} max</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -461,18 +575,19 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                         <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Car Class</p>
                         <label class="form-label">Car Class <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
                         <select name="car_class" id="ce-car-class" class="form-select" style="max-width:200px">
-                            <option value="" {{ !old('car_class') ? 'selected' : '' }}>Open</option>
+                            <option value="" {{ !old('car_class', $isEdit ? $race->car_class : '') ? 'selected' : '' }}>Open</option>
                             @foreach(['GT2', 'GT3', 'GT4', 'M2'] as $cls)
-                                <option value="{{ $cls }}" {{ old('car_class') === $cls ? 'selected' : '' }}>{{ $cls }}</option>
+                                <option value="{{ $cls }}" {{ old('car_class', $isEdit ? $race->car_class : '') === $cls ? 'selected' : '' }}>{{ $cls }}</option>
                             @endforeach
                         </select>
                     </div>
 
                     {{-- ── Multiclass (both single and bulk) ───────────────── --}}
-                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6" data-multiclass-wrap>
+                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6" data-multiclass-wrap
+                         data-mc-existing="{{ json_encode($mcExisting) }}">
                         <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Multiclass <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></p>
 
-                        <input type="hidden" name="is_multiclass" data-multiclass-flag value="{{ old('is_multiclass', '0') }}">
+                        <input type="hidden" name="is_multiclass" data-multiclass-flag value="{{ old('is_multiclass', $isEdit ? ($race->is_multiclass ? '1' : '0') : '0') }}">
                         <input type="hidden" name="classes_json" data-multiclass-json value="{{ old('classes_json', '[]') }}">
 
                         <div class="d-flex flex-wrap gap-2 mb-3">
@@ -486,14 +601,14 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                                    class="d-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
                                    style="cursor:pointer;border:2px solid #e5e7eb;font-size:.85rem;user-select:none;background:#fff;color:#374151;transition:all .15s">
                                 <input type="checkbox" data-mc-class="{{ $cls }}" data-mc-color="{{ $meta['color'] }}" class="d-none"
-                                       {{ in_array($cls, old('selected_classes', [])) ? 'checked' : '' }}>
+                                       {{ $isEdit ? ($race->raceClasses->contains('car_class', $cls) ? 'checked' : '') : (in_array($cls, old('selected_classes', [])) ? 'checked' : '') }}>
                                 <span style="width:10px;height:10px;border-radius:50%;background:{{ $meta['color'] }};flex-shrink:0"></span>
                                 {{ $meta['label'] }}
                             </label>
                             @endforeach
                         </div>
 
-                        {{-- Per-class max drivers (shown per selected class) --}}
+                        {{-- Per-class max drivers / SR / rating (shown per selected class) --}}
                         <div data-mc-drivers-wrap class="d-flex flex-wrap gap-3" style="display:none"></div>
 
                         <div class="text-secondary mt-2" style="font-size:.75rem" data-mc-hint>Select one or more classes to enable multiclass</div>
@@ -551,49 +666,16 @@ $formatsWithSlug = $formats->groupBy('game')->map(
 
                         <div>
                             <label class="form-label">Description <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
-                            <textarea name="description" rows="3" class="form-control" placeholder="Additional event info…">{{ old('description') }}</textarea>
+                            <textarea name="description" rows="3" class="form-control" placeholder="Additional event info…">{{ old('description', $isEdit ? $race->description : '') }}</textarea>
                         </div>
                     </div>
 
-                    {{-- ── gPortal Server & Slot (single only) ─────────────── --}}
-                    @if($servers->isNotEmpty())
-                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6" data-mode-single>
-                        <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">gPortal Server <span class="fw-normal" style="text-transform:none">(optional)</span></p>
-                        <p class="text-secondary mb-3" style="font-size:.75rem">Assign a server slot — config will be auto-pushed 10 minutes before the reset.</p>
-
-                        <div class="mb-3">
-                            <label class="form-label">Server</label>
-                            <select name="ftp_server_id" id="gp-server" class="form-select">
-                                <option value="">— No server assigned —</option>
-                                @foreach($servers as $srv)
-                                    <option value="{{ $srv->id }}"
-                                            data-type="{{ $srv->server_type }}"
-                                            {{ old('ftp_server_id') == $srv->id ? 'selected' : '' }}>
-                                        {{ $srv->name }}
-                                        @if($srv->server_type === 'rolling')
-                                            (resets every {{ $srv->reset_interval_minutes }}min from {{ str_pad($srv->reset_start_hour,2,'0',STR_PAD_LEFT) }}:00)
-                                        @else
-                                            (manual restart)
-                                        @endif
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div id="gp-slot-picker" style="display:none">
-                            <label class="form-label">Race Slot (BST/GMT)</label>
-                            <div id="gp-slot-grid" class="d-flex gap-2 flex-wrap mb-2" style="max-height:260px;overflow-y:auto"></div>
-                            <input type="hidden" name="slot_time" id="gp-slot-value" value="{{ old('slot_time') }}">
-                            <div id="gp-slot-selected" class="small fw-bold" style="color:#7c3aed;display:none"></div>
-                            @error('slot_time') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
-                        </div>
-
-                        <div id="gp-scheduled-picker" style="display:none">
-                            <label class="form-label">Race Slot (BST/GMT)</label>
-                            <input type="datetime-local" id="gp-scheduled-display"
-                                   class="form-control" style="max-width:240px">
-                            <input type="hidden" name="slot_time" id="gp-scheduled-value" value="{{ old('slot_time') }}">
-                            @error('slot_time') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                    @if($isEdit && !$hasFormat)
+                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+                        <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Media <span class="fw-normal text-secondary" style="text-transform:none">(custom race only)</span></p>
+                        <x-media-picker name="image" label="Background Image" :current="$race->image" />
+                        <div class="mt-3">
+                            <x-media-picker name="icon" label="Event Icon" :current="$race->icon" currentType="icon" filterDefault="icon" />
                         </div>
                     </div>
                     @endif
@@ -607,7 +689,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
                 <button type="button" id="ce-step-prev" style="display:none" class="btn btn-outline-secondary fw-bold text-uppercase px-4">← Back</button>
                 <button type="button" id="ce-step-next" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">Next →</button>
                 <button type="submit" id="ce-submit" style="display:none;background:#7c3aed" class="btn fw-black text-uppercase text-white px-4">
-                    <span id="ce-btn-single">Create Event</span>
+                    <span id="ce-btn-single">{{ $isEdit ? 'Save Changes' : 'Create Event' }}</span>
                     <span id="ce-btn-bulk" style="display:none">Create <span data-bulk-count-display>0</span> Races</span>
                 </button>
                 <a href="{{ route('admin.races.index') }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4">Cancel</a>
@@ -712,7 +794,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
 (function () {
     // ── Mode switching ──────────────────────────────────────────────────────
     const form            = document.getElementById('ce-form');
-    const singleUrl       = '{{ route('admin.races.store') }}';
+    const singleUrl       = '{{ $isEdit ? route('admin.races.update', $race) : route('admin.races.store') }}';
     const bulkUrl         = '{{ route('admin.races.bulk-store') }}';
     const modeInput       = document.getElementById('ce-mode-input');
     const singleMaxDrivers = document.getElementById('ce-max-drivers');
@@ -767,8 +849,9 @@ $formatsWithSlug = $formats->groupBy('game')->map(
 (function () {
     const formats  = @json($formatsWithSlug);
     const tracks   = @json($accTracks);
-    const oldGame  = '{{ old('game') }}';
-    const oldFmt   = '{{ old('event_format_id') }}';
+    const oldGame  = '{{ old('game', $isEdit ? $race->game : '') }}';
+    const oldFmt   = '{{ old('event_format_id', $isEdit ? $race->event_format_id : '') }}';
+    const allowNoFormat = @json($isEdit && !$hasFormat);
 
     const gameEl       = document.getElementById('ce-game');
     const fmtEl        = document.getElementById('ce-format');
@@ -892,130 +975,8 @@ $formatsWithSlug = $formats->groupBy('game')->map(
         updateTrackInput(oldGame);
         if (oldGame === 'acc') updateTrackHint(trackSelect.value);
     }
-})();
 
-// ── gPortal Slot Picker ───────────────────────────────────────────────────────
-(function () {
-    const serverEl    = document.getElementById('gp-server');
-    if (!serverEl) return;
-
-    const slotPicker  = document.getElementById('gp-slot-picker');
-    const schedPicker = document.getElementById('gp-scheduled-picker');
-    const slotGrid    = document.getElementById('gp-slot-grid');
-    const slotValue   = document.getElementById('gp-slot-value');
-    const slotLabel   = document.getElementById('gp-slot-selected');
-
-    const serverSlots = @json($serverSlots ?? []);
-    const DAYS        = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-
-    function toLocalTime(utcSlot) {
-        const d = new Date(utcSlot.replace(' ', 'T') + ':00Z');
-        return d.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' });
-    }
-
-    function toLocalDateLabel(utcSlot) {
-        const d = new Date(utcSlot.replace(' ', 'T') + ':00Z');
-        return DAYS[d.toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short' }).slice(0,3).indexOf(d.toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short' }))]
-            || d.toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short' });
-    }
-
-    function toLocalDayKey(utcSlot) {
-        const d = new Date(utcSlot.replace(' ', 'T') + ':00Z');
-        return d.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
-    }
-
-    function toLocalDayHeader(utcSlot) {
-        const d = new Date(utcSlot.replace(' ', 'T') + ':00Z');
-        const weekday = d.toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short' });
-        const day     = d.toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: '2-digit', month: '2-digit' });
-        return weekday + ' ' + day;
-    }
-
-    function buildSlotGrid(serverId) {
-        slotGrid.innerHTML = '';
-        const data = serverSlots[serverId];
-        if (!data || !data.slots.length) return;
-
-        const taken    = data.takenSlots || [];
-        const selected = slotValue ? slotValue.value : '';
-
-        const byDate = {};
-        const headers = {};
-        data.slots.forEach(slot => {
-            const key = toLocalDayKey(slot);
-            if (!byDate[key]) { byDate[key] = []; headers[key] = toLocalDayHeader(slot); }
-            byDate[key].push(slot);
-        });
-
-        Object.entries(byDate).forEach(([dateKey, slots]) => {
-            const col = document.createElement('div');
-            col.style.cssText = 'min-width:90px';
-
-            const dayLabel = document.createElement('div');
-            dayLabel.className = 'fw-black text-uppercase mb-1';
-            dayLabel.style.cssText = 'font-size:.68rem;letter-spacing:.06em;color:#9ca3af';
-            dayLabel.textContent = headers[dateKey];
-            col.appendChild(dayLabel);
-
-            slots.forEach(slot => {
-                const displayTime = toLocalTime(slot);
-                const isTaken     = taken.includes(slot);
-                const isSelected  = selected === slot;
-
-                const btn = document.createElement('button');
-                btn.type        = 'button';
-                btn.textContent = displayTime;
-                btn.className   = 'btn btn-sm fw-bold mb-1 d-block w-100';
-                btn.style.cssText = 'font-size:.72rem;border-radius:6px;padding:3px 6px;' + (
-                    isTaken    ? 'background:#f3f4f6;color:#d1d5db;cursor:not-allowed;border:1px solid #e5e7eb' :
-                    isSelected ? 'background:#7c3aed;color:#fff;border:1px solid #7c3aed' :
-                                 'background:#f8f5ff;color:#7c3aed;border:1px solid rgba(124,58,237,.3)'
-                );
-
-                if (!isTaken) {
-                    btn.addEventListener('click', () => {
-                        slotValue.value = slot;
-                        slotLabel.textContent  = '✓ ' + displayTime + ' (GMT/BST)';
-                        slotLabel.style.display = '';
-                        buildSlotGrid(serverId);
-                    });
-                } else {
-                    btn.disabled = true;
-                    btn.title    = 'Already taken';
-                }
-
-                col.appendChild(btn);
-            });
-
-            slotGrid.appendChild(col);
-        });
-    }
-
-    function onServerChange() {
-        const opt    = serverEl.options[serverEl.selectedIndex];
-        const type   = opt ? opt.dataset.type : null;
-        const id     = serverEl.value;
-
-        slotPicker.style.display  = '';
-        schedPicker.style.display = 'none';
-        slotGrid.innerHTML        = '';
-
-        if (!id) {
-            slotPicker.style.display = 'none';
-            return;
-        }
-
-        if (type === 'scheduled') {
-            slotPicker.style.display  = 'none';
-            schedPicker.style.display = '';
-        } else {
-            slotPicker.style.display  = '';
-            buildSlotGrid(id);
-        }
-    }
-
-    serverEl.addEventListener('change', onServerChange);
-    onServerChange();
+    window.__ceAllowNoFormat = allowNoFormat;
 })();
 
 // ── Live Event Preview ──────────────────────────────────────────────────────
@@ -1203,8 +1164,9 @@ $formatsWithSlug = $formats->groupBy('game')->map(
         // OPEN badge
         if (prev.openBadge) prev.openBadge.style.display = (!srOn && !minOn && !maxOn) ? '' : 'none';
 
-        // Car class / track / weather
-        if (prev.classEl)   prev.classEl.textContent  = carClass || 'Open';
+        // Car class / track / weather — multiclass selection (if any) wins over the single Car Class field
+        const mcClasses = Array.from(document.querySelectorAll('[data-mc-class]:checked')).map(cb => cb.dataset.mcClass);
+        if (prev.classEl) prev.classEl.textContent = mcClasses.length ? mcClasses.join(' + ') : (carClass || 'Open');
         if (prev.trackName) prev.trackName.textContent = track    || '—';
         if (prev.weatherEl) {
             const icon  = wxIcons[weather]  || '';
@@ -1285,6 +1247,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
     if (wEl) wEl.addEventListener('change', updatePreview);
     if (sEl) sEl.addEventListener('change', updatePreview);
     if (tEl) tEl.addEventListener('input', updatePreview);
+    document.querySelectorAll('[data-mc-class]').forEach(cb => cb.addEventListener('change', updatePreview));
 
     updatePreview();
 })();
@@ -1352,7 +1315,7 @@ $formatsWithSlug = $formats->groupBy('game')->map(
         if (current === 1) {
             const game = document.getElementById('ce-game');
             const fmt  = document.getElementById('ce-format');
-            return game?.value && fmt?.value;
+            return game?.value && (fmt?.value || window.__ceAllowNoFormat);
         }
         if (current === 2) {
             const mode = document.getElementById('ce-mode-input')?.value;

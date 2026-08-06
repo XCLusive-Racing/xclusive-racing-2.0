@@ -25,6 +25,8 @@ import '@fortawesome/fontawesome-free/css/brands.min.css';
 import EasyMDE from 'easymde';
 import 'easymde/dist/easymde.min.css';
 
+import 'flatpickr/dist/flatpickr.min.css';
+
 import * as bootstrap from 'bootstrap';
 import Swal from 'sweetalert2';
 
@@ -52,6 +54,8 @@ import { initFileBrowser } from './pages/admin/file-browser.js';
 import { initEventsSidebar } from './components/events-sidebar.js';
 import { initMediaPickers } from './components/media-picker.js';
 import { initDriverSearch } from './components/driver-search.js';
+import { initDateTimePickers } from './components/datetime-picker.js';
+import { initGportalSlotPicker } from './components/gportal-slot-picker.js';
 
 window.bootstrap      = bootstrap;
 window.Swal           = Swal;
@@ -102,6 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initEventsSidebar();
     initMediaPickers();
     initDriverSearch();
+    initDateTimePickers();
+    initGportalSlotPicker();
 
     // EasyMDE rich text editor
     const richEl = document.querySelector('.rich-editor');

@@ -3,13 +3,6 @@
 @section('title', 'Race Management')
 @section('page-title', 'Race Management')
 
-@section('page-actions')
-    <a href="{{ route('admin.races.create') }}"
-       class="btn btn-sm btn-outline-secondary fw-bold text-uppercase">
-        + Single Race
-    </a>
-@endsection
-
 @push('head')
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
 @endpush
