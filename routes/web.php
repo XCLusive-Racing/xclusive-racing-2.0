@@ -68,6 +68,11 @@ Route::post('/team/apply', [TeamApplicationController::class, 'store'])->name('t
 Route::get('/coaching', [CoachingController::class, 'index'])->name('coaching.index');
 Route::view('/privacy', 'privacy')->name('privacy');
 
+// Confidential — not linked from any menu, share the URL directly
+Route::get('/b4p-proposal', function () {
+    return response()->file(resource_path('pitch/b4p-proposal.html'), ['Content-Type' => 'text/html']);
+})->name('b4p-proposal');
+
 // PRO driver profiles
 Route::get('/teams/pro',          [ProDriverController::class, 'index'])->name('teams.pro.index');
 Route::get('/teams/pro/{slug}',   [ProDriverController::class, 'show'])->name('teams.pro.show');

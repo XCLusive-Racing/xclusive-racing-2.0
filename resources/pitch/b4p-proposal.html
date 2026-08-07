@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Build4Performance × XCLusive Racing — Partnership Proposal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700;1,800&family=Inter:wght@300;400;500;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0a0a0f;
+  --surface:#111118;
+  --panel:#16161f;
+  --edge:#1e1e2a;
+  --red:#c8102e;
+  --red-dim:rgba(200,16,46,0.14);
+  --white:#f0eff4;
+  --muted:#6e6d82;
+  --light:rgba(240,239,244,0.65);
+}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--white);font-family:'Inter',sans-serif;font-weight:400;line-height:1.6;overflow-x:hidden}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 5vw;height:62px;background:rgba(10,10,15,0.88);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,0.05)}
+.nav-logo{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;letter-spacing:0.1em;color:var(--white);text-decoration:none;text-transform:uppercase}
+.nav-logo span{color:var(--red)}
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:500;transition:color 0.2s}
+.nav-links a:hover{color:var(--white)}
+.nav-cta{background:var(--red);color:#fff;font-size:0.72rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;text-decoration:none;padding:8px 20px;border-radius:2px;transition:opacity 0.2s}
+.nav-cta:hover{opacity:0.8}
+
+/* HERO */
+#hero{min-height:100vh;display:flex;align-items:center;position:relative;padding:80px 5vw 60px;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:linear-gradient(135deg,#0a0a0f 0%,#0e0813 50%,#0a0a0f 100%)}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(200,16,46,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(200,16,46,0.04) 1px,transparent 1px);background-size:70px 70px;mask-image:radial-gradient(ellipse 90% 70% at 50% 50%,black,transparent)}
+.hero-vline{position:absolute;top:0;bottom:0;right:5vw;width:1px;background:linear-gradient(180deg,transparent,rgba(200,16,46,0.5) 30%,rgba(200,16,46,0.5) 70%,transparent)}
+.hero-inner{position:relative;z-index:2;max-width:1100px;width:100%;margin:0 auto;display:grid;grid-template-columns:1.1fr 0.9fr;gap:4rem;align-items:center}
+.hero-left{}
+.hero-kicker{display:flex;align-items:center;gap:10px;margin-bottom:2rem}
+.kicker-tag{font-family:'Roboto Mono',monospace;font-size:0.62rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--red);padding:4px 12px;border:1px solid rgba(200,16,46,0.35);border-radius:1px}
+.kicker-sep{width:4px;height:4px;background:var(--red);border-radius:50%}
+.kicker-text{font-family:'Roboto Mono',monospace;font-size:0.62rem;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase}
+h1{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:clamp(3.5rem,8vw,7rem);line-height:0.9;text-transform:uppercase;letter-spacing:-0.02em;margin-bottom:2rem}
+.h1-red{color:var(--red);font-style:italic;display:block}
+.h1-dim{color:rgba(240,239,244,0.2);display:block}
+.hero-sub{font-size:1rem;color:var(--light);max-width:480px;line-height:1.75;font-weight:300;margin-bottom:2.5rem}
+.hero-sub strong{color:var(--white);font-weight:500}
+.hero-actions{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+.btn-red{background:var(--red);color:#fff;font-size:0.75rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;text-decoration:none;padding:13px 28px;border-radius:2px;transition:all 0.2s;display:inline-block}
+.btn-red:hover{background:#a50d25}
+.btn-ghost{color:var(--muted);font-size:0.75rem;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;border-bottom:1px solid var(--edge);padding-bottom:2px;transition:all 0.2s}
+.btn-ghost:hover{color:var(--white);border-color:var(--muted)}
+.hero-right{display:flex;flex-direction:column;gap:2rem;align-items:center}
+.hero-stats{display:flex;flex-direction:column;gap:0;width:100%}
+.hstat{padding:20px 0;border-bottom:1px solid var(--edge);display:flex;align-items:baseline;gap:1rem}
+.hstat:first-child{border-top:1px solid var(--edge)}
+.hstat-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:2.8rem;line-height:1;color:var(--white);min-width:100px}
+.hstat-num em{color:var(--red);font-style:normal}
+.hstat-label{font-size:0.8rem;color:var(--light);line-height:1.4}
+
+/* SECTIONS */
+section{padding:100px 5vw}
+.inner{max-width:1100px;margin:0 auto}
+.s-label{font-family:'Roboto Mono',monospace;font-size:0.62rem;letter-spacing:0.28em;text-transform:uppercase;color:var(--red);margin-bottom:1.5rem;display:flex;align-items:center;gap:14px}
+.s-label::before{content:'';width:28px;height:1px;background:var(--red)}
+h2{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:clamp(2.4rem,5.5vw,4.2rem);line-height:0.92;text-transform:uppercase;letter-spacing:-0.01em;margin-bottom:1rem}
+h2 em{font-style:italic;color:var(--red)}
+.s-lead{font-size:1.05rem;color:var(--light);font-weight:300;line-height:1.8;max-width:620px;margin-bottom:4rem}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--edge) 30%,var(--edge) 70%,transparent)}
+
+/* OPPORTUNITY */
+#opportunity{background:var(--surface)}
+.opp-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.opp-card{background:var(--panel);padding:40px;position:relative;overflow:hidden}
+.opp-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),transparent)}
+.opp-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:4rem;color:rgba(200,16,46,0.12);line-height:1;margin-bottom:1rem;font-style:italic}
+.opp-card h3{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.35rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem}
+.opp-card p{font-size:0.88rem;color:var(--light);line-height:1.7}
+.opp-card.highlight{background:var(--red-dim);border:1px solid rgba(200,16,46,0.3)}
+.opp-card.highlight::before{background:var(--red)}
+
+/* EVENTS — MAIN SECTION */
+#events{background:var(--ink);position:relative;overflow:hidden}
+#events::before{content:'24H';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:30vw;color:rgba(200,16,46,0.025);pointer-events:none;line-height:1}
+.events-intro{display:grid;grid-template-columns:1fr 1fr;gap:5rem;margin-bottom:5rem;align-items:end}
+/* CIRCUIT CAROUSEL */
+.circuit-carousel-wrap{position:relative;margin-bottom:4rem}
+.circuit-carousel{display:flex;gap:3px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px}
+.circuit-carousel::-webkit-scrollbar{display:none}
+.circuit-card{flex-shrink:0;width:280px;scroll-snap-align:start;background:var(--panel);position:relative;overflow:hidden;cursor:pointer;transition:transform 0.2s}
+.circuit-card:hover{transform:translateY(-4px)}
+.circuit-img{height:160px;background:var(--edge);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.circuit-img-placeholder{width:100%;height:100%;background:linear-gradient(135deg,var(--edge),rgba(200,16,46,0.08))}
+.circuit-img span{position:absolute;font-family:'Roboto Mono',monospace;font-size:0.55rem;color:rgba(200,16,46,0.3);letter-spacing:0.1em;text-align:center;padding:1rem}
+.circuit-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.circuit-badge{position:absolute;top:12px;left:12px;background:var(--red);color:#fff;font-family:'Roboto Mono',monospace;font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;padding:3px 8px;border-radius:1px}
+.circuit-badge.potential{background:var(--panel);border:1px solid var(--edge);color:var(--muted)}
+.circuit-info{padding:20px}
+.circuit-name{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.2rem;text-transform:uppercase;margin-bottom:4px}
+.circuit-sub{font-family:'Roboto Mono',monospace;font-size:0.6rem;letter-spacing:0.12em;color:var(--red);text-transform:uppercase;margin-bottom:10px}
+.circuit-detail{font-size:0.78rem;color:var(--light);line-height:1.5}
+.carousel-hint{font-family:'Roboto Mono',monospace;font-size:0.6rem;color:var(--muted);letter-spacing:0.15em;text-transform:uppercase;margin-top:12px;display:flex;align-items:center;gap:8px}
+.carousel-hint::after{content:'→ →';color:var(--red)}
+
+/* DIVISIONS */
+.divisions{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:4rem}
+.division{background:var(--panel);padding:36px 28px;border-top:3px solid var(--edge);transition:border-color 0.2s}
+.division:hover{border-color:var(--red)}
+.div-tier{font-family:'Roboto Mono',monospace;font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:1rem}
+.div-tier.pro{color:#FFD700}
+.div-tier.am{color:#C0C0C0}
+.div-tier.rookie{color:#CD7F32}
+.division h3{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.6rem;text-transform:uppercase;margin-bottom:6px}
+.div-location{font-size:0.78rem;color:var(--light);font-weight:500;margin-bottom:1rem;padding:6px 12px;background:var(--edge);display:inline-block;border-radius:2px}
+.division p{font-size:0.84rem;color:var(--light);line-height:1.7;margin-bottom:1.5rem}
+.div-teams{margin-bottom:1.5rem}
+.div-teams-label{font-family:'Roboto Mono',monospace;font-size:0.58rem;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+.div-team-list{display:flex;flex-direction:column;gap:5px}
+.div-team{font-size:0.78rem;color:var(--white);display:flex;align-items:center;gap:6px}
+.div-team::before{content:'';width:4px;height:4px;background:var(--red);border-radius:50%;flex-shrink:0}
+.div-prize{margin-top:auto;padding-top:1.5rem;border-top:1px solid var(--edge)}
+.div-prize-label{font-family:'Roboto Mono',monospace;font-size:0.58rem;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+.div-prize-val{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.5rem;color:var(--white)}
+.division.pro-div{border-top-color:#FFD700}
+.division.am-div{border-top-color:#C0C0C0}
+.division.rookie-div{border-top-color:#CD7F32}
+
+/* CIRCUIT ACTIVATION */
+.activation{background:var(--red-dim);border:1px solid rgba(200,16,46,0.25);padding:48px;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
+.act-headline{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:2.5rem;text-transform:uppercase;line-height:0.95;margin-bottom:1rem}
+.act-headline em{color:var(--red);font-style:italic}
+.act-body{font-size:0.9rem;color:var(--light);line-height:1.75}
+.act-features{display:flex;flex-direction:column;gap:14px}
+.act-feature{display:flex;align-items:start;gap:12px;font-size:0.85rem;color:var(--light);line-height:1.5}
+.act-feature::before{content:'→';color:var(--red);flex-shrink:0;margin-top:1px}
+
+/* B4P BENEFITS */
+#b4p{background:var(--surface)}
+.b4p-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+.b4p-card{background:var(--panel);padding:36px 28px;border-top:2px solid var(--edge);transition:border-color 0.25s,transform 0.25s}
+.b4p-card:hover{border-color:var(--red);transform:translateY(-3px)}
+.b4p-tag{font-family:'Roboto Mono',monospace;font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--red);margin-bottom:1.5rem}
+.b4p-card h3{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.3rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem}
+.b4p-card p{font-size:0.84rem;color:var(--light);line-height:1.7}
+.b4p-metric{margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--edge);font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:800;color:var(--red);line-height:1}
+.b4p-metric span{font-size:0.7rem;font-family:'Inter',sans-serif;font-weight:400;color:var(--muted);display:block;margin-top:4px;text-transform:uppercase;letter-spacing:0.1em}
+
+/* TEAM SECTION */
+#team{background:var(--ink);position:relative;overflow:hidden}
+#team::after{content:'ESPORTS';position:absolute;bottom:-1vw;right:-1vw;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:16vw;color:rgba(200,16,46,0.025);pointer-events:none;white-space:nowrap}
+.team-intro{display:grid;grid-template-columns:1fr 1fr;gap:5rem;margin-bottom:5rem;align-items:end}
+.team-body{font-size:0.92rem;color:var(--light);line-height:1.75}
+.team-body strong{color:var(--white);font-weight:500}
+/* Competitors */
+.competitor-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:4rem}
+.comp-card{background:var(--panel);padding:28px 20px;text-align:center;border-top:2px solid var(--edge);transition:border-color 0.2s,transform 0.2s;text-decoration:none;display:block}
+.comp-card:hover{border-color:var(--red);transform:translateY(-3px)}
+.comp-logo{width:100%;height:56px;background:var(--edge);border:1px dashed rgba(200,16,46,0.2);display:flex;align-items:center;justify-content:center;margin-bottom:14px;border-radius:2px}
+.comp-logo span{font-family:'Roboto Mono',monospace;font-size:0.5rem;color:rgba(200,16,46,0.3);letter-spacing:0.1em}
+.comp-logo img{max-width:100%;max-height:100%;object-fit:contain;padding:8px}
+.comp-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.95rem;text-transform:uppercase;color:var(--white);margin-bottom:4px}
+.comp-sub{font-size:0.72rem;color:var(--muted);font-family:'Roboto Mono',monospace;letter-spacing:0.08em}
+/* Community */
+.community-block{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;margin-top:4rem}
+.cb{background:var(--panel);padding:36px 28px}
+.cb-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:3.5rem;color:var(--red);line-height:1;margin-bottom:8px}
+.cb h3{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.2rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px}
+.cb p{font-size:0.84rem;color:var(--light);line-height:1.7}
+
+/* PATHWAY */
+.pathway{margin:4rem 0;display:flex;align-items:stretch;gap:0}
+.pathway-step{background:var(--panel);padding:28px 20px;flex:1;border-top:2px solid var(--red);position:relative}
+.pathway-step.final{border-top-color:#FFD700}
+.pathway-arrow{display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:var(--red);flex-shrink:0;padding:0 6px;background:var(--ink)}
+.pathway-num{font-family:'Roboto Mono',monospace;font-size:0.58rem;letter-spacing:0.2em;color:var(--red);text-transform:uppercase;margin-bottom:10px}
+.pathway-step.final .pathway-num{color:#FFD700}
+.pathway-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;color:var(--white)}
+.pathway-body{font-size:0.76rem;color:var(--light);line-height:1.6}
+.pathway-label{font-family:'Roboto Mono',monospace;font-size:0.6rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--red);margin-bottom:1.5rem;margin-top:4rem}
+
+
+@media(max-width:900px){
+  .pathway{flex-direction:column}
+  .pathway-arrow{transform:rotate(90deg);padding:6px 0}
+}
+
+/* PLATFORM */
+#platform{background:var(--surface)}
+.platform-box{background:var(--panel);border:1px solid var(--edge);padding:64px;text-align:center;max-width:700px;margin:0 auto}
+.platform-box h3{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:2.5rem;text-transform:uppercase;margin-bottom:1rem}
+.platform-box h3 em{color:var(--red);font-style:italic}
+.platform-box p{font-size:0.92rem;color:var(--light);line-height:1.75;margin-bottom:2rem}
+.platform-options{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.platform-pill{font-family:'Roboto Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;padding:8px 20px;border:1px solid var(--edge);color:var(--muted);border-radius:2px;transition:all 0.2s}
+.platform-pill:hover{border-color:var(--red);color:var(--white)}
+
+/* COMMERCIAL */
+#commercial{background:var(--ink)}
+.commercial-intro{display:grid;grid-template-columns:1fr 1fr;gap:5rem;margin-bottom:4rem;align-items:end}
+.sponsor-tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:4rem}
+.stier{background:var(--panel);padding:32px 24px;border-top:2px solid var(--edge)}
+.stier.featured{background:var(--red-dim);border-top-color:var(--red)}
+.stier-name{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.4rem;text-transform:uppercase;margin-bottom:6px}
+.stier-price{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:2rem;color:var(--red);line-height:1;margin-bottom:1.5rem}
+.stier-price span{font-size:0.78rem;font-family:'Inter',sans-serif;font-weight:300;color:var(--muted);display:block}
+.stier ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+.stier li{font-size:0.82rem;color:var(--light);display:flex;align-items:start;gap:8px;line-height:1.4}
+.stier li::before{content:'—';color:var(--red);flex-shrink:0}
+.reach-row{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+.reach-b{background:var(--panel);padding:40px;text-align:center}
+.reach-n{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:3.5rem;color:var(--white);line-height:1}
+.reach-n em{color:var(--red);font-style:normal}
+.reach-l{font-family:'Roboto Mono',monospace;font-size:0.62rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-top:8px}
+.reach-note{font-size:0.76rem;color:rgba(240,239,244,0.35);margin-top:4px}
+
+/* ROADMAP */
+#roadmap{background:var(--surface)}
+.roadmap-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:4rem}
+.rm{background:var(--panel);padding:28px 20px}
+.rm.final{background:var(--red-dim);border:1px solid rgba(200,16,46,0.2)}
+.rm-m{font-family:'Roboto Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;color:var(--red);text-transform:uppercase;margin-bottom:1rem;display:flex;align-items:center;gap:6px}
+.rm-m::before{content:'';width:6px;height:6px;background:var(--red);border-radius:50%;flex-shrink:0}
+.rm h4{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.95rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
+.rm p{font-size:0.76rem;color:var(--light);line-height:1.55}
+
+/* CLOSE */
+#close{background:var(--ink)}
+.close-partners{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin:3rem 0 5rem}
+.partner-slot{background:var(--panel);height:88px;display:grid;place-items:center;border:1px dashed rgba(255,255,255,0.04)}
+.partner-slot span{font-family:'Roboto Mono',monospace;font-size:0.55rem;color:rgba(200,16,46,0.25);text-align:center;padding:0 12px;letter-spacing:0.08em}
+.close-box{background:var(--panel);border:1px solid var(--edge);padding:72px;text-align:center}
+.close-box p{font-size:1rem;color:var(--light);max-width:520px;margin:0 auto 2.5rem;line-height:1.75;font-weight:300}
+.contact-row{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--edge);display:flex;justify-content:center;gap:5rem;flex-wrap:wrap}
+.ci{text-align:center}
+.ci-label{font-family:'Roboto Mono',monospace;font-size:0.58rem;letter-spacing:0.2em;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.ci-val{font-size:0.88rem;color:var(--white)}
+
+/* FOOTER */
+footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.ft-logo{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:0.85rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)}
+.ft-logo em{color:var(--red);font-style:normal}
+.ft-note{font-family:'Roboto Mono',monospace;font-size:0.58rem;letter-spacing:0.1em;color:rgba(110,109,130,0.4);text-transform:uppercase}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity 0.55s ease,transform 0.55s ease}
+.reveal.in{opacity:1;transform:none}
+.d1{transition-delay:0.1s}.d2{transition-delay:0.2s}.d3{transition-delay:0.3s}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .hero-inner,.events-intro,.commercial-intro,.team-intro,.opp-grid,.b4p-grid,.divisions,.community-block,.sponsor-tiers,.reach-row,.close-partners,.activation{grid-template-columns:1fr}
+  .competitor-grid{grid-template-columns:1fr 1fr}
+  .roadmap-grid{grid-template-columns:1fr 1fr}
+  .circuit-card{width:240px}
+  .nav-links{display:none}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="#hero">XCL <span>×</span> B4P</a>
+  <ul class="nav-links">
+    <li><a href="#opportunity">Opportunity</a></li>
+    <li><a href="#events">The Events</a></li>
+    <li><a href="#b4p">For B4P</a></li>
+    <li><a href="#team">The Team</a></li>
+    <li><a href="#commercial">Commercial</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+  </ul>
+  <a class="nav-cta" href="#close">Request Proposal</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-vline"></div>
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-kicker">
+        <span class="kicker-tag" data-en="Confidential — For B4P Only" data-nl="Vertrouwelijk — Alleen voor B4P">Confidential — For B4P Only</span>
+        <span class="kicker-sep"></span>
+        <span class="kicker-text" data-en="Partnership Proposal 2026/27" data-nl="Partnerschapsvoorstel 2026/27">Partnership Proposal 2026/27</span>
+      </div>
+      <h1 style="margin-bottom:2rem">VIRTUAL <span class="h1-red">EVENTS</span> <span class="h1-dim">+ TEAM PARTNERSHIP</span></h1>
+      <p class="hero-sub" data-en="Two proposals. One partnership. XCLusive Racing invites Build4Performance to co-create the world's first virtual endurance calendar running parallel with real motorsport's greatest 24-hour races — and to put their name on the team that makes it happen." data-nl="Twee voorstellen. Één partnerschap. XCLusive Racing nodigt Build4Performance uit om samen de eerste virtuele endurance kalender te bouwen die parallel loopt met de grootste 24-uurswedstrijden ter wereld — en hun naam te zetten op het team dat het mogelijk maakt.">
+        Two proposals. One partnership. XCLusive Racing invites Build4Performance to co-create <strong>the world's first virtual endurance calendar running parallel with real motorsport's greatest 24-hour races</strong> — and to put their name on the team and platform that makes it happen.
+      </p>
+      <div class="hero-actions">
+        <a href="#close" class="btn-red" data-en="Request the full proposal →" data-nl="Volledig voorstel aanvragen →">Request the full proposal →</a>
+        <a href="#events" class="btn-ghost" data-en="See the events ↓" data-nl="Bekijk de events ↓">See the events ↓</a>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-stats">
+        <div class="hstat">
+          <div class="hstat-num">8<em>K+</em></div>
+          <div class="hstat-label" data-en="Registered community members — the perfect talent pool and a ready-made fanbase for the team from day one" data-nl="Geregistreerde community leden — de perfecte talentvijver en een kant-en-klare fanbase voor het team">Registered community members — the perfect talent pool and a ready-made fanbase for the team from day one</div>
+        </div>
+        <div class="hstat">
+          <div class="hstat-num">37</div>
+          <div class="hstat-label" data-en="Professional and esports drivers across ACC, iRacing and LMU" data-nl="Professionele en esports coureurs actief op ACC, iRacing en LMU">Professional and esports drivers across ACC, iRacing and LMU</div>
+        </div>
+        <div class="hstat">
+          <div class="hstat-num">3</div>
+          <div class="hstat-label" data-en="Real-world championships active — Porsche Supercup, Rally, MX5 Cup" data-nl="Actieve kampioenswedstrijden in de echte wereld — Porsche Supercup, Rally, MX5 Cup">Real-world championships active — Porsche Supercup, Rally, MX5 Cup</div>
+        </div>
+        <div class="hstat">
+          <div class="hstat-num">20<em>+</em></div>
+          <div class="hstat-label" data-en="Active volunteers — event managers, stewards, coaches and broadcasters already building the dream" data-nl="Actieve vrijwilligers — eventmanagers, stewards, coaches en broadcasters die al bouwen aan de droom">Active volunteers — event managers, stewards, coaches and broadcasters already building the dream</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- OPPORTUNITY -->
+<section id="opportunity">
+  <div class="inner">
+    <div class="s-label reveal" data-en="01 — The Opportunity" data-nl="01 — De Kans">01 — The Opportunity</div>
+    <h2 class="reveal" data-en="Sim racing grew up. This is what's next." data-nl="Sim racing is volwassen geworden. Dit is de volgende stap.">Sim racing<br>grew up.<br><em>This is what's next.</em></h2>
+    <p class="s-lead reveal" data-en="The Le Mans Virtual proved the format. The FIA F4 Esports Championship — sponsored by MOZA, run on iRacing, with a $35,000 prize pool — proved the sanctioning model. No one has combined them at scale: a full virtual endurance calendar, running simultaneously with the real events, Division 1 on-site at the circuit. That is the gap. That is this proposal." data-nl="Le Mans Virtual bewees het format. Het FIA F4 Esports Kampioenschap — gesponsord door MOZA, gereden op iRacing, met een prijzenpot van $35.000 — bewees het sanctioneringsmodel. Niemand heeft ze gecombineerd op grote schaal: een volledige virtuele endurance kalender, gelijktijdig rijdend met de echte events, Divisie 1 live op het circuit. Dat is de opening. Dat is dit voorstel.">The Le Mans Virtual proved the format. The FIA F4 Esports Championship — sponsored by MOZA, run on iRacing, with a $35,000 prize pool — proved the sanctioning model. No one has combined them at scale: a full virtual endurance calendar, running simultaneously with the real events, Division 1 on-site at the circuit. That is the gap. That is this proposal.</p>
+    <div class="opp-grid reveal">
+      <div class="opp-card highlight">
+        <div class="opp-num">01</div>
+        <h3>The Real Race Precedent</h3>
+        <p>The 24H Nürburgring, 24H Spa, 24H Daytona, 24H Le Mans, and 12H Bathurst collectively attract millions of circuit visitors and hundreds of millions of global broadcast viewers every year. A virtual championship running in parallel captures the same audience, the same weekend, at a fraction of the production cost.</p>
+      </div>
+      <div class="opp-card">
+        <div class="opp-num">02</div>
+        <h3>The Gap in the Market</h3>
+        <p>No FIA-sanctioned virtual championship currently runs simultaneously with real endurance events and requires Division 1 teams to race on-site at the actual circuit. That combination — sim race on circuit during the real race — is new. The dedicated circuit pavilion, the screens, the crowd watching sim and real racing side by side. That is the activation no one has built yet.</p>
+        <p style="margin-top:1rem;font-size:0.88rem;color:rgba(240,239,244,0.65);line-height:1.7">The absolute top of sim racing — Williams Esports, Team Redline, Ferrari Esports, Alpine, R8G — are competing at the highest level but facing a real problem: there are not enough elite events, not enough serious competition, and not enough prize pool to match their ambition. The Virtual 24H calendar solves that. It gives the best teams in the world the events they are missing — and gives their sponsors the global audience they are looking for.</p>
+      </div>
+      <div class="opp-card">
+        <div class="opp-num">03</div>
+        <h3>XCLusive Racing's Position</h3>
+        <p>8,000+ registered members. 37 professional and esports drivers. Active championships on ACC, iRacing and LMU. A broadcast partner — TRTN — already in place. The community, the infrastructure, and the driver relationships exist. The missing piece is a title partner with the hardware capability and brand ambition to make Division 1 on-site possible.</p>
+      </div>
+      <div class="opp-card">
+        <div class="opp-num">04</div>
+        <h3>Build4Performance's Role</h3>
+        <p>Division 1 requires high-end simulators on-site at the circuit. That is Build4Performance's core product — and this event is the highest-stakes, most visible deployment of that product imaginable. These are the same simulators used by professionals at events like Le Mans Virtual. The pros use your products. There is no better sales pitch than that. Every camera angle that shows the simulator bays at circuit is a live product demonstration to the most qualified audience in motorsport.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- EVENTS -->
+<section id="events">
+  <div class="inner">
+    <div class="events-intro">
+      <div class="reveal">
+        <div class="s-label">02 — The Virtual 24H Events</div>
+        <h2>The 24H races<br>the world<br><em>watches.</em></h2>
+        <p class="s-lead" style="margin-bottom:0">Five of the greatest endurance races in motorsport. One virtual championship running alongside each of them. Same circuit. Same race distance. Same weekend. Division 1 teams race on-site. The world watches both.</p>
+      </div>
+      <div class="reveal d1">
+        <p style="font-size:0.9rem;color:var(--light);line-height:1.75;margin-bottom:1.5rem">Each event in the calendar is anchored to its real-world counterpart. Qualifying rounds in the weeks before determine which teams race on-site (Division 1), which race online simultaneously (Division 2), and which compete in the development series (Division 3 Rookie).</p>
+        <p style="font-size:0.9rem;color:var(--light);line-height:1.75">Platform partner and circuit agreements are to be confirmed with Build4Performance. XCLusive Racing is open to the platform that best serves the partnership — AC, ACC, iRacing, Le Mans Ultimate — or another platform to be agreed together with Build4Performance.</p>
+      </div>
+    </div>
+
+    <!-- Circuit Carousel -->
+    <div class="circuit-carousel-wrap reveal">
+      <div class="circuit-carousel">
+        <div class="circuit-card">
+          <div class="circuit-img">
+            <div class="circuit-img-placeholder"></div>
+            <img src="/images/pitch/circuits/spa.jpg" alt="Spa-Francorchamps circuit">
+            <span>[ Spa-Francorchamps circuit image ]</span>
+            <div class="circuit-badge">Confirmed Target</div>
+          </div>
+          <div class="circuit-info">
+            <div class="circuit-name">24H Spa-Francorchamps</div>
+            <div class="circuit-sub">Belgian Endurance Classic</div>
+            <p class="circuit-detail">Eau Rouge, Raidillon, Pouhon. The spiritual home of endurance racing. Runs alongside the Total 24H Spa weekend in May.</p>
+          </div>
+        </div>
+        <div class="circuit-card">
+          <div class="circuit-img">
+            <div class="circuit-img-placeholder"></div>
+            <img src="/images/pitch/circuits/nurburgring.jpg" alt="Nürburgring circuit">
+            <span>[ Nürburgring circuit image ]</span>
+            <div class="circuit-badge">Confirmed Target</div>
+          </div>
+          <div class="circuit-info">
+            <div class="circuit-name">24H Nürburgring</div>
+            <div class="circuit-sub">The Green Hell</div>
+            <p class="circuit-detail">73 corners. 25km. The most demanding circuit in the world. Runs alongside the ADAC 24H Nürburgring in June.</p>
+          </div>
+        </div>
+        <div class="circuit-card">
+          <div class="circuit-img">
+            <div class="circuit-img-placeholder"></div>
+            <img src="/images/pitch/circuits/daytona.jpg" alt="Daytona circuit">
+            <span>[ Daytona circuit image ]</span>
+            <div class="circuit-badge">Confirmed Target</div>
+          </div>
+          <div class="circuit-info">
+            <div class="circuit-name">24H Daytona</div>
+            <div class="circuit-sub">The Rolex 24</div>
+            <p class="circuit-detail">IMSA's season opener. The Rolex 24 attracts the biggest factory teams in North America. January season launch event.</p>
+          </div>
+        </div>
+        <div class="circuit-card">
+          <div class="circuit-img">
+            <div class="circuit-img-placeholder"></div>
+            <img src="/images/pitch/circuits/lemans.jpg" alt="Le Mans circuit">
+            <span>[ Le Mans circuit image ]</span>
+            <div class="circuit-badge">Confirmed Target</div>
+          </div>
+          <div class="circuit-info">
+            <div class="circuit-name">24H Le Mans</div>
+            <div class="circuit-sub">The Greatest Race</div>
+            <p class="circuit-detail">The pinnacle of endurance racing. 250,000 circuit visitors. Global broadcast to 190 countries. The season finale.</p>
+          </div>
+        </div>
+        <div class="circuit-card">
+          <div class="circuit-img">
+            <div class="circuit-img-placeholder"></div>
+            <img src="/images/pitch/circuits/bathurst.jpg" alt="Bathurst circuit">
+            <span>[ Bathurst circuit image ]</span>
+            <div class="circuit-badge potential">Potential</div>
+          </div>
+          <div class="circuit-info">
+            <div class="circuit-name">12H Bathurst</div>
+            <div class="circuit-sub">Mount Panorama</div>
+            <p class="circuit-detail">Australia's most iconic circuit. The Bathurst 12H brings the championship to the Asia-Pacific region and opens the global calendar.</p>
+          </div>
+        </div>
+      </div>
+      <div class="carousel-hint">Scroll for all events</div>
+    </div>
+
+    <!-- Divisions -->
+    <div class="divisions reveal">
+      <div class="division pro-div">
+        <div class="div-tier pro">Division 1 — PRO</div>
+        <h3>On-Site at the Circuit</h3>
+        <div class="div-location">📍 Physical presence at real circuit venue</div>
+        <p>The top qualifier teams travel to the real circuit venue and race on-site during the actual endurance race weekend. Build4Performance simulators. FIA co-branding. Live crowd. Paddock access. The most prestigious sim racing event in the world.</p>
+        <div class="div-teams">
+          <div class="div-teams-label">Target Teams</div>
+          <div class="div-team-list">
+            <div class="div-team">Williams Esports</div>
+            <div class="div-team">Team Redline (Verstappen.com)</div>
+            <div class="div-team">Ferrari Esports</div>
+            <div class="div-team">Coanda Simsport</div>
+            <div class="div-team">R8G Esports</div>
+            <div class="div-team">Alpine Esports</div>
+            <div class="div-team">BS+ Competition</div>
+            <div class="div-team">Additional elite teams…</div>
+          </div>
+        </div>
+        <div class="div-prize">
+          <div class="div-prize-label">Prize</div>
+          <div class="div-prize-val">TBD</div>
+        </div>
+      </div>
+      <div class="division am-div">
+        <div class="div-tier am">Division 2 — AM</div>
+        <h3>Online — Simultaneous</h3>
+        <div class="div-location">🌐 Online, same race weekend</div>
+        <p>Top qualifier teams who narrowly miss Division 1 race online simultaneously with the real event and the Division 1 on-site field. Same circuit. Same race length. Broadcast live. Enormous visibility for teams at this level.</p>
+        <div class="div-teams">
+          <div class="div-teams-label">Profile</div>
+          <div class="div-team-list">
+            <div class="div-team">Top-tier sim racing organisations</div>
+            <div class="div-team">Teams with professional driver rosters</div>
+            <div class="div-team">Factory-backed esports programmes</div>
+            <div class="div-team">Confirmed amateur teams…</div>
+          </div>
+        </div>
+        <div class="div-prize">
+          <div class="div-prize-label">Prize</div>
+          <div class="div-prize-val">TBD</div>
+        </div>
+      </div>
+      <div class="division rookie-div">
+        <div class="div-tier rookie">Division 3 — ROOKIE</div>
+        <h3>Online — Development</h3>
+        <div class="div-location">🌐 Online, same race weekend</div>
+        <p>The entry level. Upcoming teams and communities qualify here. A genuine pathway: Rookie this season, Am next, Pro the season after. XCLusive Racing's 8,000+ community is the natural feeder for this division — and the reason the bottom of the pyramid is already full.</p>
+        <div class="div-teams">
+          <div class="div-teams-label">Profile</div>
+          <div class="div-team-list">
+            <div class="div-team">Emerging sim racing teams</div>
+            <div class="div-team">XCLusive Racing community members</div>
+            <div class="div-team">Console-to-PC crossover drivers</div>
+            <div class="div-team">First step into organised endurance racing</div>
+          </div>
+        </div>
+        <div class="div-prize">
+          <div class="div-prize-label">Prize</div>
+          <div class="div-prize-val">TBD</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Circuit Activation -->
+    <div class="activation reveal">
+      <div>
+        <div class="act-headline">A dedicated<br>circuit pavilion.<br><em>Live screens.</em><br>Real crowds.</div>
+        <p class="act-body">Division 1 teams race at the circuit during the real endurance weekend. Visitors who attend the real race can step into the XCLusive Racing dedicated circuit pavilion and watch the sim race live — on Build4Performance hardware, beside the track where the real cars are also racing. That is the activation no one has built. Yet.</p>
+      </div>
+      <div class="act-features">
+        <div class="act-feature">Build4Performance simulators as the on-site race infrastructure — the hardware is the venue</div>
+        <div class="act-feature">Live tracking screens showing sim and real race simultaneously</div>
+        <div class="act-feature">TRTN broadcast covering both Division 1 on-site and Division 2 online</div>
+        <div class="act-feature">Sponsor activation zones within the circuit footprint</div>
+        <div class="act-feature">Circuit visitor audience — tens of thousands of motorsport fans at each event</div>
+        <div class="act-feature">FIA sanctioning sought — co-branding on all event materials</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- B4P BENEFITS -->
+<section id="b4p">
+  <div class="inner">
+    <div class="s-label reveal">03 — What B4P Gets</div>
+    <h2 class="reveal">Not a logo<br>on a banner.<br><em>The hardware<br>that races.</em></h2>
+    <p class="s-lead reveal">Every other sponsorship puts Build4Performance's name somewhere. This proposal puts their hardware at the centre of the most visible sim racing events in Europe — on circuit, during real endurance weekends, in front of motorsport's most passionate audience.</p>
+    <div class="b4p-grid">
+      <div class="b4p-card reveal">
+        <div class="b4p-tag">Event Infrastructure</div>
+        <h3>Your Rigs. At the Circuit.</h3>
+        <p>Build4Performance high-end simulators are the Division 1 race infrastructure at every on-site event. Spa, Nürburgring, Daytona, Le Mans. Every camera angle showing the simulator bays is a live product demonstration at the highest level of competitive sim racing.</p>
+        <div class="b4p-metric">5 Events<span>Spa · Nürburgring · Daytona · Le Mans · Bathurst</span></div>
+      </div>
+      <div class="b4p-card reveal d1">
+        <div class="b4p-tag">Audience Access</div>
+        <h3>Circuit Visitors. Real Fans.</h3>
+        <p>Tens of thousands of motorsport fans attend each endurance race weekend. The dedicated circuit pavilion brings them directly to B4P hardware — not in a trade show, not in a sim centre, but at the actual circuit during the actual race. The target customer, in the right mindset, at the right moment.</p>
+        <div class="b4p-metric">250K+<span>Circuit visitors at Le Mans alone</span></div>
+      </div>
+      <div class="b4p-card reveal d2">
+        <div class="b4p-tag">Team Naming Rights</div>
+        <h3>B4P on the Team.</h3>
+        <p>The XCLusive Racing esports team competes as a B4P-named team across all three sim platforms and real-world championship cars. Every stream overlay, every race entry, every press release. The team proposal is detailed in the next section.</p>
+        <div class="b4p-metric">8K+<span>Community — all sim racers, all your market</span></div>
+      </div>
+      <div class="b4p-card reveal">
+        <div class="b4p-tag">Media & Broadcast</div>
+        <h3>TRTN Live Coverage.</h3>
+        <p>TRTN — XCLusive Racing's broadcast partner — provides live coverage across all events. Every broadcast frame that shows the simulator bays is branded product content. Post-event highlights, driver interviews, season reviews — all distributed to the global sim racing audience.</p>
+        <div class="b4p-metric">Live<span>Broadcast by TRTN across all events</span></div>
+      </div>
+      <div class="b4p-card reveal d1">
+        <div class="b4p-tag">FIA Association</div>
+        <h3>FIA Co-Branding.</h3>
+        <p>FIA sanctioning is being sought. If confirmed, Build4Performance's name appears alongside the FIA on all event materials — press releases, broadcast opens, circuit signage, and the official championship website. The governing body of world motorsport, endorsing your hardware.</p>
+        <div class="b4p-metric">FIA<span>Sanctioning — application in progress</span></div>
+      </div>
+      <div class="b4p-card reveal d2">
+        <div class="b4p-tag">Repeatable Property</div>
+        <h3>Season 1 Builds the IP.</h3>
+        <p>Season 1 establishes the championship, the format, and the audience. Season 2 sells it forward. The Virtual 24H calendar, the division structure, and the on-site activation model are scalable assets. B4P becomes the named infrastructure partner of a growing global championship.</p>
+        <div class="b4p-metric">Annual<span>Repeatable, scalable championship</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- TEAM SECTION -->
+<section id="team">
+  <div class="inner">
+    <div class="team-intro">
+      <div class="reveal">
+        <div class="s-label">04 — The Team Proposal</div>
+        <h2>Not another<br>esports team.<br><em>The next<br>legend.</em></h2>
+      </div>
+      <div class="reveal d1">
+        <p class="team-body">Alongside the event proposal, XCLusive Racing invites Build4Performance to name and co-build the XCLusive Racing esports team. Born from the most dominant force in ACC console racing — the Xbox Community League — and now expanding to PC across all three major sim platforms, XCLusive Racing has the community, the drivers, and the infrastructure to become a genuine challenger to the teams listed below.</p>
+        <br>
+        <p class="team-body">What B4P gets from the team deal: naming rights, stream overlay branding across 37+ drivers, logo on real-world championship cars (Porsche Supercup, Rally, MX5 Cup), a dedicated partner section on xclusiveracing.com, and access to 8,000+ sim racers who are exactly the high-end simulator market.</p>
+        <br>
+        <p class="team-body">What drivers get: <strong>not cash — access.</strong> Events. Build4Performance representation. Real-world connections. The chance to be part of a brand that matters in motorsport. From someone's first session in Assetto Corsa all the way to professional racing — XCLusive Racing is the pathway, B4P is the name on the door.</p>
+      </div>
+    </div>
+
+    <div class="pathway-label reveal">The Pathway</div>
+    <div class="pathway reveal">
+      <div class="pathway-step">
+        <div class="pathway-num">Step 01</div>
+        <div class="pathway-title">Console Sim Racer</div>
+        <p class="pathway-body">First race on ACC or LMU. The XCL Rating system identifies raw talent from day one. No experience needed — just speed.</p>
+      </div>
+      <div class="pathway-arrow">→</div>
+      <div class="pathway-step">
+        <div class="pathway-num">Step 02</div>
+        <div class="pathway-title">PC Sim Racer</div>
+        <p class="pathway-body">Cross-platform development. Competing in XCLusive Racing championships across iRacing, ACC PC and LMU. Rating grows. Profile builds.</p>
+      </div>
+      <div class="pathway-arrow">→</div>
+      <div class="pathway-step">
+        <div class="pathway-num">Step 03</div>
+        <div class="pathway-title">Development Esports Team</div>
+        <p class="pathway-body">Selected for the XCLusive Racing development programme. Coaching from DriveLab. Race engineer support. Real team structure.</p>
+      </div>
+      <div class="pathway-arrow">→</div>
+      <div class="pathway-step">
+        <div class="pathway-num">Step 04</div>
+        <div class="pathway-title">Esports Driver / Engineer / Other</div>
+        <p class="pathway-body">Competing under the B4P XCLusive Racing banner at the highest level — including Division 1 on-site at real endurance circuits worldwide.</p>
+      </div>
+      <div class="pathway-arrow">→</div>
+      <div class="pathway-step final">
+        <div class="pathway-num">Step 05</div>
+        <div class="pathway-title">Job in Sim or Motorsport</div>
+        <p class="pathway-body">The end goal. Real-world connections, B4P network access, and a proven track record that opens doors in sim racing and professional motorsport.</p>
+      </div>
+    </div>
+
+    <div class="s-label reveal" style="margin-bottom:1rem">Who Is Already Doing This</div>
+    <p style="font-size:0.85rem;color:var(--light);margin-bottom:2rem;max-width:600px" class="reveal d1">These are the teams and brand partnerships that prove the model. XCLusive Racing is the challenger version — with a larger community base than most of these had at launch.</p>
+    <div class="competitor-grid">
+      <a class="comp-card reveal" href="#" target="_blank">
+        <div class="comp-logo"><img src="/images/pitch/logos/redline.webp" alt="Team Redline"><span>[ Verstappen.com × Redline logo ]</span></div>
+        <div class="comp-name">Verstappen.com × Team Redline</div>
+        <div class="comp-sub">The benchmark</div>
+      </a>
+      <a class="comp-card reveal d1" href="#" target="_blank">
+        <div class="comp-logo"><img src="/images/pitch/logos/falken.png" alt="Falken"><span>[ Falken × Dörr logo ]</span></div>
+        <div class="comp-name">Falken × Dörr Esports</div>
+        <div class="comp-sub">Tyre brand meets esports</div>
+      </a>
+      <a class="comp-card reveal d2" href="#" target="_blank">
+        <div class="comp-logo"><img src="/images/pitch/logos/coanda.png" alt="Coanda"><span>[ Porsche × Coanda logo ]</span></div>
+        <div class="comp-name">Porsche × Coanda / Purple Labs</div>
+        <div class="comp-sub">Factory backing</div>
+      </a>
+      <a class="comp-card reveal d1" href="#" target="_blank">
+        <div class="comp-logo"><img src="/images/pitch/logos/referox.png" alt="ReFerox"><span>[ ReFerox logo ]</span></div>
+        <div class="comp-name">ReFerox × ReFerox Esports</div>
+        <div class="comp-sub">Hardware as team identity</div>
+      </a>
+      <a class="comp-card reveal d2" href="#" target="_blank">
+        <div class="comp-logo"><img src="/images/pitch/logos/akkodis.png" alt="Akkodis"><span>[ Akkodis × Delta-V logo ]</span></div>
+        <div class="comp-name">Akkodis × Delta-V Racing</div>
+        <div class="comp-sub">Tech brand, sim team</div>
+      </a>
+    </div>
+
+    <div class="community-block">
+      <div class="cb reveal">
+        <div class="cb-num">8<span style="color:var(--muted);font-size:2rem">K+</span></div>
+        <h3>The Community</h3>
+        <p>8,000+ registered members — and growing fast as XCLusive Racing expands from console to PC. This is not a social media following. These are racers who compete in rated championships, track their XCL Rating, and invest in sim hardware. The Rookie division of the championship feeds directly from this community.</p>
+      </div>
+      <div class="cb reveal d1">
+        <div class="cb-num">100<span style="color:var(--muted);font-size:2rem">+</span></div>
+        <h3>The Volunteers</h3>
+        <p>Event managers, race stewards, community coaches, TRTN broadcasters, social media creators — all contributing to XCLusive Racing without pay. Because they want to build something that matters. That kind of commitment is not bought. It is earned. And it is already here.</p>
+      </div>
+      <div class="cb reveal d2">
+        <div class="cb-num">3</div>
+        <h3>Real Platforms</h3>
+        <p>ACC, iRacing, and Le Mans Ultimate — all with active, rated championships running right now. Each has its own community, its own elite driver pool, and its own broadcast audience. The B4P team name reaches all three simultaneously from day one.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PLATFORM -->
+<section id="platform">
+  <div class="inner" style="text-align:center">
+    <div class="s-label reveal" style="justify-content:center">05 — Platform</div>
+    <h2 class="reveal">Platform TBC.<br><em>Open to discuss.</em></h2>
+    <p class="s-lead reveal" style="margin:0 auto 3rem">The championship platform is an open conversation. XCLusive Racing currently operates on all three major sim racing platforms. The right choice depends on FIA sanctioning requirements, elite team preferences, and Build4Performance's own relationships. We bring the question to the table, not a fixed answer.</p>
+    <div class="platform-box reveal">
+      <h3>ACC, iRacing<br>or <em>Le Mans Ultimate.</em></h3>
+      <p>Each platform has elite teams, FIA precedent, and an established broadcast audience. iRacing hosts the FIA F4 Esports Championship. ACC is the ACC console world's largest competitive platform — where XCLusive Racing was built. LMU is the newest and fastest growing endurance platform. We recommend deciding this together.</p>
+      <div class="platform-options">
+        <div class="platform-pill">Assetto Corsa Competizione</div>
+        <div class="platform-pill">iRacing</div>
+        <div class="platform-pill">Le Mans Ultimate</div>
+        <div class="platform-pill">Open to discussion</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- COMMERCIAL -->
+<section id="commercial">
+  <div class="inner">
+    <div class="commercial-intro">
+      <div class="reveal">
+        <div class="s-label">06 — Commercial Model</div>
+        <h2>Sponsor-funded.<br><em>Scalable.</em></h2>
+      </div>
+      <div class="reveal d1">
+        <p style="font-size:0.9rem;color:var(--light);line-height:1.75">The event is funded by tiered sponsors across five race weekends. Build4Performance holds the infrastructure and naming rights position. Category sponsors fund per-event prize pools. The model is designed to be commercially self-sustaining from Season 2 onwards — with Season 1 establishing the audience and the format.</p>
+      </div>
+    </div>
+    <div class="sponsor-tiers">
+      <div class="stier featured reveal">
+        <div class="stier-name">Infrastructure Partner</div>
+        <div class="stier-price">Build4Performance<span>The hardware, the venue, the name</span></div>
+        <ul>
+          <li>All Division 1 simulator infrastructure on-site</li>
+          <li>Event naming rights — "B4P Virtual 24H [Circuit]"</li>
+          <li>FIA co-branding (subject to sanctioning)</li>
+          <li>Full broadcast integration across all events</li>
+          <li>Team naming rights for XCLusive Racing esports team</li>
+          <li>Season 2 right of first refusal</li>
+        </ul>
+      </div>
+      <div class="stier reveal d1">
+        <div class="stier-name">Title Sponsor</div>
+        <div class="stier-price">[PLACEHOLDER]<span>Per season</span></div>
+        <ul>
+          <li>Championship title co-naming</li>
+          <li>Broadcast title card all events</li>
+          <li>On-site activation zone at circuit</li>
+          <li>All press and digital materials</li>
+          <li>Prize pool contribution</li>
+        </ul>
+      </div>
+      <div class="stier reveal d2">
+        <div class="stier-name">Category / Event Sponsor</div>
+        <div class="stier-price">[PLACEHOLDER]<span>Per event</span></div>
+        <ul>
+          <li>Per-event naming (e.g. "B4P Virtual 24H Spa presented by [Brand]")</li>
+          <li>On-site presence at that event</li>
+          <li>Division naming rights</li>
+          <li>Broadcast integration for that round</li>
+        </ul>
+      </div>
+    </div>
+    <div class="reach-row">
+      <div class="reach-b reveal">
+        <div class="reach-n">250<em>K+</em></div>
+        <div class="reach-l">Circuit visitors at Le Mans</div>
+        <div class="reach-note">Circuit pavilion audience — on circuit, motorsport fans</div>
+      </div>
+      <div class="reach-b reveal d1">
+        <div class="reach-n">8<em>K+</em></div>
+        <div class="reach-l">XCL Registered Members</div>
+        <div class="reach-note">High-intent sim racers — core broadcast and community audience</div>
+      </div>
+      <div class="reach-b reveal d2">
+        <div class="reach-n">[<em>TBC</em>]</div>
+        <div class="reach-l">Total Broadcast Reach</div>
+        <div class="reach-note">TRTN live coverage + YouTube + social — confirmed at broadcast partner stage</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <div class="inner">
+    <div class="s-label reveal">07 — Roadmap</div>
+    <h2 class="reveal">From agreement<br>to <em>race day.</em></h2>
+    <p class="s-lead reveal">Six months from partnership confirmation to the first on-site event. The team rebrand happens in weeks. The championship builds audience through the qualifier series. The first on-site 24H final is the Season 1 flagship moment.</p>
+    <div class="roadmap-grid">
+      <div class="rm reveal">
+        <div class="rm-m">Month 1</div>
+        <h4>Agreement & Rebrand</h4>
+        <p>Partnership signed. Team renamed. Website updated. Stream overlays rebranded. FIA sanctioning application submitted.</p>
+      </div>
+      <div class="rm reveal d1">
+        <div class="rm-m">Month 2</div>
+        <h4>Public Announcement</h4>
+        <p>Press release via TRTN. Social campaign. Community announcement. Platform partner confirmed. Elite team invitations issued.</p>
+      </div>
+      <div class="rm reveal d2">
+        <div class="rm-m">Month 3</div>
+        <h4>Qualifier Series Opens</h4>
+        <p>First online qualifier rounds. Division placings begin to take shape. Community Rookie division opens. Broadcast begins.</p>
+      </div>
+      <div class="rm reveal">
+        <div class="rm-m">Month 4–5</div>
+        <h4>Qualifier Finals</h4>
+        <p>Division 1 grid confirmed. On-site logistics activated with B4P. Circuit agreements finalised. Division 2 and 3 grids locked.</p>
+      </div>
+      <div class="rm reveal d1">
+        <div class="rm-m">Month 5</div>
+        <h4>Pre-Event Activation</h4>
+        <p>B4P simulators delivered and set up at circuit venue. Media coverage begins. Sponsor activations confirmed. Broadcast schedule published.</p>
+      </div>
+      <div class="rm final reveal d2">
+        <div class="rm-m">Month 6</div>
+        <h4>First 24H On-Site Event</h4>
+        <p>Division 1 races at the circuit. Division 2 & 3 online simultaneously. TRTN live broadcast. FIA ceremony. Season 2 announced.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- CLOSE -->
+<section id="close">
+  <div class="inner">
+    <div class="s-label reveal">08 — Partners & Next Steps</div>
+    <h2 class="reveal">Two proposals.<br><em>One conversation.</em></h2>
+    <p class="s-lead reveal">The full commercial proposal — including detailed pricing, division structures, circuit partner discussions, broadcast projections, and team deal specifics — is available on request. This document is the summary. The full picture is a meeting.</p>
+    <div class="close-partners reveal">
+      <div class="partner-slot"><span>[ BUILD4PERFORMANCE — Infrastructure + Team Partner ]</span></div>
+      <div class="partner-slot"><span>[ TRTN — Broadcast Partner ]</span></div>
+      <div class="partner-slot"><span>[ FIA — Sanctioning, in discussion ]</span></div>
+      <div class="partner-slot"><span>[ Platform — ACC / iRacing / LMU, TBC ]</span></div>
+      <div class="partner-slot"><span>[ Circuit Partner — ASO / ADAC / IMSA, TBC ]</span></div>
+      <div class="partner-slot"><span>[ Title Sponsor — open position ]</span></div>
+      <div class="partner-slot"><span>[ Looping by CarTech — in discussion ]</span></div>
+      <div class="partner-slot"><span>[ BWT — in discussion ]</span></div>
+    </div>
+    <div class="close-box reveal">
+      <div class="s-label" style="justify-content:center;margin-bottom:1.5rem">Ready when you are</div>
+      <h2>Start the<br><em>conversation.</em></h2>
+      <p>XCLusive Racing is in active discussion with Looping by CarTech, BWT, and Manthey. The Build4Performance position — infrastructure partner, team naming rights, and on-site hardware — is the proposal on the table. The full brief is one meeting away.</p>
+      <a href="mailto:management@xclusiveracing.com" class="btn-red" style="display:inline-block">Request the full proposal →</a>
+      <div class="contact-row">
+        <div class="ci">
+          <div class="ci-label">Contact</div>
+          <div class="ci-val">Jan Hartog</div>
+        </div>
+        <div class="ci">
+          <div class="ci-label">Title</div>
+          <div class="ci-val">Owner & Team Manager</div>
+        </div>
+        <div class="ci">
+          <div class="ci-label">Email</div>
+          <div class="ci-val">management@xclusiveracing.com</div>
+        </div>
+        <div class="ci">
+          <div class="ci-label">Website</div>
+          <div class="ci-val">xclusiveracing.com</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="ft-logo">XCLusive Racing <em>×</em> Build4Performance — Confidential Partnership Proposal 2026/27</div>
+  <div class="ft-note">Not for distribution — management@xclusiveracing.com</div>
+</footer>
+
+<script>
+// Scroll reveal
+const els = document.querySelectorAll('.reveal');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('in'); });
+},{threshold:0.08,rootMargin:'0px 0px -30px 0px'});
+els.forEach(el => obs.observe(el));
+
+
+</script>
+</body>
+</html>
