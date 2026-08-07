@@ -38,8 +38,8 @@ class XboxController extends Controller
                     'Accept'          => 'application/json',
                 ])
                 ->post('https://api.xbl.io/app/claim', [
-                    'code'   => $code,
-                    'app_id' => config('services.openxbl.app_id'),
+                    'code'       => $code,
+                    'public_key' => config('services.openxbl.app_id'),
                 ]);
         } catch (ConnectionException) {
             return response()->json(['debug' => 'token exchange connection failed']);
