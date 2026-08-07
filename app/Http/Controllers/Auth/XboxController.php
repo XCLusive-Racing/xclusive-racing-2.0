@@ -30,19 +30,27 @@ class XboxController extends Controller
         $debug = ['code_preview' => substr($code, 0, 40) . '...'];
 
         // Exchange the authorization code for a user token via /app/claim
-        $usedEndpoint = 'POST /app/claim';
-        try {
-            $tokenRes = Http::timeout(10)
-                ->withHeaders([
-                    'x-authorization' => config('services.openxbl.api_key'),
+        // /app/claim expects X-Authorization = app_id (public key), not the API key
+        $claimAttempts = [
+            fn($h) => $h->post('https://api.xbl.io/app/claim', ['code' => $code]),
+            fn($h) => $h->withHeaders(['x-authorization' => config('services.openxbl.api_key')])->post('https://api.xbl.io/app/claim', ['code' => $code]),
+        ];
+
+        $tokenRes     = null;
+        $usedEndpoint = null;
+
+        foreach ($claimAttempts as $i => $attempt) {
+            try {
+                $tokenRes = $attempt(Http::timeout(10)->withHeaders([
+                    'x-authorization' => config('services.openxbl.app_id'),
                     'Accept'          => 'application/json',
-                ])
-                ->post('https://api.xbl.io/app/claim', [
-                    'code'       => $code,
-                    'public_key' => config('services.openxbl.app_id'),
-                ]);
-        } catch (ConnectionException) {
-            return response()->json(['debug' => 'token exchange connection failed']);
+                    'Content-Type'    => 'application/json',
+                ]));
+                $usedEndpoint = 'POST /app/claim attempt #' . ($i + 1);
+            } catch (ConnectionException) {
+                continue;
+            }
+            if ($tokenRes->status() !== 400) break;
         }
 
         $debug['exchange_endpoint'] = $usedEndpoint;
