@@ -16,22 +16,13 @@ class XboxController extends Controller
 
     public function callback()
     {
-        \Log::info('Xbox OAuth callback received', ['params' => request()->all()]);
-
         $code = request('code');
 
         if (! $code) {
-            \Log::warning('Xbox OAuth callback missing code', ['params' => request()->all()]);
             return redirect()->route('register')
                 ->with('xbox_error', 'Xbox sign-in was cancelled or failed. Please try again.');
         }
 
-        $debug = [
-            'all_params'   => request()->all(),
-            'code_preview' => substr($code, 0, 40) . '...',
-        ];
-
-        // Exchange Microsoft token — client_id + redirect_uri as per OpenXBL custom Azure flow
         try {
             $tokenRes = Http::timeout(10)
                 ->withHeaders([
@@ -43,11 +34,9 @@ class XboxController extends Controller
                     'app_key' => config('services.openxbl.azure_client_id'),
                 ]);
         } catch (ConnectionException) {
-            return response()->json(['debug' => 'token exchange connection failed']);
+            return redirect()->route('register')
+                ->with('xbox_error', 'Xbox sign-in failed. Please try again.');
         }
-
-        $debug['claim_status'] = $tokenRes->status();
-        $debug['claim_body']   = $tokenRes->json() ?? $tokenRes->body();
 
         $accessToken = $tokenRes->json('token')
             ?? $tokenRes->json('access_token')
@@ -56,7 +45,12 @@ class XboxController extends Controller
             ?? null;
 
         if (! $accessToken) {
-            return response()->json($debug);
+            \Log::warning('Xbox OAuth claim failed', [
+                'status' => $tokenRes->status(),
+                'body'   => $tokenRes->json() ?? $tokenRes->body(),
+            ]);
+            return redirect()->route('register')
+                ->with('xbox_error', 'Xbox sign-in failed. Please try again.');
         }
 
         try {
@@ -67,14 +61,13 @@ class XboxController extends Controller
                 ])
                 ->get('https://api.xbl.io/v2/account');
         } catch (ConnectionException) {
-            return response()->json(['debug' => 'account fetch connection failed']);
+            return redirect()->route('register')
+                ->with('xbox_error', 'Xbox sign-in failed. Please try again.');
         }
 
-        $debug['account_status'] = $res->status();
-        $debug['account_body']   = $res->json() ?? $res->body();
-
         if (! $res->successful()) {
-            return response()->json($debug);
+            return redirect()->route('register')
+                ->with('xbox_error', 'Xbox sign-in failed. Please try again.');
         }
 
         $data     = $res->json();
@@ -82,19 +75,16 @@ class XboxController extends Controller
         $gamertag = $data['modernGamertag'] ?? $data['gamertag'] ?? $data['displayName'] ?? null;
 
         if (! $xuid) {
-            \Log::error('Xbox OAuth missing xuid', ['body' => $data]);
             return redirect()->route('register')
                 ->withErrors(['gamertag' => 'Could not retrieve Xbox profile. Please try again.']);
         }
 
         $platformId = 'M' . $xuid;
 
-        // Already logged in — just link the account (future feature)
         if (auth()->check()) {
             return redirect()->route('profile');
         }
 
-        // Already registered as a real account — send to login
         $existing = User::where('platform', 'xbox')
             ->where('platform_id', $platformId)
             ->where('email', 'not like', '%@import.local')
@@ -105,7 +95,6 @@ class XboxController extends Controller
                 ->withErrors(['email' => 'This Xbox account is already registered. Please sign in instead.']);
         }
 
-        // Store in session and continue to registration form (fill in email/password/country)
         session([
             'xbox_platform_id' => $platformId,
             'xbox_name'        => $gamertag ?? $xuid,
