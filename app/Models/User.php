@@ -111,10 +111,7 @@ class User extends Authenticatable
 
     public function displayName(): string
     {
-        if ($this->display_name_preference === 'gamertag' && $this->platform_id) {
-            return preg_replace('/#\d+$/', '', $this->platform_id);
-        }
-        return $this->name;
+        return preg_replace('/#\d+$/', '', $this->name ?? '');
     }
 
     public function avatarUrl(): ?string
