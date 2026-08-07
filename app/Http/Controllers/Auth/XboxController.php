@@ -29,33 +29,20 @@ class XboxController extends Controller
         // Exchange the authorization code for a user token via OpenXBL
         $debug = ['code_preview' => substr($code, 0, 40) . '...'];
 
-        // Try multiple candidate exchange endpoints
-        $exchangeEndpoints = [
-            'POST /app/token'              => ['method' => 'post', 'url' => 'https://api.xbl.io/app/token'],
-            'POST /v2/app/token'           => ['method' => 'post', 'url' => 'https://api.xbl.io/v2/app/token'],
-            'GET /app/token?code'          => ['method' => 'get',  'url' => 'https://api.xbl.io/app/token'],
-        ];
-
-        $tokenRes    = null;
-        $usedEndpoint = null;
-
-        foreach ($exchangeEndpoints as $label => $endpoint) {
-            try {
-                $req = Http::timeout(10)->withHeaders([
+        // Exchange the authorization code for a user token via /app/claim
+        $usedEndpoint = 'POST /app/claim';
+        try {
+            $tokenRes = Http::timeout(10)
+                ->withHeaders([
                     'x-authorization' => config('services.openxbl.api_key'),
                     'Accept'          => 'application/json',
+                ])
+                ->post('https://api.xbl.io/app/claim', [
+                    'code'   => $code,
+                    'app_id' => config('services.openxbl.app_id'),
                 ]);
-
-                $tokenRes = $endpoint['method'] === 'post'
-                    ? $req->post($endpoint['url'], ['code' => $code, 'app_id' => config('services.openxbl.app_id')])
-                    : $req->get($endpoint['url'], ['code' => $code, 'app_id' => config('services.openxbl.app_id')]);
-
-                $usedEndpoint = $label;
-            } catch (ConnectionException) {
-                continue;
-            }
-
-            if ($tokenRes->status() !== 404) break;
+        } catch (ConnectionException) {
+            return response()->json(['debug' => 'token exchange connection failed']);
         }
 
         $debug['exchange_endpoint'] = $usedEndpoint;
