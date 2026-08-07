@@ -17,6 +17,6 @@ class Announcement extends Model
 
     public function readers(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'announcement_reads')->withTimestamps();
+        return $this->belongsToMany(User::class, 'announcement_reads')->withPivot('created_at');
     }
 }

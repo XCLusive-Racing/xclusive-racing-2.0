@@ -50,7 +50,7 @@ class MessageController extends Controller
         $user = auth()->user();
 
         if (!$user->readAnnouncements()->where('announcement_id', $announcement->id)->exists()) {
-            $user->readAnnouncements()->attach($announcement->id);
+            $user->readAnnouncements()->attach($announcement->id, ['created_at' => now()]);
         }
 
         return view('messages.show-announcement', compact('announcement'));

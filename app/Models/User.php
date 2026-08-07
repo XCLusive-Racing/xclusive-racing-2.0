@@ -151,7 +151,7 @@ class User extends Authenticatable
 
     public function readAnnouncements(): BelongsToMany
     {
-        return $this->belongsToMany(Announcement::class, 'announcement_reads')->withTimestamps();
+        return $this->belongsToMany(Announcement::class, 'announcement_reads')->withPivot('created_at');
     }
 
     public function totalUnreadCount(): int
