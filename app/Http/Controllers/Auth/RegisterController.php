@@ -16,12 +16,15 @@ class RegisterController extends Controller
         return view('auth.register', [
             'steamId'   => session('steam_platform_id'),
             'steamName' => session('steam_name'),
+            'xboxId'    => session('xbox_platform_id'),
+            'xboxName'  => session('xbox_name'),
         ]);
     }
 
     public function store(Request $request, PlatformLookupService $lookup)
     {
         $steamOAuth = $request->platform === 'steam' && session('steam_platform_id');
+        $xboxOAuth  = $request->platform === 'xbox'  && session('xbox_platform_id');
 
         $rules = [
             'email'            => 'required|email|unique:users',
@@ -32,7 +35,7 @@ class RegisterController extends Controller
             'privacy_accepted' => 'accepted',
         ];
 
-        if (!$steamOAuth) {
+        if (!$steamOAuth && !$xboxOAuth) {
             $rules['gamertag'] = 'required|string|max:255';
         }
 
@@ -48,6 +51,12 @@ class RegisterController extends Controller
                 'name'        => session('steam_name'),
             ];
             session()->forget(['steam_platform_id', 'steam_name']);
+        } elseif ($xboxOAuth) {
+            $profile = [
+                'platform_id' => session('xbox_platform_id'),
+                'name'        => session('xbox_name'),
+            ];
+            session()->forget(['xbox_platform_id', 'xbox_name']);
         } else {
             try {
                 $profile = $lookup->lookup($request->platform, $request->gamertag);
@@ -73,7 +82,7 @@ class RegisterController extends Controller
 
         // Fallback: match temp-imported accounts by gamertag (T_ prefix).
         // Strip #xxxx discriminator from both sides so "Name#1234" matches "T_name".
-        if (!$existing) {
+        if (!$existing && $profile['name'] !== null) {
             $normalizedName = strtolower(preg_replace('/#\d+$/', '', $profile['name']));
             $existing = User::where(function ($q) use ($normalizedName, $profile) {
                     $q->where('platform_id', 'T_' . $normalizedName)
@@ -83,11 +92,22 @@ class RegisterController extends Controller
                 ->first();
         }
 
+        // XUID entered directly but no matching imported account — can't create a new
+        // account without a verified gamertag name.
+        if ($profile['name'] === null && !$existing) {
+            return back()->withInput()->withErrors([
+                'gamertag' => 'No account found for this XUID. If you are a new member, enter your Xbox gamertag instead.',
+            ]);
+        }
+
+        // When user entered their XUID directly, preserve the imported display name.
+        $resolvedName = $profile['name'] ?? $existing->name;
+
         if ($existing) {
             // Imported placeholder — driver claims their account by linking email + password
             if (str_ends_with($existing->email, '@import.local')) {
                 $existing->update([
-                    'name'                => $profile['name'],
+                    'name'                => $resolvedName,
                     'platform_id'         => $profile['platform_id'],
                     'platform'            => $request->platform,
                     'email'               => $request->email,
@@ -105,7 +125,7 @@ class RegisterController extends Controller
         }
 
         $user = User::create([
-            'name'                => $profile['name'],
+            'name'                => $resolvedName,
             'email'               => $request->email,
             'password'            => Hash::make($request->password),
             'country'             => $request->country,

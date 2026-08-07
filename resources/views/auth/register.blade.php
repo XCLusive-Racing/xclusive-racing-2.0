@@ -5,8 +5,8 @@
 
 @section('content')
 @php
-    $startStep = (old('platform') || $steamId) ? 2 : 1;
-    $startPlatform = old('platform', $steamId ? 'steam' : '');
+    $startStep = (old('platform') || $steamId || $xboxId) ? 2 : 1;
+    $startPlatform = old('platform', $steamId ? 'steam' : ($xboxId ? 'xbox' : ''));
 @endphp
 <div class="xcl-auth-page py-5" data-register>
 
@@ -27,10 +27,10 @@
                     <i class="fa-brands fa-steam fs-5"></i>
                     Steam
                 </a>
-                <button type="button" data-select-platform="xbox" class="xcl-platform-btn xcl-platform-btn--xbox">
+                <a href="{{ route('auth.xbox') }}" class="xcl-platform-btn xcl-platform-btn--xbox">
                     <i class="fa-brands fa-xbox fs-5"></i>
                     Xbox
-                </button>
+                </a>
                 <button type="button" data-select-platform="ps5" class="xcl-platform-btn xcl-platform-btn--ps5">
                     <i class="fa-brands fa-playstation fs-5"></i>
                     PlayStation
@@ -69,6 +69,15 @@
                         {{ $steamName }}
                     </div>
                 </div>
+                @elseif ($xboxId)
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-uppercase text-white-50 mb-1">Xbox Account</label>
+                    <div class="form-control xcl-auth-input d-flex align-items-center gap-2"
+                         style="opacity:.7; cursor:default;">
+                        <i class="fa-brands fa-xbox"></i>
+                        {{ $xboxName }}
+                    </div>
+                </div>
                 @else
                 <div class="mb-3">
                     <label class="form-label small fw-bold text-uppercase text-white-50 mb-1">
@@ -83,7 +92,8 @@
                         Enter your 17-digit SteamID64, or the name from steamcommunity.com/id/<strong>name</strong>
                     </div>
                     <div data-hint="xbox" class="mt-1" style="font-size:.78rem; color:rgba(255,255,255,.3);{{ $startPlatform !== 'xbox' ? 'display:none' : '' }}">
-                        Enter your Gamertag with or without the #xxxx suffix (e.g. <strong>PlayerName</strong> or <strong>PlayerName#1234</strong>)
+                        Enter your Gamertag (e.g. <strong>PlayerName</strong> or <strong>PlayerName#1234</strong>).
+                        If your gamertag lookup fails, enter your <strong>XUID</strong> instead — the 15–16 digit number found on your Xbox profile page at xbox.com.
                     </div>
                     @error('gamertag')
                         <div class="invalid-feedback">{{ $message }}</div>

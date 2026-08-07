@@ -72,42 +72,67 @@ class PlatformLookupService
 
     // ── Xbox (OpenXBL) ────────────────────────────────────────────────────────
 
-    private function lookupXbox(string $gamertag): array
+    private function lookupXbox(string $input): array
     {
+        $input = trim($input);
+
+        // If the user enters a raw XUID (15–18 digit number), skip the gamertag
+        // search entirely. This is the fallback for old/changed/private gamertags.
+        // name = null signals to the controller to preserve the existing imported name.
+        if (preg_match('/^\d{15,18}$/', $input)) {
+            return ['platform_id' => 'M' . $input, 'name' => null];
+        }
+
         // Strip discriminator suffix (#1234), normalize whitespace
-        $baseTag = trim(preg_replace('/\s+/', ' ', preg_replace('/#\d+$/', '', trim($gamertag))));
+        $baseTag = trim(preg_replace('/\s+/', ' ', preg_replace('/#\d+$/', '', $input)));
 
-        try {
-            $res = $this->http()->withHeaders([
-                'x-authorization' => config('services.openxbl.api_key'),
-                'Accept'          => 'application/json',
-                'Accept-Language' => 'en-US',
-            ])->get('https://api.xbl.io/v2/search/' . rawurlencode($baseTag));
-        } catch (ConnectionException) {
-            \Log::error('Xbox lookup connection failed', ['gt' => $baseTag]);
-            throw new RuntimeException('Could not reach Xbox Live. Please try again.');
-        }
-
-        if (! $res->successful()) {
-            \Log::error('OpenXBL error', ['status' => $res->status(), 'body' => $res->body()]);
-            throw new RuntimeException('Xbox account not found. Check your Gamertag.');
-        }
-
-        // Support both API response formats
-        $profile = $res->json('people.0') ?? $res->json('content.people.0');
-
-        if (! $profile) {
-            \Log::error('OpenXBL empty profile', ['gt' => $baseTag, 'body' => $res->json()]);
-            throw new RuntimeException('Xbox account not found. Check your Gamertag and make sure your Xbox profile is public.');
-        }
-
-        $xuid = $profile['xuid'];
-        $tag  = $profile['modernGamertag'] ?? $profile['gamertag'] ?? $baseTag;
-
-        return [
-            'platform_id' => 'M' . $xuid,
-            'name'        => $tag,
+        $headers = [
+            'x-authorization' => config('services.openxbl.api_key'),
+            'Accept'          => 'application/json',
+            'Accept-Language' => 'en-US',
         ];
+
+        // Try with original tag, then without spaces (old-style gamertags)
+        $candidates = array_unique([$baseTag, preg_replace('/\s+/', '', $baseTag)]);
+
+        foreach ($candidates as $attempt) {
+            try {
+                $res = $this->http()->withHeaders($headers)
+                    ->get('https://api.xbl.io/v2/search/' . rawurlencode($attempt));
+            } catch (ConnectionException) {
+                \Log::error('Xbox lookup connection failed', ['gt' => $attempt]);
+                throw new RuntimeException('Could not reach Xbox Live. Please try again.');
+            }
+
+            if (! $res->successful()) {
+                \Log::error('OpenXBL search error', [
+                    'gt'     => $attempt,
+                    'status' => $res->status(),
+                    'body'   => $res->body(),
+                ]);
+                if ($res->status() === 429) {
+                    throw new RuntimeException('Xbox lookup is temporarily unavailable due to rate limiting. Please try again in a moment.');
+                }
+                continue;
+            }
+
+            $profile = $res->json('people.0') ?? $res->json('content.people.0');
+
+            if ($profile) {
+                return [
+                    'platform_id' => 'M' . $profile['xuid'],
+                    'name'        => $profile['modernGamertag'] ?? $profile['gamertag'] ?? $baseTag,
+                ];
+            }
+
+            \Log::warning('OpenXBL empty result', ['gt' => $attempt, 'body' => $res->json()]);
+        }
+
+        throw new RuntimeException(
+            'Xbox account not found for "' . $baseTag . '". ' .
+            'Enter your current gamertag exactly as shown on your Xbox profile. ' .
+            'If your gamertag recently changed or contains spaces, enter your XUID instead (the 15–16 digit number from your Xbox profile page).'
+        );
     }
 
     // ── PSN ───────────────────────────────────────────────────────────────────

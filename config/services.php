@@ -37,7 +37,10 @@ return [
     ],
 
     'openxbl' => [
-        'api_key' => env('XBOX_API_KEY'),
+        'api_key'    => env('XBOX_API_KEY'),
+        'app_id'     => env('XBOX_APP_ID'),
+        'app_secret' => env('XBOX_APP_SECRET'),
+        'redirect'   => env('APP_URL') . '/auth/xbox/callback',
     ],
 
     'psn_lookup' => [

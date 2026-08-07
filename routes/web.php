@@ -25,6 +25,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordSetupController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SteamController;
+use App\Http\Controllers\Auth\XboxController;
 use App\Http\Controllers\ConnectedAccountController;
 use App\Http\Controllers\BopController;
 use App\Http\Controllers\CalendarController;
@@ -109,6 +110,10 @@ Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 // Steam OAuth
 Route::get('/auth/steam', [SteamController::class, 'redirect'])->name('auth.steam');
 Route::get('/auth/steam/callback', [SteamController::class, 'callback'])->name('auth.steam.callback');
+
+// Xbox OAuth
+Route::get('/auth/xbox', [XboxController::class, 'redirect'])->name('auth.xbox');
+Route::get('/auth/xbox/callback', [XboxController::class, 'callback'])->name('auth.xbox.callback');
 
 // Discord OAuth (auth required — only for linking)
 Route::middleware('auth')->group(function () {
