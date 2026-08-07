@@ -82,7 +82,7 @@ class PlatformLookupService
                 'x-authorization' => config('services.openxbl.api_key'),
                 'Accept'          => 'application/json',
                 'Accept-Language' => 'en-US',
-            ])->get('https://xbl.io/api/v2/search/' . rawurlencode($baseTag));
+            ])->get('https://api.xbl.io/v2/search/' . rawurlencode($baseTag));
         } catch (ConnectionException) {
             \Log::error('Xbox lookup connection failed', ['gt' => $baseTag]);
             throw new RuntimeException('Could not reach Xbox Live. Please try again.');
