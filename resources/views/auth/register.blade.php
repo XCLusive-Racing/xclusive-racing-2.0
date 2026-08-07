@@ -22,6 +22,12 @@
             <h1 class="fs-3 fw-black text-uppercase fst-italic text-white text-center mb-1">Choose Platform</h1>
             <p class="text-white small text-center mb-4">Select the platform you race on</p>
 
+            @if (session('xbox_error'))
+            <div class="rounded-3 mb-3 py-2 px-3" style="background:rgba(239,68,68,.15); border-left:3px solid #ef4444;">
+                <div class="small text-danger">{{ session('xbox_error') }}</div>
+            </div>
+            @endif
+
             <div class="d-flex flex-column gap-3">
                 <a href="{{ route('auth.steam') }}" class="xcl-platform-btn xcl-platform-btn--steam">
                     <i class="fa-brands fa-steam fs-5"></i>

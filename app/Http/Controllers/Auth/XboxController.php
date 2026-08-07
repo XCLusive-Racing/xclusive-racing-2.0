@@ -16,11 +16,14 @@ class XboxController extends Controller
 
     public function callback()
     {
+        \Log::info('Xbox OAuth callback received', ['params' => request()->all()]);
+
         $code = request('code');
 
         if (! $code) {
+            \Log::warning('Xbox OAuth callback missing code', ['params' => request()->all()]);
             return redirect()->route('register')
-                ->withErrors(['gamertag' => 'Xbox sign-in was cancelled or failed. Please try again.']);
+                ->with('xbox_error', 'Xbox sign-in was cancelled or failed. Please try again.');
         }
 
         // Exchange the authorization code for an access token
