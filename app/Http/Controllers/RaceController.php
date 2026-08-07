@@ -8,6 +8,7 @@ use App\Models\Race;
 use App\Models\RaceClass;
 use App\Models\RaceRegistration;
 use App\Models\User;
+use App\Services\AccServerConfigService;
 use Illuminate\Http\Request;
 
 class RaceController extends Controller
@@ -90,12 +91,9 @@ class RaceController extends Controller
         ]);
 
         $server = $race->ftpServer;
-        $serverName = $server
-            ? 'XCL SERVER ' . $server->server_number
-            : 'To be announced';
-        $password = $server
-            ? $server->server_number . 'xcl'
-            : 'To be announced';
+        $config = app(AccServerConfigService::class)->settings($race, $server);
+        $serverName = $config['serverName'] ?? 'To be announced';
+        $password   = $config['password']   ?? 'To be announced';
 
         Message::create([
             'user_id'      => auth()->id(),
