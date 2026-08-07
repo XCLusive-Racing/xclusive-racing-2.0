@@ -130,7 +130,10 @@
                 <div class="mb-3">
                     <label class="form-label small fw-bold text-uppercase text-white-50 mb-1">Confirm Password</label>
                     <input type="password" name="password_confirmation" required placeholder="••••••••"
-                           class="form-control xcl-auth-input">
+                           class="form-control xcl-auth-input @error('password_confirmation') is-invalid @enderror">
+                    @error('password_confirmation')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
 
                 <div class="mb-3">
