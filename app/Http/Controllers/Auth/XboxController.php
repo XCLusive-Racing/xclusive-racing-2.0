@@ -26,58 +26,70 @@ class XboxController extends Controller
                 ->with('xbox_error', 'Xbox sign-in was cancelled or failed. Please try again.');
         }
 
-        // Exchange the authorization code for an access token
-        try {
-            $tokenRes = Http::timeout(10)
-                ->withHeaders([
-                    'x-authorization' => config('services.openxbl.api_key'),
-                    'Accept'          => 'application/json',
-                ])
-                ->post('https://api.xbl.io/app/auth/' . config('services.openxbl.app_id') . '/token', [
-                    'code' => $code,
+        // Try using the code directly as a user token (OpenXBL may pass it through),
+        // then fall back to a token exchange if that fails.
+        $accessToken = null;
+        $res         = null;
+
+        foreach (['direct', 'exchange'] as $attempt) {
+            if ($attempt === 'exchange') {
+                try {
+                    $tokenRes = Http::timeout(10)
+                        ->withHeaders([
+                            'x-authorization' => config('services.openxbl.api_key'),
+                            'Accept'          => 'application/json',
+                        ])
+                        ->post('https://api.xbl.io/app/auth/' . config('services.openxbl.app_id') . '/token', [
+                            'code' => $code,
+                        ]);
+                } catch (ConnectionException) {
+                    break;
+                }
+
+                \Log::info('Xbox OAuth token exchange response', [
+                    'status' => $tokenRes->status(),
+                    'body'   => $tokenRes->body(),
                 ]);
-        } catch (ConnectionException) {
-            return redirect()->route('register')
-                ->withErrors(['gamertag' => 'Could not reach Xbox Live. Please try again.']);
-        }
 
-        if (! $tokenRes->successful()) {
-            \Log::error('Xbox OAuth token exchange failed', [
-                'status' => $tokenRes->status(),
-                'body'   => $tokenRes->body(),
+                if ($tokenRes->successful()) {
+                    $accessToken = $tokenRes->json('token') ?? $tokenRes->json('access_token') ?? $tokenRes->json('code');
+                }
+            } else {
+                $accessToken = $code;
+            }
+
+            if (! $accessToken) continue;
+
+            // Fetch the authenticated user's Xbox profile
+            try {
+                $res = Http::timeout(10)
+                    ->withHeaders([
+                        'x-authorization' => $accessToken,
+                        'Accept'          => 'application/json',
+                    ])
+                    ->get('https://api.xbl.io/v2/account');
+            } catch (ConnectionException) {
+                continue;
+            }
+
+            \Log::info('Xbox OAuth account response', [
+                'attempt' => $attempt,
+                'status'  => $res->status(),
+                'body'    => $res->body(),
             ]);
-            return redirect()->route('register')
-                ->withErrors(['gamertag' => 'Xbox sign-in failed. Please try again.']);
+
+            if ($res->successful()) break;
+
+            $accessToken = null;
         }
 
-        $accessToken = $tokenRes->json('token') ?? $tokenRes->json('access_token');
-
-        if (! $accessToken) {
-            \Log::error('Xbox OAuth missing token in response', ['body' => $tokenRes->json()]);
-            return redirect()->route('register')
-                ->withErrors(['gamertag' => 'Xbox sign-in failed. Please try again.']);
-        }
-
-        // Fetch the authenticated user's Xbox profile
-        try {
-            $res = Http::timeout(10)
-                ->withHeaders([
-                    'x-authorization' => $accessToken,
-                    'Accept'          => 'application/json',
-                ])
-                ->get('https://api.xbl.io/v2/account');
-        } catch (ConnectionException) {
-            return redirect()->route('register')
-                ->withErrors(['gamertag' => 'Could not reach Xbox Live. Please try again.']);
-        }
-
-        if (! $res->successful()) {
+        if (! $res || ! $res->successful()) {
             \Log::error('Xbox OAuth account fetch failed', [
-                'status' => $res->status(),
-                'body'   => $res->body(),
+                'status' => $res?->status(),
+                'body'   => $res?->body(),
             ]);
             return redirect()->route('register')
-                ->withErrors(['gamertag' => 'Xbox sign-in failed. Please try again.']);
+                ->with('xbox_error', 'Xbox sign-in failed. Please try again.');
         }
 
         $data     = $res->json();
