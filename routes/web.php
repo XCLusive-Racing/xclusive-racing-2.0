@@ -38,28 +38,10 @@ use App\Http\Controllers\HotlapController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RaceController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\TeamApplicationController;
 use App\Http\Controllers\ResultsController;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
-
-Route::get('sven', function () {
-    $baseTag = 'SatNat911GTS';
-    $baseTag = 'DeEchteCas';
-        $client = Http::timeout(10)->withOptions(['connect_timeout' => 5]);
-
-        if (app()->environment('local')) {
-            $client = $client->withoutVerifying();
-        }
-
-        $url = 'https://xbl.io/api/v2/player/summary?gt=' . rawurlencode($baseTag);
-    $res = $client->withHeaders([
-        'x-authorization' => config('services.openxbl.api_key'),
-        'Accept'          => 'application/json',
-        'Accept-Language' => 'en-US',
-    ])->get($url);
-    dd($res, $res->body());
-});
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::view('/team', 'team.index')->name('team');
@@ -148,6 +130,13 @@ Route::middleware('auth')->group(function () {
     // Event registration
     Route::post('/events/{race}/register', [RaceController::class, 'register'])->name('events.register');
     Route::delete('/events/{race}/unregister', [RaceController::class, 'unregister'])->name('events.unregister');
+
+    // Inbox
+    Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
+    Route::delete('/messages/bulk', [MessageController::class, 'bulkDestroy'])->name('messages.bulk-destroy');
+    Route::get('/messages/{message}', [MessageController::class, 'show'])->name('messages.show');
+    Route::delete('/messages/{message}', [MessageController::class, 'destroy'])->name('messages.destroy');
+    Route::get('/announcements/{announcement}', [MessageController::class, 'showAnnouncement'])->name('announcements.show');
 });
 
 // Admin

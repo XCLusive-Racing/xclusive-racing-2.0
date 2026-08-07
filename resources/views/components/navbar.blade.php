@@ -44,6 +44,18 @@
                     <x-rank-avatar :user="auth()->user()" :size="28" :badge="false" />
                     PROFILE
                 </a>
+                @php $unreadMobile = auth()->user()->totalUnreadCount(); @endphp
+                <a href="{{ route('messages.index') }}"
+                   class="position-relative d-flex align-items-center text-xcl-purple ms-2"
+                   style="font-size:1.1rem;line-height:1" title="Inbox">
+                    <i class="fa-regular fa-envelope"></i>
+                    @if($unreadMobile > 0)
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-white fw-bold"
+                              style="background:#dc2626;font-size:.55rem;min-width:15px;padding:2px 3px;transform:translate(-40%,-30%) !important">
+                            {{ $unreadMobile > 99 ? '99+' : $unreadMobile }}
+                        </span>
+                    @endif
+                </a>
                 @if(auth()->user()->canAccessAdminPanel())
                 <a href="{{ route(auth()->user()->adminLandingRoute()) }}"
                    class="btn btn-sm fw-bold text-uppercase text-white bg-xcl-purple ms-auto">
@@ -195,6 +207,20 @@
                             ADMIN
                         </a>
                     @endif
+
+                    @php $unread = auth()->user()->totalUnreadCount(); @endphp
+                    <a href="{{ route('messages.index') }}"
+                       class="position-relative d-flex align-items-center text-xcl-purple"
+                       style="font-size:1.15rem;line-height:1"
+                       title="Inbox">
+                        <i class="fa-regular fa-envelope"></i>
+                        @if($unread > 0)
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-white fw-bold"
+                                  style="background:#dc2626;font-size:.6rem;min-width:16px;padding:2px 4px;transform:translate(-40%,-30%) !important">
+                                {{ $unread > 99 ? '99+' : $unread }}
+                            </span>
+                        @endif
+                    </a>
 
                     <a href="{{ route('profile') }}"
                        class="d-flex align-items-center gap-2 text-decoration-none fw-bold text-xcl-purple">
