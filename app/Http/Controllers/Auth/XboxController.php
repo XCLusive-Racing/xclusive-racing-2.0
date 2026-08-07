@@ -26,69 +26,52 @@ class XboxController extends Controller
                 ->with('xbox_error', 'Xbox sign-in was cancelled or failed. Please try again.');
         }
 
-        // Try using the code directly as a user token (OpenXBL may pass it through),
-        // then fall back to a token exchange if that fails.
-        $accessToken = null;
-        $res         = null;
+        // Exchange the authorization code for a user token via OpenXBL
+        $debug = ['code_preview' => substr($code, 0, 40) . '...'];
 
-        foreach (['direct', 'exchange'] as $attempt) {
-            if ($attempt === 'exchange') {
-                try {
-                    $tokenRes = Http::timeout(10)
-                        ->withHeaders([
-                            'x-authorization' => config('services.openxbl.api_key'),
-                            'Accept'          => 'application/json',
-                        ])
-                        ->post('https://api.xbl.io/app/auth/' . config('services.openxbl.app_id') . '/token', [
-                            'code' => $code,
-                        ]);
-                } catch (ConnectionException) {
-                    break;
-                }
-
-                \Log::info('Xbox OAuth token exchange response', [
-                    'status' => $tokenRes->status(),
-                    'body'   => $tokenRes->body(),
+        try {
+            $tokenRes = Http::timeout(10)
+                ->withHeaders([
+                    'x-authorization' => config('services.openxbl.api_key'),
+                    'Accept'          => 'application/json',
+                    'Content-Type'    => 'application/json',
+                ])
+                ->post('https://api.xbl.io/app/auth/' . config('services.openxbl.app_id') . '/token', [
+                    'code' => $code,
                 ]);
-
-                if ($tokenRes->successful()) {
-                    $accessToken = $tokenRes->json('token') ?? $tokenRes->json('access_token') ?? $tokenRes->json('code');
-                }
-            } else {
-                $accessToken = $code;
-            }
-
-            if (! $accessToken) continue;
-
-            // Fetch the authenticated user's Xbox profile
-            try {
-                $res = Http::timeout(10)
-                    ->withHeaders([
-                        'x-authorization' => $accessToken,
-                        'Accept'          => 'application/json',
-                    ])
-                    ->get('https://api.xbl.io/v2/account');
-            } catch (ConnectionException) {
-                continue;
-            }
-
-            \Log::info('Xbox OAuth account response', [
-                'attempt' => $attempt,
-                'status'  => $res->status(),
-                'body'    => $res->body(),
-            ]);
-
-            if ($res->successful()) break;
-
-            $accessToken = null;
+        } catch (ConnectionException) {
+            return response()->json(['debug' => 'token exchange connection failed']);
         }
 
-        if (! $res || ! $res->successful()) {
-            return response()->json([
-                'debug'  => 'Xbox OAuth account fetch failed',
-                'status' => $res?->status(),
-                'body'   => $res?->json() ?? $res?->body(),
-            ]);
+        $debug['exchange_status'] = $tokenRes->status();
+        $debug['exchange_body']   = $tokenRes->json() ?? $tokenRes->body();
+
+        $accessToken = $tokenRes->json('token')
+            ?? $tokenRes->json('access_token')
+            ?? $tokenRes->json('userToken')
+            ?? null;
+
+        if (! $accessToken) {
+            return response()->json($debug);
+        }
+
+        // Fetch the authenticated user's Xbox profile
+        try {
+            $res = Http::timeout(10)
+                ->withHeaders([
+                    'x-authorization' => $accessToken,
+                    'Accept'          => 'application/json',
+                ])
+                ->get('https://api.xbl.io/v2/account');
+        } catch (ConnectionException) {
+            return response()->json(['debug' => 'account fetch connection failed']);
+        }
+
+        $debug['account_status'] = $res->status();
+        $debug['account_body']   = $res->json() ?? $res->body();
+
+        if (! $res->successful()) {
+            return response()->json($debug);
         }
 
         $data     = $res->json();
