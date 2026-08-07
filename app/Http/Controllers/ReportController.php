@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Driver;
+use App\Models\Message;
 use App\Models\Race;
 use App\Models\Report;
 use Illuminate\Http\Request;
@@ -50,7 +51,16 @@ class ReportController extends Controller
         $data['user_id'] = auth()->id();
         $data['reporter_driver_name'] = $data['reporter_driver_name'] ?: $this->myGamertag(auth()->user());
 
-        Report::create($data);
+        $report = Report::create($data);
+
+        Message::create([
+            'user_id'      => auth()->id(),
+            'title'        => 'Report submitted',
+            'body'         => "Your incident report has been received and is pending review by the stewards.\n\nReported driver: {$report->reported_driver_name}\n\nYou will receive a message when a verdict has been reached.",
+            'type'         => 'report_confirmation',
+            'related_id'   => $report->id,
+            'related_type' => Report::class,
+        ]);
 
         return redirect()->route('reports.index')
             ->with('success', 'Your report has been submitted and is pending review.');

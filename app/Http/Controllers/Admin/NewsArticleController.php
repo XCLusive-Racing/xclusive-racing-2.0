@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Announcement;
 use App\Models\Media;
 use App\Models\NewsArticle;
 use App\Models\NewsTag;
@@ -87,6 +88,14 @@ class NewsArticleController extends Controller
         $article = NewsArticle::create($data);
         $article->tags()->sync($tags);
 
+        if ($article->status === 'published') {
+            Announcement::create([
+                'title'           => 'New article: ' . $article->title,
+                'body'            => $article->excerpt ?? $article->title,
+                'news_article_id' => $article->id,
+            ]);
+        }
+
         return redirect()->route('admin.news.index')
             ->with('success', 'Article "' . $article->title . '" created.');
     }
@@ -134,8 +143,18 @@ class NewsArticleController extends Controller
         $tags = $data['tags'] ?? [];
         unset($data['tags']);
 
+        $wasPublished = $newsArticle->published_at !== null;
         $newsArticle->update($data);
         $newsArticle->tags()->sync($tags);
+
+        // Only create announcement when article goes from draft → published for the first time
+        if ($newsArticle->status === 'published' && !$wasPublished) {
+            Announcement::create([
+                'title'           => 'New article: ' . $newsArticle->title,
+                'body'            => $newsArticle->excerpt ?? $newsArticle->title,
+                'news_article_id' => $newsArticle->id,
+            ]);
+        }
 
         return redirect()->route('admin.news.index')
             ->with('success', 'Article updated.');

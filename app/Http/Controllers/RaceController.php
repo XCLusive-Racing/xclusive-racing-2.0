@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\EventTag;
+use App\Models\Message;
 use App\Models\Race;
 use App\Models\RaceClass;
 use App\Models\RaceRegistration;
@@ -86,6 +87,23 @@ class RaceController extends Controller
             'race_id'       => $race->id,
             'user_id'       => auth()->id(),
             'race_class_id' => $raceClassId,
+        ]);
+
+        $server = $race->ftpServer;
+        $serverName = $server
+            ? 'XCL SERVER ' . $server->server_number
+            : 'To be announced';
+        $password = $server
+            ? $server->server_number . 'xcl'
+            : 'To be announced';
+
+        Message::create([
+            'user_id'      => auth()->id(),
+            'title'        => 'Registered: ' . $race->title,
+            'body'         => "You have successfully registered for {$race->title}.\n\nServer: {$serverName}\nPassword: {$password}\n\nSee you on track!",
+            'type'         => 'event_registration',
+            'related_id'   => $race->id,
+            'related_type' => Race::class,
         ]);
 
         return back()->with('success', 'You have been registered for ' . $race->title . '!');

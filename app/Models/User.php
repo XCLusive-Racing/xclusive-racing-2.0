@@ -144,6 +144,24 @@ class User extends Authenticatable
         return $this->hasMany(ConnectedAccount::class);
     }
 
+    public function messages(): HasMany
+    {
+        return $this->hasMany(Message::class);
+    }
+
+    public function readAnnouncements(): BelongsToMany
+    {
+        return $this->belongsToMany(Announcement::class, 'announcement_reads')->withTimestamps();
+    }
+
+    public function totalUnreadCount(): int
+    {
+        $unreadMessages = $this->messages()->whereNull('read_at')->count();
+        $unreadAnnouncements = Announcement::whereDoesntHave('readers', fn($q) => $q->where('user_id', $this->id))->count();
+
+        return $unreadMessages + $unreadAnnouncements;
+    }
+
     public function connectedAccount(string $provider): ?ConnectedAccount
     {
         return $this->connectedAccounts->firstWhere('provider', $provider);
