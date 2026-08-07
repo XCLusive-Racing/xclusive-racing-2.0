@@ -2968,7 +2968,7 @@ span.flatpickr-weekday {
     &__btn {
         border: none;
         background: transparent;
-        color: rgba(255,255,255,.5);
+        color: #1a1a2e;
         font-family: 'Rajdhani', sans-serif;
         font-weight: 800;
         font-size: .78rem;
@@ -2979,7 +2979,7 @@ span.flatpickr-weekday {
         cursor: pointer;
         transition: background .15s, color .15s;
 
-        &:hover { color: rgba(255,255,255,.8); }
+        &:hover { color: #7c3aed; }
 
         &--active {
             background: #db2777;
@@ -2995,16 +2995,16 @@ span.flatpickr-weekday {
     width: 36px;
     height: 36px;
     border-radius: 8px;
-    border: 1.5px solid rgba(219,39,119,.25);
+    border: 1.5px solid #7c3aed;
     background: rgba(219,39,119,.07);
-    color: rgba(255,255,255,.7);
+    color: #1a1a2e;
     text-decoration: none;
     transition: background .15s, border-color .15s, color .15s;
 
     &:hover {
         background: rgba(219,39,119,.18);
-        border-color: rgba(219,39,119,.5);
-        color: #fff;
+        border-color: #7c3aed;
+        color: #1a1a2e;
     }
 }
 

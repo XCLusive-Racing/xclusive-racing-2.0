@@ -45,7 +45,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
                     </svg>
                 </a>
-                <span class="fw-black text-uppercase fst-italic text-white" style="min-width:170px;text-align:center;font-size:1.1rem;letter-spacing:.03em">
+                <span class="fw-black text-uppercase fst-italic" style="min-width:170px;text-align:center;font-size:1.1rem;letter-spacing:.03em;color:#1a1a2e">
                     {{ $current->format('F Y') }}
                 </span>
                 <a href="{{ route('calendar', ['year' => $next->year, 'month' => $next->month]) }}"
@@ -63,12 +63,12 @@
             @foreach([['acc','#7c3aed','ACC Console'],['lmu','#db2777','Le Mans Ultimate'],['iracing','#2563eb','iRacing'],['ac','#16a34a','AC Rally']] as [$g,$c,$l])
             <div class="d-flex align-items-center gap-2">
                 <span class="rounded-1 flex-shrink-0" style="width:10px;height:10px;background:{{ $c }};display:inline-block"></span>
-                <span class="fw-bold text-uppercase" style="font-size:.68rem;color:rgba(255,255,255,.45);letter-spacing:.06em">{{ $l }}</span>
+                <span class="fw-bold text-uppercase" style="font-size:.68rem;color:#1a1a2e !important;letter-spacing:.06em">{{ $l }}</span>
             </div>
             @endforeach
             <div class="d-flex align-items-center gap-2">
                 <span class="rounded-1 flex-shrink-0" style="width:10px;height:10px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);display:inline-block"></span>
-                <span class="fw-bold text-uppercase" style="font-size:.68rem;color:rgba(255,255,255,.45);letter-spacing:.06em">Championship</span>
+                <span class="fw-bold text-uppercase" style="font-size:.68rem;color:#1a1a2e !important;letter-spacing:.06em">Championship</span>
             </div>
         </div>
 
