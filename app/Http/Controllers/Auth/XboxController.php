@@ -28,11 +28,38 @@ class XboxController extends Controller
 
         $debug = ['code_preview' => substr($code, 0, 40) . '...'];
 
-        // The code returned by OpenXBL appears to be the user token itself — use directly
+        // Exchange code for user token via api.xbl.io/app/claim
+        try {
+            $tokenRes = Http::timeout(10)
+                ->withHeaders([
+                    'x-authorization' => config('services.openxbl.api_key'),
+                    'Accept'          => 'application/json',
+                ])
+                ->post('https://api.xbl.io/app/claim', [
+                    'code'    => $code,
+                    'app_key' => config('services.openxbl.app_id'),
+                ]);
+        } catch (ConnectionException) {
+            return response()->json(['debug' => 'token exchange connection failed']);
+        }
+
+        $debug['claim_status'] = $tokenRes->status();
+        $debug['claim_body']   = $tokenRes->json() ?? $tokenRes->body();
+
+        $accessToken = $tokenRes->json('token')
+            ?? $tokenRes->json('access_token')
+            ?? $tokenRes->json('userToken')
+            ?? $tokenRes->json('key')
+            ?? null;
+
+        if (! $accessToken) {
+            return response()->json($debug);
+        }
+
         try {
             $res = Http::timeout(10)
                 ->withHeaders([
-                    'x-authorization' => $code,
+                    'x-authorization' => $accessToken,
                     'Accept'          => 'application/json',
                 ])
                 ->get('https://api.xbl.io/v2/account');
