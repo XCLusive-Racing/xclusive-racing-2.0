@@ -93,16 +93,16 @@ class PlatformLookupService
             throw new RuntimeException('Xbox account not found. Check your Gamertag.');
         }
 
-        $profile = $res->json('content.people.0');
+        // Support both API response formats
+        $profile = $res->json('people.0') ?? $res->json('content.people.0');
 
         if (! $profile) {
             \Log::error('OpenXBL empty profile', ['gt' => $baseTag, 'body' => $res->json()]);
-            throw new RuntimeException('Xbox account not found. Check your Gamertag.');
+            throw new RuntimeException('Xbox account not found. Check your Gamertag and make sure your Xbox profile is public.');
         }
 
         $xuid = $profile['xuid'];
-        $tag = $profile['gamertag'] ?? $baseTag;
-        // Er bestaan ook een gamertag, modernGamertag en uniqueModernGamertag
+        $tag  = $profile['modernGamertag'] ?? $profile['gamertag'] ?? $baseTag;
 
         return [
             'platform_id' => 'M' . $xuid,
