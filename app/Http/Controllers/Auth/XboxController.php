@@ -26,18 +26,19 @@ class XboxController extends Controller
                 ->with('xbox_error', 'Xbox sign-in was cancelled or failed. Please try again.');
         }
 
-        $debug = ['code_preview' => substr($code, 0, 40) . '...'];
+        $debug = [
+            'all_params'   => request()->all(),
+            'code_preview' => substr($code, 0, 40) . '...',
+        ];
 
         // Exchange code for user token via api.xbl.io/app/claim
+        // app_key = API key (not the app UUID)
         try {
             $tokenRes = Http::timeout(10)
-                ->withHeaders([
-                    'x-authorization' => config('services.openxbl.api_key'),
-                    'Accept'          => 'application/json',
-                ])
+                ->withHeaders(['Accept' => 'application/json'])
                 ->post('https://api.xbl.io/app/claim', [
                     'code'    => $code,
-                    'app_key' => config('services.openxbl.app_id'),
+                    'app_key' => config('services.openxbl.api_key'),
                 ]);
         } catch (ConnectionException) {
             return response()->json(['debug' => 'token exchange connection failed']);
