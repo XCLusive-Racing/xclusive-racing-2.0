@@ -39,9 +39,8 @@ class XboxController extends Controller
                     'Accept'          => 'application/json',
                 ])
                 ->post('https://api.xbl.io/app/claim', [
-                    'code'         => $code,
-                    'client_id'    => config('services.openxbl.azure_client_id'),
-                    'redirect_uri' => 'https://xclusiveracing.com/auth/xbox/callback',
+                    'code'    => $code,
+                    'app_key' => config('services.openxbl.azure_client_id'),
                 ]);
         } catch (ConnectionException) {
             return response()->json(['debug' => 'token exchange connection failed']);
