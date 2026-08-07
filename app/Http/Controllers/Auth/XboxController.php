@@ -31,16 +31,17 @@ class XboxController extends Controller
             'code_preview' => substr($code, 0, 40) . '...',
         ];
 
-        // Exchange Microsoft token via /v2/auth/tokens (custom Azure app flow)
+        // Exchange Microsoft token — client_id + redirect_uri as per OpenXBL custom Azure flow
         try {
             $tokenRes = Http::timeout(10)
                 ->withHeaders([
                     'x-authorization' => config('services.openxbl.api_key'),
                     'Accept'          => 'application/json',
                 ])
-                ->post('https://api.xbl.io/v2/auth/tokens', [
+                ->post('https://api.xbl.io/app/claim', [
                     'code'         => $code,
-                    'redirect_uri' => 'https://api.xbl.io/app/callback',
+                    'client_id'    => config('services.openxbl.azure_client_id'),
+                    'redirect_uri' => 'https://xclusiveracing.com/auth/xbox/callback',
                 ]);
         } catch (ConnectionException) {
             return response()->json(['debug' => 'token exchange connection failed']);
