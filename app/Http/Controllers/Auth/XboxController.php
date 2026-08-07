@@ -26,41 +26,13 @@ class XboxController extends Controller
                 ->with('xbox_error', 'Xbox sign-in was cancelled or failed. Please try again.');
         }
 
-        // Exchange the authorization code for a user token via OpenXBL
         $debug = ['code_preview' => substr($code, 0, 40) . '...'];
 
-        // Exchange the authorization code for a user token via /app/claim
-        try {
-            $tokenRes = Http::timeout(10)
-                ->withHeaders(['Accept' => 'application/json'])
-                ->post('https://xbl.io/app/claim', [
-                    'code'    => $code,
-                    'app_key' => config('services.openxbl.app_id'),
-                ]);
-        } catch (ConnectionException) {
-            return response()->json(['debug' => 'token exchange connection failed']);
-        }
-
-        $usedEndpoint = 'POST xbl.io/app/claim';
-
-        $debug['exchange_endpoint'] = $usedEndpoint;
-        $debug['exchange_status']   = $tokenRes?->status();
-        $debug['exchange_body']     = $tokenRes?->json() ?? $tokenRes?->body();
-
-        $accessToken = $tokenRes->json('token')
-            ?? $tokenRes->json('access_token')
-            ?? $tokenRes->json('userToken')
-            ?? null;
-
-        if (! $accessToken) {
-            return response()->json($debug);
-        }
-
-        // Fetch the authenticated user's Xbox profile
+        // The code returned by OpenXBL appears to be the user token itself — use directly
         try {
             $res = Http::timeout(10)
                 ->withHeaders([
-                    'x-authorization' => $accessToken,
+                    'x-authorization' => $code,
                     'Accept'          => 'application/json',
                 ])
                 ->get('https://api.xbl.io/v2/account');
