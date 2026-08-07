@@ -84,12 +84,11 @@ class XboxController extends Controller
         }
 
         if (! $res || ! $res->successful()) {
-            \Log::error('Xbox OAuth account fetch failed', [
+            return response()->json([
+                'debug'  => 'Xbox OAuth account fetch failed',
                 'status' => $res?->status(),
-                'body'   => $res?->body(),
+                'body'   => $res?->json() ?? $res?->body(),
             ]);
-            return redirect()->route('register')
-                ->with('xbox_error', 'Xbox sign-in failed. Please try again.');
         }
 
         $data     = $res->json();
