@@ -87,26 +87,30 @@ class RaceController extends Controller
 
         $race->load('ftpServer');
 
-        DB::transaction(function () use ($race, $raceClassId) {
-            RaceRegistration::create([
-                'race_id'       => $race->id,
-                'user_id'       => auth()->id(),
-                'race_class_id' => $raceClassId,
-            ]);
+        try {
+            DB::transaction(function () use ($race, $raceClassId) {
+                RaceRegistration::create([
+                    'race_id'       => $race->id,
+                    'user_id'       => auth()->id(),
+                    'race_class_id' => $raceClassId,
+                ]);
 
-            $config     = app(AccServerConfigService::class)->settings($race, $race->ftpServer);
-            $serverName = $config['serverName'] ?? 'To be announced';
-            $password   = $config['password']   ?? 'To be announced';
+                $config     = app(AccServerConfigService::class)->settings($race, $race->ftpServer);
+                $serverName = $config['serverName'] ?? 'To be announced';
+                $password   = $config['password']   ?? 'To be announced';
 
-            Message::create([
-                'user_id'      => auth()->id(),
-                'title'        => 'Registered: ' . $race->title,
-                'body'         => "You have successfully registered for {$race->title}.\n\nServer: {$serverName}\nPassword: {$password}\n\nSee you on track!",
-                'type'         => 'event_registration',
-                'related_id'   => $race->id,
-                'related_type' => Race::class,
-            ]);
-        });
+                Message::create([
+                    'user_id'      => auth()->id(),
+                    'title'        => 'Registered: ' . $race->title,
+                    'body'         => "You have successfully registered for {$race->title}.\n\nServer: {$serverName}\nPassword: {$password}\n\nSee you on track!",
+                    'type'         => 'event_registration',
+                    'related_id'   => $race->id,
+                    'related_type' => Race::class,
+                ]);
+            });
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Something went wrong while processing your registration. Please try again.');
+        }
 
         return back()->with('success', 'You have been registered for ' . $race->title . '!');
     }
