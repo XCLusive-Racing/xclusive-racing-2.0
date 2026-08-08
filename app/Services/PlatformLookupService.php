@@ -130,8 +130,9 @@ class PlatformLookupService
         }
 
         throw new RuntimeException(
-            '[DEBUG] All endpoints failed for "' . $baseTag . '". Check logs for details. ' .
-            'Enter your XUID instead (15–16 digit number from xbox.com profile page).'
+            'Xbox account not found for "' . $baseTag . '". ' .
+            'Enter your current gamertag exactly as shown on your Xbox profile. ' .
+            'If your gamertag recently changed or contains spaces, enter your XUID instead (the 15–16 digit number from your Xbox profile page).'
         );
     }
 
