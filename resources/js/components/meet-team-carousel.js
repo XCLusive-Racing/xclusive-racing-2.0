@@ -35,52 +35,59 @@ const drivers = [
         ],
     },
 
-    // ── LMU ──────────────────────────────────────────────────────
-    { name: 'Giuseppe Dinoia',   cat: 'lmu', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'italy',            role: 'esports', socials: [] },
-    { name: 'Denis Ebert',       cat: 'lmu', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'germany',          role: 'esports', socials: [] },
-    { name: 'Wilson Gigé',       cat: 'lmu', platform: 'pc', platformLabel: 'PC', photo: '/images/drivers/W.Gige.png',   flag: 'france',            role: 'esports', socials: [] },
-    { name: 'Luca Gönnheimer',   cat: 'lmu', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'germany',          role: 'esports', socials: [] },
-    { name: 'Kyan Heyninck',     cat: 'lmu', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'belgium',          role: 'esports', socials: [] },
-    { name: 'Alex Lucky',        cat: 'lmu', platform: 'pc', platformLabel: 'PC', photo: '/images/drivers/A.Lucky.png',  flag: 'italy',             role: 'esports', socials: [] },
-    { name: 'Paul Möller',       cat: 'lmu', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'germany',          role: 'esports', socials: [] },
-    { name: 'Thato Motubatse',   cat: 'lmu', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'south%20africa',   role: 'esports', socials: [] },
-    { name: 'Lukas Oesterreich', cat: 'lmu', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'germany',          role: 'esports', socials: [] },
-    { name: 'Gianluca Walczak',  cat: 'lmu', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'germany',          role: 'esports', socials: [] },
-    { name: 'Kyle Williams',     cat: 'lmu', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'south%20africa',   role: 'esports', socials: [] },
-    { name: 'Aidan Winchester',  cat: 'lmu', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'united%20kingdom', role: 'esports', socials: [] },
-
-    // ── ACC ──────────────────────────────────────────────────────
-    { name: 'Nat Benett',          cat: 'acc', platform: 'console', platformLabel: 'Console', photo: null, flag: 'united%20kingdom', role: 'esports', socials: [] },
-    { name: 'Joakim Eriksson',     cat: 'acc', platform: 'console', platformLabel: 'Console', photo: null, flag: null,              role: 'esports', socials: [] },
-    { name: 'Fabio Faar',          cat: 'acc', platform: 'console', platformLabel: 'Console', photo: null, flag: 'italy',           role: 'esports', socials: [] },
-    { name: 'James Farish',        cat: 'acc', platform: 'console', platformLabel: 'Console', photo: '/images/drivers/J.Farish.png', flag: 'united%20kingdom', role: 'esports', socials: [] },
-    { name: 'Will Friedmann',      cat: 'acc', platform: 'console', platformLabel: 'Console', photo: null, flag: 'france',          role: 'esports', socials: [] },
-    { name: 'José García',         cat: 'acc', platform: 'console', platformLabel: 'Console', photo: null, flag: null,              role: 'esports', socials: [] },
-    { name: 'Sergio Hernández',    cat: 'acc', platform: 'console', platformLabel: 'Console', photo: null, flag: null,              role: 'esports', socials: [] },
-    { name: 'Matteo Mastromauro',  cat: 'acc', platform: 'console', platformLabel: 'Console', photo: null, flag: 'italy',           role: 'esports', socials: [] },
-    { name: 'Danny Meeldijk',      cat: 'acc', platform: 'console', platformLabel: 'Console', photo: null, flag: 'netherlands',     role: 'esports', socials: [] },
-    { name: 'Elmārs Miķelsons',    cat: 'acc', platform: 'console', platformLabel: 'Console', photo: null, flag: 'latvia',          role: 'esports', socials: [] },
-    { name: 'Florian Ochsmann',    cat: 'acc', platform: 'console', platformLabel: 'Console', photo: null, flag: 'germany',         role: 'esports', socials: [] },
-    { name: 'Menno Peters',        cat: 'acc', platform: 'console', platformLabel: 'Console', photo: null, flag: 'netherlands',     role: 'esports', socials: [] },
-    { name: 'Phil Sourcy',         cat: 'acc', platform: 'console', platformLabel: 'Console', photo: null, flag: null,              role: 'esports', socials: [] },
-    { name: 'Gianluca Zambione',   cat: 'acc', platform: 'console', platformLabel: 'Console', photo: null, flag: 'italy',           role: 'esports', socials: [] },
-    { name: 'Federico Zamblera',   cat: 'acc', platform: 'console', platformLabel: 'Console', photo: null, flag: 'italy',           role: 'esports', socials: [] },
-
-    // ── iRacing ──────────────────────────────────────────────────
-    { name: 'Ethan Amburg',     cat: 'iracing', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'usa',     role: 'esports', socials: [] },
-    { name: 'James Curtin',     cat: 'iracing', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'usa',     role: 'esports', socials: [] },
-    { name: 'CJ Farish',        cat: 'iracing', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'usa',     role: 'esports', socials: [] },
-    { name: 'Mario García',     cat: 'iracing', platform: 'pc', platformLabel: 'PC', photo: null, flag: null,      role: 'esports', socials: [] },
-    { name: 'Jake Goldman',     cat: 'iracing', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'usa',     role: 'esports', socials: [] },
-    { name: 'Michael Martinz',  cat: 'iracing', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'austria', role: 'esports', socials: [] },
-    { name: 'Parker Soukup',    cat: 'iracing', platform: 'pc', platformLabel: 'PC', photo: '/images/drivers/P.Soukup.png', flag: 'usa', role: 'esports', socials: [] },
-    { name: 'André Damrat',     cat: 'iracing', platform: 'pc', platformLabel: 'PC', photo: null, flag: 'germany', role: 'esports', socials: [] },
+    // ── ESPORTS (LMU / ACC / iRacing mixed, sorted by last name) ──
+    { name: 'Nat Benett',       cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/Bennett.png', flag: 'united%20kingdom', role: 'esports', socials: [] },
+    { name: 'Lucas Britton',    cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Britton.png', flag: 'united%20kingdom', role: 'esports', socials: [] },
+    {
+        name: 'Thomas Cauberghe',
+        cat: 'lmu', platform: 'pc', platformLabel: 'PC',
+        photo: '/images/drivers/Cauberghe.png',
+        flag: 'belgium', role: 'esports',
+        socials: [
+            { type: 'tiktok', href: 'https://www.tiktok.com/@thomascauberghe?_r=1&_t=ZG-98h5kheJfzl' },
+            { type: 'twitch', href: 'http://twitch.tv/thomascauberghee' },
+        ],
+    },
+    { name: 'James Curtin',     cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Curtin.png', flag: 'usa',              role: 'esports', socials: [] },
+    { name: 'André Damrat',     cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: null, flag: 'germany',          role: 'esports', socials: [] },
+    { name: 'Giuseppe Dinoia',  cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Dinoia.png', flag: 'italy',            role: 'esports', socials: [] },
+    { name: 'Denis Ebert',      cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: null, flag: 'germany',          role: 'esports', socials: [] },
+    { name: 'Joakim Eriksson',  cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/Eriksson.png', flag: null,              role: 'esports', socials: [] },
+    { name: 'Fabio Faar',       cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: null, flag: 'italy',           role: 'esports', socials: [] },
+    { name: 'CJ Farish',        cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Mrshlk.png', flag: 'usa',              role: 'esports', socials: [] },
+    { name: 'James Farish',     cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/J.Farish.png', flag: 'united%20kingdom', role: 'esports', socials: [] },
+    { name: 'Will Friedmann',   cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/friedmann.png', flag: 'france',         role: 'esports', socials: [] },
+    { name: 'José García',      cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/Garcia.png', flag: null,              role: 'esports', socials: [] },
+    { name: 'Mario García',     cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Mare.png', flag: null,                role: 'esports', socials: [] },
+    { name: 'Wilson Gigé',      cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/W.Gige.png', flag: 'france',           role: 'esports', socials: [] },
+    { name: 'Jake Goldman',     cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Goldman2.png', flag: 'usa',            role: 'esports', socials: [] },
+    { name: 'Luca Gönnheimer',  cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/goenni.png', flag: 'germany',          role: 'esports', socials: [] },
+    { name: 'Sergio Hernández', cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/Hernández.png', flag: null,             role: 'esports', socials: [] },
+    { name: 'Kyan Heyninck',    cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/heyninck.png', flag: 'belgium',        role: 'esports', socials: [] },
+    { name: 'Marcus Libz',      cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Libz.png', flag: 'canada',             role: 'esports', socials: [] },
+    { name: 'Alex Lucky',       cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/A.Lucky.png', flag: 'italy',           role: 'esports', socials: [] },
+    { name: 'Michael Martinz',  cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: null, flag: 'austria',          role: 'esports', socials: [] },
+    { name: 'Matteo Mastromauro', cat: 'acc',   platform: 'console', platformLabel: 'Console', photo: null, flag: 'italy',           role: 'esports', socials: [] },
+    { name: 'Danny Meeldijk',   cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/Danny.png', flag: 'netherlands',      role: 'esports', socials: [] },
+    { name: 'Elmārs Miķelsons', cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/elmars.png', flag: 'latvia',           role: 'esports', socials: [] },
+    { name: 'Paul Möller',      cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: null, flag: 'germany',          role: 'esports', socials: [] },
+    { name: 'Thato Motubatse',  cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: null, flag: 'south%20africa',   role: 'esports', socials: [] },
+    { name: 'Florian Ochsmann', cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/ochsmann.png', flag: 'germany',        role: 'esports', socials: [] },
+    { name: 'Lukas Oesterreich', cat: 'lmu',    platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Louk.png', flag: 'germany',            role: 'esports', socials: [] },
+    { name: 'Menno Peters',     cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/PetersM.png', flag: 'netherlands',     role: 'esports', socials: [] },
+    { name: 'Phil Soucy',       cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: null, flag: 'canada',           role: 'esports', socials: [] },
+    { name: 'Parker Soukup',    cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/P.Soukup.png', flag: 'usa',            role: 'esports', socials: [] },
+    { name: 'Gianluca Walczak', cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Walczak.png', flag: 'germany',         role: 'esports', socials: [] },
+    { name: 'Kyle Williams',    cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Williams.png', flag: 'south%20africa',  role: 'esports', socials: [] },
+    { name: 'Aidan Winchester', cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Winchester.png', flag: 'united%20kingdom', role: 'esports', socials: [] },
+    { name: 'Gianluca Zambione', cat: 'acc',    platform: 'console', platformLabel: 'Console', photo: '/images/drivers/Gianluca.png', flag: 'italy',           role: 'esports', socials: [] },
+    { name: 'Federico Zamblera', cat: 'acc',    platform: 'console', platformLabel: 'Console', photo: '/images/drivers/Zamby.png', flag: 'italy',             role: 'esports', socials: [] },
 
     // ── Coaches (DriveLab) ───────────────────────────────────────
     { name: 'Nikodem Wisniewski', cat: 'coach', platform: 'pc',      platformLabel: 'PC',      photo: '/images/coaches/nikodem.avif', flag: null, role: 'coach', socials: [] },
     { name: 'Dominik Blajer',     cat: 'coach', platform: 'pc',      platformLabel: 'PC',      photo: '/images/coaches/dominik.avif', flag: null, role: 'coach', socials: [] },
     { name: 'Przemysław Lemanek', cat: 'coach', platform: 'pc',      platformLabel: 'PC',      photo: '/images/coaches/przemek.avif', flag: null, role: 'coach', socials: [] },
-    { name: 'Dorian Castelli',    cat: 'coach', platform: 'console', platformLabel: 'Console', photo: '/images/coaches/dorian.png',   flag: null, role: 'coach', socials: [] },
+    { name: 'Dorian Castelli',    cat: 'coach', platform: 'console', platformLabel: 'Console', photo: '/images/coaches/dorian.png',   flag: null, role: 'coach', socials: [], photoStyle: 'transform:scale(1.45);transform-origin:50% 0%;' },
 ];
 
 const socialIconMap = {
@@ -118,7 +125,7 @@ function renderCard(driver) {
         : '';
 
     const photoHtml = driver.photo
-        ? `<img src="${driver.photo}" alt="${driver.name}" style="width:100%;height:100%;object-fit:cover;object-position:50% 40%;">`
+        ? `<img src="${driver.photo}" alt="${driver.name}" style="width:100%;height:100%;object-fit:cover;object-position:50% 40%;${driver.photoStyle || ''}">`
         : '';
 
     return `<div class="mt-carousel-item">
@@ -144,7 +151,7 @@ const moreCard = `<div class="mt-carousel-item">
     <div class="mt-driver-card mt-driver-card--more">
         <span class="mt-more-count">+29</span>
         <span class="mt-more-label">&amp; MORE</span>
-        <a href="/teams" class="mt-more-link">View full roster →</a>
+        <a href="/team" class="mt-more-link">View full roster →</a>
     </div>
 </div>`;
 

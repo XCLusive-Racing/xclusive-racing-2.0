@@ -5917,11 +5917,11 @@ table.dataTable thead th {
 
 .esports-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
     gap: 1rem;
 
     @media (max-width: 575px) {
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
         gap: .75rem;
     }
 }
@@ -5993,6 +5993,21 @@ table.dataTable thead th {
         color: rgba(255,255,255,.35);
         text-transform: uppercase;
         letter-spacing: .05em;
+    }
+
+    &__socials {
+        display: flex;
+        gap: .55rem;
+        padding: 0 .6rem .65rem;
+    }
+
+    &__social-link {
+        color: rgba(255,255,255,.55);
+        font-size: .8rem;
+        text-decoration: none;
+        transition: color .2s ease;
+
+        &:hover { color: #d4ee6a; }
     }
 }
 

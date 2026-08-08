@@ -59,7 +59,7 @@
 
         {{-- ── CTA Buttons ──────────────────────────────────────────────────────── --}}
         <div class="d-flex justify-content-center gap-3 mb-4 flex-wrap">
-            <a href="/teams"    class="mt-cta-btn">FULL ROSTER</a>
+            <a href="/team"    class="mt-cta-btn">FULL ROSTER</a>
             <a href="{{ route('team.join') }}" class="mt-cta-btn">JOIN THE TEAM</a>
         </div>
 

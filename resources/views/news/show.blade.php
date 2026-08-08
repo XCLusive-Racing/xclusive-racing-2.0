@@ -183,7 +183,7 @@
 
     {{-- Article body --}}
     <article class="news-body">
-        {!! nl2br(e($article->body)) !!}
+        {!! Illuminate\Support\Str::markdown($article->body ?? '') !!}
     </article>
 
     {{-- Footer --}}

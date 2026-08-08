@@ -28,6 +28,19 @@
     {{-- Platform tabs + roster --}}
     <section class="position-relative" style="z-index:1;padding-bottom:4rem">
 
+        @php
+            $socialIconClasses = [
+                'twitter'   => 'fa-brands fa-x-twitter',
+                'instagram' => 'fa-brands fa-instagram',
+                'website'   => 'fa-solid fa-globe',
+                'linkedin'  => 'fa-brands fa-linkedin',
+                'facebook'  => 'fa-brands fa-facebook',
+                'twitch'    => 'fa-brands fa-twitch',
+                'tiktok'    => 'fa-brands fa-tiktok',
+                'youtube'   => 'fa-brands fa-youtube',
+            ];
+        @endphp
+
         <div class="container-xl px-4" data-tabs data-default-tab="acc">
 
             {{-- Tabs --}}
@@ -57,6 +70,15 @@
                         </div>
                         <div class="esports-driver-card__name">{{ $d['name'] }}</div>
                         <div class="esports-driver-card__role">ACC · Console</div>
+                        @if(!empty($d['socials']))
+                        <div class="esports-driver-card__socials">
+                            @foreach($d['socials'] as $s)
+                            <a href="{{ $s['href'] }}" class="esports-driver-card__social-link" title="{{ $s['type'] }}" target="_blank" rel="noopener noreferrer">
+                                <i class="{{ $socialIconClasses[$s['type']] ?? 'fa-solid fa-link' }}"></i>
+                            </a>
+                            @endforeach
+                        </div>
+                        @endif
                     </div>
                     @endforeach
                 </div>
@@ -78,6 +100,15 @@
                         </div>
                         <div class="esports-driver-card__name">{{ $d['name'] }}</div>
                         <div class="esports-driver-card__role">LMU · PC</div>
+                        @if(!empty($d['socials']))
+                        <div class="esports-driver-card__socials">
+                            @foreach($d['socials'] as $s)
+                            <a href="{{ $s['href'] }}" class="esports-driver-card__social-link" title="{{ $s['type'] }}" target="_blank" rel="noopener noreferrer">
+                                <i class="{{ $socialIconClasses[$s['type']] ?? 'fa-solid fa-link' }}"></i>
+                            </a>
+                            @endforeach
+                        </div>
+                        @endif
                     </div>
                     @endforeach
                 </div>
@@ -99,6 +130,15 @@
                         </div>
                         <div class="esports-driver-card__name">{{ $d['name'] }}</div>
                         <div class="esports-driver-card__role">iRacing · PC</div>
+                        @if(!empty($d['socials']))
+                        <div class="esports-driver-card__socials">
+                            @foreach($d['socials'] as $s)
+                            <a href="{{ $s['href'] }}" class="esports-driver-card__social-link" title="{{ $s['type'] }}" target="_blank" rel="noopener noreferrer">
+                                <i class="{{ $socialIconClasses[$s['type']] ?? 'fa-solid fa-link' }}"></i>
+                            </a>
+                            @endforeach
+                        </div>
+                        @endif
                     </div>
                     @endforeach
                 </div>
