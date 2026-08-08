@@ -125,7 +125,8 @@ class PlatformLookupService
                 ];
             }
 
-            \Log::warning('OpenXBL empty result', ['gt' => $attempt, 'body' => $res->json()]);
+            \Log::warning('OpenXBL empty result', ['gt' => $attempt, 'status' => $res->status(), 'body' => $res->json()]);
+            throw new RuntimeException('[DEBUG] gt=' . $attempt . ' status=' . $res->status() . ' body=' . json_encode($res->json()));
         }
 
         throw new RuntimeException(
