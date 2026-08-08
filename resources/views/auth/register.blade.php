@@ -33,10 +33,10 @@
                     <i class="fa-brands fa-steam fs-5"></i>
                     Steam
                 </a>
-                <button type="button" data-select-platform="xbox" class="xcl-platform-btn xcl-platform-btn--xbox">
+                <a href="{{ route('auth.xbox') }}" class="xcl-platform-btn xcl-platform-btn--xbox">
                     <i class="fa-brands fa-xbox fs-5"></i>
                     Xbox
-                </button>
+                </a>
                 <button type="button" data-select-platform="ps5" class="xcl-platform-btn xcl-platform-btn--ps5">
                     <i class="fa-brands fa-playstation fs-5"></i>
                     PlayStation

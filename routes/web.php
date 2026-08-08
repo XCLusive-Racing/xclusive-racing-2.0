@@ -114,6 +114,7 @@ Route::get('/auth/steam/callback', [SteamController::class, 'callback'])->name('
 // Xbox OAuth
 Route::get('/auth/xbox', [XboxController::class, 'redirect'])->name('auth.xbox');
 Route::get('/auth/xbox/callback', [XboxController::class, 'callback'])->name('auth.xbox.callback');
+Route::get('/auth/xbox/system-setup', [XboxController::class, 'setupRedirect'])->middleware(['auth', 'role:owner'])->name('auth.xbox.setup');
 
 // Discord OAuth (auth required — only for linking)
 Route::middleware('auth')->group(function () {
