@@ -21,6 +21,12 @@
         </div>
         @endif
 
+        @if(session('error'))
+        <div class="alert py-2 px-3 mb-3 rounded-2" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:.82rem">
+            {{ session('error') }}
+        </div>
+        @endif
+
         <div class="row g-4 mb-5">
 
             {{-- LEFT COLUMN: profile form --}}
@@ -111,7 +117,18 @@
                                 <label class="form-label fw-bold text-dark" style="font-size:.82rem">Platform</label>
                                 <input type="text" value="{{ strtoupper($user->platform ?? '—') }} · {{ $user->platform_id ?? '—' }}"
                                        class="form-control" disabled style="background:#f9fafb;font-family:monospace;font-size:.82rem">
+                                @if($user->platform === 'xbox')
+                                <div class="mt-2">
+                                    <a href="{{ route('auth.xbox') }}"
+                                       class="btn btn-sm fw-bold text-uppercase text-white"
+                                       style="background:#107c10;font-size:.72rem">
+                                        <i class="fa-brands fa-xbox me-1"></i> Change Xbox Account
+                                    </a>
+                                    <span class="text-secondary ms-2" style="font-size:.72rem">You will be redirected to Microsoft to sign in with your correct account.</span>
+                                </div>
+                                @else
                                 <div class="text-secondary mt-1" style="font-size:.72rem">Platform ID cannot be changed. Contact an admin if needed.</div>
+                                @endif
                             </div>
                         </div>
                     </div>

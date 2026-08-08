@@ -81,7 +81,27 @@ class XboxController extends Controller
         $platformId = 'M' . $xuid;
 
         if (auth()->check()) {
-            return redirect()->route('profile');
+            $user = auth()->user();
+
+            $conflict = User::where('platform', 'xbox')
+                ->where('platform_id', $platformId)
+                ->where('id', '!=', $user->id)
+                ->where('email', 'not like', '%@import.local')
+                ->first();
+
+            if ($conflict) {
+                return redirect()->route('profile.edit')
+                    ->with('error', 'This Xbox account is already linked to another account.');
+            }
+
+            $user->update([
+                'platform'    => 'xbox',
+                'platform_id' => $platformId,
+                'name'        => $gamertag ?? $user->name,
+            ]);
+
+            return redirect()->route('profile.edit')
+                ->with('success', 'Xbox account updated successfully.');
         }
 
         $existing = User::where('platform', 'xbox')
