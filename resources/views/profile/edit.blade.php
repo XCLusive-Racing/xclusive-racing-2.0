@@ -114,18 +114,31 @@
                                        class="form-control" placeholder="Lamborghini Huracán GT3">
                             </div>
                             <div class="col-12">
-                                <label class="form-label fw-bold text-dark" style="font-size:.82rem">Platform</label>
-                                <input type="text" value="{{ strtoupper($user->platform ?? '—') }} · {{ $user->platform_id ?? '—' }}"
-                                       class="form-control" disabled style="background:#f9fafb;font-family:monospace;font-size:.82rem">
-                                @if($user->platform === 'xbox')
-                                <div class="mt-2">
+                                <label class="form-label fw-bold text-dark" style="font-size:.82rem">Platform Account</label>
+                                @php
+                                    $platformIcon  = match($user->platform) { 'xbox' => 'fa-xbox', 'ps5' => 'fa-playstation', 'steam' => 'fa-steam', default => 'fa-gamepad' };
+                                    $platformColor = match($user->platform) { 'xbox' => '#107c10', 'ps5' => '#00439c', 'steam' => '#1b2838', default => '#6b7280' };
+                                    $platformLabel = match($user->platform) { 'xbox' => 'Xbox', 'ps5' => 'PlayStation', 'steam' => 'Steam', default => strtoupper($user->platform ?? '—') };
+                                @endphp
+                                <div class="d-flex align-items-center gap-3 p-3 rounded-2" style="border:1px solid #e5e7eb;background:#f9fafb">
+                                    <div class="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
+                                         style="width:40px;height:40px;background:{{ $platformColor }};color:#fff;font-size:1.1rem">
+                                        <i class="fa-brands {{ $platformIcon }}"></i>
+                                    </div>
+                                    <div class="flex-grow-1 min-w-0">
+                                        <div class="fw-bold text-dark" style="font-size:.88rem">{{ $user->displayName() }}</div>
+                                        <div class="text-secondary text-truncate" style="font-size:.72rem;font-family:monospace">{{ $user->platform_id }}</div>
+                                    </div>
+                                    @if($user->platform === 'xbox')
                                     <a href="{{ route('auth.xbox') }}"
-                                       class="btn btn-sm fw-bold text-uppercase text-white"
+                                       class="btn btn-sm fw-bold text-uppercase text-white flex-shrink-0"
                                        style="background:#107c10;font-size:.72rem">
-                                        <i class="fa-brands fa-xbox me-1"></i> Change Xbox Account
+                                        <i class="fa-brands fa-xbox me-1"></i> Change
                                     </a>
-                                    <span class="text-secondary ms-2" style="font-size:.72rem">You will be redirected to Microsoft to sign in with your correct account.</span>
+                                    @endif
                                 </div>
+                                @if($user->platform === 'xbox')
+                                <div class="text-secondary mt-1" style="font-size:.72rem">Sign in with your correct Microsoft account to update your linked Xbox profile.</div>
                                 @else
                                 <div class="text-secondary mt-1" style="font-size:.72rem">Platform ID cannot be changed. Contact an admin if needed.</div>
                                 @endif
