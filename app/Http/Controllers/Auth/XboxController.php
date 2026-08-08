@@ -90,8 +90,8 @@ class XboxController extends Controller
             ->first();
 
         if ($existing) {
-            return redirect()->route('login')
-                ->withErrors(['email' => 'This Xbox account is already registered. Please sign in instead.']);
+            auth()->login($existing);
+            return redirect()->route('profile');
         }
 
         session([
