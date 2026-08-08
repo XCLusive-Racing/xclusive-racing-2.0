@@ -111,10 +111,7 @@ class User extends Authenticatable
 
     public function displayName(): string
     {
-        if ($this->display_name_preference === 'gamertag' && $this->platform_id) {
-            return preg_replace('/#\d+$/', '', $this->platform_id);
-        }
-        return $this->name;
+        return preg_replace('/#\d+$/', '', $this->name ?? '');
     }
 
     public function avatarUrl(): ?string
@@ -142,6 +139,24 @@ class User extends Authenticatable
     public function connectedAccounts(): HasMany
     {
         return $this->hasMany(ConnectedAccount::class);
+    }
+
+    public function messages(): HasMany
+    {
+        return $this->hasMany(Message::class);
+    }
+
+    public function readAnnouncements(): BelongsToMany
+    {
+        return $this->belongsToMany(Announcement::class, 'announcement_reads')->withPivot('created_at');
+    }
+
+    public function totalUnreadCount(): int
+    {
+        $unreadMessages = $this->messages()->whereNull('read_at')->count();
+        $unreadAnnouncements = Announcement::whereDoesntHave('readers', fn($q) => $q->where('user_id', $this->id))->count();
+
+        return $unreadMessages + $unreadAnnouncements;
     }
 
     public function connectedAccount(string $provider): ?ConnectedAccount

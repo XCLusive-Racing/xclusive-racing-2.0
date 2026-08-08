@@ -158,7 +158,7 @@ class AccServerConfigService
     public function defaultEventRules(): array
     {
         return [
-            'pitWindowLengthSec'                   => 1680,
+            'pitWindowLengthSec'                   => -1,
             'mandatoryPitstopCount'                => 1,
             'qualifyStandingType'                  => 1,
             'isRefuellingAllowedInRace'            => true,
@@ -167,7 +167,7 @@ class AccServerConfigService
             'isMandatoryPitstopTyreChangeRequired' => false,
             'driverStintTimeSec'                   => -1,
             'maxTotalDrivingTime'                  => -1,
-            'maxDriversCount'                      => 1,
+            'maxDriversCount'                      => 120,
             'isMandatoryPitstopSwapDriverRequired' => false,
         ];
     }

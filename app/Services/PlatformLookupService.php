@@ -70,44 +70,131 @@ class PlatformLookupService
         ];
     }
 
-    // ── Xbox (OpenXBL) ────────────────────────────────────────────────────────
+    // ── Xbox (Xbox Live direct) ───────────────────────────────────────────────
 
-    private function lookupXbox(string $gamertag): array
+    private function lookupXbox(string $input): array
     {
+        $input = trim($input);
+
+        // If the user enters a raw XUID (15–18 digit number), skip the gamertag
+        // search entirely. This is the fallback for old/changed/private gamertags.
+        // name = null signals to the controller to preserve the existing imported name.
+        if (preg_match('/^\d{15,18}$/', $input)) {
+            return ['platform_id' => 'M' . $input, 'name' => null];
+        }
+
         // Strip discriminator suffix (#1234), normalize whitespace
-        $baseTag = trim(preg_replace('/\s+/', ' ', preg_replace('/#\d+$/', '', trim($gamertag))));
+        $baseTag = trim(preg_replace('/\s+/', ' ', preg_replace('/#\d+$/', '', $input)));
+
+        $xblAuth = $this->getXblAuthFromSystemToken();
+
+        if (! $xblAuth) {
+            throw new RuntimeException(
+                'Xbox lookup is temporarily unavailable. Please enter your XUID instead ' .
+                '(the 15–16 digit number from your Xbox profile page at xbox.com).'
+            );
+        }
+
+        [$userHash, $xstsToken] = $xblAuth;
 
         try {
-            $res = $this->http()->withHeaders([
-                'x-authorization' => config('services.openxbl.api_key'),
-                'Accept'          => 'application/json',
-                'Accept-Language' => 'en-US',
-            ])->get('https://xbl.io/api/v2/search/' . rawurlencode($baseTag));
+            $res = $this->http()
+                ->withHeaders([
+                    'Authorization'          => "XBL3.0 x={$userHash};{$xstsToken}",
+                    'Accept'                 => 'application/json',
+                    'x-xbl-contract-version' => '2',
+                ])
+                ->get('https://profile.xboxlive.com/users/gt(' . rawurlencode($baseTag) . ')/profile/settings', [
+                    'settings' => 'ModernGamertag,Gamertag',
+                ]);
         } catch (ConnectionException) {
-            \Log::error('Xbox lookup connection failed', ['gt' => $baseTag]);
-            throw new RuntimeException('Could not reach Xbox Live. Please try again.');
+            throw new RuntimeException('Could not reach Xbox. Please try again or enter your XUID.');
         }
 
-        if (! $res->successful()) {
-            \Log::error('OpenXBL error', ['status' => $res->status(), 'body' => $res->body()]);
-            throw new RuntimeException('Xbox account not found. Check your Gamertag.');
+        $profile = $res->json('profileUsers.0');
+
+        if (! $profile || ! ($profile['id'] ?? null)) {
+            throw new RuntimeException(
+                'Xbox account not found for "' . $baseTag . '". ' .
+                'Enter your current gamertag exactly as shown on your Xbox profile. ' .
+                'If your gamertag recently changed or contains spaces, enter your XUID instead (the 15–16 digit number from your Xbox profile page).'
+            );
         }
 
-        $profile = $res->json('content.people.0');
-
-        if (! $profile) {
-            \Log::error('OpenXBL empty profile', ['gt' => $baseTag, 'body' => $res->json()]);
-            throw new RuntimeException('Xbox account not found. Check your Gamertag.');
-        }
-
-        $xuid = $profile['xuid'];
-        $tag = $profile['gamertag'] ?? $baseTag;
-        // Er bestaan ook een gamertag, modernGamertag en uniqueModernGamertag
+        $settings = collect($profile['settings'] ?? [])->keyBy('id');
+        $gamertag = $settings->get('ModernGamertag')['value']
+            ?? $settings->get('Gamertag')['value']
+            ?? $baseTag;
 
         return [
-            'platform_id' => 'M' . $xuid,
-            'name'        => $tag,
+            'platform_id' => 'M' . $profile['id'],
+            'name'        => $gamertag,
         ];
+    }
+
+    private function getXblAuthFromSystemToken(): ?array
+    {
+        $refreshToken = config('services.openxbl.system_refresh_token');
+        if (! $refreshToken) return null;
+
+        try {
+            $tokenRes = $this->http()->asForm()->post(
+                'https://login.microsoftonline.com/consumers/oauth2/v2.0/token',
+                [
+                    'grant_type'    => 'refresh_token',
+                    'refresh_token' => $refreshToken,
+                    'client_id'     => config('services.openxbl.azure_client_id'),
+                    'client_secret' => config('services.openxbl.azure_client_secret'),
+                    'scope'         => 'XboxLive.signin XboxLive.offline_access',
+                ]
+            );
+        } catch (ConnectionException) {
+            return null;
+        }
+
+        $accessToken = $tokenRes->json('access_token');
+        if (! $accessToken) return null;
+
+        try {
+            $xblRes = $this->http()
+                ->withHeaders(['Content-Type' => 'application/json', 'Accept' => 'application/json'])
+                ->post('https://user.auth.xboxlive.com/user/authenticate', [
+                    'Properties'   => [
+                        'AuthMethod' => 'RPS',
+                        'SiteName'   => 'user.auth.xboxlive.com',
+                        'RpsTicket'  => 'd=' . $accessToken,
+                    ],
+                    'RelyingParty' => 'http://auth.xboxlive.com',
+                    'TokenType'    => 'JWT',
+                ]);
+        } catch (ConnectionException) {
+            return null;
+        }
+
+        $xblToken = $xblRes->json('Token');
+        if (! $xblToken) return null;
+
+        try {
+            $xstsRes = $this->http()
+                ->withHeaders(['Content-Type' => 'application/json', 'Accept' => 'application/json'])
+                ->post('https://xsts.auth.xboxlive.com/xsts/authorize', [
+                    'Properties'   => [
+                        'SandboxId'  => 'RETAIL',
+                        'UserTokens' => [$xblToken],
+                    ],
+                    'RelyingParty' => 'http://xboxlive.com',
+                    'TokenType'    => 'JWT',
+                ]);
+        } catch (ConnectionException) {
+            return null;
+        }
+
+        $xstsToken = $xstsRes->json('Token');
+        $userHash  = $xstsRes->json('DisplayClaims.xui.0.uhs');
+
+        if (! $xstsToken || ! $userHash) return null;
+
+        return [$userHash, $xstsToken];
     }
 
     // ── PSN ───────────────────────────────────────────────────────────────────
