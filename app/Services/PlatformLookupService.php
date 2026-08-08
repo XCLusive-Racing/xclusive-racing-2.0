@@ -92,39 +92,46 @@ class PlatformLookupService
             'Accept-Language' => 'en-US',
         ];
 
-        // Try with original tag, then without spaces (old-style gamertags)
-        $candidates = array_unique([$baseTag, preg_replace('/\s+/', '', $baseTag)]);
+        $tag = rawurlencode($baseTag);
 
-        foreach ($candidates as $attempt) {
+        // Endpoints to try in order
+        $endpoints = [
+            ['url' => 'https://api.xbl.io/v2/friends/search', 'query' => ['gt' => $baseTag]],
+            ['url' => 'https://api.xbl.io/v2/player/gamertag/' . $tag, 'query' => []],
+            ['url' => 'https://api.xbl.io/v2/search/' . $tag, 'query' => []],
+        ];
+
+        foreach ($endpoints as $ep) {
             try {
-                $res = $this->http()->withHeaders($headers)
-                    ->get('https://api.xbl.io/v2/search/' . rawurlencode($attempt));
+                $res = $this->http()->withHeaders($headers)->get($ep['url'], $ep['query']);
             } catch (ConnectionException) {
-                \Log::error('Xbox lookup connection failed', ['gt' => $attempt]);
-                throw new RuntimeException('Could not reach Xbox Live. Please try again.');
+                \Log::error('Xbox lookup connection failed', ['url' => $ep['url']]);
+                continue;
             }
 
             if (! $res->successful()) {
-                throw new RuntimeException('[DEBUG] status=' . $res->status() . ' body=' . $res->body());
+                \Log::warning('OpenXBL endpoint failed', ['url' => $ep['url'], 'status' => $res->status(), 'body' => $res->body()]);
+                continue;
             }
 
-            $profile = $res->json('people.0') ?? $res->json('content.people.0');
+            $profile = $res->json('people.0')
+                ?? $res->json('content.people.0')
+                ?? $res->json('profile')
+                ?? null;
 
-            if ($profile) {
+            if ($profile && ($profile['xuid'] ?? null)) {
                 return [
                     'platform_id' => 'M' . $profile['xuid'],
                     'name'        => $profile['modernGamertag'] ?? $profile['gamertag'] ?? $baseTag,
                 ];
             }
 
-            \Log::warning('OpenXBL empty result', ['gt' => $attempt, 'status' => $res->status(), 'body' => $res->json()]);
-            throw new RuntimeException('[DEBUG] gt=' . $attempt . ' status=' . $res->status() . ' body=' . json_encode($res->json()));
+            \Log::warning('OpenXBL empty result', ['url' => $ep['url'], 'body' => $res->json()]);
         }
 
         throw new RuntimeException(
-            'Xbox account not found for "' . $baseTag . '". ' .
-            'Enter your current gamertag exactly as shown on your Xbox profile. ' .
-            'If your gamertag recently changed or contains spaces, enter your XUID instead (the 15–16 digit number from your Xbox profile page).'
+            '[DEBUG] All endpoints failed for "' . $baseTag . '". Check logs for details. ' .
+            'Enter your XUID instead (15–16 digit number from xbox.com profile page).'
         );
     }
 
