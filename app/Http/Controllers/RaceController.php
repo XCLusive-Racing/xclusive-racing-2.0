@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Driver;
 use App\Models\EventTag;
 use App\Models\Message;
 use App\Models\Race;
@@ -38,7 +39,12 @@ class RaceController extends Controller
             $isRegistered = $myRegistration !== null;
         }
 
-        return view('race.show', compact('race', 'isRegistered', 'myRegistration'));
+        $platformIds = $race->registrations->pluck('user.platform_id')->filter()->values()->all();
+        $driverMap   = Driver::whereIn('xuid_psid', $platformIds)
+            ->get(['id', 'xuid_psid'])
+            ->keyBy('xuid_psid');
+
+        return view('race.show', compact('race', 'isRegistered', 'myRegistration', 'driverMap'));
     }
 
     public function register(Request $request, Race $race)
