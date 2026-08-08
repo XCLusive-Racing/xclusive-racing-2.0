@@ -12,19 +12,50 @@ class EsportsController extends Controller
                     ['type' => 'tiktok', 'href' => 'https://www.tiktok.com/@thomascauberghe?_r=1&_t=ZG-98h5kheJfzl'],
                     ['type' => 'twitch', 'href' => 'http://twitch.tv/thomascauberghee'],
                 ]],
-                ['name' => 'Giuseppe Dinoia',   'flag' => 'italy',          'photo' => '/images/drivers/Dinoia.png', 'socials' => []],
-                ['name' => 'Denis Ebert',        'flag' => 'germany',        'photo' => null, 'socials' => []],
-                ['name' => 'Lucas Britton',      'flag' => 'united%20kingdom', 'photo' => '/images/drivers/Britton.png', 'socials' => []],
-                ['name' => 'Wilson Gigé',        'flag' => 'france',         'photo' => '/images/drivers/W.Gige.png', 'socials' => []],
-                ['name' => 'Luca Gönnheimer',    'flag' => 'germany',        'photo' => '/images/drivers/goenni.png', 'socials' => []],
-                ['name' => 'Kyan Heyninck',      'flag' => 'belgium',        'photo' => '/images/drivers/heyninck.png', 'socials' => []],
-                ['name' => 'Alex Lucky',         'flag' => 'italy',          'photo' => '/images/drivers/A.Lucky.png', 'socials' => []],
-                ['name' => 'Paul Möller',        'flag' => 'germany',        'photo' => null, 'socials' => []],
+                ['name' => 'Giuseppe Dinoia',   'flag' => 'italy',          'photo' => '/images/drivers/Dinoia.png', 'socials' => [
+                    ['type' => 'twitch',    'href' => 'https://www.twitch.tv/giuseppedinoia_21'],
+                    ['type' => 'instagram', 'href' => 'https://www.instagram.com/xcl_giuseppedinoia?igsh=MWRxcTBldTNqd2Y3YQ=='],
+                    ['type' => 'tiktok',    'href' => 'https://www.tiktok.com/@giuseppe_dinoia?_r=1&_t=ZN-95QVprGxrMJ'],
+                ]],
+                ['name' => 'Denis Ebert',        'flag' => 'germany',        'photo' => null, 'socials' => [
+                    ['type' => 'instagram', 'href' => 'https://www.instagram.com/ebert_racing?igsh=MWY3N2ZwNnhmNWE4YQ=='],
+                ]],
+                ['name' => 'Lucas Britton',      'flag' => 'united%20kingdom', 'photo' => '/images/drivers/Britton.png', 'socials' => [
+                    ['type' => 'instagram', 'href' => 'https://www.instagram.com/lucas_baaaaada/'],
+                ]],
+                ['name' => 'Wilson Gigé',        'flag' => 'france',         'photo' => '/images/drivers/W.Gige.png', 'socials' => [
+                    ['type' => 'twitch',    'href' => 'https://www.twitch.tv/rxspectpapy'],
+                    ['type' => 'instagram', 'href' => 'https://www.instagram.com/rxspect_papy?igsh=Y21hMGYzOWRtemEy'],
+                    ['type' => 'tiktok',    'href' => 'https://www.tiktok.com/@rxspect.papy?_r=1&_t=ZN-95QWmWjw0s2'],
+                ]],
+                ['name' => 'Luca Gönnheimer',    'flag' => 'germany',        'photo' => '/images/drivers/goenni.png', 'socials' => [
+                    ['type' => 'youtube',   'href' => 'https://www.youtube.com/'],
+                    ['type' => 'instagram', 'href' => 'https://www.instagram.com/goenni98?igsh=Mzk3OW5oamxpbnR2'],
+                ]],
+                ['name' => 'Kyan Heyninck',      'flag' => 'belgium',        'photo' => '/images/drivers/heyninck.png', 'socials' => [
+                    ['type' => 'youtube',   'href' => 'https://www.youtube.com/@kyanheyninck'],
+                    ['type' => 'instagram', 'href' => 'https://www.instagram.com/kyan.heyninck/?hl=nl'],
+                ]],
+                ['name' => 'Alex Lucky',         'flag' => 'italy',          'photo' => '/images/drivers/A.Lucky.png', 'socials' => [
+                    ['type' => 'instagram', 'href' => 'https://www.instagram.com/alexxluckyy?igsh=NWRleW9jbnRhaGlj'],
+                    ['type' => 'tiktok',    'href' => 'https://www.tiktok.com/@alexxluckyy?_r=1&_t=ZN-95QVr8UQG06'],
+                ]],
+                ['name' => 'Paul Möller',        'flag' => 'germany',        'photo' => null, 'socials' => [
+                    ['type' => 'instagram', 'href' => 'https://www.instagram.com/p.moeller787?igsh=bWh4Z3VpZjV0bDBk'],
+                ]],
                 ['name' => 'Thato Motubatse',    'flag' => 'south%20africa', 'photo' => null, 'socials' => []],
-                ['name' => 'Lukas Oesterreich',  'flag' => 'germany',        'photo' => '/images/drivers/Louk.png', 'socials' => []],
+                ['name' => 'Lukas Oesterreich',  'flag' => 'germany',        'photo' => '/images/drivers/Louk.png', 'socials' => [
+                    ['type' => 'youtube',   'href' => 'https://www.youtube.com/@Louky99'],
+                    ['type' => 'instagram', 'href' => 'https://www.instagram.com/speedlukas?igsh=OHRsbzFzMzA1OHl3'],
+                ]],
                 ['name' => 'Gianluca Walczak',   'flag' => 'germany',        'photo' => '/images/drivers/Walczak.png', 'socials' => []],
-                ['name' => 'Kyle Williams',      'flag' => 'south%20africa', 'photo' => '/images/drivers/Williams.png', 'socials' => []],
-                ['name' => 'Aidan Winchester',   'flag' => 'united%20kingdom','photo' => '/images/drivers/Winchester.png', 'socials' => []],
+                ['name' => 'Kyle Williams',      'flag' => 'south%20africa', 'photo' => '/images/drivers/Williams.png', 'socials' => [
+                    ['type' => 'instagram', 'href' => 'https://www.instagram.com/kyle.williams55?igsh=MXRhOWl1cmF5NjIwMA=='],
+                ]],
+                ['name' => 'Aidan Winchester',   'flag' => 'united%20kingdom','photo' => '/images/drivers/Winchester.png', 'socials' => [
+                    ['type' => 'twitch',    'href' => 'https://www.twitch.tv/aidannn66'],
+                    ['type' => 'instagram', 'href' => 'https://www.instagram.com/aidanwinchester66?igsh=bnZ5OWU4cHdwdWdn'],
+                ]],
             ],
             'acc' => [
                 ['name' => 'Nat Benett',         'flag' => 'united%20kingdom','photo' => '/images/drivers/Bennett.png', 'socials' => []],
