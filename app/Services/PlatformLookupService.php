@@ -105,15 +105,7 @@ class PlatformLookupService
             }
 
             if (! $res->successful()) {
-                \Log::error('OpenXBL search error', [
-                    'gt'     => $attempt,
-                    'status' => $res->status(),
-                    'body'   => $res->body(),
-                ]);
-                if ($res->status() === 429) {
-                    throw new RuntimeException('Xbox lookup is temporarily unavailable due to rate limiting. Please try again in a moment.');
-                }
-                continue;
+                throw new RuntimeException('[DEBUG] status=' . $res->status() . ' body=' . $res->body());
             }
 
             $profile = $res->json('people.0') ?? $res->json('content.people.0');
