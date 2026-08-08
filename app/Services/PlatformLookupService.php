@@ -138,7 +138,7 @@ class PlatformLookupService
         if (! $refreshToken) return null;
 
         try {
-            $tokenRes = Http::asForm()->timeout(15)->post(
+            $tokenRes = $this->http()->asForm()->post(
                 'https://login.microsoftonline.com/consumers/oauth2/v2.0/token',
                 [
                     'grant_type'    => 'refresh_token',
@@ -156,7 +156,7 @@ class PlatformLookupService
         if (! $accessToken) return null;
 
         try {
-            $xblRes = Http::timeout(15)
+            $xblRes = $this->http()
                 ->withHeaders(['Content-Type' => 'application/json', 'Accept' => 'application/json'])
                 ->post('https://user.auth.xboxlive.com/user/authenticate', [
                     'Properties'   => [
@@ -175,7 +175,7 @@ class PlatformLookupService
         if (! $xblToken) return null;
 
         try {
-            $xstsRes = Http::timeout(15)
+            $xstsRes = $this->http()
                 ->withHeaders(['Content-Type' => 'application/json', 'Accept' => 'application/json'])
                 ->post('https://xsts.auth.xboxlive.com/xsts/authorize', [
                     'Properties'   => [
