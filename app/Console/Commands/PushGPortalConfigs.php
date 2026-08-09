@@ -7,6 +7,7 @@ use App\Services\AccServerConfigService;
 use App\Services\FtpService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class PushGPortalConfigs extends Command
@@ -80,16 +81,20 @@ class PushGPortalConfigs extends Command
                 'assistrules.json' => json_encode($config->assistRules($server), JSON_PRETTY_PRINT),
             ];
 
-            if (!$ftp->connect($server)) {
-                $error = "Could not connect to {$server->host}:{$server->port}";
-                Log::error("gPortal {$label}: {$error} for race #{$race->id}");
+            $invalid = [];
+            foreach ($files as $filename => $content) {
+                if ($content === false || json_decode($content) === null && json_last_error() !== JSON_ERROR_NONE) {
+                    $invalid[] = $filename;
+                }
+            }
 
-                Race::where('id', $race->id)->update([
-                    'config_push_status'   => 'failed',
-                    'config_push_error'    => $error,
-                    'config_pushed_at'     => now(),
-                    'config_push_attempts' => DB::raw('config_push_attempts + 1'),
-                ]);
+            if ($invalid) {
+                $this->markFailed($race, $label, 'Invalid JSON, push skipped: ' . implode(', ', $invalid));
+                continue;
+            }
+
+            if (!$ftp->connect($server)) {
+                $this->markFailed($race, $label, "Could not connect to {$server->host}:{$server->port}");
                 continue;
             }
 
@@ -113,15 +118,7 @@ class PushGPortalConfigs extends Command
             $ftp->disconnect();
 
             if ($failed) {
-                $error = 'Upload failed: ' . implode(', ', $failed);
-                Log::error("gPortal {$label}: {$error} for race #{$race->id}");
-
-                Race::where('id', $race->id)->update([
-                    'config_push_status'   => 'failed',
-                    'config_push_error'    => $error,
-                    'config_pushed_at'     => now(),
-                    'config_push_attempts' => DB::raw('config_push_attempts + 1'),
-                ]);
+                $this->markFailed($race, $label, 'Upload failed: ' . implode(', ', $failed));
             } else {
                 Log::info("gPortal {$label}: success for race #{$race->id}");
 
@@ -132,6 +129,31 @@ class PushGPortalConfigs extends Command
                     'config_push_attempts' => 0,
                 ]);
             }
+        }
+    }
+
+    private function markFailed(Race $race, string $label, string $error): void
+    {
+        Log::error("gPortal {$label}: {$error} for race #{$race->id}");
+
+        Race::where('id', $race->id)->update([
+            'config_push_status'   => 'failed',
+            'config_push_error'    => $error,
+            'config_pushed_at'     => now(),
+            'config_push_attempts' => DB::raw('config_push_attempts + 1'),
+        ]);
+
+        $webhook = config('services.discord.webhook_mrs_racewell');
+        if (!$webhook) {
+            return;
+        }
+
+        try {
+            Http::timeout(5)->post($webhook, [
+                'content' => "⚠️ **gPortal config push failed** — race #{$race->id} ({$race->title}): {$error}",
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('gPortal push-failure Discord notify failed: ' . $e->getMessage());
         }
     }
 }

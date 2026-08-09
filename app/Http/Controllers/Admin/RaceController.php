@@ -106,7 +106,7 @@ class RaceController extends Controller
         $entries = $registrations->map(function ($reg) use ($race) {
             $user      = $reg->user;
             $lastName  = $user->team ? $user->name . "\n" . $user->team : ($user->name ?? '');
-            $shortName = strtoupper(substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3));
+            $shortName = mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3));
 
             return [
                 'drivers' => [
