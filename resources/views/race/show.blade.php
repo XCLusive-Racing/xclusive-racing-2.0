@@ -122,7 +122,7 @@
                     $race2Mins  = $fmt ? $fmt->race2_mins   : null;
                     $hasPitstop = $fmt && $fmt->pitstop_count > 0;
                     $pitstopLabel = $hasPitstop
-                        ? ('Required (' . $fmt->pitstop_count . 'x' . ($fmt->min_stop_secs ? ', min ' . $fmt->min_stop_secs . 's' : '') . ')')
+                    ? ('(' . $fmt->pitstop_count . 'x' . ($fmt->min_stop_secs ? ', ' . $fmt->min_stop_secs . 's' : '') . ')')
                         : 'None';
                 @endphp
                 @if($pracMins || $qualiMins || $race1Mins || $fmt)

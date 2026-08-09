@@ -31,7 +31,7 @@
             <div class="col-sm-6">
                 <label class="form-label">Formation Type</label>
                 <input type="text" name="formation_type" value="{{ old('formation_type', $eventFormat->formation_type ?? '') }}"
-                       class="form-control" placeholder="e.g. Short, Full - Nords (short)">
+                       class="form-control" placeholder="e.g. Short, Full (Nords - Short)">
             </div>
             <div class="col-sm-3">
                 <label class="form-label">Server Preference</label>

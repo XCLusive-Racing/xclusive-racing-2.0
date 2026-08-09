@@ -876,8 +876,8 @@ $mcExisting = $isEdit
 
         let pitstop = 'None';
         if (fmt.pitstop_count > 0) {
-            pitstop = 'Required (' + fmt.pitstop_count + 'x';
-            if (fmt.min_stop_secs) pitstop += ', min ' + fmt.min_stop_secs + 's';
+            pitstop = '(' + fmt.pitstop_count + 'x';
+            if (fmt.min_stop_secs) pitstop += ', ' + fmt.min_stop_secs + 's';
             pitstop += ')';
         }
         document.getElementById('ce-fi-pitstop').textContent = pitstop;
@@ -1224,7 +1224,7 @@ $mcExisting = $isEdit
                         ? fmtData.formation_type.charAt(0).toUpperCase() + fmtData.formation_type.slice(1)
                         : '—';
                     const pitstop = fmtData.pitstop_count > 0
-                        ? 'Required (' + fmtData.pitstop_count + 'x)'
+                        ? '(' + fmtData.pitstop_count + 'x)'
                         : 'Not required';
                     metaEl.textContent = 'Formation: ' + formation + ' Pitstop: ' + pitstop;
                 }

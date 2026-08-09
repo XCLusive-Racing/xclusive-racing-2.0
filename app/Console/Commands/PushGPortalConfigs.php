@@ -27,12 +27,12 @@ class PushGPortalConfigs extends Command
             ->with('ftpServer')
             ->get();
 
-        // Phase 2: safety repush — already pushed, but within 2min of slot and last push was >5min ago
+        // Phase 2: safety repush — already pushed, but from 5min before slot to 2min after and last push was >5min ago
         // Catches server crashes/restarts between initial push and race start
         $safetyRaces = Race::whereNotNull('ftp_server_id')
             ->whereNotNull('slot_time')
             ->where('config_push_status', 'pushed')
-            ->whereBetween('slot_time', [$now->copy()->subMinutes(2), $now->copy()->addMinutes(1)])
+            ->whereBetween('slot_time', [$now->copy()->subMinutes(2), $now->copy()->addMinutes(5)])
             ->where(function ($q) use ($now) {
                 $q->whereNull('config_pushed_at')
                   ->orWhere('config_pushed_at', '<', $now->copy()->subMinutes(5));
