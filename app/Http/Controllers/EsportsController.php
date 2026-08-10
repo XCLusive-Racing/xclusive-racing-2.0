@@ -43,7 +43,7 @@ class EsportsController extends Controller
                 ['name' => 'Paul Möller',        'flag' => 'germany',        'photo' => null, 'socials' => [
                     ['type' => 'instagram', 'href' => 'https://www.instagram.com/p.moeller787?igsh=bWh4Z3VpZjV0bDBk'],
                 ]],
-                ['name' => 'Thato Motubatse',    'flag' => 'south%20africa', 'photo' => null, 'socials' => []],
+                ['name' => 'Thato Motubatse',    'flag' => 'south%20africa', 'photo' => '/images/drivers/motubatse.png', 'socials' => []],
                 ['name' => 'Lukas Oesterreich',  'flag' => 'germany',        'photo' => '/images/drivers/Louk.png', 'socials' => [
                     ['type' => 'youtube',   'href' => 'https://www.youtube.com/@Louky99'],
                     ['type' => 'instagram', 'href' => 'https://www.instagram.com/speedlukas?igsh=OHRsbzFzMzA1OHl3'],
@@ -69,7 +69,6 @@ class EsportsController extends Controller
                 ['name' => 'Danny Meeldijk',     'flag' => 'netherlands',    'photo' => '/images/drivers/Danny.png', 'socials' => []],
                 ['name' => 'Elmārs Miķelsons',   'flag' => 'latvia',         'photo' => '/images/drivers/elmars.png', 'socials' => []],
                 ['name' => 'Florian Ochsmann',   'flag' => 'germany',        'photo' => '/images/drivers/ochsmann.png', 'socials' => []],
-                ['name' => 'Menno Peters',       'flag' => 'netherlands',    'photo' => '/images/drivers/PetersM.png', 'socials' => []],
                 ['name' => 'Phil Soucy',         'flag' => 'canada',         'photo' => null, 'socials' => []],
                 ['name' => 'Gianluca Zambione',  'flag' => 'italy',          'photo' => '/images/drivers/Gianluca.png', 'socials' => []],
                 ['name' => 'Federico Zamblera',  'flag' => 'italy',          'photo' => '/images/drivers/Zamby.png', 'socials' => []],
@@ -81,6 +80,7 @@ class EsportsController extends Controller
                 ['name' => 'Mario García',      'flag' => null,      'photo' => '/images/drivers/Mare.png', 'socials' => []],
                 ['name' => 'Jake Goldman',      'flag' => 'usa',     'photo' => '/images/drivers/Goldman2.png', 'socials' => []],
                 ['name' => 'Michael Martinz',   'flag' => 'austria', 'photo' => null, 'socials' => []],
+                ['name' => 'Menno Peters',      'flag' => 'netherlands', 'photo' => '/images/drivers/PetersM.png', 'socials' => []],
                 ['name' => 'Parker Soukup',     'flag' => 'usa',     'photo' => '/images/drivers/P.Soukup.png', 'socials' => []],
                 ['name' => 'André Damrat',      'flag' => 'germany', 'photo' => null, 'socials' => []],
             ],
