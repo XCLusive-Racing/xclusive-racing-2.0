@@ -51,8 +51,4 @@ return [
         'api_key' => env('PSN_LOOKUP_API_KEY'),
     ],
 
-    'b4p_proposal' => [
-        'password' => env('B4P_PROPOSAL_PASSWORD'),
-    ],
-
 ];
