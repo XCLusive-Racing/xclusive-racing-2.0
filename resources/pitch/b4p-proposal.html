@@ -141,29 +141,28 @@ h2 em{font-style:italic;color:var(--red)}
 /* B4P BENEFITS */
 #b4p{background:var(--surface)}
 .b4p-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
-.b4p-card{background:var(--panel);padding:36px 28px;border-top:2px solid var(--edge);transition:border-color 0.25s,transform 0.25s}
+.b4p-card{background:var(--panel);padding:36px 28px;border-top:2px solid var(--edge);transition:border-color 0.25s,transform 0.25s;display:flex;flex-direction:column}
 .b4p-card:hover{border-color:var(--red);transform:translateY(-3px)}
 .b4p-tag{font-family:'Roboto Mono',monospace;font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--red);margin-bottom:1.5rem}
 .b4p-card h3{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.3rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem}
 .b4p-card p{font-size:0.84rem;color:var(--light);line-height:1.7}
-.b4p-metric{margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--edge);font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:800;color:var(--red);line-height:1}
+.b4p-metric{margin-top:auto;padding-top:1.5rem;border-top:1px solid var(--edge);font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:800;color:var(--red);line-height:1}
 .b4p-metric span{font-size:0.7rem;font-family:'Inter',sans-serif;font-weight:400;color:var(--muted);display:block;margin-top:4px;text-transform:uppercase;letter-spacing:0.1em}
 
 /* TEAM SECTION */
 #team{background:var(--ink);position:relative;overflow:hidden}
 #team::after{content:'ESPORTS';position:absolute;bottom:-1vw;right:-1vw;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:16vw;color:rgba(200,16,46,0.025);pointer-events:none;white-space:nowrap}
-.team-intro{display:grid;grid-template-columns:1fr 1fr;gap:5rem;margin-bottom:5rem;align-items:end}
+.team-lion-bg{position:absolute;top:0;left:50%;transform:translate(-50%,-15%);width:min(70vw,900px);opacity:0.05;pointer-events:none;z-index:0;filter:grayscale(1)}
+#team .inner{position:relative;z-index:1}
+.team-intro{display:grid;grid-template-columns:1fr 1fr;gap:5rem;margin-bottom:5rem;align-items:start}
 .team-body{font-size:0.92rem;color:var(--light);line-height:1.75}
 .team-body strong{color:var(--white);font-weight:500}
 /* Competitors */
-.competitor-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:4rem}
-.comp-card{background:var(--panel);padding:28px 20px;text-align:center;border-top:2px solid var(--edge);transition:border-color 0.2s,transform 0.2s;text-decoration:none;display:block}
+.competitor-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:4rem}
+.comp-card{background:var(--panel);padding:32px 20px;text-align:center;border-top:2px solid var(--edge);transition:border-color 0.2s,transform 0.2s;text-decoration:none;display:flex;align-items:center;justify-content:center}
 .comp-card:hover{border-color:var(--red);transform:translateY(-3px)}
-.comp-logo{width:100%;height:56px;background:var(--edge);border:1px dashed rgba(200,16,46,0.2);display:flex;align-items:center;justify-content:center;margin-bottom:14px;border-radius:2px}
-.comp-logo span{font-family:'Roboto Mono',monospace;font-size:0.5rem;color:rgba(200,16,46,0.3);letter-spacing:0.1em}
-.comp-logo img{max-width:100%;max-height:100%;object-fit:contain;padding:8px}
-.comp-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.95rem;text-transform:uppercase;color:var(--white);margin-bottom:4px}
-.comp-sub{font-size:0.72rem;color:var(--muted);font-family:'Roboto Mono',monospace;letter-spacing:0.08em}
+.comp-logo{width:100%;height:90px;display:flex;align-items:center;justify-content:center}
+.comp-logo img{max-width:100%;max-height:100%;object-fit:contain}
 /* Community */
 .community-block{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;margin-top:4rem}
 .cb{background:var(--panel);padding:36px 28px}
@@ -231,7 +230,7 @@ h2 em{font-style:italic;color:var(--red)}
 #close{background:var(--ink)}
 .close-partners{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin:3rem 0 5rem}
 .partner-slot{background:var(--panel);height:88px;display:grid;place-items:center;border:1px dashed rgba(255,255,255,0.04)}
-.partner-slot span{font-family:'Roboto Mono',monospace;font-size:0.55rem;color:rgba(200,16,46,0.25);text-align:center;padding:0 12px;letter-spacing:0.08em}
+.partner-slot span{font-family:'Roboto Mono',monospace;font-size:0.55rem;color:var(--white);text-align:center;padding:0 12px;letter-spacing:0.08em}
 .close-box{background:var(--panel);border:1px solid var(--edge);padding:72px;text-align:center}
 .close-box p{font-size:1rem;color:var(--light);max-width:520px;margin:0 auto 2.5rem;line-height:1.75;font-weight:300}
 .contact-row{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--edge);display:flex;justify-content:center;gap:5rem;flex-wrap:wrap}
@@ -272,7 +271,7 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
     <li><a href="#commercial">Commercial</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
   </ul>
-  <a class="nav-cta" href="#close">Request Proposal</a>
+  <a class="nav-cta" href="#close">Start Conversation</a>
 </nav>
 
 <!-- HERO -->
@@ -292,7 +291,7 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
         Two proposals. One partnership. XCLusive Racing invites Build4Performance to co-create <strong>the world's first virtual endurance calendar running parallel with real motorsport's greatest 24-hour races</strong> — and to put their name on the team and platform that makes it happen.
       </p>
       <div class="hero-actions">
-        <a href="#close" class="btn-red" data-en="Request the full proposal →" data-nl="Volledig voorstel aanvragen →">Request the full proposal →</a>
+        <a href="#close" class="btn-red" data-en="Schedule a meeting →" data-nl="Plan een gesprek →">Schedule a meeting →</a>
         <a href="#events" class="btn-ghost" data-en="See the events ↓" data-nl="Bekijk de events ↓">See the events ↓</a>
       </div>
     </div>
@@ -331,7 +330,8 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
       <div class="opp-card highlight">
         <div class="opp-num">01</div>
         <h3>The Real Race Precedent</h3>
-        <p>The 24H Nürburgring, 24H Spa, 24H Daytona, 24H Le Mans, and 12H Bathurst collectively attract millions of circuit visitors and hundreds of millions of global broadcast viewers every year. A virtual championship running in parallel captures the same audience, the same weekend, at a fraction of the production cost.</p>
+        <p>The 24H Nürburgring, 24H Spa, 24H Daytona, and 24H Le Mans collectively attract millions of circuit visitors and hundreds of millions of global broadcast viewers every year. A virtual championship running in parallel captures the same audience, the same weekend, at a fraction of the production cost.</p>
+        <p style="margin-top:1rem;font-size:0.88rem;color:rgba(240,239,244,0.65);line-height:1.7">The real-world teams already on that grid — Porsche Penske, Manthey, WRT, United Autosports, BMW, Ferrari AF Corse — are exactly the organisations most likely to want a simteam of their own. It is low-cost, low-risk exposure for their existing sponsors, running on the same weekend as the cars those sponsors already paid to be on. A virtual sister entry costs a fraction of a real GT3 programme and reaches an audience that overlaps directly with their commercial partners' target market.</p>
       </div>
       <div class="opp-card">
         <div class="opp-num">02</div>
@@ -343,6 +343,7 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
         <div class="opp-num">03</div>
         <h3>XCLusive Racing's Position</h3>
         <p>8,000+ registered members. 37 professional and esports drivers. Active championships on ACC, iRacing and LMU. A broadcast partner — TRTN — already in place. The community, the infrastructure, and the driver relationships exist. The missing piece is a title partner with the hardware capability and brand ambition to make Division 1 on-site possible.</p>
+        <p style="margin-top:1rem;font-size:0.88rem;color:rgba(240,239,244,0.65);line-height:1.7">XCLusive Racing can also build and ship a fully functional, fully customisable championship website quickly — ready to attract sponsors and teams from day one, not months into the season. And the relationships run both ways: direct links into the biggest names in esports racing, plus the drivers and personalities to hype these events before a single car crosses the line.</p>
       </div>
       <div class="opp-card">
         <div class="opp-num">04</div>
@@ -362,7 +363,7 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
       <div class="reveal">
         <div class="s-label">02 — The Virtual 24H Events</div>
         <h2>The 24H races<br>the world<br><em>watches.</em></h2>
-        <p class="s-lead" style="margin-bottom:0">Five of the greatest endurance races in motorsport. One virtual championship running alongside each of them. Same circuit. Same race distance. Same weekend. Division 1 teams race on-site. The world watches both.</p>
+        <p class="s-lead" style="margin-bottom:0">Four of the greatest endurance races in motorsport. One virtual championship running alongside each of them. Same circuit. Same race distance. Same weekend. Division 1 teams race on-site. The world watches both.</p>
       </div>
       <div class="reveal d1">
         <p style="font-size:0.9rem;color:var(--light);line-height:1.75;margin-bottom:1.5rem">Each event in the calendar is anchored to its real-world counterpart. Qualifying rounds in the weeks before determine which teams race on-site (Division 1), which race online simultaneously (Division 2), and which compete in the development series (Division 3 Rookie).</p>
@@ -423,19 +424,6 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
             <div class="circuit-name">24H Le Mans</div>
             <div class="circuit-sub">The Greatest Race</div>
             <p class="circuit-detail">The pinnacle of endurance racing. 250,000 circuit visitors. Global broadcast to 190 countries. The season finale.</p>
-          </div>
-        </div>
-        <div class="circuit-card">
-          <div class="circuit-img">
-            <div class="circuit-img-placeholder"></div>
-            <img src="/images/pitch/circuits/bathurst.jpg" alt="Bathurst circuit">
-            <span>[ Bathurst circuit image ]</span>
-            <div class="circuit-badge potential">Potential</div>
-          </div>
-          <div class="circuit-info">
-            <div class="circuit-name">12H Bathurst</div>
-            <div class="circuit-sub">Mount Panorama</div>
-            <p class="circuit-detail">Australia's most iconic circuit. The Bathurst 12H brings the championship to the Asia-Pacific region and opens the global calendar.</p>
           </div>
         </div>
       </div>
@@ -538,7 +526,7 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
         <div class="b4p-tag">Event Infrastructure</div>
         <h3>Your Rigs. At the Circuit.</h3>
         <p>Build4Performance high-end simulators are the Division 1 race infrastructure at every on-site event. Spa, Nürburgring, Daytona, Le Mans. Every camera angle showing the simulator bays is a live product demonstration at the highest level of competitive sim racing.</p>
-        <div class="b4p-metric">5 Events<span>Spa · Nürburgring · Daytona · Le Mans · Bathurst</span></div>
+        <div class="b4p-metric">4 Events<span>Spa · Nürburgring · Daytona · Le Mans</span></div>
       </div>
       <div class="b4p-card reveal d1">
         <div class="b4p-tag">Audience Access</div>
@@ -578,18 +566,17 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
 
 <!-- TEAM SECTION -->
 <section id="team">
+  <img src="/images/pitch/xclusive-lion.png" alt="" class="team-lion-bg">
   <div class="inner">
     <div class="team-intro">
       <div class="reveal">
         <div class="s-label">04 — The Team Proposal</div>
         <h2>Not another<br>esports team.<br><em>The next<br>legend.</em></h2>
       </div>
-      <div class="reveal d1">
-        <p class="team-body">Alongside the event proposal, XCLusive Racing invites Build4Performance to name and co-build the XCLusive Racing esports team. Born from the most dominant force in ACC console racing — the Xbox Community League — and now expanding to PC across all three major sim platforms, XCLusive Racing has the community, the drivers, and the infrastructure to become a genuine challenger to the teams listed below.</p>
+      <div class="reveal d1" style="margin-top:2.5rem">
+        <p class="team-body">Born from the most dominant force in ACC console racing — the Xbox Community League — XCLusive Racing is now expanding to PC across all three major sim platforms. The community, the drivers, and the infrastructure are in place. The missing piece is a title partner.</p>
         <br>
-        <p class="team-body">What B4P gets from the team deal: naming rights, stream overlay branding across 37+ drivers, logo on real-world championship cars (Porsche Supercup, Rally, MX5 Cup), a dedicated partner section on xclusiveracing.com, and access to 8,000+ sim racers who are exactly the high-end simulator market.</p>
-        <br>
-        <p class="team-body">What drivers get: <strong>not cash — access.</strong> Events. Build4Performance representation. Real-world connections. The chance to be part of a brand that matters in motorsport. From someone's first session in Assetto Corsa all the way to professional racing — XCLusive Racing is the pathway, B4P is the name on the door.</p>
+        <p class="team-body">B4P gets naming rights, stream overlay branding across 40+ esports drivers who become instant B4P ambassadors, logo on real-world championship cars (Porsche Supercup, Rally, MX5 Cup), and a direct line to a large and fast-growing community that will constantly see, know, and aspire to Build4Performance. What drivers get in return is <strong>not cash — it is access.</strong> Events. Real-world connections. A brand that matters in motorsport.</p>
       </div>
     </div>
 
@@ -629,30 +616,32 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
     <div class="s-label reveal" style="margin-bottom:1rem">Who Is Already Doing This</div>
     <p style="font-size:0.85rem;color:var(--light);margin-bottom:2rem;max-width:600px" class="reveal d1">These are the teams and brand partnerships that prove the model. XCLusive Racing is the challenger version — with a larger community base than most of these had at launch.</p>
     <div class="competitor-grid">
-      <a class="comp-card reveal" href="#" target="_blank">
-        <div class="comp-logo"><img src="/images/pitch/logos/redline.webp" alt="Team Redline"><span>[ Verstappen.com × Redline logo ]</span></div>
-        <div class="comp-name">Verstappen.com × Team Redline</div>
-        <div class="comp-sub">The benchmark</div>
+      <a class="comp-card reveal" href="https://racing.verstappen.com/team-redline/" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/redline.webp" alt="Team Redline"></div>
       </a>
-      <a class="comp-card reveal d1" href="#" target="_blank">
-        <div class="comp-logo"><img src="/images/pitch/logos/falken.png" alt="Falken"><span>[ Falken × Dörr logo ]</span></div>
-        <div class="comp-name">Falken × Dörr Esports</div>
-        <div class="comp-sub">Tyre brand meets esports</div>
+      <a class="comp-card reveal d1" href="https://www.akkodis-asp-team.com/en/" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/akkodis.png" alt="Akkodis ASP Team"></div>
       </a>
-      <a class="comp-card reveal d2" href="#" target="_blank">
-        <div class="comp-logo"><img src="/images/pitch/logos/coanda.png" alt="Coanda"><span>[ Porsche × Coanda logo ]</span></div>
-        <div class="comp-name">Porsche × Coanda / Purple Labs</div>
-        <div class="comp-sub">Factory backing</div>
+      <a class="comp-card reveal d2" href="https://www.doerr-esports.com/" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/falken.png" alt="Falken Simracing Team"></div>
       </a>
-      <a class="comp-card reveal d1" href="#" target="_blank">
-        <div class="comp-logo"><img src="/images/pitch/logos/referox.png" alt="ReFerox"><span>[ ReFerox logo ]</span></div>
-        <div class="comp-name">ReFerox × ReFerox Esports</div>
-        <div class="comp-sub">Hardware as team identity</div>
+      <a class="comp-card reveal" href="https://referox.com/" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/referox.png" alt="ReFerox"></div>
       </a>
-      <a class="comp-card reveal d2" href="#" target="_blank">
-        <div class="comp-logo"><img src="/images/pitch/logos/akkodis.png" alt="Akkodis"><span>[ Akkodis × Delta-V logo ]</span></div>
-        <div class="comp-name">Akkodis × Delta-V Racing</div>
-        <div class="comp-sub">Tech brand, sim team</div>
+      <a class="comp-card reveal d1" href="https://coanda.gg/" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/coanda.png" alt="Coanda"></div>
+      </a>
+      <a class="comp-card reveal d2" href="https://www.tatumrestech.net/" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/tatum.jpg" alt="Tatum Restech"></div>
+      </a>
+      <a class="comp-card reveal" href="https://www.race-esport.fr/#about" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/ere.webp" alt="ERE Team" style="transform:scale(0.5)"></div>
+      </a>
+      <a class="comp-card reveal d1" href="https://williamsesports.com/" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/williamsesports.png" alt="Williams Esports" style="transform:scale(1.2)"></div>
+      </a>
+      <a class="comp-card reveal d2" href="https://esportsseries.ferrari.com/" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/SF.png" alt="Scuderia Ferrari Esports" style="transform:scale(0.6)"></div>
       </a>
     </div>
 
@@ -663,9 +652,10 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
         <p>8,000+ registered members — and growing fast as XCLusive Racing expands from console to PC. This is not a social media following. These are racers who compete in rated championships, track their XCL Rating, and invest in sim hardware. The Rookie division of the championship feeds directly from this community.</p>
       </div>
       <div class="cb reveal d1">
-        <div class="cb-num">100<span style="color:var(--muted);font-size:2rem">+</span></div>
+        <div class="cb-num">20<span style="color:var(--muted);font-size:2rem">+</span></div>
         <h3>The Volunteers</h3>
         <p>Event managers, race stewards, community coaches, TRTN broadcasters, social media creators — all contributing to XCLusive Racing without pay. Because they want to build something that matters. That kind of commitment is not bought. It is earned. And it is already here.</p>
+        <p style="margin-top:0.75rem">The new website opens up many more volunteer positions — <a href="https://xclusiveracing.com/team/join" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:0.76rem">Join the team →</a></p>
       </div>
       <div class="cb reveal d2">
         <div class="cb-num">3</div>
@@ -708,7 +698,7 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
         <h2>Sponsor-funded.<br><em>Scalable.</em></h2>
       </div>
       <div class="reveal d1">
-        <p style="font-size:0.9rem;color:var(--light);line-height:1.75">The event is funded by tiered sponsors across five race weekends. Build4Performance holds the infrastructure and naming rights position. Category sponsors fund per-event prize pools. The model is designed to be commercially self-sustaining from Season 2 onwards — with Season 1 establishing the audience and the format.</p>
+        <p style="font-size:0.9rem;color:var(--light);line-height:1.75">The event is funded by tiered sponsors across four race weekends. Build4Performance holds the infrastructure and naming rights position. Category sponsors fund per-event prize pools. The model is designed to be commercially self-sustaining from Season 2 onwards — with Season 1 establishing the audience and the format.</p>
       </div>
     </div>
     <div class="sponsor-tiers">
@@ -783,7 +773,7 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
       <div class="rm reveal d1">
         <div class="rm-m">Month 2</div>
         <h4>Public Announcement</h4>
-        <p>Press release via TRTN. Social campaign. Community announcement. Platform partner confirmed. Elite team invitations issued.</p>
+        <p>Press release via TRTN and other major motorsport news platforms. Social campaign. Community announcement. Platform partner confirmed. Elite team invitations issued.</p>
       </div>
       <div class="rm reveal d2">
         <div class="rm-m">Month 3</div>
@@ -816,7 +806,7 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
   <div class="inner">
     <div class="s-label reveal">08 — Partners & Next Steps</div>
     <h2 class="reveal">Two proposals.<br><em>One conversation.</em></h2>
-    <p class="s-lead reveal">The full commercial proposal — including detailed pricing, division structures, circuit partner discussions, broadcast projections, and team deal specifics — is available on request. This document is the summary. The full picture is a meeting.</p>
+    <p class="s-lead reveal">Detailed pricing, division structures, circuit partner discussions, broadcast projections, and team deal specifics are worked out together with Build4Performance, not handed over as a finished document. This proposal is the summary. The next step is a meeting.</p>
     <div class="close-partners reveal">
       <div class="partner-slot"><span>[ BUILD4PERFORMANCE — Infrastructure + Team Partner ]</span></div>
       <div class="partner-slot"><span>[ TRTN — Broadcast Partner ]</span></div>
@@ -830,8 +820,8 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
     <div class="close-box reveal">
       <div class="s-label" style="justify-content:center;margin-bottom:1.5rem">Ready when you are</div>
       <h2>Start the<br><em>conversation.</em></h2>
-      <p>XCLusive Racing is in active discussion with Looping by CarTech, BWT, and Manthey. The Build4Performance position — infrastructure partner, team naming rights, and on-site hardware — is the proposal on the table. The full brief is one meeting away.</p>
-      <a href="mailto:management@xclusiveracing.com" class="btn-red" style="display:inline-block">Request the full proposal →</a>
+      <p>The Build4Performance position — infrastructure partner, team naming rights, and on-site hardware — is the proposal on the table. The details get worked out together, starting with a meeting.</p>
+      <a href="mailto:jan@xclusiveracing.com" class="btn-red" style="display:inline-block">Schedule a meeting →</a>
       <div class="contact-row">
         <div class="ci">
           <div class="ci-label">Contact</div>
@@ -843,7 +833,7 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
         </div>
         <div class="ci">
           <div class="ci-label">Email</div>
-          <div class="ci-val">management@xclusiveracing.com</div>
+          <div class="ci-val">jan@xclusiveracing.com</div>
         </div>
         <div class="ci">
           <div class="ci-label">Website</div>
@@ -856,7 +846,7 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
 
 <footer>
   <div class="ft-logo">XCLusive Racing <em>×</em> Build4Performance — Confidential Partnership Proposal 2026/27</div>
-  <div class="ft-note">Not for distribution — management@xclusiveracing.com</div>
+  <div class="ft-note">Not for distribution — jan@xclusiveracing.com</div>
 </footer>
 
 <script>
