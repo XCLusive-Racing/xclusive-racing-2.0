@@ -52,9 +52,27 @@ Route::get('/coaching', [CoachingController::class, 'index'])->name('coaching.in
 Route::view('/privacy', 'privacy')->name('privacy');
 
 // Confidential — not linked from any menu, share the URL directly
-Route::get('/b4p-proposal', function () {
+Route::get('/b4p-proposal', function (Illuminate\Http\Request $request) {
+    if (!$request->session()->get('b4p_proposal_unlocked')) {
+        return response()->view('pitch.password');
+    }
+
     return response()->file(resource_path('pitch/b4p-proposal.html'), ['Content-Type' => 'text/html']);
 })->name('b4p-proposal');
+
+Route::post('/b4p-proposal', function (Illuminate\Http\Request $request) {
+    $request->validate(['password' => 'required|string']);
+
+    $expected = config('services.b4p_proposal.password');
+
+    if ($expected && hash_equals($expected, $request->input('password'))) {
+        $request->session()->put('b4p_proposal_unlocked', true);
+
+        return redirect()->route('b4p-proposal');
+    }
+
+    return response()->view('pitch.password', ['error' => true], 401);
+})->name('b4p-proposal.unlock');
 
 // PRO driver profiles
 Route::get('/teams/pro',          [ProDriverController::class, 'index'])->name('teams.pro.index');
