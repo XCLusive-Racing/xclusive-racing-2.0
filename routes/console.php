@@ -8,5 +8,5 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('gportal:push-configs')->everyMinute();
-Schedule::command('gportal:import-results')->everyFifteenMinutes();
+Schedule::command('gportal:push-configs')->everyMinute()->onOneServer();
+Schedule::command('gportal:import-results')->everyFifteenMinutes()->onOneServer();
