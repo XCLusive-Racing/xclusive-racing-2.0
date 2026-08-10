@@ -81,7 +81,50 @@ class XboxController extends Controller
         $platformId = 'M' . $xuid;
 
         if (auth()->check()) {
-            return redirect()->route('profile');
+            $user = auth()->user();
+
+            $conflict = User::where('platform', 'xbox')
+                ->where('platform_id', $platformId)
+                ->where('id', '!=', $user->id)
+                ->where('email', 'not like', '%@import.local')
+                ->first();
+
+            if ($conflict) {
+                return redirect()->route('profile.edit')
+                    ->with('error', 'This Xbox account is already linked to another account.');
+            }
+
+            // Auto-merge imported account if it exists with this platform_id
+            $importAccount = User::where('platform_id', $platformId)
+                ->where('id', '!=', $user->id)
+                ->where('email', 'like', '%@import.local')
+                ->first();
+
+            if ($importAccount) {
+                $user->update([
+                    'elo_acc'     => $importAccount->elo_acc,
+                    'elo_lmu'     => $importAccount->elo_lmu,
+                    'elo_iracing' => $importAccount->elo_iracing,
+                    'sr_acc'      => $importAccount->sr_acc,
+                    'sr_lmu'      => $importAccount->sr_lmu,
+                    'sr_iracing'  => $importAccount->sr_iracing,
+                    'team'        => $importAccount->team ?? $user->team,
+                    'flag'        => $importAccount->flag ?? $user->flag,
+                    'role'        => $importAccount->role ?? $user->role,
+                ]);
+                $roleIds = $importAccount->roles()->pluck('roles.id');
+                $user->roles()->sync($roleIds);
+                $importAccount->delete();
+            }
+
+            $user->update([
+                'platform'    => 'xbox',
+                'platform_id' => $platformId,
+                'name'        => $gamertag ?? $user->name,
+            ]);
+
+            return redirect()->route('profile.edit')
+                ->with('success', 'Xbox account updated successfully.');
         }
 
         $existing = User::where('platform', 'xbox')

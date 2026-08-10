@@ -122,7 +122,7 @@
                     $race2Mins  = $fmt ? $fmt->race2_mins   : null;
                     $hasPitstop = $fmt && $fmt->pitstop_count > 0;
                     $pitstopLabel = $hasPitstop
-                        ? ('Required (' . $fmt->pitstop_count . 'x' . ($fmt->min_stop_secs ? ', min ' . $fmt->min_stop_secs . 's' : '') . ')')
+                    ? ('(' . $fmt->pitstop_count . 'x' . ($fmt->min_stop_secs ? ', ' . $fmt->min_stop_secs . 's' : '') . ')')
                         : 'None';
                 @endphp
                 @if($pracMins || $qualiMins || $race1Mins || $fmt)
@@ -392,7 +392,12 @@
                         <div class="xcl-drivers-grid-wrap {{ $driverCount <= 8 ? 'no-overflow' : '' }}">
                             <div class="xcl-drivers-grid">
                                 @foreach($race->registrations as $reg)
-                                <a href="{{ route('drivers.show', $reg->user) }}" class="xcl-drivers-grid__item text-decoration-none">
+                                @php $driverRecord = $driverMap->get($reg->user->platform_id ?? '') @endphp
+                                @if($driverRecord)
+                                <a href="{{ route('drivers.show', $driverRecord) }}" class="xcl-drivers-grid__item text-decoration-none">
+                                @else
+                                <div class="xcl-drivers-grid__item">
+                                @endif
                                     <div class="xcl-drivers-grid__avatar" style="{{ !$reg->user->avatarUrl() ? 'background:' . $race->gameColor() : '' }}">
                                         @if($reg->user->avatarUrl())
                                             <img src="{{ $reg->user->avatarUrl() }}" alt="{{ $reg->user->name }}">
@@ -408,7 +413,11 @@
                                         </span>
                                         @endif
                                     </div>
+                                @if($driverRecord)
                                 </a>
+                                @else
+                                </div>
+                                @endif
                                 @endforeach
                             </div>
                         </div>

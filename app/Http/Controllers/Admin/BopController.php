@@ -105,7 +105,11 @@ class BopController extends Controller
             return back()->with('push_error', 'No BOP entries found for ' . strtoupper($game) . '.');
         }
 
-        $json    = json_encode($config->bop($game), JSON_PRETTY_PRINT);
+        $json = json_encode($config->bop($game), JSON_PRETTY_PRINT);
+        if ($json === false) {
+            return back()->with('push_error', 'Invalid JSON in bop.json: ' . json_last_error_msg());
+        }
+
         $server  = FtpServer::findOrFail($request->server_id);
         $ftp     = new FtpService();
 
