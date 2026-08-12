@@ -17,6 +17,7 @@ class XboxController extends Controller
             'redirect_uri'  => config('services.openxbl.redirect'),
             'scope'         => 'XboxLive.signin XboxLive.offline_access',
             'response_mode' => 'query',
+            'prompt'        => 'select_account',
         ]);
 
         return redirect('https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize?' . $params);
