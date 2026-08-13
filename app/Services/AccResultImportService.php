@@ -53,7 +53,7 @@ class AccResultImportService
         }
 
         foreach ($sessions as $session) {
-            if (!isset($session['sessionType'])) {
+            if (!in_array($session['sessionType'] ?? null, ['Q', 'R'], true)) {
                 continue;
             }
 

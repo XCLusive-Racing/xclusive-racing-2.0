@@ -90,6 +90,17 @@
                 </span>
                 @endif
             </button>
+            <button data-tab-btn="penalties"
+                    class="btn btn-link fw-black text-uppercase text-decoration-none py-3 px-3"
+                    style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s;border-bottom:2px solid transparent">
+                Penalties
+                @php $penaltyCount = $raceResults->filter(fn($r) => $r->dsq || $r->dc)->count(); @endphp
+                @if($penaltyCount > 0)
+                <span class="badge ms-1" style="background:#dc2626;color:white;font-size:.65rem;padding:2px 7px;border-radius:10px">
+                    {{ $penaltyCount }}
+                </span>
+                @endif
+            </button>
         </div>
 
         {{-- INFO TAB --}}
@@ -867,6 +878,88 @@
             </div>
         </div>
         {{-- END Results tab --}}
+
+        {{-- PENALTIES TAB --}}
+        <div data-tab-panel="penalties" style="display:none">
+            @if($raceResults->isEmpty())
+            <div class="p-5 text-center">
+                <div class="fw-bold text-dark" style="font-size:.95rem">No race results yet</div>
+                <div class="text-secondary mt-1" style="font-size:.82rem">Import results first, then mark DC/DSQ here.</div>
+            </div>
+            @else
+            <div class="px-4 py-3 d-flex align-items-center justify-content-between" style="border-bottom:1px solid #f3f4f6;background:#f9fafb">
+                <div class="text-secondary" style="font-size:.78rem">
+                    Mark a driver <strong>DC</strong> (disconnect — no rating penalty) or <strong>DSQ</strong> (disqualified — full rating penalty). Click "Recalculate Ratings" after changing this.
+                </div>
+                <form action="{{ route('admin.races.results.recalculate', $race) }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn btn-sm fw-bold text-uppercase text-white" style="background:#7c3aed;font-size:.72rem;padding:5px 14px">
+                        Recalculate Ratings
+                    </button>
+                </form>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" style="font-size:.82rem">
+                    <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+                        <tr>
+                            <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:50px">Pos</th>
+                            <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Driver</th>
+                            <th class="fw-bold text-uppercase text-center" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Status</th>
+                            <th class="fw-bold text-uppercase text-center pe-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:140px">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($raceResults->sortBy('position') as $result)
+                        <tr>
+                            <td class="ps-4"><x-race-position :position="$result->position" /></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
+                                         style="width:28px;height:28px;font-size:.68rem;background:{{ $race->gameColor() }}">
+                                        {{ strtoupper(substr($result->displayName(), 0, 1)) }}
+                                    </div>
+                                    <span class="fw-bold">{{ $result->displayName() }}</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                @if($result->dsq)
+                                    <span class="badge" style="background:#fef2f2;color:#dc2626;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DSQ</span>
+                                @elseif($result->dc)
+                                    <span class="badge" style="background:#fffbeb;color:#b45309;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DC</span>
+                                @elseif($result->dns)
+                                    <span class="badge" style="background:#fef2f2;color:#6b7280;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DNS</span>
+                                @elseif($result->dnf)
+                                    <span class="badge" style="background:#fef2f2;color:#dc2626;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DNF</span>
+                                @else
+                                    <span class="badge" style="background:#f0fdf4;color:#16a34a;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">FIN</span>
+                                @endif
+                            </td>
+                            <td class="text-center pe-4">
+                                <form action="{{ route('admin.races.results.status', [$race, $result]) }}" method="POST" class="d-inline-block me-1">
+                                    @csrf
+                                    <input type="hidden" name="dc" value="{{ $result->dc ? '0' : '1' }}">
+                                    <input type="hidden" name="dsq" value="{{ $result->dsq ? '1' : '0' }}">
+                                    <button type="submit" class="btn btn-sm fw-bold text-uppercase"
+                                            style="font-size:.68rem;padding:4px 10px;background:{{ $result->dc ? '#f59e0b' : '#f3f4f6' }};color:{{ $result->dc ? '#fff' : '#6b7280' }};border:1px solid {{ $result->dc ? '#f59e0b' : '#e5e7eb' }}"
+                                            title="Toggle DC (disconnect)">DC</button>
+                                </form>
+                                <form action="{{ route('admin.races.results.status', [$race, $result]) }}" method="POST" class="d-inline-block">
+                                    @csrf
+                                    <input type="hidden" name="dc" value="{{ $result->dc ? '1' : '0' }}">
+                                    <input type="hidden" name="dsq" value="{{ $result->dsq ? '0' : '1' }}">
+                                    <button type="submit" class="btn btn-sm fw-bold text-uppercase"
+                                            style="font-size:.68rem;padding:4px 10px;background:{{ $result->dsq ? '#dc2626' : '#f3f4f6' }};color:{{ $result->dsq ? '#fff' : '#6b7280' }};border:1px solid {{ $result->dsq ? '#dc2626' : '#e5e7eb' }}"
+                                            title="Toggle DSQ (disqualified)">DSQ</button>
+                                </form>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @endif
+        </div>
+        {{-- END Penalties tab --}}
 
     </div>
 </div>

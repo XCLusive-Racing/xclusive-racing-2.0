@@ -34,8 +34,11 @@ class RatingService
         }
 
         $entries = $results->map(function (RaceResult $r) use ($ratingField) {
-            $rating = (float) ($r->user->{$ratingField} ?? 1500);
-            $status = $r->dns ? 'DNS' : ($r->dnf ? 'DNF' : 'FIN');
+            // Undo this result's own previously-applied elo_change (if any) so recalculating
+            // after a manual DSQ/DC correction re-baselines from the pre-this-race rating
+            // instead of stacking a second delta on top of the first.
+            $rating = (float) ($r->user->{$ratingField} ?? 1500) - (float) ($r->elo_change ?? 0);
+            $status = $r->dsq ? 'DSQ' : ($r->dns ? 'DNS' : ($r->dc ? 'DC' : ($r->dnf ? 'DNF' : 'FIN')));
 
             return [
                 'driver_id'  => $r->user_id,
