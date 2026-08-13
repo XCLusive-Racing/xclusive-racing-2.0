@@ -35,6 +35,7 @@ import { xcDeleteSubmit, testConnection, previewAvatar } from './xcl-admin.js';
 // Vanilla JS modules
 import { init as initAdminLayout } from './pages/admin/layout.js';
 import { initNavbar } from './pages/navbar.js';
+import { initHeaderHeight } from './components/header-height.js';
 import { initEventsFilter } from './components/events-filter.js';
 import { initEventTags } from './components/event-tags.js';
 import { initCountdownTimers } from './components/countdown-timer.js';
@@ -82,6 +83,7 @@ window.addEventListener('toast', e => {
 document.addEventListener('DOMContentLoaded', () => {
     initAdminLayout();
     initNavbar();
+    initHeaderHeight();
     initEventsFilter();
     initCountdownTimers();
     initPasswordToggles();
