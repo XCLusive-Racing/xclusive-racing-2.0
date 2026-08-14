@@ -37,12 +37,17 @@ class DriverController extends Controller
 
         $drivers = $query->paginate(50)->withQueryString();
 
+        // True overall leaderboard position, independent of the search filter above —
+        // otherwise a searched-down result set would rank its rows starting from 1.
+        $rankedIds = User::where($eloCol, '>', 0)->orderByDesc($eloCol)->pluck('id');
+        $rankMap   = array_flip($rankedIds->all());
+
         $platformIds = $drivers->pluck('platform_id')->filter()->values()->all();
         $driverMap   = Driver::whereIn('xuid_psid', $platformIds)
             ->get(['id', 'xuid_psid'])
             ->keyBy('xuid_psid');
 
-        return view('drivers.index', compact('drivers', 'games', 'game', 'gameInfo', 'eloCol', 'srCol', 'driverMap'));
+        return view('drivers.index', compact('drivers', 'games', 'game', 'gameInfo', 'eloCol', 'srCol', 'driverMap', 'rankMap'));
     }
 
     public function show(Driver $driver)

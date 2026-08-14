@@ -67,7 +67,7 @@ $classMeta = [
                     <tbody>
                         @foreach($drivers as $i => $user)
                         @php
-                            $rank    = ($drivers->currentPage() - 1) * $drivers->perPage() + $i + 1;
+                            $rank    = ($rankMap[$user->id] ?? 0) + 1;
                             $rClass  = $user->rank($game);
                             $meta    = $classMeta[$rClass['slug']] ?? $classMeta['rookie'];
                             $srInfo  = $user->srGrade($game);
