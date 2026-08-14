@@ -62,7 +62,10 @@ export function initNavbar() {
     // Desktop dropdowns are absolutely positioned and centred under the nav
     // item via translateX(-50%). Mobile drops that (position: static, inline
     // flow via CSS) — keeping the -50% there shifts the whole box out of view.
-    const isMobileNav = () => window.matchMedia('(max-width: 767.98px)').matches;
+    // Threshold matches the $xcl breakpoint (1104px) the navbar collapses at
+    // (.navbar-expand-xcl in app.scss / navbar.blade.php), not Bootstrap's
+    // stock md (768px).
+    const isMobileNav = () => window.matchMedia('(max-width: 1103.98px)').matches;
 
     function showDropdown(menu) {
         menu.style.display = 'block';

@@ -43,6 +43,13 @@
                 </button>
             </div>
 
+            <p class="mt-3 mb-0" style="color:rgba(255,255,255,.4); font-size:.78rem; line-height:1.4;">
+                <i class="fa-brands fa-xbox me-1"></i>
+                Signing up with Xbox on a shared console or browser? Make sure you're signed into the Microsoft
+                account linked to your own gamertag — choose <strong style="color:rgba(255,255,255,.6)">"Use another account"</strong>
+                if Microsoft shows the wrong profile.
+            </p>
+
             <p class="text-center text-white mt-2" style="color:rgba(255,255,255,.4); font-size:.85rem;">
                 Already have an account?
                 <a href="{{ route('login') }}" class="fw-bold text-xcl-purple text-decoration-none">Sign in</a>

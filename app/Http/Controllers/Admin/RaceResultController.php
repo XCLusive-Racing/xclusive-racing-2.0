@@ -94,7 +94,7 @@ class RaceResultController extends Controller
             }
         }
 
-        $linkedFinishers  = $raceResults->where('dns', false)->where('dnf', false)->whereNotNull('user_id')->count();
+        $linkedFinishers  = $raceResults->where('dns', false)->where('dnf', false)->where('dsq', false)->where('dc', false)->whereNotNull('user_id')->count();
         $minRatingDrivers = (new XclRating())->MIN_DRIVERS;
 
         return view('admin.races.results', compact(
@@ -288,7 +288,7 @@ class RaceResultController extends Controller
             ->whereNotNull('user_id')
             ->get();
 
-        $finishers = $results->where('dns', false)->where('dnf', false)->count();
+        $finishers = $results->where('dns', false)->where('dnf', false)->where('dsq', false)->where('dc', false)->count();
         $linked    = $results->count();
         $minNeeded = (new \App\Services\XclRating())->MIN_DRIVERS;
 
@@ -306,6 +306,23 @@ class RaceResultController extends Controller
             \Log::error('Recalculate ratings failed', ['race_id' => $race->id, 'error' => $e->getMessage()]);
             return back()->with('error', 'Rating calculation failed: ' . $e->getMessage());
         }
+    }
+
+    public function updateStatus(Request $request, Race $race, RaceResult $result)
+    {
+        abort_unless($result->race_id === $race->id, 404);
+
+        $request->validate([
+            'dsq' => 'required|boolean',
+            'dc'  => 'required|boolean',
+        ]);
+
+        $result->update([
+            'dsq' => $request->boolean('dsq'),
+            'dc'  => $request->boolean('dc'),
+        ]);
+
+        return back()->with('success', $result->displayName() . ' status updated. Click "Recalculate Ratings" to apply it.');
     }
 
     private function redirectWithCounts(array $counts, array $errors): \Illuminate\Http\RedirectResponse
