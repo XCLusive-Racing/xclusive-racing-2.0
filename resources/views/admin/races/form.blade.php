@@ -498,7 +498,9 @@ $mcExisting = $isEdit
                                     <tr>
                                         <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:36px">#</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Track</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:200px">Date & Time (BST/GMT)</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:190px">Date & Time (BST/GMT)</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:120px">Weather</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:120px">In-game Time</th>
                                         <th class="pe-4" style="width:40px"></th>
                                     </tr>
                                 </thead>
@@ -576,7 +578,7 @@ $mcExisting = $isEdit
                         <label class="form-label">Car Class <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
                         <select name="car_class" id="ce-car-class" class="form-select" style="max-width:200px">
                             <option value="" {{ !old('car_class', $isEdit ? $race->car_class : '') ? 'selected' : '' }}>Open</option>
-                            @foreach(['GT2', 'GT3', 'GT4', 'M2'] as $cls)
+                            @foreach(['GT2', 'GT3', 'GT4', 'TCX', 'GTC'] as $cls)
                                 <option value="{{ $cls }}" {{ old('car_class', $isEdit ? $race->car_class : '') === $cls ? 'selected' : '' }}>{{ $cls }}</option>
                             @endforeach
                         </select>
@@ -595,7 +597,8 @@ $mcExisting = $isEdit
                                 'GT3' => ['color' => '#7c3aed', 'label' => 'GT3'],
                                 'GT4' => ['color' => '#2563eb', 'label' => 'GT4'],
                                 'GT2' => ['color' => '#db2777', 'label' => 'GT2'],
-                                'M2'  => ['color' => '#16a34a', 'label' => 'M2'],
+                                'TCX' => ['color' => '#16a34a', 'label' => 'TCX'],
+                                'GTC' => ['color' => '#ea580c', 'label' => 'GTC'],
                             ] as $cls => $meta)
                             <label data-mc-label="{{ $cls }}"
                                    class="d-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"

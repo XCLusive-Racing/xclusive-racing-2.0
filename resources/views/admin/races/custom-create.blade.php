@@ -55,7 +55,7 @@
                             <label class="form-label">Car Class <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
                             <select id="cr-car-class" name="car_class" class="form-select">
                                 <option value="">— Not set —</option>
-                                @foreach(['GT2', 'GT3', 'GT4', 'M2'] as $cls)
+                                @foreach(['GT2', 'GT3', 'GT4', 'TCX', 'GTC'] as $cls)
                                     <option value="{{ $cls }}" {{ old('car_class') === $cls ? 'selected' : '' }}>{{ $cls }}</option>
                                 @endforeach
                             </select>
@@ -281,7 +281,8 @@
                             'GT3' => ['color' => '#7c3aed', 'label' => 'GT3'],
                             'GT4' => ['color' => '#2563eb', 'label' => 'GT4'],
                             'GT2' => ['color' => '#db2777', 'label' => 'GT2'],
-                            'M2'  => ['color' => '#16a34a', 'label' => 'M2'],
+                            'TCX' => ['color' => '#16a34a', 'label' => 'TCX'],
+                            'GTC' => ['color' => '#ea580c', 'label' => 'GTC'],
                         ] as $cls => $meta)
                         <label data-mc-label="{{ $cls }}"
                                class="d-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"

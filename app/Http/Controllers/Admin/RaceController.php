@@ -182,6 +182,8 @@ class RaceController extends Controller
             'events.*.title'           => 'required|string|max:255',
             'events.*.track'           => 'required|string|max:255',
             'events.*.scheduled_at'    => 'required|date',
+            'events.*.weather'         => 'nullable|in:dry,wet,mixed,random',
+            'events.*.time_of_day'     => 'nullable|in:day,dusk,night,dynamic',
         ]);
 
         $shared = [
@@ -210,6 +212,8 @@ class RaceController extends Controller
                 'title'        => $event['title'],
                 'track'        => $event['track'],
                 'scheduled_at' => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $event['scheduled_at'], 'Europe/London')->utc(),
+                'weather'      => $event['weather'] ?: $shared['weather'],
+                'time_of_day'  => $event['time_of_day'] ?: $shared['time_of_day'],
             ]));
         }
 

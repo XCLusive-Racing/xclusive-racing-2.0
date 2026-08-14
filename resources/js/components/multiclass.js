@@ -9,7 +9,8 @@ export function initMulticlass(wrap) {
         GT3: { name: 'GT3', color: '#7c3aed', car_class: 'GT3' },
         GT4: { name: 'GT4', color: '#2563eb', car_class: 'GT4' },
         GT2: { name: 'GT2', color: '#db2777', car_class: 'GT2' },
-        M2:  { name: 'M2',  color: '#16a34a', car_class: 'M2'  },
+        TCX: { name: 'TCX', color: '#16a34a', car_class: 'TCX' },
+        GTC: { name: 'GTC', color: '#ea580c', car_class: 'GTC' },
     };
 
     const SR_OPTIONS     = ['3', '4', '5', '6', '7', '8', '9'];

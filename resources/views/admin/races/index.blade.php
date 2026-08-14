@@ -64,6 +64,29 @@
         </button>
     </div>
 
+    {{-- Status filters --}}
+    <div class="d-flex align-items-center gap-2 px-4 py-3 border-bottom flex-wrap">
+        <span class="fw-bold text-uppercase me-1" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Status:</span>
+        <button onclick="filterStatus('')"
+                id="status-all"
+                class="btn btn-sm fw-bold text-uppercase px-3"
+                style="font-size:.72rem;border-radius:6px;background:#111827;color:white;border:1px solid #111827">
+            All
+        </button>
+        <button onclick="filterStatus('upcoming')"
+                id="status-upcoming"
+                class="btn btn-sm fw-bold text-uppercase px-3"
+                style="font-size:.72rem;border-radius:6px;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb">
+            Upcoming
+        </button>
+        <button onclick="filterStatus('past')"
+                id="status-past"
+                class="btn btn-sm fw-bold text-uppercase px-3"
+                style="font-size:.72rem;border-radius:6px;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb">
+            Past Events
+        </button>
+    </div>
+
     <div class="table-responsive">
         <table id="races-table" class="table table-hover align-middle mb-0 w-100" style="font-size:.875rem">
             <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
@@ -258,6 +281,26 @@
             Object.entries(filterIds).forEach(([key, id]) => {
                 const btn    = document.getElementById(id);
                 const active = key === game;
+                btn.style.background  = active ? '#111827' : '#f3f4f6';
+                btn.style.borderColor = active ? '#111827' : '#e5e7eb';
+                btn.style.color       = active ? 'white'   : '#374151';
+            });
+        }
+
+        const statusFilterIds = { '': 'status-all', upcoming: 'status-upcoming', past: 'status-past' };
+
+        function filterStatus(mode) {
+            if (mode === 'past') {
+                table.column(5).search('Finished', false, false).draw();
+            } else if (mode === 'upcoming') {
+                table.column(5).search('^(?!.*Finished).*$', true, false).draw();
+            } else {
+                table.column(5).search('').draw();
+            }
+
+            Object.entries(statusFilterIds).forEach(([key, id]) => {
+                const btn    = document.getElementById(id);
+                const active = key === mode;
                 btn.style.background  = active ? '#111827' : '#f3f4f6';
                 btn.style.borderColor = active ? '#111827' : '#e5e7eb';
                 btn.style.color       = active ? 'white'   : '#374151';

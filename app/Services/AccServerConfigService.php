@@ -266,12 +266,14 @@ class AccServerConfigService
         return match (strtoupper(trim($carClass))) {
             'GT3'                              => 'GT3',
             'GT4'                              => 'GT4',
+            'GT2'                              => 'GT2',
+            'GTC'                              => 'GTC',
             'GTE'                              => 'GTE',
             'LMP2', 'LMP 2'                    => 'LMP2',
             'CUP', 'PORSCHE CUP', 'GT3 CUP'   => 'CUP',
             'ST', 'SUPER TROFEO'               => 'ST',
             'CHL', 'CHALLENGE'                 => 'CHL',
-            'TCX', 'TCR'                       => 'TCX',
+            'TCX', 'TCR', 'M2'                 => 'TCX',
             default                            => 'FreeForAll',
         };
     }

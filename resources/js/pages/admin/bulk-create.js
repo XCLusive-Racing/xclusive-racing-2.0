@@ -11,6 +11,18 @@ export function initBulkCreate(wrap) {
     const countDisplays   = wrap.querySelectorAll('[data-bulk-count-display]');
     const addRowBtn       = wrap.querySelector('[data-bulk-add-row]');
     const tbody           = wrap.querySelector('[data-bulk-tbody]');
+    const defaultWeatherEl = wrap.querySelector('select[name="weather"]');
+    const defaultTimeEl    = wrap.querySelector('select[name="time_of_day"]');
+
+    const WEATHER_OPTIONS = [
+        ['', '— Not set —'], ['dry', 'Dry'], ['wet', 'Wet'], ['mixed', 'Mixed'], ['random', 'Random'],
+    ];
+    const TIME_OPTIONS = [
+        ['', '— Not set —'], ['day', 'Day'], ['dusk', 'Dusk'], ['night', 'Night'], ['dynamic', 'Dynamic'],
+    ];
+
+    function getDefaultWeather() { return defaultWeatherEl?.value || ''; }
+    function getDefaultTime()    { return defaultTimeEl?.value || ''; }
 
     let events = [];
 
@@ -69,6 +81,11 @@ export function initBulkCreate(wrap) {
     // Row rendering — title hidden, mirrors track
     function renderRow(i) {
         const ev = events[i];
+        const weatherOptions = WEATHER_OPTIONS.map(([v, label]) =>
+            `<option value="${v}" ${ev.weather === v ? 'selected' : ''}>${label}</option>`).join('');
+        const timeOptions = TIME_OPTIONS.map(([v, label]) =>
+            `<option value="${v}" ${ev.time_of_day === v ? 'selected' : ''}>${label}</option>`).join('');
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td class="ps-4 text-secondary fw-bold" style="font-size:.8rem">${i + 1}</td>
@@ -81,6 +98,16 @@ export function initBulkCreate(wrap) {
                 <input type="datetime-local" name="events[${i}][scheduled_at]" value="${esc(ev.scheduled_at)}"
                        class="form-control form-control-sm" data-field="scheduled_at" required>
             </td>
+            <td>
+                <select name="events[${i}][weather]" class="form-select form-select-sm" data-field="weather">
+                    ${weatherOptions}
+                </select>
+            </td>
+            <td>
+                <select name="events[${i}][time_of_day]" class="form-select form-select-sm" data-field="time_of_day">
+                    ${timeOptions}
+                </select>
+            </td>
             <td class="pe-4">
                 <button type="button" data-remove
                         class="btn btn-sm d-flex align-items-center justify-content-center"
@@ -90,9 +117,11 @@ export function initBulkCreate(wrap) {
             </td>
         `;
 
-        const titleHidden = tr.querySelector('[data-field="title"]');
-        const trackInput  = tr.querySelector('[data-field="track"]');
-        const dateInput   = tr.querySelector('[data-field="scheduled_at"]');
+        const titleHidden  = tr.querySelector('[data-field="title"]');
+        const trackInput   = tr.querySelector('[data-field="track"]');
+        const dateInput    = tr.querySelector('[data-field="scheduled_at"]');
+        const weatherInput = tr.querySelector('[data-field="weather"]');
+        const timeInput    = tr.querySelector('[data-field="time_of_day"]');
 
         // Track drives title automatically
         trackInput.addEventListener('input', () => {
@@ -101,6 +130,8 @@ export function initBulkCreate(wrap) {
             titleHidden.value = trackInput.value;
         });
         dateInput.addEventListener('input', () => { events[i].scheduled_at = dateInput.value; });
+        weatherInput.addEventListener('change', () => { events[i].weather = weatherInput.value; });
+        timeInput.addEventListener('change', () => { events[i].time_of_day = timeInput.value; });
 
         tr.querySelector('[data-remove]').addEventListener('click', () => {
             events.splice(i, 1);
@@ -137,6 +168,9 @@ export function initBulkCreate(wrap) {
         const monday = new Date(seed);
         monday.setDate(monday.getDate() + toMon);
 
+        const defWeather = getDefaultWeather();
+        const defTime    = getDefaultTime();
+
         events = [];
         for (let w = 0; w < nWeeks; w++) {
             checkedDays.forEach(dayOffset => {
@@ -145,7 +179,10 @@ export function initBulkCreate(wrap) {
                 d.setHours(th, tm, 0, 0);
                 // Skip dates before start date
                 if (d < seed) return;
-                events.push({ title: defTrack, track: defTrack, scheduled_at: formatDate(d) });
+                events.push({
+                    title: defTrack, track: defTrack, scheduled_at: formatDate(d),
+                    weather: defWeather, time_of_day: defTime,
+                });
             });
         }
 
@@ -162,7 +199,10 @@ export function initBulkCreate(wrap) {
             nextDate = formatDate(d);
         }
         const defTrack = getDefaultTrack();
-        events.push({ title: defTrack, track: defTrack, scheduled_at: nextDate });
+        events.push({
+            title: defTrack, track: defTrack, scheduled_at: nextDate,
+            weather: getDefaultWeather(), time_of_day: getDefaultTime(),
+        });
         render();
     }
 
