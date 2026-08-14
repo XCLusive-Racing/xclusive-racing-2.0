@@ -149,6 +149,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/messages/{message}', [MessageController::class, 'show'])->name('messages.show');
     Route::delete('/messages/{message}', [MessageController::class, 'destroy'])->name('messages.destroy');
     Route::get('/announcements/{announcement}', [MessageController::class, 'showAnnouncement'])->name('announcements.show');
+    Route::delete('/announcements/{announcement}', [MessageController::class, 'destroyAnnouncement'])->name('announcements.destroy');
 });
 
 // Admin

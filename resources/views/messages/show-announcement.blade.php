@@ -32,7 +32,7 @@
 
             {{-- Link to article --}}
             @if($announcement->newsArticle)
-            <div class="px-4 pb-4">
+            <div class="px-4 pb-3">
                 <a href="{{ route('news.show', $announcement->newsArticle->slug) }}"
                    class="btn btn-sm fw-bold text-white"
                    style="background:#db2877">
@@ -40,6 +40,18 @@
                 </a>
             </div>
             @endif
+
+            {{-- Footer --}}
+            <div class="px-4 pb-4">
+                <form method="POST" action="{{ route('announcements.destroy', $announcement) }}"
+                      onsubmit="return confirm('Remove this from your inbox?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-sm fw-bold text-danger border-danger">
+                        <i class="fa-solid fa-trash me-1"></i> Remove from inbox
+                    </button>
+                </form>
+            </div>
         </div>
 
     </div>

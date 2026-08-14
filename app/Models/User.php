@@ -149,7 +149,19 @@ class User extends Authenticatable
 
     public function readAnnouncements(): BelongsToMany
     {
-        return $this->belongsToMany(Announcement::class, 'announcement_reads')->withPivot('created_at');
+        return $this->belongsToMany(Announcement::class, 'announcement_reads')->withPivot('created_at', 'dismissed_at');
+    }
+
+    public function dismissedAnnouncementIds(): \Illuminate\Support\Collection
+    {
+        return $this->readAnnouncements()->wherePivotNotNull('dismissed_at')->pluck('announcements.id');
+    }
+
+    public function dismissAnnouncement(int $announcementId): void
+    {
+        $this->readAnnouncements()->syncWithoutDetaching([
+            $announcementId => ['dismissed_at' => now()],
+        ]);
     }
 
     public function totalUnreadCount(): int

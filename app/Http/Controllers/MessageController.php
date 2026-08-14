@@ -12,7 +12,7 @@ class MessageController extends Controller
     {
         $user = auth()->user();
 
-        $messages = $user->messages()->latest()->get()
+        $messages = $user->messages()->latest()->get()->toBase()
             ->map(fn($m) => [
                 'kind'    => 'message',
                 'item'    => $m,
@@ -20,8 +20,11 @@ class MessageController extends Controller
                 'unread'  => $m->isUnread(),
             ]);
 
-        $readIds = $user->readAnnouncements()->pluck('announcements.id');
-        $announcements = Announcement::with('newsArticle')->latest()->get()
+        $readIds      = $user->readAnnouncements()->pluck('announcements.id');
+        $dismissedIds = $user->dismissedAnnouncementIds();
+        $announcements = Announcement::with('newsArticle')
+            ->whereNotIn('id', $dismissedIds)
+            ->latest()->get()->toBase()
             ->map(fn($a) => [
                 'kind'   => 'announcement',
                 'item'   => $a,
@@ -65,18 +68,35 @@ class MessageController extends Controller
         return redirect()->route('messages.index')->with('success', 'Message deleted.');
     }
 
+    public function destroyAnnouncement(Announcement $announcement)
+    {
+        auth()->user()->dismissAnnouncement($announcement->id);
+
+        return redirect()->route('messages.index')->with('success', 'Removed from inbox.');
+    }
+
     public function bulkDestroy(Request $request)
     {
-        $ids = $request->input('ids', []);
+        $messageIds      = $request->input('message_ids', []);
+        $announcementIds = $request->input('announcement_ids', []);
 
-        if (empty($ids)) {
-            return back()->with('error', 'No messages selected.');
+        if (empty($messageIds) && empty($announcementIds)) {
+            return back()->with('error', 'No items selected.');
         }
 
-        Message::whereIn('id', $ids)
-            ->where('user_id', auth()->id())
-            ->delete();
+        $user = auth()->user();
 
-        return back()->with('success', count($ids) . ' message(s) deleted.');
+        if (!empty($messageIds)) {
+            Message::whereIn('id', $messageIds)
+                ->where('user_id', $user->id)
+                ->delete();
+        }
+
+        foreach ($announcementIds as $announcementId) {
+            $user->dismissAnnouncement((int) $announcementId);
+        }
+
+        $count = count($messageIds) + count($announcementIds);
+        return back()->with('success', $count . ' item(s) removed.');
     }
 }
