@@ -96,7 +96,7 @@ export function initBulkCreate(wrap) {
             </td>
             <td>
                 <input type="datetime-local" name="events[${i}][scheduled_at]" value="${esc(ev.scheduled_at)}"
-                       class="form-control form-control-sm" data-field="scheduled_at" required>
+                       step="3600" class="form-control form-control-sm" data-field="scheduled_at" required>
             </td>
             <td>
                 <select name="events[${i}][weather]" class="form-select form-select-sm" data-field="weather">
@@ -129,7 +129,15 @@ export function initBulkCreate(wrap) {
             events[i].title = trackInput.value;
             titleHidden.value = trackInput.value;
         });
-        dateInput.addEventListener('input', () => { events[i].scheduled_at = dateInput.value; });
+        dateInput.addEventListener('input', () => {
+            // Keep whole-hour only, even if the browser lets a stray minute value through
+            const d = new Date(dateInput.value);
+            if (!isNaN(d) && d.getMinutes() !== 0) {
+                d.setMinutes(0, 0, 0);
+                dateInput.value = formatDate(d);
+            }
+            events[i].scheduled_at = dateInput.value;
+        });
         weatherInput.addEventListener('change', () => { events[i].weather = weatherInput.value; });
         timeInput.addEventListener('change', () => { events[i].time_of_day = timeInput.value; });
 
@@ -158,7 +166,7 @@ export function initBulkCreate(wrap) {
 
         const nWeeks  = Math.min(Math.max(parseInt(weekCountInput?.value) || 1, 1), 52);
         const time    = startTimeInput?.value || '20:00';
-        const [th, tm] = time.split(':').map(Number);
+        const [th]    = time.split(':').map(Number); // whole-hour only, minutes always :00
         const defTrack = getDefaultTrack();
 
         // Find Monday of the week containing start date
@@ -176,7 +184,7 @@ export function initBulkCreate(wrap) {
             checkedDays.forEach(dayOffset => {
                 const d = new Date(monday);
                 d.setDate(d.getDate() + w * 7 + dayOffset);
-                d.setHours(th, tm, 0, 0);
+                d.setHours(th, 0, 0, 0);
                 // Skip dates before start date
                 if (d < seed) return;
                 events.push({

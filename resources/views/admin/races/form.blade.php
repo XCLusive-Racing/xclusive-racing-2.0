@@ -400,7 +400,7 @@ $mcExisting = $isEdit
                                 </div>
                                 <div class="col-sm-4">
                                     <label class="form-label">Time (BST/GMT)</label>
-                                    <input type="time" data-bulk-start-time value="20:00" class="form-control">
+                                    <input type="time" data-bulk-start-time value="20:00" step="3600" class="form-control">
                                 </div>
                                 <div class="col-sm-4">
                                     <label class="form-label">Number of Weeks</label>

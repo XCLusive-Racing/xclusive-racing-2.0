@@ -159,7 +159,7 @@
 
                     <div class="col-sm-7 px-0">
                         <label class="form-label">Date & Time (BST) <span class="text-danger">*</span></label>
-                        <input type="text" id="cr-scheduled-at" name="scheduled_at" data-flatpickr data-min-today="true"
+                        <input type="text" id="cr-scheduled-at" name="scheduled_at" data-flatpickr data-min-today="true" data-minute-increment="1"
                                value="{{ old('scheduled_at') }}"
                                placeholder="Select date & time…"
                                class="form-control @error('scheduled_at') is-invalid @enderror">
