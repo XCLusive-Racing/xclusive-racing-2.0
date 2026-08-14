@@ -27,7 +27,7 @@
                 {{-- Subject --}}
                 <div class="mb-3">
                     <label class="form-label fw-bold" style="font-size:.82rem">Driver / Team <span class="text-danger">*</span></label>
-                    <select name="subject" class="form-select @error('subject') is-invalid @enderror" style="font-size:.9rem" required>
+                    <select name="subject" data-driver-picker-select class="form-select @error('subject') is-invalid @enderror" style="font-size:.9rem" required>
                         <option value="">— Select —</option>
                         <optgroup label="Professional Drivers">
                             @foreach(['dirk-schouten' => 'Dirk Schouten', 'mats-van-rooijen' => 'Mats van Rooijen', 'jesse-aalbregt' => 'Jesse Aalbregt'] as $val => $label)
@@ -42,6 +42,8 @@
                     </select>
                     @error('subject') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
+
+                @include('admin.team-events._driver-picker', ['esportsDriversByGame' => $esportsDriversByGame, 'selectedDriverIds' => old('participating_drivers') ? json_decode(old('participating_drivers'), true) : $selectedDriverIds])
 
                 {{-- Title --}}
                 <div class="mb-3">

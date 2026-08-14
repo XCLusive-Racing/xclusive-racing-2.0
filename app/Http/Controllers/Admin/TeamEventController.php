@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\EsportsDriver;
 use App\Models\TeamEvent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -12,11 +13,21 @@ class TeamEventController extends Controller
 {
     public function index()
     {
-        $events = TeamEvent::orderBy('starts_at')->get();
+        $now = now();
+
+        $upcomingEvents = TeamEvent::where('starts_at', '>=', $now)
+            ->orderBy('starts_at')
+            ->get();
+
+        $pastEvents = TeamEvent::where('starts_at', '<', $now)
+            ->orderBy('starts_at', 'desc')
+            ->get();
 
         return view('admin.team-events.index', [
-            'events'   => $events,
-            'subjects' => TeamEvent::subjects(),
+            'upcomingEvents'       => $upcomingEvents,
+            'pastEvents'           => $pastEvents,
+            'subjects'             => TeamEvent::subjects(),
+            'esportsDriversByGame' => $this->esportsDriversByGame(),
         ]);
     }
 
@@ -32,6 +43,8 @@ class TeamEventController extends Controller
             'image_url'   => ['nullable', 'url', 'max:1000'],
         ]);
 
+        $driverIds = $this->validatedDriverIds($request);
+
         if ($request->hasFile('image')) {
             $file          = $request->file('image');
             $filename      = Str::uuid() . '.' . $file->getClientOriginalExtension();
@@ -41,7 +54,8 @@ class TeamEventController extends Controller
         }
 
         unset($data['image_url']);
-        TeamEvent::create($data);
+        $teamEvent = TeamEvent::create($data);
+        $teamEvent->participatingDrivers()->sync($driverIds);
 
         return redirect()->route('admin.team-events.index')
             ->with('success', 'Team event created.');
@@ -50,8 +64,10 @@ class TeamEventController extends Controller
     public function edit(TeamEvent $teamEvent)
     {
         return view('admin.team-events.edit', [
-            'event'    => $teamEvent,
-            'subjects' => TeamEvent::subjects(),
+            'event'                => $teamEvent,
+            'subjects'             => TeamEvent::subjects(),
+            'esportsDriversByGame' => $this->esportsDriversByGame(),
+            'selectedDriverIds'    => $teamEvent->participatingDrivers()->pluck('esports_drivers.id')->all(),
         ]);
     }
 
@@ -66,6 +82,8 @@ class TeamEventController extends Controller
             'image'     => ['nullable', 'image', 'max:10240'],
             'image_url' => ['nullable', 'url', 'max:1000'],
         ]);
+
+        $driverIds = $this->validatedDriverIds($request);
 
         if ($request->hasFile('image')) {
             if ($teamEvent->image && !str_starts_with($teamEvent->image, 'http')) {
@@ -82,9 +100,35 @@ class TeamEventController extends Controller
 
         unset($data['image_url']);
         $teamEvent->update($data);
+        $teamEvent->participatingDrivers()->sync($driverIds);
 
         return redirect()->route('admin.team-events.index')
             ->with('success', 'Team event updated.');
+    }
+
+    private function esportsDriversByGame()
+    {
+        $drivers = EsportsDriver::orderBy('sort_order')->get()->groupBy('game');
+
+        foreach (array_values(TeamEvent::teamSubjectGames()) as $game) {
+            if (! $drivers->has($game)) {
+                $drivers[$game] = collect();
+            }
+        }
+
+        return $drivers;
+    }
+
+    /** Decodes + validates the JSON-encoded `participating_drivers` id list from the driver picker. */
+    private function validatedDriverIds(Request $request): array
+    {
+        $ids = json_decode((string) $request->input('participating_drivers', '[]'), true);
+        if (! is_array($ids)) {
+            $ids = [];
+        }
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+
+        return EsportsDriver::whereIn('id', $ids)->pluck('id')->all();
     }
 
     public function destroy(TeamEvent $teamEvent)

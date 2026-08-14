@@ -18,7 +18,7 @@
                 {{-- Subject --}}
                 <div class="mb-3">
                     <label class="form-label fw-bold" style="font-size:.82rem">Driver / Team <span class="text-danger">*</span></label>
-                    <select name="subject" class="form-select @error('subject') is-invalid @enderror" style="font-size:.9rem" required>
+                    <select name="subject" data-driver-picker-select class="form-select @error('subject') is-invalid @enderror" style="font-size:.9rem" required>
                         <option value="">— Select —</option>
                         <optgroup label="Professional Drivers">
                             @foreach(['dirk-schouten' => 'Dirk Schouten', 'mats-van-rooijen' => 'Mats van Rooijen', 'jesse-aalbregt' => 'Jesse Aalbregt'] as $val => $label)
@@ -33,6 +33,8 @@
                     </select>
                     @error('subject') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
+
+                @include('admin.team-events._driver-picker', ['esportsDriversByGame' => $esportsDriversByGame, 'selectedDriverIds' => old('participating_drivers') ? json_decode(old('participating_drivers'), true) : []])
 
                 {{-- Title --}}
                 <div class="mb-3">
@@ -106,88 +108,50 @@
 
     {{-- ── Event list ────────────────────────────────────────────────────── --}}
     <div class="col-lg-7">
-        <div class="admin-form-card p-4">
-            <h2 class="fw-black text-uppercase fst-italic text-dark mb-4" style="font-size:1rem">All Team Events</h2>
+        <div class="admin-form-card p-0" data-tabs data-default-tab="upcoming">
 
-            @if($events->isEmpty())
-                <p class="text-secondary" style="font-size:.88rem">No team events yet. Create one on the left.</p>
-            @else
-                <div style="display:flex;flex-direction:column;gap:.75rem">
-                    @foreach($events as $ev)
-                    <div class="d-flex align-items-start gap-3 p-3 rounded-2"
-                         style="background:#f9fafb;border:1px solid #e5e7eb">
+            {{-- Tab nav --}}
+            <div class="d-flex border-bottom px-2" style="background:#f9fafb">
+                <button data-tab-btn="upcoming"
+                        class="btn btn-link fw-black text-uppercase text-decoration-none py-3 px-3"
+                        style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s;border-bottom:2px solid transparent">
+                    Upcoming
+                    @if($upcomingEvents->isNotEmpty())
+                    <span class="badge ms-1" style="background:#7c3aed;color:white;font-size:.65rem;padding:2px 7px;border-radius:10px">
+                        {{ $upcomingEvents->count() }}
+                    </span>
+                    @endif
+                </button>
+                <button data-tab-btn="past"
+                        class="btn btn-link fw-black text-uppercase text-decoration-none py-3 px-3"
+                        style="font-size:.78rem;border-radius:0;letter-spacing:.05em;transition:color .15s;border-bottom:2px solid transparent">
+                    Past Events
+                    @if($pastEvents->isNotEmpty())
+                    <span class="badge ms-1" style="background:#9ca3af;color:white;font-size:.65rem;padding:2px 7px;border-radius:10px">
+                        {{ $pastEvents->count() }}
+                    </span>
+                    @endif
+                </button>
+            </div>
 
-                        {{-- Thumbnail --}}
-                        @if($ev->image_url)
-                        <div class="flex-shrink-0" style="width:64px;height:48px;border-radius:6px;overflow:hidden;background:#111">
-                            <img src="{{ $ev->image_url }}" alt="{{ $ev->title }}"
-                                 style="width:100%;height:100%;object-fit:cover">
-                        </div>
-                        @endif
+            {{-- UPCOMING TAB --}}
+            <div data-tab-panel="upcoming" class="p-4" style="display:none">
+                @include('admin.team-events._event-list', [
+                    'events'       => $upcomingEvents,
+                    'subjects'     => $subjects,
+                    'emptyMessage' => 'No upcoming team events. Create one on the left.',
+                ])
+            </div>
 
-                        {{-- Date block --}}
-                        <div class="text-center flex-shrink-0"
-                             style="width:48px;background:#7c3aed;border-radius:8px;padding:6px 4px;color:white">
-                            <div style="font-size:.6rem;font-weight:800;letter-spacing:.08em;opacity:.8">
-                                {{ strtoupper($ev->starts_at->timezone('Europe/London')->format('M')) }}
-                            </div>
-                            <div style="font-size:1.2rem;font-weight:900;line-height:1">
-                                {{ $ev->starts_at->timezone('Europe/London')->format('d') }}
-                            </div>
-                        </div>
+            {{-- PAST TAB --}}
+            <div data-tab-panel="past" class="p-4" style="display:none">
+                @include('admin.team-events._event-list', [
+                    'events'       => $pastEvents,
+                    'subjects'     => $subjects,
+                    'emptyMessage' => 'No past team events yet.',
+                ])
+            </div>
 
-                        {{-- Info --}}
-                        <div class="flex-grow-1" style="min-width:0">
-                            <div class="fw-black text-dark text-truncate" style="font-size:.88rem">
-                                {{ $ev->title }}
-                            </div>
-                            @if($ev->subtitle)
-                            <div class="text-secondary text-truncate" style="font-size:.75rem">
-                                {{ $ev->subtitle }}
-                            </div>
-                            @endif
-                            <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
-                                <span class="badge fw-bold text-uppercase"
-                                      style="background:#ede9fe;color:#6d28d9;font-size:.6rem">
-                                    {{ $subjects[$ev->subject] ?? $ev->subject }}
-                                </span>
-                                <span style="font-size:.72rem;color:#6b7280">
-                                    {{ $ev->starts_at->timezone('Europe/London')->format('d M Y · H:i T') }}
-                                </span>
-                                @if($ev->watch_url)
-                                <a href="{{ $ev->watch_url }}" target="_blank"
-                                   style="font-size:.7rem;color:#7c3aed;font-weight:700;text-decoration:none">
-                                    ▶ Watch
-                                </a>
-                                @endif
-                                @if($ev->starts_at->isPast())
-                                <span style="font-size:.65rem;color:#9ca3af;font-weight:700">PAST</span>
-                                @endif
-                            </div>
-                        </div>
-
-                        {{-- Actions --}}
-                        <div class="d-flex flex-column gap-1">
-                            <a href="{{ route('admin.team-events.edit', $ev) }}"
-                               class="btn btn-sm fw-bold text-uppercase"
-                               style="font-size:.68rem;padding:4px 10px;background:#f3f0ff;color:#7c3aed;border:1px solid #ddd6fe;white-space:nowrap">
-                                Edit
-                            </a>
-                            <form action="{{ route('admin.team-events.destroy', $ev) }}" method="POST"
-                                  onsubmit="return confirm('Delete this event?')">
-                                @csrf @method('DELETE')
-                                <button type="submit"
-                                        class="btn btn-sm fw-bold text-uppercase w-100"
-                                        style="font-size:.68rem;padding:4px 10px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;white-space:nowrap">
-                                    Delete
-                                </button>
-                            </form>
-                        </div>
-
-                    </div>
-                    @endforeach
-                </div>
-            @endif
         </div>
     </div>
 

@@ -57,6 +57,7 @@ import { initCoachingFilter } from './components/coaching-filter.js';
 import { initDriverSearch } from './components/driver-search.js';
 import { initDateTimePickers } from './components/datetime-picker.js';
 import { initGportalSlotPicker } from './components/gportal-slot-picker.js';
+import { initTeamEventDriverPicker } from './components/team-event-driver-picker.js';
 
 window.bootstrap      = bootstrap;
 window.Swal           = Swal;
@@ -110,6 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initDriverSearch();
     initDateTimePickers();
     initGportalSlotPicker();
+    initTeamEventDriverPicker();
 
     // EasyMDE rich text editor
     const richEl = document.querySelector('.rich-editor');

@@ -62,6 +62,7 @@ Route::get('/teams/pro/{slug}',   [ProDriverController::class, 'show'])->name('t
 
 // Esports roster
 Route::get('/teams/esports', [EsportsController::class, 'index'])->name('teams.esports.index');
+Route::get('/teams/esports/{driver:slug}', [EsportsController::class, 'show'])->name('teams.esports.show');
 Route::get('/events/sidebar-data', [EventController::class, 'getSidebarData'])->name('events.sidebar-data');
 
 // Championships - public

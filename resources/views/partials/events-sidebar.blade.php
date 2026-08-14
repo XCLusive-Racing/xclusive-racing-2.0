@@ -25,7 +25,7 @@ $sbUpcoming = Race::where('scheduled_at', '>', $now)
     ->get();
 $sbUpcoming->loadCount('registrations');
 
-$sbTeamEvents = TeamEvent::upcoming()->limit(2)->get();
+$sbTeamEvents = TeamEvent::upcoming()->with('participatingDrivers')->limit(2)->get();
 
 $sbGames = ['acc' => 'elo_acc', 'lmu' => 'elo_lmu', 'iracing' => 'elo_iracing'];
 $sbLeaderboards = [];
@@ -162,17 +162,13 @@ foreach ($sbGames as $game => $col) {
                     <div class="xcl-news-ticker__content">
                         @foreach($tickerArticles as $article)
                             <a href="{{ route('news.show', $article->slug) }}" class="xcl-news-ticker__item">{{ $article->title }}</a>
-                            @if(!$loop->last)
-                                <span class="xcl-news-ticker__dot">&#9679;</span>
-                            @endif
+                            <span class="xcl-news-ticker__dot">&#9679;</span>
                         @endforeach
                     </div>
                     <div class="xcl-news-ticker__content" aria-hidden="true">
                         @foreach($tickerArticles as $article)
                             <a href="{{ route('news.show', $article->slug) }}" class="xcl-news-ticker__item" tabindex="-1">{{ $article->title }}</a>
-                            @if(!$loop->last)
-                                <span class="xcl-news-ticker__dot">&#9679;</span>
-                            @endif
+                            <span class="xcl-news-ticker__dot">&#9679;</span>
                         @endforeach
                     </div>
                 </div>
@@ -444,17 +440,17 @@ foreach ($sbGames as $game => $col) {
                 <div style="border-top:1px solid rgba(255,255,255,0.08);margin-top:16px;margin-left:1.5rem;margin-right:1.5rem;padding:0 .25rem">
                     <div style="display:flex;align-items:center;gap:.75rem;padding:.9rem 0 .75rem">
                         <div class="xcl-sb-title" style="margin:0;white-space:nowrap">
-                            <span>REAL-WORLD </span><span>RACING</span>
+                            <span>XCLUSIVE TEAM </span><span>EVENTS</span>
                         </div>
                         <div style="flex:1;height:1px;background:rgba(255,255,255,0.07)"></div>
                     </div>
 
-                    <div style="display:flex;gap:1rem;align-items:stretch;padding-bottom:.25rem">
+                    <div class="xcl-sb-exclusive-events-row">
                         @foreach([0, 1] as $slot)
                         @php $te = $sbTeamEvents->get($slot); @endphp
 
                         @if($te)
-                        <div class="xcl-sb-up-card" style="flex:1;min-width:0"
+                        <div class="xcl-sb-up-card"
                              data-countdown="{{ $te->starts_at->toIso8601String() }}">
 
                             <div class="xcl-sb-up-card__img-wrap" style="height:300px">
@@ -464,8 +460,28 @@ foreach ($sbGames as $game => $col) {
                                      style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
                                 <div class="xcl-sb-up-card__img-gradient"></div>
 
+                                @if($te->participatingDrivers->isNotEmpty())
+                                <div class="xcl-sb-drivers-row xcl-sb-drivers-row--overlay" title="{{ $te->participatingDrivers->pluck('name')->join(', ') }}">
+                                    @foreach($te->participatingDrivers->take(4) as $pd)
+                                    <span class="xcl-sb-drivers-row__avatar">
+                                        @if($pd->photo_url)
+                                        <img src="{{ $pd->photo_url }}" alt="{{ $pd->name }}">
+                                        @else
+                                        {{ $pd->initials() }}
+                                        @endif
+                                    </span>
+                                    @endforeach
+                                    @if($te->participatingDrivers->count() > 4)
+                                    <span class="xcl-sb-drivers-row__more">+{{ $te->participatingDrivers->count() - 4 }} more</span>
+                                    @endif
+                                </div>
+                                @endif
+
                                 <div class="xcl-sb-up-card__title">
                                     {{ strtoupper($te->title) }}
+                                    @if($te->watch_url)
+                                    <span class="xcl-sb-live-badge">LIVE</span>
+                                    @endif
                                 </div>
 
                                 <div class="xcl-sb-up-card__meta-row">
@@ -504,7 +520,7 @@ foreach ($sbGames as $game => $col) {
                         </div>
 
                         @else
-                        <div style="flex:1;min-width:0;height:300px;border-radius:8px;border:1px dashed rgba(255,255,255,0.1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;background:rgba(255,255,255,0.02)">
+                        <div class="xcl-sb-exclusive-events-row__empty" style="height:300px;border-radius:8px;border:1px dashed rgba(255,255,255,0.1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;background:rgba(255,255,255,0.02)">
                             <svg width="24" height="24" fill="none" stroke="#4b5563" stroke-width="1.5" viewBox="0 0 24 24">
                                 <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
                             </svg>

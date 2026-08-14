@@ -67,21 +67,24 @@
                             <img src="/images/flags/flag-{{ $d['flag'] }}.png"
                                  alt="" class="esports-driver-card__flag">
                             @endif
+                            <a href="{{ route('teams.esports.show', $d) }}" class="esports-driver-card__profile-link">View Profile →</a>
+                            @if(!empty($d['socials']))
+                            <div class="esports-driver-card__socials">
+                                @foreach($d['socials'] as $s)
+                                <a href="{{ $s['href'] }}" class="esports-driver-card__social-link" title="{{ $s['type'] }}" target="_blank" rel="noopener noreferrer">
+                                    <i class="{{ $socialIconClasses[$s['type']] ?? 'fa-solid fa-link' }}"></i>
+                                </a>
+                                @endforeach
+                            </div>
+                            @endif
                         </div>
                         <div class="esports-driver-card__name">{{ $d['name'] }}</div>
                         <div class="esports-driver-card__role">ACC · Console</div>
-                        @if(!empty($d['socials']))
-                        <div class="esports-driver-card__socials">
-                            @foreach($d['socials'] as $s)
-                            <a href="{{ $s['href'] }}" class="esports-driver-card__social-link" title="{{ $s['type'] }}" target="_blank" rel="noopener noreferrer">
-                                <i class="{{ $socialIconClasses[$s['type']] ?? 'fa-solid fa-link' }}"></i>
-                            </a>
-                            @endforeach
-                        </div>
-                        @endif
                     </div>
                     @endforeach
                 </div>
+
+                <x-team-upcoming-events :events="$upcomingEventsByGame['acc']" :team-drivers="$drivers['acc']" :limit="2" />
             </div>
 
             {{-- LMU --}}
@@ -97,21 +100,24 @@
                             <img src="/images/flags/flag-{{ $d['flag'] }}.png"
                                  alt="" class="esports-driver-card__flag">
                             @endif
+                            <a href="{{ route('teams.esports.show', $d) }}" class="esports-driver-card__profile-link">View Profile →</a>
+                            @if(!empty($d['socials']))
+                            <div class="esports-driver-card__socials">
+                                @foreach($d['socials'] as $s)
+                                <a href="{{ $s['href'] }}" class="esports-driver-card__social-link" title="{{ $s['type'] }}" target="_blank" rel="noopener noreferrer">
+                                    <i class="{{ $socialIconClasses[$s['type']] ?? 'fa-solid fa-link' }}"></i>
+                                </a>
+                                @endforeach
+                            </div>
+                            @endif
                         </div>
                         <div class="esports-driver-card__name">{{ $d['name'] }}</div>
                         <div class="esports-driver-card__role">LMU · PC</div>
-                        @if(!empty($d['socials']))
-                        <div class="esports-driver-card__socials">
-                            @foreach($d['socials'] as $s)
-                            <a href="{{ $s['href'] }}" class="esports-driver-card__social-link" title="{{ $s['type'] }}" target="_blank" rel="noopener noreferrer">
-                                <i class="{{ $socialIconClasses[$s['type']] ?? 'fa-solid fa-link' }}"></i>
-                            </a>
-                            @endforeach
-                        </div>
-                        @endif
                     </div>
                     @endforeach
                 </div>
+
+                <x-team-upcoming-events :events="$upcomingEventsByGame['lmu']" :team-drivers="$drivers['lmu']" :limit="2" />
             </div>
 
             {{-- iRacing --}}
@@ -127,21 +133,24 @@
                             <img src="/images/flags/flag-{{ $d['flag'] }}.png"
                                  alt="" class="esports-driver-card__flag">
                             @endif
+                            <a href="{{ route('teams.esports.show', $d) }}" class="esports-driver-card__profile-link">View Profile →</a>
+                            @if(!empty($d['socials']))
+                            <div class="esports-driver-card__socials">
+                                @foreach($d['socials'] as $s)
+                                <a href="{{ $s['href'] }}" class="esports-driver-card__social-link" title="{{ $s['type'] }}" target="_blank" rel="noopener noreferrer">
+                                    <i class="{{ $socialIconClasses[$s['type']] ?? 'fa-solid fa-link' }}"></i>
+                                </a>
+                                @endforeach
+                            </div>
+                            @endif
                         </div>
                         <div class="esports-driver-card__name">{{ $d['name'] }}</div>
                         <div class="esports-driver-card__role">iRacing · PC</div>
-                        @if(!empty($d['socials']))
-                        <div class="esports-driver-card__socials">
-                            @foreach($d['socials'] as $s)
-                            <a href="{{ $s['href'] }}" class="esports-driver-card__social-link" title="{{ $s['type'] }}" target="_blank" rel="noopener noreferrer">
-                                <i class="{{ $socialIconClasses[$s['type']] ?? 'fa-solid fa-link' }}"></i>
-                            </a>
-                            @endforeach
-                        </div>
-                        @endif
                     </div>
                     @endforeach
                 </div>
+
+                <x-team-upcoming-events :events="$upcomingEventsByGame['iracing']" :team-drivers="$drivers['iracing']" :limit="2" />
             </div>
 
         </div>
