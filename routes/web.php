@@ -134,6 +134,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/email', [ProfileController::class, 'updateEmail'])->name('profile.email');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     Route::post('/profile/connected-accounts', [ConnectedAccountController::class, 'store'])->name('connected-accounts.store');

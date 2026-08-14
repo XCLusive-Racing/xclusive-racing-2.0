@@ -92,6 +92,24 @@ class ProfileController extends Controller
         return redirect()->route('profile.edit')->with('success', 'Profile updated successfully.');
     }
 
+    public function updateEmail(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'email'    => 'required|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'required',
+        ]);
+
+        if (!Hash::check($request->password, $user->password)) {
+            return back()->withErrors(['password' => 'Password is incorrect.']);
+        }
+
+        $user->update(['email' => $request->email]);
+
+        return redirect()->route('profile.edit')->with('success', 'Email updated successfully.');
+    }
+
     public function updatePassword(Request $request)
     {
         $request->validate([

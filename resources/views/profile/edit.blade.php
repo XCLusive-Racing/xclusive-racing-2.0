@@ -161,6 +161,33 @@
             {{-- RIGHT COLUMN: password + connected accounts --}}
             <div class="col-12 col-lg-6 d-flex flex-column gap-4">
 
+                {{-- Email form --}}
+                <form action="{{ route('profile.email') }}" method="POST">
+                    @csrf @method('PUT')
+                    <div class="bg-white rounded-3 shadow-sm p-4">
+                        <h2 class="fw-black text-uppercase fst-italic text-dark mb-1" style="font-size:1rem">Change Email</h2>
+                        <p class="text-secondary mb-3" style="font-size:.82rem">Confirm your password to change your account email</p>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-bold text-dark" style="font-size:.82rem">Email Address</label>
+                                <input type="email" name="email" value="{{ old('email', $user->email) }}" autocomplete="email"
+                                       class="form-control @error('email') is-invalid @enderror">
+                                @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold text-dark" style="font-size:.82rem">Password</label>
+                                <input type="password" name="password" autocomplete="current-password"
+                                       class="form-control @error('password') is-invalid @enderror">
+                                @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn fw-black text-uppercase text-white px-4 py-2"
+                                        style="background:#7c3aed">Update Email</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
                 {{-- Password form --}}
                 <form action="{{ route('profile.password') }}" method="POST">
                     @csrf @method('PUT')
