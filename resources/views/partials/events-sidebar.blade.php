@@ -484,11 +484,11 @@ foreach ($sbGames as $game => $col) {
                                     @endif
                                 </div>
 
-                                <div class="xcl-sb-up-card__meta-row">
+                                <div class="xcl-sb-up-card__meta-row" style="right:1.2rem">
                                     <div class="xcl-sb-countdown xcl-sb-countdown--small">
                                         <span data-cd-d>00</span>D&nbsp;<span data-cd-h>00</span>H&nbsp;<span data-cd-m>00</span>M
                                     </div>
-                                    <div style="font-size:.65rem;color:#9ca3af;font-weight:600">
+                                    <div style="font-size:.65rem;color:#9ca3af;font-weight:600;white-space:nowrap">
                                         {{ $te->starts_at->timezone('Europe/London')->format('d M · H:i T') }}
                                     </div>
                                 </div>
