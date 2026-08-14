@@ -89,5 +89,12 @@ export function initNavbar() {
         });
     }
 
-    document.addEventListener('click', closeAllDropdowns);
+    // Don't fight an in-flight tap on an actual menu link — closing/hiding
+    // the dropdown synchronously here can race with (and on iOS Safari,
+    // silently cancel) the link's own navigation. Let it navigate; the
+    // dropdown gets torn down naturally by the page unload/scroll anyway.
+    document.addEventListener('click', e => {
+        if (e.target.closest('[data-dropdown-menu]')) return;
+        closeAllDropdowns();
+    });
 }
