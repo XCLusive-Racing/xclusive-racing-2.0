@@ -50,78 +50,9 @@
             </a>
         </div>
 
-        {{-- Management --}}
-        @php
-            $showManagementSection = auth()->user()->canManageEvents()
-                || auth()->user()->canSeeUsers()
-                || auth()->user()->hasAnyRole(['owner', 'admin']);
-        @endphp
-        @if($showManagementSection)
-        <div class="admin-nav-section-header" data-section="events">
-            <span>Management</span>
-            <svg data-section-arrow width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="transition:transform .2s">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-            </svg>
-        </div>
-        <div class="admin-nav-section-divider" style="display:none"></div>
-
-        <div data-section-content="events">
-            @if(auth()->user()->canManageEvents())
-            <a href="{{ route('admin.championships.index') }}"
-               class="admin-nav-link {{ request()->routeIs('admin.championships.*') ? 'active' : '' }}">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
-                </svg>
-                <span>Championships</span>
-            </a>
-            <a href="{{ route('admin.races.index') }}"
-               class="admin-nav-link {{ request()->routeIs('admin.races.index') || request()->routeIs('admin.races.show') ? 'active' : '' }}">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 6h18M3 14h10M3 18h6"/>
-                </svg>
-                <span>All Races</span>
-            </a>
-            <a href="{{ route('admin.calendar') }}"
-               class="admin-nav-link {{ request()->routeIs('admin.calendar') ? 'active' : '' }}">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                </svg>
-                <span>Calendar</span>
-            </a>
-            @endif
-            @if(auth()->user()->canManageEvents())
-            <a href="{{ route('admin.media.index') }}"
-               class="admin-nav-link {{ request()->routeIs('admin.media.*') ? 'active' : '' }}">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
-                </svg>
-                <span>Media Library</span>
-            </a>
-            @endif
-            @if(auth()->user()->canSeeUsers())
-            <a href="{{ route('admin.users.index') }}"
-               class="admin-nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
-                </svg>
-                <span>Users</span>
-            </a>
-            @endif
-            @if(auth()->user()->hasAnyRole(['owner', 'admin']))
-            <a href="{{ route('admin.applications.index') }}"
-               class="admin-nav-link {{ request()->routeIs('admin.applications.*') ? 'active' : '' }}">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                <span>Applications</span>
-            </a>
-            @endif
-        </div>
-        @endif
-
-        @if(auth()->user()->canManageEvents())
         {{-- Events --}}
-        <div class="admin-nav-section-header" data-section="config">
+        @if(auth()->user()->canManageEvents())
+        <div class="admin-nav-section-header" data-section="events">
             <span>Events</span>
             <svg data-section-arrow width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="transition:transform .2s">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
@@ -129,7 +60,14 @@
         </div>
         <div class="admin-nav-section-divider" style="display:none"></div>
 
-        <div data-section-content="config">
+        <div data-section-content="events">
+            <a href="{{ route('admin.races.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.races.index') || request()->routeIs('admin.races.show') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 6h18M3 14h10M3 18h6"/>
+                </svg>
+                <span>All Races</span>
+            </a>
             <a href="{{ route('admin.races.create') }}"
                class="admin-nav-link {{ request()->routeIs('admin.races.create') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -151,13 +89,63 @@
                 </svg>
                 <span>+ Team Event</span>
             </a>
+            <a href="{{ route('admin.calendar') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.calendar') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <span>Calendar</span>
+            </a>
+            <a href="{{ route('admin.championships.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.championships.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                </svg>
+                <span>Championships</span>
+            </a>
+        </div>
+        @endif
+
+        {{-- People --}}
+        @php
+            $showPeopleSection = auth()->user()->canSeeUsers()
+                || auth()->user()->hasAnyRole(['owner', 'admin']);
+        @endphp
+        @if($showPeopleSection)
+        <div class="admin-nav-section-header" data-section="people">
+            <span>People</span>
+            <svg data-section-arrow width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="transition:transform .2s">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </div>
+        <div class="admin-nav-section-divider" style="display:none"></div>
+
+        <div data-section-content="people">
+            @if(auth()->user()->canSeeUsers())
+            <a href="{{ route('admin.users.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+                </svg>
+                <span>Users</span>
+            </a>
+            @endif
+            @if(auth()->user()->hasAnyRole(['owner', 'admin']))
+            <a href="{{ route('admin.applications.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.applications.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <span>Applications</span>
+            </a>
+            @endif
         </div>
         @endif
 
         @if(auth()->user()->canManageEvents() || auth()->user()->canModerateReports())
-        {{-- Racing --}}
+        {{-- Moderation --}}
         <div class="admin-nav-section-header" data-section="racing">
-            <span>Racing</span>
+            <span>Moderation</span>
             <svg data-section-arrow width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="transition:transform .2s">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
             </svg>
@@ -186,7 +174,10 @@
         </div>
         @endif
 
-        @if(auth()->user()->canBroadcast())
+        @php
+            $showContentSection = auth()->user()->canBroadcast() || auth()->user()->canManageEvents();
+        @endphp
+        @if($showContentSection)
         {{-- Content --}}
         <div class="admin-nav-section-header" data-section="content">
             <span>Content</span>
@@ -197,6 +188,16 @@
         <div class="admin-nav-section-divider" style="display:none"></div>
 
         <div data-section-content="content">
+            @if(auth()->user()->canManageEvents())
+            <a href="{{ route('admin.media.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.media.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+                </svg>
+                <span>Media Library</span>
+            </a>
+            @endif
+            @if(auth()->user()->canBroadcast())
             <a href="{{ route('admin.news.index') }}"
                class="admin-nav-link {{ request()->routeIs('admin.news.index') || request()->routeIs('admin.news.edit') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -218,6 +219,7 @@
                 </svg>
                 <span>Tags</span>
             </a>
+            @endif
         </div>
         @endif
 

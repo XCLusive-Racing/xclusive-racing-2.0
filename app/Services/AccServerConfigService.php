@@ -42,8 +42,10 @@ class AccServerConfigService
         ];
     }
 
-    public function configuration(Race $race): array
+    public function configuration(Race $race, ?FtpServer $server = null): array
     {
+        $defaults = $server?->event_defaults ?? [];
+
         $sessions = [];
         $hour     = $this->startHour($race->time_of_day);
 
@@ -77,7 +79,13 @@ class AccServerConfigService
             'sessionDurationMinutes' => (int) ($race->race_duration ?? 20),
         ];
 
-        [$rain, $cloudLevel, $weatherRandomness] = $this->weatherParams($race->weather);
+        if ($race->weather) {
+            [$rain, $cloudLevel, $weatherRandomness] = $this->weatherParams($race->weather);
+        } else {
+            $rain              = $defaults['rain'] ?? 0.0;
+            $cloudLevel        = $defaults['cloudLevel'] ?? 0.1;
+            $weatherRandomness = $defaults['weatherRandomness'] ?? 1;
+        }
 
         if ($race->weather_randomness !== null) {
             $wr = $race->weather_randomness;
@@ -86,9 +94,9 @@ class AccServerConfigService
 
         return [
             'track'                     => $this->trackSlug($race->track),
-            'preRaceWaitingTimeSeconds' => 60,
-            'sessionOverTimeSeconds'    => 120,
-            'ambientTemp'               => 22,
+            'preRaceWaitingTimeSeconds' => $defaults['preRaceWaitingTimeSeconds'] ?? 60,
+            'sessionOverTimeSeconds'    => $defaults['sessionOverTimeSeconds'] ?? 120,
+            'ambientTemp'               => $defaults['ambientTemp'] ?? 22,
             'cloudLevel'                => $cloudLevel,
             'rain'                      => $rain,
             'weatherRandomness'         => $weatherRandomness,

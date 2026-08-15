@@ -10,7 +10,7 @@ class FtpServer extends Model
     protected $fillable = [
         'name', 'server_number', 'host', 'port', 'username', 'password', 'path', 'cfg_path', 'active',
         'server_type', 'reset_start_hour', 'reset_interval_minutes',
-        'settings_defaults', 'eventrules_defaults', 'assistrules_defaults',
+        'settings_defaults', 'eventrules_defaults', 'assistrules_defaults', 'event_defaults',
     ];
 
     protected $casts = [
@@ -22,6 +22,7 @@ class FtpServer extends Model
         'settings_defaults'       => 'array',
         'eventrules_defaults'     => 'array',
         'assistrules_defaults'    => 'array',
+        'event_defaults'          => 'array',
     ];
 
     public function importedFiles(): HasMany
@@ -44,28 +45,19 @@ class FtpServer extends Model
             ->toArray();
     }
 
-    public function slotsForDays(int $days = 7): array
+    public function isValidSlot(\Carbon\Carbon $utcDateTime): bool
     {
         if ($this->server_type === 'scheduled') {
-            return [];
+            return true;
         }
 
-        $slots         = [];
+        if ($utcDateTime->minute !== 0 || $utcDateTime->second !== 0) {
+            return false;
+        }
+
         $intervalHours = $this->reset_interval_minutes / 60;
+        $offset        = $utcDateTime->hour - (int) $this->reset_start_hour;
 
-        for ($d = 0; $d < $days; $d++) {
-            $date = now()->utc()->startOfDay()->addDays($d);
-            $hour = (int) $this->reset_start_hour;
-
-            while ($hour < 24) {
-                $slot = $date->copy()->setHour($hour)->setMinute(0)->setSecond(0);
-                if ($slot->isAfter(now()->utc()->addHour())) {
-                    $slots[] = $slot->format('Y-m-d H:i');
-                }
-                $hour += $intervalHours;
-            }
-        }
-
-        return $slots;
+        return $offset >= 0 && fmod($offset, $intervalHours) === 0.0;
     }
 }

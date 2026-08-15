@@ -30,7 +30,7 @@
                 <input type="email" name="email" required value="{{ old('email') }}"
                        placeholder="your@email.com"
                        class="form-control xcl-auth-input"
-                       autocomplete="off">
+                       autocomplete="username">
             </div>
 
             <div class="mb-4">
@@ -38,7 +38,7 @@
                 <input type="password" name="password" required
                        placeholder="••••••••"
                        class="form-control xcl-auth-input"
-                       autocomplete="new-password">
+                       autocomplete="current-password">
             </div>
 
             <div class="mb-4">

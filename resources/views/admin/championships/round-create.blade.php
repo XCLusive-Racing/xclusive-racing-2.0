@@ -320,17 +320,22 @@
 
                 <p style="font-size:.68rem;color:#9ca3af;margin-top:.6rem;text-align:center;letter-spacing:.02em">Updates as you fill in the form</p>
 
-                <div class="admin-card mt-4 mb-4">
-                    <div class="px-4 pt-4 pb-3">
-                        <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Media</p>
-                        <x-media-picker name="image" label="Background Image" />
-                        <div class="mt-3">
-                            <x-media-picker name="icon" label="Event Icon" currentType="icon" filterDefault="icon" />
-                        </div>
+            </div>
+
+            {{-- Outside the sticky wrapper: `position:sticky` ancestors break the
+                 containing block for the gallery popup's `position:fixed` modal
+                 in some browsers (notably Safari), clipping it instead of
+                 covering the viewport. --}}
+            <div class="admin-card mt-4 mb-4">
+                <div class="px-4 pt-4 pb-3">
+                    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Media</p>
+                    <x-media-picker name="image" label="Background Image" />
+                    <div class="mt-3">
+                        <x-media-picker name="icon" label="Event Icon" currentType="icon" filterDefault="icon" />
                     </div>
                 </div>
-
             </div>
+
         </div>
     </div>
 

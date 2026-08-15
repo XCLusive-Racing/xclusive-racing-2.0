@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\FtpServer;
+use App\Services\AccServerConfigService;
 use App\Services\FtpService;
 use Illuminate\Http\Request;
 
@@ -63,6 +64,7 @@ class FtpServerController extends Controller
             'server_type'             => 'required|in:rolling,scheduled',
             'reset_start_hour'        => 'required_if:server_type,rolling|integer|min:0|max:23',
             'reset_interval_minutes'  => 'required_if:server_type,rolling|integer|min:30|max:1440',
+            'event_defaults'          => 'nullable|string',
             'settings_defaults'       => 'nullable|string',
             'eventrules_defaults'     => 'nullable|string',
             'assistrules_defaults'    => 'nullable|string',
@@ -80,7 +82,7 @@ class FtpServerController extends Controller
         );
         $data['active'] = $request->boolean('active');
 
-        foreach (['settings_defaults', 'eventrules_defaults', 'assistrules_defaults'] as $field) {
+        foreach (['event_defaults', 'settings_defaults', 'eventrules_defaults', 'assistrules_defaults'] as $field) {
             $raw = trim($request->input($field, ''));
             if ($raw === '') {
                 $data[$field] = null;
@@ -107,6 +109,42 @@ class FtpServerController extends Controller
         $ftpServer->delete();
 
         return redirect()->route('admin.servers.index')->with('success', 'Server deleted.');
+    }
+
+    public function pushDefaults(FtpServer $ftpServer, FtpService $ftp, AccServerConfigService $config)
+    {
+        $files = [
+            'settings.json'    => json_encode($config->settings(new \App\Models\Race(), $ftpServer), JSON_PRETTY_PRINT),
+            'eventrules.json'  => json_encode($config->eventRules($ftpServer), JSON_PRETTY_PRINT),
+            'assistrules.json' => json_encode($config->assistRules($ftpServer), JSON_PRETTY_PRINT),
+        ];
+
+        foreach ($files as $filename => $content) {
+            json_decode($content);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return back()->with('error', "Invalid JSON in {$filename}: " . json_last_error_msg());
+            }
+        }
+
+        if (!$ftp->connect($ftpServer)) {
+            return back()->with('error', 'Could not connect to ' . $ftpServer->host . '.');
+        }
+
+        $cfgPath = rtrim($ftpServer->cfg_path, '/');
+        $failed  = [];
+        foreach ($files as $filename => $content) {
+            if (!$ftp->uploadFile($cfgPath . '/' . $filename, $content)) {
+                $failed[] = $filename;
+            }
+        }
+
+        $ftp->disconnect();
+
+        if ($failed) {
+            return back()->with('error', 'Failed to upload: ' . implode(', ', $failed));
+        }
+
+        return back()->with('success', 'Config defaults pushed to ' . $ftpServer->name . ' — settings.json, eventrules.json, assistrules.json uploaded.');
     }
 
     public function test(FtpServer $ftpServer, FtpService $ftp)

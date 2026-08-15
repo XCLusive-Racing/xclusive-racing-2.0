@@ -233,6 +233,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/servers/{ftpServer}', [FtpServerController::class, 'update'])->name('servers.update');
     Route::delete('/servers/{ftpServer}', [FtpServerController::class, 'destroy'])->name('servers.destroy');
     Route::post('/servers/{ftpServer}/test', [FtpServerController::class, 'test'])->name('servers.test');
+    Route::post('/servers/{ftpServer}/push', [FtpServerController::class, 'pushDefaults'])->name('servers.push');
 
     // FTP Browser
     Route::get('/servers/{ftpServer}/browse', [FtpBrowserController::class, 'index'])->name('servers.browse');
@@ -255,6 +256,7 @@ Route::middleware(['auth', 'role:owner,admin,event_manager,steward'])->prefix('a
 // Owner + moderator — Users
 Route::middleware(['auth', 'role:owner,moderator'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+    Route::get('/users/data', [AdminUserController::class, 'data'])->name('users.data');
     Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
     Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');

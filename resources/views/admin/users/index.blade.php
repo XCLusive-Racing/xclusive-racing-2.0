@@ -10,13 +10,6 @@
 @section('content')
 
 <div class="admin-card">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-        <label class="d-flex align-items-center gap-2 fw-bold" style="font-size:.82rem;cursor:pointer">
-            <input type="checkbox" id="filter-roles-only" class="form-check-input" style="cursor:pointer">
-            Show only members with roles
-        </label>
-        <span id="roles-only-count" class="text-secondary" style="font-size:.78rem"></span>
-    </div>
     <div class="table-responsive">
         <table id="users-table" class="table table-hover align-middle mb-0 w-100" style="font-size:.875rem">
             <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
@@ -31,87 +24,7 @@
                     <th class="pe-4" style="min-width:100px"></th>
                 </tr>
             </thead>
-            <tbody>
-                @foreach($users as $user)
-                <tr data-has-roles="{{ $user->roles->pluck('slug')->reject(fn($slug) => $slug === 'driver')->isNotEmpty() ? '1' : '0' }}">
-                    <td class="ps-4">
-                        <div class="d-flex align-items-center gap-2">
-                            @if($user->banner)
-                                <img src="{{ $user->avatarUrl() }}" alt=""
-                                     class="rounded-circle flex-shrink-0"
-                                     style="width:32px;height:32px;object-fit:cover">
-                            @else
-                                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
-                                     style="width:32px;height:32px;font-size:.75rem;background:linear-gradient(135deg,#7c3aed,#db2777)">
-                                    {{ strtoupper(substr($user->name, 0, 1)) }}
-                                </div>
-                            @endif
-                            <div>
-                                <div class="fw-bold text-dark">{{ $user->name }}</div>
-                                <div class="text-secondary" style="font-size:.72rem">{{ $user->email }}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="d-none d-md-table-cell">
-                        @if($user->platform_id)
-                            <div class="d-flex align-items-center gap-1">
-                                <span class="badge fw-bold" style="background:#f3f4f6;color:#6b7280;font-size:.65rem;padding:2px 6px">
-                                    {{ strtoupper($user->platform ?? '?') }}
-                                </span>
-                                <code style="font-size:.75rem;color:#374151">{{ $user->platform_id }}</code>
-                            </div>
-                        @else
-                            <span class="text-secondary">—</span>
-                        @endif
-                    </td>
-                    <td class="d-none d-sm-table-cell">
-                        <div class="d-flex gap-2 align-items-center">
-                            @forelse($user->connectedAccounts as $account)
-                                <span title="{{ $account->providerLabel() }}"
-                                      style="color:{{ $account->providerColor() }};font-size:1rem">{!! $account->providerIcon() !!}</span>
-                            @empty
-                                <span class="text-secondary">—</span>
-                            @endforelse
-                        </div>
-                    </td>
-                    <td class="d-none d-sm-table-cell">
-                        @if($user->is_suspended)
-                            <span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:4px;background:#fee2e2;color:#dc2626">Suspended</span>
-                        @elseif($user->is_supporter)
-                            <span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:4px;background:#fef3c7;color:#d97706">★ Supporter</span>
-                        @else
-                            <span class="text-secondary">—</span>
-                        @endif
-                    </td>
-                    <td class="d-none d-md-table-cell" style="font-size:.8rem;color:#6b7280">
-                        {{ $user->created_at->format('d M Y') }}
-                    </td>
-                    <td class="text-secondary d-none d-lg-table-cell" style="font-size:.82rem">{{ $user->team ?? '—' }}</td>
-                    <td class="d-none d-sm-table-cell">
-                        @php
-                            $roleColors = ['owner'=>['#f3e8ff','#7c3aed'],'admin'=>['#fce7f3','#db2777'],'moderator'=>['#dbeafe','#2563eb'],'event_manager'=>['#fef3c7','#d97706'],'steward'=>['#e0f2fe','#0891b2'],'driver'=>['#d1fae5','#059669'],'broadcaster'=>['#ffe4e6','#e11d48']];
-                        @endphp
-                        <div class="d-flex flex-wrap gap-1">
-                        @foreach($user->roles->sortBy('sort_order') as $role)
-                            @php $rc = $roleColors[$role->slug] ?? ['#f3f4f6','#374151']; @endphp
-                            <span class="badge fw-bold" style="background:{{ $rc[0] }};color:{{ $rc[1] }};font-size:.7rem;padding:4px 8px;border-radius:6px">
-                                {{ $role->name }}
-                            </span>
-                        @endforeach
-                        </div>
-                    </td>
-                    <td class="pe-4">
-                        <div class="d-flex gap-2 justify-content-end">
-                            <a href="{{ route('admin.users.edit', $user) }}"
-                               class="btn btn-sm btn-outline-secondary fw-bold text-uppercase"
-                               style="font-size:.72rem;padding:5px 12px;border-radius:6px">
-                                Edit
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
+            <tbody></tbody>
         </table>
     </div>
 </div>
@@ -124,31 +37,35 @@
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <script>
         $(function () {
-            const totalWithRoles = $('#users-table tbody tr[data-has-roles="1"]').length;
-            $('#roles-only-count').text(totalWithRoles + ' member' + (totalWithRoles === 1 ? '' : 's') + ' with roles assigned');
-
-            // Custom filter: when the checkbox is on, only keep rows whose
-            // <tr data-has-roles> is "1" — i.e. anyone with at least one
-            // role beyond the (unassigned-by-default) baseline.
-            $.fn.dataTable.ext.search.push(function (settings, data, rowIndex, rowNode) {
-                if (settings.nTable.id !== 'users-table') return true;
-                if (!$('#filter-roles-only').is(':checked')) return true;
-                return $(rowNode).data('has-roles') == 1;
-            });
-
             const table = $('#users-table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '{{ route('admin.users.data') }}',
+                    data: (d) => { d.roles_only = $('#filter-roles-only').is(':checked') ? 1 : 0; },
+                },
                 pageLength: 25,
-                order: [[6, 'asc'], [0, 'asc']],
-                columnDefs: [{ orderable: false, targets: [2, 7] }],
+                order: [[0, 'asc']],
+                columnDefs: [
+                    { targets: 0, className: 'ps-4' },
+                    { targets: 1, className: 'd-none d-md-table-cell' },
+                    { targets: 2, className: 'd-none d-sm-table-cell', orderable: false },
+                    { targets: 3, className: 'd-none d-sm-table-cell', orderable: false },
+                    { targets: 4, className: 'd-none d-md-table-cell' },
+                    { targets: 5, className: 'd-none d-lg-table-cell' },
+                    { targets: 6, className: 'd-none d-sm-table-cell', orderable: false },
+                    { targets: 7, className: 'pe-4', orderable: false },
+                ],
                 language: {
                     search: '', searchPlaceholder: 'Search users…',
                     lengthMenu: 'Show _MENU_ users',
                     info: 'Showing _START_ to _END_ of _TOTAL_ users',
                     paginate: { previous: '‹', next: '›' },
+                    processing: 'Loading…',
                 },
             });
 
-            $('#filter-roles-only').on('change', () => table.draw());
+            $('#filter-roles-only').on('change', () => table.ajax.reload());
         });
     </script>
 @endpush

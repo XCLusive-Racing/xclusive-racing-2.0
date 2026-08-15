@@ -443,8 +443,7 @@ $mcExisting = $isEdit
 
                         <div class="mb-3">
                             <label class="form-label">Server</label>
-                            <select name="ftp_server_id" id="gp-server" class="form-select"
-                                    data-server-slots="{{ json_encode($serverSlots ?? []) }}">
+                            <select name="ftp_server_id" id="gp-server" class="form-select">
                                 <option value="">— No server assigned —</option>
                                 @foreach($servers as $srv)
                                     <option value="{{ $srv->id }}"
@@ -461,17 +460,10 @@ $mcExisting = $isEdit
                             </select>
                         </div>
 
-                        <div id="gp-slot-picker" style="display:none">
-                            <label class="form-label">Race Slot (BST/GMT)</label>
-                            <div id="gp-slot-grid" class="d-flex gap-2 flex-wrap mb-2" style="max-height:260px;overflow-y:auto"></div>
-                            <input type="hidden" name="slot_time" id="gp-slot-value" value="{{ old('slot_time', $isEdit ? $race->slot_time?->format('Y-m-d H:i') : '') }}">
-                            <div id="gp-slot-selected" class="small fw-bold" style="color:#7c3aed;display:none"></div>
-                            @error('slot_time') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
-                        </div>
-
                         <div id="gp-scheduled-note" class="small text-secondary" style="display:none">
-                            This server restarts manually — its race slot follows the date &amp; time set above.
+                            This race's own date &amp; time (set above) is used as its slot on this server.
                         </div>
+                        @error('scheduled_at') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                     </div>
                     @endif
 
@@ -585,7 +577,7 @@ $mcExisting = $isEdit
                     </div>
 
                     {{-- ── Multiclass (both single and bulk) ───────────────── --}}
-                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6" data-multiclass-wrap
+                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6;display:none" id="ce-multiclass-wrap" data-multiclass-wrap
                          data-mc-existing="{{ json_encode($mcExisting) }}">
                         <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Multiclass <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></p>
 
@@ -896,16 +888,22 @@ $mcExisting = $isEdit
         fmtInfo.style.display = '';
     }
 
-    const enduranceWrap = document.getElementById('ce-endurance-wrap');
+    const enduranceWrap  = document.getElementById('ce-endurance-wrap');
+    const multiclassWrap = document.getElementById('ce-multiclass-wrap');
 
     function setEnduranceVisible(slug) {
         if (enduranceWrap) enduranceWrap.style.display = slug === 'endurance' ? '' : 'none';
+    }
+
+    function setMulticlassVisible(slug) {
+        if (multiclassWrap) multiclassWrap.style.display = slug === 'multiclass' ? '' : 'none';
     }
 
     function updateFormats(game) {
         fmtEl.innerHTML = '<option value="">— Select format —</option>';
         showFormatInfo(null);
         setEnduranceVisible('');
+        setMulticlassVisible('');
         if (!game || !formats[game]) return;
         formats[game].sort((a, b) => a.sort_order - b.sort_order).forEach(f => {
             const opt = document.createElement('option');
@@ -920,6 +918,7 @@ $mcExisting = $isEdit
             if (selected) {
                 showFormatInfo(selected);
                 setEnduranceVisible(selected.slug);
+                setMulticlassVisible(selected.slug);
             }
         }
     }
@@ -965,6 +964,7 @@ $mcExisting = $isEdit
         const fmt = (formats[gameEl.value] || []).find(f => String(f.id) === fmtEl.value);
         showFormatInfo(fmt || null);
         setEnduranceVisible(fmt?.slug ?? '');
+        setMulticlassVisible(fmt?.slug ?? '');
     });
     trackSelect.addEventListener('change', () => updateTrackHint(trackSelect.value));
 

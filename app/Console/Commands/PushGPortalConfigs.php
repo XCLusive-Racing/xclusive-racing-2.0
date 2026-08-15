@@ -68,7 +68,7 @@ class PushGPortalConfigs extends Command
                 'event.json' => json_encode(
                     $race->configFile('event.json')
                         ? json_decode($race->configFile('event.json'), true)
-                        : $config->configuration($race),
+                        : $config->configuration($race, $server),
                     JSON_PRETTY_PRINT
                 ),
                 'settings.json' => json_encode(
@@ -77,8 +77,18 @@ class PushGPortalConfigs extends Command
                         : $config->settings($race, $server),
                     JSON_PRETTY_PRINT
                 ),
-                'eventrules.json'  => json_encode($config->eventRules($server), JSON_PRETTY_PRINT),
-                'assistrules.json' => json_encode($config->assistRules($server), JSON_PRETTY_PRINT),
+                'eventrules.json' => json_encode(
+                    $race->configFile('eventrules.json')
+                        ? json_decode($race->configFile('eventrules.json'), true)
+                        : $config->eventRules($server),
+                    JSON_PRETTY_PRINT
+                ),
+                'assistrules.json' => json_encode(
+                    $race->configFile('assistrules.json')
+                        ? json_decode($race->configFile('assistrules.json'), true)
+                        : $config->assistRules($server),
+                    JSON_PRETTY_PRINT
+                ),
             ];
 
             $invalid = [];

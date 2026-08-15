@@ -17,6 +17,9 @@ use Illuminate\Support\Str;
 
 class RaceController extends Controller
 {
+    private const ERR_SLOT_WRONG_SERVER = 'This time doesn\'t match a restart slot on the selected server — pick a different server or adjust the time.';
+    private const ERR_SLOT_TAKEN        = 'This time slot is already taken on the selected server.';
+
     public function index()
     {
         // Auto-close races whose start time has passed but are still open
@@ -61,12 +64,6 @@ class RaceController extends Controller
             }
         }
 
-        $configFiles = [
-            'entrylist.json' => json_encode($config->entryList($race),     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-            'event.json'     => json_encode($config->configuration($race), JSON_PRETTY_PRINT),
-            'settings.json'  => json_encode($config->settings($race),      JSON_PRETTY_PRINT),
-        ];
-
         $entrylistDrivers = [];
         $uploadedEntrylist = $race->configFile('entrylist.json');
         if ($uploadedEntrylist) {
@@ -95,7 +92,7 @@ class RaceController extends Controller
         return view('admin.races.show', compact(
             'race', 'raceResults', 'qualiResults', 'registrations',
             'ftpServers', 'selectedServer', 'ftpFiles', 'ftpAllFiles', 'ftpError', 'importedFiles',
-            'configFiles', 'entrylistDrivers'
+            'entrylistDrivers'
         ))->with('configData', $config);
     }
 
@@ -236,16 +233,9 @@ class RaceController extends Controller
         $race    = null;
 
         $servers = FtpServer::where('active', true)->orderBy('name')->get();
-        $serverSlots = $servers->mapWithKeys(fn($s) => [
-            $s->id => [
-                'type'       => $s->server_type,
-                'slots'      => $s->slotsForDays(7),
-                'takenSlots' => $s->takenSlots(),
-            ],
-        ]);
 
         return view('admin.races.form', array_merge(
-            compact('race', 'prefillDate', 'tags', 'servers', 'serverSlots'),
+            compact('race', 'prefillDate', 'tags', 'servers'),
             $this->formatBuilderData()
         ));
     }
@@ -375,7 +365,6 @@ class RaceController extends Controller
             'description'          => 'nullable|string',
             'is_multiclass'        => 'nullable|boolean',
             'ftp_server_id'        => 'nullable|exists:ftp_servers,id',
-            'slot_time'            => 'nullable|date',
             'image'                => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',
             'image_path'           => 'nullable|string|max:500',
             'icon'                 => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
@@ -397,17 +386,18 @@ class RaceController extends Controller
         if (!empty($data['ftp_server_id'])) {
             $server = FtpServer::find($data['ftp_server_id']);
 
-            if ($server && $server->server_type === 'scheduled') {
-                // No fixed slot grid on this server — the race's own date & time is the slot.
-                $data['slot_time']          = $data['scheduled_at']->copy();
-                $data['config_push_status'] = 'pending';
-            } elseif (!empty($data['slot_time'])) {
-                $data['slot_time']          = \Carbon\Carbon::parse($data['slot_time'])->utc();
-                $data['config_push_status'] = 'pending';
-            } else {
-                $data['ftp_server_id'] = null;
-                $data['slot_time']     = null;
+            // The race's own date & time (set above) is always the server slot now —
+            // no separate slot grid. Reject it if that time isn't actually free on
+            // this server.
+            if ($server && !$server->isValidSlot($data['scheduled_at'])) {
+                return back()->withInput()->withErrors(['scheduled_at' => self::ERR_SLOT_WRONG_SERVER]);
             }
+            if ($server && in_array($data['scheduled_at']->format('Y-m-d H:i'), $server->takenSlots(), true)) {
+                return back()->withInput()->withErrors(['scheduled_at' => self::ERR_SLOT_TAKEN]);
+            }
+
+            $data['slot_time']          = $data['scheduled_at']->copy();
+            $data['config_push_status'] = 'pending';
         } else {
             $data['slot_time'] = null;
         }
@@ -431,16 +421,9 @@ class RaceController extends Controller
         $prefillDate = null;
 
         $servers = FtpServer::where('active', true)->orderBy('name')->get();
-        $serverSlots = $servers->mapWithKeys(fn($s) => [
-            $s->id => [
-                'type'       => $s->server_type,
-                'slots'      => $s->slotsForDays(7),
-                'takenSlots' => $s->takenSlots($race->id),
-            ],
-        ]);
 
         return view('admin.races.form', array_merge(
-            compact('race', 'prefillDate', 'tags', 'servers', 'serverSlots'),
+            compact('race', 'prefillDate', 'tags', 'servers'),
             $this->formatBuilderData()
         ));
     }
@@ -482,7 +465,6 @@ class RaceController extends Controller
             'icon_keep'            => 'nullable|in:0,1',
             'is_multiclass'        => 'nullable|boolean',
             'ftp_server_id'        => 'nullable|exists:ftp_servers,id',
-            'slot_time'            => 'nullable|date',
         ]);
 
         $data['scheduled_at']  = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
@@ -493,16 +475,15 @@ class RaceController extends Controller
         if (!empty($data['ftp_server_id'])) {
             $server = FtpServer::find($data['ftp_server_id']);
 
-            if ($server && $server->server_type === 'scheduled') {
-                $data['slot_time']          = $data['scheduled_at']->copy();
-                $data['config_push_status'] = 'pending';
-            } elseif (!empty($data['slot_time'])) {
-                $data['slot_time']          = \Carbon\Carbon::parse($data['slot_time'])->utc();
-                $data['config_push_status'] = 'pending';
-            } else {
-                $data['ftp_server_id'] = null;
-                $data['slot_time']     = null;
+            if ($server && !$server->isValidSlot($data['scheduled_at'])) {
+                return back()->withInput()->withErrors(['scheduled_at' => self::ERR_SLOT_WRONG_SERVER]);
             }
+            if ($server && in_array($data['scheduled_at']->format('Y-m-d H:i'), $server->takenSlots($race->id), true)) {
+                return back()->withInput()->withErrors(['scheduled_at' => self::ERR_SLOT_TAKEN]);
+            }
+
+            $data['slot_time']          = $data['scheduled_at']->copy();
+            $data['config_push_status'] = 'pending';
         } else {
             $data['slot_time'] = null;
         }
@@ -538,7 +519,7 @@ class RaceController extends Controller
                 ?? json_encode($config->entryList($race), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
             'event.json'      => $request->input('event_json')
                 ?? $race->configFile('event.json')
-                ?? json_encode($config->configuration($race), JSON_PRETTY_PRINT),
+                ?? json_encode($config->configuration($race, $server), JSON_PRETTY_PRINT),
             'settings.json'   => $request->input('settings_json')
                 ?? $race->configFile('settings.json')
                 ?? json_encode($config->settings($race, $server), JSON_PRETTY_PRINT),
@@ -613,7 +594,7 @@ class RaceController extends Controller
     public function saveConfig(Request $request, Race $race)
     {
         $request->validate([
-            'file'    => 'required|in:entrylist.json,event.json,settings.json',
+            'file'    => 'required|in:entrylist.json,event.json,settings.json,eventrules.json,assistrules.json',
             'content' => 'required|string',
         ]);
 
@@ -654,7 +635,7 @@ class RaceController extends Controller
     public function resetConfig(Request $request, Race $race)
     {
         $request->validate([
-            'file' => 'required|in:entrylist.json,event.json,settings.json',
+            'file' => 'required|in:entrylist.json,event.json,settings.json,eventrules.json,assistrules.json',
         ]);
 
         $overrides = $race->config_overrides ?? [];

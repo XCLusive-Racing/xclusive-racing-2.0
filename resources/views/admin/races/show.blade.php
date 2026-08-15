@@ -208,53 +208,6 @@
                     </div>
                     @endif
 
-                    {{-- Quick push --}}
-                    @if($ftpServers->isNotEmpty())
-                    <div class="col-12">
-                        <div class="p-3 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
-                            <div class="fw-black text-uppercase fst-italic text-dark mb-1" style="font-size:.82rem">Push Config to Server</div>
-                            <div class="text-secondary mb-3" style="font-size:.75rem">
-                                Pushes the
-                                @if($race->hasAnyConfigOverride())
-                                    <span style="color:#f59e0b;font-weight:700">saved custom config</span>
-                                @else
-                                    auto-generated config
-                                @endif
-                                to the selected server. To review or edit first, use the <button type="button" data-activate-tab="config" class="btn btn-link p-0 fw-bold text-decoration-none" style="font-size:.75rem;color:#7c3aed;vertical-align:baseline">Config tab</button>.
-                            </div>
-
-                            @if(session('success'))
-                            <div class="alert alert-success py-2 px-3 mb-3" style="font-size:.8rem">{{ session('success') }}</div>
-                            @endif
-                            @if(session('error'))
-                            <div class="alert alert-danger py-2 px-3 mb-3" style="font-size:.8rem">{{ session('error') }}</div>
-                            @endif
-
-                            <form action="{{ route('admin.races.push-config', $race) }}" method="POST">
-                                @csrf
-                                <div class="d-flex gap-2 align-items-end flex-wrap">
-                                    <div class="flex-grow-1" style="min-width:200px">
-                                        <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">Server</label>
-                                        <select name="server_id" class="form-select form-select-sm @error('server_id') is-invalid @enderror">
-                                            <option value="">Select server…</option>
-                                            @foreach($ftpServers as $ftpServer)
-                                            <option value="{{ $ftpServer->id }}" {{ old('server_id') == $ftpServer->id ? 'selected' : '' }}>
-                                                {{ $ftpServer->name }} — {{ $ftpServer->cfg_path }}
-                                            </option>
-                                            @endforeach
-                                        </select>
-                                        @error('server_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                    </div>
-                                    <button type="submit" class="btn btn-sm fw-black text-uppercase text-white flex-shrink-0"
-                                            style="background:#7c3aed;font-size:.78rem;padding:7px 16px">
-                                        Push Config →
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                    @endif
-
                     {{-- Right: media --}}
                     @if($race->image_url || $race->icon_url)
                     <div class="col-lg-4">
@@ -283,15 +236,17 @@
         <div data-tab-panel="config" style="display:none">
             @php
                 $configFiles = [
-                    'entrylist.json' => json_encode($configData->entryList($race),     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-                    'event.json'     => json_encode($configData->configuration($race), JSON_PRETTY_PRINT),
-                    'settings.json'  => json_encode($configData->settings($race),      JSON_PRETTY_PRINT),
+                    'entrylist.json'   => json_encode($configData->entryList($race),               JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+                    'event.json'       => json_encode($configData->configuration($race, $race->ftpServer), JSON_PRETTY_PRINT),
+                    'settings.json'    => json_encode($configData->settings($race),                 JSON_PRETTY_PRINT),
+                    'eventrules.json'  => json_encode($configData->eventRules($race->ftpServer),     JSON_PRETTY_PRINT),
+                    'assistrules.json' => json_encode($configData->assistRules($race->ftpServer),    JSON_PRETTY_PRINT),
                 ];
             @endphp
 
             {{-- Config file editors --}}
             <div data-accordions>
-            @foreach(['entrylist.json', 'event.json', 'settings.json'] as $filename)
+            @foreach(['entrylist.json', 'event.json', 'settings.json', 'eventrules.json', 'assistrules.json'] as $filename)
             @php
                 $hasOverride = $race->hasConfigOverride($filename);
                 $content     = $hasOverride ? $race->configFile($filename) : $configFiles[$filename];
@@ -889,7 +844,7 @@
             @else
             <div class="px-4 py-3 d-flex align-items-center justify-content-between" style="border-bottom:1px solid #f3f4f6;background:#f9fafb">
                 <div class="text-secondary" style="font-size:.78rem">
-                    Mark a driver <strong>DC</strong> (disconnect — no rating penalty) or <strong>DSQ</strong> (disqualified — full rating penalty). Click "Recalculate Ratings" after changing this.
+                    Mark a driver <strong>DC</strong>or <strong>DSQ</strong>. Click "Recalculate Ratings" after changing this.
                 </div>
                 <form action="{{ route('admin.races.results.recalculate', $race) }}" method="POST">
                     @csrf
