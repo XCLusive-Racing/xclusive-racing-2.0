@@ -484,13 +484,22 @@ foreach ($sbGames as $game => $col) {
                                     @endif
                                 </div>
 
-                                <div class="xcl-sb-up-card__meta-row" style="right:1.2rem">
-                                    <div class="xcl-sb-countdown xcl-sb-countdown--small">
-                                        <span data-cd-d>00</span>D&nbsp;<span data-cd-h>00</span>H&nbsp;<span data-cd-m>00</span>M
-                                    </div>
+                                <div class="xcl-sb-up-card__meta-row" style="justify-content:flex-start;gap:.5rem">
+                                    @if($te->isLive())
+                                        <span class="xcl-sb-live-badge" style="margin-left:0">LIVE</span>
+                                    @elseif($te->starts_at->isFuture())
+                                        <div class="xcl-sb-countdown xcl-sb-countdown--small">
+                                            <span data-cd-d>00</span>D&nbsp;<span data-cd-h>00</span>H&nbsp;<span data-cd-m>00</span>M
+                                        </div>
+                                    @endif
                                     <div style="font-size:.65rem;color:#9ca3af;font-weight:600;white-space:nowrap">
                                         {{ $te->starts_at->timezone('Europe/London')->format('d M · H:i T') }}
                                     </div>
+                                    @if($te->duration_minutes)
+                                    <span class="xcl-sb-next__duration-badge" style="font-size:.6rem;padding:.1rem .4rem">
+                                        <i class="fa-solid fa-clock"></i> {{ $te->duration_badge }}
+                                    </span>
+                                    @endif
                                 </div>
                             </div>
 

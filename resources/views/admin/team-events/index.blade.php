@@ -5,10 +5,10 @@
 
 @section('content')
 
-<div class="row g-4">
+<div class="team-event-page-grid">
 
     {{-- ── Create form ──────────────────────────────────────────────────── --}}
-    <div class="col-lg-5">
+    <div>
         <div class="admin-form-card p-4">
             <h2 class="fw-black text-uppercase fst-italic text-dark mb-4" style="font-size:1rem">+ Create Team Event</h2>
 
@@ -59,11 +59,23 @@
 
                 {{-- Date / Time --}}
                 <div class="mb-3">
-                    <label class="form-label fw-bold" style="font-size:.82rem">Race Start <span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold" style="font-size:.82rem">Date &amp; Time (BST — British Summer Time, UTC+1) <span class="text-danger">*</span></label>
                     <input type="datetime-local" name="starts_at" value="{{ old('starts_at') }}"
                            class="form-control @error('starts_at') is-invalid @enderror" required>
-                    <div class="form-text">Enter in your local time zone.</div>
+                    <div class="form-text">Enter the time in BST. Example: if the race starts at 12:00 BST, enter 12:00 here.</div>
                     @error('starts_at') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+
+                {{-- Duration --}}
+                <div class="mb-3">
+                    <label class="form-label fw-bold" style="font-size:.82rem">Duration <span class="text-danger">*</span></label>
+                    <select name="duration_minutes" class="form-select @error('duration_minutes') is-invalid @enderror" required>
+                        @foreach(\App\Models\TeamEvent::durationOptions() as $minutes => $label)
+                        <option value="{{ $minutes }}" {{ (int) old('duration_minutes', 60) === $minutes ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    <div class="form-text">How long the event stays visible/live on the dashboard after it starts.</div>
+                    @error('duration_minutes') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
                 {{-- Event image --}}
@@ -107,7 +119,7 @@
     </div>
 
     {{-- ── Event list ────────────────────────────────────────────────────── --}}
-    <div class="col-lg-7">
+    <div>
         <div class="admin-form-card p-0" data-tabs data-default-tab="upcoming">
 
             {{-- Tab nav --}}

@@ -3521,11 +3521,30 @@ body.admin-body {
     }
 }
 
+// Team event — page layout: wider form column, narrower events-list column
+.team-event-page-grid {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 2rem;
+
+    @media (max-width: 991px) {
+        grid-template-columns: 1fr;
+    }
+}
+
 // Team event — participating driver picker
+.participating-drivers-panel {
+    background: #f8f6ff;
+    border: 1px solid #e0d9f7;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-top: 8px;
+}
+
 .xcl-driver-picker__grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: .6rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
     margin-top: .5rem;
 
     @media (max-width: 767px) {

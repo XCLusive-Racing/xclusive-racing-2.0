@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\EsportsDriver;
 use App\Models\TeamEvent;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -34,16 +35,23 @@ class TeamEventController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'subject'     => ['required', 'in:' . implode(',', array_keys(TeamEvent::subjects()))],
-            'title'       => ['required', 'string', 'max:200'],
-            'subtitle'    => ['nullable', 'string', 'max:200'],
-            'starts_at'   => ['required', 'date'],
-            'watch_url'   => ['nullable', 'url', 'max:500'],
-            'image'       => ['nullable', 'image', 'max:10240'],
-            'image_url'   => ['nullable', 'url', 'max:1000'],
+            'subject'          => ['required', 'in:' . implode(',', array_keys(TeamEvent::subjects()))],
+            'title'            => ['required', 'string', 'max:200'],
+            'subtitle'         => ['nullable', 'string', 'max:200'],
+            'starts_at'        => ['required', 'date'],
+            'duration_minutes' => ['required', 'integer', 'in:' . implode(',', array_keys(TeamEvent::durationOptions()))],
+            'watch_url'        => ['nullable', 'url', 'max:500'],
+            'image'            => ['nullable', 'image', 'max:10240'],
+            'image_url'        => ['nullable', 'url', 'max:1000'],
         ]);
 
         $driverIds = $this->validatedDriverIds($request);
+
+        // The datetime-local input has no offset — admins enter it in BST
+        // (Europe/London), so parse it as such and convert to UTC for storage.
+        $startsAt          = Carbon::createFromFormat('Y-m-d\TH:i', $data['starts_at'], 'Europe/London')->utc();
+        $data['starts_at'] = $startsAt;
+        $data['ends_at']   = $startsAt->copy()->addMinutes((int) $data['duration_minutes']);
 
         if ($request->hasFile('image')) {
             $file          = $request->file('image');
@@ -74,16 +82,21 @@ class TeamEventController extends Controller
     public function update(Request $request, TeamEvent $teamEvent)
     {
         $data = $request->validate([
-            'subject'   => ['required', 'in:' . implode(',', array_keys(TeamEvent::subjects()))],
-            'title'     => ['required', 'string', 'max:200'],
-            'subtitle'  => ['nullable', 'string', 'max:200'],
-            'starts_at' => ['required', 'date'],
-            'watch_url' => ['nullable', 'url', 'max:500'],
-            'image'     => ['nullable', 'image', 'max:10240'],
-            'image_url' => ['nullable', 'url', 'max:1000'],
+            'subject'          => ['required', 'in:' . implode(',', array_keys(TeamEvent::subjects()))],
+            'title'            => ['required', 'string', 'max:200'],
+            'subtitle'         => ['nullable', 'string', 'max:200'],
+            'starts_at'        => ['required', 'date'],
+            'duration_minutes' => ['required', 'integer', 'in:' . implode(',', array_keys(TeamEvent::durationOptions()))],
+            'watch_url'        => ['nullable', 'url', 'max:500'],
+            'image'            => ['nullable', 'image', 'max:10240'],
+            'image_url'        => ['nullable', 'url', 'max:1000'],
         ]);
 
         $driverIds = $this->validatedDriverIds($request);
+
+        $startsAt          = Carbon::createFromFormat('Y-m-d\TH:i', $data['starts_at'], 'Europe/London')->utc();
+        $data['starts_at'] = $startsAt;
+        $data['ends_at']   = $startsAt->copy()->addMinutes((int) $data['duration_minutes']);
 
         if ($request->hasFile('image')) {
             if ($teamEvent->image && !str_starts_with($teamEvent->image, 'http')) {

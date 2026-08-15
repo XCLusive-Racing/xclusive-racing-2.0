@@ -27,22 +27,27 @@
 
             {{-- Info --}}
             <div class="flex-grow-1" style="min-width:0">
-                <div class="fw-black text-dark text-truncate" style="font-size:.88rem">
+                <div class="fw-black text-dark" style="font-size:.88rem;white-space:normal;overflow:visible">
                     {{ $ev->title }}
                 </div>
                 @if($ev->subtitle)
-                <div class="text-secondary text-truncate" style="font-size:.75rem">
+                <div class="text-secondary" style="font-size:.75rem;white-space:normal;overflow:visible">
                     {{ $ev->subtitle }}
                 </div>
                 @endif
                 <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
-                    <span class="badge fw-bold text-uppercase"
-                          style="background:#ede9fe;color:#6d28d9;font-size:.6rem">
+                    <span class="badge fw-bold text-uppercase" style="background:#ede9fe;color:#6d28d9;font-size:.6rem;white-space:normal">
                         {{ $subjects[$ev->subject] ?? $ev->subject }}
                     </span>
-                    <span style="font-size:.72rem;color:#6b7280">
+                    <span style="font-size:.78rem;color:#6b7280">
                         {{ $ev->starts_at->timezone('Europe/London')->format('d M Y · H:i T') }}
+                        @if($ev->ends_at)
+                            &rarr; {{ $ev->ends_at->timezone('Europe/London')->format('H:i T') }}
+                        @endif
                     </span>
+                    @if($ev->isLive())
+                    <span class="badge fw-bold text-uppercase" style="background:#cc0000;color:white;font-size:.6rem">LIVE</span>
+                    @endif
                     @if($ev->watch_url)
                     <a href="{{ $ev->watch_url }}" target="_blank"
                        style="font-size:.7rem;color:#7c3aed;font-weight:700;text-decoration:none">
