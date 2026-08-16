@@ -10,7 +10,7 @@ class EventFormat extends Model
         'game', 'name', 'formation_type',
         'practice_mins', 'quali_mins', 'race1_mins', 'quali2_mins', 'race2_mins',
         'pitstop_type', 'pitstop_count', 'min_stop_secs',
-        'xcl_r_multiplier', 'server_preference', 'sort_order',
+        'xcl_r_multiplier', 'server_preference', 'server_group', 'default_event_tag', 'sort_order',
     ];
 
     protected function casts(): array

@@ -127,20 +127,20 @@
                             <label class="form-label">Weather</label>
                             <select id="cr-weather" name="weather" class="form-select">
                                 <option value="">— Not set —</option>
-                                <option value="dry"    {{ old('weather') === 'dry'    ? 'selected' : '' }}>Dry</option>
-                                <option value="wet"    {{ old('weather') === 'wet'    ? 'selected' : '' }}>Wet</option>
-                                <option value="mixed"  {{ old('weather') === 'mixed'  ? 'selected' : '' }}>Mixed</option>
-                                <option value="random" {{ old('weather') === 'random' ? 'selected' : '' }}>Random</option>
+                                <option value="dry"    {{ old('weather', 'dry') === 'dry'    ? 'selected' : '' }}>Dry</option>
+                                <option value="wet"    {{ old('weather', 'dry') === 'wet'    ? 'selected' : '' }}>Wet</option>
+                                <option value="mixed"  {{ old('weather', 'dry') === 'mixed'  ? 'selected' : '' }}>Mixed</option>
+                                <option value="random" {{ old('weather', 'dry') === 'random' ? 'selected' : '' }}>Random</option>
                             </select>
                         </div>
                         <div class="col-sm-4">
                             <label class="form-label">In-game Time</label>
                             <select name="time_of_day" class="form-select">
                                 <option value="">— Not set —</option>
-                                <option value="day"     {{ old('time_of_day') === 'day'     ? 'selected' : '' }}>Day</option>
-                                <option value="dusk"    {{ old('time_of_day') === 'dusk'    ? 'selected' : '' }}>Dusk</option>
-                                <option value="night"   {{ old('time_of_day') === 'night'   ? 'selected' : '' }}>Night</option>
-                                <option value="dynamic" {{ old('time_of_day') === 'dynamic' ? 'selected' : '' }}>Dynamic</option>
+                                <option value="day"     {{ old('time_of_day', 'day') === 'day'     ? 'selected' : '' }}>Day</option>
+                                <option value="dusk"    {{ old('time_of_day', 'day') === 'dusk'    ? 'selected' : '' }}>Dusk</option>
+                                <option value="night"   {{ old('time_of_day', 'day') === 'night'   ? 'selected' : '' }}>Night</option>
+                                <option value="dynamic" {{ old('time_of_day', 'day') === 'dynamic' ? 'selected' : '' }}>Dynamic</option>
                             </select>
                         </div>
                         <div class="col-sm-4">

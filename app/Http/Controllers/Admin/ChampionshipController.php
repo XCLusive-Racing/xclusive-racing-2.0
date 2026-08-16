@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Championship;
 use App\Models\ChampionshipPenalty;
+use App\Models\FtpServer;
 use App\Models\Media;
 use App\Models\Race;
 use App\Models\User;
@@ -169,7 +170,9 @@ class ChampionshipController extends Controller
             ->map(fn($fname) => $trackMediaByName->get($fname)?->url)
             ->all();
 
-        return view('admin.championships.round-create', compact('championship', 'trackPreviewUrls'));
+        $servers = FtpServer::where('active', true)->orderBy('name')->get();
+
+        return view('admin.championships.round-create', compact('championship', 'trackPreviewUrls', 'servers'));
     }
 
     public function addRound(Request $request, Championship $championship)
@@ -191,18 +194,36 @@ class ChampionshipController extends Controller
             'min_rating'          => 'nullable|in:rookie,bronze,silver,gold,platinum,alien',
             'max_rating'          => 'nullable|in:rookie,bronze,silver,gold,platinum,alien',
             'description'         => 'nullable|string',
+            'ftp_server_id'       => 'nullable|exists:ftp_servers,id',
         ]);
 
         $data['championship_id'] = $championship->id;
         $data['game']            = $championship->game;
         $data['status']          = 'open';
         $data['is_championship'] = true;
+        $data['event_tag']       = 'championship';
         $data['scheduled_at']    = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
         $data['image']           = $this->resolveMedia($request);
         $data['icon']            = $this->resolveIcon($request);
 
         if (!$data['round_number']) {
             $data['round_number'] = $championship->rounds()->max('round_number') + 1;
+        }
+
+        if (!empty($data['ftp_server_id'])) {
+            $server = FtpServer::find($data['ftp_server_id']);
+
+            if ($server && !$server->isValidSlot($data['scheduled_at'])) {
+                return back()->withInput()->withErrors(['scheduled_at' => RaceController::ERR_SLOT_WRONG_SERVER]);
+            }
+            if ($server && in_array($data['scheduled_at']->format('Y-m-d H:i'), $server->takenSlots(), true)) {
+                return back()->withInput()->withErrors(['scheduled_at' => RaceController::ERR_SLOT_TAKEN]);
+            }
+
+            $data['slot_time']          = $data['scheduled_at']->copy();
+            $data['config_push_status'] = 'pending';
+        } else {
+            $data['slot_time'] = null;
         }
 
         Race::create($data);

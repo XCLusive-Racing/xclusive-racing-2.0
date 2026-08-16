@@ -1,3 +1,5 @@
+import { initDateTimePickers } from '../../components/datetime-picker.js';
+
 export function initBulkCreate(wrap) {
     if (!wrap) return;
 
@@ -39,6 +41,10 @@ export function initBulkCreate(wrap) {
     }
 
     function pad(n) { return String(n).padStart(2, '0'); }
+
+    function maxDriversForTrack(track) {
+        return window.__ceTracks?.[track]?.max ?? '';
+    }
 
     function formatDate(d) {
         return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
@@ -91,12 +97,14 @@ export function initBulkCreate(wrap) {
             <td class="ps-4 text-secondary fw-bold" style="font-size:.8rem">${i + 1}</td>
             <td>
                 <input type="hidden" name="events[${i}][title]" data-field="title" value="${esc(ev.title)}">
+                <input type="hidden" name="events[${i}][max_drivers]" data-field="max_drivers" value="${esc(maxDriversForTrack(ev.track))}">
                 <input type="text" name="events[${i}][track]" value="${esc(ev.track)}"
                        class="form-control form-control-sm" data-field="track" required>
             </td>
             <td>
-                <input type="datetime-local" name="events[${i}][scheduled_at]" value="${esc(ev.scheduled_at)}"
-                       step="3600" class="form-control form-control-sm" data-field="scheduled_at" required>
+                <input type="text" name="events[${i}][scheduled_at]" value="${esc(ev.scheduled_at)}"
+                       data-flatpickr data-min-today="true"
+                       class="form-control form-control-sm" data-field="scheduled_at" required>
             </td>
             <td>
                 <select name="events[${i}][weather]" class="form-select form-select-sm" data-field="weather">
@@ -117,27 +125,22 @@ export function initBulkCreate(wrap) {
             </td>
         `;
 
-        const titleHidden  = tr.querySelector('[data-field="title"]');
-        const trackInput   = tr.querySelector('[data-field="track"]');
-        const dateInput    = tr.querySelector('[data-field="scheduled_at"]');
-        const weatherInput = tr.querySelector('[data-field="weather"]');
-        const timeInput    = tr.querySelector('[data-field="time_of_day"]');
+        const titleHidden      = tr.querySelector('[data-field="title"]');
+        const maxDriversHidden = tr.querySelector('[data-field="max_drivers"]');
+        const trackInput       = tr.querySelector('[data-field="track"]');
+        const dateInput        = tr.querySelector('[data-field="scheduled_at"]');
+        const weatherInput     = tr.querySelector('[data-field="weather"]');
+        const timeInput        = tr.querySelector('[data-field="time_of_day"]');
 
-        // Track drives title automatically
+        // Track drives title and max-drivers automatically, same as single mode
         trackInput.addEventListener('input', () => {
             events[i].track = trackInput.value;
             events[i].title = trackInput.value;
             titleHidden.value = trackInput.value;
+            maxDriversHidden.value = maxDriversForTrack(trackInput.value);
         });
-        dateInput.addEventListener('input', () => {
-            // Keep whole-hour only, even if the browser lets a stray minute value through
-            const d = new Date(dateInput.value);
-            if (!isNaN(d) && d.getMinutes() !== 0) {
-                d.setMinutes(0, 0, 0);
-                dateInput.value = formatDate(d);
-            }
-            events[i].scheduled_at = dateInput.value;
-        });
+        // flatpickr's own minuteIncrement:60/hour-only mode keeps this whole-hour already
+        dateInput.addEventListener('change', () => { events[i].scheduled_at = dateInput.value; });
         weatherInput.addEventListener('change', () => { events[i].weather = weatherInput.value; });
         timeInput.addEventListener('change', () => { events[i].time_of_day = timeInput.value; });
 
@@ -153,6 +156,7 @@ export function initBulkCreate(wrap) {
         tbody.innerHTML = '';
         events.forEach((_, i) => tbody.appendChild(renderRow(i)));
         updateCounts();
+        initDateTimePickers();
     }
 
     // Generate: find each selected day on or after start date, repeat for N weeks

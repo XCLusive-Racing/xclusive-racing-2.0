@@ -251,12 +251,6 @@ foreach ($sbGames as $game => $col) {
                                     <i class="fa-solid fa-comments"></i>
                                     <span>{{ $sbNextEvent->registrations_count }} / {{ $sbNextEvent->max_drivers ?? '∞' }}</span>
                                 </div>
-
-                                {{-- Race name big overlay --}}
-                                <div class="xcl-sb-next__title-overlay">
-                                    {{ strtoupper($sbNextEvent->title ?? $sbNextEvent->gameLabel()) }}
-                                </div>
-
                                 {{-- Platform icons bottom --}}
                                 <div class="xcl-sb-next__hero-platforms">
                                     @foreach($nextPlatIcons as [$icon, $label])

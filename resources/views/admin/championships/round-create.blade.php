@@ -130,20 +130,20 @@
                             <label class="form-label">Weather</label>
                             <select id="cr-weather" name="weather" class="form-select">
                                 <option value="">— Not set —</option>
-                                <option value="dry"    {{ old('weather', $championship->weather) === 'dry'    ? 'selected' : '' }}>Dry</option>
-                                <option value="wet"    {{ old('weather', $championship->weather) === 'wet'    ? 'selected' : '' }}>Wet</option>
-                                <option value="mixed"  {{ old('weather', $championship->weather) === 'mixed'  ? 'selected' : '' }}>Mixed</option>
-                                <option value="random" {{ old('weather', $championship->weather) === 'random' ? 'selected' : '' }}>Random</option>
+                                <option value="dry"    {{ old('weather', $championship->weather ?: 'dry') === 'dry'    ? 'selected' : '' }}>Dry</option>
+                                <option value="wet"    {{ old('weather', $championship->weather ?: 'dry') === 'wet'    ? 'selected' : '' }}>Wet</option>
+                                <option value="mixed"  {{ old('weather', $championship->weather ?: 'dry') === 'mixed'  ? 'selected' : '' }}>Mixed</option>
+                                <option value="random" {{ old('weather', $championship->weather ?: 'dry') === 'random' ? 'selected' : '' }}>Random</option>
                             </select>
                         </div>
                         <div class="col-sm-4">
                             <label class="form-label">In-game Time</label>
                             <select name="time_of_day" class="form-select">
                                 <option value="">— Not set —</option>
-                                <option value="day"     {{ old('time_of_day', $championship->time_of_day) === 'day'     ? 'selected' : '' }}>Day</option>
-                                <option value="dusk"    {{ old('time_of_day', $championship->time_of_day) === 'dusk'    ? 'selected' : '' }}>Dusk</option>
-                                <option value="night"   {{ old('time_of_day', $championship->time_of_day) === 'night'   ? 'selected' : '' }}>Night</option>
-                                <option value="dynamic" {{ old('time_of_day', $championship->time_of_day) === 'dynamic' ? 'selected' : '' }}>Dynamic</option>
+                                <option value="day"     {{ old('time_of_day', $championship->time_of_day ?: 'day') === 'day'     ? 'selected' : '' }}>Day</option>
+                                <option value="dusk"    {{ old('time_of_day', $championship->time_of_day ?: 'day') === 'dusk'    ? 'selected' : '' }}>Dusk</option>
+                                <option value="night"   {{ old('time_of_day', $championship->time_of_day ?: 'day') === 'night'   ? 'selected' : '' }}>Night</option>
+                                <option value="dynamic" {{ old('time_of_day', $championship->time_of_day ?: 'day') === 'dynamic' ? 'selected' : '' }}>Dynamic</option>
                             </select>
                         </div>
                         <div class="col-sm-4">
@@ -168,6 +168,32 @@
                         @error('scheduled_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
+
+                {{-- gPortal Server --}}
+                @if($servers->isNotEmpty())
+                <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+                    <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">gPortal Server <span class="fw-normal" style="text-transform:none">(optional)</span></p>
+                    <p class="text-secondary mb-3" style="font-size:.75rem">Assign a server — config will be auto-pushed 10 minutes before each reset. Rounds don't share a server automatically, since some championships spread rounds across different servers.</p>
+
+                    <div class="mb-3">
+                        <label class="form-label">Server</label>
+                        <select name="ftp_server_id" class="form-select">
+                            <option value="">— No server assigned —</option>
+                            @foreach($servers as $srv)
+                                <option value="{{ $srv->id }}" {{ old('ftp_server_id') == $srv->id ? 'selected' : '' }}>
+                                    {{ $srv->name }}
+                                    @if($srv->server_type === 'rolling')
+                                        (resets every {{ $srv->reset_interval_minutes }}min from {{ str_pad($srv->reset_start_hour,2,'0',STR_PAD_LEFT) }}:00)
+                                    @else
+                                        (manual restart)
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @error('scheduled_at') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                </div>
+                @endif
 
                 {{-- Requirements --}}
                 <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">

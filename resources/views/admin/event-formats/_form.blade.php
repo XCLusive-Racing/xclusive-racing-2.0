@@ -34,7 +34,7 @@
                        class="form-control" placeholder="e.g. Short, Full (Nords - Short)">
             </div>
             <div class="col-sm-3">
-                <label class="form-label">Server Preference</label>
+                <label class="form-label">Server Preference <span class="fw-normal text-secondary" style="text-transform:none">(label only)</span></label>
                 <input type="text" name="server_preference" value="{{ old('server_preference', $eventFormat->server_preference ?? '') }}"
                        class="form-control" placeholder="e.g. 1/2, 3, 4">
             </div>
@@ -44,6 +44,29 @@
                        class="form-control @error('xcl_r_multiplier') is-invalid @enderror"
                        step="0.1" min="0.1" max="10" placeholder="1.0">
                 @error('xcl_r_multiplier')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+            <div class="col-sm-6">
+                <label class="form-label">Server Group <span class="fw-normal text-secondary" style="text-transform:none">(drives auto-assignment on the race form)</span></label>
+                <select name="server_group" class="form-select @error('server_group') is-invalid @enderror">
+                    <option value="">— None (no auto-assign) —</option>
+                    <option value="short"  {{ old('server_group', $eventFormat->server_group ?? '') === 'short'  ? 'selected' : '' }}>Short (Server 1 — any hour)</option>
+                    <option value="medium" {{ old('server_group', $eventFormat->server_group ?? '') === 'medium' ? 'selected' : '' }}>Medium (Server 2 even hour / Server 3 odd hour)</option>
+                    <option value="long"   {{ old('server_group', $eventFormat->server_group ?? '') === 'long'   ? 'selected' : '' }}>Long (Server 4 — manual restart)</option>
+                </select>
+                @error('server_group')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-sm-6">
+                <label class="form-label">Default Event Tag <span class="fw-normal text-secondary" style="text-transform:none">(drives auto-assignment on the race form)</span></label>
+                <select name="default_event_tag" class="form-select @error('default_event_tag') is-invalid @enderror">
+                    <option value="">— None (no auto-assign) —</option>
+                    @foreach($tags as $tag)
+                    <option value="{{ $tag->slug }}" {{ old('default_event_tag', $eventFormat->default_event_tag ?? '') === $tag->slug ? 'selected' : '' }}>{{ $tag->name }}</option>
+                    @endforeach
+                </select>
+                @error('default_event_tag')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
         </div>
     </div>

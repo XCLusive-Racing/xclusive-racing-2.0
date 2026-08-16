@@ -16,6 +16,7 @@ export function initDateTimePickers() {
             altInput: true,
             altFormat: 'D, d M Y \\a\\t H:i',
             minDate: el.dataset.minToday === 'true' ? 'today' : undefined,
+            locale: { firstDayOfWeek: 1 }, // Monday, not flatpickr's US-default Sunday
             onReady: (selectedDates, dateStr, instance) => {
                 if (!hourOnly) return;
                 // Minutes are locked to :00 in this mode — hide the minute spinner

@@ -46,6 +46,9 @@ class AccServerConfigService
     {
         $defaults = $server?->event_defaults ?? [];
 
+        // Practice shows the same in-game lighting as the Race, since that's what
+        // drivers are actually setting up for. Qualifying is set an hour earlier —
+        // sessions still run in real-world P → Q → R order regardless.
         $sessions = [];
         $hour     = $this->startHour($race->time_of_day);
 
@@ -57,18 +60,16 @@ class AccServerConfigService
                 'sessionType'            => 'P',
                 'sessionDurationMinutes' => (int) $race->practice_duration,
             ];
-            $hour = min($hour + 1, 23);
         }
 
         if ($race->qualifying_duration) {
             $sessions[] = [
-                'hourOfDay'              => $hour,
+                'hourOfDay'              => max($hour - 1, 0),
                 'dayOfWeekend'           => 1,
                 'timeMultiplier'         => 1,
                 'sessionType'            => 'Q',
                 'sessionDurationMinutes' => (int) $race->qualifying_duration,
             ];
-            $hour = min($hour + 1, 23);
         }
 
         $sessions[] = [

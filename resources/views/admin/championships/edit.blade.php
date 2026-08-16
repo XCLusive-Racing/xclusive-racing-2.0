@@ -217,7 +217,7 @@
                             <select name="weather" class="form-select">
                                 <option value="">— Not set —</option>
                                 @foreach(['dry','wet','mixed','random'] as $w)
-                                <option value="{{ $w }}" {{ old('weather', $championship->weather) === $w ? 'selected' : '' }}>{{ ucfirst($w) }}</option>
+                                <option value="{{ $w }}" {{ old('weather', $championship->weather ?: 'dry') === $w ? 'selected' : '' }}>{{ ucfirst($w) }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -226,7 +226,7 @@
                             <select name="time_of_day" class="form-select">
                                 <option value="">— Not set —</option>
                                 @foreach(['day','dusk','night','dynamic'] as $t)
-                                <option value="{{ $t }}" {{ old('time_of_day', $championship->time_of_day) === $t ? 'selected' : '' }}>{{ ucfirst($t) }}</option>
+                                <option value="{{ $t }}" {{ old('time_of_day', $championship->time_of_day ?: 'day') === $t ? 'selected' : '' }}>{{ ucfirst($t) }}</option>
                                 @endforeach
                             </select>
                         </div>

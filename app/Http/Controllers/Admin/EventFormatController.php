@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\EventFormat;
+use App\Models\EventTag;
 use Illuminate\Http\Request;
 
 class EventFormatController extends Controller
@@ -16,7 +17,8 @@ class EventFormatController extends Controller
 
     public function create()
     {
-        return view('admin.event-formats.create');
+        $tags = EventTag::orderBy('name')->get();
+        return view('admin.event-formats.create', compact('tags'));
     }
 
     public function store(Request $request)
@@ -28,7 +30,8 @@ class EventFormatController extends Controller
 
     public function edit(EventFormat $eventFormat)
     {
-        return view('admin.event-formats.edit', compact('eventFormat'));
+        $tags = EventTag::orderBy('name')->get();
+        return view('admin.event-formats.edit', compact('eventFormat', 'tags'));
     }
 
     public function update(Request $request, EventFormat $eventFormat)
@@ -60,6 +63,8 @@ class EventFormatController extends Controller
             'min_stop_secs'    => 'nullable|integer|min:1|max:999',
             'xcl_r_multiplier' => 'required|numeric|min:0.1|max:10',
             'server_preference'=> 'nullable|string|max:20',
+            'server_group'     => 'nullable|in:short,medium,long',
+            'default_event_tag'=> 'nullable|exists:event_tags,slug',
             'sort_order'       => 'required|integer|min:0',
         ]);
     }

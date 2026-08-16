@@ -17,8 +17,8 @@ use Illuminate\Support\Str;
 
 class RaceController extends Controller
 {
-    private const ERR_SLOT_WRONG_SERVER = 'This time doesn\'t match a restart slot on the selected server — pick a different server or adjust the time.';
-    private const ERR_SLOT_TAKEN        = 'This time slot is already taken on the selected server.';
+    public const ERR_SLOT_WRONG_SERVER = 'This time doesn\'t match a restart slot on the selected server — pick a different server or adjust the time.';
+    public const ERR_SLOT_TAKEN        = 'This time slot is already taken on the selected server.';
 
     public function index()
     {
@@ -182,6 +182,7 @@ class RaceController extends Controller
             'events.*.scheduled_at'    => 'required|date',
             'events.*.weather'         => 'nullable|in:dry,wet,mixed,random',
             'events.*.time_of_day'     => 'nullable|in:day,dusk,night,dynamic',
+            'events.*.max_drivers'     => 'nullable|integer|min:1',
         ]);
 
         $shared = [
@@ -212,6 +213,7 @@ class RaceController extends Controller
                 'scheduled_at' => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $event['scheduled_at'], 'Europe/London')->utc(),
                 'weather'      => $event['weather'] ?: $shared['weather'],
                 'time_of_day'  => $event['time_of_day'] ?: $shared['time_of_day'],
+                'max_drivers'  => $event['max_drivers'] ?: $shared['max_drivers'],
             ]));
         }
 

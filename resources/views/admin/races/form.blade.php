@@ -260,22 +260,24 @@ $mcExisting = $isEdit
                             </div>
                             <div class="col-sm-4">
                                 <label class="form-label">Rain</label>
+                                @php $weatherVal = old('weather', $isEdit ? ($race->weather ?: 'dry') : 'dry'); @endphp
                                 <select name="weather" class="form-select">
                                     <option value="">— Not set —</option>
-                                    <option value="dry"    {{ old('weather', $isEdit ? $race->weather : '') === 'dry'    ? 'selected' : '' }}>Dry</option>
-                                    <option value="wet"    {{ old('weather', $isEdit ? $race->weather : '') === 'wet'    ? 'selected' : '' }}>Wet</option>
-                                    <option value="mixed"  {{ old('weather', $isEdit ? $race->weather : '') === 'mixed'  ? 'selected' : '' }}>Mixed</option>
-                                    <option value="random" {{ old('weather', $isEdit ? $race->weather : '') === 'random' ? 'selected' : '' }}>Random</option>
+                                    <option value="dry"    {{ $weatherVal === 'dry'    ? 'selected' : '' }}>Dry</option>
+                                    <option value="wet"    {{ $weatherVal === 'wet'    ? 'selected' : '' }}>Wet</option>
+                                    <option value="mixed"  {{ $weatherVal === 'mixed'  ? 'selected' : '' }}>Mixed</option>
+                                    <option value="random" {{ $weatherVal === 'random' ? 'selected' : '' }}>Random</option>
                                 </select>
                             </div>
                             <div class="col-sm-3">
                                 <label class="form-label">In-game Time</label>
+                                @php $timeOfDayVal = old('time_of_day', $isEdit ? ($race->time_of_day ?: 'day') : 'day'); @endphp
                                 <select name="time_of_day" class="form-select">
                                     <option value="">— Not set —</option>
-                                    <option value="day"     {{ old('time_of_day', $isEdit ? $race->time_of_day : '') === 'day'     ? 'selected' : '' }}>Day</option>
-                                    <option value="dusk"    {{ old('time_of_day', $isEdit ? $race->time_of_day : '') === 'dusk'    ? 'selected' : '' }}>Dusk</option>
-                                    <option value="night"   {{ old('time_of_day', $isEdit ? $race->time_of_day : '') === 'night'   ? 'selected' : '' }}>Night</option>
-                                    <option value="dynamic" {{ old('time_of_day', $isEdit ? $race->time_of_day : '') === 'dynamic' ? 'selected' : '' }}>Dynamic</option>
+                                    <option value="day"     {{ $timeOfDayVal === 'day'     ? 'selected' : '' }}>Day</option>
+                                    <option value="dusk"    {{ $timeOfDayVal === 'dusk'    ? 'selected' : '' }}>Dusk</option>
+                                    <option value="night"   {{ $timeOfDayVal === 'night'   ? 'selected' : '' }}>Night</option>
+                                    <option value="dynamic" {{ $timeOfDayVal === 'dynamic' ? 'selected' : '' }}>Dynamic</option>
                                 </select>
                             </div>
                         </div>
@@ -448,6 +450,7 @@ $mcExisting = $isEdit
                                 @foreach($servers as $srv)
                                     <option value="{{ $srv->id }}"
                                             data-type="{{ $srv->server_type }}"
+                                            data-number="{{ $srv->server_number }}"
                                             {{ old('ftp_server_id', $isEdit ? $race->ftp_server_id : '') == $srv->id ? 'selected' : '' }}>
                                         {{ $srv->name }}
                                         @if($srv->server_type === 'rolling')
@@ -981,6 +984,129 @@ $mcExisting = $isEdit
     }
 
     window.__ceAllowNoFormat = allowNoFormat;
+    window.__ceTracks        = tracks;
+})();
+
+// ── Auto-select gPortal server + event tag (driven by the chosen format) ────
+// Suggests a server/tag whenever the format or the scheduled time changes;
+// both stay normal <select>s so an admin can still override them manually.
+(function () {
+    const formats  = @json($formatsWithSlug);
+    const gameEl   = document.getElementById('ce-game');
+    const fmtEl    = document.getElementById('ce-format');
+    const serverEl = document.getElementById('gp-server');
+    const tagEl    = document.querySelector('[data-tags-select]');
+    if (!fmtEl || (!serverEl && !tagEl)) return;
+
+    const schedEl     = document.querySelector('[name="scheduled_at"]');
+    const bulkDateEl  = document.querySelector('[data-bulk-start-date]');
+    const bulkTimeEl  = document.querySelector('[data-bulk-start-time]');
+
+    // server_number → target group. Short = any hour, Medium splits even/odd
+    // hour across two servers, Long = manual-restart server, any time.
+    function serverNumberFor(group, hour) {
+        if (group === 'short')  return 1;
+        if (group === 'long')   return 4;
+        if (group === 'medium') return hour % 2 === 0 ? 2 : 3;
+        return null;
+    }
+
+    function currentHour() {
+        const isBulk = document.getElementById('ce-mode-input')?.value === 'bulk';
+        if (isBulk) {
+            if (!bulkDateEl?.value || !bulkTimeEl?.value) return null;
+            const d = new Date(bulkDateEl.value + 'T' + bulkTimeEl.value);
+            return isNaN(d) ? null : d.getHours();
+        }
+        if (!schedEl?.value) return null;
+        const d = new Date(schedEl.value);
+        return isNaN(d) ? null : d.getHours();
+    }
+
+    function currentFormat() {
+        return (formats[gameEl?.value] || []).find(f => String(f.id) === fmtEl.value);
+    }
+
+    function recomputeServer() {
+        if (!serverEl) return;
+        const fmt = currentFormat();
+        if (!fmt || !fmt.server_group) return;
+
+        const hour = currentHour();
+        if (hour === null) return;
+
+        const number = serverNumberFor(fmt.server_group, hour);
+        if (number === null) return;
+
+        const opt = Array.from(serverEl.options).find(o => o.dataset.number === String(number));
+        if (!opt || serverEl.value === opt.value) return;
+
+        serverEl.value = opt.value;
+        serverEl.dispatchEvent(new Event('change'));
+    }
+
+    function recomputeTag() {
+        if (!tagEl) return;
+        const fmt = currentFormat();
+        if (!fmt || !fmt.default_event_tag || tagEl.value === fmt.default_event_tag) return;
+
+        const opt = Array.from(tagEl.options).find(o => o.value === fmt.default_event_tag);
+        if (!opt) return;
+
+        tagEl.value = fmt.default_event_tag;
+        tagEl.dispatchEvent(new Event('change'));
+    }
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function formatForFlatpickr(d) {
+        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    // 0 = server needs an even hour (Server 2), 1 = odd (Server 3), null = no restriction
+    function requiredParity() {
+        const number = serverEl?.selectedOptions[0]?.dataset.number;
+        if (number === '2') return 0;
+        if (number === '3') return 1;
+        return null;
+    }
+
+    // Nudges the picked time by one hour when it doesn't match the selected
+    // server's even/odd requirement — e.g. picking Server 3 (odd-hour only)
+    // while an even hour is set bumps it forward to the next odd hour.
+    function enforceScheduleParity() {
+        const parity = requiredParity();
+        if (parity === null) return;
+
+        const isBulk = document.getElementById('ce-mode-input')?.value === 'bulk';
+        if (isBulk) {
+            if (!bulkTimeEl?.value) return;
+            const [hh] = bulkTimeEl.value.split(':').map(Number);
+            if (isNaN(hh) || hh % 2 === parity) return;
+            bulkTimeEl.value = pad((hh + 1) % 24) + ':00';
+            return;
+        }
+
+        if (!schedEl?.value) return;
+        const d = new Date(schedEl.value);
+        if (isNaN(d) || d.getHours() % 2 === parity) return;
+
+        d.setHours(d.getHours() + 1, 0, 0, 0);
+        schedEl._flatpickr?.setDate(d, false);
+        schedEl.value = formatForFlatpickr(d);
+    }
+
+    function recompute() {
+        recomputeServer();
+        enforceScheduleParity();
+        recomputeTag();
+    }
+
+    fmtEl.addEventListener('change', recompute);
+    schedEl?.addEventListener('change', recomputeServer);
+    bulkDateEl?.addEventListener('change', recomputeServer);
+    bulkTimeEl?.addEventListener('change', recomputeServer);
+    serverEl?.addEventListener('change', enforceScheduleParity);
+    document.querySelectorAll('[data-mode-btn]').forEach(btn => btn.addEventListener('click', recomputeServer));
 })();
 
 // ── Live Event Preview ──────────────────────────────────────────────────────
