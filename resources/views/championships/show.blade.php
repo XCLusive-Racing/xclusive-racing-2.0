@@ -54,12 +54,26 @@
             <div class="col-12 col-lg-8">
 
                 {{-- Standings --}}
+                @php
+                    $standingsGroups = $championship->is_multiclass && collect($classStandings)->isNotEmpty()
+                        ? collect($classStandings)->values()
+                        : collect([['class' => null, 'standings' => $standings]]);
+                @endphp
+
+                @foreach($standingsGroups as $group)
                 <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
-                    <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
-                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Championship Standings</h2>
+                    <div class="px-4 py-3 d-flex align-items-center gap-2" style="border-bottom:1px solid #1f2937">
+                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">
+                            {{ $group['class'] ? $group['class']->name : 'Championship' }} Standings
+                        </h2>
+                        @if($group['class'])
+                        <span class="badge fw-bold" style="background:{{ $group['class']->color }}22;color:{{ $group['class']->color }};font-size:.65rem;padding:3px 8px;border-radius:5px">
+                            {{ $group['class']->car_class ?? $group['class']->name }}
+                        </span>
+                        @endif
                     </div>
 
-                    @if(empty($standings))
+                    @if(empty($group['standings']))
                     <div class="px-4 py-4 text-center" style="color:#6b7280;font-size:.875rem">
                         No results yet — standings will appear once rounds are completed.
                     </div>
@@ -77,7 +91,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($standings as $i => $entry)
+                                @foreach($group['standings'] as $i => $entry)
                                 @php
                                     $medalColors = ['#f59e0b','#9ca3af','#b45309'];
                                     $posColor = $medalColors[$i] ?? '#6b7280';
@@ -110,6 +124,7 @@
                     </div>
                     @endif
                 </div>
+                @endforeach
 
                 {{-- Rounds --}}
                 <div style="background:#111827;border-radius:12px;overflow:hidden">
@@ -121,7 +136,9 @@
                     <div class="px-4 py-4 text-center" style="color:#6b7280;font-size:.875rem">No rounds scheduled yet.</div>
                     @else
                     @foreach($rounds as $round)
-                    <div class="px-4 py-3 d-flex align-items-center gap-3" style="border-bottom:1px solid #1f2937">
+                    <a href="{{ route('events.show', $round) }}"
+                       class="px-4 py-3 d-flex align-items-center gap-3 text-decoration-none"
+                       style="border-bottom:1px solid #1f2937">
                         <div class="fw-black flex-shrink-0" style="width:2rem;text-align:center;font-size:.85rem;color:#6b7280">
                             R{{ $round->round_number }}
                         </div>
@@ -134,7 +151,7 @@
                         <div>
                             <span class="status-badge status-{{ $round->status }}">{{ ucfirst($round->status) }}</span>
                         </div>
-                    </div>
+                    </a>
                     @endforeach
                     @endif
                 </div>

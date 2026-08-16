@@ -56,12 +56,24 @@
                             {{ ucfirst($c->status) }}
                         </span>
                     </td>
-                    <td class="pe-4 text-end">
-                        <a href="{{ route('admin.championships.show', $c) }}"
-                           class="btn btn-sm fw-bold text-uppercase text-white"
-                           style="background:#7c3aed;font-size:.72rem;padding:5px 12px;border-radius:6px">
-                            Open
-                        </a>
+                    <td class="pe-4">
+                        <div class="d-flex gap-1 gap-md-2 justify-content-end align-items-center flex-wrap">
+                            <a href="{{ route('admin.championships.show', $c) }}"
+                               class="btn btn-sm fw-bold text-uppercase text-white"
+                               style="background:#7c3aed;font-size:.72rem;padding:5px 12px;border-radius:6px">
+                                Open
+                            </a>
+                            <form action="{{ route('admin.championships.destroy', $c) }}" method="POST" style="margin:0">
+                                @csrf
+                                @method('DELETE')
+                                <button type="button"
+                                        onclick="xcDeleteSubmit(this.closest('form'), 'Delete championship?', '\'{{ addslashes($c->name) }}\' and all its registrations/penalties/classes will be removed. Rounds remain as standalone races.')"
+                                        class="btn btn-sm fw-bold text-uppercase"
+                                        style="background:#1f2937;border:1px solid #374151;color:#ef4444;font-size:.72rem;padding:5px 10px;border-radius:6px">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 @empty

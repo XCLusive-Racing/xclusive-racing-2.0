@@ -8,7 +8,6 @@ use App\Models\Message;
 use App\Models\Race;
 use App\Models\RaceClass;
 use App\Models\RaceRegistration;
-use App\Models\User;
 use App\Services\AccServerConfigService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -61,7 +60,7 @@ class RaceController extends Controller
             return back()->with('error', 'You are already registered for this race.');
         }
 
-        if ($failure = $this->requirementFailure(auth()->user(), $race->game, $race->sr_requirement, $race->min_rating)) {
+        if ($failure = auth()->user()->requirementFailure($race->game, $race->sr_requirement, $race->min_rating)) {
             return back()->with('error', $failure);
         }
 
@@ -80,7 +79,7 @@ class RaceController extends Controller
                 return back()->with('error', 'The selected class is full.');
             }
 
-            if ($failure = $this->requirementFailure(auth()->user(), $race->game, $raceClass->sr_requirement, $raceClass->min_rating)) {
+            if ($failure = auth()->user()->requirementFailure($race->game, $raceClass->sr_requirement, $raceClass->min_rating)) {
                 return back()->with('error', $failure);
             }
 
@@ -119,35 +118,6 @@ class RaceController extends Controller
         }
 
         return back()->with('success', 'You have been registered for ' . $race->title . '!');
-    }
-
-    // Checks the driver's per-game rating (User.elo_{game}/sr_{game} — the same numbers
-    // shown on the leaderboard) against an SR/rating requirement. Returns an error message
-    // if they don't qualify, or null if they do. Games with no tracked rating (e.g. AC Rally)
-    // can't be checked, so requirements are skipped rather than blocking everyone.
-    private function requirementFailure(User $user, string $game, ?string $srRequirement, ?string $minRating): ?string
-    {
-        if (!in_array($game, ['acc', 'lmu', 'iracing'])) {
-            return null;
-        }
-
-        if ($srRequirement) {
-            $userSr = (float) ($user->{"sr_{$game}"} ?? 0);
-            if ($userSr < (float) $srRequirement) {
-                return 'You need at least SR ' . number_format((float) $srRequirement, 1)
-                    . ' to register (yours: ' . number_format($userSr, 1) . ').';
-            }
-        }
-
-        if ($minRating && $minRating !== 'all') {
-            $threshold = collect(User::ranks())->firstWhere('slug', $minRating)['min'] ?? 0;
-            $userElo   = (int) ($user->{"elo_{$game}"} ?? 0);
-            if ($userElo < $threshold) {
-                return 'You need at least ' . ucfirst($minRating) . ' rank to register for this class.';
-            }
-        }
-
-        return null;
     }
 
     public function unregister(Race $race)

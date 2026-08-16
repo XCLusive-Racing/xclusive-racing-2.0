@@ -148,7 +148,7 @@ class UserController extends Controller
 
         $user->update(\Illuminate\Support\Arr::except($data, ['roles']));
 
-        if ($user->id !== auth()->id()) {
+        if ($user->id !== auth()->id() && auth()->user()->canManageRoles()) {
             $roleIds = Role::whereIn('slug', $request->input('roles', []))->pluck('id');
             $user->roles()->sync($roleIds);
         }

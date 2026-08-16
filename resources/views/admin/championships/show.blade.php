@@ -167,11 +167,27 @@
 
     {{-- STANDINGS --}}
     <div data-tab-panel="standings" style="display:none">
-        <div class="admin-card">
-            <div class="px-4 pt-4 pb-3">
-                <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Championship Standings</p>
+        @php
+            $standingsGroups = $championship->is_multiclass && collect($classStandings)->isNotEmpty()
+                ? collect($classStandings)->values()
+                : collect([['class' => null, 'standings' => $standings]]);
+        @endphp
 
-                @if(empty($standings))
+        @foreach($standingsGroups as $group)
+        <div class="admin-card mb-4">
+            <div class="px-4 pt-4 pb-3">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <p class="fw-black text-uppercase fst-italic mb-0" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">
+                        {{ $group['class'] ? $group['class']->name : 'Championship' }} Standings
+                    </p>
+                    @if($group['class'])
+                    <span class="badge fw-bold" style="background:{{ $group['class']->color }}1a;color:{{ $group['class']->color }};font-size:.65rem;padding:3px 8px;border-radius:5px">
+                        {{ $group['class']->car_class ?? $group['class']->name }}
+                    </span>
+                    @endif
+                </div>
+
+                @if(empty($group['standings']))
                     <p class="text-secondary" style="font-size:.875rem">No results yet.</p>
                 @else
                 <div class="table-responsive">
@@ -187,7 +203,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($standings as $i => $entry)
+                            @foreach($group['standings'] as $i => $entry)
                             <tr>
                                 <td class="fw-black" style="color:{{ $i === 0 ? '#db2777' : ($i === 1 ? '#7c3aed' : '#374151') }}">P{{ $i + 1 }}</td>
                                 <td class="fw-bold">{{ $entry['user']?->name ?? 'Unknown' }}</td>
@@ -209,6 +225,7 @@
                 @endif
             </div>
         </div>
+        @endforeach
     </div>
 
     {{-- REGISTRATIONS --}}

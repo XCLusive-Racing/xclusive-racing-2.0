@@ -97,6 +97,34 @@ class Championship extends Model
 
     public function computeStandings(): array
     {
+        return $this->buildDriverStandings();
+    }
+
+    // Groups the same overall standings by championship class, preserving each
+    // driver's position within their class. Drivers without a class assignment
+    // (e.g. registered before a class existed) are omitted from every group.
+    public function computeClassStandings(): array
+    {
+        if (!$this->is_multiclass) {
+            return [];
+        }
+
+        $classByUser = $this->registrations->pluck('championship_class_id', 'user_id');
+
+        $grouped = $this->classes->mapWithKeys(fn($class) => [$class->id => ['class' => $class, 'standings' => []]])->all();
+
+        foreach ($this->buildDriverStandings() as $entry) {
+            $classId = $classByUser[$entry['user_id']] ?? null;
+            if ($classId !== null && isset($grouped[$classId])) {
+                $grouped[$classId]['standings'][] = $entry;
+            }
+        }
+
+        return $grouped;
+    }
+
+    private function buildDriverStandings(): array
+    {
         $pointsSystem = $this->points_system ?? [];
         $bonusFL      = $this->bonus_fastest_lap;
         $bonusPole    = $this->bonus_pole;
@@ -119,8 +147,9 @@ class Championship extends Model
                 $userId = $result->user_id;
                 if (!isset($driverData[$userId])) {
                     $driverData[$userId] = [
-                        'user'   => $result->user,
-                        'rounds' => [],
+                        'user_id' => $userId,
+                        'user'    => $result->user,
+                        'rounds'  => [],
                     ];
                 }
 

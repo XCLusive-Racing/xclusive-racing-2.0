@@ -56,13 +56,19 @@
                 </div>
                 <div class="col-12">
                     <label class="form-label">Roles</label>
-                    @if($user->id === auth()->id())
+                    @if($user->id === auth()->id() || !auth()->user()->canManageRoles())
                         <div class="d-flex flex-wrap gap-1 mt-1">
-                            @foreach($user->roles->sortBy('sort_order') as $role)
+                            @forelse($user->roles->sortBy('sort_order') as $role)
                                 <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.78rem;padding:4px 10px;border-radius:6px">{{ $role->name }}</span>
-                            @endforeach
+                            @empty
+                                <span class="text-secondary" style="font-size:.8rem">No roles assigned</span>
+                            @endforelse
                         </div>
-                        <p class="text-secondary mt-1 mb-0" style="font-size:.75rem">You cannot change your own roles.</p>
+                        @if($user->id === auth()->id())
+                            <p class="text-secondary mt-1 mb-0" style="font-size:.75rem">You cannot change your own roles.</p>
+                        @else
+                            <p class="text-secondary mt-1 mb-0" style="font-size:.75rem">You don't have permission to change roles.</p>
+                        @endif
                     @else
                         @php
                             $userRoles = old('roles', $user->roles->pluck('slug')->all());

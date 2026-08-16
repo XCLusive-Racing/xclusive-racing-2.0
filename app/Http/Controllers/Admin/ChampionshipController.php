@@ -82,11 +82,12 @@ class ChampionshipController extends Controller
     public function show(Championship $championship)
     {
         $championship->load(['classes', 'registrations.user', 'registrations.championshipClass', 'penalties.user', 'penalties.race']);
-        $rounds   = $championship->rounds()->with('registrations')->get();
-        $standings = $championship->computeStandings();
-        $users    = User::orderBy('name')->get();
+        $rounds         = $championship->rounds()->with('registrations')->get();
+        $standings      = $championship->computeStandings();
+        $classStandings = $championship->computeClassStandings();
+        $users          = User::orderBy('name')->get();
 
-        return view('admin.championships.show', compact('championship', 'rounds', 'standings', 'users'));
+        return view('admin.championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'users'));
     }
 
     public function edit(Championship $championship)
@@ -149,6 +150,15 @@ class ChampionshipController extends Controller
 
         return redirect()->route('admin.championships.show', $championship)
             ->with('success', 'Championship updated successfully!');
+    }
+
+    public function destroy(Championship $championship)
+    {
+        $name = $championship->name;
+        $championship->delete();
+
+        return redirect()->route('admin.championships.index')
+            ->with('success', 'Championship "' . $name . '" has been deleted. Its rounds remain as standalone races.');
     }
 
     public function roundCreate(Championship $championship)
@@ -238,6 +248,10 @@ class ChampionshipController extends Controller
             ->with('success', 'Penalty removed.');
     }
 
+    // Upserts by car_class instead of delete-then-recreate, so classes that are still
+    // selected keep their id — otherwise every save would cascade-delete every driver's
+    // registration (championship_registrations.championship_class_id cascades on delete),
+    // even when nothing about the classes actually changed.
     private function syncClasses(Request $request, Championship $championship): void
     {
         $classesJson = $request->input('classes_json');
@@ -250,10 +264,11 @@ class ChampionshipController extends Controller
             return;
         }
 
-        $championship->classes()->delete();
+        $existingByCarClass = $championship->classes()->get()->keyBy('car_class');
+        $keptIds = [];
 
         foreach ($classes as $i => $class) {
-            $championship->classes()->create([
+            $attrs = [
                 'name'           => $class['name'] ?? 'Class ' . ($i + 1),
                 'color'          => $class['color'] ?? '#db2777',
                 'car_class'      => $class['car_class'] ?? null,
@@ -261,8 +276,18 @@ class ChampionshipController extends Controller
                 'sr_requirement' => $class['sr_requirement'] ?? null,
                 'min_rating'     => $class['min_rating'] ?? null,
                 'sort_order'     => $i,
-            ]);
+            ];
+
+            $existing = $attrs['car_class'] ? $existingByCarClass->get($attrs['car_class']) : null;
+            if ($existing) {
+                $existing->update($attrs);
+                $keptIds[] = $existing->id;
+            } else {
+                $keptIds[] = $championship->classes()->create($attrs)->id;
+            }
         }
+
+        $championship->classes()->whereNotIn('id', $keptIds)->delete();
     }
 
     private function parsePointsSystem(?string $value): ?array

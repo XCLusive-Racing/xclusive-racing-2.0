@@ -38,6 +38,35 @@ class User extends Authenticatable
         ];
     }
 
+    // Checks this user's per-game rating (elo_{game}/sr_{game} — the same numbers shown on
+    // the leaderboard) against an SR/rating requirement. Returns an error message if they
+    // don't qualify, or null if they do. Games with no tracked rating (e.g. AC Rally) can't
+    // be checked, so requirements are skipped rather than blocking everyone.
+    public function requirementFailure(string $game, ?string $srRequirement, ?string $minRating): ?string
+    {
+        if (!in_array($game, ['acc', 'lmu', 'iracing'])) {
+            return null;
+        }
+
+        if ($srRequirement) {
+            $userSr = (float) ($this->{"sr_{$game}"} ?? 0);
+            if ($userSr < (float) $srRequirement) {
+                return 'You need at least SR ' . number_format((float) $srRequirement, 1)
+                    . ' to register (yours: ' . number_format($userSr, 1) . ').';
+            }
+        }
+
+        if ($minRating && $minRating !== 'all') {
+            $threshold = collect(self::ranks())->firstWhere('slug', $minRating)['min'] ?? 0;
+            $userElo   = (int) ($this->{"elo_{$game}"} ?? 0);
+            if ($userElo < $threshold) {
+                return 'You need at least ' . ucfirst($minRating) . ' rank to register for this class.';
+            }
+        }
+
+        return null;
+    }
+
     public function isSuspended(): bool
     {
         if (!$this->is_suspended) return false;
@@ -80,6 +109,11 @@ class User extends Authenticatable
     }
 
     public function canSeeUsers(): bool
+    {
+        return $this->hasAnyRole(['owner', 'moderator', 'event_manager']);
+    }
+
+    public function canManageRoles(): bool
     {
         return $this->hasAnyRole(['owner', 'moderator']);
     }

@@ -175,6 +175,7 @@ class RaceController extends Controller
             'description'          => 'nullable|string',
             'is_multiclass'        => 'nullable|boolean',
             'classes_json'         => 'nullable|string',
+            'ftp_server_id'        => 'nullable|exists:ftp_servers,id',
             'events'               => 'required|array|min:1|max:20',
             'events.*.title'           => 'required|string|max:255',
             'events.*.track'           => 'required|string|max:255',
@@ -203,15 +204,43 @@ class RaceController extends Controller
             'status'               => 'open',
         ];
 
-        $races = [];
+        $eventData = [];
         foreach ($request->events as $event) {
-            $races[] = Race::create(array_merge($shared, [
+            $eventData[] = $this->deriveFormatFields(array_merge($shared, [
                 'title'        => $event['title'],
                 'track'        => $event['track'],
                 'scheduled_at' => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $event['scheduled_at'], 'Europe/London')->utc(),
                 'weather'      => $event['weather'] ?: $shared['weather'],
                 'time_of_day'  => $event['time_of_day'] ?: $shared['time_of_day'],
             ]));
+        }
+
+        // Assign the same server to the whole batch — validate every event's slot up front
+        // (against the DB and against each other) before creating anything, same rule as a
+        // single race: the event's own time is its slot on that server.
+        $server = $request->filled('ftp_server_id') ? FtpServer::find($request->ftp_server_id) : null;
+        if ($server) {
+            $seenSlots = [];
+            foreach ($eventData as $i => $data) {
+                if (!$server->isValidSlot($data['scheduled_at'])) {
+                    return back()->withInput()->withErrors(['events.' . $i . '.scheduled_at' => 'Row ' . ($i + 1) . ': ' . self::ERR_SLOT_WRONG_SERVER]);
+                }
+                $slotKey = $data['scheduled_at']->format('Y-m-d H:i');
+                if (in_array($slotKey, $server->takenSlots(), true) || isset($seenSlots[$slotKey])) {
+                    return back()->withInput()->withErrors(['events.' . $i . '.scheduled_at' => 'Row ' . ($i + 1) . ': ' . self::ERR_SLOT_TAKEN]);
+                }
+                $seenSlots[$slotKey] = true;
+            }
+        }
+
+        $races = [];
+        foreach ($eventData as $data) {
+            $data['ftp_server_id'] = $server?->id;
+            if ($server) {
+                $data['slot_time']          = $data['scheduled_at']->copy();
+                $data['config_push_status'] = 'pending';
+            }
+            $races[] = Race::create($data);
         }
 
         if ($request->boolean('is_multiclass')) {

@@ -292,12 +292,12 @@
                         </div>
                         <div class="d-flex align-items-center justify-content-between px-4 py-2" style="background:#f9fafb">
                             <span class="text-secondary" style="font-size:.72rem">
-                                Edit and save to override the auto-generated version.
+                                Edit and save to override the auto-generated version. This does not push to the server — the config is pushed automatically at the race's scheduled slot time.
                                 @if($hasOverride) Auto-generation is paused for this file. @endif
                             </span>
                             <button type="submit" class="btn btn-sm fw-black text-uppercase text-white"
                                     style="background:#059669;font-size:.72rem;padding:4px 14px">
-                                Save
+                                Save Custom Override
                             </button>
                         </div>
                     </form>

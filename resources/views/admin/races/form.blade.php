@@ -435,11 +435,11 @@ $mcExisting = $isEdit
                         @endunless
                     </div>
 
-                    {{-- ── gPortal Server & Slot (single only) ─────────────── --}}
+                    {{-- ── gPortal Server & Slot (single + bulk share one selection) ─────────────── --}}
                     @if($servers->isNotEmpty())
-                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6" data-mode-single>
+                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
                         <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">gPortal Server <span class="fw-normal" style="text-transform:none">(optional)</span></p>
-                        <p class="text-secondary mb-3" style="font-size:.75rem">Assign a server slot — config will be auto-pushed 10 minutes before the reset.</p>
+                        <p class="text-secondary mb-3" style="font-size:.75rem">Assign a server — config will be auto-pushed 10 minutes before each reset.</p>
 
                         <div class="mb-3">
                             <label class="form-label">Server</label>
@@ -461,7 +461,8 @@ $mcExisting = $isEdit
                         </div>
 
                         <div id="gp-scheduled-note" class="small text-secondary" style="display:none">
-                            This race's own date &amp; time (set above) is used as its slot on this server.
+                            <span data-mode-single>This race's own date &amp; time (set above) is used as its slot on this server.</span>
+                            <span data-mode-bulk style="display:none">Each event's own date &amp; time (set below) is used as its slot on this server — a time that doesn't line up with a restart, or that collides with another race, will be rejected for the whole batch.</span>
                         </div>
                         @error('scheduled_at') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                     </div>

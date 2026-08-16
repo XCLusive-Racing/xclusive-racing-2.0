@@ -74,12 +74,23 @@
                 <div class="px-4 pt-4 pb-3">
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Points System</p>
 
-                    <div class="mb-3">
-                        <label class="form-label">Points per position <span class="fw-normal text-secondary">(comma-separated, 1st to last)</span></label>
-                        <input type="text" name="points_system" value="{{ old('points_system', '25,18,15,12,10,8,6,4,2,1') }}"
-                               class="form-control @error('points_system') is-invalid @enderror"
-                               placeholder="25,18,15,12,10,8,6,4,2,1">
-                        @error('points_system') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    <div class="mb-3" data-points-wrap>
+                        <label class="form-label">Points per Position</label>
+                        <div class="d-flex flex-wrap gap-2 mb-2" data-points-chips></div>
+                        <div class="d-flex gap-2">
+                            <button type="button" data-points-add class="btn btn-sm fw-bold text-uppercase"
+                                    style="background:rgba(219,39,119,.1);color:#db2777;border:1px solid rgba(219,39,119,.3);font-size:.72rem">
+                                + Position
+                            </button>
+                            <button type="button" data-points-remove class="btn btn-sm fw-bold text-uppercase"
+                                    style="background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;font-size:.72rem">
+                                − Position
+                            </button>
+                        </div>
+                        <input type="hidden" name="points_system" data-points-json
+                               value="{{ old('points_system', '25,18,15,12,10,8,6,4,2,1') }}"
+                               class="@error('points_system') is-invalid @enderror">
+                        @error('points_system') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="row g-3">
@@ -238,30 +249,33 @@
             {{-- Multiclass --}}
             <div class="admin-card mb-4">
                 <div class="px-4 pt-4 pb-3">
-                    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Multiclass</p>
+                    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Multiclass <span class="fw-normal" style="text-transform:none">(optional)</span></p>
 
-                    <div class="mb-3">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="is_multiclass"
-                                   data-multiclass-checkbox {{ old('is_multiclass') ? 'checked' : '' }}>
-                            <label class="form-check-label fw-bold" for="is_multiclass">Enable Multiclass</label>
-                        </div>
-                        <input type="hidden" name="is_multiclass" data-multiclass-flag value="{{ old('is_multiclass') ? '1' : '0' }}">
+                    <input type="hidden" name="is_multiclass" data-multiclass-flag value="{{ old('is_multiclass', '0') }}">
+                    <input type="hidden" name="classes_json" data-multiclass-json value="{{ old('classes_json', '[]') }}">
+
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        @foreach([
+                            'GT3' => ['color' => '#7c3aed', 'label' => 'GT3'],
+                            'GT4' => ['color' => '#2563eb', 'label' => 'GT4'],
+                            'GT2' => ['color' => '#db2777', 'label' => 'GT2'],
+                            'TCX' => ['color' => '#16a34a', 'label' => 'TCX'],
+                            'GTC' => ['color' => '#ea580c', 'label' => 'GTC'],
+                        ] as $cls => $meta)
+                        <label data-mc-label="{{ $cls }}"
+                               class="d-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
+                               style="cursor:pointer;border:2px solid #e5e7eb;font-size:.85rem;user-select:none;background:#fff;color:#374151;transition:all .15s">
+                            <input type="checkbox" data-mc-class="{{ $cls }}" data-mc-color="{{ $meta['color'] }}" class="d-none">
+                            <span style="width:10px;height:10px;border-radius:50%;background:{{ $meta['color'] }};flex-shrink:0"></span>
+                            {{ $meta['label'] }}
+                        </label>
+                        @endforeach
                     </div>
 
-                    <div data-multiclass-section style="{{ old('is_multiclass') ? '' : 'display:none' }}">
-                        <div class="mb-3">
-                            <div data-multiclass-list></div>
+                    {{-- Per-class max drivers/SR/rating (shown per selected class) --}}
+                    <div data-mc-drivers-wrap class="d-flex flex-wrap gap-3" style="display:none"></div>
 
-                            <button type="button" data-multiclass-add
-                                    class="btn btn-sm fw-bold text-uppercase"
-                                    style="background:rgba(219,39,119,.1);color:#db2777;border:1px solid rgba(219,39,119,.3);font-size:.72rem">
-                                + Add Class
-                            </button>
-                        </div>
-
-                        <input type="hidden" name="classes_json" data-multiclass-json value="[]">
-                    </div>
+                    <div class="text-secondary mt-2" style="font-size:.75rem" data-mc-hint>Select one or more classes to enable multiclass</div>
                 </div>
             </div>
 
@@ -292,6 +306,22 @@
 
     </div>
 </form>
+
+<script>
+(function () {
+    const wrap = document.querySelector('[data-multiclass-wrap]');
+    if (!wrap) return;
+    const hideEls = wrap.querySelectorAll('[data-multiclass-hide-when-active]');
+
+    function sync() {
+        const active = wrap.querySelectorAll('[data-mc-class]:checked').length > 0;
+        hideEls.forEach(el => el.style.display = active ? 'none' : '');
+    }
+
+    wrap.querySelectorAll('[data-mc-class]').forEach(cb => cb.addEventListener('change', sync));
+    sync();
+})();
+</script>
 
 @endsection
 

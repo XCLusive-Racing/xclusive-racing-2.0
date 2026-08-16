@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Championship;
+use App\Models\ChampionshipClass;
 use App\Models\ChampionshipRegistration;
 use Illuminate\Http\Request;
 
@@ -22,10 +23,11 @@ class ChampionshipController extends Controller
     public function show(Championship $championship)
     {
         $championship->load(['classes', 'registrations.user', 'registrations.championshipClass']);
-        $rounds    = $championship->rounds()->where('status', '!=', 'draft')->orderBy('round_number')->get();
-        $standings = $championship->computeStandings();
+        $rounds         = $championship->rounds()->where('status', '!=', 'draft')->orderBy('round_number')->get();
+        $standings      = $championship->computeStandings();
+        $classStandings = $championship->computeClassStandings();
 
-        return view('championships.show', compact('championship', 'rounds', 'standings'));
+        return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings'));
     }
 
     public function register(Request $request, Championship $championship)
@@ -48,10 +50,22 @@ class ChampionshipController extends Controller
             return back()->with('error', 'Championship is full.');
         }
 
+        if ($failure = $user->requirementFailure($championship->game, $championship->sr_requirement, $championship->min_rating)) {
+            return back()->with('error', $failure);
+        }
+
         $classId = null;
         if ($championship->is_multiclass) {
             $request->validate(['championship_class_id' => 'required|exists:championship_classes,id']);
             $classId = $request->championship_class_id;
+
+            $class = ChampionshipClass::where('id', $classId)
+                ->where('championship_id', $championship->id)
+                ->firstOrFail();
+
+            if ($failure = $user->requirementFailure($championship->game, $class->sr_requirement, $class->min_rating)) {
+                return back()->with('error', $failure);
+            }
         }
 
         ChampionshipRegistration::create([

@@ -181,7 +181,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/races/{race}', [AdminRaceController::class, 'destroy'])->name('races.destroy');
 
     // Championships
-    Route::resource('championships', AdminChampionshipController::class)->except(['destroy']);
+    Route::resource('championships', AdminChampionshipController::class);
     Route::get('championships/{championship}/rounds/create', [AdminChampionshipController::class, 'roundCreate'])->name('championships.rounds.create');
     Route::post('championships/{championship}/rounds', [AdminChampionshipController::class, 'addRound'])->name('championships.rounds.store');
     Route::delete('championships/{championship}/rounds/{race}', [AdminChampionshipController::class, 'removeRound'])->name('championships.rounds.destroy');
@@ -253,8 +253,8 @@ Route::middleware(['auth', 'role:owner,admin,event_manager,steward'])->prefix('a
     Route::patch('/reports/{report}/status', [AdminReportController::class, 'updateStatus'])->name('reports.status');
 });
 
-// Owner + moderator — Users
-Route::middleware(['auth', 'role:owner,moderator'])->prefix('admin')->name('admin.')->group(function () {
+// Owner + moderator + event_manager — Users
+Route::middleware(['auth', 'role:owner,moderator,event_manager'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::get('/users/data', [AdminUserController::class, 'data'])->name('users.data');
     Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
