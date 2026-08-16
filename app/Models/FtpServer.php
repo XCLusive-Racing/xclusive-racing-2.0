@@ -51,12 +51,17 @@ class FtpServer extends Model
             return true;
         }
 
-        if ($utcDateTime->minute !== 0 || $utcDateTime->second !== 0) {
+        // reset_start_hour is configured against the wall-clock hour admins actually see
+        // (Europe/London) — checking the raw UTC hour instead would flip even/odd parity
+        // for the whole BST period (UTC+1 in summer), since it shifts every hour by one.
+        $localDateTime = $utcDateTime->copy()->timezone('Europe/London');
+
+        if ($localDateTime->minute !== 0 || $localDateTime->second !== 0) {
             return false;
         }
 
         $intervalHours = $this->reset_interval_minutes / 60;
-        $offset        = $utcDateTime->hour - (int) $this->reset_start_hour;
+        $offset        = $localDateTime->hour - (int) $this->reset_start_hour;
 
         return $offset >= 0 && fmod($offset, $intervalHours) === 0.0;
     }
