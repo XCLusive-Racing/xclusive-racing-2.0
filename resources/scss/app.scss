@@ -2203,6 +2203,13 @@ span.flatpickr-weekday {
         letter-spacing: .06em;
         color: #C8FF00;
         line-height: 1.2;
+    }
+
+    &__time-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
         margin-bottom: 3px;
     }
 
@@ -2210,6 +2217,55 @@ span.flatpickr-weekday {
         font-size: .72rem;
         color: rgba(255,255,255,.7);
         margin-bottom: .65rem;
+    }
+
+    // Registrations count — top-right over the image
+    &__lobby {
+        position: absolute;
+        top: .6rem;
+        right: .6rem;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(0,0,0,.6);
+        border-radius: 8px;
+        padding: 6px 12px;
+        color: white;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700;
+        font-size: .8rem;
+
+        i { font-size: .75rem; }
+    }
+
+    // SR minimum badge — right-aligned next to the day/time text
+    &__sr-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+
+        &-letter {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #0f0f1a;
+            border: 2px solid;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .5rem;
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+
+        &-text {
+            font-size: .68rem;
+            font-weight: 900;
+            color: #e5e7eb;
+            white-space: nowrap;
+        }
     }
 }
 
@@ -5078,9 +5134,17 @@ table.dataTable thead th {
 .xcl-sb-next__badges-row {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: .3rem;
     flex-wrap: wrap;
-    margin-bottom: .6rem;
+    margin-bottom: 20px;
+}
+
+.xcl-sb-next__hero-duration {
+    position: absolute;
+    bottom: .5rem;
+    right: .75rem;
+    z-index: 3;
 }
 
 .xcl-sb-badge {
@@ -5129,7 +5193,7 @@ table.dataTable thead th {
 .xcl-sb-next__details {
     display: flex;
     flex-direction: column;
-    gap: .28rem;
+    gap: .55rem;
     margin-bottom: .65rem;
     padding-bottom: .65rem;
     border-bottom: 1px solid rgba(31,41,55,.9);
@@ -5163,14 +5227,6 @@ table.dataTable thead th {
     white-space: nowrap;
 }
 
-.xcl-sb-next__footer-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: .6rem;
-    gap: .5rem;
-}
-
 .xcl-sb-next__duration-badge {
     display: inline-flex;
     align-items: center;
@@ -5199,16 +5255,17 @@ table.dataTable thead th {
     letter-spacing: .04em;
     text-align: right;
     line-height: 1.25;
+    white-space: nowrap;
 }
 
 .xcl-sb-next__join-btn {
     display: block;
     width: 100%;
-    margin-top: auto; // absorbs any leftover height in .xcl-sb-next__info, keeping the button pinned to the bottom
+    margin-top: .25rem;
     background: #7B2FBE;
     color: white;
     text-align: center;
-    padding: .6rem .75rem;
+    padding: 1.2rem .75rem;
     font-family: 'Poppins', sans-serif;
     font-weight: 700;
     font-size: 1rem;

@@ -123,6 +123,13 @@
                             'ac'      => 'AC RALLY',
                             default   => strtoupper($race->game),
                         };
+                        $ecPlatIcons = match($race->game) {
+                            'acc'     => [['fa-brands fa-playstation', 'PS5'], ['fa-brands fa-xbox', 'Xbox']],
+                            'lmu'     => [['fa-brands fa-steam', 'Steam'], ['fa-solid fa-desktop', 'PC']],
+                            'iracing' => [['fa-brands fa-steam', 'Steam'], ['fa-solid fa-desktop', 'PC']],
+                            'ac'      => [['fa-brands fa-steam', 'Steam'], ['fa-solid fa-desktop', 'PC']],
+                            default   => [['fa-solid fa-desktop', 'PC']],
+                        };
                     @endphp
                     <div class="col"
                          data-event-card
@@ -149,31 +156,46 @@
                                     </div>
                                     @endif
                                 </div>
+
+                                {{-- Registrations count — top-right --}}
+                                <div class="xcl-ec2__lobby">
+                                    <i class="fa-solid fa-comments"></i>
+                                    <span>{{ $race->registrations_count }} / {{ $race->max_drivers ?? '∞' }}</span>
+                                </div>
+
+                                {{-- Platform badges — bottom-left --}}
+                                <div class="xcl-sb-next__hero-platforms">
+                                    @foreach($ecPlatIcons as [$icon, $label])
+                                    <span class="xcl-sb-next__hero-platform-icon">
+                                        <i class="{{ $icon }}"></i> {{ $label }}
+                                    </span>
+                                    @endforeach
+                                </div>
                             </div>
                             <div class="xcl-ec2__body">
-                                <div class="xcl-ec2__time">
-                                    {{ strtoupper($race->scheduledAtUk()->format('l')) }} /
-                                    {{ strtoupper($race->scheduledAtUk()->format('g:i A T')) }}
+                                @php
+                                    [$srLetter, $srColor] = $race->srTier();
+                                    [$xclName,  $xclColor] = $race->xclTierInfo();
+                                @endphp
+                                <div class="xcl-ec2__time-row">
+                                    <div class="xcl-ec2__time">
+                                        {{ strtoupper($race->scheduledAtUk()->format('l')) }} /
+                                        {{ strtoupper($race->scheduledAtUk()->format('g:i A T')) }}
+                                    </div>
+                                    @if($srLetter)
+                                    <span class="xcl-ec2__sr-badge">
+                                        <span class="xcl-ec2__sr-badge-letter" style="border-color:{{ $srColor }};color:{{ $srColor }}">{{ $srLetter }}</span>
+                                        <span class="xcl-ec2__sr-badge-text">SR {{ $race->sr_requirement }}.0+</span>
+                                    </span>
+                                    @endif
                                 </div>
                                 <div class="xcl-ec2__meta">
                                     {{ $race->scheduledAtUk()->format('D, M d') }}
                                     @if($race->track) | {{ $race->track }} @endif
                                 </div>
-                                @php
-                                    [$srLetter, $srColor] = $race->srTier();
-                                    [$xclName,  $xclColor] = $race->xclTierInfo();
-                                @endphp
-                                @if($srLetter || $xclName)
-                                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;align-items:center">
-                                    @if($srLetter)
-                                    <span style="display:inline-flex;align-items:center;gap:4px">
-                                        <span style="width:18px;height:18px;border-radius:50%;background:#0f0f1a;border:2px solid {{ $srColor }};display:inline-flex;align-items:center;justify-content:center;color:{{ $srColor }};font-size:.5rem;font-weight:900;flex-shrink:0">{{ $srLetter }}</span>
-                                        <span style="font-size:.6rem;font-weight:900;color:#e5e7eb;white-space:nowrap">SR {{ $race->sr_requirement }}.0+</span>
-                                    </span>
-                                    @endif
-                                    @if($xclName)
+                                @if($xclName)
+                                <div style="margin-bottom:8px">
                                     <span style="font-size:.6rem;font-weight:900;text-transform:capitalize;padding:2px 7px;border-radius:4px;border:1px solid {{ $xclColor }}66;background:{{ $xclColor }}22;color:{{ $xclColor }}">{{ $xclName }}+</span>
-                                    @endif
                                 </div>
                                 @endif
                                 <a href="{{ route('events.show', $race) }}" class="xcl-see-event-btn">SEE EVENT</a>

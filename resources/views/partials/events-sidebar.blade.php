@@ -12,7 +12,8 @@ $tickerArticles = NewsArticle::published()
     ->get();
 
 $sbNextEvent = Race::where('scheduled_at', '>', $now)
-    ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon'])
+    ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon','car_class','event_format_id'])
+    ->with('eventFormat:id,race1_mins,race2_mins')
     ->orderBy('scheduled_at')
     ->first();
 if ($sbNextEvent) $sbNextEvent->loadCount('registrations');
@@ -232,12 +233,6 @@ foreach ($sbGames as $game => $col) {
 
                                 <div class="xcl-sb-next__hero-gradient"></div>
 
-                                @if($sbNextEvent->icon)
-                                <div class="xcl-sb-next__icon-overlay">
-                                    <img src="{{ $sbNextEvent->icon_url }}" alt="{{ $sbNextEvent->title }}">
-                                </div>
-                                @endif
-
                                 {{-- Countdown top-left --}}
                                 <div class="xcl-sb-countdown xcl-sb-countdown--hero">
                                     <span class="xcl-sb-countdown__label">STARTS IN</span>
@@ -251,7 +246,7 @@ foreach ($sbGames as $game => $col) {
                                     <i class="fa-solid fa-comments"></i>
                                     <span>{{ $sbNextEvent->registrations_count }} / {{ $sbNextEvent->max_drivers ?? '∞' }}</span>
                                 </div>
-                                {{-- Platform icons bottom --}}
+                                {{-- Platform icons bottom-left --}}
                                 <div class="xcl-sb-next__hero-platforms">
                                     @foreach($nextPlatIcons as [$icon, $label])
                                     <span class="xcl-sb-next__hero-platform-icon">
@@ -259,27 +254,41 @@ foreach ($sbGames as $game => $col) {
                                     </span>
                                     @endforeach
                                 </div>
+
+                                {{-- Race length bottom-right --}}
+                                @if($sbNextEvent->raceDurationMinutes())
+                                <div class="xcl-sb-next__hero-duration">
+                                    <span class="xcl-sb-next__duration-badge">
+                                        <i class="fa-solid fa-clock"></i> {{ $sbNextEvent->raceDurationMinutes() }} MIN
+                                    </span>
+                                </div>
+                                @endif
                             </div>
 
                             {{-- Info below image --}}
                             <div class="xcl-sb-next__info">
 
-                                {{-- Badges row --}}
+                                {{-- Badges row + scheduled day/date/time, aligned on one line --}}
                                 <div class="xcl-sb-next__badges-row">
-                                    <span class="xcl-sb-badge xcl-sb-badge--game">{{ $nextGameLabel }}</span>
-                                    <span class="xcl-sb-badge xcl-sb-badge--sr">4.0 SR</span>
-                                    @if($sbNextEvent->status === 'open')
-                                        <span class="xcl-sb-badge xcl-sb-badge--open">OPEN</span>
-                                    @else
-                                        <span class="xcl-sb-badge xcl-sb-badge--closed">CLOSED</span>
-                                    @endif
+                                    <div class="d-flex align-items-center gap-1 flex-wrap">
+                                        <span class="xcl-sb-badge xcl-sb-badge--game">{{ $nextGameLabel }}</span>
+                                        <span class="xcl-sb-badge xcl-sb-badge--sr">4.0 SR</span>
+                                        @if($sbNextEvent->status === 'open')
+                                            <span class="xcl-sb-badge xcl-sb-badge--open">OPEN</span>
+                                        @else
+                                            <span class="xcl-sb-badge xcl-sb-badge--closed">CLOSED</span>
+                                        @endif
+                                    </div>
+                                    <span class="xcl-sb-next__next-time">
+                                        {{ strtoupper($sbNextEvent->scheduledAtUk()->format('D, M d, g:iA T')) }}
+                                    </span>
                                 </div>
 
                                 {{-- Race details --}}
                                 <div class="xcl-sb-next__details">
                                     <div class="xcl-sb-next__detail-item">
                                         <span class="xcl-sb-next__detail-label">CAR CLASS</span>
-                                        <span class="xcl-sb-next__detail-value">{{ $sbNextEvent->title ?? '—' }}</span>
+                                        <span class="xcl-sb-next__detail-value">{{ $sbNextEvent->car_class ?? '—' }}</span>
                                     </div>
                                     <div class="xcl-sb-next__detail-item">
                                         <span class="xcl-sb-next__detail-label">TRACK</span>
@@ -291,17 +300,6 @@ foreach ($sbGames as $game => $col) {
                                             <i class="fa-solid fa-sun" style="color:#fbbf24;font-size:.7rem"></i> DRY
                                         </span>
                                     </div>
-                                </div>
-
-                                {{-- Duration + scheduled time --}}
-                                <div class="xcl-sb-next__footer-row">
-                                    <span class="xcl-sb-next__duration-badge">
-                                        <i class="fa-solid fa-clock"></i> 20 MIN
-                                    </span>
-                                    <span class="xcl-sb-next__next-time">
-                                        {{ strtoupper($sbNextEvent->scheduledAtUk()->format('D, M d')) }}<br>
-                                        {{ strtoupper($sbNextEvent->scheduledAtUk()->format('g:iA T')) }}
-                                    </span>
                                 </div>
 
                                 <a href="{{ route('events.show', $sbNextEvent) }}" class="xcl-sb-next__join-btn">
@@ -360,10 +358,6 @@ foreach ($sbGames as $game => $col) {
                                     <img src="{{ $event->icon_url }}" alt="{{ $event->title }}">
                                 </div>
                                 @endif
-
-                                <div class="xcl-sb-up-card__title">
-                                    {{ strtoupper($event->title ?? $event->gameLabel()) }}
-                                </div>
 
                                 <div class="xcl-sb-up-card__meta-row">
                                     <div class="xcl-sb-countdown xcl-sb-countdown--small">
