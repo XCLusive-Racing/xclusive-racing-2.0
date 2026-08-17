@@ -162,10 +162,23 @@ class Race extends Model
         return ['D', '#6b7280'];
     }
 
-    /** Returns [display-name, hex-color] for the XCL Rating tier badge. */
-    public function xclTierInfo(): array
+    /** Returns [background-hex, text-hex] for the car class badge on event cards. */
+    public function carClassStyle(): array
     {
-        return match ($this->min_rating) {
+        return match (strtoupper((string) $this->car_class)) {
+            'GT3'  => ['#DC2626', '#FFFFFF'],
+            'GT4'  => ['#2563EB', '#FFFFFF'],
+            'GT2'  => ['#16A34A', '#FFFFFF'],
+            'GTC'  => ['#F97316', '#FFFFFF'],
+            'TCX'  => ['#FFFFFF', '#0D0D0D'],
+            default => ['#374151', '#FFFFFF'],
+        };
+    }
+
+    /** Returns [display-name, hex-color] for a given XCL Rating tier slug. */
+    public static function ratingTierInfo(?string $tier): array
+    {
+        return match ($tier) {
             'rookie'   => ['Rookie',   '#ef4444'],
             'bronze'   => ['Bronze',   '#cd7f32'],
             'silver'   => ['Silver',   '#9ca3af'],
@@ -174,5 +187,17 @@ class Race extends Model
             'alien'    => ['Alien',    '#10b981'],
             default    => ['',         '#6b7280'],
         };
+    }
+
+    /** Returns [display-name, hex-color] for this race's minimum XCL Rating tier badge. */
+    public function xclTierInfo(): array
+    {
+        return static::ratingTierInfo($this->min_rating);
+    }
+
+    /** Returns [display-name, hex-color] for this race's maximum XCL Rating tier badge. */
+    public function xclMaxTierInfo(): array
+    {
+        return static::ratingTierInfo($this->max_rating);
     }
 }

@@ -157,10 +157,17 @@
                                     @endif
                                 </div>
 
-                                {{-- Car class — top-left --}}
-                                @if($race->car_class)
-                                <div class="xcl-ec2__class-badge">{{ $race->car_class }}</div>
-                                @endif
+                                {{-- Car class + day/time — top-left --}}
+                                <div class="xcl-ec2__top-left-row">
+                                    @if($race->car_class)
+                                    @php [$classBg, $classText] = $race->carClassStyle(); @endphp
+                                    <div class="xcl-ec2__class-badge" style="background:{{ $classBg }};color:{{ $classText }}">{{ $race->car_class }}</div>
+                                    @endif
+                                    <div class="xcl-ec2__time-badge">
+                                        {{ strtoupper($race->scheduledAtUk()->format('l')) }} /
+                                        {{ strtoupper($race->scheduledAtUk()->format('g:i A T')) }}
+                                    </div>
+                                </div>
 
                                 {{-- Registrations count — top-right --}}
                                 <div class="xcl-ec2__lobby">
@@ -176,41 +183,52 @@
                                     </span>
                                     @endforeach
                                 </div>
+
+                                {{-- Race length — bottom-right --}}
+                                @if($race->raceDurationMinutes())
+                                <div class="xcl-sb-next__hero-duration">
+                                    <span class="xcl-sb-next__duration-badge">
+                                        <i class="fa-solid fa-clock"></i> {{ $race->raceDurationMinutes() }} MIN
+                                    </span>
+                                </div>
+                                @endif
                             </div>
                             <div class="xcl-ec2__body">
                                 @php
-                                    [$srLetter, $srColor] = $race->srTier();
                                     [$xclName,  $xclColor] = $race->xclTierInfo();
+                                    [$xclMaxName, $xclMaxColor] = $race->xclMaxTierInfo();
+                                    $weatherIcon = match($race->weather) {
+                                        'dry'   => 'fa-sun',
+                                        'wet'   => 'fa-cloud-rain',
+                                        'mixed' => 'fa-cloud-sun-rain',
+                                        'random' => 'fa-dice',
+                                        default => null,
+                                    };
                                 @endphp
-                                <div class="xcl-ec2__time-row">
-                                    <div class="xcl-ec2__time">
-                                        {{ strtoupper($race->scheduledAtUk()->format('l')) }} /
-                                        {{ strtoupper($race->scheduledAtUk()->format('g:i A T')) }}
-                                    </div>
-                                </div>
                                 <div class="xcl-ec2__badges-row">
                                     <span class="xcl-sb-badge xcl-sb-badge--game">{{ $gameShort }}</span>
-                                    @if($srLetter)
-                                    <span class="xcl-ec2__sr-badge">
-                                        <span class="xcl-ec2__sr-badge-letter" style="border-color:{{ $srColor }};color:{{ $srColor }}">{{ $srLetter }}</span>
-                                        <span class="xcl-ec2__sr-badge-text">SR {{ $race->sr_requirement }}.0+</span>
-                                    </span>
+                                    @if($race->sr_requirement)
+                                    <span class="xcl-sb-badge xcl-sb-badge--sr">{{ number_format($race->sr_requirement, 1) }} SR</span>
                                     @endif
                                     @if($race->status === 'open')
                                         <span class="xcl-sb-badge xcl-sb-badge--open">OPEN</span>
                                     @else
                                         <span class="xcl-sb-badge xcl-sb-badge--closed">CLOSED</span>
                                     @endif
+                                    @if($xclName)
+                                    <span style="font-size:.6rem;font-weight:900;text-transform:capitalize;padding:2px 7px;border-radius:4px;border:1px solid {{ $xclColor }}66;background:{{ $xclColor }}22;color:{{ $xclColor }}">{{ $xclName }}+</span>
+                                    @endif
+                                    @if($xclMaxName)
+                                    <span style="font-size:.6rem;font-weight:900;text-transform:capitalize;padding:2px 7px;border-radius:4px;border:1px solid {{ $xclMaxColor }}66;background:{{ $xclMaxColor }}22;color:{{ $xclMaxColor }}">{{ $xclMaxName }} max</span>
+                                    @endif
                                 </div>
                                 <div class="xcl-ec2__meta">
                                     {{ $race->scheduledAtUk()->format('D, M d') }}
                                     @if($race->track) | {{ $race->track }} @endif
+                                    @if($weatherIcon)
+                                        | <i class="fa-solid {{ $weatherIcon }}"></i> {{ ucfirst($race->weather) }}
+                                    @endif
                                 </div>
-                                @if($xclName)
-                                <div style="margin-bottom:8px">
-                                    <span style="font-size:.6rem;font-weight:900;text-transform:capitalize;padding:2px 7px;border-radius:4px;border:1px solid {{ $xclColor }}66;background:{{ $xclColor }}22;color:{{ $xclColor }}">{{ $xclName }}+</span>
-                                </div>
-                                @endif
                                 <a href="{{ route('events.show', $race) }}" class="xcl-see-event-btn">SEE EVENT</a>
                             </div>
                         </div>

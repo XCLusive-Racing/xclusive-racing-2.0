@@ -121,9 +121,11 @@
                     $quali2Mins = $fmt ? $fmt->quali2_mins  : null;
                     $race2Mins  = $fmt ? $fmt->race2_mins   : null;
                     $hasPitstop = $fmt && $fmt->pitstop_count > 0;
-                    $pitstopLabel = $hasPitstop
-                    ? ('(' . $fmt->pitstop_count . 'x' . ($fmt->min_stop_secs ? ', ' . $fmt->min_stop_secs . 's' : '') . ')')
-                        : 'None';
+                    $pitstopLabel = !$hasPitstop
+                        ? 'None'
+                        : ($fmt->min_stop_secs
+                            ? $fmt->pitstop_count . 'x, ' . $fmt->min_stop_secs . 's waiting time'
+                            : $fmt->pitstop_count . 'x, fuel only');
                 @endphp
                 @if($pracMins || $qualiMins || $race1Mins || $fmt)
                 <div class="xcl-event-card mb-4">
@@ -177,7 +179,9 @@
                     </div>
                     @if($fmt)
                     <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between">
-                        <span style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em">Pit Stops</span>
+                        <span style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em">
+                            <i class="fa-solid fa-screwdriver-wrench" style="color:#f59e0b;margin-right:6px"></i>Pit Stops
+                        </span>
                         <span style="font-size:.75rem;font-weight:700;color:{{ $hasPitstop ? '#f59e0b' : '#6b7280' }}">{{ $pitstopLabel }}</span>
                     </div>
                     @endif
