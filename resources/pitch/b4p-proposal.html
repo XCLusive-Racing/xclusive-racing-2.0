@@ -857,6 +857,34 @@ const obs = new IntersectionObserver(entries => {
 },{threshold:0.08,rootMargin:'0px 0px -30px 0px'});
 els.forEach(el => obs.observe(el));
 
+// Hero heading: swap EVENTS red <-> + TEAM PARTNERSHIP grey as the page scrolls
+const heroRed = document.querySelector('.h1-red');
+const heroDim = document.querySelector('.h1-dim');
+const RED  = [200, 16, 46, 1];
+const DIM  = [240, 239, 244, 0.2];
+const HERO_SCROLL_DISTANCE = 500;
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function mixColor(from, to, t) {
+  const c = from.map((v, i) => lerp(v, to[i], t));
+  return `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${c[3]})`;
+}
+
+function updateHeroColors() {
+  const t = Math.min(Math.max(window.scrollY / HERO_SCROLL_DISTANCE, 0), 1);
+  heroRed.style.color = mixColor(RED, DIM, t);
+  heroDim.style.color = mixColor(DIM, RED, t);
+}
+
+let heroTicking = false;
+window.addEventListener('scroll', () => {
+  if (!heroTicking) {
+    requestAnimationFrame(() => { updateHeroColors(); heroTicking = false; });
+    heroTicking = true;
+  }
+}, { passive: true });
+
+updateHeroColors();
 
 </script>
 </body>
