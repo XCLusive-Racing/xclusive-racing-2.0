@@ -16,7 +16,7 @@
 @endif
 
 @php
-    $games = ['acc' => 'ACC Console', 'lmu' => 'Le Mans Ultimate', 'iracing' => 'iRacing', 'ac' => 'AC Rally'];
+    $games = ['acc' => 'ACC Console', 'lmu' => 'Le Mans Ultimate', 'iracing' => 'iRacing', 'ac' => 'ACC PC'];
 @endphp
 
 @foreach($games as $gameKey => $gameLabel)

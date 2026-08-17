@@ -32,7 +32,7 @@
 
                 {{-- Game filter --}}
                 <button data-cal-filter="all" class="xcl-filter-btn fw-bold text-uppercase xcl-filter-btn--active">All</button>
-                @foreach([['acc','ACC'],['lmu','LMU'],['iracing','iRacing'],['ac','AC Rally']] as [$g,$l])
+                @foreach([['acc','ACC'],['lmu','LMU'],['iracing','iRacing'],['ac','ACC PC']] as [$g,$l])
                 <button data-cal-filter="{{ $g }}" class="xcl-filter-btn fw-bold text-uppercase">{{ $l }}</button>
                 @endforeach
             </div>
@@ -60,7 +60,7 @@
 
         {{-- Legend --}}
         <div class="d-flex gap-4 flex-wrap mb-4">
-            @foreach([['acc','#7c3aed','ACC Console'],['lmu','#db2777','Le Mans Ultimate'],['iracing','#2563eb','iRacing'],['ac','#16a34a','AC Rally']] as [$g,$c,$l])
+            @foreach([['acc','#7c3aed','ACC Console'],['lmu','#db2777','Le Mans Ultimate'],['iracing','#2563eb','iRacing'],['ac','#16a34a','ACC PC']] as [$g,$c,$l])
             <div class="d-flex align-items-center gap-2">
                 <span class="rounded-1 flex-shrink-0" style="width:10px;height:10px;background:{{ $c }};display:inline-block"></span>
                 <span class="fw-bold text-uppercase" style="font-size:.68rem;color:#1a1a2e !important;letter-spacing:.06em">{{ $l }}</span>

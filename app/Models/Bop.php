@@ -12,7 +12,7 @@ class Bop extends Model
 
     public static function games(): array
     {
-        return ['acc' => 'ACC', 'lmu' => 'LMU', 'iracing' => 'iRacing', 'ac' => 'AC Rally'];
+        return ['acc' => 'ACC', 'lmu' => 'LMU', 'iracing' => 'iRacing', 'ac' => 'ACC PC'];
     }
 
     public static function categories(): array

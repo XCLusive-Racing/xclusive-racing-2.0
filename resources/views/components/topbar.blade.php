@@ -34,11 +34,11 @@
             </a>
         </div>
 
-        {{-- AC Rally --}}
+        {{-- ACC PC --}}
         <div class="play-on-item">
-            <a href="#" class="xcl-game-badge xcl-game-acrally">
-                <img src="/images/home/icons/AC R Logo.png" class="xcl-badge-icon" alt="AC Rally">
-                <span class="xcl-badge-text">AC RALLY</span>
+            <a href="https://www.assettocorsa.net/competizione/" target="_blank" class="xcl-game-badge xcl-game-acrally">
+                <img src="/images/home/icons/ACC Logo.png" class="xcl-badge-icon" alt="ACC PC">
+                <span class="xcl-badge-text">ACC PC</span>
             </a>
         </div>
     </div>

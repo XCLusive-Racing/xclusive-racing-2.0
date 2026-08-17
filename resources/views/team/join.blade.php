@@ -19,7 +19,7 @@
         'esports-drivers' => [
             'title'      => 'Esports Drivers',
             'categories' => ['Esports'],
-            'desc'       => 'Sim racers competing in ACC, LMU, iRacing or AC Rally. Race under the XCLusive banner in official events and leagues.',
+            'desc'       => 'Sim racers competing in ACC, LMU, iRacing or ACC PC. Race under the XCLusive banner in official events and leagues.',
         ],
         'professional-drivers' => [
             'title'      => 'Professional Drivers',

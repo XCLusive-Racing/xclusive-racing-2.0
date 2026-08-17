@@ -7,7 +7,7 @@
                 <label class="form-label">Game <span class="text-danger">*</span></label>
                 <select name="game" class="form-select @error('game') is-invalid @enderror">
                     <option value="">Select game...</option>
-                    @foreach(['acc' => 'ACC Console', 'lmu' => 'Le Mans Ultimate', 'iracing' => 'iRacing', 'ac' => 'AC Rally'] as $val => $label)
+                    @foreach(['acc' => 'ACC Console', 'lmu' => 'Le Mans Ultimate', 'iracing' => 'iRacing', 'ac' => 'ACC PC'] as $val => $label)
                         <option value="{{ $val }}" {{ old('game', $eventFormat->game ?? '') === $val ? 'selected' : '' }}>{{ $label }}</option>
                     @endforeach
                 </select>

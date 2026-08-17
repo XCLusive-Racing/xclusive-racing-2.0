@@ -41,7 +41,7 @@ class User extends Authenticatable
 
     // Checks this user's per-game rating (elo_{game}/sr_{game} — the same numbers shown on
     // the leaderboard) against an SR/rating requirement. Returns an error message if they
-    // don't qualify, or null if they do. Games with no tracked rating (e.g. AC Rally) can't
+    // don't qualify, or null if they do. Games with no tracked rating (e.g. ACC PC) can't
     // be checked, so requirements are skipped rather than blocking everyone.
     public function requirementFailure(string $game, ?string $srRequirement, ?string $minRating): ?string
     {

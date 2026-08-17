@@ -133,8 +133,8 @@ foreach ($sbGames as $game => $col) {
                         <button class="xcl-sb-game-btn xcl-sb-game-btn--iracing" data-sb-game="iracing" title="iRacing">
                             <img src="/images/home/icons/iR Logo.png" alt="iRacing">
                         </button>
-                        <button class="xcl-sb-game-btn xcl-sb-game-btn--ac" data-sb-game="ac" title="AC Rally">
-                            <img src="/images/home/icons/AC R Logo.png" alt="AC Rally">
+                        <button class="xcl-sb-game-btn xcl-sb-game-btn--ac" data-sb-game="ac" title="ACC PC">
+                            <img src="/images/home/icons/ACC Logo.png" alt="ACC PC">
                         </button>
                     </div>
                 </div>
@@ -201,7 +201,7 @@ foreach ($sbGames as $game => $col) {
                         @php
                             $nextGameLabel = match($sbNextEvent->game) {
                                 'acc' => 'ACC', 'lmu' => 'LMU',
-                                'iracing' => 'iRACING', 'ac' => 'AC RALLY',
+                                'iracing' => 'iRACING', 'ac' => 'ACC PC',
                                 default => strtoupper($sbNextEvent->game)
                             };
                             $nextPlatIcons = match($sbNextEvent->game) {
@@ -332,7 +332,7 @@ foreach ($sbGames as $game => $col) {
                             };
                             $upGameLabel = match($event->game) {
                                 'acc' => 'ACC', 'lmu' => 'LMU',
-                                'iracing' => 'iRACING', 'ac' => 'AC RALLY',
+                                'iracing' => 'iRACING', 'ac' => 'ACC PC',
                                 default => strtoupper($event->game),
                             };
                         @endphp

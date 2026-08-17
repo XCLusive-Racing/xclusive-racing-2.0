@@ -30,12 +30,13 @@
             <img src="/images/home/logos/iracing-logo-white.png" class="xcl-badge-hover" alt="iRacing">
         </a>
 
-        <a href="#" class="xcl-game-badge xcl-game-acrally" title="AC Rally">
+        <a href="https://www.assettocorsa.net/competizione/" target="_blank"
+           class="xcl-game-badge xcl-game-acrally" title="Assetto Corsa Competizione · PC">
             <span class="xcl-badge-default">
-                <img src="/images/home/icons/AC_rally_logo.png" class="xcl-badge-icon" alt="AC Rally">
-                AC RALLY
+                <img src="/images/home/icons/ACC_logo.png" class="xcl-badge-icon" alt="ACC PC">
+                ACC PC
             </span>
-            <img src="/images/home/logos/ACRally-logo.png" class="xcl-badge-hover" alt="AC Rally">
+            <img src="/images/home/logos/ACC-logo.png" class="xcl-badge-hover" alt="ACC PC">
         </a>
     </div>
 

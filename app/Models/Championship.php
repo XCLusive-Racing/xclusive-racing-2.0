@@ -66,7 +66,7 @@ class Championship extends Model
             'acc'     => 'ACC Console',
             'lmu'     => 'Le Mans Ultimate',
             'iracing' => 'iRacing',
-            'ac'      => 'AC Rally',
+            'ac'      => 'ACC PC',
             default   => strtoupper($this->game),
         };
     }

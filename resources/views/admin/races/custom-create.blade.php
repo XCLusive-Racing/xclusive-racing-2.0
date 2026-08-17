@@ -40,7 +40,7 @@
                                 <option value="acc"     {{ old('game') === 'acc'     ? 'selected' : '' }}>ACC Console</option>
                                 <option value="lmu"     {{ old('game') === 'lmu'     ? 'selected' : '' }}>Le Mans Ultimate</option>
                                 <option value="iracing" {{ old('game') === 'iracing' ? 'selected' : '' }}>iRacing</option>
-                                <option value="ac"      {{ old('game') === 'ac'      ? 'selected' : '' }}>AC Rally</option>
+                                <option value="ac"      {{ old('game') === 'ac'      ? 'selected' : '' }}>ACC PC</option>
                             </select>
                             @error('game')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
@@ -452,7 +452,7 @@
     let customBgUrl = '';
 
     const gameColors = { acc: '#7c3aed', lmu: '#db2877', iracing: '#2563eb', ac: '#16a34a' };
-    const gameLabels = { acc: 'ACC', lmu: 'LMU', iracing: 'iRACING', ac: 'AC RALLY' };
+    const gameLabels = { acc: 'ACC', lmu: 'LMU', iracing: 'iRACING', ac: 'ACC PC' };
     const wxIcons    = { dry: '☀', wet: '🌧', mixed: '⛅', random: '🎲' };
     const wxLabels   = { dry: 'Dry', wet: 'Wet', mixed: 'Mixed', random: 'Random' };
     const platBadges = {

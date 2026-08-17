@@ -133,7 +133,7 @@
                         <option value="acc"     {{ old('game') === 'acc'     ? 'selected' : '' }}>ACC Console</option>
                         <option value="lmu"     {{ old('game') === 'lmu'     ? 'selected' : '' }}>Le Mans Ultimate</option>
                         <option value="iracing" {{ old('game') === 'iracing' ? 'selected' : '' }}>iRacing</option>
-                        <option value="ac"      {{ old('game') === 'ac'      ? 'selected' : '' }}>AC Rally</option>
+                        <option value="ac"      {{ old('game') === 'ac'      ? 'selected' : '' }}>ACC PC</option>
                     </select>
                     @error('game') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>

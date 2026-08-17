@@ -21,7 +21,7 @@
                     ['acc',     '#7c3aed', 'ACC Console',     'Assetto Corsa Competizione · PS5 & Xbox Series X/S', '/images/home/icons/ACC Logo.png',  false],
                     ['lmu',     '#db2877', 'Le Mans Ultimate', 'Le Mans Ultimate · Premium PC Sim Racing',           '/images/home/icons/LM Logo.png',   false],
                     ['iracing', '#2563eb', 'iRacing',          'iRacing · World\'s Leading Online Sim Racing',       '/images/home/icons/iR Logo.png',   false],
-                    ['ac',      '#16a34a', 'AC Rally',         'Assetto Corsa Rally · PC Sim Racing',                '/images/home/icons/AC R Logo.png', true],
+                    ['ac',      '#16a34a', 'ACC PC',           'Assetto Corsa Competizione · PC Sim Racing',         '/images/home/icons/ACC Logo.png',  true],
                 ] as [$game, $color, $label, $desc, $logo, $comingSoon])
                 @php
                     $count    = $races->where('game', $game)->where('status', 'open')->count();
@@ -120,7 +120,7 @@
                             'acc'     => 'ACC',
                             'lmu'     => 'LMU',
                             'iracing' => 'iRACING',
-                            'ac'      => 'AC RALLY',
+                            'ac'      => 'ACC PC',
                             default   => strtoupper($race->game),
                         };
                         $ecPlatIcons = match($race->game) {
