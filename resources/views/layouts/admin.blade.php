@@ -315,7 +315,9 @@
 
         <div class="d-flex align-items-center gap-3">
             @php
-                $activeStaff = \App\Models\User::whereHas('roles')
+                $activeStaff = \App\Models\User::whereHas('roles', fn($q) => $q->whereIn('slug', [
+                        'owner', 'admin', 'moderator', 'event_manager', 'steward', 'broadcaster',
+                    ]))
                     ->whereNotNull('last_seen_at')
                     ->where('last_seen_at', '>=', now()->subMinutes(10))
                     ->orderByDesc('last_seen_at')
