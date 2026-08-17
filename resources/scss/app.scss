@@ -1112,9 +1112,11 @@ span.flatpickr-weekday {
 .xcl-sidebar__grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    align-items: stretch;
-    min-height: 100%;
-    margin-bottom: 16px; // space before the Real-World Racing strip below
+    align-items: start; // columns sit at their own natural height instead of
+                         // stretching to match the tallest one
+    margin-bottom: 0;    // no extra gap below the grid — spacing to the
+                          // Real-World Racing strip comes from its own
+                          // margin-top instead (see below)
 
     @media (max-width: 768px) { grid-template-columns: 1fr; }
 }
@@ -1122,7 +1124,6 @@ span.flatpickr-weekday {
 .xcl-sb-col {
     display: flex;
     flex-direction: column;
-    height: 100%;
     border-right: 1px solid #1F2937;
     padding: 1.25rem;
 
@@ -1135,15 +1136,15 @@ span.flatpickr-weekday {
     }
 }
 
-// Weekly Leaderboard (10 rows + header) is normally the tallest column, so
-// it naturally defines the row height — flex:1 just lets its table area
-// claim the rest of the column after the title/search bar, right down to
-// the shared bottom line. The other two columns stretch UP to match it
-// (see .xcl-sb-next / .xcl-sb-up-list below) rather than this being cropped
-// down to them.
+// Crops the leaderboard table to exactly 10 driver rows (header + 10 rows)
+// so column 3 never grows taller than columns 1/2 and pushes the shared
+// bottom line — and the XCLusive Team Events strip below it — down.
+// 31px header + 10 × 36px rows = 391px (measured from .xcl-sb-lb-table's
+// box model: .4rem/.45rem cell padding + 1.5 line-height text + 1px border
+// per row); nudge this if fonts render a px or two differently.
 .xcl-sb-lb-scroll {
-    flex: 1;
-    min-height: 0;
+    max-height: 391px;
+    overflow: hidden;
 }
 
 // Column section titles
@@ -1568,7 +1569,9 @@ span.flatpickr-weekday {
     }
 }
 
-// Leaderboard pagination
+// Leaderboard pagination — sits below the 10-row crop (.xcl-sb-lb-scroll),
+// not inside it, so it's always visible and never clipped. JS toggles
+// display via inline style based on totalPages.
 .xcl-sb-pagination {
     display: flex;
     justify-content: center;
@@ -2217,6 +2220,33 @@ span.flatpickr-weekday {
         font-size: .72rem;
         color: rgba(255,255,255,.7);
         margin-bottom: .65rem;
+    }
+
+    // Car class — top-left over the image (mirrors __lobby on the right)
+    &__class-badge {
+        position: absolute;
+        top: .6rem;
+        left: .6rem;
+        z-index: 3;
+        background: rgba(0,0,0,.6);
+        border: 1px solid rgba(200,255,0,.4);
+        border-radius: 8px;
+        padding: .3rem .65rem;
+        color: #C8FF00;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700;
+        font-size: .7rem;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    // Game + SR + open/closed badges, grouped next to each other
+    &__badges-row {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        flex-wrap: wrap;
+        margin-bottom: .5rem;
     }
 
     // Registrations count — top-right over the image
@@ -4932,14 +4962,9 @@ table.dataTable thead th {
     @media (max-width: 767px) { display: flex; }
 }
 
-// Fills the rest of .xcl-sb-col's height (hero image keeps its own fixed
-// aspect-ratio; .xcl-sb-next__info below absorbs any extra space so the
-// card's bottom — and its JOIN EVENT button — reaches the shared line).
 .xcl-sb-next {
     display: flex;
     flex-direction: column;
-    flex: 1;
-    min-height: 0;
 }
 
 // ── Next Event: hero image block ──────────────────────────────────────────────
@@ -5279,13 +5304,9 @@ table.dataTable thead th {
     &:active { transform: scale(.98); }
 }
 
-// Fills the rest of .xcl-sb-col's height, same as .xcl-sb-next does for
-// column 1, so column 2's box also reaches the shared bottom line.
 .xcl-sb-up-list {
     display: flex;
     flex-direction: column;
-    flex: 1;
-    min-height: 0;
 }
 
 // ── Upcoming event stacked cards ──────────────────────────────────────────────
