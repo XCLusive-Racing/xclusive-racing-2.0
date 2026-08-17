@@ -159,7 +159,7 @@
                         <x-game-badge :game="$game" />
                         @endforeach
                     </div>
-                    <a href="#" class="xcl-coaching-btn">BOOK NOW</a>
+                    <a href="mailto:info@xclusiveracing.com?subject={{ rawurlencode('Coaching booking - ' . $coach['name'] . ' (' . $tier['label'] . ')') }}" class="xcl-coaching-btn">BOOK NOW</a>
                 </div>
             </div>
             @endforeach

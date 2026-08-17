@@ -57,11 +57,11 @@ const drivers = [
         { type: 'instagram', href: 'https://www.instagram.com/xcl_giuseppedinoia?igsh=MWRxcTBldTNqd2Y3YQ==' },
         { type: 'tiktok',    href: 'https://www.tiktok.com/@giuseppe_dinoia?_r=1&_t=ZN-95QVprGxrMJ' },
     ] },
-    { name: 'Denis Ebert',      cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: null, flag: 'germany',          role: 'esports', socials: [
+    { name: 'Denis Ebert',      cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/d.ebert.png', flag: 'germany',          role: 'esports', socials: [
         { type: 'instagram', href: 'https://www.instagram.com/ebert_racing?igsh=MWY3N2ZwNnhmNWE4YQ==' },
     ] },
     { name: 'Joakim Eriksson',  cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/Eriksson.png', flag: null,              role: 'esports', socials: [] },
-    { name: 'Fabio Faar',       cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: null, flag: 'italy',           role: 'esports', socials: [] },
+    { name: 'Fabio Faar',       cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/f.faar.png', flag: 'italy',           role: 'esports', socials: [] },
     { name: 'CJ Farish',        cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Mrshlk.png', flag: 'usa',              role: 'esports', socials: [] },
     { name: 'James Farish',     cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/J.Farish.png', flag: 'united%20kingdom', role: 'esports', socials: [] },
     { name: 'Will Friedmann',   cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/friedmann.png', flag: 'france',         role: 'esports', socials: [] },
@@ -87,7 +87,7 @@ const drivers = [
         { type: 'instagram', href: 'https://www.instagram.com/alexxluckyy?igsh=NWRleW9jbnRhaGlj' },
         { type: 'tiktok',    href: 'https://www.tiktok.com/@alexxluckyy?_r=1&_t=ZN-95QVr8UQG06' },
     ] },
-    { name: 'Michael Martinz',  cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: null, flag: 'austria',          role: 'esports', socials: [] },
+    { name: 'Michael Martinz',  cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Martinz.png', flag: 'austria',          role: 'esports', socials: [] },
     { name: 'Matteo Mastromauro', cat: 'acc',   platform: 'console', platformLabel: 'Console', photo: null, flag: 'italy',           role: 'esports', socials: [] },
     { name: 'Danny Meeldijk',   cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/Danny.png', flag: 'netherlands',      role: 'esports', socials: [] },
     { name: 'Elmārs Miķelsons', cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/elmars.png', flag: 'latvia',           role: 'esports', socials: [] },
@@ -101,7 +101,7 @@ const drivers = [
         { type: 'instagram', href: 'https://www.instagram.com/speedlukas?igsh=OHRsbzFzMzA1OHl3' },
     ] },
     { name: 'Menno Peters',     cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/PetersM.png', flag: 'netherlands',     role: 'esports', socials: [] },
-    { name: 'Phil Soucy',       cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: null, flag: 'canada',           role: 'esports', socials: [] },
+    { name: 'Phil Soucy',       cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/p.soucy.png', flag: 'canada',           role: 'esports', socials: [] },
     { name: 'Parker Soukup',    cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/P.Soukup.png', flag: 'usa',            role: 'esports', socials: [] },
     { name: 'Gianluca Walczak', cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Walczak.png', flag: 'germany',         role: 'esports', socials: [] },
     { name: 'Kyle Williams',    cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Williams.png', flag: 'south%20africa',  role: 'esports', socials: [
