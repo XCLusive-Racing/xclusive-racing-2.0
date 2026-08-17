@@ -24,6 +24,23 @@
 @include('partials.events-sidebar')
 @endunless
 
+{{-- Flash → toast bridge --}}
+@if(session('success') || session('error') || $errors->any())
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        @if(session('success'))
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: @js(session('success')), type: 'success' } }));
+        @endif
+        @if(session('error'))
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: @js(session('error')), type: 'error' } }));
+        @endif
+        @if($errors->any())
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: @js($errors->first()), type: 'error' } }));
+        @endif
+    });
+</script>
+@endif
+
 @stack('scripts')
 </body>
 </html>

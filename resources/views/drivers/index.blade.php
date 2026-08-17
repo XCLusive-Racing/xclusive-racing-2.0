@@ -78,6 +78,14 @@ $classMeta = [
                             <td class="ps-4 fw-bold text-secondary" style="font-size:.85rem">{{ $rank }}</td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
+                                    @if($user->avatarUrl())
+                                    <img src="{{ $user->avatarUrl() }}" alt="" class="rounded-circle flex-shrink-0" style="width:28px;height:28px;object-fit:cover">
+                                    @else
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
+                                         style="width:28px;height:28px;font-size:.68rem;background:linear-gradient(135deg,#7c3aed,#db2777)">
+                                        {{ strtoupper(substr($user->displayName(), 0, 1)) }}
+                                    </div>
+                                    @endif
                                     @if($user->country)
                                     <span class="text-secondary" style="font-size:.8rem">{{ strtoupper($user->country) }}</span>
                                     @endif

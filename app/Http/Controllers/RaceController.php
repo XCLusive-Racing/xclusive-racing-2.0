@@ -117,7 +117,7 @@ class RaceController extends Controller
             return back()->with('error', 'Something went wrong while processing your registration. Please try again.');
         }
 
-        return back()->with('success', 'You have been registered for ' . $race->title . '!');
+        return back()->with('success', 'You have been registered for ' . $race->title . '! Server details are in your inbox.');
     }
 
     public function unregister(Race $race)

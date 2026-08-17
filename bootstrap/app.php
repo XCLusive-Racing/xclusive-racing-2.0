@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->appendToGroup('web', \App\Http\Middleware\EnsurePasswordIsSet::class);
+        $middleware->appendToGroup('web', \App\Http\Middleware\UpdateLastSeen::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

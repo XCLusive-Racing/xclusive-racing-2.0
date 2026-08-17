@@ -428,10 +428,14 @@
                             <td class="ps-4 text-secondary fw-bold" style="font-size:.8rem">{{ $i + 1 }}</td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
+                                    @if($reg->user->avatarUrl())
+                                    <img src="{{ $reg->user->avatarUrl() }}" alt="" class="rounded-circle flex-shrink-0" style="width:30px;height:30px;object-fit:cover">
+                                    @else
                                     <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
                                          style="width:30px;height:30px;font-size:.72rem;background:linear-gradient(135deg,#7c3aed,#db2777)">
                                         {{ strtoupper(substr($reg->user->name, 0, 1)) }}
                                     </div>
+                                    @endif
                                     <div>
                                         <div class="fw-bold text-dark">{{ $reg->user->name }}</div>
                                         @if($reg->user->platform)
@@ -672,10 +676,14 @@
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
+                                            @if($result->user?->avatarUrl())
+                                            <img src="{{ $result->user->avatarUrl() }}" alt="" class="rounded-circle flex-shrink-0" style="width:28px;height:28px;object-fit:cover">
+                                            @else
                                             <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
                                                  style="width:28px;height:28px;font-size:.68rem;background:{{ $race->gameColor() }}">
                                                 {{ strtoupper(substr($result->displayName(), 0, 1)) }}
                                             </div>
+                                            @endif
                                             <div>
                                                 <div class="fw-bold">{{ $result->displayName() }}</div>
                                             </div>
@@ -738,10 +746,14 @@
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
+                                            @if($result->user?->avatarUrl())
+                                            <img src="{{ $result->user->avatarUrl() }}" alt="" class="rounded-circle flex-shrink-0" style="width:30px;height:30px;object-fit:cover">
+                                            @else
                                             <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
                                                  style="width:30px;height:30px;font-size:.72rem;background:#2563eb">
                                                 {{ strtoupper(substr($result->displayName(), 0, 1)) }}
                                             </div>
+                                            @endif
                                             <div>
                                                 <div class="fw-bold">{{ $result->displayName() }}</div>
                                             </div>
@@ -799,10 +811,14 @@
                                     <td class="ps-4"><x-race-position :position="$result->position" /></td>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
+                                            @if($result->user?->avatarUrl())
+                                            <img src="{{ $result->user->avatarUrl() }}" alt="" class="rounded-circle flex-shrink-0" style="width:28px;height:28px;object-fit:cover">
+                                            @else
                                             <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
                                                  style="width:28px;height:28px;font-size:.68rem;background:{{ $race->gameColor() }}">
                                                 {{ strtoupper(substr($result->displayName(), 0, 1)) }}
                                             </div>
+                                            @endif
                                             <span class="fw-bold">{{ $result->displayName() }}</span>
                                         </div>
                                     </td>
@@ -869,10 +885,14 @@
                             <td class="ps-4"><x-race-position :position="$result->position" /></td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
+                                    @if($result->user?->avatarUrl())
+                                    <img src="{{ $result->user->avatarUrl() }}" alt="" class="rounded-circle flex-shrink-0" style="width:28px;height:28px;object-fit:cover">
+                                    @else
                                     <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
                                          style="width:28px;height:28px;font-size:.68rem;background:{{ $race->gameColor() }}">
                                         {{ strtoupper(substr($result->displayName(), 0, 1)) }}
                                     </div>
+                                    @endif
                                     <span class="fw-bold">{{ $result->displayName() }}</span>
                                 </div>
                             </td>

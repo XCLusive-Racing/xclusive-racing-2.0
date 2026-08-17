@@ -32,10 +32,14 @@ $stats   = $driver->stats;
         {{-- Header card --}}
         <div class="bg-white rounded-3 shadow-sm p-4 mb-4">
             <div class="d-flex align-items-start gap-4 flex-wrap">
-                {{-- Class badge ring --}}
+                {{-- Class badge ring / avatar --}}
                 <div class="flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle fw-black"
-                     style="width:80px;height:80px;background:{{ $meta['color'] }}18;border:3px solid {{ $meta['color'] }};font-size:1.6rem;color:{{ $meta['color'] }}">
+                     style="width:80px;height:80px;background:{{ $meta['color'] }}18;border:3px solid {{ $meta['color'] }};font-size:1.6rem;color:{{ $meta['color'] }};overflow:hidden">
+                    @if($linkedUser?->avatarUrl())
+                    <img src="{{ $linkedUser->avatarUrl() }}" alt="{{ $driver->gamertag }}" style="width:100%;height:100%;object-fit:cover">
+                    @else
                     {{ strtoupper(substr($meta['label'], 0, 1)) }}
+                    @endif
                 </div>
                 <div class="flex-grow-1">
                     <div class="d-flex align-items-center gap-2 flex-wrap mb-1">

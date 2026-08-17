@@ -265,10 +265,14 @@
     {{-- User / Logout --}}
     <div class="admin-sidebar-footer">
         <div class="collapse-hide d-flex align-items-center gap-2 mb-2">
+            @if(auth()->user()->avatarUrl())
+            <img src="{{ auth()->user()->avatarUrl() }}" alt="" class="rounded-circle flex-shrink-0" style="width:30px;height:30px;object-fit:cover">
+            @else
             <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
                  style="width:30px;height:30px;font-size:.75rem;background:linear-gradient(135deg,#7c3aed,#db2777)">
                 {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
             </div>
+            @endif
             <div style="min-width:0">
                 <div class="text-white fw-bold text-truncate" style="font-size:.75rem">{{ auth()->user()->name }}</div>
                 <div style="font-size:.6rem;color:#6b7280;text-transform:uppercase;font-weight:700">{{ auth()->user()->roles->pluck('name')->join(', ') }}</div>
@@ -310,6 +314,30 @@
         </div>
 
         <div class="d-flex align-items-center gap-3">
+            @php
+                $activeStaff = \App\Models\User::whereHas('roles')
+                    ->whereNotNull('last_seen_at')
+                    ->where('last_seen_at', '>=', now()->subMinutes(10))
+                    ->orderByDesc('last_seen_at')
+                    ->limit(8)
+                    ->get(['id', 'name', 'banner', 'last_seen_at']);
+            @endphp
+            @if($activeStaff->isNotEmpty())
+            <div class="d-flex align-items-center" title="Active in the last 10 minutes">
+                @foreach($activeStaff as $staff)
+                <div style="width:26px;height:26px;margin-left:{{ $loop->first ? 0 : '-8px' }};z-index:{{ 10 - $loop->index }};position:relative"
+                     title="{{ $staff->name }} — active {{ $staff->last_seen_at->diffForHumans() }}">
+                    @if($staff->avatarUrl())
+                    <img src="{{ $staff->avatarUrl() }}" alt="" class="rounded-circle" style="width:100%;height:100%;object-fit:cover;border:2px solid #fff">
+                    @else
+                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black" style="width:100%;height:100%;font-size:.62rem;background:linear-gradient(135deg,#7c3aed,#db2777);border:2px solid #fff">
+                        {{ strtoupper(substr($staff->name, 0, 1)) }}
+                    </div>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+            @endif
             @yield('page-actions')
         </div>
     </header>
