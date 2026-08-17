@@ -55,7 +55,7 @@ class AccServerConfigService
         if ($race->practice_duration) {
             $sessions[] = [
                 'hourOfDay'              => $hour,
-                'dayOfWeekend'           => 1,
+                'dayOfWeekend'           => 2,
                 'timeMultiplier'         => 1,
                 'sessionType'            => 'P',
                 'sessionDurationMinutes' => (int) $race->practice_duration,
@@ -65,7 +65,7 @@ class AccServerConfigService
         if ($race->qualifying_duration) {
             $sessions[] = [
                 'hourOfDay'              => max($hour - 1, 0),
-                'dayOfWeekend'           => 1,
+                'dayOfWeekend'           => 3,
                 'timeMultiplier'         => 1,
                 'sessionType'            => 'Q',
                 'sessionDurationMinutes' => (int) $race->qualifying_duration,
@@ -74,13 +74,13 @@ class AccServerConfigService
 
         $sessions[] = [
             'hourOfDay'              => $hour,
-            'dayOfWeekend'           => 1,
+            'dayOfWeekend'           => 3,
             'timeMultiplier'         => 1,
             'sessionType'            => 'R',
             'sessionDurationMinutes' => (int) ($race->race_duration ?? 20),
         ];
 
-        if ($race->weather) {
+        if ($race->weather && $race->weather !== 'dry') {
             [$rain, $cloudLevel, $weatherRandomness] = $this->weatherParams($race->weather);
         } else {
             $rain              = $defaults['rain'] ?? 0.0;
