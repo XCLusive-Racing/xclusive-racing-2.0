@@ -119,6 +119,15 @@ class Race extends Model
         return $this->scheduled_at->timezone('Europe/London');
     }
 
+    /** Total on-track race time in minutes, from the event format (race1 + race2 for double races). */
+    public function raceDurationMinutes(): ?int
+    {
+        if (! $this->eventFormat) {
+            return null;
+        }
+        return $this->eventFormat->race1_mins + ($this->eventFormat->race2_mins ?? 0);
+    }
+
     public function getImageUrlAttribute(): ?string
     {
         return $this->image ? Storage::disk('media')->url($this->image) : null;
