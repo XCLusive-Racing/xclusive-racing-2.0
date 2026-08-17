@@ -233,6 +233,12 @@ foreach ($sbGames as $game => $col) {
 
                                 <div class="xcl-sb-next__hero-gradient"></div>
 
+                                @if($sbNextEvent->icon)
+                                <div class="xcl-sb-next__icon-overlay">
+                                    <img src="{{ $sbNextEvent->icon_url }}" alt="{{ $sbNextEvent->title }}">
+                                </div>
+                                @endif
+
                                 {{-- Countdown top-left --}}
                                 <div class="xcl-sb-countdown xcl-sb-countdown--hero">
                                     <span class="xcl-sb-countdown__label">STARTS IN</span>
@@ -425,7 +431,7 @@ foreach ($sbGames as $game => $col) {
                 </div>
 
                 {{-- ── Separator + Full-width Real-World Racing ────────────── --}}
-                <div style="border-top:1px solid rgba(255,255,255,0.08);margin-top:16px;margin-left:1.5rem;margin-right:1.5rem;padding:0 .25rem">
+                <div style="border-top:1px solid rgba(255,255,255,0.08);margin-top:1.5rem;margin-left:1.5rem;margin-right:1.5rem;padding:0 .25rem">
                     <div style="display:flex;align-items:center;gap:.75rem;padding:.9rem 0 .75rem">
                         <div class="xcl-sb-title" style="margin:0;white-space:nowrap">
                             <span>XCLUSIVE TEAM </span><span>EVENTS</span>

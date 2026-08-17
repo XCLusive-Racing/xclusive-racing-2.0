@@ -157,6 +157,11 @@
                                     @endif
                                 </div>
 
+                                {{-- Car class — top-left --}}
+                                @if($race->car_class)
+                                <div class="xcl-ec2__class-badge">{{ $race->car_class }}</div>
+                                @endif
+
                                 {{-- Registrations count — top-right --}}
                                 <div class="xcl-ec2__lobby">
                                     <i class="fa-solid fa-comments"></i>
@@ -182,11 +187,19 @@
                                         {{ strtoupper($race->scheduledAtUk()->format('l')) }} /
                                         {{ strtoupper($race->scheduledAtUk()->format('g:i A T')) }}
                                     </div>
+                                </div>
+                                <div class="xcl-ec2__badges-row">
+                                    <span class="xcl-sb-badge xcl-sb-badge--game">{{ $gameShort }}</span>
                                     @if($srLetter)
                                     <span class="xcl-ec2__sr-badge">
                                         <span class="xcl-ec2__sr-badge-letter" style="border-color:{{ $srColor }};color:{{ $srColor }}">{{ $srLetter }}</span>
                                         <span class="xcl-ec2__sr-badge-text">SR {{ $race->sr_requirement }}.0+</span>
                                     </span>
+                                    @endif
+                                    @if($race->status === 'open')
+                                        <span class="xcl-sb-badge xcl-sb-badge--open">OPEN</span>
+                                    @else
+                                        <span class="xcl-sb-badge xcl-sb-badge--closed">CLOSED</span>
                                     @endif
                                 </div>
                                 <div class="xcl-ec2__meta">
