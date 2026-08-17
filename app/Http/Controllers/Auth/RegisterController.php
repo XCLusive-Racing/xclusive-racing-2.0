@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Driver;
 use App\Models\User;
 use App\Services\PlatformLookupService;
 use Illuminate\Http\Request;
@@ -109,6 +110,11 @@ class RegisterController extends Controller
             return back()->withInput()->withErrors(['gamertag' => 'This platform account is already registered.']);
         }
 
+        // Members already tracked in the ratings/driver-stats import (the Driver table,
+        // keyed on platform_id) carry their real ACC rating over instead of starting at
+        // the 1500 default.
+        $driver = Driver::where('xuid_psid', $profile['platform_id'])->first();
+
         $user = User::create([
             'name'                => $resolvedName,
             'email'               => $request->email,
@@ -117,9 +123,10 @@ class RegisterController extends Controller
             'platform'            => $request->platform,
             'platform_id'         => $profile['platform_id'],
             'team'                => $request->team,
-            'elo_acc'             => 1500,
+            'elo_acc'             => $driver->xcl_rating ?? 1500,
             'elo_lmu'             => 1500,
             'elo_iracing'         => 1500,
+            'sr_acc'              => $driver->safety_rating ?? 5.00,
             'privacy_accepted_at' => now(),
         ]);
 
