@@ -61,26 +61,43 @@
         </div>
 
         {{-- ELO ratings --}}
+        @php
+            $srAcc     = $user->srGrade('acc');
+            $srLmu     = $user->srGrade('lmu');
+            $srIracing = $user->srGrade('iracing');
+        @endphp
         <div class="row g-3 mb-4">
             <div class="col-md-4">
                 <div class="bg-white rounded-3 shadow-sm p-4 elo-card elo-acc">
                     <div class="small fw-bold text-secondary text-uppercase tracking-wide mb-2">ACC CONSOLE</div>
                     <div class="elo-value">{{ $user->elo_acc }}</div>
-                    <p class="text-secondary small mb-0">Current Rating</p>
+                    <p class="text-secondary small mb-1">Current Rating</p>
+                    <div>
+                        <span class="fw-black" style="color:{{ $srAcc['color'] }}">{{ number_format($user->sr_acc, 2) }}</span>
+                        <span class="text-secondary" style="font-size:.75rem"> SR</span>
+                    </div>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="bg-white rounded-3 shadow-sm p-4 elo-card elo-lmu">
                     <div class="small fw-bold text-secondary text-uppercase tracking-wide mb-2">LE MANS ULTIMATE</div>
                     <div class="elo-value">{{ $user->elo_lmu }}</div>
-                    <p class="text-secondary small mb-0">Current Rating</p>
+                    <p class="text-secondary small mb-1">Current Rating</p>
+                    <div>
+                        <span class="fw-black" style="color:{{ $srLmu['color'] }}">{{ number_format($user->sr_lmu, 2) }}</span>
+                        <span class="text-secondary" style="font-size:.75rem"> SR</span>
+                    </div>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="bg-white rounded-3 shadow-sm p-4 elo-card elo-iracing">
                     <div class="small fw-bold text-secondary text-uppercase tracking-wide mb-2">iRACING</div>
                     <div class="elo-value">{{ $user->elo_iracing }}</div>
-                    <p class="text-secondary small mb-0">Current Rating</p>
+                    <p class="text-secondary small mb-1">Current Rating</p>
+                    <div>
+                        <span class="fw-black" style="color:{{ $srIracing['color'] }}">{{ number_format($user->sr_iracing, 2) }}</span>
+                        <span class="text-secondary" style="font-size:.75rem"> SR</span>
+                    </div>
                 </div>
             </div>
         </div>
