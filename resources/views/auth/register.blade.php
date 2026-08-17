@@ -112,23 +112,6 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
-
-                {{-- PSN Account ID — only shown for ps5 --}}
-                <div class="mb-3" data-psn-account-id-wrap style="{{ $startPlatform !== 'ps5' ? 'display:none' : '' }}">
-                    <label class="form-label small fw-bold text-uppercase text-white-50 mb-1">PSN Account ID</label>
-                    <input type="text" name="psn_account_id"
-                           data-psn-account-id-input
-                           placeholder="e.g. 1264925427550018923"
-                           value="{{ old('psn_account_id') }}"
-                           inputmode="numeric"
-                           class="form-control xcl-auth-input @error('psn_account_id') is-invalid @enderror">
-                    <div class="mt-1" style="font-size:.78rem;color:rgba(255,255,255,.3)">
-                        Your numeric PSN ID — found in your PSN profile URL or via PSN lookup.
-                    </div>
-                    @error('psn_account_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
                 @endif
 
                 <div class="mb-3">

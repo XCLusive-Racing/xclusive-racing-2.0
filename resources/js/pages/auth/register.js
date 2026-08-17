@@ -9,8 +9,6 @@ export function initRegister() {
     const gamertag       = wrap.querySelector('[data-gamertag-input]');
     const steamHint      = wrap.querySelector('[data-hint="steam"]');
     const xboxHint       = wrap.querySelector('[data-hint="xbox"]');
-    const psnIdWrap      = wrap.querySelector('[data-psn-account-id-wrap]');
-    const psnIdInput     = wrap.querySelector('[data-psn-account-id-input]');
     const backBtn        = wrap.querySelector('[data-back]');
 
     function goToStep2(platform) {
@@ -30,9 +28,6 @@ export function initRegister() {
 
         if (steamHint) steamHint.style.display = platform === 'steam' ? '' : 'none';
         if (xboxHint)  xboxHint.style.display  = platform === 'xbox'  ? '' : 'none';
-
-        if (psnIdWrap)  psnIdWrap.style.display  = platform === 'ps5' ? '' : 'none';
-        if (psnIdInput) psnIdInput.required       = platform === 'ps5';
     }
 
     wrap.querySelectorAll('[data-select-platform]').forEach(btn => {
