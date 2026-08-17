@@ -96,8 +96,11 @@ class AccServerConfigService
         return [
             'track'                     => $this->trackSlug($race->track),
             'preRaceWaitingTimeSeconds' => $defaults['preRaceWaitingTimeSeconds'] ?? 60,
+            'postQualySeconds'          => $defaults['postQualySeconds'] ?? 30,
+            'postRaceSeconds'           => $defaults['postRaceSeconds'] ?? 30,
             'sessionOverTimeSeconds'    => $defaults['sessionOverTimeSeconds'] ?? 120,
             'ambientTemp'               => $defaults['ambientTemp'] ?? 22,
+            'trackTemp'                 => $defaults['trackTemp'] ?? -1,
             'cloudLevel'                => $cloudLevel,
             'rain'                      => $rain,
             'weatherRandomness'         => $weatherRandomness,
