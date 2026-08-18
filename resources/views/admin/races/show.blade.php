@@ -133,9 +133,13 @@
                             <div class="col-sm-6 col-lg-4">
                                 <div class="p-3 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
                                     <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af">Multiplier</div>
-                                    @php $multipliers = ['15'=>'0.6','20'=>'0.8','30'=>'1.0','30+'=>'1.2','30++'=>'1.3','45'=>'1.5','45+'=>'1.6','60'=>'2.0','60+'=>'2.1','90'=>'2.5','90+'=>'2.6']; @endphp
                                     <div class="fw-black text-dark mt-1" style="font-size:1.1rem">
-                                        {{ ($multipliers[$race->duration_key] ?? '1.0') }}×
+                                        @if($race->eventFormat)
+                                            {{ $race->eventFormat->xclRLabel() }}
+                                        @else
+                                            @php $multipliers = ['15'=>'0.6','20'=>'0.8','30'=>'1.0','30+'=>'1.2','30++'=>'1.3','45'=>'1.5','45+'=>'1.6','60'=>'2.0','60+'=>'2.1','90'=>'2.5','90+'=>'2.6']; @endphp
+                                            {{ ($multipliers[$race->duration_key] ?? '1.0') }}×
+                                        @endif
                                     </div>
                                 </div>
                             </div>
