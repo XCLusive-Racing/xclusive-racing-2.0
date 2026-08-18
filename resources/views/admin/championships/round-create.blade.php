@@ -137,14 +137,16 @@
                             </select>
                         </div>
                         <div class="col-sm-4">
-                            <label class="form-label">In-game Time</label>
-                            <select name="time_of_day" class="form-select">
-                                <option value="">— Not set —</option>
-                                <option value="day"     {{ old('time_of_day', $championship->time_of_day ?: 'day') === 'day'     ? 'selected' : '' }}>Day</option>
-                                <option value="dusk"    {{ old('time_of_day', $championship->time_of_day ?: 'day') === 'dusk'    ? 'selected' : '' }}>Dusk</option>
-                                <option value="night"   {{ old('time_of_day', $championship->time_of_day ?: 'day') === 'night'   ? 'selected' : '' }}>Night</option>
-                                <option value="dynamic" {{ old('time_of_day', $championship->time_of_day ?: 'day') === 'dynamic' ? 'selected' : '' }}>Dynamic</option>
-                            </select>
+                            <label class="form-label">Race Start Time <span class="fw-normal text-secondary" style="text-transform:none">(in-game)</span></label>
+                            @php
+                                $rawChTod = old('time_of_day', $championship->time_of_day);
+                                $chTodMap = ['day' => '14:00', 'dusk' => '17:00', 'night' => '21:00', 'dynamic' => '14:00'];
+                                $chTimeVal = ($rawChTod && !preg_match('/^\d{2}:\d{2}$/', $rawChTod))
+                                    ? ($chTodMap[$rawChTod] ?? '14:00')
+                                    : ($rawChTod ?: '14:00');
+                            @endphp
+                            <input type="time" name="time_of_day" class="form-control"
+                                   value="{{ $chTimeVal }}" step="3600">
                         </div>
                         <div class="col-sm-4">
                             <label class="form-label">Max Drivers <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>

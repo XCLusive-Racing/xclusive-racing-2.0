@@ -250,6 +250,10 @@ class AccServerConfigService
 
     private function startHour(?string $timeOfDay): int
     {
+        if ($timeOfDay && preg_match('/^(\d{1,2}):(\d{2})$/', $timeOfDay, $m)) {
+            return (int) $m[1];
+        }
+
         return match ($timeOfDay) {
             'dusk'    => 17,
             'night'   => 21,

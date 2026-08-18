@@ -270,15 +270,16 @@ $mcExisting = $isEdit
                                 </select>
                             </div>
                             <div class="col-sm-3">
-                                <label class="form-label">In-game Time</label>
-                                @php $timeOfDayVal = old('time_of_day', $isEdit ? ($race->time_of_day ?: 'day') : 'day'); @endphp
-                                <select name="time_of_day" class="form-select">
-                                    <option value="">— Not set —</option>
-                                    <option value="day"     {{ $timeOfDayVal === 'day'     ? 'selected' : '' }}>Day</option>
-                                    <option value="dusk"    {{ $timeOfDayVal === 'dusk'    ? 'selected' : '' }}>Dusk</option>
-                                    <option value="night"   {{ $timeOfDayVal === 'night'   ? 'selected' : '' }}>Night</option>
-                                    <option value="dynamic" {{ $timeOfDayVal === 'dynamic' ? 'selected' : '' }}>Dynamic</option>
-                                </select>
+                                <label class="form-label">Race Start Time <span class="fw-normal text-secondary" style="text-transform:none">(in-game)</span></label>
+                                @php
+                                    $rawTod = old('time_of_day', $isEdit ? $race->time_of_day : null);
+                                    $todMap = ['day' => '14:00', 'dusk' => '17:00', 'night' => '21:00', 'dynamic' => '14:00'];
+                                    $timeOfDayVal = ($rawTod && !preg_match('/^\d{2}:\d{2}$/', $rawTod))
+                                        ? ($todMap[$rawTod] ?? '14:00')
+                                        : ($rawTod ?: '14:00');
+                                @endphp
+                                <input type="time" name="time_of_day" class="form-control"
+                                       value="{{ $timeOfDayVal }}" step="3600">
                             </div>
                             <div class="col-sm-3">
                                 <label class="form-label">Ambient Temp (°C)</label>
