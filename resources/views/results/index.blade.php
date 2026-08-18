@@ -54,6 +54,20 @@
                 <style>
                     .results-tab-active { color: #111827 !important; border-bottom: 2px solid #7c3aed !important; }
                 </style>
+                @php
+                    $fmt       = $selected->eventFormat;
+                    $pracMins  = $fmt ? $fmt->practice_mins : $selected->practice_duration;
+                    $qualiMins = $fmt ? $fmt->quali_mins    : $selected->qualifying_duration;
+
+                    $practiceStart = $selected->scheduledAtUk()->copy();
+                    $quali1Start   = $practiceStart->copy();
+                    if ($pracMins) { $quali1Start->addMinutes($pracMins); }
+                    $race1Start    = $quali1Start->copy();
+                    if ($qualiMins) { $race1Start->addMinutes($qualiMins); }
+
+                    $headerRatingResults = $raceResults->filter(fn($r) => $r->elo_change !== null);
+                    $headerSof = $headerRatingResults->isNotEmpty() ? $headerRatingResults->first()->sof : null;
+                @endphp
                 <div data-tabs data-default-tab="race">
 
                     {{-- Event header --}}
@@ -67,6 +81,22 @@
                                 {{ $selected->track }} &middot; {{ $selected->scheduledAtUk()->format('d M Y') }}
                             </div>
                         </div>
+                        @if($headerSof !== null || $fmt)
+                        <div class="ms-auto d-flex align-items-center gap-4">
+                            @if($headerSof !== null)
+                            <div class="text-end">
+                                <div class="text-secondary text-uppercase" style="font-size:.62rem;font-weight:800;letter-spacing:.07em">SoF</div>
+                                <div class="fw-black" style="font-size:.95rem;color:#7c3aed">{{ number_format($headerSof, 0) }}</div>
+                            </div>
+                            @endif
+                            @if($fmt)
+                            <div class="text-end">
+                                <div class="text-secondary text-uppercase" style="font-size:.62rem;font-weight:800;letter-spacing:.07em">XCL Rating</div>
+                                <div class="fw-black" style="font-size:.95rem;color:#059669">{{ $fmt->xclRLabel() }}</div>
+                            </div>
+                            @endif
+                        </div>
+                        @endif
                     </div>
 
                     {{-- Tabs --}}
@@ -94,6 +124,10 @@
 
                         {{-- Race results --}}
                         <div data-tab-panel="race" style="display:none">
+                            <div class="px-4 pt-3" style="font-size:.75rem;color:#6b7280;font-weight:700">
+                                <i class="fa-solid fa-clock" style="margin-right:5px;color:#7c3aed"></i>
+                                Race started at {{ $race1Start->format('H:i') }} UK
+                            </div>
                             @if($raceResults->isEmpty())
                             <p class="text-secondary text-center py-5" style="font-size:.85rem">No race results available.</p>
                             @else
@@ -137,6 +171,10 @@
 
                         {{-- Quali results --}}
                         <div data-tab-panel="quali" style="display:none">
+                            <div class="px-4 pt-3" style="font-size:.75rem;color:#6b7280;font-weight:700">
+                                <i class="fa-solid fa-clock" style="margin-right:5px;color:#2563eb"></i>
+                                Qualifying started at {{ $quali1Start->format('H:i') }} UK
+                            </div>
                             @if($qualiResults->isEmpty())
                             <p class="text-secondary text-center py-5" style="font-size:.85rem">No qualifying results available.</p>
                             @else

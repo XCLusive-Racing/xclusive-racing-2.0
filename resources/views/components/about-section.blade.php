@@ -30,11 +30,11 @@
                         <div class="fw-bold text-uppercase text-white" style="font-size:.8rem;letter-spacing:.08em;color:#e9d5ff!important">Active Members</div>
                     </div>
                     <div class="mb-4 pb-4 about-stats-card__row">
-                        <div class="display-4 fw-black fst-italic mb-1" style="color:#c084fc">1000</div>
+                        <div class="display-4 fw-black fst-italic mb-1" style="color:#c084fc">{{ number_format(\App\Models\Race::where('scheduled_at', '<', now())->count() + 4237) }}</div>
                         <div class="fw-bold text-uppercase text-white" style="font-size:.8rem;letter-spacing:.08em;color:#e9d5ff!important">Events Hosted</div>
                     </div>
                     <div>
-                        <div class="display-4 fw-black fst-italic mb-1" style="color:#c084fc">33</div>
+                        <div class="display-4 fw-black fst-italic mb-1" style="color:#c084fc">{{ number_format(count(\App\Http\Controllers\ProDriverController::allDrivers()) + \App\Models\EsportsDriver::count()) }}</div>
                         <div class="fw-bold text-uppercase text-white" style="font-size:.8rem;letter-spacing:.08em;color:#e9d5ff!important">Professional Drivers</div>
                     </div>
                 </div>
