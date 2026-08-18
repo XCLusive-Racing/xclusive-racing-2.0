@@ -189,6 +189,7 @@ class ChampionshipController extends Controller
             'car_class'           => 'nullable|string|max:50',
             'weather'             => 'nullable|in:dry,wet,mixed,random',
             'time_of_day'         => 'nullable|in:day,dusk,night,dynamic',
+            'ambient_temp'        => 'nullable|integer|min:-30|max:50',
             'duration_key'        => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
             'sr_requirement'      => 'nullable|in:3,4,5,6,7,8,9',
             'min_rating'          => 'nullable|in:rookie,bronze,silver,gold,platinum,alien',

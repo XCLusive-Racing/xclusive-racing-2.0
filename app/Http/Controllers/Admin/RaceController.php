@@ -168,6 +168,7 @@ class RaceController extends Controller
             'weather'              => 'nullable|in:dry,wet,mixed,random',
             'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
+            'ambient_temp'         => 'nullable|integer|min:-30|max:50',
             'sr_requirement'       => 'nullable|numeric|in:3,4,5,6,7,8,9',
             'min_rating'           => 'nullable|string|in:rookie,bronze,silver,gold,platinum,alien',
             'max_rating'           => 'nullable|string|in:rookie,bronze,silver,gold,platinum,alien',
@@ -182,6 +183,7 @@ class RaceController extends Controller
             'events.*.scheduled_at'    => 'required|date',
             'events.*.weather'         => 'nullable|in:dry,wet,mixed,random',
             'events.*.time_of_day'     => 'nullable|in:day,dusk,night,dynamic',
+            'events.*.ambient_temp'    => 'nullable|integer|min:-30|max:50',
             'events.*.max_drivers'     => 'nullable|integer|min:1',
         ]);
 
@@ -197,6 +199,7 @@ class RaceController extends Controller
             'weather'              => $request->weather ?: null,
             'weather_randomness'   => $request->weather_randomness ?: null,
             'time_of_day'          => $request->time_of_day ?: null,
+            'ambient_temp'         => $request->ambient_temp ?? null,
             'sr_requirement'       => $request->sr_requirement ?: null,
             'min_rating'           => $request->min_rating ?: null,
             'max_rating'           => $request->max_rating ?: null,
@@ -213,6 +216,7 @@ class RaceController extends Controller
                 'scheduled_at' => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $event['scheduled_at'], 'Europe/London')->utc(),
                 'weather'      => $event['weather'] ?: $shared['weather'],
                 'time_of_day'  => $event['time_of_day'] ?: $shared['time_of_day'],
+                'ambient_temp' => $event['ambient_temp'] ?? $shared['ambient_temp'],
                 'max_drivers'  => $event['max_drivers'] ?: $shared['max_drivers'],
             ]));
         }
@@ -392,6 +396,7 @@ class RaceController extends Controller
             'weather'              => 'nullable|in:dry,wet,mixed,random',
             'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
+            'ambient_temp'         => 'nullable|integer|min:-30|max:50',
             'max_drivers'          => 'nullable|integer|min:1',
             'description'          => 'nullable|string',
             'is_multiclass'        => 'nullable|boolean',
@@ -486,6 +491,7 @@ class RaceController extends Controller
             'weather'              => 'nullable|in:dry,wet,mixed,random',
             'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
+            'ambient_temp'         => 'nullable|integer|min:-30|max:50',
             'max_drivers'          => 'nullable|integer|min:1',
             'description'          => 'nullable|string',
             'image'                => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',

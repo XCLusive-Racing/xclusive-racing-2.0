@@ -15,6 +15,7 @@ export function initBulkCreate(wrap) {
     const tbody           = wrap.querySelector('[data-bulk-tbody]');
     const defaultWeatherEl = wrap.querySelector('select[name="weather"]');
     const defaultTimeEl    = wrap.querySelector('select[name="time_of_day"]');
+    const defaultAmbientTempEl = wrap.querySelector('input[name="ambient_temp"]');
 
     const WEATHER_OPTIONS = [
         ['', '— Not set —'], ['dry', 'Dry'], ['wet', 'Wet'], ['mixed', 'Mixed'], ['random', 'Random'],
@@ -25,6 +26,7 @@ export function initBulkCreate(wrap) {
 
     function getDefaultWeather() { return defaultWeatherEl?.value || ''; }
     function getDefaultTime()    { return defaultTimeEl?.value || ''; }
+    function getDefaultAmbientTemp() { return defaultAmbientTempEl?.value || ''; }
 
     let events = [];
 
@@ -116,6 +118,10 @@ export function initBulkCreate(wrap) {
                     ${timeOptions}
                 </select>
             </td>
+            <td>
+                <input type="number" name="events[${i}][ambient_temp]" value="${esc(ev.ambient_temp)}"
+                       class="form-control form-control-sm" data-field="ambient_temp" placeholder="Default">
+            </td>
             <td class="pe-4">
                 <button type="button" data-remove
                         class="btn btn-sm d-flex align-items-center justify-content-center"
@@ -131,6 +137,7 @@ export function initBulkCreate(wrap) {
         const dateInput        = tr.querySelector('[data-field="scheduled_at"]');
         const weatherInput     = tr.querySelector('[data-field="weather"]');
         const timeInput        = tr.querySelector('[data-field="time_of_day"]');
+        const ambientTempInput = tr.querySelector('[data-field="ambient_temp"]');
 
         // Track drives title and max-drivers automatically, same as single mode
         trackInput.addEventListener('input', () => {
@@ -143,6 +150,7 @@ export function initBulkCreate(wrap) {
         dateInput.addEventListener('change', () => { events[i].scheduled_at = dateInput.value; });
         weatherInput.addEventListener('change', () => { events[i].weather = weatherInput.value; });
         timeInput.addEventListener('change', () => { events[i].time_of_day = timeInput.value; });
+        ambientTempInput.addEventListener('input', () => { events[i].ambient_temp = ambientTempInput.value; });
 
         tr.querySelector('[data-remove]').addEventListener('click', () => {
             events.splice(i, 1);
@@ -182,6 +190,7 @@ export function initBulkCreate(wrap) {
 
         const defWeather = getDefaultWeather();
         const defTime    = getDefaultTime();
+        const defAmbientTemp = getDefaultAmbientTemp();
 
         events = [];
         for (let w = 0; w < nWeeks; w++) {
@@ -193,7 +202,7 @@ export function initBulkCreate(wrap) {
                 if (d < seed) return;
                 events.push({
                     title: defTrack, track: defTrack, scheduled_at: formatDate(d),
-                    weather: defWeather, time_of_day: defTime,
+                    weather: defWeather, time_of_day: defTime, ambient_temp: defAmbientTemp,
                 });
             });
         }
@@ -213,7 +222,7 @@ export function initBulkCreate(wrap) {
         const defTrack = getDefaultTrack();
         events.push({
             title: defTrack, track: defTrack, scheduled_at: nextDate,
-            weather: getDefaultWeather(), time_of_day: getDefaultTime(),
+            weather: getDefaultWeather(), time_of_day: getDefaultTime(), ambient_temp: getDefaultAmbientTemp(),
         });
         render();
     }

@@ -150,6 +150,13 @@
                                    min="1">
                             @error('max_drivers')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Ambient Temp (°C) <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
+                            <input type="number" name="ambient_temp" value="{{ old('ambient_temp') }}"
+                                   class="form-control @error('ambient_temp') is-invalid @enderror"
+                                   placeholder="Server default">
+                            @error('ambient_temp')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
                     </div>
                 </div>
 
