@@ -79,7 +79,7 @@ class ImportGportalResults extends Command
                     continue;
                 }
 
-                if (FtpImportedFile::where('race_id', $race->id)->where('filename', $filename)->exists()) {
+                if (FtpImportedFile::where('filename', $filename)->exists()) {
                     continue;
                 }
 

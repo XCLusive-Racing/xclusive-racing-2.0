@@ -91,6 +91,11 @@ class Race extends Model
         return $this->scheduled_at->isPast();
     }
 
+    public function registrationOpen(): bool
+    {
+        return $this->status === 'open' && $this->scheduled_at->gt(now()->addMinutes(5));
+    }
+
     public function isFull(): bool
     {
         if ($this->is_multiclass && $this->raceClasses->isNotEmpty()) {

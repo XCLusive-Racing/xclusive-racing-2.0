@@ -53,7 +53,7 @@ class RaceController extends Controller
             return back()->with('error', 'Your account has been suspended. Please contact an administrator.');
         }
 
-        if ($race->status !== 'open') {
+        if (! $race->registrationOpen()) {
             return back()->with('error', 'Registration is closed for this race.');
         }
 

@@ -275,7 +275,7 @@
                                 <button type="submit" class="xcl-event-unreg-btn w-100">UNREGISTER</button>
                             </form>
                             @endif
-                        @elseif($race->status === 'open')
+                        @elseif($race->registrationOpen())
                             @if($race->isFull())
                                 <div class="xcl-event-reg-status xcl-event-reg-status--full">This race is full.</div>
                             @else
