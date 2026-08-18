@@ -51,9 +51,21 @@
                                        class="form-control" placeholder="Netherlands">
                             </div>
                             <div class="col-12">
-                                <label class="form-label fw-bold text-dark" style="font-size:.82rem">Team / Quote</label>
+                                <label class="form-label fw-bold text-dark" style="font-size:.82rem">
+                                    Team / Quote
+                                    @if(!$user->is_supporter)
+                                    <span class="ms-1 fw-normal" style="font-size:.75rem;color:#f59e0b">
+                                        <i class="fa-solid fa-star" style="font-size:.65rem"></i> Supporter only
+                                    </span>
+                                    @endif
+                                </label>
+                                @if($user->is_supporter)
                                 <input type="text" name="team" value="{{ old('team', $user->team) }}"
                                        class="form-control" placeholder="Team XCLusive">
+                                @else
+                                <input type="text" class="form-control" value="{{ $user->displayTeam() ?? '' }}"
+                                       disabled style="opacity:.5;cursor:not-allowed">
+                                @endif
                             </div>
                         </div>
                     </div>

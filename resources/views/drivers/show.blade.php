@@ -61,7 +61,9 @@ $stats   = $driver->stats;
                         </span>
                         <span class="fw-black" style="color:{{ $srClass['color'] }}">SR {{ $srClass['grade'] }}</span>
                         @if($driver->country_code)
-                        <span class="text-secondary fw-bold" style="font-size:.85rem">{{ $driver->country_code }}</span>
+                        <img src="{{ \App\Services\CountryFlagService::imgUrl($driver->country_code) }}"
+                             title="{{ $driver->country_code }}" alt="{{ $driver->country_code }}"
+                             style="width:24px;height:17px;object-fit:cover;border-radius:2px">
                         @endif
                         <span class="badge text-uppercase fw-bold" style="background:#f3f4f6;color:#374151;font-size:.72rem">
                             {{ strtoupper($driver->platform) }}

@@ -86,10 +86,9 @@ $classMeta = [
                                         {{ strtoupper(substr($user->displayName(), 0, 1)) }}
                                     </div>
                                     @endif
-                                    @php $countryFlag = \App\Services\CountryFlagService::emoji($user->country); @endphp
-                                    @if($countryFlag)
-                                    <span title="{{ $user->country }}" style="font-size:1rem" aria-hidden="true">{{ $countryFlag }}</span>
-                                    @endif
+                                    <img src="{{ \App\Services\CountryFlagService::imgUrl($user->country) }}"
+                                         title="{{ $user->country }}" alt="{{ $user->country }}"
+                                         style="width:20px;height:14px;object-fit:cover;border-radius:2px;flex-shrink:0">
                                     @php $driverRecord = $driverMap->get($user->platform_id); @endphp
                                     @if($driverRecord)
                                     <a href="{{ route('drivers.show', $driverRecord->id) }}"
@@ -122,7 +121,7 @@ $classMeta = [
                                 <span class="text-secondary ms-1" style="font-size:.75rem">{{ number_format($sr, 2) }}</span>
                             </td>
                             <td class="text-secondary d-none d-md-table-cell" style="font-size:.82rem;max-width:160px">
-                                <span class="text-truncate d-block">{{ $user->team ?? '—' }}</span>
+                                <span class="text-truncate d-block">{{ $user->displayTeam() ?? '—' }}</span>
                             </td>
                         </tr>
                         @endforeach

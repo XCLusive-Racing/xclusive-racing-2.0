@@ -125,4 +125,15 @@ class CountryFlagService
 
         return mb_chr(0x1F1E6 + (ord($code[0]) - 65)) . mb_chr(0x1F1E6 + (ord($code[1]) - 65));
     }
+
+    /**
+     * Return a flagcdn.com SVG URL for the country, or the XCL fallback flag if unknown.
+     */
+    public static function imgUrl(?string $input): string
+    {
+        $code = self::toIso2($input);
+        if (!$code) return asset('images/flags/XCL Flag.png');
+
+        return 'https://flagcdn.com/' . strtolower($code) . '.svg';
+    }
 }
