@@ -9,5 +9,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('gportal:push-configs')->everyMinute()->onOneServer();
-Schedule::command('gportal:import-results')->everyMinute()->onOneServer(); // TEMP: verifying scheduler in DO Runtime Logs, revert to everyFifteenMinutes() after
+Schedule::command('gportal:import-results')->everyFifteenMinutes()->onOneServer();
 Schedule::command('xcl:discord:sync-ranks')->daily()->onOneServer();
