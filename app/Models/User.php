@@ -152,12 +152,7 @@ class User extends Authenticatable
 
     public function displayTeam(): ?string
     {
-        if ($this->team) return $this->team;
-
-        $parts = preg_split('/\s+/', trim($this->name ?? ''), 2);
-        if (count($parts) < 2 || $parts[1] === '') return null;
-
-        return strtoupper($parts[0][0]) . '.' . $parts[1];
+        return $this->is_supporter ? $this->team : null;
     }
 
     public function avatarUrl(): ?string
