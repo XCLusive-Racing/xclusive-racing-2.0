@@ -366,6 +366,9 @@ class FtpService
         $this->server = null;
     }
 
+    // gPortal names result files with its own local time (Europe/Berlin, CET/CEST) — this
+    // shows admins that timestamp converted to the site's UK admin timezone (GMT/BST) so
+    // it lines up with the race times they scheduled.
     public static function parseFilename(string $filename): array
     {
         $name  = pathinfo($filename, PATHINFO_FILENAME);
@@ -380,12 +383,14 @@ class FtpService
             $typePart = strtoupper($parts[2] ?? '');
 
             if (strlen($datePart) === 6 && is_numeric($datePart)) {
-                $y    = '20' . substr($datePart, 0, 2);
-                $m    = substr($datePart, 2, 2);
-                $d    = substr($datePart, 4, 2);
-                $h    = substr($timePart, 0, 2);
-                $i    = substr($timePart, 2, 2);
-                $date = "$d/$m/$y $h:$i";
+                try {
+                    $hhmm = str_pad(substr($timePart, 0, 4), 4, '0');
+                    $date = \Illuminate\Support\Carbon::createFromFormat('ymd Hi', $datePart . ' ' . $hhmm, 'Europe/Berlin')
+                        ->timezone('Europe/London')
+                        ->format('d/m/Y H:i T');
+                } catch (\Throwable) {
+                    $date = '—';
+                }
             }
 
             if ($typePart === 'R') {

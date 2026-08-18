@@ -129,7 +129,12 @@ class ImportGportalResults extends Command
         }
     }
 
-    // Filenames follow gPortal's {YYMMDD}_{HHmm}_{R|Q}.json convention (see FtpService::parseFilename).
+    // Filenames follow gPortal's {YYMMDD}_{HHmm[ss]}_{R|Q}.json convention (see
+    // FtpService::parseFilename) — the time part is sometimes HHmm, sometimes HHmmss.
+    // gPortal timestamps these in the server's local time (Europe/Berlin, CET/CEST) — not
+    // UTC. Parsing them as UTC silently shifted every match by 1-2 hours (DST-dependent),
+    // which mostly stayed inside the generous match window but could pick the wrong race
+    // when two races on the same server are only a couple of hours apart.
     private function parseFileTimestamp(string $filename): ?\Illuminate\Support\Carbon
     {
         $parts = explode('_', pathinfo($filename, PATHINFO_FILENAME));
@@ -137,8 +142,11 @@ class ImportGportalResults extends Command
             return null;
         }
 
+        $timePart = str_pad(substr($parts[1] ?? '', 0, 4), 4, '0');
+
         try {
-            return \Illuminate\Support\Carbon::createFromFormat('ymd Hi', $parts[0] . ' ' . str_pad($parts[1], 4, '0'), 'UTC');
+            return \Illuminate\Support\Carbon::createFromFormat('ymd Hi', $parts[0] . ' ' . $timePart, 'Europe/Berlin')
+                ->utc();
         } catch (\Throwable) {
             return null;
         }
