@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\SyncDiscordRankRole;
 use App\Models\Race;
 use App\Models\RaceResult;
 use App\Models\User;
@@ -98,6 +99,8 @@ class RatingService
                     ->update([$ratingField => $calc['rating_after']]);
             }
         });
+
+        $byUserId->keys()->each(fn ($userId) => SyncDiscordRankRole::dispatch($userId));
     }
 
     private function ratingField(string $game): ?string

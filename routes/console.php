@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 
 Schedule::command('gportal:push-configs')->everyMinute()->onOneServer();
 Schedule::command('gportal:import-results')->everyFifteenMinutes()->onOneServer();
+Schedule::command('xcl:discord:sync-ranks')->daily()->onOneServer();

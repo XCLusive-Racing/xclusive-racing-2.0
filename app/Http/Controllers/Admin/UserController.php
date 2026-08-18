@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SyncDiscordRankRole;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -147,6 +148,10 @@ class UserController extends Controller
         }
 
         $user->update(\Illuminate\Support\Arr::except($data, ['roles']));
+
+        if ($user->wasChanged(['elo_acc', 'elo_lmu', 'elo_iracing'])) {
+            SyncDiscordRankRole::dispatch($user->id);
+        }
 
         if ($user->id !== auth()->id() && auth()->user()->canManageRoles()) {
             $roleIds = Role::whereIn('slug', $request->input('roles', []))->pluck('id');

@@ -28,6 +28,16 @@ return [
         'client_secret'         => env('DISCORD_CLIENT_SECRET'),
         'redirect'              => env('APP_URL') . '/auth/discord/callback',
         'webhook_mrs_racewell'  => env('DISCORD_WEBHOOK_MRS_RACEWELL'),
+        'bot_token'             => env('DISCORD_BOT_TOKEN'),
+        'guild_id'              => env('DISCORD_GUILD_ID'),
+        'rank_roles'            => [
+            'alien'    => env('DISCORD_ROLE_RANK_ALIEN'),
+            'platinum' => env('DISCORD_ROLE_RANK_PLATINUM'),
+            'gold'     => env('DISCORD_ROLE_RANK_GOLD'),
+            'silver'   => env('DISCORD_ROLE_RANK_SILVER'),
+            'bronze'   => env('DISCORD_ROLE_RANK_BRONZE'),
+            'rookie'   => env('DISCORD_ROLE_RANK_ROOKIE'),
+        ],
     ],
 
     'steam' => [

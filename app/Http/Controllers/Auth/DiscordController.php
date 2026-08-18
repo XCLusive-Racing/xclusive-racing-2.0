@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SyncDiscordRankRole;
 use App\Models\ConnectedAccount;
 use GuzzleHttp\Client;
 use Laravel\Socialite\Facades\Socialite;
@@ -46,6 +47,8 @@ class DiscordController extends Controller
                 'connected_at' => now(),
             ]
         );
+
+        SyncDiscordRankRole::dispatch(auth()->id());
 
         return redirect()->route('profile.edit')->with('success', 'Discord account connected!');
     }

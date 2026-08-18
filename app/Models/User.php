@@ -245,6 +245,18 @@ class User extends Authenticatable
         return end(self::ranks());
     }
 
+    // Highest rank across all 3 tracked games (acc/lmu/iracing) — used for the
+    // single Discord rank role, since a member only gets one regardless of how
+    // many games they play.
+    public function highestRank(): array
+    {
+        $elo = max((int) $this->elo_acc, (int) $this->elo_lmu, (int) $this->elo_iracing);
+        foreach (self::ranks() as $rank) {
+            if ($elo >= $rank['min']) return $rank;
+        }
+        return end(self::ranks());
+    }
+
     // --- Rating class (0–3) based on XCL rating score ---
 
     public static function ratingClasses(): array
