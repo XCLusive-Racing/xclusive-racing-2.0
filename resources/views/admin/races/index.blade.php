@@ -195,6 +195,8 @@
                     paginate: { previous: '‹', next: '›' },
                 },
             });
+
+            filterStatus('upcoming');
         });
 
         // Select all (across all pages)
