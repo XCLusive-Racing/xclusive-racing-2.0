@@ -19,12 +19,12 @@ class PushGPortalConfigs extends Command
     {
         $now = now();
 
-        // Phase 1: normal push — pending/failed races, up to 30min before slot, retry until 10min after
+        // Phase 1: normal push — pending/failed races, starting 5min before slot, retry until 30min after
         $normalRaces = Race::whereNotNull('ftp_server_id')
             ->whereNotNull('slot_time')
             ->whereIn('config_push_status', ['pending', 'failed', null])
             ->where('config_push_attempts', '<', 15)
-            ->whereBetween('slot_time', [$now->copy()->subMinutes(30), $now->copy()->addMinutes(10)])
+            ->whereBetween('slot_time', [$now->copy()->subMinutes(30), $now->copy()->addMinutes(5)])
             ->with('ftpServer')
             ->get();
 
