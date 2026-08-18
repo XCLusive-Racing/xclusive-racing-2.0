@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Driver;
 use App\Models\Race;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,19 +20,14 @@ class ProfileController extends Controller
             ->orderByDesc('race_scheduled_at')
             ->get();
 
-        $totalRaces = $results->count();
-        $wins       = $results->where('position', 1)->count();
-        $podiums    = $results->whereIn('position', [1, 2, 3])->count();
+        // Legacy stats are a manually-set aggregate carried over from the old
+        // website (no per-race detail available), added on top of live results.
+        $totalRaces = $results->count() + $user->legacy_races;
+        $wins       = $results->where('position', 1)->count() + $user->legacy_wins;
+        $podiums    = $results->whereIn('position', [1, 2, 3])->count() + $user->legacy_podiums;
         $winRate    = $totalRaces > 0 ? round(($wins / $totalRaces) * 100) : 0;
 
         $stats = compact('totalRaces', 'wins', 'podiums', 'winRate');
-
-        // Link user to driver record via platform_id or temp gamertag ID
-        $driver = Driver::with(['stats', 'trackTimes'])
-            ->where('xuid_psid', $user->platform_id)
-            ->orWhere('xuid_psid', 'T_' . strtolower($user->name))
-            ->orWhere('gamertag', $user->name)
-            ->first();
 
         $myEvents = Race::select(['id','title','game','track','scheduled_at','status'])
             ->whereHas('registrations', fn($q) => $q->where('user_id', $user->id))
@@ -43,7 +37,7 @@ class ProfileController extends Controller
             ->take(6)
             ->get();
 
-        return view('profile.show', compact('user', 'results', 'stats', 'driver', 'myEvents'));
+        return view('profile.show', compact('user', 'results', 'stats', 'myEvents'));
     }
 
     public function edit()

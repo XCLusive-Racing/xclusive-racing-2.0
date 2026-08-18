@@ -86,8 +86,9 @@ $classMeta = [
                                         {{ strtoupper(substr($user->displayName(), 0, 1)) }}
                                     </div>
                                     @endif
-                                    @if($user->country)
-                                    <span class="text-secondary" style="font-size:.8rem">{{ strtoupper($user->country) }}</span>
+                                    @php $countryFlag = \App\Services\CountryFlagService::emoji($user->country); @endphp
+                                    @if($countryFlag)
+                                    <span title="{{ $user->country }}" style="font-size:1rem" aria-hidden="true">{{ $countryFlag }}</span>
                                     @endif
                                     @php $driverRecord = $driverMap->get($user->platform_id); @endphp
                                     @if($driverRecord)

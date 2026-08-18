@@ -28,7 +28,7 @@ class RaceController extends Controller
             ->update(['status' => 'closed']);
 
         $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','event_tag','max_drivers','duration_key'])
-            ->orderBy('scheduled_at', 'desc')
+            ->orderBy('scheduled_at', 'asc')
             ->get();
         $races->loadCount('registrations');
 

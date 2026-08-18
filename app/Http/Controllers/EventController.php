@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Race;
 use App\Models\RaceResult;
 use App\Models\User;
+use App\Services\CountryFlagService;
 use Illuminate\Http\JsonResponse;
 
 class EventController extends Controller
@@ -42,7 +43,7 @@ class EventController extends Controller
             ->map(fn($u, $i) => [
                 'pos'     => $i + 1,
                 'name'    => $u->name,
-                'country' => strtoupper($u->country ?? 'XX'),
+                'flag'    => CountryFlagService::emoji($u->country),
                 'gain'    => (int)($u->elo_acc ?? 0),
             ]);
 

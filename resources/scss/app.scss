@@ -1528,26 +1528,9 @@ span.flatpickr-weekday {
     }
 
     .xcl-lb-flag {
-        width: 20px;
-        height: 14px;
-        object-fit: cover;
+        font-size: .85rem;
+        line-height: 1;
         flex-shrink: 0;
-        border: 1px solid rgba(255,255,255,.1);
-    }
-
-    .xcl-lb-flag-placeholder {
-        width: 20px;
-        height: 14px;
-        background: #2D3748;
-        border: 1px solid rgba(255,255,255,.1);
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: .45rem;
-        color: #8B9BB4;
-        font-weight: 700;
-        letter-spacing: 0;
     }
 
     .xcl-lb-name {

@@ -16,7 +16,8 @@
                 <div class="flex-grow-1">
                     <h1 class="display-6 fw-black text-uppercase fst-italic text-dark mb-1">{{ $user->name }}</h1>
                     <p class="text-secondary text-uppercase mb-1">
-                        {{ $user->country }} &bull; {{ strtoupper($user->platform) }}
+                        @php $countryFlag = \App\Services\CountryFlagService::emoji($user->country); @endphp
+                        @if($countryFlag)<span aria-hidden="true">{{ $countryFlag }}</span> @endif{{ $user->country }} &bull; {{ strtoupper($user->platform) }}
                     </p>
                     @if($user->team)
                     <p class="fw-bold text-uppercase text-xcl-purple mb-1">{{ $user->team }}</p>
@@ -137,11 +138,13 @@
 
         {{-- Stats --}}
         @php
-            $ds      = ($driver && $driver->stats) ? $driver->stats : null;
-            $dsRaces = $ds?->total_races  ?? $stats['totalRaces'];
-            $dsWins  = $ds?->wins         ?? $stats['wins'];
-            $dsPods  = $ds?->podiums      ?? $stats['podiums'];
-            $dsRate  = $dsRaces > 0 ? round(($dsWins / $dsRaces) * 100) : ($stats['winRate'] ?? 0);
+            // Live stats from this user's own race_results — the legacy CSV-imported
+            // DriverStats is keyed by xuid and can be stale or attributed to the wrong
+            // driver after gamertag/account changes, so it's not used here.
+            $dsRaces = $stats['totalRaces'];
+            $dsWins  = $stats['wins'];
+            $dsPods  = $stats['podiums'];
+            $dsRate  = $stats['winRate'] ?? 0;
         @endphp
         <div class="bg-white rounded-3 shadow-sm p-4 mb-4">
             <h2 class="fs-2 fw-black text-uppercase fst-italic text-dark mb-4">YOUR STATS</h2>

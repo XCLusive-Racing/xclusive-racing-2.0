@@ -164,7 +164,7 @@ export function initEventsSidebar() {
                     <td class="xcl-lb-pos">${d.pos}</td>
                     <td>
                         <div class="xcl-lb-driver">
-                            <div class="xcl-lb-flag-placeholder">${esc(d.country)}</div>
+                            ${d.flag ? `<span class="xcl-lb-flag" aria-hidden="true">${esc(d.flag)}</span>` : ''}
                             <span class="xcl-lb-name">${esc(d.name)}</span>
                             ${d.supporter ? '<span title="Supporter" style="font-size:.6rem;color:#f59e0b;line-height:1">★</span>' : ''}
                         </div>

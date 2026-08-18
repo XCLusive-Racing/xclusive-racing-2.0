@@ -181,7 +181,7 @@
         $(function () {
             table = $('#races-table').DataTable({
                 pageLength: 10,
-                order: [[3, 'desc']],
+                order: [[3, 'asc']],
                 columnDefs: [
                     { orderable: false, targets: [0, 6] },
                 ],
