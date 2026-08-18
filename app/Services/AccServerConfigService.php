@@ -124,6 +124,9 @@ class AccServerConfigService
             'racecraftRatingRequirement' => $this->rcRequired($race),
             'maxCarSlots'                => $race->max_drivers ?? ($base['maxCarSlots'] ?? 30),
             'carGroup'                   => $this->carGroup($race->car_class),
+            // Nordschleife always gets the short formation lap — a full-length formation lap
+            // around the ~21km Nordschleife takes far too long to be practical.
+            'shortFormationLap'          => $this->trackSlug($race->track) === 'nordschleife' ? 1 : ($base['shortFormationLap'] ?? 0),
         ]);
     }
 
@@ -266,9 +269,21 @@ class AccServerConfigService
         };
     }
 
+    // Tracks whose display name doesn't naively slugify into ACC's real internal track
+    // folder name — Nordschleife is ACC's combined Nordschleife+GP endurance layout,
+    // internally named "nurburgring_24h" (not "nordschleife"); Nürburgring's umlaut
+    // breaks the naive regex slug below.
+    private const TRACK_SLUG_OVERRIDES = [
+        'Nordschleife' => 'nurburgring_24h',
+        'Nürburgring'  => 'nurburgring',
+    ];
+
     private function trackSlug(string $track): string
     {
-        return strtolower(preg_replace('/[^a-z0-9_]/i', '_', trim($track)));
+        $track = trim($track);
+
+        return self::TRACK_SLUG_OVERRIDES[$track]
+            ?? strtolower(preg_replace('/[^a-z0-9_]/i', '_', $track));
     }
 
     private function carGroup(?string $carClass): string
