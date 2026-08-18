@@ -146,7 +146,7 @@
                                         @foreach($raceResults as $result)
                                         <tr style="border-bottom:1px solid #f9fafb">
                                             <td class="ps-4 fw-bold" style="font-size:.9rem;{{ $result->position === 1 ? 'color:#f59e0b' : ($result->position === 2 ? 'color:#9ca3af' : ($result->position === 3 ? 'color:#cd7f32' : 'color:#374151')) }}">
-                                                {{ $result->dnf ? 'DNF' : $result->position }}
+                                                {{ $result->dsq ? 'DSQ' : ($result->dc ? 'DC' : ($result->dns ? 'DNS' : ($result->dnf ? 'DNF' : $result->position))) }}
                                             </td>
                                             <td>
                                                 <div class="d-flex align-items-center gap-2">

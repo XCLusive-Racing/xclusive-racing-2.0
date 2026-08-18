@@ -64,21 +64,21 @@ class Race extends Model
 
     public function results(): HasMany
     {
-        return $this->hasMany(RaceResult::class)->orderBy('position');
+        return $this->hasMany(RaceResult::class)->orderBy('dns')->orderBy('dnf')->orderBy('position');
     }
 
     public function raceResults(): HasMany
     {
         return $this->hasMany(RaceResult::class)
             ->where('session_type', 'race')
-            ->orderBy('position');
+            ->orderBy('dns')->orderBy('dnf')->orderBy('position');
     }
 
     public function qualiResults(): HasMany
     {
         return $this->hasMany(RaceResult::class)
             ->where('session_type', 'quali')
-            ->orderBy('position');
+            ->orderBy('dns')->orderBy('dnf')->orderBy('position');
     }
 
     public function isRegistered(User $user): bool

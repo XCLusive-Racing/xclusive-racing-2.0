@@ -880,7 +880,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($raceResults->sortBy('position') as $result)
+                        @foreach($raceResults->sortBy([['dns', 'asc'], ['dnf', 'asc'], ['position', 'asc']]) as $result)
                         <tr>
                             <td class="ps-4"><x-race-position :position="$result->position" /></td>
                             <td>

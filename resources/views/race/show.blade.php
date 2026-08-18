@@ -228,7 +228,13 @@
                                         @endif
                                     </td>
                                     <td class="text-center">
-                                        @if($result->dnf)
+                                        @if($result->dsq)
+                                            <span class="xcl-results-table__status xcl-results-table__status--dsq">DSQ</span>
+                                        @elseif($result->dc)
+                                            <span class="xcl-results-table__status xcl-results-table__status--dc">DC</span>
+                                        @elseif($result->dns)
+                                            <span class="xcl-results-table__status xcl-results-table__status--dns">DNS</span>
+                                        @elseif($result->dnf)
                                             <span class="xcl-results-table__status xcl-results-table__status--dnf">DNF</span>
                                         @else
                                             <span class="xcl-results-table__status xcl-results-table__status--fin">FIN</span>

@@ -227,7 +227,13 @@
                             <td class="text-secondary d-none d-md-table-cell" style="font-size:.82rem">{{ $result->vehicle ?? '—' }}</td>
                             <td class="text-center fw-bold d-none d-md-table-cell">{{ $result->lap_count ?? '—' }}</td>
                             <td class="text-center d-none d-sm-table-cell" style="font-family:monospace;font-size:.82rem">
-                                @if($result->dnf)
+                                @if($result->dsq)
+                                    <span class="badge" style="background:#fef2f2;color:#dc2626;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DSQ</span>
+                                @elseif($result->dc)
+                                    <span class="badge" style="background:#fffbeb;color:#b45309;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DC</span>
+                                @elseif($result->dns)
+                                    <span class="badge" style="background:#fef2f2;color:#6b7280;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DNS</span>
+                                @elseif($result->dnf)
                                     <span class="badge" style="background:#fef2f2;color:#dc2626;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DNF</span>
                                 @else
                                     {{ \App\Models\RaceResult::formatMs($result->total_time) }}

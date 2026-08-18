@@ -69,12 +69,22 @@ class AccResultImportService
         return [$counts, $errors];
     }
 
+    // A driver who parks in the pits (or never gets going) still shows up in ACC's
+    // leaderboard with whatever position they last held — there's no "retired"/"finished"
+    // flag in the export, so DNF/DNS have to be inferred from how far they actually got
+    // relative to the session leader.
+    private const DNF_LAP_THRESHOLD = 0.70;
+
     private function parseSession(array $session, Race $race, string $sessionType): int
     {
         $lines     = $session['sessionResult']['leaderBoardLines'] ?? [];
         $bestLapMs = ($session['sessionResult']['bestlap'] ?? -1) > 0
             ? (int) $session['sessionResult']['bestlap']
             : null;
+
+        $leaderLaps = $sessionType === 'race'
+            ? collect($lines)->max(fn ($l) => (int) ($l['timing']['lapCount'] ?? 0))
+            : 0;
 
         $playerIds = collect($lines)
             ->map(fn($l) => $l['car']['drivers'][0]['playerId'] ?? null)
@@ -117,7 +127,9 @@ class AccResultImportService
                 $consistency = ($raw >= 0 && $raw <= 999.99) ? round($raw, 2) : null;
             }
 
-            $dnf        = ($line['missingMandatoryPitstop'] ?? -1) === 1;
+            $dns = $sessionType === 'race' && $totalTime === null;
+            $dnf = $sessionType === 'race' && ! $dns && $leaderLaps > 0
+                && ($lapCount ?? 0) < $leaderLaps * self::DNF_LAP_THRESHOLD;
             $fastestLap = $bestLapMs !== null && $bestLap !== null && $bestLap === $bestLapMs;
 
             $user = $usersByPlatformId->get($playerId);
@@ -145,6 +157,7 @@ class AccResultImportService
                     'consistency'       => $consistency,
                     'fastest_lap'       => $fastestLap,
                     'dnf'               => $dnf,
+                    'dns'               => $dns,
                 ]
             );
 
