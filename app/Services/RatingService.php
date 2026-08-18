@@ -58,15 +58,12 @@ class RatingService
             'min_required'   => $this->calculator->MIN_DRIVERS,
         ]);
 
-        $this->calculator->MULTIPLIER = 1.0;
-
-        if ($race->duration_key) {
-            try {
-                $this->calculator->setDuration($race->duration_key);
-            } catch (\InvalidArgumentException) {
-                // Unknown key — fall back to 1.0×
-            }
-        }
+        // The multiplier admins actually configure lives on the race's EventFormat
+        // (Admin → Event Formats), shown as the "×N.N XCL-R" preview when creating a race.
+        // duration_key is a legacy, manually-set fallback for Custom Races that have no
+        // Format at all — races with a Format always use the Format's multiplier.
+        $this->calculator->MULTIPLIER = $race->eventFormat?->xcl_r_multiplier
+            ?? ($race->duration_key ? ($this->calculator->DURATION_MULTIPLIERS[$race->duration_key] ?? 1.0) : 1.0);
 
         try {
             $calculated = $this->calculator->processRace(
