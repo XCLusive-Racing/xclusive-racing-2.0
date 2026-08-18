@@ -47,8 +47,33 @@ class RatingService
                 'rating'     => $rating,
                 'finish_pos' => ($status === 'FIN') ? $r->position : null,
                 'status'     => $status,
+                'lap_count'  => (int) ($r->lap_count ?? 0),
             ];
         })->values()->all();
+
+        // Partial DNFs (completed >= 1 lap) are slotted behind all classified finishers
+        // and go through the normal position-based formula instead of the flat -25 penalty,
+        // so quitting late is never less punishing than finishing last.
+        // True DNFs (0 laps) keep the flat penalty.
+        $collection  = collect($entries);
+        $classified  = $collection->where('status', 'FIN')->sortBy('finish_pos')->values();
+        $partialDnfs = $collection
+            ->filter(fn($e) => $e['status'] === 'DNF' && $e['lap_count'] >= 1)
+            ->sortByDesc('lap_count')
+            ->values();
+
+        if ($partialDnfs->isNotEmpty()) {
+            $nextPos     = ($classified->max('finish_pos') ?? 0) + 1;
+            $partialDnfs = $partialDnfs->map(function ($e) use (&$nextPos) {
+                return array_merge($e, ['status' => 'FIN', 'finish_pos' => $nextPos++]);
+            });
+            $entries = $classified
+                ->concat($partialDnfs)
+                ->concat($collection->filter(fn($e) => $e['status'] === 'DNF' && $e['lap_count'] < 1))
+                ->concat($collection->filter(fn($e) => ! in_array($e['status'], ['FIN', 'DNF'])))
+                ->values()
+                ->all();
+        }
 
         $finisherCount = collect($entries)->where('status', 'FIN')->count();
         \Log::info('RatingService: starting calculation', [
