@@ -13,7 +13,8 @@ class ResultsController extends Controller
             ->orderBy('scheduled_at', 'desc')
             ->get();
 
-        $selected = $races->firstWhere('id', request('race')) ?? $races->first();
+        $selectedId = request('race') ?? $races->first()?->id;
+        $selected   = $selectedId ? Race::with('eventFormat')->find($selectedId) : null;
 
         $raceResults  = $selected?->raceResults()->with('user')->get() ?? collect();
         $qualiResults = $selected?->qualiResults()->with('user')->get() ?? collect();

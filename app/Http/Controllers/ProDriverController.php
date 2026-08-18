@@ -6,7 +6,7 @@ use App\Models\Media;
 
 class ProDriverController extends Controller
 {
-    private function allDrivers(): array
+    public static function allDrivers(): array
     {
         return [
             'dirk-schouten' => [
@@ -238,13 +238,13 @@ class ProDriverController extends Controller
 
     public function index()
     {
-        $drivers = $this->allDrivers();
+        $drivers = self::allDrivers();
         return view('teams.pro.index', compact('drivers'));
     }
 
     public function show(string $slug)
     {
-        $all = $this->allDrivers();
+        $all = self::allDrivers();
         abort_unless(isset($all[$slug]), 404);
 
         $driver         = $all[$slug];

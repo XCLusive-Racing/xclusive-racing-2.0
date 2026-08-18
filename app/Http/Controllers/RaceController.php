@@ -16,7 +16,8 @@ class RaceController extends Controller
 {
     public function index()
     {
-        $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','event_tag','max_drivers','duration_key','image','icon','description','sr_requirement','min_rating'])
+        $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','event_tag','max_drivers','duration_key','image','icon','description','sr_requirement','min_rating','max_rating','car_class','weather','event_format_id'])
+            ->with('eventFormat:id,race1_mins,race2_mins')
             ->where('status', '!=', 'finished')
             ->orderBy('scheduled_at')
             ->get();

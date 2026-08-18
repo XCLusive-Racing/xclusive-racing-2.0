@@ -121,9 +121,11 @@
                     $quali2Mins = $fmt ? $fmt->quali2_mins  : null;
                     $race2Mins  = $fmt ? $fmt->race2_mins   : null;
                     $hasPitstop = $fmt && $fmt->pitstop_count > 0;
-                    $pitstopLabel = $hasPitstop
-                    ? ('(' . $fmt->pitstop_count . 'x' . ($fmt->min_stop_secs ? ', ' . $fmt->min_stop_secs . 's' : '') . ')')
-                        : 'None';
+                    $pitstopLabel = !$hasPitstop
+                        ? 'None'
+                        : ($fmt->min_stop_secs
+                            ? $fmt->pitstop_count . 'x, ' . $fmt->min_stop_secs . 's waiting time'
+                            : $fmt->pitstop_count . 'x, fuel only');
                 @endphp
                 @if($pracMins || $qualiMins || $race1Mins || $fmt)
                 <div class="xcl-event-card mb-4">
@@ -176,9 +178,16 @@
                         @endif
                     </div>
                     @if($fmt)
-                    <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between">
-                        <span style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em">Pit Stops</span>
-                        <span style="font-size:.75rem;font-weight:700;color:{{ $hasPitstop ? '#f59e0b' : '#6b7280' }}">{{ $pitstopLabel }}</span>
+                    <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;gap:16px">
+                        <span style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">
+                            <i class="fa-solid fa-screwdriver-wrench" style="color:#f59e0b;margin-right:6px"></i>Pit Stops
+                            <span style="font-weight:700;color:{{ $hasPitstop ? '#f59e0b' : '#6b7280' }};text-transform:none;letter-spacing:normal;margin-left:6px">{{ $pitstopLabel }}</span>
+                        </span>
+                        <span style="width:1px;height:18px;background:rgba(219,39,119,.4);flex-shrink:0"></span>
+                        <span style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">
+                            <i class="fa-solid fa-gauge-high" style="color:#c084fc;margin-right:6px"></i>XCL Rating
+                            <span style="font-weight:700;color:#c084fc;text-transform:none;letter-spacing:normal;margin-left:6px">{{ $fmt->xclRLabel() }}</span>
+                        </span>
                     </div>
                     @endif
                 </div>
@@ -378,11 +387,22 @@
 
                 {{-- Drivers --}}
                 <div class="xcl-event-card">
+                    @php
+                        $sofRatings = $race->registrations->pluck('user')->filter()
+                            ->map(fn($u) => (int) ($u->{"elo_{$race->game}"} ?? 0))
+                            ->filter(fn($r) => $r > 0);
+                        $sof = $sofRatings->isNotEmpty() ? $sofRatings->avg() : null;
+                    @endphp
                     <h3 class="xcl-event-card__heading">
                         DRIVERS
                         <span class="xcl-event-card__heading-sub">
                             {{ $race->registrations->count() }}{{ $race->max_drivers ? '/' . $race->max_drivers : '' }}
                         </span>
+                        @if($sof !== null)
+                        <span class="xcl-event-card__heading-sub" style="margin-left:auto;margin-right:14px;color:#c084fc;font-weight:800">
+                            <i class="fa-solid fa-chart-line" style="margin-right:4px"></i>SoF {{ number_format($sof, 0) }}
+                        </span>
+                        @endif
                     </h3>
 
                     @if($race->registrations->isEmpty())
