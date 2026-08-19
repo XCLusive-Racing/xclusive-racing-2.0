@@ -28,6 +28,15 @@
         </div>
         @else
 
+        <div class="d-flex gap-2 p-3 rounded-3 mb-4" style="background:#eff6ff;border:1px solid #bfdbfe">
+            <i class="fa-solid fa-circle-info mt-1" style="color:#2563eb;font-size:.85rem"></i>
+            <div style="font-size:.78rem;line-height:1.5;color:#1e40af">
+                <strong>Reports open once results are final.</strong> A race only appears below after it has
+                finished and its results &amp; ratings have been fully processed &mdash; this can take a
+                little while after the chequered flag. Check back shortly if your race isn&rsquo;t listed yet.
+            </div>
+        </div>
+
         <div class="row g-4">
 
             {{-- Submit form --}}
@@ -35,16 +44,6 @@
                 <div class="bg-white rounded-3 shadow-sm overflow-hidden">
                     <div class="px-4 py-3 border-bottom" style="background:#fafafa">
                         <span class="fw-black text-uppercase" style="font-size:.78rem;letter-spacing:.06em">Submit Report</span>
-                    </div>
-                    <div class="px-4 pt-4">
-                        <div class="d-flex gap-2 p-3 rounded-3" style="background:#eff6ff;border:1px solid #bfdbfe">
-                            <i class="fa-solid fa-circle-info mt-1" style="color:#2563eb;font-size:.85rem"></i>
-                            <div style="font-size:.78rem;line-height:1.5;color:#1e40af">
-                                <strong>Reports open once results are final.</strong> A race only appears below after it has
-                                finished and its results &amp; ratings have been fully processed &mdash; this can take a
-                                little while after the chequered flag. Check back shortly if your race isn&rsquo;t listed yet.
-                            </div>
-                        </div>
                     </div>
                     <form method="POST" action="{{ route('reports.store') }}" class="p-4">
                         @csrf
@@ -144,6 +143,15 @@
                             <div class="form-text" style="font-size:.72rem">Heli / overview footage of the incident.</div>
                         </div>
 
+                        <div class="mb-4 d-flex align-items-start gap-2 p-2 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
+                            <input type="checkbox" name="hide_reporter_name" id="hide-reporter-name" value="1"
+                                   class="form-check-input mt-1" {{ old('hide_reporter_name') ? 'checked' : '' }}>
+                            <label for="hide-reporter-name" class="mb-0" style="font-size:.78rem;line-height:1.4">
+                                <span class="fw-bold">Hide my name from the reported driver</span>
+                                <div class="text-secondary" style="font-size:.72rem">Stewards will always see who filed this report — this only keeps your name hidden from the driver you're reporting.</div>
+                            </label>
+                        </div>
+
                         <button type="submit" class="btn fw-bold text-white w-100" style="background:#7c3aed;font-size:.85rem"
                                 {{ $races->isEmpty() ? 'disabled' : '' }}>
                             Submit Report
@@ -215,8 +223,7 @@
                             @foreach($reportsAgainst as $report)
                             @php
                                 $meta = $report->statusMeta();
-                                $decided = in_array($report->status, ['resolved', 'dismissed']);
-                                $reporterName = $decided ? ($report->user->displayName() ?? 'Unknown') : 'Anonymous';
+                                $reporterName = $report->reporterNameForReportedDriver();
                             @endphp
                             <div class="px-4 py-3 border-bottom">
                                 <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
