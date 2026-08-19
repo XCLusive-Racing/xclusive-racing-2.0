@@ -44,7 +44,7 @@ class AccServerConfigService
 
     public function configuration(Race $race, ?FtpServer $server = null): array
     {
-        $defaults = $server?->event_defaults ?? [];
+        $defaults = $server?->event_defaults ?? $this->defaultEventConfig();
 
         // Practice shows the same in-game lighting as the Race, since that's what
         // drivers are actually setting up for. Qualifying is set an hour earlier —
@@ -95,11 +95,11 @@ class AccServerConfigService
 
         return [
             'track'                     => $this->trackSlug($race->track),
-            'preRaceWaitingTimeSeconds' => $defaults['preRaceWaitingTimeSeconds'] ?? 60,
-            'postQualySeconds'          => $defaults['postQualySeconds'] ?? 30,
-            'postRaceSeconds'           => $defaults['postRaceSeconds'] ?? 30,
-            'sessionOverTimeSeconds'    => $defaults['sessionOverTimeSeconds'] ?? 120,
-            'ambientTemp'               => $race->ambient_temp ?? $defaults['ambientTemp'] ?? 22,
+            'preRaceWaitingTimeSeconds' => $defaults['preRaceWaitingTimeSeconds'] ?? 120,
+            'postQualySeconds'          => $defaults['postQualySeconds'] ?? 60,
+            'postRaceSeconds'           => $defaults['postRaceSeconds'] ?? 180,
+            'sessionOverTimeSeconds'    => $defaults['sessionOverTimeSeconds'] ?? 540,
+            'ambientTemp'               => $race->ambient_temp ?? $defaults['ambientTemp'] ?? 20,
             'trackTemp'                 => $defaults['trackTemp'] ?? -1,
             'cloudLevel'                => $cloudLevel,
             'rain'                      => $rain,
@@ -140,10 +140,25 @@ class AccServerConfigService
         return $server?->assistrules_defaults ?? $this->defaultAssistRules();
     }
 
+    public function defaultEventConfig(): array
+    {
+        return [
+            'preRaceWaitingTimeSeconds' => 120,
+            'postQualySeconds'          => 60,
+            'postRaceSeconds'           => 180,
+            'sessionOverTimeSeconds'    => 540,
+            'ambientTemp'               => 20,
+            'trackTemp'                 => -1,
+            'cloudLevel'                => 0.1,
+            'rain'                      => 0,
+            'weatherRandomness'         => 1,
+        ];
+    }
+
     public function defaultSettings(): array
     {
         return [
-            'serverName'                 => 'XCL SERVER - Daily Sprint - Playstation 5 & Xbox Series S/X',
+            'serverName'                 => 'XCL SERVER - Playstation 5 & Xbox Series S/X',
             'adminPassword'              => '3867cf9b',
             'randomizeTrackWhenEmpty'    => 0,
             'trackMedalsRequirement'     => 0,
@@ -151,7 +166,7 @@ class AccServerConfigService
             'racecraftRatingRequirement' => -1,
             'allowAutoDQ'                => 0,
             'password'                   => '1xcl',
-            'maxConnections'             => 100,
+            'maxConnections'             => 120,
             'spectatorSlots'             => 2,
             'spectatorPassword'          => 'Password',
             'dumpLeaderboards'           => 1,
@@ -176,8 +191,8 @@ class AccServerConfigService
             'pitWindowLengthSec'                   => -1,
             'mandatoryPitstopCount'                => 1,
             'qualifyStandingType'                  => 1,
-            'isRefuellingAllowedInRace'            => true,
-            'isRefuellingTimeFixed'                => false,
+            'isRefuellingAllowedInRace'             => true,
+            'isRefuellingTimeFixed'                => true,
             'isMandatoryPitstopRefuellingRequired' => true,
             'isMandatoryPitstopTyreChangeRequired' => false,
             'driverStintTimeSec'                   => -1,

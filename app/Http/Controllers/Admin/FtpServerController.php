@@ -82,17 +82,25 @@ class FtpServerController extends Controller
         );
         $data['active'] = $request->boolean('active');
 
-        foreach (['event_defaults', 'settings_defaults', 'eventrules_defaults', 'assistrules_defaults'] as $field) {
+        $configService = app(AccServerConfigService::class);
+        $builtInDefaults = [
+            'event_defaults'       => $configService->defaultEventConfig(),
+            'settings_defaults'    => $configService->defaultSettings(),
+            'eventrules_defaults'  => $configService->defaultEventRules(),
+            'assistrules_defaults' => $configService->defaultAssistRules(),
+        ];
+
+        foreach ($builtInDefaults as $field => $builtIn) {
             $raw = trim($request->input($field, ''));
             if ($raw === '') {
                 $data[$field] = null;
-            } else {
-                $decoded = json_decode($raw, true);
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    return back()->withInput()->withErrors([$field => 'Invalid JSON: ' . json_last_error_msg()]);
-                }
-                $data[$field] = $decoded;
+                continue;
             }
+            $decoded = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return back()->withInput()->withErrors([$field => 'Invalid JSON: ' . json_last_error_msg()]);
+            }
+            $data[$field] = ($decoded == $builtIn) ? null : $decoded;
         }
 
         if ($request->filled('password')) {

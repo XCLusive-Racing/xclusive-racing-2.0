@@ -66,31 +66,35 @@
                         @endif
                     </td>
                     <td class="text-end pe-4">
-                        <div class="d-flex gap-1 gap-md-2 justify-content-end align-items-center flex-wrap">
-                            <button type="button"
-                                    class="btn btn-sm fw-bold text-uppercase"
-                                    style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:.68rem;padding:3px 10px"
-                                    onclick="testConnection({{ $server->id }}, this)">
-                                Test
+                        <div class="dropdown">
+                            <button class="btn btn-sm fw-bold" type="button"
+                                    data-bs-toggle="dropdown" aria-expanded="false"
+                                    style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;font-size:.78rem;padding:4px 10px;line-height:1.2">
+                                ···
                             </button>
-                            <a href="{{ route('admin.servers.browse', $server) }}"
-                               class="btn btn-sm fw-bold text-uppercase"
-                               style="background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;font-size:.68rem;padding:3px 10px">
-                                Browse
-                            </a>
-                            <a href="{{ route('admin.servers.edit', $server) }}"
-                               class="btn btn-sm fw-bold text-uppercase"
-                               style="background:#f3e8ff;color:#7c3aed;border:1px solid #e9d5ff;font-size:.68rem;padding:3px 10px">
-                                Edit
-                            </a>
-                            <form action="{{ route('admin.servers.destroy', $server) }}" method="POST" onsubmit="return false">
-                                @csrf @method('DELETE')
-                                <button type="button" class="btn btn-sm fw-bold text-uppercase"
-                                        style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.68rem;padding:3px 10px"
-                                        onclick="xcDeleteSubmit(this.closest('form'), 'Delete {{ addslashes($server->name) }}?')">
-                                    Delete
-                                </button>
-                            </form>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="font-size:.82rem;min-width:140px;border-color:#e5e7eb">
+                                <li>
+                                    <button type="button" class="dropdown-item fw-bold" style="color:#16a34a"
+                                            onclick="testConnection({{ $server->id }}, this)">
+                                        Test Connection
+                                    </button>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item fw-bold" href="{{ route('admin.servers.edit', $server) }}" style="color:#7c3aed">
+                                        Edit
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider" style="border-color:#f3f4f6"></li>
+                                <li>
+                                    <form action="{{ route('admin.servers.destroy', $server) }}" method="POST" onsubmit="return false">
+                                        @csrf @method('DELETE')
+                                        <button type="button" class="dropdown-item fw-bold" style="color:#dc2626"
+                                                onclick="xcDeleteSubmit(this.closest('form'), 'Delete {{ addslashes($server->name) }}?')">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
                         </div>
                     </td>
                 </tr>
