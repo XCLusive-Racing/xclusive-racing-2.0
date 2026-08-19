@@ -72,6 +72,17 @@
                             @error('reporter_driver_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
 
+                        <div class="mb-3">
+                            <label class="form-label fw-bold" style="font-size:.8rem">Session <span class="text-danger">*</span></label>
+                            <select name="session_type" class="form-select form-select-sm @error('session_type') is-invalid @enderror">
+                                <option value="">— Select session —</option>
+                                <option value="R" {{ old('session_type') == 'R' ? 'selected' : '' }}>Race</option>
+                                <option value="Q" {{ old('session_type') == 'Q' ? 'selected' : '' }}>Qualifying</option>
+                                <option value="P" {{ old('session_type') == 'P' ? 'selected' : '' }}>Practice</option>
+                            </select>
+                            @error('session_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+
                         <div class="row g-2 mb-3">
                             <div class="col-6">
                                 <label class="form-label fw-bold" style="font-size:.8rem">Lap number</label>

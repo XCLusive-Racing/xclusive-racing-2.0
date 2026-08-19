@@ -39,6 +39,7 @@ class ReportController extends Controller
             'race_id'               => 'nullable|exists:races,id',
             'reported_driver_name'  => 'required|string|max:100',
             'reporter_driver_name'  => 'nullable|string|max:100',
+            'session_type'          => 'required|in:R,Q,P',
             'lap_number'            => 'nullable|integer|min:1|max:999',
             'incident_corner'       => 'nullable|string|max:50',
             'description'           => 'required|string|min:20|max:2000',

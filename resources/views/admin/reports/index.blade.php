@@ -21,6 +21,9 @@
                     <th class="fw-bold text-uppercase text-secondary py-3" style="font-size:.68rem;letter-spacing:.06em">Reported</th>
                     <th class="fw-bold text-uppercase text-secondary py-3 d-none d-md-table-cell" style="font-size:.68rem;letter-spacing:.06em">Race</th>
                     <th class="fw-bold text-uppercase text-secondary py-3 text-center" style="font-size:.68rem;letter-spacing:.06em">Status</th>
+                    <th class="fw-bold text-uppercase text-secondary py-3 text-center d-none d-md-table-cell" style="font-size:.68rem;letter-spacing:.06em">Penalty</th>
+                    <th class="fw-bold text-uppercase text-secondary py-3 text-center d-none d-lg-table-cell" style="font-size:.68rem;letter-spacing:.06em">Stewards</th>
+                    <th class="fw-bold text-uppercase text-secondary py-3 text-center d-none d-lg-table-cell" style="font-size:.68rem;letter-spacing:.06em">Processed</th>
                     <th class="fw-bold text-uppercase text-secondary py-3 d-none d-lg-table-cell" style="font-size:.68rem;letter-spacing:.06em">Submitted</th>
                     <th style="width:60px"></th>
                 </tr>
@@ -39,6 +42,25 @@
                         <span class="badge fw-bold text-white" style="background:{{ $meta['color'] }};font-size:.68rem">
                             {{ $meta['label'] }}
                         </span>
+                    </td>
+                    <td class="text-center d-none d-md-table-cell">
+                        @if($report->final_penalty)
+                        <span class="badge fw-bold" style="background:#ede9fe;color:#5b21b6;font-size:.68rem">
+                            {{ $report->final_penalty }}@if($report->final_multiplier) &times;{{ (float) $report->final_multiplier }}@endif
+                        </span>
+                        @else
+                        <span class="text-secondary">—</span>
+                        @endif
+                    </td>
+                    <td class="text-center d-none d-lg-table-cell" style="font-size:.78rem">
+                        {{ $report->verdicts_count }}/2
+                    </td>
+                    <td class="text-center d-none d-lg-table-cell">
+                        @if($report->processed_at)
+                        <span class="badge fw-bold text-white" style="background:#16a34a;font-size:.65rem">✓ Processed</span>
+                        @else
+                        <span class="text-secondary" style="font-size:.75rem">—</span>
+                        @endif
                     </td>
                     <td class="text-secondary d-none d-lg-table-cell" style="font-size:.78rem">
                         {{ $report->created_at->timezone('Europe/London')->format('d M Y') }}
