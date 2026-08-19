@@ -96,6 +96,7 @@ Route::get('/bop', [BopController::class, 'index'])->name('bop.index');
 Route::middleware('auth')->group(function () {
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
+    Route::get('/api/race/{race}/participants', [ReportController::class, 'raceParticipants'])->name('api.race.participants');
 });
 
 // Auth
