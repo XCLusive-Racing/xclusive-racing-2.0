@@ -45,7 +45,7 @@ class ConnectedAccountController extends Controller
             ->where('email', 'like', '%@import.local')
             ->first();
 
-        $stillDefault = (int) $user->elo_acc === 1500 && (float) $user->sr_acc === 5.00;
+        $stillDefault = (int) $user->elo_acc === 1500 && (float) $user->sr_acc === 4.00;
         $merged       = false;
         $blockedMerge = false;
 

@@ -13,7 +13,7 @@ class RaceResult extends Model
         'player_id', 'driver_name', 'car_number', 'vehicle',
         'position', 'best_lap', 'lap_count', 'laps_led', 'total_time', 'consistency',
         'fastest_lap', 'dnf', 'dns', 'dsq', 'dc',
-        'rating_before', 'rating_after', 'elo_change', 'sof',
+        'rating_before', 'rating_after', 'elo_change', 'sof', 'sr_change',
     ];
 
     private const ACC_CARS = [
@@ -91,6 +91,7 @@ class RaceResult extends Model
             'rating_after'  => 'decimal:4',
             'elo_change'    => 'decimal:4',
             'sof'           => 'decimal:2',
+            'sr_change'     => 'decimal:4',
         ];
     }
 

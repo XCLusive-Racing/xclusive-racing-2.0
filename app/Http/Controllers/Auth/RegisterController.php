@@ -126,7 +126,9 @@ class RegisterController extends Controller
             'elo_acc'             => $driver->xcl_rating ?? 1500,
             'elo_lmu'             => 1500,
             'elo_iracing'         => 1500,
-            'sr_acc'              => $driver->safety_rating ?? 5.00,
+            'sr_acc'              => 4.00,
+            'sr_lmu'              => 4.00,
+            'sr_iracing'          => 4.00,
             'privacy_accepted_at' => now(),
         ]);
 
