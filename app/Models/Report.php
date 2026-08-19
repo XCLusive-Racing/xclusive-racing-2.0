@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Report extends Model
 {
     protected $fillable = [
-        'user_id', 'race_id', 'reported_driver_name', 'reporter_driver_name',
+        'user_id', 'race_id', 'reported_driver_name', 'reported_user_id', 'reporter_driver_name',
         'lap_number', 'incident_corner', 'description', 'session_type',
         'video_url', 'clip_good_driver_url', 'clip_bad_driver_url', 'clip_heli_url',
         'status', 'admin_notes', 'reviewed_by',
@@ -78,6 +78,11 @@ class Report extends Model
     public function race(): BelongsTo
     {
         return $this->belongsTo(Race::class);
+    }
+
+    public function reportedUserAccount(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reported_user_id');
     }
 
     public function reviewer(): BelongsTo
@@ -177,12 +182,20 @@ class Report extends Model
     }
 
     /**
-     * Resolve the reported driver's User account. Prefers the linked race result for this
-     * race (driver_name is the exact name used in that session), falling back to a
-     * Driver/gamertag match against platform_id the same way profile lookups work elsewhere.
+     * Resolve the reported driver's User account. New reports carry reported_user_id
+     * directly (chosen from the race's participant list at submission time). Older
+     * reports only stored a name, so we fall back to matching that name against the
+     * linked race result, then a Driver/gamertag match against platform_id the same
+     * way profile lookups work elsewhere.
      */
     public function reportedUser(): ?User
     {
+        if ($this->reported_user_id) {
+            return $this->relationLoaded('reportedUserAccount')
+                ? $this->reportedUserAccount
+                : User::find($this->reported_user_id);
+        }
+
         if ($this->race_id && $this->reported_driver_name) {
             $result = RaceResult::where('race_id', $this->race_id)
                 ->where('driver_name', $this->reported_driver_name)
