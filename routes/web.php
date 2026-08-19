@@ -253,6 +253,19 @@ Route::middleware(['auth', 'role:owner,admin,event_manager,steward'])->prefix('a
     Route::patch('/reports/{report}/status', [AdminReportController::class, 'updateStatus'])->name('reports.status');
 });
 
+// Steward verdict workflow — owner, admin, steward only
+Route::middleware(['auth', 'role:owner,admin,steward'])->prefix('admin')->name('admin.')->group(function () {
+    Route::post('/reports/{report}/start-investigating', [AdminReportController::class, 'startInvestigating'])->name('reports.start-investigating');
+    Route::post('/reports/{report}/verdict', [AdminReportController::class, 'submitVerdict'])->name('reports.verdict');
+    Route::post('/reports/{report}/mark-ready', [AdminReportController::class, 'markReady'])->name('reports.mark-ready');
+    Route::post('/reports/{report}/dismiss', [AdminReportController::class, 'dismiss'])->name('reports.dismiss');
+});
+
+// Penalty processing — owner, admin only
+Route::middleware(['auth', 'role:owner,admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::post('/reports/{report}/process', [AdminReportController::class, 'process'])->name('reports.process');
+});
+
 // Owner + moderator + event_manager — Users
 Route::middleware(['auth', 'role:owner,moderator,event_manager'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
