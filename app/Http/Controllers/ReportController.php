@@ -77,7 +77,10 @@ class ReportController extends Controller
             'clip_good_driver_url'  => 'nullable|url|max:500',
             'clip_bad_driver_url'   => 'nullable|url|max:500',
             'clip_heli_url'         => 'nullable|url|max:500',
+            'hide_reporter_name'    => 'nullable|boolean',
         ]);
+
+        $data['hide_reporter_name'] = $request->boolean('hide_reporter_name');
 
         if ((int) $data['reported_user_id'] === auth()->id()) {
             return back()->withErrors(['reported_user_id' => 'You cannot report yourself.'])->withInput();

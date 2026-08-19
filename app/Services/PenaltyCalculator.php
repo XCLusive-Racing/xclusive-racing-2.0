@@ -47,7 +47,7 @@ class PenaltyCalculator
      * R = reported driver's XCL rating, P = penalty value, M = steward multiplier, S = session multiplier.
      *
      * XCL Rating deduction  = R / 100 * P * M * S
-     * Rating return to reporter = P / 2.7 if the incident happened in a Race session, else 0
+     * Rating return to reporter = XCL Rating deduction / 2.7 if the incident happened in a Race session, else 0
      * SR deduction = base SR for the penalty code * SR multiplier for M
      */
     public static function calculate(string $penaltyCode, float|int $multiplier, ?string $sessionType, float $reportedRating): array
@@ -59,7 +59,7 @@ class PenaltyCalculator
         $m       = (float) $multiplier;
 
         $ratingDeduction = $reportedRating / 100 * $p * $m * $s;
-        $ratingReturn    = $sessionType === 'R' ? ($p / 2.7) : 0.0;
+        $ratingReturn    = $sessionType === 'R' ? ($ratingDeduction / 2.7) : 0.0;
         $srDeduction     = $baseSr * self::srMultiplier($m);
 
         return [

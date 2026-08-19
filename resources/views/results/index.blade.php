@@ -34,13 +34,16 @@
                         @foreach($races as $race)
                         @php $isActive = $selected?->id === $race->id; @endphp
                         <a href="{{ route('results.index', ['race' => $race->id]) }}"
-                           class="result-race-item d-flex align-items-start gap-2 px-3 py-2 text-decoration-none border-bottom {{ $isActive ? 'active' : '' }}">
-                            <span class="badge mt-1 flex-shrink-0" style="background:{{ $race->gameColor() }};font-size:.6rem">{{ $race->gameLabel() }}</span>
-                            <div>
-                                <div class="fw-bold text-dark" style="font-size:.82rem;line-height:1.3;{{ $isActive ? 'color:#7c3aed' : '' }}">
-                                    {{ $race->title }}
-                                </div>
-                                <div class="text-secondary" style="font-size:.72rem">{{ $race->scheduledAtUk()->format('d M Y') }}</div>
+                           class="result-race-item d-flex flex-column gap-1 px-3 py-2 text-decoration-none border-bottom {{ $isActive ? 'active' : '' }}">
+                            <div class="fw-bold text-dark" style="font-size:.82rem;line-height:1.3;{{ $isActive ? 'color:#7c3aed' : '' }}">
+                                {{ $race->title }}
+                            </div>
+                            <div class="fw-bold" style="font-size:.68rem;letter-spacing:.03em;color:#7c3aed">
+                                {{ strtoupper($race->scheduledAtUk()->format('l')) }} / {{ strtoupper($race->scheduledAtUk()->format('g:i A T')) }}
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span class="badge flex-shrink-0" style="background:{{ $race->gameColor() }};font-size:.6rem">{{ $race->gameLabel() }}</span>
+                                <span class="text-secondary" style="font-size:.72rem">{{ $race->scheduledAtUk()->format('d M Y') }}</span>
                             </div>
                         </a>
                         @endforeach
@@ -76,7 +79,9 @@
                         <img src="{{ $selected->icon_url }}" alt="" width="40" height="40" style="object-fit:contain;border-radius:6px">
                         @endif
                         <div>
-                            <div class="fw-black text-dark" style="font-size:1rem">{{ $selected->title }}</div>
+                            <div class="fw-black text-dark" style="font-size:1rem">
+                                {{ $selected->title }}, {{ strtoupper($selected->scheduledAtUk()->format('l')) }} / {{ strtoupper($selected->scheduledAtUk()->format('g:i A T')) }}
+                            </div>
                             <div class="text-secondary" style="font-size:.78rem">
                                 {{ $selected->track }} &middot; {{ $selected->scheduledAtUk()->format('d M Y') }}
                             </div>

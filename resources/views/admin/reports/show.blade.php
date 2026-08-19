@@ -17,9 +17,10 @@
     $agreement   = $report->agreementState();
     $bothSlotsFilled = $report->steward_1_id && $report->steward_2_id;
 
-    // Build the list of verdict panels: slot 1, slot 2, then any additional stewards
-    // who've submitted a verdict without holding a numbered slot, then — if both slots
-    // are taken and the viewer hasn't submitted anything yet — one open panel for them.
+    // Build the list of verdict panels: slot 1, slot 2, then any additional stewards who've
+    // submitted a verdict without holding a numbered slot. A 3rd panel always reserves the
+    // space — it's actionable (isNew) once both slots are filled and the viewer hasn't voted
+    // yet, otherwise it's a non-interactive placeholder (isPlaceholder) up to a max of 3 total.
     $panels = [];
     foreach ([1, 2] as $slot) {
         $steward = $report->{'steward' . $slot};
@@ -34,8 +35,31 @@
     $viewerHasPanel = collect($panels)->contains(fn($p) => $p['steward']?->id === $currentUser->id);
     if ($bothSlotsFilled && ! $viewerHasPanel && $canVerdict && in_array($report->status, ['investigating'])) {
         $panels[] = ['slot' => null, 'steward' => null, 'verdict' => null, 'isNew' => true];
+    } elseif (count($panels) < 3 && in_array($report->status, ['investigating'])) {
+        // Reserve visible space for a 3rd steward even before both numbered slots are filled —
+        // it only becomes actionable (isNew, above) once steward 1 and 2 have both submitted.
+        $panels[] = ['slot' => null, 'steward' => null, 'verdict' => null, 'isPlaceholder' => true];
     }
 @endphp
+
+<style>
+    .mult-help-tooltip {
+        display: none;
+        position: absolute;
+        z-index: 20;
+        top: 20px;
+        left: 0;
+        width: 240px;
+        background: #111827;
+        color: #f3f4f6;
+        padding: .6rem .7rem;
+        border-radius: 8px;
+        font-size: .7rem;
+        line-height: 1.5;
+        box-shadow: 0 4px 16px rgba(0,0,0,.25);
+    }
+    .mult-help-tooltip.show { display: block; }
+</style>
 
 @if(session('success'))
 <div class="alert border-0 text-white fw-bold mb-4 rounded-3" style="background:#16a34a">{{ session('success') }}</div>
@@ -45,7 +69,7 @@
 @endif
 
 {{-- Incident details --}}
-<div class="admin-card mb-4">
+<div class="admin-card mb-4 p-4 p-lg-5">
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
         <h6 class="fw-black text-uppercase mb-0" style="font-size:.78rem;letter-spacing:.06em">Incident Details</h6>
         <div class="d-flex align-items-center gap-2">
@@ -138,26 +162,33 @@
 
 @if($report->status === 'investigating' || (in_array($report->status, ['resolved', 'dismissed']) && $report->verdicts->count() > 0))
 {{-- Steward verdict panels --}}
-<div class="admin-card mb-4">
+<div class="admin-card mb-4 p-4 p-lg-5">
     <h6 class="fw-black text-uppercase mb-4" style="font-size:.78rem;letter-spacing:.06em">Steward Verdicts</h6>
+    <div class="text-secondary mb-4" style="font-size:.78rem">Up to 3 stewards can weigh in — 2 matching verdicts are enough to reach a ruling.</div>
 
     <div class="row g-3">
         @foreach($panels as $i => $panel)
         @php
-            $steward   = $panel['steward'];
-            $verdict   = $panel['verdict'];
-            $isNew     = $panel['isNew'] ?? false;
-            $editable  = $report->status === 'investigating' && (($steward && $steward->id === $currentUser->id) || $isNew);
-            $label     = $panel['slot'] ? "Steward {$panel['slot']}" : ($steward ? $steward->name : 'Additional Steward');
+            $steward       = $panel['steward'];
+            $verdict       = $panel['verdict'];
+            $isNew         = $panel['isNew'] ?? false;
+            $isPlaceholder = $panel['isPlaceholder'] ?? false;
+            $editable      = $report->status === 'investigating' && (($steward && $steward->id === $currentUser->id) || $isNew);
+            $label         = $panel['slot'] ? "Steward {$panel['slot']}" : ($steward ? $steward->name : '3rd Steward (optional)');
         @endphp
-        <div class="col-12 col-lg-6">
-            <div class="p-3 rounded-3 h-100" style="border:1px solid #f3f4f6;background:{{ $verdict?->red_flag ? '#fef2f2' : '#fafafa' }}">
+        <div class="col-12 col-lg-4">
+            <div class="p-3 p-lg-4 rounded-3 h-100" style="border:1px {{ $isPlaceholder ? 'dashed #e5e7eb' : 'solid #f3f4f6' }};background:{{ $verdict?->red_flag ? '#fef2f2' : ($isPlaceholder ? '#fcfcfd' : '#fafafa') }}">
                 <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="fw-black text-uppercase" style="font-size:.72rem;letter-spacing:.06em">{{ $label }}</span>
+                    <span class="fw-black text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:{{ $isPlaceholder ? '#9ca3af' : 'inherit' }}">{{ $label }}</span>
                     @if($verdict?->red_flag)
                     <span class="badge fw-bold text-white" style="background:#dc2626;font-size:.65rem">🚩 Red Flag</span>
                     @endif
                 </div>
+
+                @if($isPlaceholder)
+                    <div class="text-secondary" style="font-size:.8rem">Opens once Steward 1 and Steward 2 have both submitted a verdict.</div>
+                @else
+
                 <div class="text-secondary mb-3" style="font-size:.8rem">
                     {{ $steward->name ?? ($isNew ? $currentUser->name : 'Awaiting steward') }}
                 </div>
@@ -180,11 +211,14 @@
                         </div>
 
                         <div class="mb-3">
-                            <div class="d-flex align-items-center gap-1 mb-1">
+                            <div class="d-flex align-items-center gap-1 mb-1 position-relative">
                                 <label class="form-label fw-bold mb-0" style="font-size:.75rem">Multiplier</label>
-                                <span tabindex="0"
-                                      title="1x = Standard penalty. 2x = Repeated offence or elevated severity (SR loss ×1.1). 3x = Severe / multiple aggravating factors (SR loss ×1.2)."
+                                <span class="mult-help-icon" tabindex="0" role="button" aria-label="Multiplier help" data-tooltip="mult-tt-{{ $i }}"
                                       style="cursor:help;font-size:.7rem;width:15px;height:15px;border-radius:50%;background:#9ca3af;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800">?</span>
+                                <div id="mult-tt-{{ $i }}" class="mult-help-tooltip">
+                                    2x multiplier is only applied for lap 1 incidents.<br>
+                                    3x multiplier is only applied for lap 1 incidents happening in Crash Zones (see crash zones below).
+                                </div>
                             </div>
                             <div class="btn-group w-100 multiplier-group" data-form="{{ $formId }}">
                                 @foreach([1 => '1x', 2 => '2x', 3 => '3x'] as $mVal => $mLabel)
@@ -233,6 +267,7 @@
                 @else
                     <div class="text-secondary" style="font-size:.8rem">Awaiting verdict.</div>
                 @endif
+                @endif
             </div>
         </div>
         @endforeach
@@ -240,7 +275,7 @@
 </div>
 
 {{-- Agreement banner --}}
-<div class="admin-card mb-4">
+<div class="admin-card mb-4 p-4 p-lg-5">
     @if($agreement === 'agree')
         <div class="p-3 rounded-2 text-white fw-bold mb-3" style="background:#16a34a;font-size:.85rem">
             ✓ 2 stewards agree — ready to process
@@ -285,7 +320,7 @@
 
 @if($canVerdict && ! in_array($report->status, ['resolved', 'dismissed']))
 {{-- Dismiss --}}
-<div class="admin-card mb-4">
+<div class="admin-card mb-4 p-4 p-lg-5">
     <button type="button" class="btn btn-sm btn-outline-danger fw-bold" id="dismiss-toggle" style="font-size:.78rem">Dismiss Report</button>
     <form method="POST" action="{{ route('admin.reports.dismiss', $report) }}" id="dismiss-form" class="mt-3" style="display:none">
         @csrf
@@ -297,21 +332,22 @@
 @endif
 
 {{-- Penalty code reference --}}
-<div class="admin-card mb-4" style="background:#111827;color:#e5e7eb">
+<div class="admin-card mb-4 p-4 p-lg-5" style="background:#111827;color:#e5e7eb">
     <button type="button" id="ref-toggle" class="btn w-100 d-flex align-items-center justify-content-between border-0 p-0" style="background:transparent;color:#e5e7eb">
         <span class="fw-black text-uppercase" style="font-size:.78rem;letter-spacing:.06em">Penalty Code Reference</span>
         <span id="ref-arrow" style="transition:transform .15s">▸</span>
     </button>
 
     <div id="ref-body" style="display:none" class="mt-4">
-        <div class="table-responsive mb-4">
-            <table class="table table-sm mb-0" style="font-size:.78rem;color:#e5e7eb">
+        <div class="p-3 rounded-2 mb-4" style="background:#1f2937">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0" style="font-size:.78rem;color:#e5e7eb;--bs-table-bg:transparent;--bs-table-color:#e5e7eb">
                 <thead>
                     <tr style="border-bottom:1px solid #374151">
-                        <th class="text-secondary text-uppercase" style="font-size:.65rem;letter-spacing:.05em">Code</th>
-                        <th class="text-secondary text-uppercase" style="font-size:.65rem;letter-spacing:.05em">Label</th>
-                        <th class="text-secondary text-uppercase" style="font-size:.65rem;letter-spacing:.05em">SR</th>
-                        <th class="text-secondary text-uppercase" style="font-size:.65rem;letter-spacing:.05em">Description</th>
+                        <th class="text-uppercase" style="font-size:.65rem;letter-spacing:.05em;color:#9ca3af">Code</th>
+                        <th class="text-uppercase" style="font-size:.65rem;letter-spacing:.05em;color:#9ca3af">Label</th>
+                        <th class="text-uppercase" style="font-size:.65rem;letter-spacing:.05em;color:#9ca3af">SR</th>
+                        <th class="text-uppercase" style="font-size:.65rem;letter-spacing:.05em;color:#9ca3af">Description</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -337,15 +373,16 @@
                     ];
                     @endphp
                     @foreach($penaltyCodes as $code => $cfg)
-                    <tr style="border-bottom:1px solid #1f2937">
+                    <tr style="border-bottom:1px solid #374151">
                         <td class="fw-bold" style="color:#a78bfa">{{ $code }}</td>
-                        <td>{{ $cfg['label'] }}</td>
-                        <td>-{{ number_format($cfg['sr'], 2) }}</td>
-                        <td class="text-secondary">{{ $descriptions[$code] ?? '' }}</td>
+                        <td style="color:#d1d5db">{{ $cfg['label'] }}</td>
+                        <td style="color:#d1d5db">-{{ number_format($cfg['sr'], 2) }}</td>
+                        <td style="color:#9ca3af">{{ $descriptions[$code] ?? '' }}</td>
                     </tr>
                     @endforeach
                 </tbody>
             </table>
+        </div>
         </div>
 
         <button type="button" id="bf-toggle" class="btn w-100 d-flex align-items-center justify-content-between border-0 p-0 mb-2" style="background:transparent;color:#e5e7eb">
@@ -370,6 +407,19 @@
                     blue-flagged driver wide — they are still in their own race. The responsibility for a safe pass is on the car behind. Show
                     your intended line clearly and the blue-flagged car should not defend. If you cannot pass immediately, focus on your exit
                     and the next corner.
+                </p>
+            </div>
+        </div>
+
+        <button type="button" id="cz-toggle" class="btn w-100 d-flex align-items-center justify-content-between border-0 p-0 mb-2 mt-4" style="background:transparent;color:#e5e7eb">
+            <span class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em">Crash Zones</span>
+            <span id="cz-arrow" style="transition:transform .15s">▸</span>
+        </button>
+        <div id="cz-body" style="display:none">
+            <div class="p-3 rounded-2" style="background:#1f2937">
+                <p class="mb-0" style="font-size:.78rem;line-height:1.6;color:#d1d5db">
+                    Crash zone definitions have not been added yet — this section is a placeholder. The 3x multiplier ("Lap 1 incident in a
+                    Crash Zone") relies on this list; add the per-track zones here once defined.
                 </p>
             </div>
         </div>
@@ -415,7 +465,7 @@
         const s = sessionMultiplier(SESSION_TYPE);
 
         const ratingDeduction = (REPORTED_RATING / 100) * p * m * s;
-        const ratingReturn = SESSION_TYPE === 'R' ? (p / 2.7) : 0;
+        const ratingReturn = SESSION_TYPE === 'R' ? (ratingDeduction / 2.7) : 0;
         const srDeduction = baseSr * srMultiplier(m);
 
         preview.querySelector('.pv-rating').textContent = '-' + ratingDeduction.toFixed(2);
@@ -430,6 +480,25 @@
     });
     document.querySelectorAll('.multiplier-radio').forEach(function (el) {
         el.addEventListener('change', function () { updatePreview(el.dataset.form); });
+    });
+
+    document.querySelectorAll('.mult-help-icon').forEach(function (icon) {
+        const tooltip = document.getElementById(icon.dataset.tooltip);
+        if (!tooltip) return;
+
+        icon.addEventListener('mouseenter', function () { tooltip.classList.add('show'); });
+        icon.addEventListener('mouseleave', function () { tooltip.classList.remove('show'); });
+        icon.addEventListener('focus', function () { tooltip.classList.add('show'); });
+        icon.addEventListener('blur', function () { tooltip.classList.remove('show'); });
+        icon.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const isOpen = tooltip.classList.contains('show');
+            document.querySelectorAll('.mult-help-tooltip.show').forEach(function (t) { t.classList.remove('show'); });
+            if (!isOpen) tooltip.classList.add('show');
+        });
+    });
+    document.addEventListener('click', function () {
+        document.querySelectorAll('.mult-help-tooltip.show').forEach(function (t) { t.classList.remove('show'); });
     });
 
     document.querySelectorAll('.red-flag-toggle').forEach(function (btn) {
@@ -467,6 +536,7 @@
     }
     bindCollapse('ref-toggle', 'ref-body', 'ref-arrow');
     bindCollapse('bf-toggle', 'bf-body', 'bf-arrow');
+    bindCollapse('cz-toggle', 'cz-body', 'cz-arrow');
 })();
 </script>
 @endpush

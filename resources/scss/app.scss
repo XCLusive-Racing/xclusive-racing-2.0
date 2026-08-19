@@ -2181,13 +2181,31 @@ span.flatpickr-weekday {
         padding: .7rem .85rem .85rem;
     }
 
+    &__time {
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 700;
+        font-size: .85rem;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: #C8FF00;
+        line-height: 1.2;
+    }
+
+    &__time-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        margin-bottom: 3px;
+    }
+
     &__meta {
         font-size: .72rem;
         color: rgba(255,255,255,.7);
         margin-bottom: .65rem;
     }
 
-    // Car class + day/time — top-left over the image (mirrors __lobby on the right)
+    // Car class — top-left over the image (mirrors __lobby on the right)
     &__top-left-row {
         position: absolute;
         top: .6rem;
@@ -2211,19 +2229,6 @@ span.flatpickr-weekday {
         text-transform: uppercase;
         white-space: nowrap;
         box-shadow: 0 2px 8px rgba(0,0,0,.35);
-    }
-
-    &__time-badge {
-        background: rgba(0,0,0,.6);
-        border-radius: 4px;
-        padding: .3rem .65rem;
-        color: #fff;
-        font-family: 'Poppins', sans-serif;
-        font-weight: 700;
-        font-size: .68rem;
-        letter-spacing: .04em;
-        text-transform: uppercase;
-        white-space: nowrap;
     }
 
     // Game + SR + open/closed badges, grouped next to each other

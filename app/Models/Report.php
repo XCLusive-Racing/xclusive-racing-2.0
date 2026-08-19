@@ -11,6 +11,7 @@ class Report extends Model
 {
     protected $fillable = [
         'user_id', 'race_id', 'reported_driver_name', 'reported_user_id', 'reporter_driver_name',
+        'hide_reporter_name',
         'lap_number', 'incident_corner', 'description', 'session_type',
         'video_url', 'clip_good_driver_url', 'clip_bad_driver_url', 'clip_heli_url',
         'status', 'admin_notes', 'reviewed_by',
@@ -25,6 +26,7 @@ class Report extends Model
     protected function casts(): array
     {
         return [
+            'hide_reporter_name'   => 'boolean',
             'steward_1_multiplier' => 'decimal:1',
             'steward_1_red_flag'   => 'boolean',
             'steward_2_multiplier' => 'decimal:1',
@@ -66,6 +68,22 @@ class Report extends Model
     public function sessionLabel(): string
     {
         return self::sessionTypes()[$this->session_type] ?? '—';
+    }
+
+    /**
+     * Reporter name as shown to the reported driver: always anonymous while the report
+     * is still open, and permanently anonymous if the reporter chose to hide their name.
+     * Stewards/admins always see the real reporter via $report->user directly.
+     */
+    public function reporterNameForReportedDriver(): string
+    {
+        if ($this->hide_reporter_name) {
+            return 'Anonymous';
+        }
+
+        $decided = in_array($this->status, ['resolved', 'dismissed'], true);
+
+        return $decided ? ($this->user->displayName() ?? 'Unknown') : 'Anonymous';
     }
 
     // --- Relationships ---
