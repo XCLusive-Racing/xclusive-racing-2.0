@@ -32,7 +32,7 @@ class RaceController extends Controller
 
     public function show(Race $race)
     {
-        $race->load(['raceClasses', 'registrations.user', 'registrations.raceClass', 'registrations.teamEntry.team', 'raceResults.user', 'eventFormat']);
+        $race->load(['raceClasses', 'registrations.user', 'registrations.raceClass', 'registrations.teamEntry.team', 'raceResults.user', 'eventFormat', 'teamEntries']);
         $isRegistered   = false;
         $myRegistration = null;
         $userTeam       = null;
@@ -211,9 +211,9 @@ class RaceController extends Controller
         }
 
         if ($race->max_drivers !== null) {
-            $currentCount = $race->registrations()->count();
-            if ($currentCount + $selectedIds->count() > $race->max_drivers) {
-                return back()->with('error', 'Not enough slots available for all selected drivers.');
+            $currentTeams = $race->teamEntries()->count();
+            if ($currentTeams + 1 > $race->max_drivers) {
+                return back()->with('error', 'This race is full. No more team slots available.');
             }
         }
 
