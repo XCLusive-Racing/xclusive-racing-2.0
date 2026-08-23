@@ -172,7 +172,7 @@ $mcExisting = $isEdit
                                 <label class="form-label">Car Class</label>
                                 <select name="car_class" id="ce-custom-car-class" class="form-select">
                                     <option value="">Open</option>
-                                    @foreach(['GT2','GT3','GT4','TCX','GTC','LMP1','LMP2','LMGT3','GTE','Hypercar','Oval','Road'] as $cls)
+                                    @foreach(['GT2','GT3','GT4','TCX','GTC'] as $cls)
                                         <option value="{{ $cls }}" {{ old('car_class', $isEdit ? $race->car_class : '') === $cls ? 'selected' : '' }}>{{ $cls }}</option>
                                     @endforeach
                                 </select>
