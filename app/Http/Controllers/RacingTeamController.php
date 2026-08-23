@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Message;
 use App\Models\RacingTeam;
 use App\Models\RacingTeamInvitation;
 use App\Models\User;
@@ -87,10 +88,19 @@ class RacingTeamController extends Controller
             return back()->withErrors(['team' => $user->displayName() . ' is already a member.']);
         }
 
-        RacingTeamInvitation::firstOrCreate([
+        $invitation = RacingTeamInvitation::firstOrCreate([
             'racing_team_id' => $team->id,
             'user_id'        => $user->id,
         ]);
+
+        if ($invitation->wasRecentlyCreated) {
+            Message::create([
+                'user_id' => $user->id,
+                'title'   => 'Team Invitation: ' . $team->name,
+                'body'    => Auth::user()->displayName() . ' has invited you to join their racing team ' . $team->name . '. Go to My Team to accept or decline.',
+                'type'    => 'team_invitation',
+            ]);
+        }
 
         return back()->with('team_success', 'Invite sent to ' . $user->displayName() . '.');
     }
