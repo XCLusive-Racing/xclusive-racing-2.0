@@ -169,6 +169,8 @@ class RaceController extends Controller
         }
 
         $validated = $request->validate([
+            'car_number'   => ['required', 'integer', 'min:0', 'max:999'],
+            'car_model'    => ['nullable', 'string', 'max:60'],
             'driver_ids'   => ['required', 'array', 'min:1'],
             'driver_ids.*' => ['integer'],
         ]);
@@ -204,10 +206,12 @@ class RaceController extends Controller
         $race->load('ftpServer');
 
         try {
-            DB::transaction(function () use ($race, $team, $selectedIds, $users) {
+            DB::transaction(function () use ($race, $team, $selectedIds, $users, $validated) {
                 $entry = RaceTeamEntry::create([
                     'race_id'        => $race->id,
                     'racing_team_id' => $team->id,
+                    'car_number'     => $validated['car_number'],
+                    'car_model'      => $validated['car_model'] ?? null,
                 ]);
 
                 foreach ($selectedIds as $userId) {

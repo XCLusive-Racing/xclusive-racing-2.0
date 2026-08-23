@@ -651,6 +651,17 @@ $mcExisting = $isEdit
                         <div class="text-secondary mt-2" style="font-size:.75rem" data-mc-hint>Select one or more classes to enable multiclass</div>
                     </div>
 
+                    {{-- ── Endurance / Driver Swap ─────────────────────────── --}}
+                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   name="is_endurance" id="ce-is-endurance" value="1"
+                                   {{ old('is_endurance', $isEdit ? $race->is_endurance : false) ? 'checked' : '' }}>
+                            <label class="form-check-label fw-bold" for="ce-is-endurance">Endurance / Driver Swap</label>
+                        </div>
+                        <div class="text-secondary mt-1" style="font-size:.75rem">Enables team entry registration — drivers sign up as a team with shared car number and model.</div>
+                    </div>
+
                 </div>
 
             </div>{{-- /step 3 --}}

@@ -405,6 +405,7 @@ class RaceController extends Controller
             'max_drivers'          => 'nullable|integer|min:1',
             'description'          => 'nullable|string',
             'is_multiclass'        => 'nullable|boolean',
+            'is_endurance'         => 'nullable|boolean',
             'ftp_server_id'        => empty($request->event_format_id) ? 'required|exists:ftp_servers,id' : 'nullable|exists:ftp_servers,id',
             'image'                => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',
             'image_path'           => 'nullable|string|max:500',
@@ -416,6 +417,7 @@ class RaceController extends Controller
 
         $data['scheduled_at']  = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
         $data['is_multiclass'] = $request->boolean('is_multiclass');
+        $data['is_endurance']  = $request->boolean('is_endurance');
 
         $data = $this->deriveFormatFields($data);
 
@@ -515,6 +517,7 @@ class RaceController extends Controller
             'icon_path'            => 'nullable|string|max:500',
             'icon_keep'            => 'nullable|in:0,1',
             'is_multiclass'        => 'nullable|boolean',
+            'is_endurance'         => 'nullable|boolean',
             'ftp_server_id'        => 'nullable|exists:ftp_servers,id',
             'pitstop_count'        => 'nullable|integer|min:0|max:9',
             'min_stop_secs'        => 'nullable|integer|min:1|max:3600',
@@ -522,6 +525,7 @@ class RaceController extends Controller
 
         $data['scheduled_at']  = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
         $data['is_multiclass'] = $request->boolean('is_multiclass');
+        $data['is_endurance']  = $request->boolean('is_endurance');
 
         $data = $this->deriveFormatFields($data);
 

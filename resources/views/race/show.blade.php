@@ -278,11 +278,7 @@
             {{-- Right: sidebar --}}
             <div class="col-12 col-lg-4">
 
-                @php
-                    $isEndurance = $race->eventFormat
-                        ? (int)($race->eventFormat->pitstop_count ?? 0) > 0
-                        : (int)($race->pitstop_count ?? 0) > 0;
-                @endphp
+                @php $isEndurance = (bool) $race->is_endurance; @endphp
 
                 {{-- Team Entry (endurance races only) --}}
                 @auth
@@ -317,6 +313,27 @@
                         </p>
                         <form action="{{ route('events.register-team', $race) }}" method="POST">
                             @csrf
+
+                            {{-- Car details --}}
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="xcl-event-card__text d-block mb-1" style="font-size:.75rem">Car Number</label>
+                                    <input type="number" name="car_number" min="0" max="999"
+                                           class="form-control form-control-sm"
+                                           style="background:#1f2937;border-color:#374151;color:#e5e7eb"
+                                           placeholder="e.g. 7" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="xcl-event-card__text d-block mb-1" style="font-size:.75rem">Car Model</label>
+                                    <input type="text" name="car_model" maxlength="60"
+                                           class="form-control form-control-sm"
+                                           style="background:#1f2937;border-color:#374151;color:#e5e7eb"
+                                           placeholder="e.g. Ferrari 296">
+                                </div>
+                            </div>
+
+                            {{-- Driver selection --}}
+                            <p class="xcl-event-card__text mb-2" style="font-size:.78rem;opacity:.7">Drivers</p>
                             <div class="form-check mb-2">
                                 <input class="form-check-input" type="checkbox" name="driver_ids[]"
                                        value="{{ $userTeam->owner_id }}" id="driver_{{ $userTeam->owner_id }}" checked>
@@ -336,6 +353,7 @@
                                 </label>
                             </div>
                             @endforeach
+
                             <button type="submit" class="xcl-event-reg-btn w-100 mt-3"
                                     style="background:{{ $race->gameColor() }}">
                                 REGISTER TEAM →
@@ -348,8 +366,8 @@
                 @endif
                 @endauth
 
-                {{-- Registration --}}
-                @if($race->status !== 'finished')
+                {{-- Registration (solo — hidden for endurance races) --}}
+                @if($race->status !== 'finished' && !$isEndurance)
                 <div class="xcl-event-card mb-4">
                     <h3 class="xcl-event-card__heading">REGISTRATION</h3>
 
