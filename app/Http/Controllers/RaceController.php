@@ -45,7 +45,7 @@ class RaceController extends Controller
             if ($userTeam) {
                 $myTeamEntry = RaceTeamEntry::where('race_id', $race->id)
                     ->where('racing_team_id', $userTeam->id)
-                    ->with('registrations.user')
+                    ->with(['registrations.user', 'startingDriver'])
                     ->first();
             }
         }
@@ -169,10 +169,11 @@ class RaceController extends Controller
         }
 
         $validated = $request->validate([
-            'car_number'   => ['required', 'integer', 'min:0', 'max:999'],
-            'car_model'    => ['nullable', 'string', 'max:60'],
-            'driver_ids'   => ['required', 'array', 'min:1'],
-            'driver_ids.*' => ['integer'],
+            'car_number'        => ['required', 'integer', 'min:0', 'max:999'],
+            'car_model'         => ['nullable', 'string', 'max:60'],
+            'driver_ids'        => ['required', 'array', 'min:1'],
+            'driver_ids.*'      => ['integer'],
+            'starting_driver_id' => ['required', 'integer'],
         ]);
 
         $eligibleIds = $team->members->pluck('id')->push($team->owner_id)->unique();
@@ -183,6 +184,11 @@ class RaceController extends Controller
 
         if ($selectedIds->isEmpty()) {
             return back()->with('error', 'Please select at least one driver from your team.');
+        }
+
+        $startingDriverId = (int) $validated['starting_driver_id'];
+        if (!$selectedIds->contains($startingDriverId)) {
+            return back()->with('error', 'The starting driver must be one of the selected drivers.');
         }
 
         $users = User::whereIn('id', $selectedIds)->get()->keyBy('id');
@@ -206,12 +212,13 @@ class RaceController extends Controller
         $race->load('ftpServer');
 
         try {
-            DB::transaction(function () use ($race, $team, $selectedIds, $users, $validated) {
+            DB::transaction(function () use ($race, $team, $selectedIds, $users, $validated, $startingDriverId) {
                 $entry = RaceTeamEntry::create([
-                    'race_id'        => $race->id,
-                    'racing_team_id' => $team->id,
-                    'car_number'     => $validated['car_number'],
-                    'car_model'      => $validated['car_model'] ?? null,
+                    'race_id'            => $race->id,
+                    'racing_team_id'     => $team->id,
+                    'car_number'         => $validated['car_number'],
+                    'car_model'          => $validated['car_model'] ?? null,
+                    'starting_driver_id' => $startingDriverId,
                 ]);
 
                 foreach ($selectedIds as $userId) {

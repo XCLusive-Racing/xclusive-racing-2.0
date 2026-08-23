@@ -290,7 +290,7 @@ $mcExisting = $isEdit
                                 <div class="form-text">0.0 dry · 0.3 damp · 0.5 light · 0.8 heavy · 1.0 flooded</div>
                             </div>
                             <div class="col-sm-3">
-                                <label class="form-label">Race Start Time <span class="fw-normal text-secondary" style="text-transform:none">(in-game)</span></label>
+                                <label class="form-label">Race Start Time</label>
                                 @php
                                     $rawTod = old('time_of_day', $isEdit ? $race->time_of_day : null);
                                     $todMap = ['day' => '14:00', 'dusk' => '17:00', 'night' => '21:00', 'dynamic' => '14:00'];
