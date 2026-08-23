@@ -142,9 +142,22 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/connected-accounts', [ConnectedAccountController::class, 'store'])->name('connected-accounts.store');
     Route::delete('/profile/connected-accounts/{connectedAccount}', [ConnectedAccountController::class, 'destroy'])->name('connected-accounts.destroy');
 
+    // Racing teams
+    Route::get('/my-team',                                           [RacingTeamController::class, 'index'])->name('racing-teams.index');
+    Route::get('/racing-teams/search',                               [RacingTeamController::class, 'searchUsers'])->name('racing-teams.search');
+    Route::post('/racing-teams',                                     [RacingTeamController::class, 'store'])->name('racing-teams.store');
+    Route::delete('/racing-teams/{team}',                            [RacingTeamController::class, 'destroy'])->name('racing-teams.destroy');
+    Route::post('/racing-teams/{team}/members',                      [RacingTeamController::class, 'addMember'])->name('racing-teams.members.add');
+    Route::delete('/racing-teams/{team}/members/{user}',             [RacingTeamController::class, 'removeMember'])->name('racing-teams.members.remove');
+    Route::post('/racing-teams/{team}/leave',                        [RacingTeamController::class, 'leave'])->name('racing-teams.leave');
+    Route::post('/racing-team-invitations/{invitation}/accept',      [RacingTeamController::class, 'acceptInvite'])->name('racing-teams.invite.accept');
+    Route::post('/racing-team-invitations/{invitation}/decline',     [RacingTeamController::class, 'declineInvite'])->name('racing-teams.invite.decline');
+
     // Event registration
     Route::post('/events/{race}/register', [RaceController::class, 'register'])->name('events.register');
     Route::delete('/events/{race}/unregister', [RaceController::class, 'unregister'])->name('events.unregister');
+    Route::post('/events/{race}/register-team', [RaceController::class, 'registerTeam'])->name('events.register-team');
+    Route::delete('/events/{race}/unregister-team', [RaceController::class, 'unregisterTeam'])->name('events.unregister-team');
 
     // Inbox
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
@@ -159,6 +172,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/calendar', [AdminCalendarController::class, 'index'])->name('calendar');
     Route::get('/races', [AdminRaceController::class, 'index'])->name('races.index');
+    Route::get('/races/special', [AdminRaceController::class, 'specialIndex'])->name('races.special');
     Route::get('/races/create', [AdminRaceController::class, 'create'])->name('races.create');
     Route::get('/races/bulk-create', [AdminRaceController::class, 'bulkCreate'])->name('races.bulk-create');
     Route::post('/races/bulk-store', [AdminRaceController::class, 'bulkStore'])->name('races.bulk-store');

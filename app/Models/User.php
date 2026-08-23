@@ -43,7 +43,7 @@ class User extends Authenticatable
     // the leaderboard) against an SR/rating requirement. Returns an error message if they
     // don't qualify, or null if they do. Games with no tracked rating (e.g. ACC PC) can't
     // be checked, so requirements are skipped rather than blocking everyone.
-    public function requirementFailure(string $game, ?string $srRequirement, ?string $minRating): ?string
+    public function requirementFailure(string $game, ?string $srRequirement, ?string $minRating, ?string $maxRating = null): ?string
     {
         if (!in_array($game, ['acc', 'lmu', 'iracing'])) {
             return null;
@@ -57,11 +57,23 @@ class User extends Authenticatable
             }
         }
 
+        $userElo = (int) ($this->{"elo_{$game}"} ?? 0);
+        $ranks   = collect(self::ranks());
+
         if ($minRating && $minRating !== 'all') {
-            $threshold = collect(self::ranks())->firstWhere('slug', $minRating)['min'] ?? 0;
-            $userElo   = (int) ($this->{"elo_{$game}"} ?? 0);
+            $threshold = $ranks->firstWhere('slug', $minRating)['min'] ?? 0;
             if ($userElo < $threshold) {
                 return 'You need at least ' . ucfirst($minRating) . ' rank to register for this class.';
+            }
+        }
+
+        if ($maxRating && $maxRating !== 'all') {
+            $maxIndex = $ranks->search(fn($r) => $r['slug'] === $maxRating);
+            if ($maxIndex !== false && $maxIndex > 0) {
+                $nextHigherMin = $ranks[$maxIndex - 1]['min'];
+                if ($userElo >= $nextHigherMin) {
+                    return 'This race is for ' . ucfirst($maxRating) . ' drivers only. Your rank is too high.';
+                }
             }
         }
 
@@ -170,6 +182,11 @@ class User extends Authenticatable
     public function ownedRacingTeams(): HasMany
     {
         return $this->hasMany(RacingTeam::class, 'owner_id');
+    }
+
+    public function racingTeamInvitations(): HasMany
+    {
+        return $this->hasMany(RacingTeamInvitation::class);
     }
 
     public function racingTeams(): BelongsToMany

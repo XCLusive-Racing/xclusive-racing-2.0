@@ -5,11 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\RaceTeamEntry;
 use Illuminate\Support\Facades\Storage;
 
 class Race extends Model
 {
-    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon', 'duration_key', 'practice_duration', 'qualifying_duration', 'race_duration', 'pitstop_count', 'min_stop_secs', 'car_class', 'sr_requirement', 'min_rating', 'max_rating', 'weather', 'weather_randomness', 'rain_level', 'time_of_day', 'ambient_temp', 'config_overrides', 'championship_id', 'round_number', 'is_multiclass', 'event_format_id', 'ftp_server_id', 'slot_time', 'config_pushed_at', 'config_push_status', 'config_push_attempts', 'config_push_error'];
+    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon', 'duration_key', 'practice_duration', 'qualifying_duration', 'race_duration', 'pitstop_count', 'min_stop_secs', 'car_class', 'sr_requirement', 'min_rating', 'max_rating', 'weather', 'weather_randomness', 'rain_level', 'time_of_day', 'ambient_temp', 'config_overrides', 'championship_id', 'round_number', 'is_multiclass', 'is_endurance', 'event_format_id', 'ftp_server_id', 'slot_time', 'config_pushed_at', 'config_push_status', 'config_push_attempts', 'config_push_error'];
 
     protected function casts(): array
     {
@@ -17,6 +18,7 @@ class Race extends Model
             'scheduled_at'       => 'datetime',
             'config_overrides'   => 'array',
             'is_multiclass'      => 'boolean',
+            'is_endurance'       => 'boolean',
             'slot_time'          => 'datetime',
             'config_pushed_at'   => 'datetime',
         ];
@@ -60,6 +62,11 @@ class Race extends Model
     public function registrations(): HasMany
     {
         return $this->hasMany(RaceRegistration::class);
+    }
+
+    public function teamEntries(): HasMany
+    {
+        return $this->hasMany(RaceTeamEntry::class);
     }
 
     public function results(): HasMany

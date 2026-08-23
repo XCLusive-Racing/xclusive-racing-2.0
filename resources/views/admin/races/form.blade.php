@@ -216,7 +216,7 @@ $mcExisting = $isEdit
                                 <label class="form-label">Rating Multiplier</label>
                                 <select name="duration_key" class="form-select" style="max-width:220px">
                                     @foreach(['' => '1.0× (default)', '15' => '0.6×', '20' => '0.8×', '30' => '1.0×', '30+' => '1.2×', '30++' => '1.3×', '45' => '1.5×', '45+' => '1.6×', '60' => '2.0×', '60+' => '2.1×', '90' => '2.5×', '90+' => '2.6×'] as $val => $label)
-                                        <option value="{{ $val }}" {{ old('duration_key', $race->duration_key ?? '') === $val ? 'selected' : '' }}>{{ $label }}</option>
+                                        <option value="{{ $val }}" {{ old('duration_key', $race->duration_key ?? '') === (string) $val ? 'selected' : '' }}>{{ $label }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -290,7 +290,7 @@ $mcExisting = $isEdit
                                 <div class="form-text">0.0 dry · 0.3 damp · 0.5 light · 0.8 heavy · 1.0 flooded</div>
                             </div>
                             <div class="col-sm-3">
-                                <label class="form-label">Race Start Time <span class="fw-normal text-secondary" style="text-transform:none">(in-game)</span></label>
+                                <label class="form-label">Race Start Time</label>
                                 @php
                                     $rawTod = old('time_of_day', $isEdit ? $race->time_of_day : null);
                                     $todMap = ['day' => '14:00', 'dusk' => '17:00', 'night' => '21:00', 'dynamic' => '14:00'];
@@ -649,6 +649,17 @@ $mcExisting = $isEdit
                         <div data-mc-drivers-wrap class="d-flex flex-wrap gap-3" style="display:none"></div>
 
                         <div class="text-secondary mt-2" style="font-size:.75rem" data-mc-hint>Select one or more classes to enable multiclass</div>
+                    </div>
+
+                    {{-- ── Endurance / Driver Swap ─────────────────────────── --}}
+                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   name="is_endurance" id="ce-is-endurance" value="1"
+                                   {{ old('is_endurance', $isEdit ? $race->is_endurance : false) ? 'checked' : '' }}>
+                            <label class="form-check-label fw-bold" for="ce-is-endurance">Endurance / Driver Swap</label>
+                        </div>
+                        <div class="text-secondary mt-1" style="font-size:.75rem">Enables team entry registration — drivers sign up as a team with shared car number and model.</div>
                     </div>
 
                 </div>

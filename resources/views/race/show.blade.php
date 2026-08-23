@@ -278,8 +278,139 @@
             {{-- Right: sidebar --}}
             <div class="col-12 col-lg-4">
 
-                {{-- Registration --}}
-                @if($race->status !== 'finished')
+                @php $isEndurance = (bool) $race->is_endurance; @endphp
+
+                {{-- Team Entry (endurance races only) --}}
+                @auth
+                @if($isEndurance && $userTeam)
+                <div class="xcl-event-card mb-4">
+                    <h3 class="xcl-event-card__heading">TEAM ENTRY</h3>
+
+                    @if($myTeamEntry)
+                        <div class="xcl-event-reg-status xcl-event-reg-status--registered mb-3">
+                            {{ $userTeam->name }} is registered!
+                        </div>
+                        @if($myTeamEntry->car_number || $myTeamEntry->car_model)
+                        <div style="font-size:.78rem;color:#9ca3af;margin-bottom:10px">
+                            @if($myTeamEntry->car_number)<span style="color:#e5e7eb;font-weight:700">#{{ $myTeamEntry->car_number }}</span>@endif
+                            @if($myTeamEntry->car_model)<span> — {{ $myTeamEntry->car_model }}</span>@endif
+                        </div>
+                        @endif
+                        <div class="mb-3">
+                            @foreach($myTeamEntry->registrations as $reg)
+                            @php $isStarter = $myTeamEntry->starting_driver_id === $reg->user_id; @endphp
+                            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+                                <div style="width:28px;height:28px;border-radius:50%;background:#374151;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#e5e7eb;flex-shrink:0">
+                                    {{ strtoupper(substr($reg->user->name, 0, 1)) }}
+                                </div>
+                                <span style="font-size:.82rem;font-weight:600;color:#e5e7eb">{{ $reg->user->displayName() }}</span>
+                                @if($isStarter)
+                                <span style="margin-left:auto;font-size:.68rem;font-weight:800;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:{{ $race->gameColor() }}33;color:{{ $race->gameColor() }};border:1px solid {{ $race->gameColor() }}55">Starts</span>
+                                @endif
+                            </div>
+                            @endforeach
+                        </div>
+                        @if($race->status === 'open')
+                        <form action="{{ route('events.unregister-team', $race) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="xcl-event-unreg-btn w-100">UNREGISTER TEAM</button>
+                        </form>
+                        @endif
+                    @elseif($race->registrationOpen())
+                        <p class="xcl-event-card__text mb-3" style="font-size:.82rem">
+                            Register your team <strong style="color:#e5e7eb">{{ $userTeam->name }}</strong>. Select which drivers will participate:
+                        </p>
+                        <form action="{{ route('events.register-team', $race) }}" method="POST">
+                            @csrf
+
+                            {{-- Car details --}}
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="xcl-event-card__text d-block mb-1" style="font-size:.75rem">Car Number</label>
+                                    <input type="number" name="car_number" min="0" max="999"
+                                           class="form-control form-control-sm"
+                                           style="background:#1f2937;border-color:#374151;color:#e5e7eb"
+                                           placeholder="e.g. 7" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="xcl-event-card__text d-block mb-1" style="font-size:.75rem">Car Model</label>
+                                    <input type="text" name="car_model" maxlength="60"
+                                           class="form-control form-control-sm"
+                                           style="background:#1f2937;border-color:#374151;color:#e5e7eb"
+                                           placeholder="e.g. Ferrari 296">
+                                </div>
+                            </div>
+
+                            {{-- Driver selection --}}
+                            <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:4px 8px;margin-bottom:8px">
+                                <span style="font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">Driver</span>
+                                <span style="font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;text-align:center">Starts</span>
+
+                                {{-- Owner --}}
+                                <div class="d-flex align-items-center gap-2">
+                                    <input class="form-check-input m-0" type="checkbox" name="driver_ids[]"
+                                           value="{{ $userTeam->owner_id }}" id="driver_{{ $userTeam->owner_id }}"
+                                           checked onchange="syncStarter(this)">
+                                    <label for="driver_{{ $userTeam->owner_id }}" style="color:#e5e7eb;font-size:.85rem;cursor:pointer">
+                                        {{ auth()->user()->displayName() }}
+                                        <span style="color:#6b7280;font-size:.75rem">(you)</span>
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <input type="radio" name="starting_driver_id" value="{{ $userTeam->owner_id }}"
+                                           id="starter_{{ $userTeam->owner_id }}" checked
+                                           style="width:15px;height:15px;cursor:pointer;accent-color:{{ $race->gameColor() }}">
+                                </div>
+
+                                @foreach($userTeam->members as $member)
+                                <div class="d-flex align-items-center gap-2">
+                                    <input class="form-check-input m-0" type="checkbox" name="driver_ids[]"
+                                           value="{{ $member->id }}" id="driver_{{ $member->id }}"
+                                           onchange="syncStarter(this)">
+                                    <label for="driver_{{ $member->id }}" style="color:#e5e7eb;font-size:.85rem;cursor:pointer">
+                                        {{ $member->displayName() }}
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <input type="radio" name="starting_driver_id" value="{{ $member->id }}"
+                                           id="starter_{{ $member->id }}"
+                                           style="width:15px;height:15px;cursor:pointer;accent-color:{{ $race->gameColor() }}">
+                                </div>
+                                @endforeach
+                            </div>
+                            <script>
+                            function syncStarter(checkbox) {
+                                const val   = checkbox.value;
+                                const radio = document.getElementById('starter_' + val);
+                                if (!radio) return;
+                                if (!checkbox.checked) {
+                                    // If this driver was the selected starter, move to first checked driver
+                                    if (radio.checked) {
+                                        const first = document.querySelector('input[name="driver_ids[]"]:checked');
+                                        if (first) document.getElementById('starter_' + first.value)?.click();
+                                    }
+                                    radio.disabled = true;
+                                } else {
+                                    radio.disabled = false;
+                                }
+                            }
+                            </script>
+
+                            <button type="submit" class="xcl-event-reg-btn w-100 mt-3"
+                                    style="background:{{ $race->gameColor() }}">
+                                REGISTER TEAM →
+                            </button>
+                        </form>
+                    @else
+                        <p class="xcl-event-card__text mb-0">Team registration is closed.</p>
+                    @endif
+                </div>
+                @endif
+                @endauth
+
+                {{-- Registration (solo — hidden for endurance races) --}}
+                @if($race->status !== 'finished' && !$isEndurance)
                 <div class="xcl-event-card mb-4">
                     <h3 class="xcl-event-card__heading">REGISTRATION</h3>
 
@@ -287,13 +418,18 @@
                         @if($isRegistered)
                             <div class="xcl-event-reg-status xcl-event-reg-status--registered mb-3">
                                 You are registered for this race!
+                                @if($myRegistration?->teamEntry)
+                                <span class="d-block mt-1" style="font-size:.78rem;opacity:.8">
+                                    Team: {{ $myRegistration->teamEntry->team->name }}
+                                </span>
+                                @endif
                                 @if($race->is_multiclass && $myRegistration?->raceClass)
                                 <span class="d-block mt-1" style="font-size:.78rem;font-weight:700;color:{{ $myRegistration->raceClass->color }}">
                                     Class: {{ $myRegistration->raceClass->name }}
                                 </span>
                                 @endif
                             </div>
-                            @if($race->status === 'open')
+                            @if($race->status === 'open' && !$myRegistration?->teamEntry)
                             <form action="{{ route('events.unregister', $race) }}" method="POST">
                                 @csrf
                                 @method('DELETE')
@@ -461,7 +597,11 @@
                                     </div>
                                     <div class="xcl-drivers-grid__info">
                                         <span class="xcl-drivers-grid__name">{{ $reg->user->displayName() }}</span>
-                                        @if($race->is_multiclass && $reg->raceClass)
+                                        @if($reg->teamEntry)
+                                        <span class="xcl-drivers-grid__class-badge" style="background:#374151;color:#9ca3af;border:1px solid #4b5563">
+                                            {{ $reg->teamEntry->team->name }}
+                                        </span>
+                                        @elseif($race->is_multiclass && $reg->raceClass)
                                         <span class="xcl-drivers-grid__class-badge" style="background:{{ $reg->raceClass->color }}22;color:{{ $reg->raceClass->color }};border:1px solid {{ $reg->raceClass->color }}44">
                                             {{ $reg->raceClass->name }}
                                         </span>

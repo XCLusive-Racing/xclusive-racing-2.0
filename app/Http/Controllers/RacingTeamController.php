@@ -3,14 +3,58 @@
 namespace App\Http\Controllers;
 
 use App\Models\RacingTeam;
+use App\Models\RacingTeamInvitation;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class RacingTeamController extends Controller
 {
+    public function index()
+    {
+        $user = Auth::user()->load([
+            'ownedRacingTeams.members',
+            'ownedRacingTeams.invitations.user',
+            'racingTeams.owner',
+            'racingTeams.members',
+            'racingTeamInvitations.team.owner',
+        ]);
+        return view('racing-teams.index', compact('user'));
+    }
+
+    public function searchUsers(Request $request)
+    {
+        $q    = $request->string('q')->trim()->value();
+        $team = RacingTeam::with(['members', 'invitations'])->findOrFail($request->integer('team_id'));
+
+        abort_unless(Auth::id() === $team->owner_id, 403);
+
+        if (strlen($q) < 2) {
+            return response()->json([]);
+        }
+
+        $existingIds = $team->members->pluck('id')
+            ->merge($team->invitations->pluck('user_id'))
+            ->push($team->owner_id);
+
+        $users = User::where('name', 'like', '%' . $q . '%')
+            ->whereNull('deleted_at')
+            ->whereNotIn('id', $existingIds)
+            ->select('id', 'name')
+            ->orderBy('name')
+            ->limit(8)
+            ->get()
+            ->map(fn($u) => ['id' => $u->id, 'name' => $u->displayName()]);
+
+        return response()->json($users);
+    }
+
     public function store(Request $request)
     {
+        if (RacingTeam::where('owner_id', Auth::id())->exists()) {
+            return back()->withErrors(['team' => 'You already own a team. Delete it first to create a new one.']);
+        }
+
         $data = $request->validate([
             'name' => 'required|string|max:40',
             'tag'  => 'required|string|max:6',
@@ -30,22 +74,44 @@ class RacingTeamController extends Controller
         abort_unless(Auth::id() === $team->owner_id, 403);
 
         $data = $request->validate([
-            'username' => 'required|string',
+            'user_id' => 'required|integer|exists:users,id',
         ]);
 
-        $user = User::where('name', $data['username'])->first();
-
-        if (! $user) {
-            return back()->withErrors(['username' => 'User not found.']);
-        }
+        $user = User::findOrFail($data['user_id']);
 
         if ($user->id === $team->owner_id) {
-            return back()->withErrors(['username' => 'You are already the team owner.']);
+            return back()->withErrors(['team' => 'You are already the team owner.']);
         }
 
-        $team->members()->syncWithoutDetaching([$user->id]);
+        if ($team->members->contains($user->id)) {
+            return back()->withErrors(['team' => $user->displayName() . ' is already a member.']);
+        }
 
-        return back()->with('team_success', $user->name . ' added to the team.');
+        RacingTeamInvitation::firstOrCreate([
+            'racing_team_id' => $team->id,
+            'user_id'        => $user->id,
+        ]);
+
+        return back()->with('team_success', 'Invite sent to ' . $user->displayName() . '.');
+    }
+
+    public function acceptInvite(RacingTeamInvitation $invitation)
+    {
+        abort_unless(Auth::id() === $invitation->user_id, 403);
+
+        $invitation->team->members()->syncWithoutDetaching([$invitation->user_id]);
+        $invitation->delete();
+
+        return back()->with('team_success', 'You joined ' . $invitation->team->name . '!');
+    }
+
+    public function declineInvite(RacingTeamInvitation $invitation)
+    {
+        abort_unless(Auth::id() === $invitation->user_id, 403);
+
+        $invitation->delete();
+
+        return back()->with('team_success', 'Invite declined.');
     }
 
     public function removeMember(Request $request, RacingTeam $team, User $user)
