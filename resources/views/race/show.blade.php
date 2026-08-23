@@ -334,7 +334,7 @@
                                 </div>
                                 <div class="col-6">
                                     <label class="xcl-event-card__text d-block mb-1" style="font-size:.75rem">Car Model</label>
-                                    @php $carList = config('cars.' . $race->game, []); @endphp
+                                    @php $carList = config('cars.' . $race->game . '.' . $race->car_class, []); @endphp
                                     @if($carList)
                                     <select name="car_model" class="form-select form-select-sm"
                                             style="background:#1f2937;border-color:#374151;color:#e5e7eb">
