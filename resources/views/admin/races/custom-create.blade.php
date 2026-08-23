@@ -147,20 +147,14 @@ $tagsConfig = json_encode([
                             </div>
                             <div class="col-sm-3">
                                 <label class="form-label">XCL-R Multiplier</label>
-                                <select id="cr-duration-key" name="duration_key" class="form-select">
-                                    <option value="">1.0× (default)</option>
-                                    <option value="15"   {{ old('duration_key') === '15'   ? 'selected' : '' }}>0.6×</option>
-                                    <option value="20"   {{ old('duration_key') === '20'   ? 'selected' : '' }}>0.8×</option>
-                                    <option value="30"   {{ old('duration_key') === '30'   ? 'selected' : '' }}>1.0×</option>
-                                    <option value="30+"  {{ old('duration_key') === '30+'  ? 'selected' : '' }}>1.2×</option>
-                                    <option value="30++" {{ old('duration_key') === '30++' ? 'selected' : '' }}>1.3×</option>
-                                    <option value="45"   {{ old('duration_key') === '45'   ? 'selected' : '' }}>1.5×</option>
-                                    <option value="45+"  {{ old('duration_key') === '45+'  ? 'selected' : '' }}>1.6×</option>
-                                    <option value="60"   {{ old('duration_key') === '60'   ? 'selected' : '' }}>2.0×</option>
-                                    <option value="60+"  {{ old('duration_key') === '60+'  ? 'selected' : '' }}>2.1×</option>
-                                    <option value="90"   {{ old('duration_key') === '90'   ? 'selected' : '' }}>2.5×</option>
-                                    <option value="90+"  {{ old('duration_key') === '90+'  ? 'selected' : '' }}>2.6×</option>
-                                </select>
+                                <div class="input-group">
+                                    <span class="input-group-text" style="font-size:.78rem">×</span>
+                                    <input type="number" id="cr-xcl-multiplier" name="xcl_r_multiplier"
+                                           value="{{ old('xcl_r_multiplier') }}"
+                                           class="form-control @error('xcl_r_multiplier') is-invalid @enderror"
+                                           min="0.1" max="10" step="0.1" placeholder="1.0">
+                                </div>
+                                @error('xcl_r_multiplier')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             </div>
                         </div>
                     </div>
@@ -237,35 +231,13 @@ $tagsConfig = json_encode([
                         </div>
                     </div>
 
-                    {{-- Conditions --}}
+                    {{-- Configuration --}}
                     <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-                        <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Conditions</p>
+                        <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Configuration</p>
 
                         <div class="row g-3">
                             <div class="col-sm-4">
-                                <label class="form-label">Weather</label>
-                                <select id="cr-weather" name="weather" class="form-select">
-                                    <option value="">— Not set —</option>
-                                    <option value="dry"    {{ old('weather', 'dry') === 'dry'    ? 'selected' : '' }}>Dry</option>
-                                    <option value="wet"    {{ old('weather', 'dry') === 'wet'    ? 'selected' : '' }}>Wet</option>
-                                    <option value="mixed"  {{ old('weather', 'dry') === 'mixed'  ? 'selected' : '' }}>Mixed</option>
-                                    <option value="random" {{ old('weather', 'dry') === 'random' ? 'selected' : '' }}>Random</option>
-                                </select>
-                            </div>
-                            <div class="col-sm-4">
-                                <label class="form-label">Race Start Time <span class="fw-normal text-secondary" style="text-transform:none">(in-game)</span></label>
-                                <input type="time" name="time_of_day" class="form-control"
-                                       value="{{ old('time_of_day', '14:00') }}" step="3600">
-                            </div>
-                            <div class="col-sm-4">
-                                <label class="form-label">Ambient Temp (°C) <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
-                                <input type="number" name="ambient_temp" value="{{ old('ambient_temp') }}"
-                                       class="form-control @error('ambient_temp') is-invalid @enderror"
-                                       placeholder="Server default">
-                                @error('ambient_temp')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            </div>
-                            <div class="col-sm-4">
-                                <label class="form-label">Max Drivers <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
+                                <label class="form-label">Max Drivers/Teams</label>
                                 <input type="number" name="max_drivers" value="{{ old('max_drivers') }}"
                                        class="form-control @error('max_drivers') is-invalid @enderror"
                                        min="1">
@@ -660,8 +632,8 @@ $tagsConfig = json_encode([
         const pracMin  = ($('cr-practice')     || {}).value || '';
         const qualiMin = ($('cr-qualifying')   || {}).value || '';
         const raceMin  = ($('cr-race')         || {}).value || '';
-        const dkVal    = ($('cr-duration-key') || {}).value || '';
-        const weather  = ($('cr-weather')      || {}).value || '';
+        const dkVal    = '';
+        const weather  = '';
         const schedVal = ($('cr-scheduled-at') || {}).value || '';
         const title    = ($('cr-title')        || {}).value || '';
         const srToggle = $('cr-sr-toggle');
@@ -823,7 +795,7 @@ $tagsConfig = json_encode([
     // Patch updatePreview to use the correct track source
     const _origUpdate = updatePreview;
 
-    ['cr-game','cr-car-class','cr-weather','cr-duration-key',
+    ['cr-game','cr-car-class','cr-xcl-multiplier',
      'cr-sr-toggle','cr-sr-select','cr-minrating-toggle','cr-minrating-select','cr-maxrating-toggle']
         .forEach(id => { const el = $(id); if (el) el.addEventListener('change', updatePreview); });
     ['cr-title','cr-practice','cr-qualifying','cr-race']

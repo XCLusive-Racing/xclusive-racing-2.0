@@ -136,9 +136,13 @@
                                     <div class="fw-black text-dark mt-1" style="font-size:1.1rem">
                                         @if($race->eventFormat)
                                             {{ $race->eventFormat->xclRLabel() }}
-                                        @else
+                                        @elseif($race->xcl_r_multiplier)
+                                            ×{{ number_format($race->xcl_r_multiplier, 1) }}
+                                        @elseif($race->duration_key)
                                             @php $multipliers = ['15'=>'0.6','20'=>'0.8','30'=>'1.0','30+'=>'1.2','30++'=>'1.3','45'=>'1.5','45+'=>'1.6','60'=>'2.0','60+'=>'2.1','90'=>'2.5','90+'=>'2.6']; @endphp
                                             {{ ($multipliers[$race->duration_key] ?? '1.0') }}×
+                                        @else
+                                            1.0×
                                         @endif
                                     </div>
                                 </div>

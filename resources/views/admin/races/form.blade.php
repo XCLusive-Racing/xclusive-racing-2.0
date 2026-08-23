@@ -214,11 +214,14 @@ $mcExisting = $isEdit
 
                             <div class="mt-2">
                                 <label class="form-label">Rating Multiplier</label>
-                                <select name="duration_key" class="form-select" style="max-width:220px">
-                                    @foreach(['' => '1.0× (default)', '15' => '0.6×', '20' => '0.8×', '30' => '1.0×', '30+' => '1.2×', '30++' => '1.3×', '45' => '1.5×', '45+' => '1.6×', '60' => '2.0×', '60+' => '2.1×', '90' => '2.5×', '90+' => '2.6×'] as $val => $label)
-                                        <option value="{{ $val }}" {{ old('duration_key', $race->duration_key ?? '') === (string) $val ? 'selected' : '' }}>{{ $label }}</option>
-                                    @endforeach
-                                </select>
+                                <div class="input-group" style="max-width:220px">
+                                    <span class="input-group-text">×</span>
+                                    <input type="number" name="xcl_r_multiplier"
+                                           value="{{ old('xcl_r_multiplier', $race->xcl_r_multiplier ?? '') }}"
+                                           class="form-control @error('xcl_r_multiplier') is-invalid @enderror"
+                                           min="0.1" max="10" step="0.1" placeholder="1.0">
+                                </div>
+                                @error('xcl_r_multiplier')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             </div>
                         </div>
                         @endif

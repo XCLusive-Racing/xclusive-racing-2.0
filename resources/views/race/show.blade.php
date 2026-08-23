@@ -191,14 +191,18 @@
                         </div>
                         @endif
                     </div>
-                    @if($fmt || $hasPitstop || $race->duration_key)
+                    @php
+                        $customMultiplier = $race->xcl_r_multiplier
+                            ?? ($race->duration_key ? (['15'=>0.6,'20'=>0.8,'30'=>1.0,'30+'=>1.2,'30++'=>1.3,'45'=>1.5,'45+'=>1.6,'60'=>2.0,'60+'=>2.1,'90'=>2.5,'90+'=>2.6][$race->duration_key] ?? null) : null);
+                    @endphp
+                    @if($fmt || $hasPitstop || $customMultiplier)
                     <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap">
                         @if($fmt || $hasPitstop)
                         <span style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">
                             <i class="fa-solid fa-screwdriver-wrench" style="color:#f59e0b;margin-right:6px"></i>Pit Stops
                             <span style="font-weight:700;color:{{ $hasPitstop ? '#f59e0b' : '#6b7280' }};text-transform:none;letter-spacing:normal;margin-left:6px">{{ $pitstopLabel }}</span>
                         </span>
-                        @if($fmt || $race->duration_key)
+                        @if($fmt || $customMultiplier)
                         <span style="width:1px;height:18px;background:rgba(219,39,119,.4);flex-shrink:0"></span>
                         @endif
                         @endif
@@ -207,14 +211,10 @@
                             <i class="fa-solid fa-gauge-high" style="color:#c084fc;margin-right:6px"></i>XCL Rating
                             <span style="font-weight:700;color:#c084fc;text-transform:none;letter-spacing:normal;margin-left:6px">{{ $fmt->xclRLabel() }}</span>
                         </span>
-                        @elseif($race->duration_key)
-                        @php
-                            $dkLabels = ['15'=>'0.6×','20'=>'0.8×','30'=>'1.0×','30+'=>'1.2×','30++'=>'1.3×','45'=>'1.5×','45+'=>'1.6×','60'=>'2.0×','60+'=>'2.1×','90'=>'2.5×','90+'=>'2.6×'];
-                            $dkLabel  = $dkLabels[$race->duration_key] ?? '1.0×';
-                        @endphp
+                        @elseif($customMultiplier)
                         <span style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">
                             <i class="fa-solid fa-gauge-high" style="color:#c084fc;margin-right:6px"></i>XCL Rating
-                            <span style="font-weight:700;color:#c084fc;text-transform:none;letter-spacing:normal;margin-left:6px">{{ $dkLabel }} XCL-R</span>
+                            <span style="font-weight:700;color:#c084fc;text-transform:none;letter-spacing:normal;margin-left:6px">×{{ number_format($customMultiplier, 1) }} XCL-R</span>
                         </span>
                         @endif
                     </div>
