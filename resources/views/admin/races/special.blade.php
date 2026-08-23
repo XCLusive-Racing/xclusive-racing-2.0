@@ -14,6 +14,34 @@
 
 <div class="admin-card">
 
+    {{-- Game filters --}}
+    <div class="d-flex align-items-center gap-2 px-4 py-3 border-bottom flex-wrap">
+        <span class="fw-bold text-uppercase me-1" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Filter:</span>
+        <button onclick="filterGame('')" id="filter-all"
+                class="btn btn-sm fw-bold text-uppercase px-3"
+                style="font-size:.72rem;border-radius:6px;background:#111827;color:white;border:1px solid #111827">All</button>
+        <button onclick="filterGame('ACC Console')" id="filter-acc"
+                class="btn btn-sm fw-bold text-uppercase px-3"
+                style="font-size:.72rem;border-radius:6px;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb">ACC Console</button>
+        <button onclick="filterGame('Le Mans Ultimate')" id="filter-lmu"
+                class="btn btn-sm fw-bold text-uppercase px-3"
+                style="font-size:.72rem;border-radius:6px;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb">Le Mans Ultimate</button>
+        <button onclick="filterGame('iRacing')" id="filter-iracing"
+                class="btn btn-sm fw-bold text-uppercase px-3"
+                style="font-size:.72rem;border-radius:6px;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb">iRacing</button>
+    </div>
+
+    {{-- Status filters --}}
+    <div class="d-flex align-items-center gap-2 px-4 py-3 border-bottom flex-wrap">
+        <span class="fw-bold text-uppercase me-1" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Status:</span>
+        <button onclick="filterStatus('upcoming')" id="status-upcoming"
+                class="btn btn-sm fw-bold text-uppercase px-3"
+                style="font-size:.72rem;border-radius:6px;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb">Upcoming</button>
+        <button onclick="filterStatus('past')" id="status-past"
+                class="btn btn-sm fw-bold text-uppercase px-3"
+                style="font-size:.72rem;border-radius:6px;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb">Past Events</button>
+    </div>
+
     <div class="table-responsive">
         <table id="special-table" class="table table-hover align-middle mb-0 w-100" style="font-size:.875rem">
             <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
@@ -99,14 +127,19 @@
 
 @endsection
 
+@push('head')
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+@endpush
+
 @push('scripts')
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <script>
+        let table;
+
         $(function () {
-            $('#special-table').DataTable({
+            table = $('#special-table').DataTable({
                 pageLength: 25,
                 order: [[3, 'desc']],
                 columnDefs: [{ orderable: false, targets: [6] }],
@@ -120,6 +153,48 @@
                     paginate: { previous: '‹', next: '›' },
                 },
             });
+
+            filterStatus('upcoming');
         });
+
+        const filterIds = {
+            '':                 'filter-all',
+            'ACC Console':      'filter-acc',
+            'Le Mans Ultimate': 'filter-lmu',
+            'iRacing':          'filter-iracing',
+        };
+
+        function filterGame(game) {
+            table.column(2).search(game, false, false).draw();
+
+            Object.entries(filterIds).forEach(([key, id]) => {
+                const btn    = document.getElementById(id);
+                const active = key === game;
+                btn.style.background  = active ? '#111827' : '#f3f4f6';
+                btn.style.borderColor = active ? '#111827' : '#e5e7eb';
+                btn.style.color       = active ? 'white'   : '#374151';
+            });
+        }
+
+        const statusFilterIds = { upcoming: 'status-upcoming', past: 'status-past' };
+
+        function filterStatus(mode) {
+            if (mode === 'past') {
+                table.column(5).search('Finished', false, false);
+                table.order([3, 'desc']);
+            } else {
+                table.column(5).search('^(?!.*Finished).*$', true, false);
+                table.order([3, 'asc']);
+            }
+            table.draw();
+
+            Object.entries(statusFilterIds).forEach(([key, id]) => {
+                const btn    = document.getElementById(id);
+                const active = key === mode;
+                btn.style.background  = active ? '#111827' : '#f3f4f6';
+                btn.style.borderColor = active ? '#111827' : '#e5e7eb';
+                btn.style.color       = active ? 'white'   : '#374151';
+            });
+        }
     </script>
 @endpush

@@ -57,8 +57,10 @@ class RatingService
         // True DNFs (0 laps) keep the flat penalty.
         $collection  = collect($entries);
         $classified  = $collection->where('status', 'FIN')->sortBy('finish_pos')->values();
+        $leaderLaps  = $classified->max('lap_count') ?? 0;
+        $lapCutoff   = $leaderLaps > 0 ? (int) max(1, round($leaderLaps * 0.70)) : 1;
         $partialDnfs = $collection
-            ->filter(fn($e) => $e['status'] === 'DNF' && $e['lap_count'] >= 1)
+            ->filter(fn($e) => $e['status'] === 'DNF' && $e['lap_count'] >= $lapCutoff)
             ->sortByDesc('lap_count')
             ->values();
 
@@ -80,6 +82,9 @@ class RatingService
             'race_id'        => $race->id,
             'linked_drivers' => count($entries),
             'finishers'      => $finisherCount,
+            'leader_laps'    => $leaderLaps,
+            'lap_cutoff_70%' => $lapCutoff,
+            'partial_dnfs'   => $partialDnfs->count(),
             'min_required'   => $this->calculator->MIN_DRIVERS,
         ]);
 

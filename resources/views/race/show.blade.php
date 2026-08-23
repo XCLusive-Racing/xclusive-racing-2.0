@@ -288,27 +288,26 @@
 
                     @if($myTeamEntry)
                         <div class="xcl-event-reg-status xcl-event-reg-status--registered mb-3">
-                            {{ $userTeam->name }} is registered!
+                            Registered!
                         </div>
-                        @if($myTeamEntry->car_number || $myTeamEntry->car_model)
-                        <div style="font-size:.78rem;color:#9ca3af;margin-bottom:10px">
-                            @if($myTeamEntry->car_number)<span style="color:#e5e7eb;font-weight:700">#{{ $myTeamEntry->car_number }}</span>@endif
-                            @if($myTeamEntry->car_model)<span> — {{ $myTeamEntry->car_model }}</span>@endif
-                        </div>
-                        @endif
-                        <div class="mb-3">
-                            @foreach($myTeamEntry->registrations as $reg)
-                            @php $isStarter = $myTeamEntry->starting_driver_id === $reg->user_id; @endphp
-                            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-                                <div style="width:28px;height:28px;border-radius:50%;background:#374151;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#e5e7eb;flex-shrink:0">
-                                    {{ strtoupper(substr($reg->user->name, 0, 1)) }}
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+                            @if($userTeam->logoUrl())
+                            <img src="{{ $userTeam->logoUrl() }}" width="44" height="44"
+                                 style="border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.15);flex-shrink:0">
+                            @else
+                            <div style="width:44px;height:44px;border-radius:50%;background:#374151;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:900;color:#e5e7eb;flex-shrink:0">
+                                {{ strtoupper(substr($userTeam->name, 0, 1)) }}
+                            </div>
+                            @endif
+                            <div>
+                                <div style="font-size:.95rem;font-weight:800;color:#e5e7eb">[{{ $userTeam->tag }}] {{ $userTeam->name }}</div>
+                                @if($myTeamEntry->car_number || $myTeamEntry->car_model)
+                                <div style="font-size:.78rem;color:#9ca3af;margin-top:2px">
+                                    @if($myTeamEntry->car_number)<span style="color:#e5e7eb;font-weight:700">#{{ $myTeamEntry->car_number }}</span>@endif
+                                    @if($myTeamEntry->car_model)<span> — {{ $myTeamEntry->car_model }}</span>@endif
                                 </div>
-                                <span style="font-size:.82rem;font-weight:600;color:#e5e7eb">{{ $reg->user->displayName() }}</span>
-                                @if($isStarter)
-                                <span style="margin-left:auto;font-size:.68rem;font-weight:800;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:{{ $race->gameColor() }}33;color:{{ $race->gameColor() }};border:1px solid {{ $race->gameColor() }}55">Starts</span>
                                 @endif
                             </div>
-                            @endforeach
                         </div>
                         @if($race->status === 'open')
                         <form action="{{ route('events.unregister-team', $race) }}" method="POST">
@@ -352,7 +351,15 @@
                                     <input class="form-check-input m-0" type="checkbox" name="driver_ids[]"
                                            value="{{ $userTeam->owner_id }}" id="driver_{{ $userTeam->owner_id }}"
                                            checked onchange="syncStarter(this)">
-                                    <label for="driver_{{ $userTeam->owner_id }}" style="color:#e5e7eb;font-size:.85rem;cursor:pointer">
+                                    <label for="driver_{{ $userTeam->owner_id }}" class="d-flex align-items-center gap-2" style="color:#e5e7eb;font-size:.85rem;cursor:pointer">
+                                        @if(auth()->user()->avatarUrl())
+                                        <img src="{{ auth()->user()->avatarUrl() }}" width="22" height="22"
+                                             style="border-radius:50%;object-fit:cover;flex-shrink:0">
+                                        @else
+                                        <div style="width:22px;height:22px;border-radius:50%;background:#374151;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#e5e7eb;flex-shrink:0">
+                                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                                        </div>
+                                        @endif
                                         {{ auth()->user()->displayName() }}
                                         <span style="color:#6b7280;font-size:.75rem">(you)</span>
                                     </label>
@@ -368,7 +375,15 @@
                                     <input class="form-check-input m-0" type="checkbox" name="driver_ids[]"
                                            value="{{ $member->id }}" id="driver_{{ $member->id }}"
                                            onchange="syncStarter(this)">
-                                    <label for="driver_{{ $member->id }}" style="color:#e5e7eb;font-size:.85rem;cursor:pointer">
+                                    <label for="driver_{{ $member->id }}" class="d-flex align-items-center gap-2" style="color:#e5e7eb;font-size:.85rem;cursor:pointer">
+                                        @if($member->avatarUrl())
+                                        <img src="{{ $member->avatarUrl() }}" width="22" height="22"
+                                             style="border-radius:50%;object-fit:cover;flex-shrink:0">
+                                        @else
+                                        <div style="width:22px;height:22px;border-radius:50%;background:#374151;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#e5e7eb;flex-shrink:0">
+                                            {{ strtoupper(substr($member->name, 0, 1)) }}
+                                        </div>
+                                        @endif
                                         {{ $member->displayName() }}
                                     </label>
                                 </div>

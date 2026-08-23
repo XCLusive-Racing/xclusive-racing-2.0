@@ -143,6 +143,24 @@ class RacingTeamController extends Controller
         return back()->with('team_success', 'Team deleted.');
     }
 
+    public function updateLogo(Request $request, RacingTeam $team)
+    {
+        abort_unless(Auth::id() === $team->owner_id, 403);
+
+        $request->validate([
+            'logo' => 'required|image|max:2048|mimes:jpg,jpeg,png,webp',
+        ]);
+
+        if ($team->logo) {
+            \Storage::disk('public')->delete($team->logo);
+        }
+
+        $path = $request->file('logo')->store('team-logos', 'public');
+        $team->update(['logo' => $path]);
+
+        return back()->with('team_success', 'Team logo updated.');
+    }
+
     public function leave(RacingTeam $team)
     {
         $user = Auth::user();

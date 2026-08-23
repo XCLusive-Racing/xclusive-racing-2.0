@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class RacingTeam extends Model
 {
-    protected $fillable = ['name', 'tag', 'owner_id'];
+    protected $fillable = ['name', 'tag', 'logo', 'owner_id'];
 
     public function owner(): BelongsTo
     {
@@ -30,6 +30,11 @@ class RacingTeam extends Model
     public function invitations(): HasMany
     {
         return $this->hasMany(RacingTeamInvitation::class);
+    }
+
+    public function logoUrl(): ?string
+    {
+        return $this->logo ? asset('storage/' . $this->logo) : null;
     }
 
     public function hasMember(User $user): bool
