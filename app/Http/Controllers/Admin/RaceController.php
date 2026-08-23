@@ -145,6 +145,7 @@ class RaceController extends Controller
     {
         $tags    = EventTag::orderBy('name')->get();
         $servers = FtpServer::where('active', true)->orderBy('name')->get();
+        $accTracks = array_keys(self::TRACK_IMAGE_MAP);
 
         $trackFilenames   = array_values(self::TRACK_IMAGE_MAP);
         $trackMediaByName = Media::whereIn('original_name', $trackFilenames)->get()->keyBy('original_name');
@@ -152,7 +153,7 @@ class RaceController extends Controller
             ->map(fn($fname) => $trackMediaByName->get($fname)?->url)
             ->all();
 
-        return view('admin.races.custom-create', compact('tags', 'servers', 'trackPreviewUrls'));
+        return view('admin.races.custom-create', compact('tags', 'servers', 'accTracks', 'trackPreviewUrls'));
     }
 
     public function bulkStore(Request $request)
@@ -404,7 +405,7 @@ class RaceController extends Controller
             'max_drivers'          => 'nullable|integer|min:1',
             'description'          => 'nullable|string',
             'is_multiclass'        => 'nullable|boolean',
-            'ftp_server_id'        => 'nullable|exists:ftp_servers,id',
+            'ftp_server_id'        => empty($request->event_format_id) ? 'required|exists:ftp_servers,id' : 'nullable|exists:ftp_servers,id',
             'image'                => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',
             'image_path'           => 'nullable|string|max:500',
             'icon'                 => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
