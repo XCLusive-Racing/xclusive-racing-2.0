@@ -612,7 +612,7 @@ $mcExisting = $isEdit
                         <label class="form-label">Car Class <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
                         <select name="car_class" id="ce-car-class" class="form-select" style="max-width:200px">
                             <option value="" {{ !old('car_class', $isEdit ? $race->car_class : '') ? 'selected' : '' }}>Open</option>
-                            @foreach(['GT2', 'GT3', 'GT4', 'TCX', 'GTC', 'Hypercar', 'LMP2', 'GTP'] as $cls)
+                            @foreach(['GT2', 'GT3', 'GT4', 'TCX', 'GTC'] as $cls)
                                 <option value="{{ $cls }}" {{ old('car_class', $isEdit ? $race->car_class : '') === $cls ? 'selected' : '' }}>{{ $cls }}</option>
                             @endforeach
                         </select>
