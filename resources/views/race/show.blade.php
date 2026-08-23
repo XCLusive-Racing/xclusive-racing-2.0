@@ -334,8 +334,13 @@
                                 </div>
                                 <div class="col-6">
                                     <label class="xcl-event-card__text d-block mb-1" style="font-size:.75rem">Car Model</label>
-                                    @php $carList = config('cars.' . $race->game . '.' . $race->car_class, []); @endphp
-                                    @if($carList)
+                                    @php
+                                        $carList = \App\Models\Car::where('game', $race->game)
+                                            ->when($race->car_class, fn($q) => $q->where('car_class', $race->car_class))
+                                            ->orderBy('name')
+                                            ->pluck('name');
+                                    @endphp
+                                    @if($carList->isNotEmpty())
                                     <select name="car_model" class="form-select form-select-sm"
                                             style="background:#1f2937;border-color:#374151;color:#e5e7eb">
                                         <option value="">— Select car —</option>

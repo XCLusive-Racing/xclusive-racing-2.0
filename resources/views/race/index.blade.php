@@ -169,7 +169,7 @@
                                 {{-- Registrations count — top-right --}}
                                 <div class="xcl-ec2__lobby">
                                     <i class="fa-solid fa-comments"></i>
-                                    <span>{{ $race->registrations_count }} / {{ $race->max_drivers ?? '∞' }}</span>
+                                    <span>{{ $race->is_endurance ? $race->team_entries_count : $race->registrations_count }} / {{ $race->max_drivers ?? '∞' }}</span>
                                 </div>
 
                                 {{-- Platform badges — bottom-left --}}

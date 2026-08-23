@@ -27,10 +27,10 @@ class RaceController extends Controller
             ->where('scheduled_at', '<', now())
             ->update(['status' => 'closed']);
 
-        $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','event_tag','max_drivers','duration_key'])
+        $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','event_tag','max_drivers','duration_key','is_endurance'])
             ->orderBy('scheduled_at', 'asc')
             ->get();
-        $races->loadCount('registrations');
+        $races->loadCount(['registrations', 'teamEntries']);
 
         return view('admin.races.index', compact('races'));
     }
@@ -41,7 +41,7 @@ class RaceController extends Controller
             ->where(fn($q) => $q->where('is_endurance', true)->orWhereNull('event_format_id'))
             ->orderBy('scheduled_at', 'desc')
             ->get();
-        $races->loadCount('registrations');
+        $races->loadCount(['registrations', 'teamEntries']);
 
         return view('admin.races.special', compact('races'));
     }
@@ -51,6 +51,7 @@ class RaceController extends Controller
         $raceResults   = $race->results()->where('session_type', 'race')->with('user')->get();
         $qualiResults  = $race->results()->where('session_type', 'quali')->with('user')->get();
         $registrations = $race->registrations()->with('user')->orderBy('created_at')->get();
+        $teamEntries   = $race->is_endurance ? $race->teamEntries()->count() : null;
 
         $ftpServers     = FtpServer::where('active', true)->orderBy('name')->get();
         $selectedServer = null;
@@ -101,7 +102,7 @@ class RaceController extends Controller
         }
 
         return view('admin.races.show', compact(
-            'race', 'raceResults', 'qualiResults', 'registrations',
+            'race', 'raceResults', 'qualiResults', 'registrations', 'teamEntries',
             'ftpServers', 'selectedServer', 'ftpFiles', 'ftpAllFiles', 'ftpError', 'importedFiles',
             'entrylistDrivers'
         ))->with('configData', $config);

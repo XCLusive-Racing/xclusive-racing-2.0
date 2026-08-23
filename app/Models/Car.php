@@ -10,7 +10,7 @@ class Car extends Model
     public $incrementing = false;
     protected $keyType = 'int';
 
-    protected $fillable = ['id', 'game', 'name', 'year', 'logo'];
+    protected $fillable = ['id', 'game', 'car_class', 'name', 'year', 'logo'];
 
     public function assignments(): HasMany
     {

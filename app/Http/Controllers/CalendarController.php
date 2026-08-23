@@ -23,7 +23,7 @@ class CalendarController extends Controller
             ->orderBy('scheduled_at')
             ->get();
 
-        $races->loadCount('registrations');
+        $races->loadCount(['registrations', 'teamEntries']);
 
         $grouped = $races->groupBy(fn($r) => $r->scheduledAtUk()->format('Y-m-d'));
 
