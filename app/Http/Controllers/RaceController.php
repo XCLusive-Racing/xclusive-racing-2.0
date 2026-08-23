@@ -61,7 +61,7 @@ class RaceController extends Controller
             return back()->with('error', 'You are already registered for this race.');
         }
 
-        if ($failure = auth()->user()->requirementFailure($race->game, $race->sr_requirement, $race->min_rating)) {
+        if ($failure = auth()->user()->requirementFailure($race->game, $race->sr_requirement, $race->min_rating, $race->max_rating)) {
             return back()->with('error', $failure);
         }
 
@@ -80,7 +80,7 @@ class RaceController extends Controller
                 return back()->with('error', 'The selected class is full.');
             }
 
-            if ($failure = auth()->user()->requirementFailure($race->game, $raceClass->sr_requirement, $raceClass->min_rating)) {
+            if ($failure = auth()->user()->requirementFailure($race->game, $raceClass->sr_requirement, $raceClass->min_rating, $raceClass->max_rating ?? null)) {
                 return back()->with('error', $failure);
             }
 

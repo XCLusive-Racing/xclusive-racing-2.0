@@ -516,6 +516,8 @@ class RaceController extends Controller
             'icon_keep'            => 'nullable|in:0,1',
             'is_multiclass'        => 'nullable|boolean',
             'ftp_server_id'        => 'nullable|exists:ftp_servers,id',
+            'pitstop_count'        => 'nullable|integer|min:0|max:9',
+            'min_stop_secs'        => 'nullable|integer|min:1|max:3600',
         ]);
 
         $data['scheduled_at']  = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();

@@ -141,9 +141,11 @@ class AccServerConfigService
         if ($fmt) {
             $pitstopType  = $fmt->pitstop_type ?? 'none';
             $pitstopCount = (int) ($fmt->pitstop_count ?? 0);
+            $minStopSecs  = $fmt->min_stop_secs;
         } elseif ($race && (int) ($race->pitstop_count ?? 0) > 0) {
             $pitstopType  = 'mandatory';
             $pitstopCount = (int) $race->pitstop_count;
+            $minStopSecs  = $race->min_stop_secs;
         } else {
             return $base;
         }
@@ -158,11 +160,13 @@ class AccServerConfigService
             ]);
         }
 
+        $timeFixed = !empty($minStopSecs);
+
         return array_merge($base, [
             'mandatoryPitstopCount'                => $pitstopCount,
             'isRefuellingAllowedInRace'            => true,
-            'isRefuellingTimeFixed'                => true,
-            'isMandatoryPitstopRefuellingRequired' => true,
+            'isRefuellingTimeFixed'                => $timeFixed,
+            'isMandatoryPitstopRefuellingRequired' => $timeFixed,
             'isMandatoryPitstopTyreChangeRequired' => false,
         ]);
     }
