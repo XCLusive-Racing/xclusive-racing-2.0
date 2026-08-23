@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class RacingTeam extends Model
 {
@@ -24,6 +25,11 @@ class RacingTeam extends Model
     public function entries(): HasMany
     {
         return $this->hasMany(RaceTeamEntry::class);
+    }
+
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(RacingTeamInvitation::class);
     }
 
     public function hasMember(User $user): bool
