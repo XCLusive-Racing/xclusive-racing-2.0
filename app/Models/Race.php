@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\RaceTeamEntry;
 use Illuminate\Support\Facades\Storage;
 
 class Race extends Model
@@ -60,6 +61,11 @@ class Race extends Model
     public function registrations(): HasMany
     {
         return $this->hasMany(RaceRegistration::class);
+    }
+
+    public function teamEntries(): HasMany
+    {
+        return $this->hasMany(RaceTeamEntry::class);
     }
 
     public function results(): HasMany

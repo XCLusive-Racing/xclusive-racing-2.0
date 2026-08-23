@@ -8,6 +8,8 @@ use App\Models\Message;
 use App\Models\Race;
 use App\Models\RaceClass;
 use App\Models\RaceRegistration;
+use App\Models\RaceTeamEntry;
+use App\Models\User;
 use App\Services\AccServerConfigService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,13 +32,22 @@ class RaceController extends Controller
 
     public function show(Race $race)
     {
-        $race->load(['raceClasses', 'registrations.user', 'registrations.raceClass', 'raceResults.user', 'eventFormat']);
-        $isRegistered = false;
+        $race->load(['raceClasses', 'registrations.user', 'registrations.raceClass', 'registrations.teamEntry.team', 'raceResults.user', 'eventFormat']);
+        $isRegistered   = false;
         $myRegistration = null;
+        $userTeam       = null;
+        $myTeamEntry    = null;
 
         if (auth()->check()) {
             $myRegistration = $race->registrations->firstWhere('user_id', auth()->id());
-            $isRegistered = $myRegistration !== null;
+            $isRegistered   = $myRegistration !== null;
+            $userTeam       = auth()->user()->ownedRacingTeams()->with('members')->first();
+            if ($userTeam) {
+                $myTeamEntry = RaceTeamEntry::where('race_id', $race->id)
+                    ->where('racing_team_id', $userTeam->id)
+                    ->with('registrations.user')
+                    ->first();
+            }
         }
 
         $platformIds = $race->registrations->pluck('user.platform_id')->filter()->values()->all();
@@ -44,7 +55,7 @@ class RaceController extends Controller
             ->get(['id', 'xuid_psid'])
             ->keyBy('xuid_psid');
 
-        return view('race.show', compact('race', 'isRegistered', 'myRegistration', 'driverMap'));
+        return view('race.show', compact('race', 'isRegistered', 'myRegistration', 'driverMap', 'userTeam', 'myTeamEntry'));
     }
 
     public function register(Request $request, Race $race)
@@ -132,5 +143,127 @@ class RaceController extends Controller
             ->delete();
 
         return back()->with('success', 'You have been unregistered from ' . $race->title . '.');
+    }
+
+    public function registerTeam(Request $request, Race $race)
+    {
+        if (auth()->user()->isSuspended()) {
+            return back()->with('error', 'Your account has been suspended. Please contact an administrator.');
+        }
+
+        if (!$race->registrationOpen()) {
+            return back()->with('error', 'Registration is closed for this race.');
+        }
+
+        $team = auth()->user()->ownedRacingTeams()->with('members')->first();
+        if (!$team) {
+            return back()->with('error', 'You do not own a racing team.');
+        }
+
+        $existingEntry = RaceTeamEntry::where('race_id', $race->id)
+            ->where('racing_team_id', $team->id)
+            ->exists();
+
+        if ($existingEntry) {
+            return back()->with('error', 'Your team is already registered for this race.');
+        }
+
+        $validated = $request->validate([
+            'driver_ids'   => ['required', 'array', 'min:1'],
+            'driver_ids.*' => ['integer'],
+        ]);
+
+        $eligibleIds = $team->members->pluck('id')->push($team->owner_id)->unique();
+        $selectedIds = collect($validated['driver_ids'])
+            ->map(fn($id) => (int) $id)
+            ->filter(fn($id) => $eligibleIds->contains($id))
+            ->values();
+
+        if ($selectedIds->isEmpty()) {
+            return back()->with('error', 'Please select at least one driver from your team.');
+        }
+
+        $users = User::whereIn('id', $selectedIds)->get()->keyBy('id');
+
+        foreach ($users as $user) {
+            if ($failure = $user->requirementFailure($race->game, $race->sr_requirement, $race->min_rating, $race->max_rating)) {
+                return back()->with('error', $user->displayName() . ': ' . $failure);
+            }
+            if ($race->isRegistered($user)) {
+                return back()->with('error', $user->displayName() . ' is already registered for this race.');
+            }
+        }
+
+        if ($race->max_drivers !== null) {
+            $currentCount = $race->registrations()->count();
+            if ($currentCount + $selectedIds->count() > $race->max_drivers) {
+                return back()->with('error', 'Not enough slots available for all selected drivers.');
+            }
+        }
+
+        $race->load('ftpServer');
+
+        try {
+            DB::transaction(function () use ($race, $team, $selectedIds, $users) {
+                $entry = RaceTeamEntry::create([
+                    'race_id'        => $race->id,
+                    'racing_team_id' => $team->id,
+                ]);
+
+                foreach ($selectedIds as $userId) {
+                    RaceRegistration::create([
+                        'race_id'       => $race->id,
+                        'user_id'       => $userId,
+                        'team_entry_id' => $entry->id,
+                    ]);
+                }
+
+                $config     = app(AccServerConfigService::class)->settings($race, $race->ftpServer);
+                $serverName = $config['serverName'] ?? 'To be announced';
+                $password   = $config['password']   ?? 'To be announced';
+
+                foreach ($users as $user) {
+                    Message::create([
+                        'user_id'      => $user->id,
+                        'title'        => 'Team Registered: ' . $race->title,
+                        'body'         => "Your team {$team->name} has been registered for {$race->title}.\n\nServer: {$serverName}\nPassword: {$password}\n\nSee you on track!",
+                        'type'         => 'event_registration',
+                        'related_id'   => $race->id,
+                        'related_type' => Race::class,
+                    ]);
+                }
+            });
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Something went wrong while processing your registration. Please try again.');
+        }
+
+        return back()->with('success', $team->name . ' has been registered for ' . $race->title . '!');
+    }
+
+    public function unregisterTeam(Race $race)
+    {
+        if ($race->status !== 'open') {
+            return back()->with('error', 'You cannot unregister from a closed race.');
+        }
+
+        $team = auth()->user()->ownedRacingTeams()->first();
+        if (!$team) {
+            return back()->with('error', 'You do not own a racing team.');
+        }
+
+        $entry = RaceTeamEntry::where('race_id', $race->id)
+            ->where('racing_team_id', $team->id)
+            ->first();
+
+        if (!$entry) {
+            return back()->with('error', 'Your team is not registered for this race.');
+        }
+
+        DB::transaction(function () use ($entry) {
+            $entry->registrations()->delete();
+            $entry->delete();
+        });
+
+        return back()->with('success', 'Your team has been unregistered from ' . $race->title . '.');
     }
 }

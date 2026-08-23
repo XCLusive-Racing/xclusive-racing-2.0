@@ -156,6 +156,8 @@ Route::middleware('auth')->group(function () {
     // Event registration
     Route::post('/events/{race}/register', [RaceController::class, 'register'])->name('events.register');
     Route::delete('/events/{race}/unregister', [RaceController::class, 'unregister'])->name('events.unregister');
+    Route::post('/events/{race}/register-team', [RaceController::class, 'registerTeam'])->name('events.register-team');
+    Route::delete('/events/{race}/unregister-team', [RaceController::class, 'unregisterTeam'])->name('events.unregister-team');
 
     // Inbox
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
