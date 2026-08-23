@@ -10,30 +10,67 @@ class AccServerConfigService
 {
     public function entryList(Race $race): array
     {
-        $registrations = $race->registrations()->with('user')->orderBy('created_at')->get();
+        $registrations = $race->registrations()
+            ->with(['user', 'teamEntry'])
+            ->orderBy('team_entry_id')
+            ->orderBy('created_at')
+            ->get();
 
-        $entries = $registrations->map(function ($reg) use ($race) {
-            $user      = $reg->user;
-            $lastName  = $user->team ? $user->name . "\n" . $user->team : ($user->name ?? '');
-            $shortName = mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3));
+        $entries           = [];
+        $processedTeamIds  = [];
 
-            return [
-                'drivers' => [
-                    [
-                        'firstName'      => '',
-                        'lastName'       => $lastName,
-                        'shortName'      => $shortName,
-                        'playerID'       => $user->platform_id ?? '',
-                        'driverCategory' => $user->ratingClass($race->game),
+        foreach ($registrations as $reg) {
+            if ($reg->team_entry_id !== null) {
+                // Team entry — all drivers of the same car go into one entry
+                if (isset($processedTeamIds[$reg->team_entry_id])) {
+                    continue;
+                }
+                $processedTeamIds[$reg->team_entry_id] = true;
+
+                $teamRegs  = $registrations->where('team_entry_id', $reg->team_entry_id);
+                $teamEntry = $reg->teamEntry;
+                $carNumber = $teamEntry?->car_number ?? 0;
+
+                $drivers = $teamRegs->map(fn($tr) => [
+                    'firstName'      => '',
+                    'lastName'       => $tr->user->name ?? '',
+                    'shortName'      => mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $tr->user->name ?? ''), 0, 3)),
+                    'playerID'       => $tr->user->platform_id ?? '',
+                    'driverCategory' => $tr->user->ratingClass($race->game),
+                ])->values()->all();
+
+                $entries[] = [
+                    'drivers'             => $drivers,
+                    'raceNumber'          => is_numeric($carNumber) ? (int) $carNumber : 0,
+                    'defaultGridPosition' => -1,
+                    'ballastKg'           => 0,
+                    'forcedCarModel'      => -1,
+                    'overrideDriverInfo'  => 1,
+                ];
+            } else {
+                // Solo driver
+                $user      = $reg->user;
+                $lastName  = $user->team ? $user->name . "\n" . $user->team : ($user->name ?? '');
+                $shortName = mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3));
+
+                $entries[] = [
+                    'drivers' => [
+                        [
+                            'firstName'      => '',
+                            'lastName'       => $lastName,
+                            'shortName'      => $shortName,
+                            'playerID'       => $user->platform_id ?? '',
+                            'driverCategory' => $user->ratingClass($race->game),
+                        ],
                     ],
-                ],
-                'raceNumber'          => is_numeric($user->car_number) ? (int) $user->car_number : 0,
-                'defaultGridPosition' => -1,
-                'ballastKg'           => 0,
-                'forcedCarModel'      => -1,
-                'overrideDriverInfo'  => 1,
-            ];
-        })->values()->all();
+                    'raceNumber'          => is_numeric($user->car_number) ? (int) $user->car_number : 0,
+                    'defaultGridPosition' => -1,
+                    'ballastKg'           => 0,
+                    'forcedCarModel'      => -1,
+                    'overrideDriverInfo'  => 1,
+                ];
+            }
+        }
 
         return [
             'entries'        => $entries,
