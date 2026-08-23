@@ -127,7 +127,7 @@
                         <span style="color:#9ca3af">{{ $race->scheduledAtUk()->format('H:i T') }}</span>
                     </td>
                     <td class="d-none d-lg-table-cell text-center fw-bold">
-                        {{ $race->registrations_count }}{{ $race->max_drivers ? ' / ' . $race->max_drivers : '' }}
+                        {{ $race->is_endurance ? $race->team_entries_count : $race->registrations_count }}{{ $race->max_drivers ? ' / ' . $race->max_drivers : '' }}
                     </td>
                     <td class="text-center">
                         <span class="status-badge status-{{ $race->status }}">
