@@ -334,10 +334,21 @@
                                 </div>
                                 <div class="col-6">
                                     <label class="xcl-event-card__text d-block mb-1" style="font-size:.75rem">Car Model</label>
+                                    @php $carList = config('cars.' . $race->game . '.' . $race->car_class, []); @endphp
+                                    @if($carList)
+                                    <select name="car_model" class="form-select form-select-sm"
+                                            style="background:#1f2937;border-color:#374151;color:#e5e7eb">
+                                        <option value="">— Select car —</option>
+                                        @foreach($carList as $car)
+                                        <option value="{{ $car }}">{{ $car }}</option>
+                                        @endforeach
+                                    </select>
+                                    @else
                                     <input type="text" name="car_model" maxlength="60"
                                            class="form-control form-control-sm"
                                            style="background:#1f2937;border-color:#374151;color:#e5e7eb"
                                            placeholder="e.g. Ferrari 296">
+                                    @endif
                                 </div>
                             </div>
 
@@ -579,9 +590,13 @@
                         $sof = $sofRatings->isNotEmpty() ? $sofRatings->avg() : null;
                     @endphp
                     <h3 class="xcl-event-card__heading">
-                        DRIVERS
+                        {{ $isEndurance ? 'TEAMS' : 'DRIVERS' }}
                         <span class="xcl-event-card__heading-sub">
-                            {{ $race->registrations->count() }}{{ $race->max_drivers ? '/' . $race->max_drivers : '' }}
+                            @if($isEndurance)
+                                {{ $race->teamEntries->count() }}{{ $race->max_drivers ? '/' . $race->max_drivers : '' }}
+                            @else
+                                {{ $race->registrations->count() }}{{ $race->max_drivers ? '/' . $race->max_drivers : '' }}
+                            @endif
                         </span>
                         @if($sof !== null)
                         <span class="xcl-event-card__heading-sub" style="margin-left:auto;margin-right:14px;color:#c084fc;font-weight:800">

@@ -112,6 +112,11 @@ class Race extends Model
         if ($this->max_drivers === null) {
             return false;
         }
+
+        if ($this->is_endurance) {
+            return $this->teamEntries()->count() >= $this->max_drivers;
+        }
+
         return $this->registrations()->count() >= $this->max_drivers;
     }
 
