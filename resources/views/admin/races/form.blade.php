@@ -1025,6 +1025,22 @@ $mcExisting = $isEdit
         setEnduranceVisible(fmt?.slug ?? '');
         setMulticlassVisible(fmt?.slug ?? '');
     });
+
+    const endurElFmt = document.getElementById('ce-endurance-duration');
+    if (endurElFmt) {
+        const endurMinsMap = { '4h': 240, '6h': 360, '8h': 480, '10h': 600, '12h': 720, '24h': 1440 };
+        endurElFmt.addEventListener('change', () => {
+            const fmt = (formats[gameEl.value] || []).find(f => String(f.id) === fmtEl.value);
+            if (!fmt || fmt.slug !== 'endurance') return;
+            const race1Mins = endurMinsMap[endurElFmt.value] || fmt.race1_mins;
+            let sessions = '';
+            if (fmt.practice_mins) sessions += buildSessionBadge('P', fmt.practice_mins, '#6b7280');
+            if (fmt.quali_mins)    sessions += buildSessionBadge('Q', fmt.quali_mins, '#d97706');
+            sessions += buildSessionBadge('R1', race1Mins, '#7c3aed');
+            document.getElementById('ce-fi-sessions').innerHTML = sessions;
+        });
+    }
+
     trackSelect.addEventListener('change', () => updateTrackHint(trackSelect.value));
 
     [['ce-sr-toggle','ce-sr-panel'],['ce-minrating-toggle','ce-minrating-panel'],['ce-maxrating-toggle','ce-maxrating-panel']].forEach(([tid,pid]) => {
@@ -1388,10 +1404,14 @@ $mcExisting = $isEdit
 
                 if (pillsEl) {
                     pillsEl.innerHTML = '';
+                    const endurMinsMap = { '4h': 240, '6h': 360, '8h': 480, '10h': 600, '12h': 720, '24h': 1440 };
+                    const race1Mins = (fmtSlug === 'endurance' && endurDur && endurMinsMap[endurDur])
+                        ? endurMinsMap[endurDur]
+                        : fmtData.race1_mins;
                     const sessions = [
                         { key: 'P',  mins: fmtData.practice_mins, bg: '#1f2937', color: '#9ca3af' },
                         { key: 'Q',  mins: fmtData.quali_mins,    bg: '#292524', color: '#f59e0b' },
-                        { key: fmtData.race2_mins ? 'R1' : 'R', mins: fmtData.race1_mins, bg: '#2e1065', color: '#a78bfa' },
+                        { key: fmtData.race2_mins ? 'R1' : 'R', mins: race1Mins, bg: '#2e1065', color: '#a78bfa' },
                         { key: 'Q2', mins: fmtData.quali2_mins,   bg: '#292524', color: '#f59e0b' },
                         { key: 'R2', mins: fmtData.race2_mins,    bg: '#2e1065', color: '#a78bfa' },
                     ];

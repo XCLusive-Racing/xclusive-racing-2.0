@@ -139,10 +139,24 @@ class Race extends Model
     /** Total on-track race time in minutes, from the event format (race1 + race2 for double races). */
     public function raceDurationMinutes(): ?int
     {
+        if ($this->is_endurance && $this->race_duration) {
+            return (int) $this->race_duration;
+        }
         if (! $this->eventFormat) {
             return null;
         }
         return $this->eventFormat->race1_mins + ($this->eventFormat->race2_mins ?? 0);
+    }
+
+    /** Human-readable duration label: "4H" for endurance, "240 MIN" for others. */
+    public function durationLabel(): ?string
+    {
+        $mins = $this->raceDurationMinutes();
+        if ($mins === null) return null;
+        if ($this->is_endurance && $mins % 60 === 0) {
+            return ($mins / 60) . 'H';
+        }
+        return $mins . ' MIN';
     }
 
     public function getImageUrlAttribute(): ?string

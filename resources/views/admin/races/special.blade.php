@@ -100,11 +100,23 @@
                         </span>
                     </td>
                     <td class="pe-4">
-                        <a href="{{ route('admin.races.show', $race) }}"
-                           class="btn btn-sm fw-bold text-uppercase text-white"
-                           style="background:#7c3aed;font-size:.72rem;padding:5px 12px;border-radius:6px">
-                            Open
-                        </a>
+                        <div class="d-flex gap-1 gap-md-2 justify-content-end align-items-center flex-wrap">
+                            <a href="{{ route('admin.races.show', $race) }}"
+                               class="btn btn-sm fw-bold text-uppercase text-white"
+                               style="background:#7c3aed;font-size:.72rem;padding:5px 12px;border-radius:6px">
+                                Open
+                            </a>
+                            <form action="{{ route('admin.races.destroy', $race) }}" method="POST" style="margin:0">
+                                @csrf
+                                @method('DELETE')
+                                <button type="button"
+                                        onclick="xcDeleteSubmit(this.closest('form'), 'Delete event?', '\'{{ addslashes($race->title) }}\' and all registrations will be removed. Results are preserved.')"
+                                        class="btn btn-sm fw-bold text-uppercase"
+                                        style="background:#1f2937;border:1px solid #374151;color:#ef4444;font-size:.72rem;padding:5px 10px;border-radius:6px">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 @empty

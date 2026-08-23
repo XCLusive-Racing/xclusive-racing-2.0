@@ -265,7 +265,7 @@ foreach ($sbGames as $game => $col) {
                                 @if($sbNextEvent->raceDurationMinutes())
                                 <div class="xcl-sb-next__hero-duration">
                                     <span class="xcl-sb-next__duration-badge">
-                                        <i class="fa-solid fa-clock"></i> {{ $sbNextEvent->raceDurationMinutes() }} MIN
+                                        <i class="fa-solid fa-clock"></i> {{ $sbNextEvent->durationLabel() }}
                                     </span>
                                 </div>
                                 @endif

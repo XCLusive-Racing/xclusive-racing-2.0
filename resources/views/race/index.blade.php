@@ -185,7 +185,7 @@
                                 @if($race->raceDurationMinutes())
                                 <div class="xcl-sb-next__hero-duration">
                                     <span class="xcl-sb-next__duration-badge">
-                                        <i class="fa-solid fa-clock"></i> {{ $race->raceDurationMinutes() }} MIN
+                                        <i class="fa-solid fa-clock"></i> {{ $race->durationLabel() }}
                                     </span>
                                 </div>
                                 @endif

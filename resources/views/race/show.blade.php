@@ -117,7 +117,9 @@
                     $fmt      = $race->eventFormat;
                     $pracMins = $fmt ? $fmt->practice_mins  : $race->practice_duration;
                     $qualiMins = $fmt ? $fmt->quali_mins    : $race->qualifying_duration;
-                    $race1Mins = $fmt ? $fmt->race1_mins    : $race->race_duration;
+                    $race1Mins = ($race->is_endurance && $race->race_duration)
+                        ? $race->race_duration
+                        : ($fmt ? $fmt->race1_mins : $race->race_duration);
                     $quali2Mins = $fmt ? $fmt->quali2_mins  : null;
                     $race2Mins  = $fmt ? $fmt->race2_mins   : null;
 
@@ -164,7 +166,9 @@
                             <div class="xcl-session-schedule__dot xcl-session-schedule__dot--race" style="border-color:{{ $race->gameColor() }};background:{{ $race->gameColor() }}22"></div>
                             <div class="xcl-session-schedule__info">
                                 <span class="xcl-session-schedule__label xcl-session-schedule__label--race" style="color:{{ $race->gameColor() }}">{{ $race2Mins ? 'RACE 1' : 'RACE' }}</span>
-                                <span class="xcl-session-schedule__dur xcl-session-schedule__dur--race">{{ $race1Mins }} min</span>
+                                <span class="xcl-session-schedule__dur xcl-session-schedule__dur--race">
+                                    @if($race->is_endurance && $race1Mins % 60 === 0){{ $race1Mins / 60 }}h@else{{ $race1Mins }} min@endif
+                                </span>
                             </div>
                         </div>
                         @endif
