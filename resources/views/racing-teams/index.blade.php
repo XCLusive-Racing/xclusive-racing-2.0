@@ -30,11 +30,33 @@
             @php $myTeam = $user->ownedRacingTeams->first(); @endphp
             <div class="bg-white rounded-3 shadow-sm p-4">
                 <div class="d-flex align-items-start justify-content-between mb-4">
-                    <div>
-                        <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:1.4rem">
-                            [{{ $myTeam->tag }}] {{ $myTeam->name }}
+                    <div class="d-flex align-items-center gap-3">
+                        {{-- Team logo --}}
+                        <div style="position:relative">
+                            @if($myTeam->logoUrl())
+                            <img src="{{ $myTeam->logoUrl() }}" width="56" height="56"
+                                 style="border-radius:50%;object-fit:cover;border:2px solid #e5e7eb">
+                            @else
+                            <div style="width:56px;height:56px;border-radius:50%;background:#7c3aed22;border:2px solid #7c3aed44;display:flex;align-items:center;justify-content:center">
+                                <span style="font-size:1.4rem;font-weight:900;color:#7c3aed">{{ strtoupper(substr($myTeam->name, 0, 1)) }}</span>
+                            </div>
+                            @endif
+                            <label for="logo-upload" title="Change logo"
+                                   style="position:absolute;bottom:-2px;right:-2px;width:20px;height:20px;border-radius:50%;background:#7c3aed;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid white">
+                                <i class="fa-solid fa-pen" style="font-size:.5rem;color:white"></i>
+                            </label>
+                            <form id="logo-form" action="{{ route('racing-teams.logo', $myTeam) }}" method="POST" enctype="multipart/form-data" style="display:none">
+                                @csrf
+                                <input type="file" id="logo-upload" name="logo" accept="image/*"
+                                       onchange="document.getElementById('logo-form').submit()">
+                            </form>
                         </div>
-                        <span class="badge rounded-pill fw-bold mt-1" style="background:#7c3aed22;color:#7c3aed;font-size:.72rem">You are the owner</span>
+                        <div>
+                            <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:1.4rem">
+                                [{{ $myTeam->tag }}] {{ $myTeam->name }}
+                            </div>
+                            <span class="badge rounded-pill fw-bold mt-1" style="background:#7c3aed22;color:#7c3aed;font-size:.72rem">You are the owner</span>
+                        </div>
                     </div>
                     <form action="{{ route('racing-teams.destroy', $myTeam) }}" method="POST"
                           onsubmit="return confirm('Delete team {{ addslashes($myTeam->name) }}? This cannot be undone.')">
@@ -173,7 +195,7 @@
                         </button>
                     </form>
                 </div>
-                <div class="d-flex flex-wrap gap-2">
+                <div class="d-flex flex-wrap gap-2 mb-3">
                     <span class="badge rounded-pill fw-bold" style="background:#7c3aed22;color:#7c3aed;font-size:.72rem">
                         {{ $team->owner->displayName() }} (owner)
                     </span>
@@ -183,6 +205,10 @@
                     </span>
                     @endforeach
                 </div>
+                <p class="mb-0" style="font-size:.78rem;color:#9ca3af">
+                    <i class="fa-solid fa-circle-info me-1"></i>
+                    Only the Team Captain can enter the team for an event.
+                </p>
             </div>
             @endforeach
 

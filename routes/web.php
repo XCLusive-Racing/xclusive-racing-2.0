@@ -149,6 +149,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/racing-teams/{team}',                            [RacingTeamController::class, 'destroy'])->name('racing-teams.destroy');
     Route::post('/racing-teams/{team}/members',                      [RacingTeamController::class, 'addMember'])->name('racing-teams.members.add');
     Route::delete('/racing-teams/{team}/members/{user}',             [RacingTeamController::class, 'removeMember'])->name('racing-teams.members.remove');
+    Route::post('/racing-teams/{team}/logo',                         [RacingTeamController::class, 'updateLogo'])->name('racing-teams.logo');
     Route::post('/racing-teams/{team}/leave',                        [RacingTeamController::class, 'leave'])->name('racing-teams.leave');
     Route::post('/racing-team-invitations/{invitation}/accept',      [RacingTeamController::class, 'acceptInvite'])->name('racing-teams.invite.accept');
     Route::post('/racing-team-invitations/{invitation}/decline',     [RacingTeamController::class, 'declineInvite'])->name('racing-teams.invite.decline');
