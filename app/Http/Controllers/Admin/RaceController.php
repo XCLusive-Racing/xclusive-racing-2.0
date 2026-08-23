@@ -27,7 +27,9 @@ class RaceController extends Controller
             ->where('scheduled_at', '<', now())
             ->update(['status' => 'closed']);
 
-        $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','event_tag','max_drivers','duration_key','is_endurance'])
+        $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','event_tag','max_drivers','duration_key','is_endurance','event_format_id'])
+            ->where('is_endurance', false)
+            ->whereNotNull('event_format_id')
             ->orderBy('scheduled_at', 'asc')
             ->get();
         $races->loadCount(['registrations', 'teamEntries']);

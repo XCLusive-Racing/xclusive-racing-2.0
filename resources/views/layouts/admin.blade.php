@@ -66,7 +66,7 @@
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 6h18M3 14h10M3 18h6"/>
                 </svg>
-                <span>All Races</span>
+                <span>Standard Races</span>
             </a>
             <a href="{{ route('admin.races.special') }}"
                class="admin-nav-link {{ request()->routeIs('admin.races.special') ? 'active' : '' }}">
