@@ -167,6 +167,21 @@ class User extends Authenticatable
         return $this->hasMany(RaceRegistration::class);
     }
 
+    public function ownedRacingTeams(): HasMany
+    {
+        return $this->hasMany(RacingTeam::class, 'owner_id');
+    }
+
+    public function racingTeams(): BelongsToMany
+    {
+        return $this->belongsToMany(RacingTeam::class, 'racing_team_members');
+    }
+
+    public function allRacingTeams(): \Illuminate\Support\Collection
+    {
+        return $this->ownedRacingTeams->merge($this->racingTeams);
+    }
+
     public function raceResults(): HasMany
     {
         return $this->hasMany(RaceResult::class);
