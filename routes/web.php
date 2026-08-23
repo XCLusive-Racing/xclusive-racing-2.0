@@ -40,6 +40,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RaceController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\RacingTeamController;
 use App\Http\Controllers\TeamApplicationController;
 use App\Http\Controllers\ResultsController;
 use Illuminate\Support\Facades\Route;

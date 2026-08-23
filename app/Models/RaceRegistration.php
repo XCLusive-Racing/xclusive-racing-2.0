@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RaceRegistration extends Model
 {
-    protected $fillable = ['race_id', 'user_id', 'race_class_id'];
+    protected $fillable = ['race_id', 'user_id', 'race_class_id', 'team_entry_id'];
 
     public function race(): BelongsTo
     {
@@ -22,5 +22,10 @@ class RaceRegistration extends Model
     public function raceClass(): BelongsTo
     {
         return $this->belongsTo(RaceClass::class);
+    }
+
+    public function teamEntry(): BelongsTo
+    {
+        return $this->belongsTo(RaceTeamEntry::class, 'team_entry_id');
     }
 }
