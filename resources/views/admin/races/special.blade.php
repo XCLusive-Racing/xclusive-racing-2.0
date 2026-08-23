@@ -3,12 +3,6 @@
 @section('title', 'Special Events')
 @section('page-title', 'Special Events')
 
-@section('page-actions')
-    <a href="{{ route('admin.races.custom-create') }}" class="btn btn-sm fw-bold text-uppercase text-white"
-       style="background:#7c3aed;font-size:.78rem;border-radius:6px;padding:6px 14px">
-        + Custom Race
-    </a>
-@endsection
 
 @section('content')
 
