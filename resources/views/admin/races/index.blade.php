@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', 'Race Management')
-@section('page-title', 'Race Management')
+@section('title', 'Standard Races')
+@section('page-title', 'Standard Races')
 
 @push('head')
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
