@@ -157,17 +157,13 @@
                                     @endif
                                 </div>
 
-                                {{-- Car class + day/time — top-left --}}
+                                {{-- Car class — top-left --}}
+                                @if($race->car_class)
+                                @php [$classBg, $classText] = $race->carClassStyle(); @endphp
                                 <div class="xcl-ec2__top-left-row">
-                                    @if($race->car_class)
-                                    @php [$classBg, $classText] = $race->carClassStyle(); @endphp
                                     <div class="xcl-ec2__class-badge" style="background:{{ $classBg }};color:{{ $classText }}">{{ $race->car_class }}</div>
-                                    @endif
-                                    <div class="xcl-ec2__time-badge">
-                                        {{ strtoupper($race->scheduledAtUk()->format('l')) }} /
-                                        {{ strtoupper($race->scheduledAtUk()->format('g:i A T')) }}
-                                    </div>
                                 </div>
+                                @endif
 
                                 {{-- Registrations count — top-right --}}
                                 <div class="xcl-ec2__lobby">
@@ -205,6 +201,12 @@
                                         default => null,
                                     };
                                 @endphp
+                                <div class="xcl-ec2__time-row">
+                                    <div class="xcl-ec2__time">
+                                        {{ strtoupper($race->scheduledAtUk()->format('l')) }} /
+                                        {{ strtoupper($race->scheduledAtUk()->format('g:i A T')) }}
+                                    </div>
+                                </div>
                                 <div class="xcl-ec2__badges-row">
                                     <span class="xcl-sb-badge xcl-sb-badge--game">{{ $gameShort }}</span>
                                     @if($race->sr_requirement)

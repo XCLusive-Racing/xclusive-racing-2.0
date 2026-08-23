@@ -101,8 +101,9 @@ class RatingService
         }
 
         $byUserId = collect($calculated)->keyBy('driver_id');
+        $srField  = $this->srField($race->game);
 
-        DB::transaction(function () use ($results, $byUserId, $ratingField) {
+        DB::transaction(function () use ($results, $byUserId, $ratingField, $srField) {
             foreach ($results as $result) {
                 $calc = $byUserId->get($result->user_id);
 
@@ -119,6 +120,10 @@ class RatingService
 
                 User::where('id', $result->user_id)
                     ->update([$ratingField => $calc['rating_after']]);
+
+                if ($srField) {
+                    $this->applySrChange($result, $srField);
+                }
             }
         });
 
@@ -133,5 +138,41 @@ class RatingService
             'iracing' => 'elo_iracing',
             default   => null,
         };
+    }
+
+    private function srField(string $game): ?string
+    {
+        return match ($game) {
+            'acc'     => 'sr_acc',
+            'lmu'     => 'sr_lmu',
+            'iracing' => 'sr_iracing',
+            default   => null,
+        };
+    }
+
+    /**
+     * Only a clean finish (not DSQ/DNS/DC/DNF, including partial DNFs) raises SR — new_sr =
+     * old_sr + (2.2 / old_sr) * race multiplier, so the gain shrinks the closer a driver
+     * gets to the 9.99 cap. Undoes this result's own previously-applied sr_change first
+     * (mirrors the elo re-baselining above) so reprocessing after a correction doesn't stack.
+     */
+    private function applySrChange(RaceResult $result, string $srField): void
+    {
+        $current  = (float) ($result->user->{$srField} ?? 4.00);
+        $baseline = min(max($current - (float) ($result->sr_change ?? 0), 0.00), 9.99);
+
+        $isFinisher = ! $result->dsq && ! $result->dns && ! $result->dc && ! $result->dnf;
+
+        if ($isFinisher) {
+            $gain  = 2.2 / max($baseline, 0.01) * $this->calculator->MULTIPLIER;
+            $newSr = min(max($baseline + $gain, 0.00), 9.99);
+        } else {
+            $newSr = $baseline;
+        }
+
+        $change = round($newSr - $baseline, 4);
+
+        $result->update(['sr_change' => $change]);
+        User::where('id', $result->user_id)->update([$srField => round($newSr, 2)]);
     }
 }

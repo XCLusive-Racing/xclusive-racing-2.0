@@ -67,12 +67,6 @@
     {{-- Status filters --}}
     <div class="d-flex align-items-center gap-2 px-4 py-3 border-bottom flex-wrap">
         <span class="fw-bold text-uppercase me-1" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Status:</span>
-        <button onclick="filterStatus('')"
-                id="status-all"
-                class="btn btn-sm fw-bold text-uppercase px-3"
-                style="font-size:.72rem;border-radius:6px;background:#111827;color:white;border:1px solid #111827">
-            All
-        </button>
         <button onclick="filterStatus('upcoming')"
                 id="status-upcoming"
                 class="btn btn-sm fw-bold text-uppercase px-3"
@@ -289,16 +283,17 @@
             });
         }
 
-        const statusFilterIds = { '': 'status-all', upcoming: 'status-upcoming', past: 'status-past' };
+        const statusFilterIds = { upcoming: 'status-upcoming', past: 'status-past' };
 
         function filterStatus(mode) {
             if (mode === 'past') {
-                table.column(5).search('Finished', false, false).draw();
-            } else if (mode === 'upcoming') {
-                table.column(5).search('^(?!.*Finished).*$', true, false).draw();
+                table.column(5).search('Finished', false, false);
+                table.order([3, 'desc']);
             } else {
-                table.column(5).search('').draw();
+                table.column(5).search('^(?!.*Finished).*$', true, false);
+                table.order([3, 'asc']);
             }
+            table.draw();
 
             Object.entries(statusFilterIds).forEach(([key, id]) => {
                 const btn    = document.getElementById(id);

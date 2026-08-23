@@ -28,6 +28,15 @@
         </div>
         @else
 
+        <div class="d-flex gap-2 p-3 rounded-3 mb-4" style="background:#eff6ff;border:1px solid #bfdbfe">
+            <i class="fa-solid fa-circle-info mt-1" style="color:#2563eb;font-size:.85rem"></i>
+            <div style="font-size:.78rem;line-height:1.5;color:#1e40af">
+                <strong>Reports open once results are final.</strong> A race only appears below after it has
+                finished and its results &amp; ratings have been fully processed &mdash; this can take a
+                little while after the chequered flag. Check back shortly if your race isn&rsquo;t listed yet.
+            </div>
+        </div>
+
         <div class="row g-4">
 
             {{-- Submit form --}}
@@ -36,40 +45,50 @@
                     <div class="px-4 py-3 border-bottom" style="background:#fafafa">
                         <span class="fw-black text-uppercase" style="font-size:.78rem;letter-spacing:.06em">Submit Report</span>
                     </div>
-                    <form method="POST" action="{{ route('reports.store') }}" class="p-4" data-driver-names="{{ json_encode($driverNames) }}">
+                    <form method="POST" action="{{ route('reports.store') }}" class="p-4">
                         @csrf
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold" style="font-size:.8rem">Race (optional)</label>
-                            <select name="race_id" class="form-select form-select-sm @error('race_id') is-invalid @enderror">
-                                <option value="">— Not race-specific —</option>
+                            <label class="form-label fw-bold" style="font-size:.8rem">Race <span class="text-danger">*</span></label>
+
+                            @if($races->isEmpty())
+                            <div class="alert alert-warning py-2 px-3 mb-0" style="font-size:.8rem">
+                                You have no completed races to report from yet. Races appear here once they've finished
+                                and results &amp; ratings have been processed.
+                            </div>
+                            @else
+                            <select name="race_id" id="race-select" required
+                                    class="form-select form-select-sm @error('race_id') is-invalid @enderror">
+                                <option value="">— Select a race —</option>
                                 @foreach($races as $race)
-                                <option value="{{ $race->id }}" {{ old('race_id') == $race->id ? 'selected' : '' }}>
-                                    {{ $race->title }} ({{ $race->scheduledAtUk()->format('d M Y') }})
+                                <option value="{{ $race->id }}" {{ (string) old('race_id') === (string) $race->id ? 'selected' : '' }}>
+                                    {{ $race->eventFormat->name ?? $race->gameLabel() }} — {{ $race->track }} — {{ $race->scheduledAtUk()->format('D j M Y') }}
                                 </option>
                                 @endforeach
                             </select>
-                            @error('race_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            @error('race_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                            @endif
                         </div>
 
                         <div class="mb-3">
-                            <label class=
-                                           "form-label fw-bold" style="font-size:.8rem">Submitted against <span class="text-danger">*</span></label>
-                            <input type="text" name="reported_driver_name" data-driver-search autocomplete="off"
-                                   value="{{ old('reported_driver_name') }}"
-                                   class="form-control form-control-sm @error('reported_driver_name') is-invalid @enderror"
-                                   placeholder="Start typing a driver name...">
-                            @error('reported_driver_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            <div class="form-text" style="font-size:.72rem">Pick from the list so we can find the right driver spelling matters.</div>
+                            <label class="form-label fw-bold" style="font-size:.8rem">Submitted against <span class="text-danger">*</span></label>
+                            <select name="reported_user_id" id="participant-select" required disabled
+                                    class="form-select form-select-sm @error('reported_user_id') is-invalid @enderror">
+                                <option value="">Select a race first</option>
+                            </select>
+                            <p id="participant-loading" class="text-muted mb-0 mt-1" style="font-size:.72rem;display:none">Loading drivers…</p>
+                            @error('reported_user_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold" style="font-size:.8rem">Your username</label>
-                            <input type="text" name="reporter_driver_name" data-driver-search autocomplete="off"
-                                   value="{{ old('reporter_driver_name', $myGamertag) }}"
-                                   class="form-control form-control-sm @error('reporter_driver_name') is-invalid @enderror"
-                                   placeholder="Your driver name">
-                            @error('reporter_driver_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <label class="form-label fw-bold" style="font-size:.8rem">Session <span class="text-danger">*</span></label>
+                            <select name="session_type" required class="form-select form-select-sm @error('session_type') is-invalid @enderror">
+                                <option value="R" {{ old('session_type') === 'R' ? 'selected' : '' }}>Race</option>
+                                <option value="Q" {{ old('session_type') === 'Q' ? 'selected' : '' }}>Qualifying</option>
+                                <option value="P" {{ old('session_type') === 'P' ? 'selected' : '' }}>Practice</option>
+                            </select>
+                            <div class="form-text" style="font-size:.72rem">The session in which the incident occurred</div>
+                            @error('session_type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
 
                         <div class="row g-2 mb-3">
@@ -98,16 +117,16 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold" style="font-size:.8rem">Clip 1</label>
-                            <input type="url" name="clip_good_driver_url" value="{{ old('clip_good_driver_url') }}"
-                                   class="form-control form-control-sm @error('clip_good_driver_url') is-invalid @enderror"
-                                   placeholder="https://youtube.com/...">
-                            @error('clip_good_driver_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            <div class="form-text" style="font-size:.72rem">Footage from your driver&rsquo;s point of view.</div>
+                            <label class="form-label fw-bold" style="font-size:.8rem">Clip Link <span class="text-danger">*</span></label>
+                            <input type="url" name="video_url" value="{{ old('video_url') }}"
+                                   class="form-control form-control-sm @error('video_url') is-invalid @enderror"
+                                   placeholder="YouTube or Twitch clip URL (required)">
+                            @error('video_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <div class="form-text" style="font-size:.72rem">A clip is required for all incident reports. Reports without a valid clip link will not be reviewed.</div>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold" style="font-size:.8rem">Clip 2</label>
+                            <label class="form-label fw-bold" style="font-size:.8rem">Clip 2 <span class="text-secondary fw-normal">(optional)</span></label>
                             <input type="url" name="clip_bad_driver_url" value="{{ old('clip_bad_driver_url') }}"
                                    class="form-control form-control-sm @error('clip_bad_driver_url') is-invalid @enderror"
                                    placeholder="https://youtube.com/...">
@@ -116,7 +135,7 @@
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label fw-bold" style="font-size:.8rem">Clip 3</label>
+                            <label class="form-label fw-bold" style="font-size:.8rem">Clip 3 <span class="text-secondary fw-normal">(optional)</span></label>
                             <input type="url" name="clip_heli_url" value="{{ old('clip_heli_url') }}"
                                    class="form-control form-control-sm @error('clip_heli_url') is-invalid @enderror"
                                    placeholder="https://youtube.com/...">
@@ -124,7 +143,17 @@
                             <div class="form-text" style="font-size:.72rem">Heli / overview footage of the incident.</div>
                         </div>
 
-                        <button type="submit" class="btn fw-bold text-white w-100" style="background:#7c3aed;font-size:.85rem">
+                        <div class="mb-4 d-flex align-items-start gap-2 p-2 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
+                            <input type="checkbox" name="hide_reporter_name" id="hide-reporter-name" value="1"
+                                   class="form-check-input mt-1" {{ old('hide_reporter_name') ? 'checked' : '' }}>
+                            <label for="hide-reporter-name" class="mb-0" style="font-size:.78rem;line-height:1.4">
+                                <span class="fw-bold">Hide my name from the reported driver</span>
+                                <div class="text-secondary" style="font-size:.72rem">Stewards will always see who filed this report — this only keeps your name hidden from the driver you're reporting.</div>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn fw-bold text-white w-100" style="background:#7c3aed;font-size:.85rem"
+                                {{ $races->isEmpty() ? 'disabled' : '' }}>
                             Submit Report
                         </button>
                     </form>
@@ -134,42 +163,96 @@
             {{-- My reports --}}
             <div class="col-lg-7">
                 <div class="bg-white rounded-3 shadow-sm overflow-hidden">
-                    <div class="px-4 py-3 border-bottom" style="background:#fafafa">
-                        <span class="fw-black text-uppercase" style="font-size:.78rem;letter-spacing:.06em">My Reports</span>
+                    <div class="d-flex border-bottom" style="background:#fafafa">
+                        <button type="button" class="report-tab-btn active" data-tab-target="made">
+                            My Reports
+                            <span class="badge rounded-pill ms-1" style="background:#ede9fe;color:#5b21b6">{{ $reportsMade->count() }}</span>
+                        </button>
+                        <button type="button" class="report-tab-btn" data-tab-target="against">
+                            Reports Against
+                            <span class="badge rounded-pill ms-1" style="background:#ede9fe;color:#5b21b6">{{ $reportsAgainst->count() }}</span>
+                        </button>
                     </div>
-                    @if($reports->isEmpty())
-                    <div class="text-center py-5 text-secondary" style="font-size:.85rem">
-                        You haven't submitted any reports yet.
-                    </div>
-                    @else
-                    <div>
-                        @foreach($reports as $report)
-                        @php $meta = $report->statusMeta(); @endphp
-                        <div class="px-4 py-3 border-bottom">
-                            <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
-                                <span class="fw-bold text-dark" style="font-size:.88rem">vs {{ $report->reported_driver_name }}</span>
-                                <span class="badge fw-bold text-white" style="background:{{ $meta['color'] }};font-size:.68rem">
-                                    {{ $meta['label'] }}
-                                </span>
-                            </div>
-                            @if($report->race)
-                            <div class="text-secondary mb-1" style="font-size:.75rem">{{ $report->race->title }}</div>
-                            @endif
-                            <div class="text-secondary" style="font-size:.75rem">
-                                {{ $report->created_at->format('d M Y') }}
-                                @if($report->lap_number) &middot; Lap {{ $report->lap_number }} @endif
-                                @if($report->incident_corner) &middot; {{ $report->incident_corner }} @endif
-                            </div>
-                            @if($report->admin_notes)
-                            <div class="mt-2 p-2 rounded-2" style="background:#f9fafb;font-size:.78rem;color:#374151;border:1px solid #f3f4f6">
-                                <span class="fw-bold text-uppercase" style="font-size:.65rem;letter-spacing:.05em;color:#9ca3af">Steward note: </span>
-                                {{ $report->admin_notes }}
-                            </div>
-                            @endif
+
+                    {{-- Reports I Made --}}
+                    <div id="tab-made" class="report-tab-panel">
+                        @if($reportsMade->isEmpty())
+                        <div class="text-center py-5 text-secondary" style="font-size:.85rem">
+                            You haven't submitted any reports yet.
                         </div>
-                        @endforeach
+                        @else
+                        <div>
+                            @foreach($reportsMade as $report)
+                            @php $meta = $report->statusMeta(); @endphp
+                            <div class="px-4 py-3 border-bottom">
+                                <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
+                                    <span class="fw-bold text-dark" style="font-size:.88rem">vs {{ $report->reported_driver_name }}</span>
+                                    <span class="badge fw-bold text-white" style="background:{{ $meta['color'] }};font-size:.68rem">
+                                        {{ $meta['label'] }}
+                                    </span>
+                                </div>
+                                @if($report->race)
+                                <div class="text-secondary mb-1" style="font-size:.75rem">{{ $report->race->title }}</div>
+                                @endif
+                                <div class="text-secondary" style="font-size:.75rem">
+                                    {{ $report->created_at->format('d M Y') }}
+                                    @if($report->session_type) &middot; {{ $report->sessionLabel() }} @endif
+                                    @if($report->lap_number) &middot; Lap {{ $report->lap_number }} @endif
+                                    @if($report->incident_corner) &middot; {{ $report->incident_corner }} @endif
+                                </div>
+                                @if($report->admin_notes)
+                                <div class="mt-2 p-2 rounded-2" style="background:#f9fafb;font-size:.78rem;color:#374151;border:1px solid #f3f4f6">
+                                    <span class="fw-bold text-uppercase" style="font-size:.65rem;letter-spacing:.05em;color:#9ca3af">Steward note: </span>
+                                    {{ $report->admin_notes }}
+                                </div>
+                                @endif
+                            </div>
+                            @endforeach
+                        </div>
+                        @endif
                     </div>
-                    @endif
+
+                    {{-- Reports Against Me --}}
+                    <div id="tab-against" class="report-tab-panel" style="display:none">
+                        @if($reportsAgainst->isEmpty())
+                        <div class="text-center py-5 text-secondary" style="font-size:.85rem">
+                            No incident reports have been filed against you.
+                        </div>
+                        @else
+                        <div>
+                            @foreach($reportsAgainst as $report)
+                            @php
+                                $meta = $report->statusMeta();
+                                $reporterName = $report->reporterNameForReportedDriver();
+                            @endphp
+                            <div class="px-4 py-3 border-bottom">
+                                <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
+                                    <span class="fw-bold text-dark" style="font-size:.88rem">{{ $report->race?->title ?? 'Incident Report' }}</span>
+                                    <span class="badge fw-bold text-white" style="background:{{ $meta['color'] }};font-size:.68rem">
+                                        {{ $meta['label'] }}
+                                    </span>
+                                </div>
+                                <div class="text-secondary mb-1" style="font-size:.75rem">
+                                    Reported by: {{ $reporterName }}
+                                    @if($report->session_type) &middot; {{ $report->sessionLabel() }} @endif
+                                </div>
+                                <div class="text-secondary" style="font-size:.75rem">
+                                    {{ ($report->race?->scheduledAtUk() ?? $report->created_at)->format('d M Y') }}
+                                </div>
+                                @if($report->status === 'resolved' && $report->final_penalty)
+                                <div class="mt-2 p-2 rounded-2" style="background:#f9fafb;font-size:.78rem;color:#374151;border:1px solid #f3f4f6">
+                                    Final penalty: <strong>{{ $report->final_penalty }}</strong>
+                                </div>
+                                @elseif($report->status === 'dismissed')
+                                <div class="mt-2 p-2 rounded-2" style="background:#f9fafb;font-size:.78rem;color:#6b7280;border:1px solid #f3f4f6">
+                                    Dismissed
+                                </div>
+                                @endif
+                            </div>
+                            @endforeach
+                        </div>
+                        @endif
+                    </div>
                 </div>
             </div>
 
@@ -178,4 +261,89 @@
 
     </div>
 </main>
+
+<style>
+    .report-tab-btn {
+        flex: 1;
+        border: none;
+        background: transparent;
+        padding: 14px 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        font-size: .72rem;
+        letter-spacing: .06em;
+        color: #9ca3af;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition: color .15s, border-color .15s;
+    }
+    .report-tab-btn:hover { color: #5b21b6; }
+    .report-tab-btn.active { color: #5b21b6; border-bottom-color: #7c3aed; }
+</style>
+
+@push('scripts')
+<script>
+(function () {
+    const raceSelect = document.getElementById('race-select');
+    const participantSelect = document.getElementById('participant-select');
+    const loadingEl = document.getElementById('participant-loading');
+
+    function renderParticipants(drivers, preselect) {
+        if (!drivers.length) {
+            participantSelect.innerHTML = '<option value="">No other participants found</option>';
+            participantSelect.disabled = true;
+            return;
+        }
+        participantSelect.innerHTML = '<option value="">— Select a driver —</option>' +
+            drivers.map(function (d) {
+                const selected = preselect && String(preselect) === String(d.id) ? ' selected' : '';
+                return '<option value="' + d.id + '"' + selected + '>' + d.name + '</option>';
+            }).join('');
+        participantSelect.disabled = false;
+    }
+
+    function loadParticipants(raceId, preselect) {
+        if (!raceId) {
+            participantSelect.innerHTML = '<option value="">Select a race first</option>';
+            participantSelect.disabled = true;
+            return;
+        }
+
+        participantSelect.innerHTML = '<option value="">Loading…</option>';
+        participantSelect.disabled = true;
+        loadingEl.style.display = 'block';
+
+        fetch('/api/race/' + raceId + '/participants', { headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (drivers) {
+                loadingEl.style.display = 'none';
+                renderParticipants(drivers, preselect);
+            })
+            .catch(function () {
+                loadingEl.style.display = 'none';
+                participantSelect.innerHTML = '<option value="">Failed to load drivers</option>';
+            });
+    }
+
+    if (raceSelect && participantSelect) {
+        raceSelect.addEventListener('change', function () {
+            loadParticipants(this.value, null);
+        });
+
+        @if(old('race_id'))
+        loadParticipants(@json(old('race_id')), @json(old('reported_user_id')));
+        @endif
+    }
+
+    document.querySelectorAll('.report-tab-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.report-tab-btn').forEach(function (b) { b.classList.remove('active'); });
+            document.querySelectorAll('.report-tab-panel').forEach(function (p) { p.style.display = 'none'; });
+            btn.classList.add('active');
+            document.getElementById('tab-' + btn.dataset.tabTarget).style.display = 'block';
+        });
+    });
+})();
+</script>
+@endpush
 @endsection

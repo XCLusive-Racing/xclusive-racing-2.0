@@ -306,6 +306,9 @@
                                         REGISTER NOW →
                                     </button>
                                 </form>
+                                <p class="xcl-event-card__text mt-2 mb-0" style="font-size:.72rem;opacity:.7">
+                                    Registration closes 5 minutes before the start.
+                                </p>
                             @endif
                         @else
                             <p class="xcl-event-card__text mb-0">Registration is closed.</p>
