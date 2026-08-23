@@ -80,7 +80,7 @@ class PushGPortalConfigs extends Command
                 'eventrules.json' => json_encode(
                     $race->configFile('eventrules.json')
                         ? json_decode($race->configFile('eventrules.json'), true)
-                        : $config->eventRules($server),
+                        : $config->eventRules($race, $server),
                     JSON_PRETTY_PRINT
                 ),
                 'assistrules.json' => json_encode(

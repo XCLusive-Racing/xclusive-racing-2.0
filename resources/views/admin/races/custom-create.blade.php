@@ -155,17 +155,59 @@
                     </div>
                 </div>
 
+                {{-- Pit Stop --}}
+                <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+                    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Pit Stop</p>
+
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="cr-pitstop-toggle"
+                               {{ old('pitstop_count', 0) > 0 ? 'checked' : '' }}>
+                        <label class="form-check-label fw-bold" for="cr-pitstop-toggle">Mandatory Pit Stop</label>
+                    </div>
+                    <div id="cr-pitstop-panel" style="{{ old('pitstop_count', 0) > 0 ? '' : 'display:none' }}">
+                        <div class="d-flex gap-3 flex-wrap align-items-end">
+                            <div>
+                                <label class="form-label" style="font-size:.82rem">Stops</label>
+                                <input type="number" name="pitstop_count" id="cr-pitstop-count"
+                                       value="{{ old('pitstop_count', 1) }}"
+                                       class="form-control form-control-sm" min="1" max="9" style="width:70px">
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="cr-minstop-toggle"
+                                       name="min_stop_toggle"
+                                       {{ old('min_stop_secs') ? 'checked' : '' }}>
+                                <label class="form-check-label fw-bold" for="cr-minstop-toggle" style="font-size:.85rem">25s minimum waiting time</label>
+                                <input type="hidden" name="min_stop_secs" id="cr-minstop-val" value="{{ old('min_stop_secs', '') }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Schedule --}}
                 <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Schedule</p>
 
-                    <div class="col-sm-7 px-0">
-                        <label class="form-label">Date & Time (BST) <span class="text-danger">*</span></label>
-                        <input type="text" id="cr-scheduled-at" name="scheduled_at" data-flatpickr data-min-today="true" data-minute-increment="1"
-                               value="{{ old('scheduled_at') }}"
-                               placeholder="Select date & time…"
-                               class="form-control @error('scheduled_at') is-invalid @enderror">
-                        @error('scheduled_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div class="row g-3">
+                        <div class="col-sm-7">
+                            <label class="form-label">Date & Time (BST) <span class="text-danger">*</span></label>
+                            <input type="text" id="cr-scheduled-at" name="scheduled_at" data-flatpickr data-min-today="true" data-minute-increment="1"
+                                   value="{{ old('scheduled_at') }}"
+                                   placeholder="Select date & time…"
+                                   class="form-control @error('scheduled_at') is-invalid @enderror">
+                            @error('scheduled_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="form-label">Server <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
+                            <select name="ftp_server_id" class="form-select @error('ftp_server_id') is-invalid @enderror">
+                                <option value="">— No server —</option>
+                                @foreach($servers as $srv)
+                                    <option value="{{ $srv->id }}" {{ old('ftp_server_id') == $srv->id ? 'selected' : '' }}>
+                                        {{ $srv->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('ftp_server_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
                     </div>
                 </div>
 
@@ -419,6 +461,28 @@
         const t = document.getElementById(tid), p = document.getElementById(pid);
         t?.addEventListener('change', () => { p.style.display = t.checked ? '' : 'none'; });
     });
+
+    // Pitstop toggle
+    const pitstopToggle = document.getElementById('cr-pitstop-toggle');
+    const pitstopPanel  = document.getElementById('cr-pitstop-panel');
+    const pitstopCount  = document.getElementById('cr-pitstop-count');
+    const minstopToggle = document.getElementById('cr-minstop-toggle');
+    const minstopVal    = document.getElementById('cr-minstop-val');
+
+    if (pitstopToggle) {
+        pitstopToggle.addEventListener('change', () => {
+            pitstopPanel.style.display = pitstopToggle.checked ? '' : 'none';
+            if (!pitstopToggle.checked && pitstopCount) pitstopCount.name = '';
+            else if (pitstopCount) pitstopCount.name = 'pitstop_count';
+        });
+        if (!pitstopToggle.checked && pitstopCount) pitstopCount.name = '';
+    }
+
+    if (minstopToggle) {
+        const syncMinstop = () => { minstopVal.value = minstopToggle.checked ? '25' : ''; };
+        minstopToggle.addEventListener('change', syncMinstop);
+        syncMinstop();
+    }
 })();
 
 // ── Live Event Preview ──────────────────────────────────────────────────────

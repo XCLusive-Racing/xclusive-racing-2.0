@@ -143,7 +143,8 @@ class RaceController extends Controller
 
     public function customCreate()
     {
-        $tags = EventTag::orderBy('name')->get();
+        $tags    = EventTag::orderBy('name')->get();
+        $servers = FtpServer::where('active', true)->orderBy('name')->get();
 
         $trackFilenames   = array_values(self::TRACK_IMAGE_MAP);
         $trackMediaByName = Media::whereIn('original_name', $trackFilenames)->get()->keyBy('original_name');
@@ -151,7 +152,7 @@ class RaceController extends Controller
             ->map(fn($fname) => $trackMediaByName->get($fname)?->url)
             ->all();
 
-        return view('admin.races.custom-create', compact('tags', 'trackPreviewUrls'));
+        return view('admin.races.custom-create', compact('tags', 'servers', 'trackPreviewUrls'));
     }
 
     public function bulkStore(Request $request)
@@ -167,6 +168,7 @@ class RaceController extends Controller
             'car_class'            => 'nullable|string|max:50',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
             'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
+            'rain_level'           => 'nullable|numeric|min:0|max:1',
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
             'ambient_temp'         => 'nullable|integer|min:-30|max:50',
             'sr_requirement'       => 'nullable|numeric|in:3,4,5,6,7,8,9',
@@ -198,6 +200,7 @@ class RaceController extends Controller
             'car_class'            => $request->car_class ?: null,
             'weather'              => $request->weather ?: null,
             'weather_randomness'   => $request->weather_randomness ?: null,
+            'rain_level'           => $request->filled('rain_level') ? (float) $request->rain_level : null,
             'time_of_day'          => $request->time_of_day ?: null,
             'ambient_temp'         => $request->ambient_temp ?? null,
             'sr_requirement'       => $request->sr_requirement ?: null,
@@ -395,6 +398,7 @@ class RaceController extends Controller
             'max_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
             'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
+            'rain_level'           => 'nullable|numeric|min:0|max:1',
             'time_of_day'          => 'nullable|date_format:H:i',
             'ambient_temp'         => 'nullable|integer|min:-30|max:50',
             'max_drivers'          => 'nullable|integer|min:1',
@@ -405,6 +409,8 @@ class RaceController extends Controller
             'image_path'           => 'nullable|string|max:500',
             'icon'                 => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
             'icon_path'            => 'nullable|string|max:500',
+            'pitstop_count'        => 'nullable|integer|min:0|max:9',
+            'min_stop_secs'        => 'nullable|integer|min:1|max:3600',
         ]);
 
         $data['scheduled_at']  = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
@@ -413,9 +419,15 @@ class RaceController extends Controller
         $data = $this->deriveFormatFields($data);
 
         if (empty($data['event_format_id'])) {
-            // Custom race — no format to derive art from, use whatever was uploaded/selected
+            // Custom race — use uploaded/selected image, or fall back to track's stock image
             $data['image'] = $this->resolveMedia($request);
-            $data['icon']  = $this->resolveIcon($request);
+            if (!$data['image'] && isset($data['track'])) {
+                $trackFilename  = self::TRACK_IMAGE_MAP[$data['track']] ?? null;
+                $data['image']  = $trackFilename
+                    ? Media::where('original_name', $trackFilename)->value('path')
+                    : null;
+            }
+            $data['icon'] = $this->resolveIcon($request);
         }
         unset($data['image_path'], $data['icon_path']);
 
@@ -490,6 +502,7 @@ class RaceController extends Controller
             'max_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
             'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
+            'rain_level'           => 'nullable|numeric|min:0|max:1',
             'time_of_day'          => 'nullable|date_format:H:i',
             'ambient_temp'         => 'nullable|integer|min:-30|max:50',
             'max_drivers'          => 'nullable|integer|min:1',
@@ -560,7 +573,8 @@ class RaceController extends Controller
             'settings.json'   => $request->input('settings_json')
                 ?? $race->configFile('settings.json')
                 ?? json_encode($config->settings($race, $server), JSON_PRETTY_PRINT),
-            'eventrules.json'  => json_encode($config->eventRules($server), JSON_PRETTY_PRINT),
+            'eventrules.json'  => $race->configFile('eventrules.json')
+                ?? json_encode($config->eventRules($race, $server), JSON_PRETTY_PRINT),
             'assistrules.json' => json_encode($config->assistRules($server), JSON_PRETTY_PRINT),
         ];
 

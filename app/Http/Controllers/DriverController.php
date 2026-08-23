@@ -54,18 +54,59 @@ class DriverController extends Controller
     {
         $driver->load(['stats', 'trackTimes', 'hotlaps']);
 
-        $trackTimes = $driver->trackTimes
-            ->sortBy('track')
-            ->values();
+        $trackTimes = $driver->trackTimes->sortBy('track')->values();
+
+        $linkedUser  = User::where('platform_id', $driver->xuid_psid)->first();
+        $isSupporter = $linkedUser->is_supporter ?? false;
 
         $avgRating = RaceResult::where('player_id', $driver->xuid_psid)
             ->where('session_type', 'race')
             ->whereNotNull('rating_after')
             ->avg('rating_after');
 
-        $linkedUser = \App\Models\User::where('platform_id', $driver->xuid_psid)->first();
-        $isSupporter = $linkedUser->is_supporter ?? false;
+        if ($linkedUser) {
+            $xclRating    = (int) $linkedUser->elo_acc;
+            $safetyRating = (float) $linkedUser->sr_acc;
 
-        return view('drivers.show', compact('driver', 'trackTimes', 'avgRating', 'isSupporter', 'linkedUser'));
+            $raceRows  = RaceResult::where('player_id', $driver->xuid_psid)
+                ->where('session_type', 'race')
+                ->get(['position', 'fastest_lap', 'dns', 'dsq']);
+            $started    = $raceRows->where('dns', false);
+            $classified = $started->where('dsq', false);
+
+            $displayStats = (object) [
+                'total_races'       => $started->count(),
+                'wins'              => $classified->where('position', 1)->count(),
+                'podiums'           => $classified->where('position', '<=', 3)->count(),
+                'top5s'             => $classified->where('position', '<=', 5)->count(),
+                'top10s'            => $classified->where('position', '<=', 10)->count(),
+                'fastest_race_laps' => $started->where('fastest_lap', true)->count(),
+            ];
+        } else {
+            $xclRating    = (float) $driver->xcl_rating;
+            $safetyRating = (float) $driver->safety_rating;
+            $displayStats = $driver->stats;
+        }
+
+        $classSlug = 'rookie';
+        foreach (Driver::brackets() as $bracket) {
+            if ($xclRating >= $bracket['min'] && $xclRating <= $bracket['max']) {
+                $classSlug = $bracket['slug'];
+                break;
+            }
+        }
+
+        $srClass = ['grade' => 'D', 'color' => '#000000'];
+        foreach (Driver::srGrades() as $grade) {
+            if ($safetyRating >= $grade['min'] && $safetyRating < $grade['max']) {
+                $srClass = $grade;
+                break;
+            }
+        }
+
+        return view('drivers.show', compact(
+            'driver', 'trackTimes', 'avgRating', 'isSupporter', 'linkedUser',
+            'displayStats', 'xclRating', 'safetyRating', 'classSlug', 'srClass'
+        ));
     }
 }

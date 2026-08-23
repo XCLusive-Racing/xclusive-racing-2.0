@@ -261,13 +261,33 @@ $mcExisting = $isEdit
                             <div class="col-sm-4">
                                 <label class="form-label">Rain</label>
                                 @php $weatherVal = old('weather', $isEdit ? ($race->weather ?: 'dry') : 'dry'); @endphp
-                                <select name="weather" class="form-select">
+                                <select name="weather" id="ce-weather-select" class="form-select">
                                     <option value="">— Not set —</option>
                                     <option value="dry"    {{ $weatherVal === 'dry'    ? 'selected' : '' }}>Dry</option>
                                     <option value="wet"    {{ $weatherVal === 'wet'    ? 'selected' : '' }}>Wet</option>
                                     <option value="mixed"  {{ $weatherVal === 'mixed'  ? 'selected' : '' }}>Mixed</option>
                                     <option value="random" {{ $weatherVal === 'random' ? 'selected' : '' }}>Random</option>
                                 </select>
+                            </div>
+                            <div class="col-sm-3" id="ce-rain-level-wrap" style="display:none">
+                                @php
+                                    $rainLevelPresets = ['wet' => 0.8, 'mixed' => 0.3];
+                                    $savedRainLevel   = old('rain_level', $isEdit ? $race->rain_level : null);
+                                @endphp
+                                <label class="form-label">Rain Level
+                                    <span class="fw-normal text-secondary" style="text-transform:none">(ACC rain)</span>
+                                </label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="range" name="rain_level" id="ce-rain-level"
+                                           min="0" max="1" step="0.1"
+                                           value="{{ $savedRainLevel ?? '' }}"
+                                           class="form-range flex-grow-1" style="accent-color:#7c3aed">
+                                    <span id="ce-rain-level-val" class="fw-bold text-dark"
+                                          style="min-width:2rem;font-size:.9rem;text-align:right">
+                                        {{ $savedRainLevel !== null ? number_format($savedRainLevel, 1) : '—' }}
+                                    </span>
+                                </div>
+                                <div class="form-text">0.0 dry · 0.3 damp · 0.5 light · 0.8 heavy · 1.0 flooded</div>
                             </div>
                             <div class="col-sm-3">
                                 <label class="form-label">Race Start Time <span class="fw-normal text-secondary" style="text-transform:none">(in-game)</span></label>
@@ -277,9 +297,19 @@ $mcExisting = $isEdit
                                     $timeOfDayVal = ($rawTod && !preg_match('/^\d{2}:\d{2}$/', $rawTod))
                                         ? ($todMap[$rawTod] ?? '14:00')
                                         : ($rawTod ?: '14:00');
+                                    $bulkTodVal = in_array($rawTod, ['day','dusk','night','dynamic']) ? $rawTod : '';
                                 @endphp
-                                <input type="time" name="time_of_day" class="form-control"
+                                {{-- Single mode: H:i time picker --}}
+                                <input type="time" name="time_of_day" data-single-tod class="form-control"
                                        value="{{ $timeOfDayVal }}" step="3600">
+                                {{-- Bulk mode: enum select, also used as default for generated rows --}}
+                                <select name="time_of_day" data-bulk-tod class="form-select" style="display:none" disabled>
+                                    <option value=""        {{ $bulkTodVal === ''        ? 'selected' : '' }}>— Not set —</option>
+                                    <option value="day"     {{ $bulkTodVal === 'day'     ? 'selected' : '' }}>Day (14:00)</option>
+                                    <option value="dusk"    {{ $bulkTodVal === 'dusk'    ? 'selected' : '' }}>Dusk (17:00)</option>
+                                    <option value="night"   {{ $bulkTodVal === 'night'   ? 'selected' : '' }}>Night (21:00)</option>
+                                    <option value="dynamic" {{ $bulkTodVal === 'dynamic' ? 'selected' : '' }}>Dynamic</option>
+                                </select>
                             </div>
                             <div class="col-sm-3">
                                 <label class="form-label">Ambient Temp (°C)</label>
@@ -819,6 +849,12 @@ $mcExisting = $isEdit
 
         // Disable single-only hidden inputs to prevent duplicate submissions
         if (singleMaxDrivers) singleMaxDrivers.disabled = isBulk;
+
+        // Toggle time-of-day between H:i picker (single) and enum select (bulk)
+        const singleTod = document.querySelector('[data-single-tod]');
+        const bulkTod   = document.querySelector('[data-bulk-tod]');
+        if (singleTod) { singleTod.disabled = isBulk;  singleTod.style.display = isBulk ? 'none' : ''; }
+        if (bulkTod)   { bulkTod.disabled   = !isBulk; bulkTod.style.display   = isBulk ? ''     : 'none'; }
 
         // Bulk events section: hide on single, restore if rows exist on bulk
         if (bulkEventsSection) {
@@ -1492,6 +1528,32 @@ $mcExisting = $isEdit
     });
 
     showStep(1);
+})();
+
+// ── Rain Level Control ───────────────────────────────────────────────────────
+(function () {
+    const weatherSelect  = document.getElementById('ce-weather-select');
+    const rainWrap       = document.getElementById('ce-rain-level-wrap');
+    const rainSlider     = document.getElementById('ce-rain-level');
+    const rainDisplay    = document.getElementById('ce-rain-level-val');
+    const presets        = { wet: 0.8, mixed: 0.3 };
+
+    function updateWrap() {
+        const w = weatherSelect?.value;
+        const show = w === 'wet' || w === 'mixed';
+        if (rainWrap) rainWrap.style.display = show ? '' : 'none';
+        if (show && rainSlider && !rainSlider.value) {
+            rainSlider.value = presets[w] ?? 0.5;
+            if (rainDisplay) rainDisplay.textContent = parseFloat(rainSlider.value).toFixed(1);
+        }
+    }
+
+    rainSlider?.addEventListener('input', () => {
+        if (rainDisplay) rainDisplay.textContent = parseFloat(rainSlider.value).toFixed(1);
+    });
+
+    weatherSelect?.addEventListener('change', updateWrap);
+    updateWrap();
 })();
 </script>
 

@@ -136,6 +136,10 @@
                             @if($raceResults->isEmpty())
                             <p class="text-secondary text-center py-5" style="font-size:.85rem">No race results available.</p>
                             @else
+                            @php
+                                $p1Row      = $raceResults->where('dns', false)->where('dsq', false)->sortBy('position')->first();
+                                $p1Time     = $p1Row ? (int) $p1Row->total_time : null;
+                            @endphp
                             <div class="table-responsive">
                                 <table class="table align-middle mb-0" style="font-size:.875rem">
                                     <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
@@ -144,11 +148,29 @@
                                             <th class="fw-bold text-uppercase text-secondary py-3" style="font-size:.7rem;letter-spacing:.06em">Driver</th>
                                             <th class="fw-bold text-uppercase text-secondary py-3 d-none d-md-table-cell" style="font-size:.7rem;letter-spacing:.06em">Car</th>
                                             <th class="fw-bold text-uppercase text-secondary py-3 text-center" style="font-size:.7rem;letter-spacing:.06em">Laps</th>
-                                            <th class="fw-bold text-uppercase text-secondary py-3 text-end pe-4" style="font-size:.7rem;letter-spacing:.06em">Best Lap</th>
+                                            <th class="fw-bold text-uppercase text-secondary py-3 text-end" style="font-size:.7rem;letter-spacing:.06em">Best Lap</th>
+                                            <th class="fw-bold text-uppercase text-secondary py-3 text-end" style="font-size:.7rem;letter-spacing:.06em">Gap</th>
+                                            <th class="fw-bold text-uppercase text-secondary py-3 text-center d-none d-lg-table-cell" style="font-size:.7rem;letter-spacing:.06em">Consistency</th>
+                                            <th class="fw-bold text-uppercase text-secondary py-3 text-center d-none d-lg-table-cell pe-4" style="font-size:.7rem;letter-spacing:.06em">Laps Led</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach($raceResults as $result)
+                                        @php
+                                            $notStarted = $result->dns || $result->dc;
+                                            $notFinished = $result->dnf || $result->dsq;
+                                            $rowTime = $result->total_time !== null ? (int) $result->total_time : null;
+                                            if ($result->position === 1 && $rowTime !== null) {
+                                                $gapDisplay = \App\Models\RaceResult::formatMs($rowTime);
+                                                $gapColor   = '#374151';
+                                            } elseif (!$notStarted && $rowTime !== null && $p1Time !== null) {
+                                                $gapDisplay = '+' . \App\Models\RaceResult::formatMs($rowTime - $p1Time);
+                                                $gapColor   = '#6b7280';
+                                            } else {
+                                                $gapDisplay = '—';
+                                                $gapColor   = '#6b7280';
+                                            }
+                                        @endphp
                                         <tr style="border-bottom:1px solid #f9fafb">
                                             <td class="ps-4 fw-bold" style="font-size:.9rem;{{ $result->position === 1 ? 'color:#f59e0b' : ($result->position === 2 ? 'color:#9ca3af' : ($result->position === 3 ? 'color:#cd7f32' : 'color:#374151')) }}">
                                                 {{ $result->dsq ? 'DSQ' : ($result->dc ? 'DC' : ($result->dns ? 'DNS' : ($result->dnf ? 'DNF' : $result->position))) }}
@@ -163,8 +185,17 @@
                                             </td>
                                             <td class="text-secondary d-none d-md-table-cell" style="font-size:.8rem">{{ $result->vehicle ?? '—' }}</td>
                                             <td class="text-center text-secondary" style="font-size:.85rem">{{ $result->lap_count ?? '—' }}</td>
-                                            <td class="text-end pe-4 fw-bold" style="font-size:.85rem;font-variant-numeric:tabular-nums">
+                                            <td class="text-end fw-bold" style="font-size:.85rem;font-variant-numeric:tabular-nums">
                                                 {{ \App\Models\RaceResult::formatMs($result->best_lap) }}
+                                            </td>
+                                            <td class="text-end fw-bold" style="font-size:.82rem;font-variant-numeric:tabular-nums;color:{{ $gapColor }}">
+                                                {{ $gapDisplay }}
+                                            </td>
+                                            <td class="text-center text-secondary d-none d-lg-table-cell" style="font-size:.82rem">
+                                                {{ $result->consistency !== null ? number_format((float)$result->consistency, 1) . '%' : '—' }}
+                                            </td>
+                                            <td class="text-center text-secondary d-none d-lg-table-cell pe-4" style="font-size:.82rem">
+                                                {{ $result->laps_led ?? '—' }}
                                             </td>
                                         </tr>
                                         @endforeach
@@ -183,6 +214,9 @@
                             @if($qualiResults->isEmpty())
                             <p class="text-secondary text-center py-5" style="font-size:.85rem">No qualifying results available.</p>
                             @else
+                            @php
+                                $poleTime = $qualiResults->whereNotNull('best_lap')->where('best_lap', '>', 0)->sortBy('best_lap')->first()?->best_lap;
+                            @endphp
                             <div class="table-responsive">
                                 <table class="table align-middle mb-0" style="font-size:.875rem">
                                     <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
@@ -190,19 +224,31 @@
                                             <th class="fw-bold text-uppercase text-secondary ps-4 py-3" style="font-size:.7rem;letter-spacing:.06em;width:50px">Pos</th>
                                             <th class="fw-bold text-uppercase text-secondary py-3" style="font-size:.7rem;letter-spacing:.06em">Driver</th>
                                             <th class="fw-bold text-uppercase text-secondary py-3 d-none d-md-table-cell" style="font-size:.7rem;letter-spacing:.06em">Car</th>
-                                            <th class="fw-bold text-uppercase text-secondary py-3 text-end pe-4" style="font-size:.7rem;letter-spacing:.06em">Best Lap</th>
+                                            <th class="fw-bold text-uppercase text-secondary py-3 text-end" style="font-size:.7rem;letter-spacing:.06em">Best Lap</th>
+                                            <th class="fw-bold text-uppercase text-secondary py-3 text-end pe-4" style="font-size:.7rem;letter-spacing:.06em">Gap to Pole</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach($qualiResults as $result)
+                                        @php
+                                            $lapMs = $result->best_lap ? (int) $result->best_lap : null;
+                                            if ($result->position === 1 || $poleTime === null || $lapMs === null) {
+                                                $poleGap = '—';
+                                            } else {
+                                                $poleGap = '+' . \App\Models\RaceResult::formatMs($lapMs - (int) $poleTime);
+                                            }
+                                        @endphp
                                         <tr style="border-bottom:1px solid #f9fafb">
                                             <td class="ps-4 fw-bold" style="font-size:.9rem;{{ $result->position === 1 ? 'color:#f59e0b' : 'color:#374151' }}">
                                                 {{ $result->position }}
                                             </td>
                                             <td class="fw-bold text-dark" style="font-size:.88rem">{{ $result->displayName() }}</td>
                                             <td class="text-secondary d-none d-md-table-cell" style="font-size:.8rem">{{ $result->vehicle ?? '—' }}</td>
-                                            <td class="text-end pe-4 fw-bold" style="font-size:.85rem;font-variant-numeric:tabular-nums">
+                                            <td class="text-end fw-bold" style="font-size:.85rem;font-variant-numeric:tabular-nums">
                                                 {{ \App\Models\RaceResult::formatMs($result->best_lap) }}
+                                            </td>
+                                            <td class="text-end pe-4 fw-bold" style="font-size:.82rem;font-variant-numeric:tabular-nums;color:#6b7280">
+                                                {{ $poleGap }}
                                             </td>
                                         </tr>
                                         @endforeach
