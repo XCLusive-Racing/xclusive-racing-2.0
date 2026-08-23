@@ -14,12 +14,6 @@
 
 <div class="admin-card">
 
-    <div class="px-4 py-3 border-bottom" style="background:#111827;border-radius:12px 12px 0 0">
-        <p class="mb-0 text-secondary" style="font-size:.82rem">
-            Endurance races and custom events (no standard format). Use the <strong style="color:#e5e7eb">Endurance / Driver Swap</strong> toggle on any race to include it here.
-        </p>
-    </div>
-
     <div class="table-responsive">
         <table id="special-table" class="table table-hover align-middle mb-0 w-100" style="font-size:.875rem">
             <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
