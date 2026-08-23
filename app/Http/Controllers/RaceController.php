@@ -202,6 +202,14 @@ class RaceController extends Controller
             }
         }
 
+        $carNumberTaken = RaceTeamEntry::where('race_id', $race->id)
+            ->where('car_number', $validated['car_number'])
+            ->exists();
+
+        if ($carNumberTaken) {
+            return back()->with('error', 'Car number #' . $validated['car_number'] . ' is already taken for this race.');
+        }
+
         if ($race->max_drivers !== null) {
             $currentCount = $race->registrations()->count();
             if ($currentCount + $selectedIds->count() > $race->max_drivers) {
