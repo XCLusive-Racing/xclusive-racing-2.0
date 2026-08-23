@@ -114,7 +114,8 @@
                         } elseif (str_contains($titleLower, 'multiclass') || str_contains($titleLower, 'endurance')) {
                             $badge = 'MULTICLASS';
                         } else {
-                            $badge = 'DAILY SPRINT';
+                            $tagObj = $eventTags->firstWhere('slug', $race->event_tag);
+                            $badge  = strtoupper($tagObj?->name ?? 'Race');
                         }
                         $gameShort = match($race->game) {
                             'acc'     => 'ACC',

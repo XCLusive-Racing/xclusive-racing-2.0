@@ -235,11 +235,18 @@
 
         <div data-section-content="ftp">
             <a href="{{ route('admin.servers.index') }}"
-               class="admin-nav-link {{ request()->routeIs('admin.servers.*') ? 'active' : '' }}">
+               class="admin-nav-link {{ request()->routeIs('admin.servers.index') || request()->routeIs('admin.servers.create') || request()->routeIs('admin.servers.edit') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
                 </svg>
                 <span>FTP Servers</span>
+            </a>
+            <a href="{{ route('admin.servers.schedule') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.servers.schedule') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <span>Server Schedule</span>
             </a>
             @if(auth()->user()->isOwner())
             <a href="{{ route('admin.event-formats.index') }}"

@@ -88,6 +88,10 @@ class AccServerConfigService
             $weatherRandomness = $defaults['weatherRandomness'] ?? 1;
         }
 
+        if ($race->rain_level !== null) {
+            $rain = (float) $race->rain_level;
+        }
+
         if ($race->weather_randomness !== null) {
             $wr = $race->weather_randomness;
             $weatherRandomness = $wr === 'random' ? rand(0, 7) : (int) $wr;
@@ -124,15 +128,43 @@ class AccServerConfigService
             'racecraftRatingRequirement' => $this->rcRequired($race),
             'maxCarSlots'                => $race->max_drivers ?? ($base['maxCarSlots'] ?? 30),
             'carGroup'                   => $this->carGroup($race->car_class),
-            // Nordschleife always gets the short formation lap — a full-length formation lap
-            // around the ~21km Nordschleife takes far too long to be practical.
-            'shortFormationLap'          => $this->trackSlug($race->track) === 'nordschleife' ? 1 : ($base['shortFormationLap'] ?? 0),
+            'shortFormationLap'          => $this->shortFormationLap($race, $base),
         ]);
     }
 
-    public function eventRules(?FtpServer $server = null): array
+    public function eventRules(?Race $race = null, ?FtpServer $server = null): array
     {
-        return $server?->eventrules_defaults ?? $this->defaultEventRules();
+        $base = $server?->eventrules_defaults ?? $this->defaultEventRules();
+
+        $fmt = $race?->eventFormat;
+
+        if ($fmt) {
+            $pitstopType  = $fmt->pitstop_type ?? 'none';
+            $pitstopCount = (int) ($fmt->pitstop_count ?? 0);
+        } elseif ($race && (int) ($race->pitstop_count ?? 0) > 0) {
+            $pitstopType  = 'mandatory';
+            $pitstopCount = (int) $race->pitstop_count;
+        } else {
+            return $base;
+        }
+
+        if ($pitstopType === 'none' || $pitstopCount === 0) {
+            return array_merge($base, [
+                'mandatoryPitstopCount'                => 0,
+                'isRefuellingAllowedInRace'            => false,
+                'isRefuellingTimeFixed'                => false,
+                'isMandatoryPitstopRefuellingRequired' => false,
+                'isMandatoryPitstopTyreChangeRequired' => false,
+            ]);
+        }
+
+        return array_merge($base, [
+            'mandatoryPitstopCount'                => $pitstopCount,
+            'isRefuellingAllowedInRace'            => true,
+            'isRefuellingTimeFixed'                => true,
+            'isMandatoryPitstopRefuellingRequired' => true,
+            'isMandatoryPitstopTyreChangeRequired' => false,
+        ]);
     }
 
     public function assistRules(?FtpServer $server = null): array
@@ -240,6 +272,23 @@ class AccServerConfigService
             'entries'       => $mapped,
             'configVersion' => 1,
         ];
+    }
+
+    private function shortFormationLap(Race $race, array $base): int
+    {
+        $formationType = $race->eventFormat?->formation_type ?? '';
+
+        // Format explicitly uses a short formation lap for all tracks.
+        if (strtolower(trim($formationType)) === 'short') {
+            return 1;
+        }
+
+        // Nordschleife always gets short regardless of format — a full lap takes too long.
+        if ($this->trackSlug($race->track) === 'nordschleife') {
+            return 1;
+        }
+
+        return (int) ($base['shortFormationLap'] ?? 0);
     }
 
     private function srRequired(Race $race): int

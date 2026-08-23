@@ -228,6 +228,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // FTP Servers
     Route::get('/servers', [FtpServerController::class, 'index'])->name('servers.index');
+    Route::get('/servers/schedule', [FtpServerController::class, 'schedule'])->name('servers.schedule');
     Route::get('/servers/create', [FtpServerController::class, 'create'])->name('servers.create');
     Route::post('/servers', [FtpServerController::class, 'store'])->name('servers.store');
     Route::get('/servers/{ftpServer}/edit', [FtpServerController::class, 'edit'])->name('servers.edit');

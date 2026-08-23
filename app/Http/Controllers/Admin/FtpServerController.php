@@ -17,6 +17,17 @@ class FtpServerController extends Controller
         return view('admin.servers.index', compact('servers'));
     }
 
+    public function schedule()
+    {
+        $servers = FtpServer::with(['races' => function ($q) {
+            $q->where('status', '!=', 'finished')
+              ->where('scheduled_at', '>=', now())
+              ->orderBy('scheduled_at');
+        }])->orderBy('name')->get();
+
+        return view('admin.servers.schedule', compact('servers'));
+    }
+
     public function create()
     {
         return view('admin.servers.create');
@@ -123,7 +134,7 @@ class FtpServerController extends Controller
     {
         $files = [
             'settings.json'    => json_encode($config->settings(new \App\Models\Race(), $ftpServer), JSON_PRETTY_PRINT),
-            'eventrules.json'  => json_encode($config->eventRules($ftpServer), JSON_PRETTY_PRINT),
+            'eventrules.json'  => json_encode($config->eventRules(null, $ftpServer), JSON_PRETTY_PRINT),
             'assistrules.json' => json_encode($config->assistRules($ftpServer), JSON_PRETTY_PRINT),
         ];
 
