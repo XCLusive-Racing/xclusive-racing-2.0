@@ -172,6 +172,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/calendar', [AdminCalendarController::class, 'index'])->name('calendar');
     Route::get('/races', [AdminRaceController::class, 'index'])->name('races.index');
+    Route::get('/races/special', [AdminRaceController::class, 'specialIndex'])->name('races.special');
     Route::get('/races/create', [AdminRaceController::class, 'create'])->name('races.create');
     Route::get('/races/bulk-create', [AdminRaceController::class, 'bulkCreate'])->name('races.bulk-create');
     Route::post('/races/bulk-store', [AdminRaceController::class, 'bulkStore'])->name('races.bulk-store');

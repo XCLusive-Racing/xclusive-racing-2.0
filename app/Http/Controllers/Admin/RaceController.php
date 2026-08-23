@@ -35,6 +35,17 @@ class RaceController extends Controller
         return view('admin.races.index', compact('races'));
     }
 
+    public function specialIndex()
+    {
+        $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','event_tag','max_drivers','duration_key','event_format_id','is_endurance'])
+            ->where(fn($q) => $q->where('is_endurance', true)->orWhereNull('event_format_id'))
+            ->orderBy('scheduled_at', 'desc')
+            ->get();
+        $races->loadCount('registrations');
+
+        return view('admin.races.special', compact('races'));
+    }
+
     public function show(Race $race, AccServerConfigService $config)
     {
         $raceResults   = $race->results()->where('session_type', 'race')->with('user')->get();
