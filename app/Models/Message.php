@@ -36,6 +36,7 @@ class Message extends Model
             'report_confirmation' => 'fa-file-circle-check',
             'report_resolved'     => 'fa-gavel',
             'news'                => 'fa-newspaper',
+            'team_invitation'     => 'fa-users',
             default               => 'fa-envelope',
         };
     }
@@ -47,6 +48,7 @@ class Message extends Model
             'report_confirmation' => '#2563eb',
             'report_resolved'     => '#16a34a',
             'news'                => '#db2877',
+            'team_invitation'     => '#f59e0b',
             default               => '#6b7280',
         };
     }
