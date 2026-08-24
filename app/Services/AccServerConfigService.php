@@ -173,6 +173,14 @@ class AccServerConfigService
     {
         $base = $server?->eventrules_defaults ?? $this->defaultEventRules();
 
+        if ($race && $race->is_endurance) {
+            $base = array_merge($base, [
+                'driverStintTimeSec'                   => $race->driver_stint_time_mins ? $race->driver_stint_time_mins * 60 : -1,
+                'maxTotalDrivingTime'                  => $race->max_total_driving_time_mins ? $race->max_total_driving_time_mins * 60 : -1,
+                'isMandatoryPitstopSwapDriverRequired' => $race->mandatory_driver_swap,
+            ]);
+        }
+
         $fmt = $race?->eventFormat;
 
         if ($fmt) {
