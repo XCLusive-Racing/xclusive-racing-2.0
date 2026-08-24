@@ -155,8 +155,9 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($raceResults as $result)
+                                        @foreach(\App\Models\RaceResult::groupedByCar($raceResults, $selected) as $row)
                                         @php
+                                            $result = $row->result;
                                             $notStarted = $result->dns || $result->dc;
                                             $notFinished = $result->dnf || $result->dsq;
                                             $rowTime = $result->total_time !== null ? (int) $result->total_time : null;
@@ -177,7 +178,12 @@
                                             </td>
                                             <td>
                                                 <div class="d-flex align-items-center gap-2">
-                                                    <span class="fw-bold text-dark" style="font-size:.88rem">{{ $result->displayName() }}</span>
+                                                    <div>
+                                                        <span class="fw-bold text-dark" style="font-size:.88rem">{{ $row->label }}</span>
+                                                        @if($row->sub)
+                                                        <span class="d-block text-secondary" style="font-size:.7rem">{{ $row->sub }}</span>
+                                                        @endif
+                                                    </div>
                                                     @if($result->fastest_lap)
                                                     <span class="badge" style="background:#7c3aed20;color:#7c3aed;font-size:.65rem;border:1px solid #7c3aed40">FL</span>
                                                     @endif
@@ -229,8 +235,9 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($qualiResults as $result)
+                                        @foreach(\App\Models\RaceResult::groupedByCar($qualiResults, $selected) as $row)
                                         @php
+                                            $result = $row->result;
                                             $lapMs = $result->best_lap ? (int) $result->best_lap : null;
                                             if ($result->position === 1 || $poleTime === null || $lapMs === null) {
                                                 $poleGap = '—';
@@ -242,7 +249,12 @@
                                             <td class="ps-4 fw-bold" style="font-size:.9rem;{{ $result->position === 1 ? 'color:#f59e0b' : 'color:#374151' }}">
                                                 {{ $result->position }}
                                             </td>
-                                            <td class="fw-bold text-dark" style="font-size:.88rem">{{ $result->displayName() }}</td>
+                                            <td class="fw-bold text-dark" style="font-size:.88rem">
+                                                {{ $row->label }}
+                                                @if($row->sub)
+                                                <span class="d-block text-secondary" style="font-size:.7rem">{{ $row->sub }}</span>
+                                                @endif
+                                            </td>
                                             <td class="text-secondary d-none d-md-table-cell" style="font-size:.8rem">{{ $result->vehicle ?? '—' }}</td>
                                             <td class="text-end fw-bold" style="font-size:.85rem;font-variant-numeric:tabular-nums">
                                                 {{ \App\Models\RaceResult::formatMs($result->best_lap) }}

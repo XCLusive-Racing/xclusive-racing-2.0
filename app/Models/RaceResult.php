@@ -110,6 +110,39 @@ class RaceResult extends Model
         return $this->user?->name ?? $this->driver_name ?? 'Unknown';
     }
 
+    /**
+     * Collapses one result row per co-driver into one row per car for endurance/team
+     * races (import creates a row per driver, but they share identical car-level stats).
+     * Non-endurance races pass through unchanged. Preserves the input's existing order.
+     *
+     * @param  \Illuminate\Support\Collection<int, self>  $results
+     * @return \Illuminate\Support\Collection<int, object{result: self, label: string, sub: ?string}>
+     */
+    public static function groupedByCar(\Illuminate\Support\Collection $results, Race $race): \Illuminate\Support\Collection
+    {
+        if (!$race->is_endurance) {
+            return $results->map(fn (self $r) => (object) [
+                'result' => $r,
+                'label'  => $r->displayName(),
+                'sub'    => null,
+            ]);
+        }
+
+        $teamByCarNumber = $race->teamEntries->keyBy('car_number');
+
+        return $results->groupBy('car_number')->map(function ($group) use ($teamByCarNumber) {
+            $primary = $group->first();
+            $team    = $teamByCarNumber->get($primary->car_number);
+            $names   = $group->map->displayName()->implode(' / ');
+
+            return (object) [
+                'result' => $primary,
+                'label'  => $team?->team?->name ?? $names,
+                'sub'    => $team ? $names : null,
+            ];
+        })->values();
+    }
+
     public static function formatMs(?int $ms): string
     {
         if ($ms === null || $ms <= 0) {
