@@ -314,15 +314,7 @@ class RaceController extends Controller
                 ->first()?->url;
         }
 
-        $endurancePreviewUrls = [];
-        foreach (['4h', '6h', '8h', '10h', '12h', '24h'] as $dur) {
-            $key = $dur . '_endurance';
-            $endurancePreviewUrls[$dur] = Media::where('title', $key)
-                ->orWhere('original_name', 'like', $key . '%')
-                ->first()?->url;
-        }
-
-        return compact('formats', 'trackPreviewUrls', 'formatPreviewUrls', 'endurancePreviewUrls');
+        return compact('formats', 'trackPreviewUrls', 'formatPreviewUrls');
     }
 
     // Derives title/durations/icon from the chosen Format + track image, for format-based races.
@@ -330,6 +322,9 @@ class RaceController extends Controller
     private function deriveFormatFields(array $data): array
     {
         if (!empty($data['event_format_id'])) {
+            // Endurance/driver-swap is Custom Race only — a format-based race never sets it.
+            $data['is_endurance'] = false;
+
             $fmt = EventFormat::find($data['event_format_id']);
             if ($fmt) {
                 $data['title']               = $fmt->name;
@@ -338,14 +333,8 @@ class RaceController extends Controller
                 $data['qualifying_duration'] = $fmt->quali_mins ?: null;
                 $data['race_duration']       = $fmt->race1_mins ?: null;
 
-                $formatSlug = Str::slug($fmt->name, '_');
-                if ($formatSlug === 'endurance' && !empty($data['endurance_duration'])) {
-                    $formatImageKey = $data['endurance_duration'] . '_endurance';
-                    $hoursMap = ['4h' => 240, '6h' => 360, '8h' => 480, '10h' => 600, '12h' => 720, '24h' => 1440];
-                    $data['race_duration'] = $hoursMap[$data['endurance_duration']] ?? null;
-                } else {
-                    $formatImageKey = self::FORMAT_IMAGE_OVERRIDES[$formatSlug] ?? $formatSlug;
-                }
+                $formatSlug     = Str::slug($fmt->name, '_');
+                $formatImageKey = self::FORMAT_IMAGE_OVERRIDES[$formatSlug] ?? $formatSlug;
 
                 $data['icon'] = Media::where('title', $formatImageKey)
                     ->orWhere('original_name', 'like', $formatImageKey . '%')
@@ -358,7 +347,6 @@ class RaceController extends Controller
                 : null;
         }
 
-        unset($data['endurance_duration']);
         return $data;
     }
 
@@ -405,7 +393,6 @@ class RaceController extends Controller
             'event_tag'            => 'required|exists:event_tags,slug',
             'event_format_id'      => 'nullable|exists:event_formats,id',
             'title'                => 'required_without:event_format_id|string|max:255',
-            'endurance_duration'   => 'nullable|in:4h,6h,8h,10h,12h,24h',
             'duration_key'         => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
             'xcl_r_multiplier'     => 'nullable|numeric|min:0.1|max:10',
             'practice_duration'    => 'nullable|integer|min:1|max:1440',
@@ -512,7 +499,6 @@ class RaceController extends Controller
             'event_tag'            => 'required|exists:event_tags,slug',
             'event_format_id'      => 'nullable|exists:event_formats,id',
             'title'                => 'required_without:event_format_id|string|max:255',
-            'endurance_duration'   => 'nullable|in:4h,6h,8h,10h,12h,24h',
             'duration_key'         => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
             'xcl_r_multiplier'     => 'nullable|numeric|min:0.1|max:10',
             'practice_duration'    => 'nullable|integer|min:1|max:1440',

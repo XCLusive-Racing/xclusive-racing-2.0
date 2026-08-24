@@ -193,22 +193,6 @@ $mcExisting = $isEdit
                             </div>
                         </div>
 
-                        {{-- Endurance duration: single + custom mode only --}}
-                        <div data-mode-single>
-                            <div id="ce-endurance-wrap" class="mt-3" style="display:none">
-                                <label class="form-label">Duration <span class="text-danger">*</span></label>
-                                <select name="endurance_duration" id="ce-endurance-duration" class="form-select" style="max-width:200px">
-                                    <option value="">Select duration…</option>
-                                    <option value="4h"  {{ old('endurance_duration') === '4h'  ? 'selected' : '' }}>4 Hours</option>
-                                    <option value="6h"  {{ old('endurance_duration') === '6h'  ? 'selected' : '' }}>6 Hours</option>
-                                    <option value="8h"  {{ old('endurance_duration') === '8h'  ? 'selected' : '' }}>8 Hours</option>
-                                    <option value="10h" {{ old('endurance_duration') === '10h' ? 'selected' : '' }}>10 Hours</option>
-                                    <option value="12h" {{ old('endurance_duration') === '12h' ? 'selected' : '' }}>12 Hours</option>
-                                    <option value="24h" {{ old('endurance_duration') === '24h' ? 'selected' : '' }}>24 Hours</option>
-                                </select>
-                            </div>
-                        </div>
-
                         {{-- Custom: sessions + multiplier --}}
                         <div data-mode-custom style="display:none">
                             <div class="mt-3">
@@ -722,8 +706,8 @@ $mcExisting = $isEdit
                         <div class="text-secondary mt-2" style="font-size:.75rem" data-mc-hint>Select one or more classes to enable multiclass</div>
                     </div>
 
-                    {{-- ── Endurance / Driver Swap ─────────────────────────── --}}
-                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+                    {{-- ── Endurance / Driver Swap — Custom Race only ───────── --}}
+                    <div class="px-4 py-3" data-mode-custom style="display:none;border-top:1px solid #f3f4f6">
                         <div class="form-check form-switch mb-0">
                             <input class="form-check-input" type="checkbox" role="switch"
                                    name="is_endurance" id="ce-is-endurance" value="1"
@@ -1046,12 +1030,7 @@ $mcExisting = $isEdit
         fmtInfo.style.display = '';
     }
 
-    const enduranceWrap  = document.getElementById('ce-endurance-wrap');
     const multiclassWrap = document.getElementById('ce-multiclass-wrap');
-
-    function setEnduranceVisible(slug) {
-        if (enduranceWrap) enduranceWrap.style.display = slug === 'endurance' ? '' : 'none';
-    }
 
     function setMulticlassVisible(slug) {
         if (multiclassWrap) multiclassWrap.style.display = slug === 'multiclass' ? '' : 'none';
@@ -1060,7 +1039,6 @@ $mcExisting = $isEdit
     function updateFormats(game) {
         fmtEl.innerHTML = '<option value="">— Select format —</option>';
         showFormatInfo(null);
-        setEnduranceVisible('');
         setMulticlassVisible('');
         if (!game || !formats[game]) return;
         formats[game].sort((a, b) => a.sort_order - b.sort_order).forEach(f => {
@@ -1075,7 +1053,6 @@ $mcExisting = $isEdit
             const selected = (formats[game] || []).find(f => String(f.id) === oldFmt);
             if (selected) {
                 showFormatInfo(selected);
-                setEnduranceVisible(selected.slug);
                 setMulticlassVisible(selected.slug);
             }
         }
@@ -1121,24 +1098,8 @@ $mcExisting = $isEdit
     fmtEl.addEventListener('change', () => {
         const fmt = (formats[gameEl.value] || []).find(f => String(f.id) === fmtEl.value);
         showFormatInfo(fmt || null);
-        setEnduranceVisible(fmt?.slug ?? '');
         setMulticlassVisible(fmt?.slug ?? '');
     });
-
-    const endurElFmt = document.getElementById('ce-endurance-duration');
-    if (endurElFmt) {
-        const endurMinsMap = { '4h': 240, '6h': 360, '8h': 480, '10h': 600, '12h': 720, '24h': 1440 };
-        endurElFmt.addEventListener('change', () => {
-            const fmt = (formats[gameEl.value] || []).find(f => String(f.id) === fmtEl.value);
-            if (!fmt || fmt.slug !== 'endurance') return;
-            const race1Mins = endurMinsMap[endurElFmt.value] || fmt.race1_mins;
-            let sessions = '';
-            if (fmt.practice_mins) sessions += buildSessionBadge('P', fmt.practice_mins, '#6b7280');
-            if (fmt.quali_mins)    sessions += buildSessionBadge('Q', fmt.quali_mins, '#d97706');
-            sessions += buildSessionBadge('R1', race1Mins, '#7c3aed');
-            document.getElementById('ce-fi-sessions').innerHTML = sessions;
-        });
-    }
 
     trackSelect.addEventListener('change', () => updateTrackHint(trackSelect.value));
 
@@ -1284,7 +1245,6 @@ $mcExisting = $isEdit
     const formats              = @json($formatsWithSlug);
     const trackPreviewUrls     = @json($trackPreviewUrls ?? []);
     const formatPreviewUrls    = @json($formatPreviewUrls ?? []);
-    const endurancePreviewUrls = @json($endurancePreviewUrls ?? []);
 
     const $ = id => document.getElementById(id);
     const prev = {
@@ -1337,7 +1297,6 @@ $mcExisting = $isEdit
         const trackSelEl  = $('ce-track-select');
         const trackTxtEl  = $('ce-track-text');
         const carClassEl  = $('ce-car-class');
-        const endurEl     = $('ce-endurance-duration');
         const srToggle    = $('ce-sr-toggle');
         const srSelect    = $('ce-sr-select');
         const minToggle   = $('ce-minrating-toggle');
@@ -1349,7 +1308,6 @@ $mcExisting = $isEdit
         const game      = gameEl  ? gameEl.value  : '';
         const fmtId     = fmtEl   ? fmtEl.value   : '';
         const fmtOpt    = (fmtEl && fmtId) ? fmtEl.options[fmtEl.selectedIndex] : null;
-        const fmtSlug   = fmtOpt  ? (fmtOpt.dataset.slug || '') : '';
         const fmtName   = fmtOpt  ? fmtOpt.textContent.trim() : '';
         const fmtData   = (formats[game] || []).find(f => String(f.id) === fmtId);
         const track     = (game === 'acc' && trackSelEl && trackSelEl.style.display !== 'none')
@@ -1358,7 +1316,6 @@ $mcExisting = $isEdit
         const weather   = weatherSel  ? weatherSel.value  : '';
         const carClass  = carClassEl  ? carClassEl.value  : '';
         const schedVal  = schedEl     ? schedEl.value     : '';
-        const endurDur  = endurEl     ? endurEl.value     : '';
         const srOn      = srToggle    ? srToggle.checked  : false;
         const srVal     = (srOn && srSelect) ? srSelect.value : '';
         const minOn     = minToggle   ? minToggle.checked : false;
@@ -1378,9 +1335,7 @@ $mcExisting = $isEdit
 
         // Format overlay image / text fallback
         let fmtUrl = '';
-        if (fmtSlug === 'endurance' && endurDur) {
-            fmtUrl = endurancePreviewUrls[endurDur] || formatPreviewUrls[fmtId] || '';
-        } else if (fmtId) {
+        if (fmtId) {
             fmtUrl = formatPreviewUrls[fmtId] || '';
         }
         if (fmtUrl && prev.formatImg) {
@@ -1484,10 +1439,7 @@ $mcExisting = $isEdit
 
         // Duration badge
         if (prev.duration) {
-            if (fmtSlug === 'endurance' && endurDur) {
-                prev.duration.textContent   = endurDur.toUpperCase();
-                prev.duration.style.display = '';
-            } else if (isCustomMode && customRace && customRace.value) {
+            if (isCustomMode && customRace && customRace.value) {
                 const mins = parseInt(customRace.value);
                 prev.duration.textContent   = mins + ' MIN';
                 prev.duration.style.display = '';
@@ -1549,10 +1501,7 @@ $mcExisting = $isEdit
 
                 if (pillsEl) {
                     pillsEl.innerHTML = '';
-                    const endurMinsMap = { '4h': 240, '6h': 360, '8h': 480, '10h': 600, '12h': 720, '24h': 1440 };
-                    const race1Mins = (fmtSlug === 'endurance' && endurDur && endurMinsMap[endurDur])
-                        ? endurMinsMap[endurDur]
-                        : fmtData.race1_mins;
+                    const race1Mins = fmtData.race1_mins;
                     const sessions = [
                         { key: 'P',  mins: fmtData.practice_mins, bg: '#1f2937', color: '#9ca3af' },
                         { key: 'Q',  mins: fmtData.quali_mins,    bg: '#292524', color: '#f59e0b' },
@@ -1589,7 +1538,7 @@ $mcExisting = $isEdit
     // Bind change/input listeners
     ['ce-game','ce-format','ce-car-class','ce-sr-toggle','ce-sr-select',
      'ce-minrating-toggle','ce-minrating-select','ce-maxrating-toggle',
-     'ce-endurance-duration','ce-track-select',
+     'ce-track-select',
      'ce-custom-car-class','ce-custom-multiplier']
         .forEach(id => { const el = $(id); if (el) el.addEventListener('change', updatePreview); });
     ['ce-custom-title','ce-custom-practice','ce-custom-qualifying','ce-custom-race']
