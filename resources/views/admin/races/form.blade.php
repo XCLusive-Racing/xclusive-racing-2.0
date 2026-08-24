@@ -715,6 +715,39 @@ $mcExisting = $isEdit
                             <label class="form-check-label fw-bold" for="ce-is-endurance">Endurance / Driver Swap</label>
                         </div>
                         <div class="text-secondary mt-1" style="font-size:.75rem">Enables team entry registration — drivers sign up as a team with shared car number and model.</div>
+
+                        <div id="ce-swap-rules-panel" class="mt-3"
+                             style="{{ old('is_endurance', $isEdit ? $race->is_endurance : false) ? '' : 'display:none' }}">
+                            <p class="fw-black text-uppercase fst-italic mb-2" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Driver Swap Rules <span class="fw-normal" style="text-transform:none">(pushed to the gPortal server)</span></p>
+                            <div class="row g-2 mb-2">
+                                <div class="col-sm-6">
+                                    <label class="form-label" style="font-size:.8rem">Min. Stint Time</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" name="driver_stint_time_mins"
+                                               value="{{ old('driver_stint_time_mins', $isEdit ? $race->driver_stint_time_mins : '') }}"
+                                               class="form-control" min="1" max="1440" placeholder="No minimum">
+                                        <span class="input-group-text">min</span>
+                                    </div>
+                                    <div class="form-text" style="font-size:.7rem">Shortest time before a driver may hand over the car.</div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label" style="font-size:.8rem">Max Driving Time / Driver</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" name="max_total_driving_time_mins"
+                                               value="{{ old('max_total_driving_time_mins', $isEdit ? $race->max_total_driving_time_mins : '') }}"
+                                               class="form-control" min="1" max="1440" placeholder="No limit">
+                                        <span class="input-group-text">min</span>
+                                    </div>
+                                    <div class="form-text" style="font-size:.7rem">Caps how much of the race one driver may cover in total.</div>
+                                </div>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="ce-mandatory-swap"
+                                       name="mandatory_driver_swap" value="1"
+                                       {{ old('mandatory_driver_swap', $isEdit ? $race->mandatory_driver_swap : false) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="ce-mandatory-swap" style="font-size:.82rem">Require a driver swap at the mandatory pit stop</label>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
@@ -1675,6 +1708,14 @@ $mcExisting = $isEdit
     if (minToggle && minVal) {
         minToggle.addEventListener('change', () => { minVal.value = minToggle.checked ? '25' : ''; });
     }
+})();
+
+// ── Endurance / Driver Swap Rules Toggle ────────────────────────────────────
+(function () {
+    const toggle = document.getElementById('ce-is-endurance');
+    const panel  = document.getElementById('ce-swap-rules-panel');
+    if (!toggle || !panel) return;
+    toggle.addEventListener('change', () => { panel.style.display = toggle.checked ? '' : 'none'; });
 })();
 
 // ── Rain Level Control ───────────────────────────────────────────────────────
