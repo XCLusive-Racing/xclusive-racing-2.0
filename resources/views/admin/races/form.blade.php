@@ -257,7 +257,7 @@ $mcExisting = $isEdit
                                             <label class="form-label" style="font-size:.82rem">Stops</label>
                                             <input type="number" name="pitstop_count" id="ce-custom-pitstop-count"
                                                    value="{{ old('pitstop_count', $isEdit ? $race->pitstop_count : 1) }}"
-                                                   class="form-control form-control-sm" min="1" max="9" style="width:70px">
+                                                   class="form-control form-control-sm" min="0" max="9" style="width:70px">
                                         </div>
                                         <div class="form-check mb-2">
                                             <input class="form-check-input" type="checkbox" id="ce-custom-minstop-toggle"
