@@ -20,3 +20,5 @@ yarn-error.log
 /.vscode
 .DS_Store
 *.pem
+/.claude/settings.local.json
+/.claude/worktrees/
