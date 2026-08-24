@@ -108,7 +108,7 @@ $mcExisting = $isEdit
             {{-- ══════════════════════════════════════════════════════════════ --}}
             <div data-step-panel="1" style="display:none">
 
-                @unless($isEdit)
+                @unless($isEdit && $hasFormat)
                 {{-- Mode toggle --}}
                 <div class="d-flex mb-4" style="border-bottom:2px solid #e5e7eb">
                     <button type="button" data-mode-btn="single"
@@ -121,8 +121,16 @@ $mcExisting = $isEdit
                             style="font-size:.76rem;letter-spacing:.08em;margin-bottom:-2px">
                         Bulk Schedule
                     </button>
+                    <button type="button" data-mode-btn="custom"
+                            class="btn fw-black text-uppercase rounded-0 border-0 px-4 py-2"
+                            style="font-size:.76rem;letter-spacing:.08em;margin-bottom:-2px">
+                        Custom Race
+                    </button>
                 </div>
                 @endunless
+                @if($isEdit && !$hasFormat)
+                <style>[data-mode-btn="single"],[data-mode-btn="bulk"] { display:none !important; }</style>
+                @endif
 
                 <div class="admin-card mb-4">
                     {{-- ── Event ──────────────────────────────────────────── --}}
@@ -142,17 +150,37 @@ $mcExisting = $isEdit
                                 @error('game')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
 
-                            <div class="col-sm-7">
+                            {{-- Format selector — hidden in custom mode --}}
+                            <div class="col-sm-7" data-mode-format-only>
                                 <label class="form-label">Format <span class="text-danger">*</span></label>
                                 <select name="event_format_id" id="ce-format" class="form-select @error('event_format_id') is-invalid @enderror">
                                     <option value="">— Select game first —</option>
                                 </select>
                                 @error('event_format_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
+
+                            {{-- Custom: title + car class --}}
+                            <div class="col-sm-4" data-mode-custom style="display:none">
+                                <label class="form-label">Title <span class="text-danger">*</span></label>
+                                <input type="text" name="title" id="ce-custom-title"
+                                       value="{{ old('title', $isEdit && !$hasFormat ? $race->title : '') }}"
+                                       class="form-control @error('title') is-invalid @enderror"
+                                       placeholder="e.g. Saturday GT3 Sprint">
+                                @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-sm-3" data-mode-custom style="display:none">
+                                <label class="form-label">Car Class</label>
+                                <select name="car_class" id="ce-custom-car-class" class="form-select">
+                                    <option value="">Open</option>
+                                    @foreach(['GT2','GT3','GT4','TCX','GTC'] as $cls)
+                                        <option value="{{ $cls }}" {{ old('car_class', $isEdit ? $race->car_class : '') === $cls ? 'selected' : '' }}>{{ $cls }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
 
-                        {{-- Format info: both modes --}}
-                        <div id="ce-format-info" class="mt-3 p-3 rounded-3" style="display:none;background:#f8f5ff;border:1px solid rgba(124,58,237,.2)">
+                        {{-- Format info — hidden in custom mode --}}
+                        <div id="ce-format-info" class="mt-3 p-3 rounded-3" data-mode-format-only style="display:none;background:#f8f5ff;border:1px solid rgba(124,58,237,.2)">
                             <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
                                 <span id="ce-fi-name" class="fw-black text-uppercase fst-italic" style="color:#7c3aed;font-size:.85rem"></span>
                                 <span id="ce-fi-xcl" class="fw-black" style="color:#7c3aed;font-size:.9rem"></span>
@@ -165,7 +193,7 @@ $mcExisting = $isEdit
                             </div>
                         </div>
 
-                        {{-- Endurance: single only --}}
+                        {{-- Endurance duration: single + custom mode only --}}
                         <div data-mode-single>
                             <div id="ce-endurance-wrap" class="mt-3" style="display:none">
                                 <label class="form-label">Duration <span class="text-danger">*</span></label>
@@ -181,45 +209,88 @@ $mcExisting = $isEdit
                             </div>
                         </div>
 
+                        {{-- Custom: sessions + multiplier --}}
+                        <div data-mode-custom style="display:none">
+                            <div class="mt-3">
+                                <p class="fw-black text-uppercase fst-italic mb-2" style="font-size:.7rem;letter-spacing:.06em;color:#9ca3af">Sessions <span class="fw-normal" style="text-transform:none">(minutes)</span></p>
+                                <div class="row g-2">
+                                    <div class="col-sm-3 col-6">
+                                        <label class="form-label">Practice</label>
+                                        <div class="input-group">
+                                            <input type="number" name="practice_duration" id="ce-custom-practice"
+                                                   value="{{ old('practice_duration', $isEdit && !$hasFormat ? $race->practice_duration : '') }}"
+                                                   class="form-control" min="1" max="1440" placeholder="—">
+                                            <span class="input-group-text" style="font-size:.78rem">min</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3 col-6">
+                                        <label class="form-label">Qualifying</label>
+                                        <div class="input-group">
+                                            <input type="number" name="qualifying_duration" id="ce-custom-qualifying"
+                                                   value="{{ old('qualifying_duration', $isEdit && !$hasFormat ? $race->qualifying_duration : '') }}"
+                                                   class="form-control" min="1" max="1440" placeholder="—">
+                                            <span class="input-group-text" style="font-size:.78rem">min</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3 col-6">
+                                        <label class="form-label">Race <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <input type="number" name="race_duration" id="ce-custom-race"
+                                                   value="{{ old('race_duration', $isEdit && !$hasFormat ? $race->race_duration : '') }}"
+                                                   class="form-control @error('race_duration') is-invalid @enderror"
+                                                   min="1" max="1440" placeholder="e.g. 60">
+                                            <span class="input-group-text" style="font-size:.78rem">min</span>
+                                        </div>
+                                        @error('race_duration')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                    </div>
+                                    <div class="col-sm-3 col-6">
+                                        <label class="form-label">XCL-R Multiplier</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">×</span>
+                                            <input type="number" name="xcl_r_multiplier" id="ce-custom-multiplier"
+                                                   value="{{ old('xcl_r_multiplier', $isEdit && !$hasFormat ? ($race->xcl_r_multiplier ?? '') : '') }}"
+                                                   class="form-control @error('xcl_r_multiplier') is-invalid @enderror"
+                                                   min="0.1" max="10" step="0.1" placeholder="1.0">
+                                        </div>
+                                        @error('xcl_r_multiplier')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Custom: pitstop --}}
+                        <div data-mode-custom style="display:none">
+                            <div class="mt-3 pt-3" style="border-top:1px solid #f3f4f6">
+                                <p class="fw-black text-uppercase fst-italic mb-2" style="font-size:.7rem;letter-spacing:.06em;color:#9ca3af">Pit Stop</p>
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="ce-custom-pitstop-toggle"
+                                           {{ old('pitstop_count', $isEdit ? $race->pitstop_count : 0) > 0 ? 'checked' : '' }}>
+                                    <label class="form-check-label fw-bold" for="ce-custom-pitstop-toggle">Mandatory Pit Stop</label>
+                                </div>
+                                <div id="ce-custom-pitstop-panel" style="{{ old('pitstop_count', $isEdit ? $race->pitstop_count : 0) > 0 ? '' : 'display:none' }}">
+                                    <div class="d-flex gap-3 flex-wrap align-items-end">
+                                        <div>
+                                            <label class="form-label" style="font-size:.82rem">Stops</label>
+                                            <input type="number" name="pitstop_count" id="ce-custom-pitstop-count"
+                                                   value="{{ old('pitstop_count', $isEdit ? $race->pitstop_count : 1) }}"
+                                                   class="form-control form-control-sm" min="1" max="9" style="width:70px">
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="ce-custom-minstop-toggle"
+                                                   {{ old('min_stop_secs', $isEdit ? $race->min_stop_secs : null) ? 'checked' : '' }}>
+                                            <label class="form-check-label fw-bold" for="ce-custom-minstop-toggle" style="font-size:.85rem">25s minimum waiting time</label>
+                                            <input type="hidden" name="min_stop_secs" id="ce-custom-minstop-val"
+                                                   value="{{ old('min_stop_secs', $isEdit ? $race->min_stop_secs : '') }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         @if($isEdit && !$hasFormat)
-                        {{-- Custom race — no Format on record. Pick one above to convert it, or fill these in manually. --}}
-                        <div class="mt-3 p-3 rounded-3" style="background:#fefce8;border:1px solid #fde047">
-                            <p class="fw-black text-uppercase fst-italic mb-2" style="font-size:.7rem;letter-spacing:.06em;color:#854d0e">Custom Race — no format assigned</p>
-
-                            <div class="mb-2">
-                                <label class="form-label">Title <span class="text-danger">*</span></label>
-                                <input type="text" name="title" value="{{ old('title', $race->title) }}"
-                                       class="form-control @error('title') is-invalid @enderror">
-                                @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            </div>
-
-                            <div class="row g-2">
-                                <div class="col-4">
-                                    <label class="form-label">Practice <span class="fw-normal text-secondary">(min)</span></label>
-                                    <input type="number" name="practice_duration" value="{{ old('practice_duration', $race->practice_duration) }}"
-                                           class="form-control" min="1" max="999">
-                                </div>
-                                <div class="col-4">
-                                    <label class="form-label">Qualifying <span class="fw-normal text-secondary">(min)</span></label>
-                                    <input type="number" name="qualifying_duration" value="{{ old('qualifying_duration', $race->qualifying_duration) }}"
-                                           class="form-control" min="1" max="999">
-                                </div>
-                                <div class="col-4">
-                                    <label class="form-label">Race <span class="text-danger">*</span> <span class="fw-normal text-secondary">(min)</span></label>
-                                    <input type="number" name="race_duration" value="{{ old('race_duration', $race->race_duration) }}"
-                                           class="form-control @error('race_duration') is-invalid @enderror" min="1" max="999">
-                                    @error('race_duration')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-
-                            <div class="mt-2">
-                                <label class="form-label">Rating Multiplier</label>
-                                <select name="duration_key" class="form-select" style="max-width:220px">
-                                    @foreach(['' => '1.0× (default)', '15' => '0.6×', '20' => '0.8×', '30' => '1.0×', '30+' => '1.2×', '30++' => '1.3×', '45' => '1.5×', '45+' => '1.6×', '60' => '2.0×', '60+' => '2.1×', '90' => '2.5×', '90+' => '2.6×'] as $val => $label)
-                                        <option value="{{ $val }}" {{ old('duration_key', $race->duration_key ?? '') === (string) $val ? 'selected' : '' }}>{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                        {{-- Edit-only warning for custom races --}}
+                        <div class="mt-3 p-2 rounded-2" style="background:#fefce8;border:1px solid #fde047;font-size:.78rem;color:#854d0e">
+                            <strong>Custom Race</strong> — no format assigned. Select a format above to convert it.
                         </div>
                         @endif
                     </div>
@@ -718,15 +789,13 @@ $mcExisting = $isEdit
                         </div>
                     </div>
 
-                    @if($isEdit && !$hasFormat)
-                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-                        <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Media <span class="fw-normal text-secondary" style="text-transform:none">(custom race only)</span></p>
-                        <x-media-picker name="image" label="Background Image" :current="$race->image" />
+                    <div id="ce-media-section" class="px-4 py-3" style="border-top:1px solid #f3f4f6;{{ $isEdit && !$hasFormat ? '' : 'display:none' }}">
+                        <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Media</p>
+                        <x-media-picker name="image" label="Background Image" :current="$isEdit ? $race->image : null" />
                         <div class="mt-3">
-                            <x-media-picker name="icon" label="Event Icon" :current="$race->icon" currentType="icon" filterDefault="icon" />
+                            <x-media-picker name="icon" label="Event Icon" :current="$isEdit ? $race->icon : null" currentType="icon" filterDefault="icon" />
                         </div>
                     </div>
-                    @endif
 
                 </div>
 
@@ -851,23 +920,52 @@ $mcExisting = $isEdit
     const bulkEventsSection = document.querySelector('[data-bulk-events-section]');
 
     function switchMode(mode) {
-        const isBulk = mode === 'bulk';
+        const isBulk   = mode === 'bulk';
+        const isCustom = mode === 'custom';
+        const isFormat = !isCustom; // single or bulk
+
         if (form)     form.action = isBulk ? bulkUrl : singleUrl;
         if (modeInput) modeInput.value = mode;
 
+        // Format-only sections (hidden in custom mode)
+        document.querySelectorAll('[data-mode-format-only]').forEach(el => el.style.display = isCustom ? 'none' : '');
+        // Custom-only sections
+        document.querySelectorAll('[data-mode-custom]').forEach(el => el.style.display = isCustom ? '' : 'none');
+
+        // Single/bulk sections (custom behaves like single for scheduling)
         document.querySelectorAll('[data-mode-single]').forEach(el => el.style.display = isBulk ? 'none' : '');
         document.querySelectorAll('[data-mode-bulk]').forEach(el => el.style.display = isBulk ? '' : 'none');
+
+        // Disable/enable event_format_id in custom mode
+        const fmtEl = document.getElementById('ce-format');
+        if (fmtEl) { fmtEl.disabled = isCustom; if (isCustom) fmtEl.value = ''; }
+        const fmtInfo = document.getElementById('ce-format-info');
+        if (fmtInfo && isCustom) fmtInfo.style.display = 'none';
+
+        // Swap active car_class select so only one is submitted
+        const customCarClass  = document.getElementById('ce-custom-car-class');
+        const formatCarClass  = document.getElementById('ce-car-class');
+        if (customCarClass) customCarClass.disabled = !isCustom;
+        if (formatCarClass)  formatCarClass.disabled = isCustom;
+
+        // Disable custom session/title/multiplier inputs in non-custom mode
+        ['ce-custom-title','ce-custom-practice','ce-custom-qualifying','ce-custom-race','ce-custom-multiplier']
+            .forEach(id => { const el = document.getElementById(id); if (el) el.disabled = !isCustom; });
+
+        // Show media section in custom mode
+        const mediaSection = document.getElementById('ce-media-section');
+        if (mediaSection) mediaSection.style.display = isCustom ? '' : 'none';
 
         // Disable single-only hidden inputs to prevent duplicate submissions
         if (singleMaxDrivers) singleMaxDrivers.disabled = isBulk;
 
-        // Toggle time-of-day between H:i picker (single) and enum select (bulk)
+        // Toggle time-of-day between H:i picker (single/custom) and enum select (bulk)
         const singleTod = document.querySelector('[data-single-tod]');
         const bulkTod   = document.querySelector('[data-bulk-tod]');
         if (singleTod) { singleTod.disabled = isBulk;  singleTod.style.display = isBulk ? 'none' : ''; }
         if (bulkTod)   { bulkTod.disabled   = !isBulk; bulkTod.style.display   = isBulk ? ''     : 'none'; }
 
-        // Bulk events section: hide on single, restore if rows exist on bulk
+        // Bulk events section: hide on single/custom, restore if rows exist on bulk
         if (bulkEventsSection) {
             if (!isBulk) {
                 bulkEventsSection.style.display = 'none';
@@ -889,13 +987,14 @@ $mcExisting = $isEdit
         });
 
         history.replaceState(null, '', location.pathname + '?mode=' + mode);
+        if (typeof updatePreview === 'function') updatePreview();
     }
 
     document.querySelectorAll('[data-mode-btn]').forEach(btn => {
         btn.addEventListener('click', () => switchMode(btn.dataset.modeBtn));
     });
 
-    const initMode = new URLSearchParams(location.search).get('mode') || '{{ old('_mode', 'single') }}';
+    const initMode = new URLSearchParams(location.search).get('mode') || '{{ old('_mode', $isEdit && !$hasFormat ? 'custom' : 'single') }}';
     switchMode(initMode);
 })();
 
@@ -1025,6 +1124,22 @@ $mcExisting = $isEdit
         setEnduranceVisible(fmt?.slug ?? '');
         setMulticlassVisible(fmt?.slug ?? '');
     });
+
+    const endurElFmt = document.getElementById('ce-endurance-duration');
+    if (endurElFmt) {
+        const endurMinsMap = { '4h': 240, '6h': 360, '8h': 480, '10h': 600, '12h': 720, '24h': 1440 };
+        endurElFmt.addEventListener('change', () => {
+            const fmt = (formats[gameEl.value] || []).find(f => String(f.id) === fmtEl.value);
+            if (!fmt || fmt.slug !== 'endurance') return;
+            const race1Mins = endurMinsMap[endurElFmt.value] || fmt.race1_mins;
+            let sessions = '';
+            if (fmt.practice_mins) sessions += buildSessionBadge('P', fmt.practice_mins, '#6b7280');
+            if (fmt.quali_mins)    sessions += buildSessionBadge('Q', fmt.quali_mins, '#d97706');
+            sessions += buildSessionBadge('R1', race1Mins, '#7c3aed');
+            document.getElementById('ce-fi-sessions').innerHTML = sessions;
+        });
+    }
+
     trackSelect.addEventListener('change', () => updateTrackHint(trackSelect.value));
 
     [['ce-sr-toggle','ce-sr-panel'],['ce-minrating-toggle','ce-minrating-panel'],['ce-maxrating-toggle','ce-maxrating-panel']].forEach(([tid,pid]) => {
@@ -1359,10 +1474,22 @@ $mcExisting = $isEdit
             prev.weatherEl.textContent = icon ? icon + ' ' + label : label;
         }
 
+        // Custom mode: pick up title and race duration from custom inputs
+        const modeInput    = document.getElementById('ce-mode-input');
+        const isCustomMode = modeInput && modeInput.value === 'custom';
+        const customTitle  = $('ce-custom-title');
+        const customRace   = $('ce-custom-race');
+        const customMult   = $('ce-custom-multiplier');
+        const customClass  = $('ce-custom-car-class');
+
         // Duration badge
         if (prev.duration) {
             if (fmtSlug === 'endurance' && endurDur) {
                 prev.duration.textContent   = endurDur.toUpperCase();
+                prev.duration.style.display = '';
+            } else if (isCustomMode && customRace && customRace.value) {
+                const mins = parseInt(customRace.value);
+                prev.duration.textContent   = mins + ' MIN';
                 prev.duration.style.display = '';
             } else if (fmtData && fmtData.race1_mins) {
                 prev.duration.textContent   = fmtData.race1_mins + ' MIN';
@@ -1370,6 +1497,40 @@ $mcExisting = $isEdit
             } else {
                 prev.duration.style.display = 'none';
             }
+        }
+
+        // In custom mode: show custom format block with title + sessions + multiplier
+        if (isCustomMode) {
+            if (fmtBlock) {
+                const nameLabel = $('prev-fmt-name-label');
+                const xclrEl   = $('prev-fmt-xclr');
+                const pillsEl  = $('prev-fmt-pills');
+                const metaEl   = $('prev-fmt-meta');
+                if (nameLabel) nameLabel.textContent = (customTitle && customTitle.value) ? customTitle.value : 'Custom Race';
+                const mult = customMult && customMult.value ? parseFloat(customMult.value) : 1.0;
+                if (xclrEl) xclrEl.textContent = '×' + mult.toFixed(1) + ' XCL-R';
+                if (pillsEl) {
+                    pillsEl.innerHTML = '';
+                    const pracEl  = $('ce-custom-practice');
+                    const qualiEl = $('ce-custom-qualifying');
+                    const customSessions = [
+                        { key: 'P', mins: pracEl  && pracEl.value  ? parseInt(pracEl.value)  : 0, bg: '#1f2937', color: '#9ca3af' },
+                        { key: 'Q', mins: qualiEl && qualiEl.value ? parseInt(qualiEl.value) : 0, bg: '#292524', color: '#f59e0b' },
+                        { key: 'R', mins: customRace && customRace.value ? parseInt(customRace.value) : 0, bg: '#2e1065', color: '#a78bfa' },
+                    ];
+                    customSessions.forEach(function (s) {
+                        if (!s.mins) return;
+                        const pill = document.createElement('span');
+                        pill.style.cssText = 'font-size:.7rem;font-weight:600;border-radius:6px;padding:3px 8px;background:' + s.bg + ';color:' + s.color;
+                        pill.textContent   = s.key + ' ' + s.mins + "'";
+                        pillsEl.appendChild(pill);
+                    });
+                }
+                if (metaEl) metaEl.textContent = '';
+                if (prev.classEl && customClass) prev.classEl.textContent = customClass.value || 'Open';
+                fmtBlock.style.display = '';
+            }
+            return;
         }
 
         // Format info block
@@ -1388,10 +1549,14 @@ $mcExisting = $isEdit
 
                 if (pillsEl) {
                     pillsEl.innerHTML = '';
+                    const endurMinsMap = { '4h': 240, '6h': 360, '8h': 480, '10h': 600, '12h': 720, '24h': 1440 };
+                    const race1Mins = (fmtSlug === 'endurance' && endurDur && endurMinsMap[endurDur])
+                        ? endurMinsMap[endurDur]
+                        : fmtData.race1_mins;
                     const sessions = [
                         { key: 'P',  mins: fmtData.practice_mins, bg: '#1f2937', color: '#9ca3af' },
                         { key: 'Q',  mins: fmtData.quali_mins,    bg: '#292524', color: '#f59e0b' },
-                        { key: fmtData.race2_mins ? 'R1' : 'R', mins: fmtData.race1_mins, bg: '#2e1065', color: '#a78bfa' },
+                        { key: fmtData.race2_mins ? 'R1' : 'R', mins: race1Mins, bg: '#2e1065', color: '#a78bfa' },
                         { key: 'Q2', mins: fmtData.quali2_mins,   bg: '#292524', color: '#f59e0b' },
                         { key: 'R2', mins: fmtData.race2_mins,    bg: '#2e1065', color: '#a78bfa' },
                     ];
@@ -1424,8 +1589,11 @@ $mcExisting = $isEdit
     // Bind change/input listeners
     ['ce-game','ce-format','ce-car-class','ce-sr-toggle','ce-sr-select',
      'ce-minrating-toggle','ce-minrating-select','ce-maxrating-toggle',
-     'ce-endurance-duration','ce-track-select']
+     'ce-endurance-duration','ce-track-select',
+     'ce-custom-car-class','ce-custom-multiplier']
         .forEach(id => { const el = $(id); if (el) el.addEventListener('change', updatePreview); });
+    ['ce-custom-title','ce-custom-practice','ce-custom-qualifying','ce-custom-race']
+        .forEach(id => { const el = $(id); if (el) el.addEventListener('input', updatePreview); });
     const wEl = document.querySelector('[name="weather"]');
     const sEl = document.querySelector('[name="scheduled_at"]');
     const tEl = $('ce-track-text');
@@ -1500,6 +1668,12 @@ $mcExisting = $isEdit
         if (current === 1) {
             const game = document.getElementById('ce-game');
             const fmt  = document.getElementById('ce-format');
+            const mode = document.getElementById('ce-mode-input')?.value;
+            if (mode === 'custom') {
+                const title = document.getElementById('ce-custom-title');
+                const race  = document.getElementById('ce-custom-race');
+                return !!(game?.value && title?.value && race?.value);
+            }
             return game?.value && (fmt?.value || window.__ceAllowNoFormat);
         }
         if (current === 2) {
@@ -1539,6 +1713,19 @@ $mcExisting = $isEdit
     });
 
     showStep(1);
+})();
+
+// ── Custom Race Pitstop Toggle ───────────────────────────────────────────────
+(function () {
+    const toggle = document.getElementById('ce-custom-pitstop-toggle');
+    const panel  = document.getElementById('ce-custom-pitstop-panel');
+    const minToggle = document.getElementById('ce-custom-minstop-toggle');
+    const minVal    = document.getElementById('ce-custom-minstop-val');
+    if (!toggle || !panel) return;
+    toggle.addEventListener('change', () => { panel.style.display = toggle.checked ? '' : 'none'; });
+    if (minToggle && minVal) {
+        minToggle.addEventListener('change', () => { minVal.value = minToggle.checked ? '25' : ''; });
+    }
 })();
 
 // ── Rain Level Control ───────────────────────────────────────────────────────

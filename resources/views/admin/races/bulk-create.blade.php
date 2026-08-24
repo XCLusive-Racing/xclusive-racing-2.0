@@ -139,22 +139,14 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Multiplier</label>
-                    <select name="duration_key" class="form-select @error('duration_key') is-invalid @enderror">
-                        <option value="">1.0× (default)</option>
-                        <option value="15"   {{ old('duration_key') === '15'   ? 'selected' : '' }}>0.6×</option>
-                        <option value="20"   {{ old('duration_key') === '20'   ? 'selected' : '' }}>0.8×</option>
-                        <option value="30"   {{ old('duration_key') === '30'   ? 'selected' : '' }}>1.0×</option>
-                        <option value="30+"  {{ old('duration_key') === '30+'  ? 'selected' : '' }}>1.2×</option>
-                        <option value="30++" {{ old('duration_key') === '30++' ? 'selected' : '' }}>1.3×</option>
-                        <option value="45"   {{ old('duration_key') === '45'   ? 'selected' : '' }}>1.5×</option>
-                        <option value="45+"  {{ old('duration_key') === '45+'  ? 'selected' : '' }}>1.6×</option>
-                        <option value="60"   {{ old('duration_key') === '60'   ? 'selected' : '' }}>2.0×</option>
-                        <option value="60+"  {{ old('duration_key') === '60+'  ? 'selected' : '' }}>2.1×</option>
-                        <option value="90"   {{ old('duration_key') === '90'   ? 'selected' : '' }}>2.5×</option>
-                        <option value="90+"  {{ old('duration_key') === '90+'  ? 'selected' : '' }}>2.6×</option>
-                    </select>
-                    @error('duration_key') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    <label class="form-label">XCL-R Multiplier</label>
+                    <div class="input-group">
+                        <span class="input-group-text">×</span>
+                        <input type="number" name="xcl_r_multiplier" value="{{ old('xcl_r_multiplier') }}"
+                               class="form-control @error('xcl_r_multiplier') is-invalid @enderror"
+                               min="0.1" max="10" step="0.1" placeholder="1.0">
+                    </div>
+                    @error('xcl_r_multiplier') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="mb-3">

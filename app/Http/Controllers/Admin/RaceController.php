@@ -177,9 +177,10 @@ class RaceController extends Controller
             'event_tag'            => 'required|exists:event_tags,slug',
             'event_format_id'      => 'nullable|exists:event_formats,id',
             'duration_key'         => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
-            'practice_duration'    => 'nullable|integer|min:1|max:999',
-            'qualifying_duration'  => 'nullable|integer|min:1|max:999',
-            'race_duration'        => 'nullable|integer|min:1|max:999',
+            'xcl_r_multiplier'     => 'nullable|numeric|min:0.1|max:10',
+            'practice_duration'    => 'nullable|integer|min:1|max:1440',
+            'qualifying_duration'  => 'nullable|integer|min:1|max:1440',
+            'race_duration'        => 'nullable|integer|min:1|max:1440',
             'car_class'            => 'nullable|string|max:50',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
             'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
@@ -340,6 +341,8 @@ class RaceController extends Controller
                 $formatSlug = Str::slug($fmt->name, '_');
                 if ($formatSlug === 'endurance' && !empty($data['endurance_duration'])) {
                     $formatImageKey = $data['endurance_duration'] . '_endurance';
+                    $hoursMap = ['4h' => 240, '6h' => 360, '8h' => 480, '10h' => 600, '12h' => 720, '24h' => 1440];
+                    $data['race_duration'] = $hoursMap[$data['endurance_duration']] ?? null;
                 } else {
                     $formatImageKey = self::FORMAT_IMAGE_OVERRIDES[$formatSlug] ?? $formatSlug;
                 }
@@ -404,9 +407,10 @@ class RaceController extends Controller
             'title'                => 'required_without:event_format_id|string|max:255',
             'endurance_duration'   => 'nullable|in:4h,6h,8h,10h,12h,24h',
             'duration_key'         => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
-            'practice_duration'    => 'nullable|integer|min:1|max:999',
-            'qualifying_duration'  => 'nullable|integer|min:1|max:999',
-            'race_duration'        => 'required_without:event_format_id|integer|min:1|max:999',
+            'xcl_r_multiplier'     => 'nullable|numeric|min:0.1|max:10',
+            'practice_duration'    => 'nullable|integer|min:1|max:1440',
+            'qualifying_duration'  => 'nullable|integer|min:1|max:1440',
+            'race_duration'        => 'required_without:event_format_id|integer|min:1|max:1440',
             'car_class'            => 'nullable|string|max:50',
             'sr_requirement'       => 'nullable|in:3,4,5,6,7,8,9',
             'min_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
@@ -510,9 +514,10 @@ class RaceController extends Controller
             'title'                => 'required_without:event_format_id|string|max:255',
             'endurance_duration'   => 'nullable|in:4h,6h,8h,10h,12h,24h',
             'duration_key'         => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
-            'practice_duration'    => 'nullable|integer|min:1|max:999',
-            'qualifying_duration'  => 'nullable|integer|min:1|max:999',
-            'race_duration'        => 'required_without:event_format_id|integer|min:1|max:999',
+            'xcl_r_multiplier'     => 'nullable|numeric|min:0.1|max:10',
+            'practice_duration'    => 'nullable|integer|min:1|max:1440',
+            'qualifying_duration'  => 'nullable|integer|min:1|max:1440',
+            'race_duration'        => 'required_without:event_format_id|integer|min:1|max:1440',
             'car_class'            => 'nullable|string|max:50',
             'sr_requirement'       => 'nullable|in:3,4,5,6,7,8,9',
             'min_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
