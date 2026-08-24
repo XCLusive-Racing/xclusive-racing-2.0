@@ -167,7 +167,11 @@
                             <div class="xcl-session-schedule__info">
                                 <span class="xcl-session-schedule__label xcl-session-schedule__label--race" style="color:{{ $race->gameColor() }}">{{ $race2Mins ? 'RACE 1' : 'RACE' }}</span>
                                 <span class="xcl-session-schedule__dur xcl-session-schedule__dur--race">
-                                    @if($race->is_endurance && $race1Mins % 60 === 0){{ $race1Mins / 60 }}h@else{{ $race1Mins }} min@endif
+                                    @if($race->is_endurance && $race1Mins % 60 === 0)
+                                        {{ $race1Mins / 60 }}h
+                                    @else
+                                        {{ $race1Mins }} min
+                                    @endif
                                 </span>
                             </div>
                         </div>
