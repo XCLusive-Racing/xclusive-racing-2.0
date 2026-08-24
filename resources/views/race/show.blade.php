@@ -241,7 +241,8 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($race->raceResults as $result)
+                                @foreach(\App\Models\RaceResult::groupedByCar($race->raceResults, $race) as $row)
+                                @php $result = $row->result; @endphp
                                 <tr>
                                     <td>
                                         @if($result->position === 1)
@@ -254,7 +255,12 @@
                                             <span class="xcl-results-table__pos">P{{ $result->position }}</span>
                                         @endif
                                     </td>
-                                    <td class="fw-bold text-white">{{ $result->displayName() }}</td>
+                                    <td class="fw-bold text-white">
+                                        {{ $row->label }}
+                                        @if($row->sub)
+                                        <span class="d-block fw-normal" style="font-size:.72rem;opacity:.65">{{ $row->sub }}</span>
+                                        @endif
+                                    </td>
                                     <td class="text-center">
                                         @if($result->fastest_lap)
                                             <span class="xcl-results-table__fl">FL</span>
