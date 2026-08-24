@@ -223,7 +223,7 @@
         </div>
         @endif
 
-        @if(auth()->user()->hasAnyRole(['owner', 'admin']))
+        @if(auth()->user()->hasAnyRole(['owner', 'admin', 'event_manager']))
         {{-- Configuration --}}
         <div class="admin-nav-section-header" data-section="ftp">
             <span>Configuration</span>
