@@ -82,6 +82,10 @@ const drivers = [
         { type: 'youtube',   href: 'https://www.youtube.com/@kyanheyninck' },
         { type: 'instagram', href: 'https://www.instagram.com/kyan.heyninck/?hl=nl' },
     ] },
+    { name: 'Brody Lawless',    cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/brodylaweless.png', flag: 'united%20kingdom', role: 'esports', socials: [
+        { type: 'tiktok',    href: 'https://www.tiktok.com/@brodyl00' },
+        { type: 'instagram', href: 'https://www.instagram.com/brody.l1/' },
+    ] },
     { name: 'Marcus Libz',      cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Libz.png', flag: 'canada',             role: 'esports', socials: [] },
     { name: 'Alex Lucky',       cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/A.Lucky.png', flag: 'italy',           role: 'esports', socials: [
         { type: 'instagram', href: 'https://www.instagram.com/alexxluckyy?igsh=NWRleW9jbnRhaGlj' },
@@ -91,6 +95,11 @@ const drivers = [
     { name: 'Matteo Mastromauro', cat: 'acc',   platform: 'console', platformLabel: 'Console', photo: null, flag: 'italy',           role: 'esports', socials: [] },
     { name: 'Danny Meeldijk',   cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/Danny.png', flag: 'netherlands',      role: 'esports', socials: [] },
     { name: 'Elmārs Miķelsons', cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/elmars.png', flag: 'latvia',           role: 'esports', socials: [] },
+    { name: 'Melvin Milasten',  cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/m.milasten.png', flag: 'sweden',        role: 'esports', socials: [
+        { type: 'tiktok',    href: 'https://www.tiktok.com/@mellemelon6823' },
+        { type: 'instagram', href: 'https://www.instagram.com/melvinmilasten' },
+        { type: 'twitch',    href: 'https://www.twitch.tv/melle234353' },
+    ] },
     { name: 'Paul Möller',      cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: null, flag: 'germany',          role: 'esports', socials: [
         { type: 'instagram', href: 'https://www.instagram.com/p.moeller787?igsh=bWh4Z3VpZjV0bDBk' },
     ] },
@@ -103,6 +112,12 @@ const drivers = [
     { name: 'Menno Peters',     cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/PetersM.png', flag: 'netherlands',     role: 'esports', socials: [] },
     { name: 'Phil Soucy',       cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/p.soucy.png', flag: 'canada',           role: 'esports', socials: [] },
     { name: 'Parker Soukup',    cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/P.Soukup.png', flag: 'usa',            role: 'esports', socials: [] },
+    { name: 'Jure Artač Vičič', cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/jure.png', flag: null,                role: 'esports', socials: [
+        { type: 'twitch',    href: 'https://www.twitch.tv/jure_av' },
+        { type: 'youtube',   href: 'https://www.youtube.com/@JureAV' },
+        { type: 'youtube',   href: 'https://www.youtube.com/@JureAV2' },
+        { type: 'instagram', href: 'https://www.instagram.com/jure_av/' },
+    ] },
     { name: 'Gianluca Walczak', cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Walczak.png', flag: 'germany',         role: 'esports', socials: [] },
     { name: 'Kyle Williams',    cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Williams.png', flag: 'south%20africa',  role: 'esports', socials: [
         { type: 'instagram', href: 'https://www.instagram.com/kyle.williams55?igsh=MXRhOWl1cmF5NjIwMA==' },
@@ -200,7 +215,7 @@ export function initMeetTeam() {
     let current = 0;
 
     const getPerPage    = () => window.innerWidth >= 768 ? 5 : 2;
-    const getFiltered   = () => filter === 'all' ? drivers : drivers.filter(d => d.role === filter);
+    const getFiltered   = () => (filter === 'all' ? drivers : drivers.filter(d => d.role === filter)).filter(d => d.photo);
     const getMaxCurrent = () => Math.max(0, getFiltered().length + 1 - getPerPage());
 
     function updateTrack() {

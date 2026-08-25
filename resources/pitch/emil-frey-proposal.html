@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Emil Frey Racing × XCLusive Racing: Confidential Partnership Proposal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700;1,800&family=Inter:wght@300;400;500;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0a0a0a;
+  --surface:#111111;
+  --panel:#161616;
+  --edge:#242424;
+  --red:#e2001a;
+  --red-dim:rgba(226,0,26,0.14);
+  --red-line:rgba(226,0,26,0.4);
+  --white:#ffffff;
+  --silver:#c8ccd0;
+  --muted:rgba(200,204,208,0.42);
+  --light:rgba(200,204,208,0.8);
+}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--white);font-family:'Inter',sans-serif;font-weight:400;line-height:1.6;overflow-x:hidden}
+
+/* SWISS ACCENT MARK */
+.swiss-mark{width:11px;height:11px;background:var(--red);position:relative;display:inline-block;border-radius:1px;flex-shrink:0}
+.swiss-mark::before{content:'';position:absolute;background:#fff;top:38%;left:16%;right:16%;height:24%}
+.swiss-mark::after{content:'';position:absolute;background:#fff;left:38%;top:16%;bottom:16%;width:24%}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 5vw;height:62px;background:rgba(10,10,10,0.88);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,0.05)}
+.nav-logo{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;letter-spacing:0.1em;color:var(--white);text-decoration:none;text-transform:uppercase}
+.nav-logo span{color:var(--red)}
+.nav-links{display:flex;gap:2.3rem;list-style:none}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:500;transition:color 0.2s}
+.nav-links a:hover{color:var(--white)}
+.nav-cta{background:var(--red);color:#fff;font-size:0.72rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;text-decoration:none;padding:8px 20px;border-radius:2px;transition:opacity 0.2s}
+.nav-cta:hover{opacity:0.8}
+
+/* HERO */
+#hero{min-height:100vh;display:flex;align-items:center;position:relative;padding:80px 5vw 60px;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:linear-gradient(135deg,#0a0a0a 0%,#120608 50%,#0a0a0a 100%)}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(226,0,26,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(226,0,26,0.04) 1px,transparent 1px);background-size:70px 70px;mask-image:radial-gradient(ellipse 90% 70% at 50% 50%,black,transparent)}
+.hero-vline{position:absolute;top:0;bottom:0;right:5vw;width:1px;background:linear-gradient(180deg,transparent,rgba(226,0,26,0.5) 30%,rgba(226,0,26,0.5) 70%,transparent)}
+.hero-inner{position:relative;z-index:2;max-width:1100px;width:100%;margin:0 auto;display:grid;grid-template-columns:1.1fr 0.9fr;gap:4rem;align-items:center}
+.hero-kicker{display:flex;align-items:center;gap:10px;margin-bottom:2rem;flex-wrap:wrap}
+.kicker-tag{font-family:'Roboto Mono',monospace;font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--red);padding:4px 12px;border:1px solid rgba(226,0,26,0.35);border-radius:1px}
+.kicker-sep{width:4px;height:4px;background:var(--red);border-radius:50%}
+.kicker-text{font-family:'Roboto Mono',monospace;font-size:0.62rem;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase}
+h1{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:clamp(3rem,7vw,6.2rem);line-height:0.94;text-transform:uppercase;letter-spacing:-0.02em;margin-bottom:2rem}
+.h1-red{color:var(--red);font-style:italic}
+.h1-dim{color:rgba(255,255,255,0.18)}
+.hero-sub{font-size:1rem;color:var(--light);max-width:500px;line-height:1.75;font-weight:300;margin-bottom:2.5rem}
+.hero-sub strong{color:var(--white);font-weight:500}
+.hero-actions{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+.btn-red{background:var(--red);color:#fff;font-size:0.75rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;text-decoration:none;padding:13px 28px;border-radius:2px;transition:all 0.2s;display:inline-block}
+.btn-red:hover{background:#b50015}
+.btn-ghost{color:var(--muted);font-size:0.75rem;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;border-bottom:1px solid var(--edge);padding-bottom:2px;transition:all 0.2s}
+.btn-ghost:hover{color:var(--white);border-color:var(--muted)}
+.hero-right{display:flex;flex-direction:column;gap:2rem;align-items:center}
+.hero-stats{display:flex;flex-direction:column;gap:0;width:100%}
+.hstat{padding:20px 0;border-bottom:1px solid var(--edge);display:flex;align-items:baseline;gap:1rem}
+.hstat:first-child{border-top:1px solid var(--edge)}
+.hstat-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:2.8rem;line-height:1;color:var(--white);min-width:130px}
+.hstat-num em{color:var(--red);font-style:normal}
+.hstat-label{font-size:0.8rem;color:var(--light);line-height:1.4}
+
+/* SECTIONS */
+section{padding:100px 5vw}
+.inner{max-width:1100px;margin:0 auto}
+.s-label{font-family:'Roboto Mono',monospace;font-size:0.62rem;letter-spacing:0.26em;text-transform:uppercase;color:var(--red);margin-bottom:1.5rem;display:flex;align-items:center;gap:14px}
+.s-label::before{content:'';width:28px;height:1px;background:var(--red)}
+h2{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:clamp(2.2rem,5vw,3.9rem);line-height:0.96;text-transform:uppercase;letter-spacing:-0.01em;margin-bottom:1rem}
+h2 em{font-style:italic;color:var(--red)}
+.s-lead{font-size:1.03rem;color:var(--light);font-weight:300;line-height:1.8;max-width:640px;margin-bottom:3.5rem}
+.s-lead + .s-lead{margin-top:-2.5rem}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--edge) 30%,var(--edge) 70%,transparent)}
+
+/* GENERIC CARD GRID */
+.card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+.card-grid.cols-2{grid-template-columns:repeat(2,1fr)}
+.card{background:var(--panel);padding:36px 28px;border-top:2px solid var(--edge);transition:border-color 0.25s,transform 0.25s;display:flex;flex-direction:column}
+.card:hover{border-color:var(--red);transform:translateY(-3px)}
+.card-tag{font-family:'Roboto Mono',monospace;font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--red);margin-bottom:1.5rem}
+.card h3{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.3rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem}
+.card p{font-size:0.86rem;color:var(--light);line-height:1.7}
+.card-metric{margin-top:auto;padding-top:1.5rem;border-top:1px solid var(--edge);font-family:'Barlow Condensed',sans-serif;font-size:1.7rem;font-weight:800;color:var(--red);line-height:1}
+.card-metric span{font-size:0.7rem;font-family:'Inter',sans-serif;font-weight:400;color:var(--muted);display:block;margin-top:4px;text-transform:uppercase;letter-spacing:0.1em}
+
+/* CREDIBILITY STRIP */
+.cred-strip{margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--edge)}
+.cred-label{font-family:'Roboto Mono',monospace;font-size:0.58rem;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+.cred-chips{display:flex;flex-wrap:wrap;gap:8px}
+.cred-chip{font-family:'Roboto Mono',monospace;font-size:0.7rem;color:var(--white);background:var(--edge);border:1px solid rgba(226,0,26,0.25);padding:5px 11px;border-radius:2px;letter-spacing:0.02em}
+
+/* WHO WE ARE */
+#who{background:var(--surface)}
+
+/* VISION / NARRATIVE */
+#vision{background:var(--ink);position:relative;overflow:hidden}
+.narrative{max-width:720px;background:var(--panel);border-left:2px solid var(--red);padding:44px 48px;margin-top:1rem}
+.narrative-lead{font-size:0.98rem;color:var(--light);line-height:1.8;margin-bottom:1.5rem}
+.narrative-punch{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;font-size:2.2rem;color:var(--red);text-transform:uppercase;line-height:1;margin-bottom:1.75rem}
+.narrative-body{font-size:0.92rem;color:var(--light);line-height:1.8;margin-bottom:1.25rem}
+.narrative-body:last-child{margin-bottom:0}
+
+/* WHY EMIL FREY */
+#why{background:var(--surface);position:relative;overflow:hidden}
+.why-lion-bg{position:absolute;top:-5%;right:-6vw;width:min(46vw,560px);opacity:0.06;pointer-events:none;z-index:0;filter:grayscale(1)}
+.why-lion-glow{position:absolute;top:0;right:0;width:60vw;height:100%;background:radial-gradient(ellipse at 90% 20%,rgba(226,0,26,0.14),transparent 60%);pointer-events:none;z-index:0}
+#why .inner{position:relative;z-index:1}
+.why-body{font-size:0.94rem;color:var(--light);line-height:1.8;max-width:700px;margin-bottom:1.5rem}
+.why-body strong{color:var(--white);font-weight:500}
+.callout{margin-top:2.5rem;background:var(--red-dim);border:1px solid rgba(226,0,26,0.3);padding:44px 48px;max-width:760px}
+.callout p{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-style:italic;font-size:1.5rem;line-height:1.35;color:var(--white)}
+.callout p em{color:var(--red);font-style:italic}
+
+/* PLATFORM */
+#platform{background:var(--ink)}
+.platform-box{background:var(--panel);border:1px solid var(--edge);padding:60px;text-align:center;max-width:720px;margin:0 auto}
+.platform-box p{font-size:0.92rem;color:var(--light);line-height:1.75;margin-bottom:2rem}
+.platform-options{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:1.75rem}
+.platform-pill{font-family:'Roboto Mono',monospace;font-size:0.7rem;letter-spacing:0.14em;text-transform:uppercase;padding:9px 18px;border:1px solid var(--edge);color:var(--silver);border-radius:2px;transition:all 0.2s}
+.platform-pill:hover{border-color:var(--red);color:var(--white)}
+.platform-note{font-size:0.82rem;color:var(--muted);max-width:520px;margin:0 auto}
+
+/* PATHWAY */
+#pathway{background:var(--surface)}
+.pathway{margin:3rem 0 0;display:flex;align-items:stretch;gap:0}
+.pathway-step{background:var(--panel);padding:28px 20px;flex:1;border-top:2px solid var(--red);position:relative}
+.pathway-step.final{border-top-color:var(--white)}
+.pathway-arrow{display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:var(--red);flex-shrink:0;padding:0 6px;background:var(--surface)}
+.pathway-num{font-family:'Roboto Mono',monospace;font-size:0.58rem;letter-spacing:0.2em;color:var(--red);text-transform:uppercase;margin-bottom:10px}
+.pathway-step.final .pathway-num{color:var(--white)}
+.pathway-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;color:var(--white)}
+.pathway-body{font-size:0.76rem;color:var(--light);line-height:1.6}
+
+@media(max-width:900px){
+  .pathway{flex-direction:column}
+  .pathway-arrow{transform:rotate(90deg);padding:6px 0;align-self:center;width:32px}
+}
+
+/* PROPOSAL */
+#proposal{background:var(--ink)}
+.option-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:3px;margin-bottom:3.5rem}
+.option-card{background:var(--panel);padding:40px;border-top:2px solid var(--red)}
+.option-tag{font-family:'Roboto Mono',monospace;font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--red);margin-bottom:1rem}
+.option-card h3{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.7rem;text-transform:uppercase;margin-bottom:0.9rem;line-height:1.05}
+.option-card p{font-size:0.88rem;color:var(--light);line-height:1.75}
+.terms-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem}
+.terms-col-label{font-family:'Roboto Mono',monospace;font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--white);margin-bottom:1.25rem;padding-bottom:0.75rem;border-bottom:1px solid var(--edge)}
+.terms-list{list-style:none;display:flex;flex-direction:column;gap:12px}
+.terms-list li{font-size:0.86rem;color:var(--light);line-height:1.55;display:flex;align-items:start;gap:10px}
+.terms-list li::before{content:'\2192';color:var(--red);flex-shrink:0}
+
+/* INVOLVEMENT */
+#involvement{background:var(--surface)}
+.involve-body{font-size:0.94rem;color:var(--light);line-height:1.8;max-width:700px;margin-bottom:2.5rem}
+.placeholder-box{border:1px dashed rgba(226,0,26,0.4);background:rgba(226,0,26,0.05);padding:32px 36px;max-width:760px}
+.placeholder-tag{font-family:'Roboto Mono',monospace;font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--red);margin-bottom:0.9rem}
+.placeholder-box p{font-size:0.86rem;color:var(--light);line-height:1.7}
+
+/* CLOSE */
+#close{background:var(--ink)}
+.close-box{background:var(--panel);border:1px solid var(--edge);padding:72px;text-align:center}
+.close-box p{font-size:1rem;color:var(--light);max-width:520px;margin:0 auto 2.5rem;line-height:1.75;font-weight:300}
+.contact-row{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--edge);display:flex;justify-content:center;gap:5rem;flex-wrap:wrap}
+.ci{text-align:center}
+.ci-label{font-family:'Roboto Mono',monospace;font-size:0.58rem;letter-spacing:0.2em;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.ci-val{font-size:0.88rem;color:var(--white)}
+
+/* FOOTER */
+footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.ft-logo{display:flex;align-items:center;gap:10px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)}
+.ft-logo em{color:var(--red);font-style:normal}
+.ft-note{font-family:'Roboto Mono',monospace;font-size:0.58rem;letter-spacing:0.1em;color:rgba(200,204,208,0.3);text-transform:uppercase}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity 0.55s ease,transform 0.55s ease}
+.reveal.in{opacity:1;transform:none}
+.d1{transition-delay:0.1s}.d2{transition-delay:0.2s}.d3{transition-delay:0.3s}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .hero-inner,.card-grid,.option-grid,.terms-grid{grid-template-columns:1fr}
+  .nav-links{display:none}
+  .narrative{padding:32px 28px}
+  .callout{padding:32px 28px}
+  .callout p{font-size:1.2rem}
+  .close-box{padding:40px 24px}
+  .platform-box{padding:36px 24px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="#hero">XCL <span>×</span> EF</a>
+  <ul class="nav-links">
+    <li><a href="#who">Who We Are</a></li>
+    <li><a href="#vision">The Vision</a></li>
+    <li><a href="#why">Why Emil Frey</a></li>
+    <li><a href="#platform">The Platform</a></li>
+    <li><a href="#pathway">The Pathway</a></li>
+    <li><a href="#proposal">The Proposal</a></li>
+  </ul>
+  <a class="nav-cta" href="#close">Schedule a meeting</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-vline"></div>
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-kicker">
+        <span class="swiss-mark"></span>
+        <span class="kicker-tag">Confidential. For Emil Frey Racing only.</span>
+        <span class="kicker-sep"></span>
+        <span class="kicker-text">Partnership Proposal 2026</span>
+      </div>
+      <h1>ONE PLATFORM<br>FOR RACING.<br><span class="h1-red">YOUR NAME</span> <span class="h1-dim">ON IT.</span></h1>
+      <p class="hero-sub">XCLusive Racing invites Emil Frey Racing to put its name on the pathway that <strong>turns a kid on a console into a driver, an engineer, or a name in motorsport.</strong> A real esports team competing at the top. A talent pipeline feeding the whole Emil Frey world.</p>
+      <div class="hero-actions">
+        <a href="#close" class="btn-red">Schedule a meeting →</a>
+        <a href="#vision" class="btn-ghost">See the vision ↓</a>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-stats">
+        <div class="hstat">
+          <div class="hstat-num">11,000<em>+</em></div>
+          <div class="hstat-label">Registered community members. High intent, motorsport obsessed, ready to build.</div>
+        </div>
+        <div class="hstat">
+          <div class="hstat-num">3</div>
+          <div class="hstat-label">Competitive sim platforms live today, with more on the way.</div>
+        </div>
+        <div class="hstat">
+          <div class="hstat-num">3</div>
+          <div class="hstat-label">Real-world motorsport programmes already connected.</div>
+        </div>
+        <div class="hstat">
+          <div class="hstat-num">1</div>
+          <div class="hstat-label">Home for racing. News, events, a sim team, and a real team.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 01 WHO WE ARE -->
+<section id="who">
+  <div class="inner">
+    <div class="s-label reveal">01 · Who We Are</div>
+    <h2 class="reveal">You have not met us.<br><em>Let us fix that.</em></h2>
+    <p class="s-lead reveal">XCLusive Racing started as the Xbox Community League, the most dominant force in ACC console racing. It has grown into one of Europe's largest sim racing organisations. 11,000+ registered members. Competitive, rated championships on ACC, iRacing, and Le Mans Ultimate. Our own XCL Rating system across seven licence tiers. An esports arm. And real-world connections through drivers competing right now in professional motorsport.</p>
+    <div class="card-grid">
+      <div class="card reveal">
+        <div class="card-tag">The Community</div>
+        <h3>11,000+ Racers.<br>Not Followers.</h3>
+        <p>11,000+ registered members who race in rated championships, track their XCL Rating, and invest in real sim hardware. Not a social following. A self-selected pool of high-intent racers.</p>
+      </div>
+      <div class="card reveal d1">
+        <div class="card-tag">The System</div>
+        <h3>Every Member,<br>Measured.</h3>
+        <p>Our own Elo-based XCL Rating across seven tiers, from Rookie to Legend. Every member is measured. Talent surfaces on its own.</p>
+      </div>
+      <div class="card reveal d2">
+        <div class="card-tag">The Real-World Link</div>
+        <h3>Already Racing,<br>Under Our Banner.</h3>
+        <p>Drivers under the XCLusive banner competing in Porsche one-make racing, rally, and MX5 Cup. The bridge between virtual and real is already built.</p>
+        <div class="cred-strip">
+          <div class="cred-label">Real drivers, already on the books</div>
+          <div class="cred-chips">
+            <span class="cred-chip">Dirk Schouten · Porsche Mobil 1 Supercup</span>
+            <span class="cred-chip">Mats van Rooijen</span>
+            <span class="cred-chip">Jesse Aalbregt</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 02 THE VISION -->
+<section id="vision">
+  <div class="inner">
+    <div class="s-label reveal">02 · The Vision</div>
+    <h2 class="reveal">The dream we are selling.<br><em>One home for racing.</em></h2>
+    <p class="s-lead reveal">A single platform. News, events, a sim racing team, and a real-world team, all in one place. A young racer joins for the racing and stays for the future. That is the product. Emil Frey Racing is the name that makes the dream real.</p>
+    <div class="narrative reveal">
+      <p class="narrative-lead">Picture a thirteen year old on a console. They watch Emil Frey Racing win at the top of GT racing. It looks impossibly far away. There is no door.</p>
+      <p class="narrative-punch">XCLusive is the door.</p>
+      <p class="narrative-body">We run events across every major sim, Assetto Corsa, Assetto Corsa Competizione, Le Mans Ultimate, iRacing, and RaceRoom, on PC and on console. Most matchmaking platforms serve PC only, and often a single game. XCLusive brings them together in one smart system.</p>
+      <p class="narrative-body">Inside that system, a beginner can climb. They can help build the platform, or get fast enough to land on our radar. Our scouting programme, time trials, and XCL Rating pre-select the talent worth backing. When the esports team they are chasing wears the Emil Frey name, there is no reason to look anywhere else.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 03 WHY EMIL FREY -->
+<section id="why">
+  <img src="/images/home/brand/xclusive_racing_logo_lion.png" alt="" class="why-lion-bg">
+  <div class="why-lion-glow"></div>
+  <div class="inner">
+    <div class="s-label reveal">03 · Why Emil Frey</div>
+    <h2 class="reveal">Not just a race team.<br><em>A destination.</em></h2>
+    <p class="why-body reveal">Team Redline gives a partner the top of the pyramid. A closed, elite squad. XCLusive gives you the whole pyramid, and the pipeline that feeds it. That matters more for Emil Frey than for anyone, because Emil Frey is not only a race team. It is Europe's largest automotive group. <strong>22,000+ people across twelve countries.</strong> Dealerships, marketing, engineering, and a works GT programme.</p>
+    <p class="why-body reveal d1">Our members are thousands of young, motorsport obsessed people looking for a way in. You are the company with the doors. Social media, engineering, coaching, sim training for real drivers, and for the quick ones, a real seat. The talent flows up through XCLusive and into the Emil Frey world.</p>
+    <div class="callout reveal d2">
+      <p>The Emil Frey name attracts top drivers. Top drivers win. Winning attracts <em>the next thousand members.</em> The loop builds itself.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 04 THE PLATFORM -->
+<section id="platform">
+  <div class="inner" style="text-align:center">
+    <div class="s-label reveal" style="justify-content:center">04 · The Platform</div>
+    <h2 class="reveal">Every sim.<br><em>PC and console.</em></h2>
+    <p class="s-lead reveal" style="margin:0 auto 3rem">This is the edge. Where the big platforms stop at PC and a single title, XCLusive runs organised, rated racing across all of them, on both PC and console, in one home.</p>
+    <div class="platform-box reveal">
+      <div class="platform-options">
+        <div class="platform-pill">Assetto Corsa</div>
+        <div class="platform-pill">Assetto Corsa Competizione</div>
+        <div class="platform-pill">Le Mans Ultimate</div>
+        <div class="platform-pill">iRacing</div>
+        <div class="platform-pill">RaceRoom</div>
+      </div>
+      <p class="platform-note">Console to PC crossover is where the raw talent hides. We are built to find it.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 05 THE PATHWAY -->
+<section id="pathway">
+  <div class="inner">
+    <div class="s-label reveal">05 · The Pathway</div>
+    <h2 class="reveal">First online race.<br><em>To a job in the Emil Frey world.</em></h2>
+    <div class="pathway reveal">
+      <div class="pathway-step">
+        <div class="pathway-num">Step 01</div>
+        <div class="pathway-title">Console or PC Sim Racer</div>
+        <p class="pathway-body">First race on ACC, LMU, or iRacing. The XCL Rating reads talent from day one. No experience needed, just speed.</p>
+      </div>
+      <div class="pathway-arrow">→</div>
+      <div class="pathway-step">
+        <div class="pathway-num">Step 02</div>
+        <div class="pathway-title">Measured and Scouted</div>
+        <p class="pathway-body">Time trials, rated championships, and the scouting programme surface the fastest and the most committed.</p>
+      </div>
+      <div class="pathway-arrow">→</div>
+      <div class="pathway-step">
+        <div class="pathway-num">Step 03</div>
+        <div class="pathway-title">Development Squad</div>
+        <p class="pathway-body">Selected into the XCLusive development programme. Coaching, race engineer support, real team structure.</p>
+      </div>
+      <div class="pathway-arrow">→</div>
+      <div class="pathway-step">
+        <div class="pathway-num">Step 04</div>
+        <div class="pathway-title">Emil Frey Esports Driver or Specialist</div>
+        <p class="pathway-body">Competing under the Emil Frey banner at the top, or contributing as an engineer, coach, broadcaster, or creator.</p>
+      </div>
+      <div class="pathway-arrow">→</div>
+      <div class="pathway-step final">
+        <div class="pathway-num">Step 05</div>
+        <div class="pathway-title">A Career in Racing</div>
+        <p class="pathway-body">Sim or real. A seat, a role in the team, or a job across the wider Emil Frey Group. The dream, delivered.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 06 THE PROPOSAL -->
+<section id="proposal">
+  <div class="inner">
+    <div class="s-label reveal">06 · The Proposal</div>
+    <h2 class="reveal">Two paths.<br><em>Your call.</em></h2>
+    <p class="s-lead reveal">We keep running the team as we do today, competing at the highest level, at no operational cost to you. Involvement scales entirely to how visible Emil Frey wants to be. The team identity is where we offer two options.</p>
+    <div class="option-grid reveal">
+      <div class="option-card">
+        <div class="option-tag">Option A</div>
+        <h3>Full Rebrand</h3>
+        <p>The esports team races as Emil Frey Racing Esports across every platform and every real-world car we field. One identity, top to bottom.</p>
+      </div>
+      <div class="option-card">
+        <div class="option-tag">Option B</div>
+        <h3>Branding Overlay</h3>
+        <p>XCLusive keeps its name and Emil Frey branding is applied across the platform, the team, the socials, and every touchpoint. Your name everywhere the community lives.</p>
+      </div>
+    </div>
+    <div class="terms-grid reveal">
+      <div>
+        <div class="terms-col-label">What Emil Frey Gets</div>
+        <ul class="terms-list">
+          <li>An esports team competing across ACC, iRacing, LMU, and beyond.</li>
+          <li>Brand presence across the platform, the socials, and real-world championship cars.</li>
+          <li>A pipeline of young talent and brand affinity among thousands of members.</li>
+          <li>A grassroots story no closed elite squad can offer.</li>
+          <li>A real entry into esports beyond the single Verstappen.com cooperation.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="terms-col-label">What We Ask In Return</div>
+        <ul class="terms-list">
+          <li>One official connection between XCLusive and Emil Frey.</li>
+          <li>The ability to offer our members a real dream: a path from their first online race to a job in sim racing or motorsport.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 07 INVOLVEMENT -->
+<section id="involvement">
+  <div class="inner">
+    <div class="s-label reveal">07 · Involvement</div>
+    <h2 class="reveal">As light or as deep<br><em>as you want.</em></h2>
+    <p class="involve-body reveal">At the minimum, an official connection and the Emil Frey name. From there it is open. Marketing support, driver access, engineering mentorship, or a full works esports programme. We bring the community, the infrastructure, and the drive. You choose the depth.</p>
+    <div class="placeholder-box reveal">
+      <div class="placeholder-tag">Placeholder · Edit before sending</div>
+      <p>Roster and budget detail to follow. A paid pro roster on each platform, funded through sponsorship and XCLusive revenue, with selections drawn from the XCL pool. Figures to be added.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 08 NEXT STEPS -->
+<section id="close">
+  <div class="inner">
+    <div class="s-label reveal">08 · Next Steps</div>
+    <h2 class="reveal">Let us show you.<br><em>Then let us talk.</em></h2>
+    <p class="s-lead reveal">This page is the summary. The detail gets built together, starting with a meeting. We would love to walk you through the platform, the community, and where Emil Frey fits.</p>
+    <div class="close-box reveal">
+      <a href="tel:+31625241154" class="btn-red" style="display:inline-block">Schedule a meeting →</a>
+      <div class="contact-row">
+        <div class="ci">
+          <div class="ci-label">Contact</div>
+          <div class="ci-val">Jan Hartog</div>
+        </div>
+        <div class="ci">
+          <div class="ci-label">Title</div>
+          <div class="ci-val">Owner and Team Manager</div>
+        </div>
+        <div class="ci">
+          <div class="ci-label">Phone</div>
+          <div class="ci-val">+31 6 252 411 54</div>
+        </div>
+        <div class="ci">
+          <div class="ci-label">Website</div>
+          <div class="ci-val">xclusiveracing.com</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="ft-logo"><span class="swiss-mark"></span>XCLusive Racing <em>×</em> Emil Frey Racing. Confidential Partnership Proposal 2026.</div>
+  <div class="ft-note">Not for distribution</div>
+</footer>
+
+<script>
+// Scroll reveal
+const els = document.querySelectorAll('.reveal');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('in'); });
+},{threshold:0.08,rootMargin:'0px 0px -30px 0px'});
+els.forEach(el => obs.observe(el));
+
+// Hero heading: swap YOUR NAME red <-> ON IT grey as the page scrolls
+const heroRed = document.querySelector('.h1-red');
+const heroDim = document.querySelector('.h1-dim');
+const RED  = [226, 0, 26, 1];
+const DIM  = [255, 255, 255, 0.18];
+const HERO_SCROLL_DISTANCE = 500;
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function mixColor(from, to, t) {
+  const c = from.map((v, i) => lerp(v, to[i], t));
+  return `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${c[3]})`;
+}
+
+function updateHeroColors() {
+  const t = Math.min(Math.max(window.scrollY / HERO_SCROLL_DISTANCE, 0), 1);
+  heroRed.style.color = mixColor(RED, DIM, t);
+  heroDim.style.color = mixColor(DIM, RED, t);
+}
+
+let heroTicking = false;
+window.addEventListener('scroll', () => {
+  if (!heroTicking) {
+    requestAnimationFrame(() => { updateHeroColors(); heroTicking = false; });
+    heroTicking = true;
+  }
+}, { passive: true });
+
+updateHeroColors();
+
+</script>
+</body>
+</html>

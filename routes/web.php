@@ -57,6 +57,10 @@ Route::get('/b4p-proposal', function () {
     return response()->file(resource_path('pitch/b4p-proposal.html'), ['Content-Type' => 'text/html']);
 })->name('b4p-proposal');
 
+Route::get('/emil-frey-proposal', function () {
+    return response()->file(resource_path('pitch/emil-frey-proposal.html'), ['Content-Type' => 'text/html']);
+})->name('emil-frey-proposal');
+
 // PRO driver profiles
 Route::get('/teams/pro',          [ProDriverController::class, 'index'])->name('teams.pro.index');
 Route::get('/teams/pro/{slug}',   [ProDriverController::class, 'show'])->name('teams.pro.show');
