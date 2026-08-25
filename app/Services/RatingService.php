@@ -57,8 +57,10 @@ class RatingService
         // True DNFs (0 laps) keep the flat penalty.
         $collection  = collect($entries);
         $classified  = $collection->where('status', 'FIN')->sortBy('finish_pos')->values();
+        $leaderLaps  = $classified->max('lap_count') ?? 0;
+        $lapCutoff   = $leaderLaps > 0 ? (int) max(1, round($leaderLaps * 0.70)) : 1;
         $partialDnfs = $collection
-            ->filter(fn($e) => $e['status'] === 'DNF' && $e['lap_count'] >= 1)
+            ->filter(fn($e) => $e['status'] === 'DNF' && $e['lap_count'] >= $lapCutoff)
             ->sortByDesc('lap_count')
             ->values();
 
@@ -80,14 +82,15 @@ class RatingService
             'race_id'        => $race->id,
             'linked_drivers' => count($entries),
             'finishers'      => $finisherCount,
+            'leader_laps'    => $leaderLaps,
+            'lap_cutoff_70%' => $lapCutoff,
+            'partial_dnfs'   => $partialDnfs->count(),
             'min_required'   => $this->calculator->MIN_DRIVERS,
         ]);
 
-        // The multiplier admins actually configure lives on the race's EventFormat
-        // (Admin → Event Formats), shown as the "×N.N XCL-R" preview when creating a race.
-        // duration_key is a legacy, manually-set fallback for Custom Races that have no
-        // Format at all — races with a Format always use the Format's multiplier.
+        // Priority: format multiplier > custom xcl_r_multiplier > legacy duration_key > 1.0 default
         $this->calculator->MULTIPLIER = $race->eventFormat?->xcl_r_multiplier
+            ?? $race->xcl_r_multiplier
             ?? ($race->duration_key ? ($this->calculator->DURATION_MULTIPLIERS[$race->duration_key] ?? 1.0) : 1.0);
 
         try {

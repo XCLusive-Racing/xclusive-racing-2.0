@@ -5,20 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\RaceTeamEntry;
 use Illuminate\Support\Facades\Storage;
 
 class Race extends Model
 {
-    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon', 'duration_key', 'practice_duration', 'qualifying_duration', 'race_duration', 'car_class', 'sr_requirement', 'min_rating', 'max_rating', 'weather', 'weather_randomness', 'time_of_day', 'ambient_temp', 'config_overrides', 'championship_id', 'round_number', 'is_multiclass', 'event_format_id', 'ftp_server_id', 'slot_time', 'config_pushed_at', 'config_push_status', 'config_push_attempts', 'config_push_error'];
+    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon', 'duration_key', 'xcl_r_multiplier', 'practice_duration', 'qualifying_duration', 'race_duration', 'pitstop_count', 'min_stop_secs', 'car_class', 'sr_requirement', 'min_rating', 'max_rating', 'weather', 'weather_randomness', 'rain_level', 'time_of_day', 'ambient_temp', 'config_overrides', 'championship_id', 'round_number', 'is_multiclass', 'is_endurance', 'driver_stint_time_mins', 'max_total_driving_time_mins', 'mandatory_driver_swap', 'event_format_id', 'ftp_server_id', 'slot_time', 'config_pushed_at', 'config_push_status', 'config_push_attempts', 'config_push_error'];
 
     protected function casts(): array
     {
         return [
-            'scheduled_at'       => 'datetime',
-            'config_overrides'   => 'array',
-            'is_multiclass'      => 'boolean',
-            'slot_time'          => 'datetime',
-            'config_pushed_at'   => 'datetime',
+            'scheduled_at'           => 'datetime',
+            'config_overrides'       => 'array',
+            'is_multiclass'          => 'boolean',
+            'is_endurance'           => 'boolean',
+            'mandatory_driver_swap'  => 'boolean',
+            'slot_time'              => 'datetime',
+            'config_pushed_at'       => 'datetime',
         ];
     }
 
@@ -60,6 +63,11 @@ class Race extends Model
     public function registrations(): HasMany
     {
         return $this->hasMany(RaceRegistration::class);
+    }
+
+    public function teamEntries(): HasMany
+    {
+        return $this->hasMany(RaceTeamEntry::class);
     }
 
     public function results(): HasMany
@@ -105,6 +113,11 @@ class Race extends Model
         if ($this->max_drivers === null) {
             return false;
         }
+
+        if ($this->is_endurance) {
+            return $this->teamEntries()->count() >= $this->max_drivers;
+        }
+
         return $this->registrations()->count() >= $this->max_drivers;
     }
 
@@ -127,10 +140,24 @@ class Race extends Model
     /** Total on-track race time in minutes, from the event format (race1 + race2 for double races). */
     public function raceDurationMinutes(): ?int
     {
+        if ($this->is_endurance && $this->race_duration) {
+            return (int) $this->race_duration;
+        }
         if (! $this->eventFormat) {
             return null;
         }
         return $this->eventFormat->race1_mins + ($this->eventFormat->race2_mins ?? 0);
+    }
+
+    /** Human-readable duration label: "4H" for endurance, "240 MIN" for others. */
+    public function durationLabel(): ?string
+    {
+        $mins = $this->raceDurationMinutes();
+        if ($mins === null) return null;
+        if ($this->is_endurance && $mins % 60 === 0) {
+            return ($mins / 60) . 'H';
+        }
+        return $mins . ' MIN';
     }
 
     public function getImageUrlAttribute(): ?string

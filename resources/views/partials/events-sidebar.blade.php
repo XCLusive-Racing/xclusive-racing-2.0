@@ -250,7 +250,7 @@ foreach ($sbGames as $game => $col) {
                                 {{-- Lobby counter top-right --}}
                                 <div class="xcl-sb-lobby">
                                     <i class="fa-solid fa-comments"></i>
-                                    <span>{{ $sbNextEvent->registrations_count }} / {{ $sbNextEvent->max_drivers ?? '∞' }}</span>
+                                    <span>{{ $sbNextEvent->is_endurance ? $sbNextEvent->team_entries_count : $sbNextEvent->registrations_count }} / {{ $sbNextEvent->max_drivers ?? '∞' }}</span>
                                 </div>
                                 {{-- Platform icons bottom-left --}}
                                 <div class="xcl-sb-next__hero-platforms">
@@ -265,7 +265,7 @@ foreach ($sbGames as $game => $col) {
                                 @if($sbNextEvent->raceDurationMinutes())
                                 <div class="xcl-sb-next__hero-duration">
                                     <span class="xcl-sb-next__duration-badge">
-                                        <i class="fa-solid fa-clock"></i> {{ $sbNextEvent->raceDurationMinutes() }} MIN
+                                        <i class="fa-solid fa-clock"></i> {{ $sbNextEvent->durationLabel() }}
                                     </span>
                                 </div>
                                 @endif
@@ -371,7 +371,7 @@ foreach ($sbGames as $game => $col) {
                                     </div>
                                     <div class="xcl-sb-lobby xcl-sb-lobby--small">
                                         <i class="fa-solid fa-comments"></i>
-                                        <span>{{ $event->registrations_count }} / {{ $event->max_drivers ?? '∞' }}</span>
+                                        <span>{{ $event->is_endurance ? $event->team_entries_count : $event->registrations_count }} / {{ $event->max_drivers ?? '∞' }}</span>
                                     </div>
                                 </div>
                             </div>

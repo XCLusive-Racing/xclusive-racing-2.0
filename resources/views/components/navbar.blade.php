@@ -167,6 +167,9 @@
                         <li><a class="xcl-dropdown-item" href="{{ route('results.index') }}">RESULTS</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('bop.index') }}">BOPs</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('reports.index') }}">REPORTS</a></li>
+                        @auth
+                        <li><a class="xcl-dropdown-item" href="{{ route('racing-teams.index') }}">MY TEAM</a></li>
+                        @endauth
                     </ul>
                 </li>
 

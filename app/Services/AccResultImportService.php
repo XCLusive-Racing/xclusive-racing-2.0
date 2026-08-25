@@ -86,8 +86,17 @@ class AccResultImportService
             ? collect($lines)->max(fn ($l) => (int) ($l['timing']['lapCount'] ?? 0))
             : 0;
 
+        // Only save results for drivers who are actually registered — keyed for O(1) lookup
+        $registeredIds = $race->registrations()
+            ->join('users', 'users.id', '=', 'race_registrations.user_id')
+            ->pluck('users.platform_id')
+            ->filter()
+            ->flip()
+            ->all();
+
+        // Collect all driver IDs across all cars (team entries have multiple drivers per car)
         $playerIds = collect($lines)
-            ->map(fn($l) => $l['car']['drivers'][0]['playerId'] ?? null)
+            ->flatMap(fn($l) => collect($l['car']['drivers'] ?? [])->pluck('playerId'))
             ->filter()
             ->unique()
             ->values()
@@ -100,68 +109,70 @@ class AccResultImportService
         $saved = 0;
 
         foreach ($lines as $index => $line) {
-            $drivers  = $line['car']['drivers'] ?? [];
-            $driver   = $drivers[0] ?? null;
-            $playerId = $driver['playerId'] ?? null;
-
-            if (!$playerId) {
-                continue;
-            }
-
-            $driverName = trim($driver['lastName'] ?? '');
-            $carNumber  = $line['car']['raceNumber'] ?? null;
-            $carModel   = $line['car']['carModel'] ?? null;
-            $timing     = $line['timing'] ?? [];
+            $drivers   = $line['car']['drivers'] ?? [];
+            $carNumber = $line['car']['raceNumber'] ?? null;
+            $carModel  = $line['car']['carModel'] ?? null;
+            $timing    = $line['timing'] ?? [];
 
             $rawBestLap = (int) ($timing['bestLap'] ?? -1);
-            $bestLap   = ($rawBestLap > 0 && $rawBestLap < 2147483647) ? $rawBestLap : null;
-            $lapCount  = isset($timing['lapCount'])        ? (int) $timing['lapCount']  : null;
-            $rawTotal  = (int) ($timing['totalTime'] ?? -1);
-            $totalTime = ($rawTotal > 0 && $rawTotal < 2147483647) ? $rawTotal : null;
-            $lapsLed   = isset($line['lapsLed'])           ? (int) $line['lapsLed']     : null;
+            $bestLap    = ($rawBestLap > 0 && $rawBestLap < 2147483647) ? $rawBestLap : null;
+            $lapCount   = isset($timing['lapCount']) ? (int) $timing['lapCount']  : null;
+            $rawTotal   = (int) ($timing['totalTime'] ?? -1);
+            $totalTime  = ($rawTotal > 0 && $rawTotal < 2147483647) ? $rawTotal : null;
+            $lapsLed    = isset($line['lapsLed'])    ? (int) $line['lapsLed']     : null;
 
             $consistency = null;
             if ($bestLap && $lapCount > 0 && $totalTime) {
-                $avgLap = $totalTime / $lapCount;
-                $raw = ($bestLap / $avgLap) * 100;
+                $avgLap      = $totalTime / $lapCount;
+                $raw         = ($bestLap / $avgLap) * 100;
                 $consistency = ($raw >= 0 && $raw <= 999.99) ? round($raw, 2) : null;
             }
 
-            $dns = $sessionType === 'race' && $totalTime === null;
-            $dnf = $sessionType === 'race' && ! $dns && $leaderLaps > 0
+            $dns        = $sessionType === 'race' && $totalTime === null;
+            $dnf        = $sessionType === 'race' && ! $dns && $leaderLaps > 0
                 && ($lapCount ?? 0) < $leaderLaps * self::DNF_LAP_THRESHOLD;
             $fastestLap = $bestLapMs !== null && $bestLap !== null && $bestLap === $bestLapMs;
 
-            $user = $usersByPlatformId->get($playerId);
+            // For team entries all drivers share the same car-level stats; each registered
+            // driver gets their own RaceResult row so the rating system credits them all.
+            foreach ($drivers as $driver) {
+                $playerId = $driver['playerId'] ?? null;
+                if (!$playerId || !isset($registeredIds[$playerId])) {
+                    continue;
+                }
 
-            RaceResult::updateOrCreate(
-                [
-                    'race_id'      => $race->id,
-                    'session_type' => $sessionType,
-                    'player_id'    => $playerId,
-                ],
-                [
-                    'race_title'        => $race->title,
-                    'race_track'        => $race->track,
-                    'race_game'         => $race->game,
-                    'race_scheduled_at' => $race->scheduled_at,
-                    'user_id'           => $user?->id,
-                    'driver_name'       => $driverName ?: null,
-                    'car_number'        => $carNumber,
-                    'vehicle'           => RaceResult::accCarName($carModel),
-                    'position'          => $index + 1,
-                    'best_lap'          => $bestLap,
-                    'lap_count'         => $lapCount,
-                    'laps_led'          => $lapsLed,
-                    'total_time'        => $totalTime,
-                    'consistency'       => $consistency,
-                    'fastest_lap'       => $fastestLap,
-                    'dnf'               => $dnf,
-                    'dns'               => $dns,
-                ]
-            );
+                $driverName = trim($driver['lastName'] ?? '');
+                $user       = $usersByPlatformId->get($playerId);
 
-            $saved++;
+                RaceResult::updateOrCreate(
+                    [
+                        'race_id'      => $race->id,
+                        'session_type' => $sessionType,
+                        'player_id'    => $playerId,
+                    ],
+                    [
+                        'race_title'        => $race->title,
+                        'race_track'        => $race->track,
+                        'race_game'         => $race->game,
+                        'race_scheduled_at' => $race->scheduled_at,
+                        'user_id'           => $user?->id,
+                        'driver_name'       => $driverName ?: null,
+                        'car_number'        => $carNumber,
+                        'vehicle'           => RaceResult::accCarName($carModel),
+                        'position'          => $index + 1,
+                        'best_lap'          => $bestLap,
+                        'lap_count'         => $lapCount,
+                        'laps_led'          => $lapsLed,
+                        'total_time'        => $totalTime,
+                        'consistency'       => $consistency,
+                        'fastest_lap'       => $fastestLap,
+                        'dnf'               => $dnf,
+                        'dns'               => $dns,
+                    ]
+                );
+
+                $saved++;
+            }
         }
 
         return $saved;

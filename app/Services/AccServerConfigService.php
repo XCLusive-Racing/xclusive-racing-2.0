@@ -10,30 +10,67 @@ class AccServerConfigService
 {
     public function entryList(Race $race): array
     {
-        $registrations = $race->registrations()->with('user')->orderBy('created_at')->get();
+        $registrations = $race->registrations()
+            ->with(['user', 'teamEntry'])
+            ->orderBy('team_entry_id')
+            ->orderBy('created_at')
+            ->get();
 
-        $entries = $registrations->map(function ($reg) use ($race) {
-            $user      = $reg->user;
-            $lastName  = $user->team ? $user->name . "\n" . $user->team : ($user->name ?? '');
-            $shortName = mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3));
+        $entries           = [];
+        $processedTeamIds  = [];
 
-            return [
-                'drivers' => [
-                    [
-                        'firstName'      => '',
-                        'lastName'       => $lastName,
-                        'shortName'      => $shortName,
-                        'playerID'       => $user->platform_id ?? '',
-                        'driverCategory' => $user->ratingClass($race->game),
+        foreach ($registrations as $reg) {
+            if ($reg->team_entry_id !== null) {
+                // Team entry — all drivers of the same car go into one entry
+                if (isset($processedTeamIds[$reg->team_entry_id])) {
+                    continue;
+                }
+                $processedTeamIds[$reg->team_entry_id] = true;
+
+                $teamRegs  = $registrations->where('team_entry_id', $reg->team_entry_id);
+                $teamEntry = $reg->teamEntry;
+                $carNumber = $teamEntry?->car_number ?? 0;
+
+                $drivers = $teamRegs->map(fn($tr) => [
+                    'firstName'      => '',
+                    'lastName'       => $tr->user->name ?? '',
+                    'shortName'      => mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $tr->user->name ?? ''), 0, 3)),
+                    'playerID'       => $tr->user->platform_id ?? '',
+                    'driverCategory' => $tr->user->ratingClass($race->game),
+                ])->values()->all();
+
+                $entries[] = [
+                    'drivers'             => $drivers,
+                    'raceNumber'          => is_numeric($carNumber) ? (int) $carNumber : 0,
+                    'defaultGridPosition' => -1,
+                    'ballastKg'           => 0,
+                    'forcedCarModel'      => -1,
+                    'overrideDriverInfo'  => 1,
+                ];
+            } else {
+                // Solo driver
+                $user      = $reg->user;
+                $lastName  = $user->team ? $user->name . "\n" . $user->team : ($user->name ?? '');
+                $shortName = mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3));
+
+                $entries[] = [
+                    'drivers' => [
+                        [
+                            'firstName'      => '',
+                            'lastName'       => $lastName,
+                            'shortName'      => $shortName,
+                            'playerID'       => $user->platform_id ?? '',
+                            'driverCategory' => $user->ratingClass($race->game),
+                        ],
                     ],
-                ],
-                'raceNumber'          => is_numeric($user->car_number) ? (int) $user->car_number : 0,
-                'defaultGridPosition' => -1,
-                'ballastKg'           => 0,
-                'forcedCarModel'      => -1,
-                'overrideDriverInfo'  => 1,
-            ];
-        })->values()->all();
+                    'raceNumber'          => is_numeric($user->car_number) ? (int) $user->car_number : 0,
+                    'defaultGridPosition' => -1,
+                    'ballastKg'           => 0,
+                    'forcedCarModel'      => -1,
+                    'overrideDriverInfo'  => 1,
+                ];
+            }
+        }
 
         return [
             'entries'        => $entries,
@@ -44,7 +81,7 @@ class AccServerConfigService
 
     public function configuration(Race $race, ?FtpServer $server = null): array
     {
-        $defaults = $server?->event_defaults ?? [];
+        $defaults = $server?->event_defaults ?? $this->defaultEventConfig();
 
         // Practice shows the same in-game lighting as the Race, since that's what
         // drivers are actually setting up for. Qualifying is set an hour earlier —
@@ -88,6 +125,10 @@ class AccServerConfigService
             $weatherRandomness = $defaults['weatherRandomness'] ?? 1;
         }
 
+        if ($race->rain_level !== null) {
+            $rain = (float) $race->rain_level;
+        }
+
         if ($race->weather_randomness !== null) {
             $wr = $race->weather_randomness;
             $weatherRandomness = $wr === 'random' ? rand(0, 7) : (int) $wr;
@@ -95,11 +136,11 @@ class AccServerConfigService
 
         return [
             'track'                     => $this->trackSlug($race->track),
-            'preRaceWaitingTimeSeconds' => $defaults['preRaceWaitingTimeSeconds'] ?? 60,
-            'postQualySeconds'          => $defaults['postQualySeconds'] ?? 30,
-            'postRaceSeconds'           => $defaults['postRaceSeconds'] ?? 30,
-            'sessionOverTimeSeconds'    => $defaults['sessionOverTimeSeconds'] ?? 120,
-            'ambientTemp'               => $race->ambient_temp ?? $defaults['ambientTemp'] ?? 22,
+            'preRaceWaitingTimeSeconds' => $defaults['preRaceWaitingTimeSeconds'] ?? 120,
+            'postQualySeconds'          => $defaults['postQualySeconds'] ?? 60,
+            'postRaceSeconds'           => $defaults['postRaceSeconds'] ?? 180,
+            'sessionOverTimeSeconds'    => $defaults['sessionOverTimeSeconds'] ?? 540,
+            'ambientTemp'               => $race->ambient_temp ?? $defaults['ambientTemp'] ?? 20,
             'trackTemp'                 => $defaults['trackTemp'] ?? -1,
             'cloudLevel'                => $cloudLevel,
             'rain'                      => $rain,
@@ -124,15 +165,55 @@ class AccServerConfigService
             'racecraftRatingRequirement' => $this->rcRequired($race),
             'maxCarSlots'                => $race->max_drivers ?? ($base['maxCarSlots'] ?? 30),
             'carGroup'                   => $this->carGroup($race->car_class),
-            // Nordschleife always gets the short formation lap — a full-length formation lap
-            // around the ~21km Nordschleife takes far too long to be practical.
-            'shortFormationLap'          => $this->trackSlug($race->track) === 'nordschleife' ? 1 : ($base['shortFormationLap'] ?? 0),
+            'shortFormationLap'          => $this->shortFormationLap($race, $base),
         ]);
     }
 
-    public function eventRules(?FtpServer $server = null): array
+    public function eventRules(?Race $race = null, ?FtpServer $server = null): array
     {
-        return $server?->eventrules_defaults ?? $this->defaultEventRules();
+        $base = $server?->eventrules_defaults ?? $this->defaultEventRules();
+
+        if ($race && $race->is_endurance) {
+            $base = array_merge($base, [
+                'driverStintTimeSec'                   => $race->driver_stint_time_mins ? $race->driver_stint_time_mins * 60 : -1,
+                'maxTotalDrivingTime'                  => $race->max_total_driving_time_mins ? $race->max_total_driving_time_mins * 60 : -1,
+                'isMandatoryPitstopSwapDriverRequired' => $race->mandatory_driver_swap,
+            ]);
+        }
+
+        $fmt = $race?->eventFormat;
+
+        if ($fmt) {
+            $pitstopType  = $fmt->pitstop_type ?? 'none';
+            $pitstopCount = (int) ($fmt->pitstop_count ?? 0);
+            $minStopSecs  = $fmt->min_stop_secs;
+        } elseif ($race && (int) ($race->pitstop_count ?? 0) > 0) {
+            $pitstopType  = 'mandatory';
+            $pitstopCount = (int) $race->pitstop_count;
+            $minStopSecs  = $race->min_stop_secs;
+        } else {
+            return $base;
+        }
+
+        if ($pitstopType === 'none' || $pitstopCount === 0) {
+            return array_merge($base, [
+                'mandatoryPitstopCount'                => 0,
+                'isRefuellingAllowedInRace'            => false,
+                'isRefuellingTimeFixed'                => false,
+                'isMandatoryPitstopRefuellingRequired' => false,
+                'isMandatoryPitstopTyreChangeRequired' => false,
+            ]);
+        }
+
+        $timeFixed = !empty($minStopSecs);
+
+        return array_merge($base, [
+            'mandatoryPitstopCount'                => $pitstopCount,
+            'isRefuellingAllowedInRace'            => true,
+            'isRefuellingTimeFixed'                => $timeFixed,
+            'isMandatoryPitstopRefuellingRequired' => $timeFixed,
+            'isMandatoryPitstopTyreChangeRequired' => false,
+        ]);
     }
 
     public function assistRules(?FtpServer $server = null): array
@@ -140,10 +221,25 @@ class AccServerConfigService
         return $server?->assistrules_defaults ?? $this->defaultAssistRules();
     }
 
+    public function defaultEventConfig(): array
+    {
+        return [
+            'preRaceWaitingTimeSeconds' => 120,
+            'postQualySeconds'          => 60,
+            'postRaceSeconds'           => 180,
+            'sessionOverTimeSeconds'    => 540,
+            'ambientTemp'               => 20,
+            'trackTemp'                 => -1,
+            'cloudLevel'                => 0.1,
+            'rain'                      => 0,
+            'weatherRandomness'         => 1,
+        ];
+    }
+
     public function defaultSettings(): array
     {
         return [
-            'serverName'                 => 'XCL SERVER - Daily Sprint - Playstation 5 & Xbox Series S/X',
+            'serverName'                 => 'XCL SERVER - Playstation 5 & Xbox Series S/X',
             'adminPassword'              => '3867cf9b',
             'randomizeTrackWhenEmpty'    => 0,
             'trackMedalsRequirement'     => 0,
@@ -151,7 +247,7 @@ class AccServerConfigService
             'racecraftRatingRequirement' => -1,
             'allowAutoDQ'                => 0,
             'password'                   => '1xcl',
-            'maxConnections'             => 100,
+            'maxConnections'             => 120,
             'spectatorSlots'             => 2,
             'spectatorPassword'          => 'Password',
             'dumpLeaderboards'           => 1,
@@ -176,8 +272,8 @@ class AccServerConfigService
             'pitWindowLengthSec'                   => -1,
             'mandatoryPitstopCount'                => 1,
             'qualifyStandingType'                  => 1,
-            'isRefuellingAllowedInRace'            => true,
-            'isRefuellingTimeFixed'                => false,
+            'isRefuellingAllowedInRace'             => true,
+            'isRefuellingTimeFixed'                => true,
             'isMandatoryPitstopRefuellingRequired' => true,
             'isMandatoryPitstopTyreChangeRequired' => false,
             'driverStintTimeSec'                   => -1,
@@ -225,6 +321,23 @@ class AccServerConfigService
             'entries'       => $mapped,
             'configVersion' => 1,
         ];
+    }
+
+    private function shortFormationLap(Race $race, array $base): int
+    {
+        $formationType = $race->eventFormat?->formation_type ?? '';
+
+        // Format explicitly uses a short formation lap for all tracks.
+        if (strtolower(trim($formationType)) === 'short') {
+            return 1;
+        }
+
+        // Nordschleife always gets short regardless of format — a full lap takes too long.
+        if ($this->trackSlug($race->track) === 'nordschleife') {
+            return 1;
+        }
+
+        return (int) ($base['shortFormationLap'] ?? 0);
     }
 
     private function srRequired(Race $race): int

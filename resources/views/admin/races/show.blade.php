@@ -72,7 +72,7 @@
                 Entry List
                 @if($registrations->isNotEmpty())
                 <span class="badge ms-1" style="background:#7c3aed;color:white;font-size:.65rem;padding:2px 7px;border-radius:10px">
-                    {{ $registrations->count() }}
+                    {{ $race->is_endurance ? $teamEntries : $registrations->count() }}
                 </span>
                 @elseif(!empty($entrylistDrivers))
                 <span class="badge ms-1" style="background:#f59e0b;color:white;font-size:.65rem;padding:2px 7px;border-radius:10px">
@@ -121,9 +121,9 @@
                         <div class="row g-3">
                             <div class="col-sm-6 col-lg-4">
                                 <div class="p-3 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
-                                    <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af">Registrations</div>
+                                    <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af">{{ $race->is_endurance ? 'Teams' : 'Registrations' }}</div>
                                     <div class="fw-black text-dark mt-1" style="font-size:1.4rem">
-                                        {{ $registrations->count() }}
+                                        {{ $race->is_endurance ? $teamEntries : $registrations->count() }}
                                         @if($race->max_drivers)
                                         <span class="fw-normal text-secondary" style="font-size:.9rem">/ {{ $race->max_drivers }}</span>
                                         @endif
@@ -136,9 +136,13 @@
                                     <div class="fw-black text-dark mt-1" style="font-size:1.1rem">
                                         @if($race->eventFormat)
                                             {{ $race->eventFormat->xclRLabel() }}
-                                        @else
+                                        @elseif($race->xcl_r_multiplier)
+                                            ×{{ number_format($race->xcl_r_multiplier, 1) }}
+                                        @elseif($race->duration_key)
                                             @php $multipliers = ['15'=>'0.6','20'=>'0.8','30'=>'1.0','30+'=>'1.2','30++'=>'1.3','45'=>'1.5','45+'=>'1.6','60'=>'2.0','60+'=>'2.1','90'=>'2.5','90+'=>'2.6']; @endphp
                                             {{ ($multipliers[$race->duration_key] ?? '1.0') }}×
+                                        @else
+                                            1.0×
                                         @endif
                                     </div>
                                 </div>
@@ -243,7 +247,7 @@
                     'entrylist.json'   => json_encode($configData->entryList($race),               JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
                     'event.json'       => json_encode($configData->configuration($race, $race->ftpServer), JSON_PRETTY_PRINT),
                     'settings.json'    => json_encode($configData->settings($race),                 JSON_PRETTY_PRINT),
-                    'eventrules.json'  => json_encode($configData->eventRules($race->ftpServer),     JSON_PRETTY_PRINT),
+                    'eventrules.json'  => json_encode($configData->eventRules($race, $race->ftpServer),     JSON_PRETTY_PRINT),
                     'assistrules.json' => json_encode($configData->assistRules($race->ftpServer),    JSON_PRETTY_PRINT),
                 ];
             @endphp
@@ -318,7 +322,11 @@
         <div data-tab-panel="entries" style="display:none">
             <div class="d-flex align-items-center justify-content-between px-4 py-3" style="border-bottom:1px solid #f3f4f6">
                 <span class="fw-black text-uppercase fst-italic text-secondary" style="font-size:.72rem;letter-spacing:.08em">
-                    {{ $registrations->count() }} {{ $registrations->count() === 1 ? 'driver' : 'drivers' }} registered
+                    @if($race->is_endurance)
+                        {{ $teamEntries }} {{ $teamEntries === 1 ? 'team' : 'teams' }} registered
+                    @else
+                        {{ $registrations->count() }} {{ $registrations->count() === 1 ? 'driver' : 'drivers' }} registered
+                    @endif
                 </span>
                 <div class="d-flex align-items-center gap-2">
                     <form action="{{ route('admin.races.upload-entrylist', $race) }}" method="POST" enctype="multipart/form-data" class="d-flex align-items-center gap-2">

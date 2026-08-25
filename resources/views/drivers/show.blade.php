@@ -11,10 +11,9 @@ $classMeta = [
     'bronze'   => ['label' => 'Bronze',   'color' => '#cd7f32'],
     'rookie'   => ['label' => 'Rookie',   'color' => '#ef4444'],
 ];
-$class   = $driver->class;
-$meta    = $classMeta[$class] ?? $classMeta['rookie'];
-$srClass = $driver->sr_class;
-$stats   = $driver->stats;
+$class = $classSlug;
+$meta  = $classMeta[$class] ?? $classMeta['rookie'];
+$stats = $displayStats;
 @endphp
 
 @section('content')
@@ -81,11 +80,11 @@ $stats   = $driver->stats;
                 {{-- Rating block --}}
                 <div class="text-end flex-shrink-0">
                     <div class="fw-black" style="font-size:2.8rem;line-height:1;color:#111827">
-                        {{ number_format($driver->xcl_rating, 0) }}
+                        {{ number_format($xclRating, 0) }}
                     </div>
                     <div class="text-secondary fw-bold text-uppercase" style="font-size:.7rem;letter-spacing:.08em">XCL Rating</div>
                     <div class="mt-1">
-                        <span style="color:{{ $srClass['color'] }};font-weight:900">{{ number_format($driver->safety_rating, 2) }}</span>
+                        <span style="color:{{ $srClass['color'] }};font-weight:900">{{ number_format($safetyRating, 2) }}</span>
                         <span class="text-secondary" style="font-size:.75rem"> SR</span>
                     </div>
                 </div>

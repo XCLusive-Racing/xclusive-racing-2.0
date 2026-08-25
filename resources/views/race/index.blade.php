@@ -114,7 +114,8 @@
                         } elseif (str_contains($titleLower, 'multiclass') || str_contains($titleLower, 'endurance')) {
                             $badge = 'MULTICLASS';
                         } else {
-                            $badge = 'DAILY SPRINT';
+                            $tagObj = $eventTags->firstWhere('slug', $race->event_tag);
+                            $badge  = strtoupper($tagObj?->name ?? 'Race');
                         }
                         $gameShort = match($race->game) {
                             'acc'     => 'ACC',
@@ -168,7 +169,7 @@
                                 {{-- Registrations count — top-right --}}
                                 <div class="xcl-ec2__lobby">
                                     <i class="fa-solid fa-comments"></i>
-                                    <span>{{ $race->registrations_count }} / {{ $race->max_drivers ?? '∞' }}</span>
+                                    <span>{{ $race->is_endurance ? $race->team_entries_count : $race->registrations_count }} / {{ $race->max_drivers ?? '∞' }}</span>
                                 </div>
 
                                 {{-- Platform badges — bottom-left --}}
@@ -184,7 +185,7 @@
                                 @if($race->raceDurationMinutes())
                                 <div class="xcl-sb-next__hero-duration">
                                     <span class="xcl-sb-next__duration-badge">
-                                        <i class="fa-solid fa-clock"></i> {{ $race->raceDurationMinutes() }} MIN
+                                        <i class="fa-solid fa-clock"></i> {{ $race->durationLabel() }}
                                     </span>
                                 </div>
                                 @endif

@@ -27,12 +27,25 @@ class RaceController extends Controller
             ->where('scheduled_at', '<', now())
             ->update(['status' => 'closed']);
 
-        $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','event_tag','max_drivers','duration_key'])
+        $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','event_tag','max_drivers','duration_key','is_endurance','event_format_id'])
+            ->where('is_endurance', false)
+            ->whereNotNull('event_format_id')
             ->orderBy('scheduled_at', 'asc')
             ->get();
-        $races->loadCount('registrations');
+        $races->loadCount(['registrations', 'teamEntries']);
 
         return view('admin.races.index', compact('races'));
+    }
+
+    public function specialIndex()
+    {
+        $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','event_tag','max_drivers','duration_key','event_format_id','is_endurance'])
+            ->where(fn($q) => $q->where('is_endurance', true)->orWhereNull('event_format_id'))
+            ->orderBy('scheduled_at', 'desc')
+            ->get();
+        $races->loadCount(['registrations', 'teamEntries']);
+
+        return view('admin.races.special', compact('races'));
     }
 
     public function show(Race $race, AccServerConfigService $config)
@@ -40,6 +53,7 @@ class RaceController extends Controller
         $raceResults   = $race->results()->where('session_type', 'race')->with('user')->get();
         $qualiResults  = $race->results()->where('session_type', 'quali')->with('user')->get();
         $registrations = $race->registrations()->with('user')->orderBy('created_at')->get();
+        $teamEntries   = $race->is_endurance ? $race->teamEntries()->count() : null;
 
         $ftpServers     = FtpServer::where('active', true)->orderBy('name')->get();
         $selectedServer = null;
@@ -90,7 +104,7 @@ class RaceController extends Controller
         }
 
         return view('admin.races.show', compact(
-            'race', 'raceResults', 'qualiResults', 'registrations',
+            'race', 'raceResults', 'qualiResults', 'registrations', 'teamEntries',
             'ftpServers', 'selectedServer', 'ftpFiles', 'ftpAllFiles', 'ftpError', 'importedFiles',
             'entrylistDrivers'
         ))->with('configData', $config);
@@ -143,7 +157,9 @@ class RaceController extends Controller
 
     public function customCreate()
     {
-        $tags = EventTag::orderBy('name')->get();
+        $tags    = EventTag::orderBy('name')->get();
+        $servers = FtpServer::where('active', true)->orderBy('name')->get();
+        $accTracks = array_keys(self::TRACK_IMAGE_MAP);
 
         $trackFilenames   = array_values(self::TRACK_IMAGE_MAP);
         $trackMediaByName = Media::whereIn('original_name', $trackFilenames)->get()->keyBy('original_name');
@@ -151,7 +167,7 @@ class RaceController extends Controller
             ->map(fn($fname) => $trackMediaByName->get($fname)?->url)
             ->all();
 
-        return view('admin.races.custom-create', compact('tags', 'trackPreviewUrls'));
+        return view('admin.races.custom-create', compact('tags', 'servers', 'accTracks', 'trackPreviewUrls'));
     }
 
     public function bulkStore(Request $request)
@@ -161,12 +177,14 @@ class RaceController extends Controller
             'event_tag'            => 'required|exists:event_tags,slug',
             'event_format_id'      => 'nullable|exists:event_formats,id',
             'duration_key'         => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
-            'practice_duration'    => 'nullable|integer|min:1|max:999',
-            'qualifying_duration'  => 'nullable|integer|min:1|max:999',
-            'race_duration'        => 'nullable|integer|min:1|max:999',
+            'xcl_r_multiplier'     => 'nullable|numeric|min:0.1|max:10',
+            'practice_duration'    => 'nullable|integer|min:1|max:1440',
+            'qualifying_duration'  => 'nullable|integer|min:1|max:1440',
+            'race_duration'        => 'nullable|integer|min:1|max:1440',
             'car_class'            => 'nullable|string|max:50',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
             'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
+            'rain_level'           => 'nullable|numeric|min:0|max:1',
             'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
             'ambient_temp'         => 'nullable|integer|min:-30|max:50',
             'sr_requirement'       => 'nullable|numeric|in:3,4,5,6,7,8,9',
@@ -198,6 +216,7 @@ class RaceController extends Controller
             'car_class'            => $request->car_class ?: null,
             'weather'              => $request->weather ?: null,
             'weather_randomness'   => $request->weather_randomness ?: null,
+            'rain_level'           => $request->filled('rain_level') ? (float) $request->rain_level : null,
             'time_of_day'          => $request->time_of_day ?: null,
             'ambient_temp'         => $request->ambient_temp ?? null,
             'sr_requirement'       => $request->sr_requirement ?: null,
@@ -295,15 +314,7 @@ class RaceController extends Controller
                 ->first()?->url;
         }
 
-        $endurancePreviewUrls = [];
-        foreach (['4h', '6h', '8h', '10h', '12h', '24h'] as $dur) {
-            $key = $dur . '_endurance';
-            $endurancePreviewUrls[$dur] = Media::where('title', $key)
-                ->orWhere('original_name', 'like', $key . '%')
-                ->first()?->url;
-        }
-
-        return compact('formats', 'trackPreviewUrls', 'formatPreviewUrls', 'endurancePreviewUrls');
+        return compact('formats', 'trackPreviewUrls', 'formatPreviewUrls');
     }
 
     // Derives title/durations/icon from the chosen Format + track image, for format-based races.
@@ -311,6 +322,12 @@ class RaceController extends Controller
     private function deriveFormatFields(array $data): array
     {
         if (!empty($data['event_format_id'])) {
+            // Endurance/driver-swap is Custom Race only — a format-based race never sets it.
+            $data['is_endurance']                = false;
+            $data['driver_stint_time_mins']      = null;
+            $data['max_total_driving_time_mins'] = null;
+            $data['mandatory_driver_swap']       = false;
+
             $fmt = EventFormat::find($data['event_format_id']);
             if ($fmt) {
                 $data['title']               = $fmt->name;
@@ -319,12 +336,8 @@ class RaceController extends Controller
                 $data['qualifying_duration'] = $fmt->quali_mins ?: null;
                 $data['race_duration']       = $fmt->race1_mins ?: null;
 
-                $formatSlug = Str::slug($fmt->name, '_');
-                if ($formatSlug === 'endurance' && !empty($data['endurance_duration'])) {
-                    $formatImageKey = $data['endurance_duration'] . '_endurance';
-                } else {
-                    $formatImageKey = self::FORMAT_IMAGE_OVERRIDES[$formatSlug] ?? $formatSlug;
-                }
+                $formatSlug     = Str::slug($fmt->name, '_');
+                $formatImageKey = self::FORMAT_IMAGE_OVERRIDES[$formatSlug] ?? $formatSlug;
 
                 $data['icon'] = Media::where('title', $formatImageKey)
                     ->orWhere('original_name', 'like', $formatImageKey . '%')
@@ -337,7 +350,6 @@ class RaceController extends Controller
                 : null;
         }
 
-        unset($data['endurance_duration']);
         return $data;
     }
 
@@ -384,38 +396,53 @@ class RaceController extends Controller
             'event_tag'            => 'required|exists:event_tags,slug',
             'event_format_id'      => 'nullable|exists:event_formats,id',
             'title'                => 'required_without:event_format_id|string|max:255',
-            'endurance_duration'   => 'nullable|in:4h,6h,8h,10h,12h,24h',
             'duration_key'         => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
-            'practice_duration'    => 'nullable|integer|min:1|max:999',
-            'qualifying_duration'  => 'nullable|integer|min:1|max:999',
-            'race_duration'        => 'required_without:event_format_id|integer|min:1|max:999',
+            'xcl_r_multiplier'     => 'nullable|numeric|min:0.1|max:10',
+            'practice_duration'    => 'nullable|integer|min:1|max:1440',
+            'qualifying_duration'  => 'nullable|integer|min:1|max:1440',
+            'race_duration'        => 'required_without:event_format_id|integer|min:1|max:1440',
             'car_class'            => 'nullable|string|max:50',
             'sr_requirement'       => 'nullable|in:3,4,5,6,7,8,9',
             'min_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'max_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
             'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
+            'rain_level'           => 'nullable|numeric|min:0|max:1',
             'time_of_day'          => 'nullable|date_format:H:i',
             'ambient_temp'         => 'nullable|integer|min:-30|max:50',
             'max_drivers'          => 'nullable|integer|min:1',
             'description'          => 'nullable|string',
             'is_multiclass'        => 'nullable|boolean',
-            'ftp_server_id'        => 'nullable|exists:ftp_servers,id',
+            'is_endurance'         => 'nullable|boolean',
+            'driver_stint_time_mins'      => 'nullable|integer|min:1|max:1440',
+            'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
+            'mandatory_driver_swap'       => 'nullable|boolean',
+            'ftp_server_id'        => empty($request->event_format_id) ? 'required|exists:ftp_servers,id' : 'nullable|exists:ftp_servers,id',
             'image'                => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',
             'image_path'           => 'nullable|string|max:500',
             'icon'                 => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
             'icon_path'            => 'nullable|string|max:500',
+            'pitstop_count'        => 'nullable|integer|min:0|max:9',
+            'min_stop_secs'        => 'nullable|integer|min:1|max:3600',
         ]);
 
         $data['scheduled_at']  = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
         $data['is_multiclass'] = $request->boolean('is_multiclass');
+        $data['is_endurance']  = $request->boolean('is_endurance');
+        $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
 
         $data = $this->deriveFormatFields($data);
 
         if (empty($data['event_format_id'])) {
-            // Custom race — no format to derive art from, use whatever was uploaded/selected
+            // Custom race — use uploaded/selected image, or fall back to track's stock image
             $data['image'] = $this->resolveMedia($request);
-            $data['icon']  = $this->resolveIcon($request);
+            if (!$data['image'] && isset($data['track'])) {
+                $trackFilename  = self::TRACK_IMAGE_MAP[$data['track']] ?? null;
+                $data['image']  = $trackFilename
+                    ? Media::where('original_name', $trackFilename)->value('path')
+                    : null;
+            }
+            $data['icon'] = $this->resolveIcon($request);
         }
         unset($data['image_path'], $data['icon_path']);
 
@@ -479,17 +506,18 @@ class RaceController extends Controller
             'event_tag'            => 'required|exists:event_tags,slug',
             'event_format_id'      => 'nullable|exists:event_formats,id',
             'title'                => 'required_without:event_format_id|string|max:255',
-            'endurance_duration'   => 'nullable|in:4h,6h,8h,10h,12h,24h',
             'duration_key'         => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
-            'practice_duration'    => 'nullable|integer|min:1|max:999',
-            'qualifying_duration'  => 'nullable|integer|min:1|max:999',
-            'race_duration'        => 'required_without:event_format_id|integer|min:1|max:999',
+            'xcl_r_multiplier'     => 'nullable|numeric|min:0.1|max:10',
+            'practice_duration'    => 'nullable|integer|min:1|max:1440',
+            'qualifying_duration'  => 'nullable|integer|min:1|max:1440',
+            'race_duration'        => 'required_without:event_format_id|integer|min:1|max:1440',
             'car_class'            => 'nullable|string|max:50',
             'sr_requirement'       => 'nullable|in:3,4,5,6,7,8,9',
             'min_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'max_rating'           => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
             'weather'              => 'nullable|in:dry,wet,mixed,random',
             'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
+            'rain_level'           => 'nullable|numeric|min:0|max:1',
             'time_of_day'          => 'nullable|date_format:H:i',
             'ambient_temp'         => 'nullable|integer|min:-30|max:50',
             'max_drivers'          => 'nullable|integer|min:1',
@@ -501,11 +529,19 @@ class RaceController extends Controller
             'icon_path'            => 'nullable|string|max:500',
             'icon_keep'            => 'nullable|in:0,1',
             'is_multiclass'        => 'nullable|boolean',
+            'is_endurance'         => 'nullable|boolean',
+            'driver_stint_time_mins'      => 'nullable|integer|min:1|max:1440',
+            'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
+            'mandatory_driver_swap'       => 'nullable|boolean',
             'ftp_server_id'        => 'nullable|exists:ftp_servers,id',
+            'pitstop_count'        => 'nullable|integer|min:0|max:9',
+            'min_stop_secs'        => 'nullable|integer|min:1|max:3600',
         ]);
 
         $data['scheduled_at']  = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
         $data['is_multiclass'] = $request->boolean('is_multiclass');
+        $data['is_endurance']  = $request->boolean('is_endurance');
+        $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
 
         $data = $this->deriveFormatFields($data);
 
@@ -560,7 +596,8 @@ class RaceController extends Controller
             'settings.json'   => $request->input('settings_json')
                 ?? $race->configFile('settings.json')
                 ?? json_encode($config->settings($race, $server), JSON_PRETTY_PRINT),
-            'eventrules.json'  => json_encode($config->eventRules($server), JSON_PRETTY_PRINT),
+            'eventrules.json'  => $race->configFile('eventrules.json')
+                ?? json_encode($config->eventRules($race, $server), JSON_PRETTY_PRINT),
             'assistrules.json' => json_encode($config->assistRules($server), JSON_PRETTY_PRINT),
         ];
 
