@@ -156,11 +156,6 @@ h2 em{font-style:italic;color:var(--blue)}
 .comp-card:hover{border-color:var(--blue);transform:translateY(-3px)}
 .comp-logo{width:100%;height:90px;display:flex;align-items:center;justify-content:center}
 .comp-logo img{max-width:100%;max-height:100%;object-fit:contain}
-.stat-block-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:3px;margin-top:4rem}
-.stat-block{background:var(--panel);padding:36px 28px}
-.stat-block-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:3.5rem;color:var(--blue);line-height:1;margin-bottom:8px}
-.stat-block h3{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.2rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px}
-.stat-block p{font-size:0.84rem;color:var(--light);line-height:1.7}
 
 /* STEP ROW — shared by The Pathway and Next Steps */
 .step-row{margin:3rem 0 0;display:flex;align-items:stretch;gap:0}
@@ -204,7 +199,7 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
   .card-grid{grid-template-columns:1fr}
 }
 @media(max-width:900px){
-  .hero-inner,.option-grid,.split-grid,.team-intro,.stat-block-grid{grid-template-columns:1fr}
+  .hero-inner,.option-grid,.split-grid,.team-intro{grid-template-columns:1fr}
   .competitor-grid{grid-template-columns:repeat(2,1fr)}
   .nav-links{display:none}
   .close-box{padding:40px 24px}
@@ -264,7 +259,7 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
         <span class="kicker-text">Partnership Proposal 2026</span>
       </div>
       <h1>A NEW ERA OF<br><span class="h1-accent">SIM AND REAL</span><br><span class="h1-dim">MOTORSPORT</span></h1>
-      <p class="hero-sub">XCLusive Racing and Emil Frey Racing. <strong>One identity, two worlds.</strong> A grassroots sim racing platform of thousands, joined to a works GT team, building a pathway from a first online race to a real name in motorsport.</p>
+      <p class="hero-sub">XCLusive Racing and Emil Frey Racing. <strong>One identity, two worlds.</strong> A grassroots sim racing platform of thousands, joined to a works GT team, building a pathway from a first online race to a real name in motorsport, or a potential operational position within the Emil Frey network.</p>
       <div class="hero-actions">
         <a href="mailto:jan@xclusiveracing.com?subject=Emil%20Frey%20Partnership%20Proposal%20-%20Schedule%20a%20Meeting" class="btn-primary">Schedule a meeting →</a>
         <a href="#opportunity" class="btn-ghost">See the vision ↓</a>
@@ -309,7 +304,7 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
       <div class="card reveal">
         <div class="card-tag">The Community</div>
         <h3>8,000+ Racers.<br>Not Followers.</h3>
-        <p>8,000+ registered members who race in rated championships, track their XCL Rating, and invest in real sim hardware. Not a social following. A self-selected pool of high-intent racers.</p>
+        <p>8,000+ registered members who race in rated championships, track their XCL Rating, and invest in real sim hardware. Not a social following. A self-selected pool of high-intent racers. All of that came from console alone, in just three years. With XCLusive now expanding across multiple platforms, that number has real potential to grow fast.</p>
         <div class="cred-strip">
           <a href="https://discord.gg/3q5QAs8Dkw" class="btn-ghost" target="_blank" rel="noopener noreferrer">JOIN OUR DISCORD →</a>
         </div>
@@ -317,7 +312,7 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
       <div class="card reveal d1">
         <div class="card-tag">The System</div>
         <h3>Objective Talent.<br>No Politics.</h3>
-        <p>Our own Elo-based XCL Rating across seven tiers, from Rookie to Legend. Objective talent identification. No politics, just performance.</p>
+        <p>Our own Elo-based XCL Rating across seven tiers, from Rookie to Legend. Objective talent identification. No politics, just performance. We have scouts with a proven track record, ready to bring in new talent, and experienced team members helping across every aspect of racing and event management.</p>
         <div class="cred-strip">
           <a href="/drivers" class="btn-ghost" target="_blank" rel="noopener noreferrer">SEE OUR LEADERBOARDS →</a>
         </div>
@@ -325,7 +320,7 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
       <div class="card reveal d2">
         <div class="card-tag">The Real-World Link</div>
         <h3>Already Racing,<br>Under Our Banner.</h3>
-        <p>Drivers under the XCLusive banner already competing in Porsche one-make racing, rally, and MX5 Cup, and many sim racing platforms. The bridge between virtual and real is already built.</p>
+        <p>Drivers under the XCLusive banner already competing in Porsche one-make racing, rally, and MX5 Cup, and many sim racing platforms. The bridge between virtual and real is already built. Now we need a big name in real motorsport to build credibility and a bigger fanbase for both sides.</p>
         <div class="cred-strip">
           <a href="/teams/pro" class="btn-ghost" target="_blank" rel="noopener noreferrer">Meet the full team →</a>
         </div>
@@ -374,30 +369,27 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
       <div class="card reveal">
         <div class="card-tag">Multi Platform Presence</div>
         <h3>Console. PC.<br>Every Platform.</h3>
-        <p>Active competitive esports teams across ACC on console and PC, iRacing, and Le Mans Ultimate. Console roots reach the audiences PC-only orgs miss, and that is exactly where most young sim racers begin.</p>
+        <p>Active competitive esports teams across ACC on console and PC, iRacing, and Le Mans Ultimate, and more titles coming soon. Console roots reach the audiences PC-only orgs miss, and that is exactly where most young sim racers begin.</p>
       </div>
       <div class="card reveal d1">
         <div class="card-tag">XCL Rating System</div>
         <h3>Proven Talent<br>Identification.</h3>
-        <p>Proprietary Elo-based driver ranking across seven licence tiers. Objective talent identification, proven over years to surface the best drivers.</p>
+        <p>Proprietary Elo-based driver ranking across seven licence tiers. Objective talent identification, proven over years to surface the best drivers. A wide roster of hand-selected, vetted, rated sim drivers, ready to represent Emil Frey liveries in virtual championships alongside your real drivers.</p>
       </div>
       <div class="card reveal d2">
         <div class="card-tag">Professional Platform</div>
         <h3>Built.<br>Live. Ready.</h3>
         <p>A full-featured site at xclusiveracing.com with event calendar, driver profiles, registration, results, merchandise, and Discord integration. The new website opens up many more volunteer positions too.</p>
-        <div class="cred-strip">
-          <a href="https://xclusiveracing.com/team/join" target="_blank" rel="noopener noreferrer" class="btn-ghost">Join the team →</a>
-        </div>
       </div>
       <div class="card reveal">
-        <div class="card-tag">Curated Driver Pool</div>
-        <h3>Vetted.<br>Rated. Ready.</h3>
-        <p>A wide roster of hand-selected, vetted, rated sim drivers, ready to represent Emil Frey liveries in virtual championships alongside your real drivers.</p>
+        <div class="card-tag">The Volunteers & Fans</div>
+        <h3>Not Bought.<br>Earned.</h3>
+        <p>Event managers, race stewards, community coaches, broadcasters, and social creators, all contributing without pay, because they want to build something that matters. That kind of commitment is not bought. It is earned, and it is already here.</p>
       </div>
       <div class="card reveal d1">
         <div class="card-tag">Championship Infrastructure</div>
         <h3>Operational.<br>Day One.</h3>
-        <p>Race organisation, scheduling, results, and announcement systems, all built and operational, pushed across socials, email, and Discord.</p>
+        <p>Race organisation, scheduling, results, and announcement systems, all built and operational, pushed across socials, email, and Discord. XCLusive also offers partner programs for external leagues to host championships on our platform. This helps the Emil Frey name grow. We provide the platform and the possibilities, they manage the championship.</p>
       </div>
       <div class="card reveal d2">
         <div class="card-tag">Digital Brand Reach</div>
@@ -653,19 +645,6 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
       <a class="comp-card reveal d2" href="https://esportsseries.ferrari.com/" target="_blank" rel="noopener noreferrer">
         <div class="comp-logo"><img src="/images/pitch/logos/SF.png" alt="Scuderia Ferrari Esports" style="transform:scale(0.6)"></div>
       </a>
-    </div>
-
-    <div class="stat-block-grid">
-      <div class="stat-block reveal">
-        <div class="stat-block-num">11<span style="color:var(--muted);font-size:2rem">K+</span></div>
-        <h3>The Community</h3>
-        <p>11,000+ registered members and growing fast as XCLusive expands from console to PC. Not a social media following. These are racers who compete in rated championships, track their XCL Rating, and invest in sim hardware. The Rookie level of the pyramid feeds directly from this community.</p>
-      </div>
-      <div class="stat-block reveal d1">
-        <div class="stat-block-num">20<span style="color:var(--muted);font-size:2rem">+</span></div>
-        <h3>The Volunteers</h3>
-        <p>Event managers, race stewards, community coaches, broadcasters, and social creators, all contributing without pay, because they want to build something that matters. That kind of commitment is not bought. It is earned, and it is already here.</p>
-      </div>
     </div>
   </div>
 </section>
