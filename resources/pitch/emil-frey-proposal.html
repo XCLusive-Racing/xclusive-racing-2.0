@@ -10,161 +10,170 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --ink:#0a0a0a;
-  --surface:#111111;
-  --panel:#161616;
-  --edge:#242424;
-  --red:#e2001a;
-  --red-dim:rgba(226,0,26,0.14);
-  --red-line:rgba(226,0,26,0.4);
+  --ink:#000000;
+  --surface:#000000;
+  --panel:#0a0a0c;
+  --edge:#1c1d20;
+  --blue:#005cb3;
+  --blue-dim:rgba(0,92,179,0.14);
+  --blue-line:rgba(0,92,179,0.4);
   --white:#ffffff;
-  --silver:#c8ccd0;
-  --muted:rgba(200,204,208,0.42);
-  --light:rgba(200,204,208,0.8);
+  --silver:#b7bdc6;
+  --muted:rgba(183,189,198,0.42);
+  --light:rgba(183,189,198,0.8);
 }
 html{scroll-behavior:smooth}
-body{background:var(--ink);color:var(--white);font-family:'Inter',sans-serif;font-weight:400;line-height:1.6;overflow-x:hidden}
+body{position:relative;background:var(--ink);color:var(--white);font-family:'Inter',sans-serif;font-weight:400;line-height:1.6;overflow-x:hidden}
 
-/* SWISS ACCENT MARK */
-.swiss-mark{width:11px;height:11px;background:var(--red);position:relative;display:inline-block;border-radius:1px;flex-shrink:0}
-.swiss-mark::before{content:'';position:absolute;background:#fff;top:38%;left:16%;right:16%;height:24%}
-.swiss-mark::after{content:'';position:absolute;background:#fff;left:38%;top:16%;bottom:16%;width:24%}
+/* WATERMARK — faint scattered Emil Frey marks behind all content.
+   Uses the real logo/emblem art already in public/images/emil-frey/, forced
+   white via filter. Swap in dedicated logo-white.svg / emblem-white.svg at
+   the same folder later for crisper edges at large sizes if wanted. */
+.ef-watermark{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.ef-watermark-item{position:absolute;background-repeat:no-repeat;background-position:center;background-size:contain;filter:brightness(0) invert(1);pointer-events:none}
+.ef-watermark-logo{background-image:url('/images/emil-frey/emil%20frey.png')}
+.ef-watermark-emblem{background-image:url('/images/emil-frey/Emil_Frey_Gruppe_logo.svg.webp')}
+.ew-1{top:9%;right:-4%;width:320px;height:200px;opacity:0.07;transform:rotate(-8deg)}
+.ew-2{top:18%;left:-6%;width:580px;height:250px;opacity:0.06;transform:rotate(4deg)}
+.ew-3{top:28%;right:4%;width:260px;height:260px;opacity:0.08;transform:rotate(10deg)}
+.ew-4{top:38%;left:0%;width:480px;height:210px;opacity:0.06;transform:rotate(-5deg)}
+.ew-5{top:48%;right:-6%;width:300px;height:300px;opacity:0.07;transform:rotate(6deg)}
+.ew-6{top:58%;left:-4%;width:520px;height:220px;opacity:0.06;transform:rotate(3deg)}
+.ew-7{top:68%;right:2%;width:280px;height:280px;opacity:0.08;transform:rotate(-9deg)}
+.ew-8{top:78%;left:-6%;width:500px;height:230px;opacity:0.06;transform:rotate(5deg)}
+.ew-9{top:88%;right:-4%;width:320px;height:320px;opacity:0.07;transform:rotate(-4deg)}
+.ew-10{top:96%;left:0%;width:460px;height:200px;opacity:0.06;transform:rotate(7deg)}
+
+/* FILM GRAIN — photographic texture over the black base */
+.grain{position:fixed;inset:0;z-index:200;pointer-events:none;opacity:0.035;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 
 /* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 5vw;height:62px;background:rgba(10,10,10,0.88);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,0.05)}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 5vw;height:62px;background:rgba(0,0,0,0.88);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,0.05)}
 .nav-logo{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;letter-spacing:0.1em;color:var(--white);text-decoration:none;text-transform:uppercase}
-.nav-logo span{color:var(--red)}
-.nav-links{display:flex;gap:2.3rem;list-style:none}
-.nav-links a{color:var(--muted);text-decoration:none;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:500;transition:color 0.2s}
+.nav-logo span{color:var(--blue)}
+.nav-links{display:flex;gap:1.9rem;list-style:none}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:500;transition:color 0.2s;white-space:nowrap}
 .nav-links a:hover{color:var(--white)}
-.nav-cta{background:var(--red);color:#fff;font-size:0.72rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;text-decoration:none;padding:8px 20px;border-radius:2px;transition:opacity 0.2s}
+.nav-cta{background:var(--blue);color:#fff;font-size:0.72rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;text-decoration:none;padding:8px 20px;border-radius:2px;transition:opacity 0.2s;white-space:nowrap}
 .nav-cta:hover{opacity:0.8}
 
-/* HERO */
-#hero{min-height:100vh;display:flex;align-items:center;position:relative;padding:80px 5vw 60px;overflow:hidden}
-.hero-bg{position:absolute;inset:0;background:linear-gradient(135deg,#0a0a0a 0%,#120608 50%,#0a0a0a 100%)}
-.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(226,0,26,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(226,0,26,0.04) 1px,transparent 1px);background-size:70px 70px;mask-image:radial-gradient(ellipse 90% 70% at 50% 50%,black,transparent)}
-.hero-vline{position:absolute;top:0;bottom:0;right:5vw;width:1px;background:linear-gradient(180deg,transparent,rgba(226,0,26,0.5) 30%,rgba(226,0,26,0.5) 70%,transparent)}
+/* HERO — cinematic, image-led */
+#hero{min-height:100vh;display:flex;align-items:center;position:relative;padding:110px 5vw 60px;overflow:hidden;background:#000}
+.hero-photo{position:absolute;inset:0;background-image:url('/images/pitch/emil-frey/hero.jpg');background-size:cover;background-position:center;filter:grayscale(0.55) brightness(0.32) contrast(1.15);opacity:0.9}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 78% 30%,rgba(0,92,179,0.16),transparent 60%),linear-gradient(160deg,#000 0%,#000 55%,#050608 100%)}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,92,179,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(0,92,179,0.05) 1px,transparent 1px);background-size:70px 70px;mask-image:radial-gradient(ellipse 90% 70% at 50% 50%,black,transparent)}
+.hero-vline{position:absolute;top:0;bottom:0;right:5vw;width:1px;background:linear-gradient(180deg,transparent,rgba(0,92,179,0.5) 30%,rgba(0,92,179,0.5) 70%,transparent)}
 .hero-inner{position:relative;z-index:2;max-width:1100px;width:100%;margin:0 auto;display:grid;grid-template-columns:1.1fr 0.9fr;gap:4rem;align-items:center}
 .hero-kicker{display:flex;align-items:center;gap:10px;margin-bottom:2rem;flex-wrap:wrap}
-.kicker-tag{font-family:'Roboto Mono',monospace;font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--red);padding:4px 12px;border:1px solid rgba(226,0,26,0.35);border-radius:1px}
-.kicker-sep{width:4px;height:4px;background:var(--red);border-radius:50%}
+.kicker-tag{font-family:'Roboto Mono',monospace;font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--blue);padding:4px 12px;border:1px solid rgba(0,92,179,0.4);border-radius:1px}
+.kicker-sep{width:4px;height:4px;background:var(--blue);border-radius:50%}
 .kicker-text{font-family:'Roboto Mono',monospace;font-size:0.62rem;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase}
-h1{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:clamp(3rem,7vw,6.2rem);line-height:0.94;text-transform:uppercase;letter-spacing:-0.02em;margin-bottom:2rem}
-.h1-red{color:var(--red);font-style:italic}
+h1{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:clamp(2.9rem,7vw,6.2rem);line-height:0.9;text-transform:uppercase;letter-spacing:-0.03em;margin-bottom:2rem}
+.h1-accent{color:var(--blue);font-style:italic}
 .h1-dim{color:rgba(255,255,255,0.18)}
 .hero-sub{font-size:1rem;color:var(--light);max-width:500px;line-height:1.75;font-weight:300;margin-bottom:2.5rem}
 .hero-sub strong{color:var(--white);font-weight:500}
 .hero-actions{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
-.btn-red{background:var(--red);color:#fff;font-size:0.75rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;text-decoration:none;padding:13px 28px;border-radius:2px;transition:all 0.2s;display:inline-block}
-.btn-red:hover{background:#b50015}
+.btn-primary{background:var(--blue);color:#fff;font-size:0.75rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;text-decoration:none;padding:13px 28px;border-radius:2px;transition:all 0.2s;display:inline-block}
+.btn-primary:hover{background:#004a8f}
 .btn-ghost{color:var(--muted);font-size:0.75rem;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;border-bottom:1px solid var(--edge);padding-bottom:2px;transition:all 0.2s}
 .btn-ghost:hover{color:var(--white);border-color:var(--muted)}
 .hero-right{display:flex;flex-direction:column;gap:2rem;align-items:center}
 .hero-stats{display:flex;flex-direction:column;gap:0;width:100%}
-.hstat{padding:20px 0;border-bottom:1px solid var(--edge);display:flex;align-items:baseline;gap:1rem}
+.hstat{padding:16px 0;border-bottom:1px solid var(--edge);display:flex;align-items:baseline;gap:1rem}
 .hstat:first-child{border-top:1px solid var(--edge)}
-.hstat-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:2.8rem;line-height:1;color:var(--white);min-width:130px}
-.hstat-num em{color:var(--red);font-style:normal}
+.hstat-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:2.5rem;line-height:1;color:var(--white);min-width:110px}
+.hstat-num em{color:var(--blue);font-style:normal}
 .hstat-label{font-size:0.8rem;color:var(--light);line-height:1.4}
 
 /* SECTIONS */
-section{padding:100px 5vw}
+section{padding:130px 5vw}
 .inner{max-width:1100px;margin:0 auto}
-.s-label{font-family:'Roboto Mono',monospace;font-size:0.62rem;letter-spacing:0.26em;text-transform:uppercase;color:var(--red);margin-bottom:1.5rem;display:flex;align-items:center;gap:14px}
-.s-label::before{content:'';width:28px;height:1px;background:var(--red)}
-h2{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:clamp(2.2rem,5vw,3.9rem);line-height:0.96;text-transform:uppercase;letter-spacing:-0.01em;margin-bottom:1rem}
-h2 em{font-style:italic;color:var(--red)}
-.s-lead{font-size:1.03rem;color:var(--light);font-weight:300;line-height:1.8;max-width:640px;margin-bottom:3.5rem}
-.s-lead + .s-lead{margin-top:-2.5rem}
-.divider{height:1px;background:linear-gradient(90deg,transparent,var(--edge) 30%,var(--edge) 70%,transparent)}
+.s-label{font-family:'Roboto Mono',monospace;font-size:0.62rem;letter-spacing:0.26em;text-transform:uppercase;color:var(--blue);margin-bottom:1.5rem;display:flex;align-items:center;gap:14px}
+.s-label::before{content:'';width:28px;height:1px;background:var(--blue)}
+h2{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:clamp(2.3rem,5.2vw,4.1rem);line-height:0.92;text-transform:uppercase;letter-spacing:-0.02em;margin-bottom:1rem}
+h2 em{font-style:italic;color:var(--blue)}
+.s-lead{font-size:1.03rem;color:var(--light);font-weight:300;line-height:1.8;max-width:660px;margin-bottom:3.5rem}
+
+/* PHOTO BAND — the "section break" photography strip */
+.photo-band{height:130px;position:relative;overflow:hidden}
+.photo-band-img{position:absolute;inset:0;z-index:1;background-image:url('/images/pitch/emil-frey/section-break.jpg');background-size:cover;background-position:center;filter:grayscale(0.5) brightness(0.35) contrast(1.1);opacity:0.9}
+.photo-band::after{content:'';position:absolute;inset:0;z-index:2;background:radial-gradient(ellipse 70% 160% at 50% 50%,rgba(0,92,179,0.16),transparent 65%),linear-gradient(180deg,#000,transparent 35%,transparent 65%,#000)}
+
+/* ANGLED DIVIDER — reusable racing-accent bars, full-bleed across each photo band */
+.ef-divider{position:absolute;inset:0;z-index:3;width:100%;height:100%}
+.ef-divider .ef-d-charcoal{fill:none;stroke:#2e2e2e;stroke-width:16;stroke-linejoin:miter}
+.ef-divider .ef-d-gap{fill:none;stroke:#ffffff;stroke-width:3;stroke-linejoin:miter;opacity:0.9}
+.ef-divider .ef-d-blue{fill:none;stroke:var(--blue);stroke-width:16;stroke-linejoin:miter}
+.photo-band.flip .ef-divider{transform:scaleX(-1)}
 
 /* GENERIC CARD GRID */
 .card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
 .card-grid.cols-2{grid-template-columns:repeat(2,1fr)}
-.card{background:var(--panel);padding:36px 28px;border-top:2px solid var(--edge);transition:border-color 0.25s,transform 0.25s;display:flex;flex-direction:column}
-.card:hover{border-color:var(--red);transform:translateY(-3px)}
-.card-tag{font-family:'Roboto Mono',monospace;font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--red);margin-bottom:1.5rem}
+.card{background:var(--panel);padding:36px 30px;border-top:2px solid var(--edge);transition:border-color 0.25s,transform 0.25s;display:flex;flex-direction:column}
+.card:hover{border-color:var(--blue);transform:translateY(-3px)}
+.card-span-2{grid-column:span 2}
+.card-tag{font-family:'Roboto Mono',monospace;font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--blue);margin-bottom:1.5rem}
 .card h3{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.3rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem}
 .card p{font-size:0.86rem;color:var(--light);line-height:1.7}
-.card-metric{margin-top:auto;padding-top:1.5rem;border-top:1px solid var(--edge);font-family:'Barlow Condensed',sans-serif;font-size:1.7rem;font-weight:800;color:var(--red);line-height:1}
-.card-metric span{font-size:0.7rem;font-family:'Inter',sans-serif;font-weight:400;color:var(--muted);display:block;margin-top:4px;text-transform:uppercase;letter-spacing:0.1em}
 
 /* CREDIBILITY STRIP */
 .cred-strip{margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--edge)}
-.cred-label{font-family:'Roboto Mono',monospace;font-size:0.58rem;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
-.cred-chips{display:flex;flex-wrap:wrap;gap:8px}
-.cred-chip{font-family:'Roboto Mono',monospace;font-size:0.7rem;color:var(--white);background:var(--edge);border:1px solid rgba(226,0,26,0.25);padding:5px 11px;border-radius:2px;letter-spacing:0.02em}
 
-/* WHO WE ARE */
-#who{background:var(--surface)}
+/* SPLIT GRID — two-column comparisons / opportunity + why-now */
+.split-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start}
+.split-label{font-family:'Roboto Mono',monospace;font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:1.25rem;padding-bottom:0.75rem;border-bottom:1px solid var(--edge)}
+.split-label.accent{color:var(--blue)}
+.side-panel{background:var(--panel);border:1px solid var(--edge);border-left:2px solid var(--blue);padding:8px 32px 32px}
+.side-panel .split-label{border-bottom-color:rgba(0,92,179,0.25)}
 
-/* VISION / NARRATIVE */
-#vision{background:var(--ink);position:relative;overflow:hidden}
-.narrative{max-width:720px;background:var(--panel);border-left:2px solid var(--red);padding:44px 48px;margin-top:1rem}
-.narrative-lead{font-size:0.98rem;color:var(--light);line-height:1.8;margin-bottom:1.5rem}
-.narrative-punch{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;font-size:2.2rem;color:var(--red);text-transform:uppercase;line-height:1;margin-bottom:1.75rem}
-.narrative-body{font-size:0.92rem;color:var(--light);line-height:1.8;margin-bottom:1.25rem}
-.narrative-body:last-child{margin-bottom:0}
+/* CHECK LIST */
+.check-list{list-style:none;display:flex;flex-direction:column;gap:14px}
+.check-list li{font-size:0.9rem;color:var(--light);line-height:1.6;display:flex;align-items:start;gap:12px}
+.check-list li::before{content:'\2713';color:var(--blue);flex-shrink:0;font-weight:700}
 
-/* WHY EMIL FREY */
-#why{background:var(--surface);position:relative;overflow:hidden}
-.why-lion-bg{position:absolute;top:-5%;right:-6vw;width:min(46vw,560px);opacity:0.06;pointer-events:none;z-index:0;filter:grayscale(1)}
-.why-lion-glow{position:absolute;top:0;right:0;width:60vw;height:100%;background:radial-gradient(ellipse at 90% 20%,rgba(226,0,26,0.14),transparent 60%);pointer-events:none;z-index:0}
-#why .inner{position:relative;z-index:1}
-.why-body{font-size:0.94rem;color:var(--light);line-height:1.8;max-width:700px;margin-bottom:1.5rem}
-.why-body strong{color:var(--white);font-weight:500}
-.callout{margin-top:2.5rem;background:var(--red-dim);border:1px solid rgba(226,0,26,0.3);padding:44px 48px;max-width:760px}
-.callout p{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-style:italic;font-size:1.5rem;line-height:1.35;color:var(--white)}
-.callout p em{color:var(--red);font-style:italic}
+/* MARKETING */
+.section-body{font-size:0.98rem;color:var(--light);line-height:1.85;max-width:700px;margin-bottom:3rem;font-weight:300}
 
-/* PLATFORM */
-#platform{background:var(--ink)}
-.platform-box{background:var(--panel);border:1px solid var(--edge);padding:60px;text-align:center;max-width:720px;margin:0 auto}
-.platform-box p{font-size:0.92rem;color:var(--light);line-height:1.75;margin-bottom:2rem}
-.platform-options{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:1.75rem}
-.platform-pill{font-family:'Roboto Mono',monospace;font-size:0.7rem;letter-spacing:0.14em;text-transform:uppercase;padding:9px 18px;border:1px solid var(--edge);color:var(--silver);border-radius:2px;transition:all 0.2s}
-.platform-pill:hover{border-color:var(--red);color:var(--white)}
-.platform-note{font-size:0.82rem;color:var(--muted);max-width:520px;margin:0 auto}
-
-/* PATHWAY */
-#pathway{background:var(--surface)}
-.pathway{margin:3rem 0 0;display:flex;align-items:stretch;gap:0}
-.pathway-step{background:var(--panel);padding:28px 20px;flex:1;border-top:2px solid var(--red);position:relative}
-.pathway-step.final{border-top-color:var(--white)}
-.pathway-arrow{display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:var(--red);flex-shrink:0;padding:0 6px;background:var(--surface)}
-.pathway-num{font-family:'Roboto Mono',monospace;font-size:0.58rem;letter-spacing:0.2em;color:var(--red);text-transform:uppercase;margin-bottom:10px}
-.pathway-step.final .pathway-num{color:var(--white)}
-.pathway-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;color:var(--white)}
-.pathway-body{font-size:0.76rem;color:var(--light);line-height:1.6}
-
-@media(max-width:900px){
-  .pathway{flex-direction:column}
-  .pathway-arrow{transform:rotate(90deg);padding:6px 0;align-self:center;width:32px}
-}
-
-/* PROPOSAL */
-#proposal{background:var(--ink)}
-.option-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:3px;margin-bottom:3.5rem}
-.option-card{background:var(--panel);padding:40px;border-top:2px solid var(--red)}
-.option-tag{font-family:'Roboto Mono',monospace;font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--red);margin-bottom:1rem}
+/* TEAM IDENTITY */
+.option-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:3px}
+.option-card{background:var(--panel);padding:40px;border-top:2px solid var(--blue)}
+.option-tag{font-family:'Roboto Mono',monospace;font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--blue);margin-bottom:1rem}
 .option-card h3{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.7rem;text-transform:uppercase;margin-bottom:0.9rem;line-height:1.05}
 .option-card p{font-size:0.88rem;color:var(--light);line-height:1.75}
-.terms-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem}
-.terms-col-label{font-family:'Roboto Mono',monospace;font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--white);margin-bottom:1.25rem;padding-bottom:0.75rem;border-bottom:1px solid var(--edge)}
-.terms-list{list-style:none;display:flex;flex-direction:column;gap:12px}
-.terms-list li{font-size:0.86rem;color:var(--light);line-height:1.55;display:flex;align-items:start;gap:10px}
-.terms-list li::before{content:'\2192';color:var(--red);flex-shrink:0}
 
-/* INVOLVEMENT */
-#involvement{background:var(--surface)}
-.involve-body{font-size:0.94rem;color:var(--light);line-height:1.8;max-width:700px;margin-bottom:2.5rem}
-.placeholder-box{border:1px dashed rgba(226,0,26,0.4);background:rgba(226,0,26,0.05);padding:32px 36px;max-width:760px}
-.placeholder-tag{font-family:'Roboto Mono',monospace;font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--red);margin-bottom:0.9rem}
-.placeholder-box p{font-size:0.86rem;color:var(--light);line-height:1.7}
+/* TEAM PROPOSAL — intro grid, pathway label, logo wall, stat blocks */
+.team-intro{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start;margin-bottom:1rem}
+.team-body{font-size:0.92rem;color:var(--light);line-height:1.75}
+.team-body strong{color:var(--white);font-weight:500}
+.pathway-label{font-family:'Roboto Mono',monospace;font-size:0.6rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--blue);margin-bottom:1.5rem;margin-top:4rem}
+.competitor-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:4rem}
+.comp-card{background:var(--panel);padding:32px 20px;text-align:center;border-top:2px solid var(--edge);transition:border-color 0.2s,transform 0.2s;text-decoration:none;display:flex;align-items:center;justify-content:center}
+.comp-card:hover{border-color:var(--blue);transform:translateY(-3px)}
+.comp-logo{width:100%;height:90px;display:flex;align-items:center;justify-content:center}
+.comp-logo img{max-width:100%;max-height:100%;object-fit:contain}
+.stat-block-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-top:4rem}
+.stat-block{background:var(--panel);padding:36px 28px}
+.stat-block-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:3.5rem;color:var(--blue);line-height:1;margin-bottom:8px}
+.stat-block h3{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.2rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px}
+.stat-block p{font-size:0.84rem;color:var(--light);line-height:1.7}
+
+/* STEP ROW — shared by The Pathway and Next Steps */
+.step-row{margin:3rem 0 0;display:flex;align-items:stretch;gap:0}
+.step-box{background:var(--panel);padding:28px 20px;flex:1;border-top:2px solid var(--blue);position:relative}
+.step-box.final{border-top-color:var(--white)}
+.step-arrow{display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:var(--blue);flex-shrink:0;padding:0 6px}
+.step-num{font-family:'Roboto Mono',monospace;font-size:0.58rem;letter-spacing:0.2em;color:var(--blue);text-transform:uppercase;margin-bottom:10px}
+.step-box.final .step-num{color:var(--white)}
+.step-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;color:var(--white)}
+.step-body{font-size:0.76rem;color:var(--light);line-height:1.6}
+
+@media(max-width:900px){
+  .step-row{flex-direction:column}
+  .step-arrow{transform:rotate(90deg);padding:6px 0;align-self:center;width:32px}
+}
 
 /* CLOSE */
-#close{background:var(--ink)}
 .close-box{background:var(--panel);border:1px solid var(--edge);padding:72px;text-align:center}
 .close-box p{font-size:1rem;color:var(--light);max-width:520px;margin:0 auto 2.5rem;line-height:1.75;font-weight:300}
 .contact-row{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--edge);display:flex;justify-content:center;gap:5rem;flex-wrap:wrap}
@@ -174,9 +183,9 @@ h2 em{font-style:italic;color:var(--red)}
 
 /* FOOTER */
 footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
-.ft-logo{display:flex;align-items:center;gap:10px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)}
-.ft-logo em{color:var(--red);font-style:normal}
-.ft-note{font-family:'Roboto Mono',monospace;font-size:0.58rem;letter-spacing:0.1em;color:rgba(200,204,208,0.3);text-transform:uppercase}
+.ft-logo{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)}
+.ft-logo em{color:var(--blue);font-style:normal}
+.ft-note{font-family:'Roboto Mono',monospace;font-size:0.58rem;letter-spacing:0.1em;color:rgba(183,189,198,0.3);text-transform:uppercase}
 
 /* REVEAL */
 .reveal{opacity:0;transform:translateY(18px);transition:opacity 0.55s ease,transform 0.55s ease}
@@ -185,214 +194,346 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
 
 /* RESPONSIVE */
 @media(max-width:900px){
-  .hero-inner,.card-grid,.option-grid,.terms-grid{grid-template-columns:1fr}
+  .hero-inner,.card-grid,.option-grid,.split-grid,.team-intro,.stat-block-grid{grid-template-columns:1fr}
+  .card-span-2{grid-column:span 1}
+  .competitor-grid{grid-template-columns:repeat(2,1fr)}
   .nav-links{display:none}
-  .narrative{padding:32px 28px}
-  .callout{padding:32px 28px}
-  .callout p{font-size:1.2rem}
   .close-box{padding:40px 24px}
-  .platform-box{padding:36px 24px}
+  .side-panel{padding-top:1px}
+  section{padding:90px 5vw}
+  .photo-band{height:90px}
+  .ef-divider .ef-d-charcoal,.ef-divider .ef-d-blue{stroke-width:10}
+  .ef-divider .ef-d-gap{stroke-width:2}
+  .ew-1,.ew-3,.ew-4,.ew-6,.ew-8,.ew-9,.ew-10{display:none}
+  .ew-2{width:300px;height:130px;opacity:0.06}
+  .ew-5{width:220px;height:220px;opacity:0.06}
+  .ew-7{width:200px;height:200px;opacity:0.07}
 }
 </style>
 </head>
 <body>
 
+<div class="ef-watermark" aria-hidden="true">
+  <div class="ef-watermark-item ef-watermark-emblem ew-1"></div>
+  <div class="ef-watermark-item ef-watermark-logo ew-2"></div>
+  <div class="ef-watermark-item ef-watermark-emblem ew-3"></div>
+  <div class="ef-watermark-item ef-watermark-logo ew-4"></div>
+  <div class="ef-watermark-item ef-watermark-emblem ew-5"></div>
+  <div class="ef-watermark-item ef-watermark-logo ew-6"></div>
+  <div class="ef-watermark-item ef-watermark-emblem ew-7"></div>
+  <div class="ef-watermark-item ef-watermark-logo ew-8"></div>
+  <div class="ef-watermark-item ef-watermark-emblem ew-9"></div>
+  <div class="ef-watermark-item ef-watermark-logo ew-10"></div>
+</div>
+
+<div class="grain"></div>
+
 <nav>
   <a class="nav-logo" href="#hero">XCL <span>×</span> EF</a>
   <ul class="nav-links">
     <li><a href="#who">Who We Are</a></li>
-    <li><a href="#vision">The Vision</a></li>
-    <li><a href="#why">Why Emil Frey</a></li>
-    <li><a href="#platform">The Platform</a></li>
+    <li><a href="#opportunity">The Opportunity</a></li>
+    <li><a href="#bring">What We Bring</a></li>
+    <li><a href="#emil-frey-brings">What Emil Frey Brings</a></li>
+    <li><a href="#identity">The Team Proposal</a></li>
     <li><a href="#pathway">The Pathway</a></li>
-    <li><a href="#proposal">The Proposal</a></li>
   </ul>
   <a class="nav-cta" href="#close">Schedule a meeting</a>
 </nav>
 
 <!-- HERO -->
 <section id="hero">
+  <div class="hero-photo"></div>
   <div class="hero-bg"></div>
   <div class="hero-grid"></div>
   <div class="hero-vline"></div>
   <div class="hero-inner">
     <div class="hero-left">
       <div class="hero-kicker">
-        <span class="swiss-mark"></span>
         <span class="kicker-tag">Confidential. For Emil Frey Racing only.</span>
         <span class="kicker-sep"></span>
         <span class="kicker-text">Partnership Proposal 2026</span>
       </div>
-      <h1>ONE PLATFORM<br>FOR RACING.<br><span class="h1-red">YOUR NAME</span> <span class="h1-dim">ON IT.</span></h1>
-      <p class="hero-sub">XCLusive Racing invites Emil Frey Racing to put its name on the pathway that <strong>turns a kid on a console into a driver, an engineer, or a name in motorsport.</strong> A real esports team competing at the top. A talent pipeline feeding the whole Emil Frey world.</p>
+      <h1>A NEW ERA OF<br><span class="h1-accent">SIM AND REAL</span><br><span class="h1-dim">MOTORSPORT</span></h1>
+      <p class="hero-sub">XCLusive Racing and Emil Frey Racing. <strong>One identity, two worlds.</strong> A grassroots sim racing platform of thousands, joined to a works GT team, building a pathway from a first online race to a real name in motorsport.</p>
       <div class="hero-actions">
-        <a href="#close" class="btn-red">Schedule a meeting →</a>
-        <a href="#vision" class="btn-ghost">See the vision ↓</a>
+        <a href="#close" class="btn-primary">Schedule a meeting →</a>
+        <a href="#opportunity" class="btn-ghost">See the vision ↓</a>
       </div>
     </div>
     <div class="hero-right">
       <div class="hero-stats">
         <div class="hstat">
-          <div class="hstat-num">11,000<em>+</em></div>
-          <div class="hstat-label">Registered community members. High intent, motorsport obsessed, ready to build.</div>
+          <div class="hstat-num">8,000<em>+</em></div>
+          <div class="hstat-label">XCL registered members</div>
+        </div>
+        <div class="hstat">
+          <div class="hstat-num">3,500<em>+</em></div>
+          <div class="hstat-label">Discord community</div>
+        </div>
+        <div class="hstat">
+          <div class="hstat-num">50<em>+</em></div>
+          <div class="hstat-label">Nationalities competing</div>
+        </div>
+        <div class="hstat">
+          <div class="hstat-num">38<em>+</em></div>
+          <div class="hstat-label">Esports drivers</div>
         </div>
         <div class="hstat">
           <div class="hstat-num">3</div>
-          <div class="hstat-label">Competitive sim platforms live today, with more on the way.</div>
-        </div>
-        <div class="hstat">
-          <div class="hstat-num">3</div>
-          <div class="hstat-label">Real-world motorsport programmes already connected.</div>
-        </div>
-        <div class="hstat">
-          <div class="hstat-num">1</div>
-          <div class="hstat-label">Home for racing. News, events, a sim team, and a real team.</div>
+          <div class="hstat-label">Real-world motorsport programmes connected</div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<div class="divider"></div>
+<div class="photo-band"><div class="photo-band-img"></div><svg class="ef-divider" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true"><polyline class="ef-d-charcoal" points="0,30 600,30 750,62 1000,62"/><polyline class="ef-d-gap" points="0,46 600,46 750,78 1000,78"/><polyline class="ef-d-blue" points="0,58 600,58 750,90 1000,90"/></svg></div>
 
 <!-- 01 WHO WE ARE -->
 <section id="who">
   <div class="inner">
     <div class="s-label reveal">01 · Who We Are</div>
-    <h2 class="reveal">You have not met us.<br><em>Let us fix that.</em></h2>
-    <p class="s-lead reveal">XCLusive Racing started as the Xbox Community League, the most dominant force in ACC console racing. It has grown into one of Europe's largest sim racing organisations. 11,000+ registered members. Competitive, rated championships on ACC, iRacing, and Le Mans Ultimate. Our own XCL Rating system across seven licence tiers. An esports arm. And real-world connections through drivers competing right now in professional motorsport.</p>
+    <h2 class="reveal">We do not just play racing games.<br><em>We build careers, communities, and champions.</em></h2>
+    <p class="s-lead reveal">XCLusive Racing was born from the Xbox Community League, the most dominant force in ACC console racing, which was founded in 2023. It has grown into one of Europe's largest sim racing organisations and has now expanded from console to PC across every major platform. Competitive, rated championships on ACC, iRacing, and Le Mans Ultimate. Our own XCL Rating system across seven licence tiers. An esports arm. And real-world connections through drivers competing in professional motorsport right now.</p>
     <div class="card-grid">
       <div class="card reveal">
         <div class="card-tag">The Community</div>
-        <h3>11,000+ Racers.<br>Not Followers.</h3>
-        <p>11,000+ registered members who race in rated championships, track their XCL Rating, and invest in real sim hardware. Not a social following. A self-selected pool of high-intent racers.</p>
+        <h3>8,000+ Racers.<br>Not Followers.</h3>
+        <p>8,000+ registered members who race in rated championships, track their XCL Rating, and invest in real sim hardware. Not a social following. A self-selected pool of high-intent racers.</p>
       </div>
       <div class="card reveal d1">
         <div class="card-tag">The System</div>
-        <h3>Every Member,<br>Measured.</h3>
-        <p>Our own Elo-based XCL Rating across seven tiers, from Rookie to Legend. Every member is measured. Talent surfaces on its own.</p>
+        <h3>Objective Talent.<br>No Politics.</h3>
+        <p>Our own Elo-based XCL Rating across seven tiers, from Rookie to Legend. Objective talent identification. No politics, just performance.</p>
       </div>
       <div class="card reveal d2">
         <div class="card-tag">The Real-World Link</div>
         <h3>Already Racing,<br>Under Our Banner.</h3>
-        <p>Drivers under the XCLusive banner competing in Porsche one-make racing, rally, and MX5 Cup. The bridge between virtual and real is already built.</p>
+        <p>Drivers under the XCLusive banner already competing in Porsche one-make racing, rally, and MX5 Cup, and many sim racing platforms. The bridge between virtual and real is already built.</p>
         <div class="cred-strip">
-          <div class="cred-label">Real drivers, already on the books</div>
-          <div class="cred-chips">
-            <span class="cred-chip">Dirk Schouten · Porsche Mobil 1 Supercup</span>
-            <span class="cred-chip">Mats van Rooijen</span>
-            <span class="cred-chip">Jesse Aalbregt</span>
-          </div>
+          <a href="/teams/pro" class="btn-ghost" target="_blank" rel="noopener noreferrer">Meet the full team →</a>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<div class="divider"></div>
+<div class="photo-band flip"><div class="photo-band-img"></div><svg class="ef-divider" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true"><polyline class="ef-d-charcoal" points="0,30 600,30 750,62 1000,62"/><polyline class="ef-d-gap" points="0,46 600,46 750,78 1000,78"/><polyline class="ef-d-blue" points="0,58 600,58 750,90 1000,90"/></svg></div>
 
-<!-- 02 THE VISION -->
-<section id="vision">
+<!-- 02 THE OPPORTUNITY -->
+<section id="opportunity">
   <div class="inner">
-    <div class="s-label reveal">02 · The Vision</div>
-    <h2 class="reveal">The dream we are selling.<br><em>One home for racing.</em></h2>
-    <p class="s-lead reveal">A single platform. News, events, a sim racing team, and a real-world team, all in one place. A young racer joins for the racing and stays for the future. That is the product. Emil Frey Racing is the name that makes the dream real.</p>
-    <div class="narrative reveal">
-      <p class="narrative-lead">Picture a thirteen year old on a console. They watch Emil Frey Racing win at the top of GT racing. It looks impossibly far away. There is no door.</p>
-      <p class="narrative-punch">XCLusive is the door.</p>
-      <p class="narrative-body">We run events across every major sim, Assetto Corsa, Assetto Corsa Competizione, Le Mans Ultimate, iRacing, and RaceRoom, on PC and on console. Most matchmaking platforms serve PC only, and often a single game. XCLusive brings them together in one smart system.</p>
-      <p class="narrative-body">Inside that system, a beginner can climb. They can help build the platform, or get fast enough to land on our radar. Our scouting programme, time trials, and XCL Rating pre-select the talent worth backing. When the esports team they are chasing wears the Emil Frey name, there is no reason to look anywhere else.</p>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- 03 WHY EMIL FREY -->
-<section id="why">
-  <img src="/images/home/brand/xclusive_racing_logo_lion.png" alt="" class="why-lion-bg">
-  <div class="why-lion-glow"></div>
-  <div class="inner">
-    <div class="s-label reveal">03 · Why Emil Frey</div>
-    <h2 class="reveal">Not just a race team.<br><em>A destination.</em></h2>
-    <p class="why-body reveal">Team Redline gives a partner the top of the pyramid. A closed, elite squad. XCLusive gives you the whole pyramid, and the pipeline that feeds it. That matters more for Emil Frey than for anyone, because Emil Frey is not only a race team. It is Europe's largest automotive group. <strong>22,000+ people across twelve countries.</strong> Dealerships, marketing, engineering, and a works GT programme.</p>
-    <p class="why-body reveal d1">Our members are thousands of young, motorsport obsessed people looking for a way in. You are the company with the doors. Social media, engineering, coaching, sim training for real drivers, and for the quick ones, a real seat. The talent flows up through XCLusive and into the Emil Frey world.</p>
-    <div class="callout reveal d2">
-      <p>The Emil Frey name attracts top drivers. Top drivers win. Winning attracts <em>the next thousand members.</em> The loop builds itself.</p>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- 04 THE PLATFORM -->
-<section id="platform">
-  <div class="inner" style="text-align:center">
-    <div class="s-label reveal" style="justify-content:center">04 · The Platform</div>
-    <h2 class="reveal">Every sim.<br><em>PC and console.</em></h2>
-    <p class="s-lead reveal" style="margin:0 auto 3rem">This is the edge. Where the big platforms stop at PC and a single title, XCLusive runs organised, rated racing across all of them, on both PC and console, in one home.</p>
-    <div class="platform-box reveal">
-      <div class="platform-options">
-        <div class="platform-pill">Assetto Corsa</div>
-        <div class="platform-pill">Assetto Corsa Competizione</div>
-        <div class="platform-pill">Le Mans Ultimate</div>
-        <div class="platform-pill">iRacing</div>
-        <div class="platform-pill">RaceRoom</div>
+    <div class="s-label reveal">02 · The Opportunity</div>
+    <h2 class="reveal">Sim racing is no longer<br><em>just a game.</em></h2>
+    <div class="split-grid reveal">
+      <div>
+        <div class="split-label">The Market</div>
+        <ul class="check-list">
+          <li>The global sim racing market is projected to exceed 10 billion dollars by 2030, with esports audiences rivalling traditional motorsport broadcasts.</li>
+          <li>Real racing teams are partnering with sim orgs to extend brand reach, identify talent, and engage digital-native fanbases.</li>
+          <li>Real driver and sim driver crossover content generates outsized engagement. Fans love seeing the two worlds collide.</li>
+        </ul>
       </div>
-      <p class="platform-note">Console to PC crossover is where the raw talent hides. We are built to find it.</p>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- 05 THE PATHWAY -->
-<section id="pathway">
-  <div class="inner">
-    <div class="s-label reveal">05 · The Pathway</div>
-    <h2 class="reveal">First online race.<br><em>To a job in the Emil Frey world.</em></h2>
-    <div class="pathway reveal">
-      <div class="pathway-step">
-        <div class="pathway-num">Step 01</div>
-        <div class="pathway-title">Console or PC Sim Racer</div>
-        <p class="pathway-body">First race on ACC, LMU, or iRacing. The XCL Rating reads talent from day one. No experience needed, just speed.</p>
-      </div>
-      <div class="pathway-arrow">→</div>
-      <div class="pathway-step">
-        <div class="pathway-num">Step 02</div>
-        <div class="pathway-title">Measured and Scouted</div>
-        <p class="pathway-body">Time trials, rated championships, and the scouting programme surface the fastest and the most committed.</p>
-      </div>
-      <div class="pathway-arrow">→</div>
-      <div class="pathway-step">
-        <div class="pathway-num">Step 03</div>
-        <div class="pathway-title">Development Squad</div>
-        <p class="pathway-body">Selected into the XCLusive development programme. Coaching, race engineer support, real team structure.</p>
-      </div>
-      <div class="pathway-arrow">→</div>
-      <div class="pathway-step">
-        <div class="pathway-num">Step 04</div>
-        <div class="pathway-title">Emil Frey Esports Driver or Specialist</div>
-        <p class="pathway-body">Competing under the Emil Frey banner at the top, or contributing as an engineer, coach, broadcaster, or creator.</p>
-      </div>
-      <div class="pathway-arrow">→</div>
-      <div class="pathway-step final">
-        <div class="pathway-num">Step 05</div>
-        <div class="pathway-title">A Career in Racing</div>
-        <p class="pathway-body">Sim or real. A seat, a role in the team, or a job across the wider Emil Frey Group. The dream, delivered.</p>
+      <div class="side-panel">
+        <div class="split-label accent">Why Now</div>
+        <ul class="check-list">
+          <li>Dirk Schouten and other XCLusive drivers are already bridging both worlds.</li>
+          <li>XCLusive has the platform and the community.</li>
+          <li>Emil Frey has the real-world credibility and the works GT programme.</li>
+          <li>Together we become a crossover brand neither side could build alone.</li>
+        </ul>
       </div>
     </div>
   </div>
 </section>
 
-<div class="divider"></div>
+<div class="photo-band"><div class="photo-band-img"></div><svg class="ef-divider" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true"><polyline class="ef-d-charcoal" points="0,30 600,30 750,62 1000,62"/><polyline class="ef-d-gap" points="0,46 600,46 750,78 1000,78"/><polyline class="ef-d-blue" points="0,58 600,58 750,90 1000,90"/></svg></div>
 
-<!-- 06 THE PROPOSAL -->
-<section id="proposal">
+<!-- 03 WHAT XCLUSIVE BRINGS -->
+<section id="bring">
   <div class="inner">
-    <div class="s-label reveal">06 · The Proposal</div>
-    <h2 class="reveal">Two paths.<br><em>Your call.</em></h2>
-    <p class="s-lead reveal">We keep running the team as we do today, competing at the highest level, at no operational cost to you. Involvement scales entirely to how visible Emil Frey wants to be. The team identity is where we offer two options.</p>
+    <div class="s-label reveal">03 · What XCLusive Brings</div>
+    <h2 class="reveal">What we bring<br><em>to the table.</em></h2>
+    <div class="card-grid">
+      <div class="card reveal">
+        <div class="card-tag">Multi Platform Presence</div>
+        <h3>Console. PC.<br>Every Platform.</h3>
+        <p>Active competitive esports teams across ACC on console and PC, iRacing, and Le Mans Ultimate. Console roots reach the audiences PC-only orgs miss, and that is exactly where most young sim racers begin.</p>
+      </div>
+      <div class="card reveal d1">
+        <div class="card-tag">XCL Rating System</div>
+        <h3>Proven Talent<br>Identification.</h3>
+        <p>Proprietary Elo-based driver ranking across seven licence tiers. Objective talent identification, proven over years to surface the best drivers.</p>
+      </div>
+      <div class="card reveal d2">
+        <div class="card-tag">Professional Platform</div>
+        <h3>Built.<br>Live. Ready.</h3>
+        <p>A full-featured site at xclusiveracing.com with event calendar, driver profiles, registration, results, merchandise, and Discord integration.</p>
+      </div>
+      <div class="card reveal">
+        <div class="card-tag">Curated Driver Pool</div>
+        <h3>Vetted.<br>Rated. Ready.</h3>
+        <p>A wide roster of hand-selected, vetted, rated sim drivers, ready to represent Emil Frey liveries in virtual championships alongside your real drivers.</p>
+      </div>
+      <div class="card reveal d1">
+        <div class="card-tag">Championship Infrastructure</div>
+        <h3>Operational.<br>Day One.</h3>
+        <p>Race organisation, scheduling, results, and announcement systems, all built and operational, pushed across socials, email, and Discord.</p>
+      </div>
+      <div class="card reveal d2">
+        <div class="card-tag">Digital Brand Reach</div>
+        <h3>Real Editors.<br>Real Audience.</h3>
+        <p>A content engine across Instagram, TikTok, YouTube, Twitch, and a large Discord, focused on competitive motorsport audiences, with professional editors and no AI-generated content.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="photo-band flip"><div class="photo-band-img"></div><svg class="ef-divider" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true"><polyline class="ef-d-charcoal" points="0,30 600,30 750,62 1000,62"/><polyline class="ef-d-gap" points="0,46 600,46 750,78 1000,78"/><polyline class="ef-d-blue" points="0,58 600,58 750,90 1000,90"/></svg></div>
+
+<!-- 04 WHAT EMIL FREY BRINGS -->
+<section id="emil-frey-brings">
+  <div class="inner">
+    <div class="s-label reveal">04 · What Emil Frey Brings</div>
+    <h2 class="reveal">What makes this<br><em>valuable to us.</em></h2>
+    <div class="card-grid">
+      <div class="card reveal">
+        <div class="card-tag">Real-World Motorsport Legitimacy</div>
+        <h3>Credibility We<br>Cannot Manufacture.</h3>
+        <p>Emil Frey Racing is a genuine works GT team. That credibility is something no sim org can manufacture, and it elevates XCLusive across the wider motorsport world.</p>
+      </div>
+      <div class="card reveal d1">
+        <div class="card-tag">Real Driver Network</div>
+        <h3>Crossover<br>Content.</h3>
+        <p>Emil Frey drivers joining XCLusive as real drivers creates unique crossover content and deepens team identity on both sides.</p>
+      </div>
+      <div class="card reveal d2">
+        <div class="card-tag">Sponsor Ecosystem</div>
+        <h3>A Combined<br>Package.</h3>
+        <p>Real racing teams attract real sponsors. A joint venture opens combined packages, livery on real cars plus digital visibility, a compelling offer for brands.</p>
+      </div>
+      <div class="card reveal">
+        <div class="card-tag">Paddock Access and Content</div>
+        <h3>Premium.<br>Behind the Scenes.</h3>
+        <p>Behind the scenes from real race weekends, access to cars and circuits. Premium content no sim-only team can produce.</p>
+      </div>
+      <div class="card reveal d1 card-span-2">
+        <div class="card-tag">A Career Destination</div>
+        <h3>22,000+ People. Twelve Countries. One Ladder.</h3>
+        <p>Emil Frey is Europe's largest automotive group. 22,000+ people across twelve countries. For our members, that is a real ladder from a console into social, engineering, coaching, sim training, or a seat.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="photo-band"><div class="photo-band-img"></div><svg class="ef-divider" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true"><polyline class="ef-d-charcoal" points="0,30 600,30 750,62 1000,62"/><polyline class="ef-d-gap" points="0,46 600,46 750,78 1000,78"/><polyline class="ef-d-blue" points="0,58 600,58 750,90 1000,90"/></svg></div>
+
+<!-- 05 HOW IT WORKS -->
+<section id="how-it-works">
+  <div class="inner">
+    <div class="s-label reveal">05 · How It Works</div>
+    <h2 class="reveal">A model that works<br><em>for both teams.</em></h2>
+    <div class="split-grid reveal">
+      <div>
+        <div class="split-label accent">XCLusive Racing Manages</div>
+        <ul class="check-list">
+          <li>Emil Frey labelled sim racing events and championships</li>
+          <li>Digital content production for the entire esports side</li>
+          <li>Emil Frey branding in sim team liveries</li>
+          <li>A rebranded joint racing website, registrations, and results</li>
+          <li>Discord community and announcements</li>
+          <li>Esports driver rating and selection through the XCL system</li>
+        </ul>
+      </div>
+      <div>
+        <div class="split-label accent">Emil Frey Contributes</div>
+        <ul class="check-list">
+          <li>Real driver representation in XCLusive Esports</li>
+          <li>Paddock access for content creation</li>
+          <li>Sponsor network connections</li>
+          <li>Credibility in real motorsport circles</li>
+          <li>Emil Frey branding across the platform, socials, and team</li>
+          <li>Career and job pathways for XCLusive members to work toward</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="photo-band flip"><div class="photo-band-img"></div><svg class="ef-divider" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true"><polyline class="ef-d-charcoal" points="0,30 600,30 750,62 1000,62"/><polyline class="ef-d-gap" points="0,46 600,46 750,78 1000,78"/><polyline class="ef-d-blue" points="0,58 600,58 750,90 1000,90"/></svg></div>
+
+<!-- 06 FOR EMIL FREY MARKETING -->
+<section id="marketing">
+  <div class="inner">
+    <div class="s-label reveal">06 · For Emil Frey Marketing</div>
+    <h2 class="reveal">Built for your<br><em>world.</em></h2>
+    <p class="section-body reveal">This is an asset your marketing can sell, not a cost line. It speaks directly to brand visibility, sponsorship, events, and content.</p>
+    <div class="card-grid cols-2">
+      <div class="card reveal">
+        <h3>A New Audience</h3>
+        <p>Young, digital-native, motorsport-obsessed fans that traditional channels do not reach.</p>
+      </div>
+      <div class="card reveal d1">
+        <h3>A Fresh Sponsor Story</h3>
+        <p>Combined physical and digital packages, one pitch, two audiences, higher value.</p>
+      </div>
+      <div class="card reveal d2">
+        <h3>Trackside Sim Activation</h3>
+        <p>Turn the existing Emil Frey simulator, VIP, and workshop experiences into a live competitive layer at race weekends.</p>
+      </div>
+      <div class="card reveal">
+        <h3>An Always-On Content Engine</h3>
+        <p>Real versus sim challenges, paddock vlogs, and driver features that run all season.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="photo-band"><div class="photo-band-img"></div><svg class="ef-divider" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true"><polyline class="ef-d-charcoal" points="0,30 600,30 750,62 1000,62"/><polyline class="ef-d-gap" points="0,46 600,46 750,78 1000,78"/><polyline class="ef-d-blue" points="0,58 600,58 750,90 1000,90"/></svg></div>
+
+<!-- 07 BRAND VISION -->
+<section id="brand-vision">
+  <div class="inner">
+    <div class="s-label reveal">07 · Brand Vision</div>
+    <h2 class="reveal">One identity.<br><em>Two worlds.</em></h2>
+    <div class="card-grid">
+      <div class="card reveal">
+        <div class="card-tag">Sim Liveries</div>
+        <h3>Colours That<br>Travel The World.</h3>
+        <p>Emil Frey colours and branding carried by XCLusive drivers in virtual championships worldwide.</p>
+      </div>
+      <div class="card reveal d1">
+        <div class="card-tag">Content Series</div>
+        <h3>Neither Team<br>Could Do Alone.</h3>
+        <p>Real versus sim challenges, paddock vlogs, and driver features. Content neither team could produce alone.</p>
+      </div>
+      <div class="card reveal d2">
+        <div class="card-tag">Sponsorship</div>
+        <h3>One Pitch.<br>Two Audiences.</h3>
+        <p>Combined packages, physical car plus digital platform. One pitch, two audiences, higher value.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="photo-band flip"><div class="photo-band-img"></div><svg class="ef-divider" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true"><polyline class="ef-d-charcoal" points="0,30 600,30 750,62 1000,62"/><polyline class="ef-d-gap" points="0,46 600,46 750,78 1000,78"/><polyline class="ef-d-blue" points="0,58 600,58 750,90 1000,90"/></svg></div>
+
+<!-- 08 THE TEAM PROPOSAL -->
+<section id="identity">
+  <div class="inner">
+    <div class="team-intro reveal">
+      <div>
+        <div class="s-label">08 · The Team Proposal</div>
+        <h2>Not another<br>esports team.<br><em>The next legend.</em></h2>
+      </div>
+      <div style="margin-top:2.5rem">
+        <p class="team-body">Born from the most dominant force in ACC console racing, the Xbox Community League, XCLusive Racing is now expanding to PC across all three major sim platforms. The community, the drivers, and the infrastructure are in place. The missing piece is a name that matters. Emil Frey.</p>
+        <br>
+        <p class="team-body">Emil Frey gets naming rights, stream overlay branding across 36+ esports drivers who become instant Emil Frey ambassadors, a logo on real-world championship cars in Porsche Supercup, rally, and MX5 Cup, and a direct line to a large and fast-growing community that will constantly see, know, and aspire to Emil Frey. What drivers get in return is <strong>not cash. It is access.</strong> Events. Real-world connections. A brand that matters in motorsport, and a genuine ladder into the Emil Frey world.</p>
+      </div>
+    </div>
+
     <div class="option-grid reveal">
       <div class="option-card">
         <div class="option-tag">Option A</div>
@@ -402,13 +543,14 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
       <div class="option-card">
         <div class="option-tag">Option B</div>
         <h3>Branding Overlay</h3>
-        <p>XCLusive keeps its name and Emil Frey branding is applied across the platform, the team, the socials, and every touchpoint. Your name everywhere the community lives.</p>
+        <p>XCLusive keeps its name and Emil Frey branding is applied across the platform, the team, the socials, and every touchpoint.</p>
       </div>
     </div>
-    <div class="terms-grid reveal">
+
+    <div class="split-grid reveal" style="margin-top:3.5rem">
       <div>
-        <div class="terms-col-label">What Emil Frey Gets</div>
-        <ul class="terms-list">
+        <div class="split-label accent">What Emil Frey Gets</div>
+        <ul class="check-list">
           <li>An esports team competing across ACC, iRacing, LMU, and beyond.</li>
           <li>Brand presence across the platform, the socials, and real-world championship cars.</li>
           <li>A pipeline of young talent and brand affinity among thousands of members.</li>
@@ -417,41 +559,145 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
         </ul>
       </div>
       <div>
-        <div class="terms-col-label">What We Ask In Return</div>
-        <ul class="terms-list">
+        <div class="split-label accent">What We Ask In Return</div>
+        <ul class="check-list">
           <li>One official connection between XCLusive and Emil Frey.</li>
           <li>The ability to offer our members a real dream: a path from their first online race to a job in sim racing or motorsport.</li>
         </ul>
       </div>
     </div>
-  </div>
-</section>
 
-<div class="divider"></div>
+    <div class="pathway-label reveal">The Pathway</div>
+    <div id="pathway" class="step-row reveal">
+      <div class="step-box">
+        <div class="step-num">Step 01</div>
+        <div class="step-title">Console Sim Racer</div>
+        <p class="step-body">First race on ACC or LMU. The XCL Rating system identifies raw talent from day one. No experience needed, just speed.</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step-box">
+        <div class="step-num">Step 02</div>
+        <div class="step-title">PC Sim Racer</div>
+        <p class="step-body">Cross-platform development across iRacing, ACC PC, and LMU. Rating grows. Profile builds.</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step-box">
+        <div class="step-num">Step 03</div>
+        <div class="step-title">Development Esports Team</div>
+        <p class="step-body">Selected for the XCLusive development programme. Coaching, race engineer support, real team structure.</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step-box">
+        <div class="step-num">Step 04</div>
+        <div class="step-title">Esports Driver, Engineer, or Specialist</div>
+        <p class="step-body">Competing under the Emil Frey banner at the highest level, or contributing as an engineer, coach, broadcaster, or creator.</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step-box final">
+        <div class="step-num">Step 05</div>
+        <div class="step-title">A Career in Sim or Motorsport</div>
+        <p class="step-body">Real-world connections, access to the Emil Frey network, and a proven track record that opens doors in sim racing, professional motorsport, and across the wider Emil Frey Group.</p>
+      </div>
+    </div>
 
-<!-- 07 INVOLVEMENT -->
-<section id="involvement">
-  <div class="inner">
-    <div class="s-label reveal">07 · Involvement</div>
-    <h2 class="reveal">As light or as deep<br><em>as you want.</em></h2>
-    <p class="involve-body reveal">At the minimum, an official connection and the Emil Frey name. From there it is open. Marketing support, driver access, engineering mentorship, or a full works esports programme. We bring the community, the infrastructure, and the drive. You choose the depth.</p>
-    <div class="placeholder-box reveal">
-      <div class="placeholder-tag">Placeholder · Edit before sending</div>
-      <p>Roster and budget detail to follow. A paid pro roster on each platform, funded through sponsorship and XCLusive revenue, with selections drawn from the XCL pool. Figures to be added.</p>
+    <div class="s-label reveal" style="margin-bottom:1rem;margin-top:4rem">Who Is Already Doing This</div>
+    <p class="team-body reveal d1" style="margin-bottom:2rem;max-width:640px">These are the teams and brand partnerships that prove the model. Emil Frey already knows it firsthand through Verstappen.com. XCLusive is the grassroots challenger version, with a community base larger than most of these had at launch.</p>
+    <div class="competitor-grid">
+      <a class="comp-card reveal" href="https://racing.verstappen.com/team-redline/" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/redline.webp" alt="Team Redline"></div>
+      </a>
+      <a class="comp-card reveal d1" href="https://www.akkodis-asp-team.com/en/" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/akkodis.png" alt="Akkodis ASP Team"></div>
+      </a>
+      <a class="comp-card reveal d2" href="https://www.doerr-esports.com/" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/falken.png" alt="Falken Simracing Team"></div>
+      </a>
+      <a class="comp-card reveal" href="https://referox.com/" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/referox.png" alt="ReFerox"></div>
+      </a>
+      <a class="comp-card reveal d1" href="https://coanda.gg/" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/coanda.png" alt="Coanda"></div>
+      </a>
+      <a class="comp-card reveal d2" href="https://www.tatumrestech.net/" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/tatum.jpg" alt="Tatum Restech"></div>
+      </a>
+      <a class="comp-card reveal" href="https://www.race-esport.fr/#about" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/ere.webp" alt="ERE Team" style="transform:scale(0.5)"></div>
+      </a>
+      <a class="comp-card reveal d1" href="https://williamsesports.com/" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/williamsesports.png" alt="Williams Esports" style="transform:scale(1.2)"></div>
+      </a>
+      <a class="comp-card reveal d2" href="https://esportsseries.ferrari.com/" target="_blank" rel="noopener noreferrer">
+        <div class="comp-logo"><img src="/images/pitch/logos/SF.png" alt="Scuderia Ferrari Esports" style="transform:scale(0.6)"></div>
+      </a>
+    </div>
+
+    <div class="stat-block-grid">
+      <div class="stat-block reveal">
+        <div class="stat-block-num">11<span style="color:var(--muted);font-size:2rem">K+</span></div>
+        <h3>The Community</h3>
+        <p>11,000+ registered members and growing fast as XCLusive expands from console to PC. Not a social media following. These are racers who compete in rated championships, track their XCL Rating, and invest in sim hardware. The Rookie level of the pyramid feeds directly from this community.</p>
+      </div>
+      <div class="stat-block reveal d1">
+        <div class="stat-block-num">20<span style="color:var(--muted);font-size:2rem">+</span></div>
+        <h3>The Volunteers</h3>
+        <p>Event managers, race stewards, community coaches, broadcasters, and social creators, all contributing without pay, because they want to build something that matters. That kind of commitment is not bought. It is earned, and it is already here.</p>
+        <p style="margin-top:0.75rem">The new website opens up many more volunteer positions. <a href="https://xclusiveracing.com/team/join" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:0.76rem">Join the team →</a></p>
+      </div>
+      <div class="stat-block reveal d2">
+        <div class="stat-block-num">3</div>
+        <h3>Real Platforms</h3>
+        <p>ACC, iRacing, and Le Mans Ultimate, all with active, rated championships running right now. Each has its own community, elite driver pool, and broadcast audience. The Emil Frey team name reaches all three simultaneously from day one.</p>
+      </div>
     </div>
   </div>
 </section>
 
-<div class="divider"></div>
+<div class="photo-band flip"><div class="photo-band-img"></div><svg class="ef-divider" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true"><polyline class="ef-d-charcoal" points="0,30 600,30 750,62 1000,62"/><polyline class="ef-d-gap" points="0,46 600,46 750,78 1000,78"/><polyline class="ef-d-blue" points="0,58 600,58 750,90 1000,90"/></svg></div>
 
-<!-- 08 NEXT STEPS -->
+<!-- 09 NEXT STEPS -->
+<section id="next-steps">
+  <div class="inner">
+    <div class="s-label reveal">09 · Next Steps</div>
+    <h2 class="reveal">A path with<br><em>low risk and high signal.</em></h2>
+    <div class="step-row reveal">
+      <div class="step-box">
+        <div class="step-num">01</div>
+        <div class="step-title">Alignment Call</div>
+        <p class="step-body">Confirm the shared vision and ambitions. What does success look like in twelve months?</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step-box">
+        <div class="step-num">02</div>
+        <div class="step-title">Define the Structure</div>
+        <p class="step-body">Agree on branding, team naming, and which domains each party leads.</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step-box">
+        <div class="step-num">03</div>
+        <div class="step-title">Pilot Event</div>
+        <p class="step-body">Run a joint event, Emil Frey livery in an XCLusive championship. Low risk, high signal.</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step-box">
+        <div class="step-num">04</div>
+        <div class="step-title">Formalise the Partnership</div>
+        <p class="step-body">A simple agreement covering branding, sponsors, IP, and governance.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="photo-band"><div class="photo-band-img"></div><svg class="ef-divider" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true"><polyline class="ef-d-charcoal" points="0,30 600,30 750,62 1000,62"/><polyline class="ef-d-gap" points="0,46 600,46 750,78 1000,78"/><polyline class="ef-d-blue" points="0,58 600,58 750,90 1000,90"/></svg></div>
+
+<!-- CLOSE -->
 <section id="close">
   <div class="inner">
-    <div class="s-label reveal">08 · Next Steps</div>
-    <h2 class="reveal">Let us show you.<br><em>Then let us talk.</em></h2>
+    <div class="s-label reveal">Let's Talk</div>
+    <h2 class="reveal">Let us build<br><em>something great.</em></h2>
     <p class="s-lead reveal">This page is the summary. The detail gets built together, starting with a meeting. We would love to walk you through the platform, the community, and where Emil Frey fits.</p>
     <div class="close-box reveal">
-      <a href="tel:+31625241154" class="btn-red" style="display:inline-block">Schedule a meeting →</a>
+      <a href="tel:+31625241154" class="btn-primary" style="display:inline-block">Schedule a meeting →</a>
       <div class="contact-row">
         <div class="ci">
           <div class="ci-label">Contact</div>
@@ -475,7 +721,7 @@ footer{background:var(--ink);border-top:1px solid var(--edge);padding:28px 5vw;d
 </section>
 
 <footer>
-  <div class="ft-logo"><span class="swiss-mark"></span>XCLusive Racing <em>×</em> Emil Frey Racing. Confidential Partnership Proposal 2026.</div>
+  <div class="ft-logo">XCLusive Racing <em>×</em> Emil Frey Racing. Confidential Partnership Proposal 2026.</div>
   <div class="ft-note">Not for distribution</div>
 </footer>
 
@@ -487,10 +733,10 @@ const obs = new IntersectionObserver(entries => {
 },{threshold:0.08,rootMargin:'0px 0px -30px 0px'});
 els.forEach(el => obs.observe(el));
 
-// Hero heading: swap YOUR NAME red <-> ON IT grey as the page scrolls
-const heroRed = document.querySelector('.h1-red');
+// Hero heading: swap SIM AND REAL blue <-> MOTORSPORT grey as the page scrolls
+const heroAccent = document.querySelector('.h1-accent');
 const heroDim = document.querySelector('.h1-dim');
-const RED  = [226, 0, 26, 1];
+const ACCENT = [0, 92, 179, 1];
 const DIM  = [255, 255, 255, 0.18];
 const HERO_SCROLL_DISTANCE = 500;
 
@@ -502,8 +748,8 @@ function mixColor(from, to, t) {
 
 function updateHeroColors() {
   const t = Math.min(Math.max(window.scrollY / HERO_SCROLL_DISTANCE, 0), 1);
-  heroRed.style.color = mixColor(RED, DIM, t);
-  heroDim.style.color = mixColor(DIM, RED, t);
+  heroAccent.style.color = mixColor(ACCENT, DIM, t);
+  heroDim.style.color = mixColor(DIM, ACCENT, t);
 }
 
 let heroTicking = false;
