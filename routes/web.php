@@ -181,6 +181,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/races/create', [AdminRaceController::class, 'create'])->name('races.create');
     Route::get('/races/bulk-create', [AdminRaceController::class, 'bulkCreate'])->name('races.bulk-create');
     Route::post('/races/bulk-store', [AdminRaceController::class, 'bulkStore'])->name('races.bulk-store');
+    Route::get('/races/import-export', [AdminRaceController::class, 'importExport'])->name('races.import-export');
+    Route::post('/races/bulk-import-csv', [AdminRaceController::class, 'bulkImportCsv'])->name('races.bulk-import-csv');
+    Route::get('/races/export-csv', [AdminRaceController::class, 'exportCsv'])->name('races.export-csv');
     Route::get('/races/custom-create', [AdminRaceController::class, 'customCreate'])->name('races.custom-create');
     Route::post('/races', [AdminRaceController::class, 'store'])->name('races.store');
     Route::get('/races/{race}', [AdminRaceController::class, 'show'])->name('races.show');
