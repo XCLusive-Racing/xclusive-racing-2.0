@@ -36,7 +36,7 @@
                         <a href="{{ route('results.index', ['race' => $race->id]) }}"
                            class="result-race-item d-flex flex-column gap-1 px-3 py-2 text-decoration-none border-bottom {{ $isActive ? 'active' : '' }}">
                             <div class="fw-bold text-dark" style="font-size:.82rem;line-height:1.3;{{ $isActive ? 'color:#7c3aed' : '' }}">
-                                {{ $race->title }}
+                                {{ $race->title }} &middot; {{ $race->track }}
                             </div>
                             <div class="fw-bold" style="font-size:.68rem;letter-spacing:.03em;color:#7c3aed">
                                 {{ strtoupper($race->scheduledAtUk()->format('l')) }} / {{ strtoupper($race->scheduledAtUk()->format('g:i A T')) }}
@@ -319,3 +319,25 @@
     </div>
 </main>
 @endsection
+
+@push('scripts')
+<script>
+    // Event selection is a plain <a href> full-page reload, which otherwise resets the
+    // race list's own scroll position back to the top every time — annoying once you've
+    // scrolled down to a race further down the list.
+    (function () {
+        var KEY  = 'xcl-results-list-scroll';
+        var list = document.querySelector('.results-race-list');
+        if (!list) return;
+
+        var saved = sessionStorage.getItem(KEY);
+        if (saved !== null) list.scrollTop = parseInt(saved, 10) || 0;
+
+        list.querySelectorAll('.result-race-item').forEach(function (link) {
+            link.addEventListener('click', function () {
+                sessionStorage.setItem(KEY, list.scrollTop);
+            });
+        });
+    })();
+</script>
+@endpush
