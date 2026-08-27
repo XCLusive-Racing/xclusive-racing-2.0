@@ -215,14 +215,9 @@
                             </select>
                         </div>
                         <div class="col-sm-4">
-                            <label class="form-label">Time of Day</label>
-                            <select name="time_of_day" class="form-select">
-                                <option value="">— Not set —</option>
-                                <option value="day"     {{ old('time_of_day', 'day') === 'day'     ? 'selected' : '' }}>Day</option>
-                                <option value="dusk"    {{ old('time_of_day', 'day') === 'dusk'    ? 'selected' : '' }}>Dusk</option>
-                                <option value="night"   {{ old('time_of_day', 'day') === 'night'   ? 'selected' : '' }}>Night</option>
-                                <option value="dynamic" {{ old('time_of_day', 'day') === 'dynamic' ? 'selected' : '' }}>Dynamic</option>
-                            </select>
+                            <label class="form-label">Race Start Time <span class="fw-normal text-secondary" style="text-transform:none">(in-game)</span></label>
+                            <input type="time" name="time_of_day" class="form-control"
+                                   value="{{ old('time_of_day', '14:00') }}" step="3600">
                         </div>
                     </div>
 
