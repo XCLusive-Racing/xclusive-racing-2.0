@@ -47,44 +47,17 @@ class RatingService
                 'rating'     => $rating,
                 'finish_pos' => ($status === 'FIN') ? $r->position : null,
                 'status'     => $status,
-                'lap_count'  => (int) ($r->lap_count ?? 0),
             ];
         })->values()->all();
 
-        // Partial DNFs (completed >= 1 lap) are slotted behind all classified finishers
-        // and go through the normal position-based formula instead of the flat -25 penalty,
-        // so quitting late is never less punishing than finishing last.
-        // True DNFs (0 laps) keep the flat penalty.
-        $collection  = collect($entries);
-        $classified  = $collection->where('status', 'FIN')->sortBy('finish_pos')->values();
-        $leaderLaps  = $classified->max('lap_count') ?? 0;
-        $lapCutoff   = $leaderLaps > 0 ? (int) max(1, round($leaderLaps * 0.70)) : 1;
-        $partialDnfs = $collection
-            ->filter(fn($e) => $e['status'] === 'DNF' && $e['lap_count'] >= $lapCutoff)
-            ->sortByDesc('lap_count')
-            ->values();
-
-        if ($partialDnfs->isNotEmpty()) {
-            $nextPos     = ($classified->max('finish_pos') ?? 0) + 1;
-            $partialDnfs = $partialDnfs->map(function ($e) use (&$nextPos) {
-                return array_merge($e, ['status' => 'FIN', 'finish_pos' => $nextPos++]);
-            });
-            $entries = $classified
-                ->concat($partialDnfs)
-                ->concat($collection->filter(fn($e) => $e['status'] === 'DNF' && $e['lap_count'] < 1))
-                ->concat($collection->filter(fn($e) => ! in_array($e['status'], ['FIN', 'DNF'])))
-                ->values()
-                ->all();
-        }
-
+        // dnf is only ever true for a lap-0/1 retirement (see AccResultImportService) —
+        // everyone else keeps the finishing position ACC's own leaderboard gave them and
+        // goes through the normal position-based formula, same as a full classified finish.
         $finisherCount = collect($entries)->where('status', 'FIN')->count();
         \Log::info('RatingService: starting calculation', [
             'race_id'        => $race->id,
             'linked_drivers' => count($entries),
             'finishers'      => $finisherCount,
-            'leader_laps'    => $leaderLaps,
-            'lap_cutoff_70%' => $lapCutoff,
-            'partial_dnfs'   => $partialDnfs->count(),
             'min_required'   => $this->calculator->MIN_DRIVERS,
         ]);
 
@@ -154,10 +127,10 @@ class RatingService
     }
 
     /**
-     * Only a clean finish (not DSQ/DNS/DC/DNF, including partial DNFs) raises SR — new_sr =
-     * old_sr + (2.2 / old_sr) * race multiplier, so the gain shrinks the closer a driver
-     * gets to the 9.99 cap. Undoes this result's own previously-applied sr_change first
-     * (mirrors the elo re-baselining above) so reprocessing after a correction doesn't stack.
+     * Only a clean finish (not DSQ/DNS/DC/DNF) raises SR — new_sr = old_sr + (2.2 / old_sr)
+     * * race multiplier, so the gain shrinks the closer a driver gets to the 9.99 cap. Undoes
+     * this result's own previously-applied sr_change first (mirrors the elo re-baselining
+     * above) so reprocessing after a correction doesn't stack.
      */
     private function applySrChange(RaceResult $result, string $srField): void
     {
