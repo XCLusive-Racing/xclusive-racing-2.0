@@ -39,7 +39,14 @@ class RatingService
             // after a manual DSQ/DC correction re-baselines from the pre-this-race rating
             // instead of stacking a second delta on top of the first.
             $rating = (float) ($r->user->{$ratingField} ?? 1500) - (float) ($r->elo_change ?? 0);
-            $status = $r->dsq ? 'DSQ' : ($r->dns ? 'DNS' : ($r->dc ? 'DC' : ($r->dnf ? 'DNF' : 'FIN')));
+
+            // The dnf flag itself (set on import from the 70%-of-leader-laps heuristic)
+            // drives the DNF badge/status and freezes Safety Rating either way — but the
+            // flat DNF rating penalty is reserved for an actual lap-0/1 retirement. Anyone
+            // dnf-flagged who completed 2+ laps still just keeps their real ACC finishing
+            // position and goes through the normal position-based formula.
+            $isTrueDnf = $r->dnf && (int) ($r->lap_count ?? 0) <= 1;
+            $status    = $r->dsq ? 'DSQ' : ($r->dns ? 'DNS' : ($r->dc ? 'DC' : ($isTrueDnf ? 'DNF' : 'FIN')));
 
             return [
                 'driver_id'  => $r->user_id,
@@ -50,9 +57,6 @@ class RatingService
             ];
         })->values()->all();
 
-        // dnf is only ever true for a lap-0/1 retirement (see AccResultImportService) —
-        // everyone else keeps the finishing position ACC's own leaderboard gave them and
-        // goes through the normal position-based formula, same as a full classified finish.
         $finisherCount = collect($entries)->where('status', 'FIN')->count();
         \Log::info('RatingService: starting calculation', [
             'race_id'        => $race->id,

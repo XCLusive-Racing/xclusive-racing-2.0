@@ -71,9 +71,11 @@ class AccResultImportService
 
     // A driver who parks in the pits (or never gets going) still shows up in ACC's
     // leaderboard with whatever position they last held — there's no "retired"/"finished"
-    // flag in the export, so DNF has to be inferred. We only call it DNF when they bailed
-    // in lap 0 or 1; anyone who did 2+ laps keeps whatever finishing position ACC gave them.
-    private const DNF_MAX_LAPS = 1;
+    // flag in the export, so the dnf flag has to be inferred from how far they got
+    // relative to the session leader. This flag drives the DNF badge/status and freezes
+    // Safety Rating — it does NOT by itself decide the flat DNF rating penalty, see
+    // RatingService (only a lap-0/1 retirement gets that).
+    private const DNF_LAP_THRESHOLD = 0.70;
 
     private function parseSession(array $session, Race $race, string $sessionType): int
     {
@@ -81,6 +83,10 @@ class AccResultImportService
         $bestLapMs = ($session['sessionResult']['bestlap'] ?? -1) > 0
             ? (int) $session['sessionResult']['bestlap']
             : null;
+
+        $leaderLaps = $sessionType === 'race'
+            ? collect($lines)->max(fn ($l) => (int) ($l['timing']['lapCount'] ?? 0))
+            : 0;
 
         // Only save results for drivers who are actually registered — keyed for O(1) lookup
         $registeredIds = $race->registrations()
@@ -125,7 +131,8 @@ class AccResultImportService
             }
 
             $dns        = $sessionType === 'race' && $totalTime === null;
-            $dnf        = $sessionType === 'race' && ! $dns && ($lapCount ?? 0) <= self::DNF_MAX_LAPS;
+            $dnf        = $sessionType === 'race' && ! $dns && $leaderLaps > 0
+                && ($lapCount ?? 0) < $leaderLaps * self::DNF_LAP_THRESHOLD;
             $fastestLap = $bestLapMs !== null && $bestLap !== null && $bestLap === $bestLapMs;
 
             // For team entries all drivers share the same car-level stats; each registered
