@@ -326,8 +326,7 @@ $mcExisting = $isEdit
                             </div>
                             <div class="col-sm-3" id="ce-rain-level-wrap" style="display:none">
                                 @php
-                                    $rainLevelPresets = ['wet' => 0.8, 'mixed' => 0.3];
-                                    $savedRainLevel   = old('rain_level', $isEdit ? $race->rain_level : null);
+                                    $savedRainLevel = old('rain_level', $isEdit ? $race->rain_level : null);
                                 @endphp
                                 <label class="form-label">Rain Level
                                     <span class="fw-normal text-secondary" style="text-transform:none">(ACC rain)</span>
@@ -1720,13 +1719,18 @@ $mcExisting = $isEdit
     const rainWrap       = document.getElementById('ce-rain-level-wrap');
     const rainSlider     = document.getElementById('ce-rain-level');
     const rainDisplay    = document.getElementById('ce-rain-level-val');
-    const presets        = { wet: 0.8, mixed: 0.3 };
+    const presets        = { wet: 0.3, mixed: 0.3 };
+    // Saved/old value from the server (edit mode, or a re-submitted form) — only this counts
+    // as "already has a value"; the dry-reset below writes '0' to the DOM but must not block
+    // the preset from (re-)applying the next time wet/mixed is chosen.
+    const hasSavedValue  = !!(rainSlider && rainSlider.value);
+    let touchedByUser    = false;
 
     function updateWrap() {
         const w = weatherSelect?.value;
         const show = w === 'wet' || w === 'mixed';
         if (rainWrap) rainWrap.style.display = show ? '' : 'none';
-        if (show && rainSlider && !rainSlider.value) {
+        if (show && rainSlider && !touchedByUser && !hasSavedValue) {
             rainSlider.value = presets[w] ?? 0.5;
             if (rainDisplay) rainDisplay.textContent = parseFloat(rainSlider.value).toFixed(1);
         } else if (!show && rainSlider) {
@@ -1738,6 +1742,7 @@ $mcExisting = $isEdit
     }
 
     rainSlider?.addEventListener('input', () => {
+        touchedByUser = true;
         if (rainDisplay) rainDisplay.textContent = parseFloat(rainSlider.value).toFixed(1);
     });
 
