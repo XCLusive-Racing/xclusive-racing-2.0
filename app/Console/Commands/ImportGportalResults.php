@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 class ImportGportalResults extends Command
 {
     protected $signature   = 'gportal:import-results';
-    protected $description = 'Auto-close overdue races and auto-import their results from gPortal FTP once available';
+    protected $description = 'Auto-close overdue races, auto-import their results from gPortal FTP once available, and auto-finish stale closed races with no results';
 
     // How long after scheduled_at before we start looking for a results file —
     // covers even the shortest sprint format, and we just retry every run until
@@ -24,6 +24,11 @@ class ImportGportalResults extends Command
     // still count as "this race's file" — generous enough to cover endurance races.
     private const MATCH_WINDOW_HOURS = 6;
 
+    // A closed race with no results after this long is assumed to never be getting
+    // any (no FTP server, a file that never matched, someone forgot to upload manually)
+    // — otherwise it sits stuck on "closed" forever instead of surfacing as finished.
+    private const STALE_CLOSED_HOURS = 24;
+
     public function handle(AccResultImportService $importer, FtpService $ftp): void
     {
         $closed = Race::where('status', 'open')
@@ -32,6 +37,15 @@ class ImportGportalResults extends Command
 
         if ($closed > 0) {
             Log::info("gportal:import-results: auto-closed {$closed} overdue race(s)");
+        }
+
+        $staleFinished = Race::where('status', 'closed')
+            ->where('scheduled_at', '<', now()->subHours(self::STALE_CLOSED_HOURS))
+            ->whereDoesntHave('raceResults')
+            ->update(['status' => 'finished']);
+
+        if ($staleFinished > 0) {
+            Log::info("gportal:import-results: auto-finished {$staleFinished} stale closed race(s) with no results");
         }
 
         $races = Race::whereNotNull('ftp_server_id')
