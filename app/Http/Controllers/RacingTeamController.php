@@ -152,10 +152,10 @@ class RacingTeamController extends Controller
         ]);
 
         if ($team->logo) {
-            \Storage::disk('public')->delete($team->logo);
+            \Storage::disk('media')->delete($team->logo);
         }
 
-        $path = $request->file('logo')->store('team-logos', 'public');
+        $path = $request->file('logo')->store('team-logos', 'media');
         $team->update(['logo' => $path]);
 
         return back()->with('team_success', 'Team logo updated.');

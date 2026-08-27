@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Facades\Storage;
 
 class RacingTeam extends Model
 {
@@ -34,7 +35,7 @@ class RacingTeam extends Model
 
     public function logoUrl(): ?string
     {
-        return $this->logo ? asset('storage/' . $this->logo) : null;
+        return $this->logo ? Storage::disk('media')->url($this->logo) : null;
     }
 
     public function hasMember(User $user): bool
