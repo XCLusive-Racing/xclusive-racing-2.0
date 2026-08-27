@@ -71,8 +71,10 @@ class AccResultImportService
 
     // A driver who parks in the pits (or never gets going) still shows up in ACC's
     // leaderboard with whatever position they last held — there's no "retired"/"finished"
-    // flag in the export, so DNF/DNS have to be inferred from how far they actually got
-    // relative to the session leader.
+    // flag in the export, so the dnf flag has to be inferred from how far they got
+    // relative to the session leader. This flag drives the DNF badge/status and freezes
+    // Safety Rating — it does NOT by itself decide the flat DNF rating penalty, see
+    // RatingService (only a lap-0/1 retirement gets that).
     private const DNF_LAP_THRESHOLD = 0.70;
 
     private function parseSession(array $session, Race $race, string $sessionType): int

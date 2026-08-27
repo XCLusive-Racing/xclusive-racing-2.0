@@ -14,11 +14,16 @@ class XclRating
     public float $R_LOW  = -0.85;
 
     public array $R_STATUS = [
-        'DNF' => -0.50,
-        'DNS' => -0.50,
         'DC'  => -0.20,
         'DSQ' => -0.70,
     ];
+
+    // DNS and DNF (RatingService only ever passes true — lap 0/1 — DNFs through; partial
+    // DNFs get reclassified as FIN before reaching here) are flat penalties, not scaled by
+    // k_factor/multiplier like the other statuses — a no-show or an early quit costs the
+    // same whether it's a sprint or an endurance round.
+    public float $DNS_FLAT_PENALTY = -10.0;
+    public float $DNF_FLAT_PENALTY = -25.0;
 
     public float $ELO_SCALE     = 800.0;
     public float $WIN_PCT_SCALE = 600.0;
@@ -112,8 +117,24 @@ class XclRating
                 if ($oldRating <= $this->STOP_LOSS_FLOOR) {
                     $eloChange = max(0.0, $eloChange);
                 }
+            } elseif ($status === 'DNS') {
+                $rFactor     = 0.0;
+                $winPct      = 0.0;
+                $actualScore = 0.0;
+                $expScore    = 0.0;
+                $rawChange   = $this->DNS_FLAT_PENALTY;
+                $gainFactor  = 1.0;
+                $eloChange   = $rawChange;
+            } elseif ($status === 'DNF') {
+                $rFactor     = 0.0;
+                $winPct      = 0.0;
+                $actualScore = 0.0;
+                $expScore    = 0.0;
+                $rawChange   = $this->DNF_FLAT_PENALTY;
+                $gainFactor  = 1.0;
+                $eloChange   = $rawChange;
             } else {
-                $rFactor     = $this->R_STATUS[$status] ?? $this->R_STATUS['DNF'];
+                $rFactor     = $this->R_STATUS[$status] ?? $this->R_STATUS['DSQ'];
                 $winPct      = 0.0;
                 $actualScore = 0.0;
                 $expScore    = 0.0;
