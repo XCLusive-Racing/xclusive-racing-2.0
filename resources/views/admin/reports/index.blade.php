@@ -9,22 +9,56 @@
 <div class="alert border-0 text-white fw-bold mb-4 rounded-3" style="background:#16a34a">{{ session('success') }}</div>
 @endif
 
+@php
+    $totalReports = $statusCounts->sum();
+    $filterPill = function (?string $value, string $label, int $count) use ($status) {
+        $active = $status === $value;
+        $url    = request()->fullUrlWithQuery(['status' => $value]);
+        $bg     = $active ? '#7c3aed' : '#f3f4f6';
+        $color  = $active ? '#fff' : '#374151';
+
+        return '<a href="' . e($url) . '" class="text-decoration-none fw-bold text-uppercase d-inline-block me-2 mb-2"'
+            . ' style="font-size:.7rem;letter-spacing:.05em;background:' . $bg . ';color:' . $color . ';padding:5px 12px;border-radius:20px">'
+            . e($label) . ' <span style="opacity:.75">' . $count . '</span></a>';
+    };
+@endphp
+<div class="mb-3">
+    {!! $filterPill(null, 'All', $totalReports) !!}
+    @foreach(\App\Models\Report::statuses() as $slug => $meta)
+        {!! $filterPill($slug, $meta['label'], $statusCounts->get($slug, 0)) !!}
+    @endforeach
+</div>
+
 <div class="admin-card p-0 overflow-hidden">
     @if($reports->isEmpty())
-    <p class="text-secondary text-center py-5 mb-0" style="font-size:.85rem">No reports submitted yet.</p>
+    <p class="text-secondary text-center py-5 mb-0" style="font-size:.85rem">No reports {{ $status ? 'with this status' : 'submitted yet' }}.</p>
     @else
+    @php
+        // Builds a clickable column header: sorting by a not-yet-active column starts
+        // ascending, clicking the already-active column flips its direction.
+        $sortHeader = function (string $column, string $label) use ($sort, $dir) {
+            $active   = $sort === $column;
+            $nextDir  = $active && $dir === 'asc' ? 'desc' : 'asc';
+            $url      = request()->fullUrlWithQuery(['sort' => $column, 'dir' => $nextDir]);
+            $arrow    = $active ? ($dir === 'asc' ? ' ↑' : ' ↓') : '';
+            $color    = $active ? '#7c3aed' : '#6b7280';
+
+            return '<a href="' . e($url) . '" class="text-decoration-none fw-bold text-uppercase d-inline-block"'
+                . ' style="font-size:.68rem;letter-spacing:.06em;color:' . $color . '">' . e($label) . $arrow . '</a>';
+        };
+    @endphp
     <div class="table-responsive">
         <table class="table align-middle mb-0" style="font-size:.83rem">
             <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
                 <tr>
-                    <th class="fw-bold text-uppercase text-secondary ps-4 py-3" style="font-size:.68rem;letter-spacing:.06em">Reporter</th>
-                    <th class="fw-bold text-uppercase text-secondary py-3" style="font-size:.68rem;letter-spacing:.06em">Reported</th>
-                    <th class="fw-bold text-uppercase text-secondary py-3 d-none d-md-table-cell" style="font-size:.68rem;letter-spacing:.06em">Race</th>
-                    <th class="fw-bold text-uppercase text-secondary py-3 text-center" style="font-size:.68rem;letter-spacing:.06em">Status</th>
-                    <th class="fw-bold text-uppercase text-secondary py-3 text-center d-none d-md-table-cell" style="font-size:.68rem;letter-spacing:.06em">Penalty</th>
+                    <th class="ps-4 py-3">{!! $sortHeader('reporter', 'Reporter') !!}</th>
+                    <th class="py-3">{!! $sortHeader('reported', 'Reported') !!}</th>
+                    <th class="py-3 d-none d-md-table-cell">{!! $sortHeader('race', 'Race') !!}</th>
+                    <th class="py-3 text-center">{!! $sortHeader('status', 'Status') !!}</th>
+                    <th class="py-3 text-center d-none d-md-table-cell">{!! $sortHeader('penalty', 'Penalty') !!}</th>
                     <th class="fw-bold text-uppercase text-secondary py-3 text-center d-none d-lg-table-cell" style="font-size:.68rem;letter-spacing:.06em">Stewards</th>
-                    <th class="fw-bold text-uppercase text-secondary py-3 text-center d-none d-lg-table-cell" style="font-size:.68rem;letter-spacing:.06em">Processed</th>
-                    <th class="fw-bold text-uppercase text-secondary py-3 d-none d-lg-table-cell" style="font-size:.68rem;letter-spacing:.06em">Submitted</th>
+                    <th class="py-3 text-center d-none d-lg-table-cell">{!! $sortHeader('processed', 'Processed') !!}</th>
+                    <th class="py-3 d-none d-lg-table-cell">{!! $sortHeader('submitted', 'Submitted') !!}</th>
                     <th style="width:60px"></th>
                 </tr>
             </thead>

@@ -125,7 +125,7 @@ class AccServerConfigService
             $weatherRandomness = $defaults['weatherRandomness'] ?? 1;
         }
 
-        if ($race->rain_level !== null) {
+        if ($race->rain_level !== null && in_array($race->weather, ['wet', 'mixed'], true)) {
             $rain = (float) $race->rain_level;
         }
 
@@ -158,8 +158,8 @@ class AccServerConfigService
 
         return array_merge($base, [
             'serverName'                 => $n
-                ? 'XCL SERVER ' . $n . ' - Daily Sprint - Playstation 5 & Xbox Series S/X'
-                : ($base['serverName'] ?? 'XCL SERVER - Daily Sprint - Playstation 5 & Xbox Series S/X'),
+                ? 'XCL SERVER ' . $n . ' - Playstation 5 & Xbox Series S/X'
+                : ($base['serverName'] ?? 'XCL SERVER - Playstation 5 & Xbox Series S/X'),
             'password'                   => $n ? $n . 'xcl' : ($base['password'] ?? '1xcl'),
             'safetyRatingRequirement'    => $this->srRequired($race),
             'racecraftRatingRequirement' => $this->rcRequired($race),

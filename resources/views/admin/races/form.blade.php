@@ -347,24 +347,20 @@ $mcExisting = $isEdit
                             <div class="col-sm-3">
                                 <label class="form-label">Race Start Time</label>
                                 @php
+                                    // Legacy races were saved with a day/dusk/night/dynamic preset instead of an
+                                    // actual clock time — map those to a displayable H:i so an old row still edits cleanly.
                                     $rawTod = old('time_of_day', $isEdit ? $race->time_of_day : null);
                                     $todMap = ['day' => '14:00', 'dusk' => '17:00', 'night' => '21:00', 'dynamic' => '14:00'];
                                     $timeOfDayVal = ($rawTod && !preg_match('/^\d{2}:\d{2}$/', $rawTod))
                                         ? ($todMap[$rawTod] ?? '14:00')
                                         : ($rawTod ?: '14:00');
-                                    $bulkTodVal = in_array($rawTod, ['day','dusk','night','dynamic']) ? $rawTod : '';
                                 @endphp
                                 {{-- Single mode: H:i time picker --}}
                                 <input type="time" name="time_of_day" data-single-tod class="form-control"
                                        value="{{ $timeOfDayVal }}" step="3600">
-                                {{-- Bulk mode: enum select, also used as default for generated rows --}}
-                                <select name="time_of_day" data-bulk-tod class="form-select" style="display:none" disabled>
-                                    <option value=""        {{ $bulkTodVal === ''        ? 'selected' : '' }}>— Not set —</option>
-                                    <option value="day"     {{ $bulkTodVal === 'day'     ? 'selected' : '' }}>Day (14:00)</option>
-                                    <option value="dusk"    {{ $bulkTodVal === 'dusk'    ? 'selected' : '' }}>Dusk (17:00)</option>
-                                    <option value="night"   {{ $bulkTodVal === 'night'   ? 'selected' : '' }}>Night (21:00)</option>
-                                    <option value="dynamic" {{ $bulkTodVal === 'dynamic' ? 'selected' : '' }}>Dynamic</option>
-                                </select>
+                                {{-- Bulk mode: same H:i picker, also used as default for generated rows --}}
+                                <input type="time" name="time_of_day" data-bulk-tod class="form-control"
+                                       value="{{ $timeOfDayVal }}" step="3600" style="display:none" disabled>
                             </div>
                             <div class="col-sm-3">
                                 <label class="form-label">Ambient Temp (°C)</label>
@@ -661,8 +657,8 @@ $mcExisting = $isEdit
                         </div>
                     </div>
 
-                    {{-- ── Car Class ────────────────────────────────────────── --}}
-                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+                    {{-- ── Car Class — format modes only (Custom Race has its own in Step 1) ── --}}
+                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6" data-mode-format-only>
                         <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Car Class</p>
                         <label class="form-label">Car Class <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
                         <select name="car_class" id="ce-car-class" class="form-select" style="max-width:200px">
@@ -976,7 +972,7 @@ $mcExisting = $isEdit
         // Disable single-only hidden inputs to prevent duplicate submissions
         if (singleMaxDrivers) singleMaxDrivers.disabled = isBulk;
 
-        // Toggle time-of-day between H:i picker (single/custom) and enum select (bulk)
+        // Toggle time-of-day between the single-mode and bulk-mode H:i pickers
         const singleTod = document.querySelector('[data-single-tod]');
         const bulkTod   = document.querySelector('[data-bulk-tod]');
         if (singleTod) { singleTod.disabled = isBulk;  singleTod.style.display = isBulk ? 'none' : ''; }
@@ -1733,6 +1729,11 @@ $mcExisting = $isEdit
         if (show && rainSlider && !rainSlider.value) {
             rainSlider.value = presets[w] ?? 0.5;
             if (rainDisplay) rainDisplay.textContent = parseFloat(rainSlider.value).toFixed(1);
+        } else if (!show && rainSlider) {
+            // Weather isn't wet/mixed — force the slider back to 0 so a hidden-but-still-
+            // submitted range input never sends the browser's midpoint default (0.5).
+            rainSlider.value = '0';
+            if (rainDisplay) rainDisplay.textContent = '0.0';
         }
     }
 

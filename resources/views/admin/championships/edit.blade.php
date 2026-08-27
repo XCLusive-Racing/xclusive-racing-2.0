@@ -222,13 +222,16 @@
                             </select>
                         </div>
                         <div class="col-sm-4">
-                            <label class="form-label">Time of Day</label>
-                            <select name="time_of_day" class="form-select">
-                                <option value="">— Not set —</option>
-                                @foreach(['day','dusk','night','dynamic'] as $t)
-                                <option value="{{ $t }}" {{ old('time_of_day', $championship->time_of_day ?: 'day') === $t ? 'selected' : '' }}>{{ ucfirst($t) }}</option>
-                                @endforeach
-                            </select>
+                            <label class="form-label">Race Start Time <span class="fw-normal text-secondary" style="text-transform:none">(in-game)</span></label>
+                            @php
+                                $rawChTod = old('time_of_day', $championship->time_of_day);
+                                $chTodMap = ['day' => '14:00', 'dusk' => '17:00', 'night' => '21:00', 'dynamic' => '14:00'];
+                                $chTimeVal = ($rawChTod && !preg_match('/^\d{2}:\d{2}$/', $rawChTod))
+                                    ? ($chTodMap[$rawChTod] ?? '14:00')
+                                    : ($rawChTod ?: '14:00');
+                            @endphp
+                            <input type="time" name="time_of_day" class="form-control"
+                                   value="{{ $chTimeVal }}" step="3600">
                         </div>
                     </div>
 

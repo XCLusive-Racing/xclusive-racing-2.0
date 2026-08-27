@@ -82,6 +82,13 @@
                 </svg>
                 <span>Create Race</span>
             </a>
+            <a href="{{ route('admin.races.import-export') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.races.import-export') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/>
+                </svg>
+                <span>Import/Export</span>
+            </a>
             <a href="{{ route('admin.team-events.index') }}"
                class="admin-nav-link {{ request()->routeIs('admin.team-events.*') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

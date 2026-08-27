@@ -68,20 +68,8 @@ class DriverController extends Controller
             $xclRating    = (int) $linkedUser->elo_acc;
             $safetyRating = (float) $linkedUser->sr_acc;
 
-            $raceRows  = RaceResult::where('player_id', $driver->xuid_psid)
-                ->where('session_type', 'race')
-                ->get(['position', 'fastest_lap', 'dns', 'dsq']);
-            $started    = $raceRows->where('dns', false);
-            $classified = $started->where('dsq', false);
-
-            $displayStats = (object) [
-                'total_races'       => $started->count(),
-                'wins'              => $classified->where('position', 1)->count(),
-                'podiums'           => $classified->where('position', '<=', 3)->count(),
-                'top5s'             => $classified->where('position', '<=', 5)->count(),
-                'top10s'            => $classified->where('position', '<=', 10)->count(),
-                'fastest_race_laps' => $started->where('fastest_lap', true)->count(),
-            ];
+            // Same source of truth as the user's own profile page, so the two never disagree.
+            $displayStats = (object) $linkedUser->raceStats();
         } else {
             $xclRating    = (float) $driver->xcl_rating;
             $safetyRating = (float) $driver->safety_rating;

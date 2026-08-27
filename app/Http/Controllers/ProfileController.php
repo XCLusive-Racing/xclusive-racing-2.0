@@ -20,14 +20,7 @@ class ProfileController extends Controller
             ->orderByDesc('race_scheduled_at')
             ->get();
 
-        // Legacy stats are a manually-set aggregate carried over from the old
-        // website (no per-race detail available), added on top of live results.
-        $totalRaces = $results->count() + $user->legacy_races;
-        $wins       = $results->where('position', 1)->count() + $user->legacy_wins;
-        $podiums    = $results->whereIn('position', [1, 2, 3])->count() + $user->legacy_podiums;
-        $winRate    = $totalRaces > 0 ? round(($wins / $totalRaces) * 100) : 0;
-
-        $stats = compact('totalRaces', 'wins', 'podiums', 'winRate');
+        $stats = $user->raceStats();
 
         $myEvents = Race::select(['id','title','game','track','scheduled_at','status'])
             ->whereHas('registrations', fn($q) => $q->where('user_id', $user->id))

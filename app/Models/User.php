@@ -204,6 +204,34 @@ class User extends Authenticatable
         return $this->hasMany(RaceResult::class);
     }
 
+    /**
+     * Career race stats — the single source of truth shared by the "your profile" page and
+     * the public driver page, so the two never show different numbers for the same account.
+     * DNS entries don't count as a race started; DSQ'd results don't count toward wins/podiums.
+     */
+    public function raceStats(): array
+    {
+        $results    = $this->raceResults()->where('session_type', 'race')->get(['position', 'fastest_lap', 'dns', 'dsq']);
+        $started    = $results->where('dns', false);
+        $classified = $started->where('dsq', false);
+
+        // Legacy stats are a manually-set aggregate carried over from the old website
+        // (no per-race detail available), added on top of live results.
+        $totalRaces = $started->count() + $this->legacy_races;
+        $wins       = $classified->where('position', 1)->count() + $this->legacy_wins;
+        $podiums    = $classified->where('position', '<=', 3)->count() + $this->legacy_podiums;
+
+        return [
+            'total_races'       => $totalRaces,
+            'wins'              => $wins,
+            'podiums'           => $podiums,
+            'top5s'             => $classified->where('position', '<=', 5)->count(),
+            'top10s'            => $classified->where('position', '<=', 10)->count(),
+            'fastest_race_laps' => $started->where('fastest_lap', true)->count(),
+            'win_rate'          => $totalRaces > 0 ? round(($wins / $totalRaces) * 100) : 0,
+        ];
+    }
+
     public function carAssignments(): HasMany
     {
         return $this->hasMany(CarAssignment::class);

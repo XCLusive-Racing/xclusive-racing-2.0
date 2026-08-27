@@ -60,7 +60,7 @@ class ChampionshipController extends Controller
             'qualifying_duration'    => 'nullable|integer|min:1|max:999',
             'race_duration'          => 'nullable|integer|min:1|max:999',
             'weather'                => 'nullable|in:dry,wet,mixed,random',
-            'time_of_day'            => 'nullable|in:day,dusk,night,dynamic',
+            'time_of_day'            => 'nullable|date_format:H:i',
             'duration_key'           => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
         ]);
 
@@ -129,7 +129,7 @@ class ChampionshipController extends Controller
             'qualifying_duration'    => 'nullable|integer|min:1|max:999',
             'race_duration'          => 'nullable|integer|min:1|max:999',
             'weather'                => 'nullable|in:dry,wet,mixed,random',
-            'time_of_day'            => 'nullable|in:day,dusk,night,dynamic',
+            'time_of_day'            => 'nullable|date_format:H:i',
             'duration_key'           => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
         ]);
 

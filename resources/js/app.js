@@ -50,6 +50,7 @@ import { initMeetTeam } from './components/meet-team-carousel.js';
 import { initMulticlass } from './components/multiclass.js';
 import { initPointsSystem } from './components/points-system.js';
 import { initBulkCreate } from './pages/admin/bulk-create.js';
+import { initImportExport } from './pages/admin/import-export.js';
 import { initMediaIndex } from './pages/admin/media.js';
 import { initRatingRows } from './pages/admin/rating.js';
 import { initFileBrowser } from './pages/admin/file-browser.js';
@@ -106,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-multiclass-wrap]').forEach(el => initMulticlass(el));
     document.querySelectorAll('[data-points-wrap]').forEach(el => initPointsSystem(el));
     document.querySelectorAll('[data-bulk-wrap]').forEach(el => initBulkCreate(el));
+    document.querySelectorAll('[data-import-export-wrap]').forEach(el => initImportExport(el));
     initMediaIndex();
     initRatingRows();
     initFileBrowser();

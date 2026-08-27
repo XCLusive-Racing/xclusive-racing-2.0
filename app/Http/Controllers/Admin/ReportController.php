@@ -14,15 +14,54 @@ use Illuminate\Validation\Rule;
 
 class ReportController extends Controller
 {
-    public function index()
-    {
-        $reports = Report::with(['user', 'race', 'reviewer', 'steward1', 'steward2'])
-            ->withCount('verdicts')
-            ->orderByRaw("FIELD(status, 'pending', 'investigating', 'resolved', 'dismissed')")
-            ->orderBy('created_at', 'desc')
-            ->get();
+    // Maps the ?sort= query param to the actual column/relation it orders by.
+    private const SORTABLE_COLUMNS = [
+        'reporter'  => 'users.name',
+        'reported'  => 'reports.reported_driver_name',
+        'race'      => 'races.title',
+        'status'    => 'reports.status',
+        'penalty'   => 'reports.final_penalty',
+        'processed' => 'reports.processed_at',
+        'submitted' => 'reports.created_at',
+    ];
 
-        return view('admin.reports.index', compact('reports'));
+    public function index(Request $request)
+    {
+        $sort   = $request->get('sort');
+        $dir    = $request->get('dir') === 'desc' ? 'desc' : 'asc';
+        $status = $request->get('status');
+
+        if ($status !== null && ! array_key_exists($status, Report::statuses())) {
+            $status = null;
+        }
+
+        $statusCounts = Report::selectRaw('status, count(*) as c')->groupBy('status')->pluck('c', 'status');
+
+        $query = Report::query()
+            ->select('reports.*')
+            ->with(['user', 'race', 'reviewer', 'steward1', 'steward2'])
+            ->withCount('verdicts');
+
+        if ($status) {
+            $query->where('reports.status', $status);
+        }
+
+        if ($sort && isset(self::SORTABLE_COLUMNS[$sort])) {
+            if ($sort === 'reporter') {
+                $query->leftJoin('users', 'users.id', '=', 'reports.user_id');
+            } elseif ($sort === 'race') {
+                $query->leftJoin('races', 'races.id', '=', 'reports.race_id');
+            }
+            $query->orderBy(self::SORTABLE_COLUMNS[$sort], $dir);
+        } else {
+            $sort = null;
+            $query->orderByRaw("FIELD(reports.status, 'pending', 'investigating', 'resolved', 'dismissed')")
+                ->orderBy('reports.created_at', 'desc');
+        }
+
+        $reports = $query->get();
+
+        return view('admin.reports.index', compact('reports', 'sort', 'dir', 'status', 'statusCounts'));
     }
 
     public function show(Report $report)

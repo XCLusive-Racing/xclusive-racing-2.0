@@ -174,7 +174,7 @@ class RaceController extends Controller
     {
         $request->validate([
             'game'                 => 'required|in:acc,lmu,iracing,ac',
-            'event_tag'            => 'required|exists:event_tags,slug',
+            'event_tag'            => 'nullable|exists:event_tags,slug',
             'event_format_id'      => 'nullable|exists:event_formats,id',
             'duration_key'         => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
             'xcl_r_multiplier'     => 'nullable|numeric|min:0.1|max:10',
@@ -185,7 +185,7 @@ class RaceController extends Controller
             'weather'              => 'nullable|in:dry,wet,mixed,random',
             'weather_randomness'   => 'nullable|in:0,1,2,3,4,5,6,7,random',
             'rain_level'           => 'nullable|numeric|min:0|max:1',
-            'time_of_day'          => 'nullable|in:day,dusk,night,dynamic',
+            'time_of_day'          => 'nullable|date_format:H:i',
             'ambient_temp'         => 'nullable|integer|min:-30|max:50',
             'sr_requirement'       => 'nullable|numeric|in:3,4,5,6,7,8,9',
             'min_rating'           => 'nullable|string|in:rookie,bronze,silver,gold,platinum,alien',
@@ -199,15 +199,18 @@ class RaceController extends Controller
             'events.*.title'           => 'required|string|max:255',
             'events.*.track'           => 'required|string|max:255',
             'events.*.scheduled_at'    => 'required|date',
+            'events.*.event_tag'       => 'nullable|exists:event_tags,slug',
+            'events.*.event_format_id' => 'nullable|exists:event_formats,id',
+            'events.*.ftp_server_id'   => 'nullable|exists:ftp_servers,id',
             'events.*.weather'         => 'nullable|in:dry,wet,mixed,random',
-            'events.*.time_of_day'     => 'nullable|in:day,dusk,night,dynamic',
+            'events.*.time_of_day'     => 'nullable|date_format:H:i',
             'events.*.ambient_temp'    => 'nullable|integer|min:-30|max:50',
             'events.*.max_drivers'     => 'nullable|integer|min:1',
         ]);
 
         $shared = [
             'game'                 => $request->game,
-            'event_tag'            => $request->event_tag,
+            'event_tag'            => $request->event_tag ?: null,
             'event_format_id'      => $request->event_format_id ?: null,
             'duration_key'         => $request->duration_key ?: null,
             'practice_duration'    => $request->practice_duration ?: null,
@@ -227,39 +230,56 @@ class RaceController extends Controller
             'status'               => 'open',
         ];
 
-        $eventData = [];
-        foreach ($request->events as $event) {
-            $eventData[] = $this->deriveFormatFields(array_merge($shared, [
-                'title'        => $event['title'],
-                'track'        => $event['track'],
-                'scheduled_at' => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $event['scheduled_at'], 'Europe/London')->utc(),
-                'weather'      => $event['weather'] ?: $shared['weather'],
-                'time_of_day'  => $event['time_of_day'] ?: $shared['time_of_day'],
-                'ambient_temp' => $event['ambient_temp'] ?? $shared['ambient_temp'],
-                'max_drivers'  => $event['max_drivers'] ?: $shared['max_drivers'],
-            ]));
+        // Per row, event_tag / event_format_id / ftp_server_id fall back to the shared
+        // selection only when the row itself doesn't specify one — a whole week can mix
+        // formats/tags/servers (e.g. imported from a CSV), or share one via the shared
+        // fields (the day/week generator, which has no per-row concept of these).
+        $eventData     = [];
+        $rowServerIds  = [];
+        foreach ($request->events as $i => $event) {
+            $eventTag = ($event['event_tag'] ?? null) ?: $shared['event_tag'];
+            if (!$eventTag) {
+                return back()->withInput()->withErrors(['events.' . $i . '.event_tag' => 'Row ' . ($i + 1) . ': no Event Tag set (neither per-row nor shared).']);
+            }
+
+            $rowServerIds[$i] = ($event['ftp_server_id'] ?? null) ?: $request->ftp_server_id;
+
+            $eventData[] = $this->deriveFormatFields($this->normalizeRainLevel(array_merge($shared, [
+                'title'            => $event['title'],
+                'track'            => $event['track'],
+                'scheduled_at'     => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $event['scheduled_at'], 'Europe/London')->utc(),
+                'event_tag'        => $eventTag,
+                'event_format_id'  => ($event['event_format_id'] ?? null) ?: $shared['event_format_id'],
+                'weather'          => $event['weather'] ?: $shared['weather'],
+                'time_of_day'      => $event['time_of_day'] ?: $shared['time_of_day'],
+                'ambient_temp'     => $event['ambient_temp'] ?? $shared['ambient_temp'],
+                'max_drivers'      => $event['max_drivers'] ?: $shared['max_drivers'],
+            ])));
         }
 
-        // Assign the same server to the whole batch — validate every event's slot up front
-        // (against the DB and against each other) before creating anything, same rule as a
-        // single race: the event's own time is its slot on that server.
-        $server = $request->filled('ftp_server_id') ? FtpServer::find($request->ftp_server_id) : null;
-        if ($server) {
-            $seenSlots = [];
-            foreach ($eventData as $i => $data) {
-                if (!$server->isValidSlot($data['scheduled_at'])) {
-                    return back()->withInput()->withErrors(['events.' . $i . '.scheduled_at' => 'Row ' . ($i + 1) . ': ' . self::ERR_SLOT_WRONG_SERVER]);
-                }
-                $slotKey = $data['scheduled_at']->format('Y-m-d H:i');
-                if (in_array($slotKey, $server->takenSlots(), true) || isset($seenSlots[$slotKey])) {
-                    return back()->withInput()->withErrors(['events.' . $i . '.scheduled_at' => 'Row ' . ($i + 1) . ': ' . self::ERR_SLOT_TAKEN]);
-                }
-                $seenSlots[$slotKey] = true;
+        // Validate every event's slot up front (against the DB and against each other,
+        // per its own resolved server) before creating anything — same rule as a single
+        // race: the event's own time is its slot on that server.
+        $serversById = FtpServer::whereIn('id', array_filter(array_unique($rowServerIds)))->get()->keyBy('id');
+        $seenSlots   = [];
+        foreach ($eventData as $i => $data) {
+            $server = $serversById->get($rowServerIds[$i]);
+            if (!$server) {
+                continue;
             }
+            if (!$server->isValidSlot($data['scheduled_at'])) {
+                return back()->withInput()->withErrors(['events.' . $i . '.scheduled_at' => 'Row ' . ($i + 1) . ': ' . self::ERR_SLOT_WRONG_SERVER]);
+            }
+            $slotKey = $server->id . '|' . $data['scheduled_at']->format('Y-m-d H:i');
+            if (in_array($slotKey, $seenSlots, true) || in_array($data['scheduled_at']->format('Y-m-d H:i'), $server->takenSlots(), true)) {
+                return back()->withInput()->withErrors(['events.' . $i . '.scheduled_at' => 'Row ' . ($i + 1) . ': ' . self::ERR_SLOT_TAKEN]);
+            }
+            $seenSlots[] = $slotKey;
         }
 
         $races = [];
-        foreach ($eventData as $data) {
+        foreach ($eventData as $i => $data) {
+            $server = $serversById->get($rowServerIds[$i]);
             $data['ftp_server_id'] = $server?->id;
             if ($server) {
                 $data['slot_time']          = $data['scheduled_at']->copy();
@@ -278,6 +298,192 @@ class RaceController extends Controller
         $count = count($request->events);
         return redirect()->route('admin.races.index')
             ->with('success', $count . ' ' . ($count === 1 ? 'race' : 'races') . ' created successfully!');
+    }
+
+    public function importExport()
+    {
+        $tags    = EventTag::orderBy('name')->get();
+        $servers = FtpServer::where('active', true)->orderBy('name')->get();
+        $formats = EventFormat::orderBy('game')->orderBy('sort_order')->get();
+
+        return view('admin.races.import-export', compact('tags', 'servers', 'formats'));
+    }
+
+    // CSV columns (header row, case-insensitive, any order): track, date, time —
+    // required. weather / time_of_day / ambient_temp / event_tag / format / server —
+    // all optional, and event_tag/format/server (when given) override the page's
+    // shared defaults for that one row, so a single import can mix formats/tags/
+    // servers across a whole week. Parses to the same row shape the Bulk Schedule
+    // table already uses, so the page's JS can render an editable preview and submit
+    // it straight to bulkStore() — no new creation path.
+    public function bulkImportCsv(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt|max:2048',
+            'game' => 'nullable|in:acc,lmu,iracing,ac',
+        ]);
+
+        $handle = fopen($request->file('file')->getRealPath(), 'r');
+        $header = fgetcsv($handle, null, ',', '"', '\\');
+        if (!$header) {
+            fclose($handle);
+            return response()->json(['errors' => ['The file is empty.']], 422);
+        }
+        // Excel-exported CSVs commonly start with a UTF-8 BOM, which would otherwise
+        // corrupt the first header cell (e.g. "track" becomes "\xEF\xBB\xBFtrack") and
+        // make the very first column silently fail to match.
+        $header   = array_map(fn($h) => strtolower(trim(str_replace("\xEF\xBB\xBF", '', $h ?? ''))), $header);
+        $colIndex = array_flip($header);
+
+        foreach (['track', 'date', 'time'] as $col) {
+            if (!isset($colIndex[$col])) {
+                fclose($handle);
+                return response()->json(['errors' => ["Missing required column \"{$col}\". Expected headers: track, date, time, weather, time_of_day, ambient_temp."]], 422);
+            }
+        }
+
+        // Lookup maps for the optional per-row overrides, keyed lowercase for case-insensitive matching.
+        $tagsByKey = EventTag::all()->flatMap(fn($t) => [
+            strtolower($t->slug) => $t->slug,
+            strtolower($t->name) => $t->slug,
+        ])->all();
+        $formatsByKey = EventFormat::when($request->filled('game'), fn($q) => $q->where('game', $request->game))
+            ->get()->keyBy(fn($f) => strtolower($f->name))->map->id->all();
+        $serversByKey = [];
+        foreach (FtpServer::where('active', true)->get() as $s) {
+            $serversByKey[strtolower($s->name)] = $s->id;
+            if ($s->server_number) {
+                $serversByKey[(string) $s->server_number] = $s->id;
+            }
+        }
+
+        $rows    = [];
+        $errors  = [];
+        $lineNum = 1;
+
+        while (($line = fgetcsv($handle, null, ',', '"', '\\')) !== false) {
+            $lineNum++;
+            if (count(array_filter($line, fn($v) => trim((string) $v) !== '')) === 0) {
+                continue;
+            }
+
+            $track = trim($line[$colIndex['track']] ?? '');
+            $date  = trim($line[$colIndex['date']] ?? '');
+            $time  = trim($line[$colIndex['time']] ?? '');
+
+            if ($track === '' || $date === '' || $time === '') {
+                $errors[] = "Row {$lineNum}: missing track/date/time — skipped.";
+                continue;
+            }
+
+            try {
+                $dt = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $date . ' ' . substr($time, 0, 5));
+                if (!$dt) throw new \Exception();
+            } catch (\Throwable $e) {
+                $errors[] = "Row {$lineNum}: invalid date/time \"{$date} {$time}\" (expected YYYY-MM-DD and HH:MM) — skipped.";
+                continue;
+            }
+
+            $weather = isset($colIndex['weather']) ? strtolower(trim($line[$colIndex['weather']] ?? '')) : '';
+            if ($weather !== '' && !in_array($weather, ['dry', 'wet', 'mixed', 'random'], true)) {
+                $errors[] = "Row {$lineNum}: unknown weather \"{$weather}\" — ignored.";
+                $weather = '';
+            }
+
+            $timeOfDay = isset($colIndex['time_of_day']) ? trim($line[$colIndex['time_of_day']] ?? '') : '';
+            if ($timeOfDay !== '' && !preg_match('/^\d{1,2}:\d{2}$/', $timeOfDay)) {
+                $errors[] = "Row {$lineNum}: invalid time_of_day \"{$timeOfDay}\" (expected HH:MM) — ignored.";
+                $timeOfDay = '';
+            }
+
+            $ambientTemp = isset($colIndex['ambient_temp']) ? trim($line[$colIndex['ambient_temp']] ?? '') : '';
+            if ($ambientTemp !== '' && !is_numeric($ambientTemp)) {
+                $errors[] = "Row {$lineNum}: invalid ambient_temp \"{$ambientTemp}\" — ignored.";
+                $ambientTemp = '';
+            }
+
+            $eventTagSlug = '';
+            $rawTag = isset($colIndex['event_tag']) ? trim($line[$colIndex['event_tag']] ?? '') : '';
+            if ($rawTag !== '') {
+                $eventTagSlug = $tagsByKey[strtolower($rawTag)] ?? '';
+                if ($eventTagSlug === '') {
+                    $errors[] = "Row {$lineNum}: unknown event_tag \"{$rawTag}\" — using the shared default.";
+                }
+            }
+
+            $formatId = '';
+            $rawFormat = isset($colIndex['format']) ? trim($line[$colIndex['format']] ?? '') : '';
+            if ($rawFormat !== '') {
+                $formatId = $formatsByKey[strtolower($rawFormat)] ?? '';
+                if ($formatId === '') {
+                    $errors[] = "Row {$lineNum}: unknown format \"{$rawFormat}\" — using the shared default.";
+                }
+            }
+
+            $serverId = '';
+            $rawServer = isset($colIndex['server']) ? trim($line[$colIndex['server']] ?? '') : '';
+            if ($rawServer !== '') {
+                $serverId = $serversByKey[strtolower($rawServer)] ?? '';
+                if ($serverId === '') {
+                    $errors[] = "Row {$lineNum}: unknown server \"{$rawServer}\" — using the shared default.";
+                }
+            }
+
+            $rows[] = [
+                'title'            => $track,
+                'track'            => $track,
+                'scheduled_at'     => $dt->format('Y-m-d\TH:i'),
+                'event_tag'        => $eventTagSlug,
+                'event_format_id'  => $formatId,
+                'ftp_server_id'    => $serverId,
+                'weather'          => $weather,
+                'time_of_day'      => $timeOfDay,
+                'ambient_temp'     => $ambientTemp,
+            ];
+        }
+        fclose($handle);
+
+        if (empty($rows)) {
+            return response()->json(['errors' => array_merge(['No valid rows found in the file.'], $errors)], 422);
+        }
+
+        return response()->json(['rows' => $rows, 'errors' => $errors]);
+    }
+
+    // Exports races in a date range (optionally filtered to one game) back out in the
+    // same column format bulkImportCsv() expects — lets an admin export a finished
+    // week and re-import it to duplicate the schedule onto a future week.
+    public function exportCsv(Request $request)
+    {
+        $request->validate(['game' => 'required|in:acc,lmu,iracing,ac']);
+
+        // Custom races (no event_format_id) have no fixed session durations/title —
+        // same "real" races filter the admin races index already uses.
+        $races = Race::where('game', $request->game)
+            ->where('is_endurance', false)
+            ->whereNotNull('event_format_id')
+            ->where('scheduled_at', '>=', now())
+            ->orderBy('scheduled_at')
+            ->get();
+
+        $filename = 'xcl-races-upcoming-' . $request->game . '-' . now()->format('Y-m-d') . '.csv';
+
+        return response()->streamDownload(function () use ($races) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['track', 'date', 'time', 'weather', 'time_of_day', 'ambient_temp'], ',', '"', '\\');
+            foreach ($races as $race) {
+                $local = $race->scheduledAtUk();
+                fputcsv($out, [
+                    $race->track,
+                    $local->format('Y-m-d'),
+                    $local->format('H:i'),
+                    $race->weather,
+                    $race->time_of_day,
+                    $race->ambient_temp,
+                ], ',', '"', '\\');
+            }
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv']);
     }
 
     public function create(Request $request)
@@ -319,6 +525,18 @@ class RaceController extends Controller
 
     // Derives title/durations/icon from the chosen Format + track image, for format-based races.
     // Custom races (no event_format_id) keep whatever title/durations/image were submitted directly.
+    // Rain Level is only meaningful for wet/mixed weather — the slider stays in the DOM
+    // (just hidden) for dry/random/unset, so without this a stray submitted value would
+    // otherwise leak into AccServerConfigService's rain override for a supposedly dry race.
+    private function normalizeRainLevel(array $data): array
+    {
+        if (!in_array($data['weather'] ?? null, ['wet', 'mixed'], true)) {
+            $data['rain_level'] = null;
+        }
+
+        return $data;
+    }
+
     private function deriveFormatFields(array $data): array
     {
         if (!empty($data['event_format_id'])) {
@@ -430,6 +648,7 @@ class RaceController extends Controller
         $data['is_multiclass'] = $request->boolean('is_multiclass');
         $data['is_endurance']  = $request->boolean('is_endurance');
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
+        $data = $this->normalizeRainLevel($data);
 
         $data = $this->deriveFormatFields($data);
 
@@ -542,6 +761,7 @@ class RaceController extends Controller
         $data['is_multiclass'] = $request->boolean('is_multiclass');
         $data['is_endurance']  = $request->boolean('is_endurance');
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
+        $data = $this->normalizeRainLevel($data);
 
         $data = $this->deriveFormatFields($data);
 

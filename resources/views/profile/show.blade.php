@@ -136,43 +136,26 @@
             @endif
         </div>
 
-        {{-- Stats --}}
-        @php
-            // Live stats from this user's own race_results — the legacy CSV-imported
-            // DriverStats is keyed by xuid and can be stale or attributed to the wrong
-            // driver after gamertag/account changes, so it's not used here.
-            $dsRaces = $stats['totalRaces'];
-            $dsWins  = $stats['wins'];
-            $dsPods  = $stats['podiums'];
-            $dsRate  = $stats['winRate'] ?? 0;
-        @endphp
+        {{-- Stats — same underlying calculation as the public driver page (User::raceStats()) --}}
         <div class="bg-white rounded-3 shadow-sm p-4 mb-4">
             <h2 class="fs-2 fw-black text-uppercase fst-italic text-dark mb-4">YOUR STATS</h2>
             <div class="row g-3">
+                @foreach([
+                    ['label' => 'Races',       'value' => $stats['total_races']],
+                    ['label' => 'Wins',        'value' => $stats['wins']],
+                    ['label' => 'Podiums',     'value' => $stats['podiums']],
+                    ['label' => 'Top 5s',      'value' => $stats['top5s']],
+                    ['label' => 'Top 10s',     'value' => $stats['top10s']],
+                    ['label' => 'Fastest Laps','value' => $stats['fastest_race_laps']],
+                    ['label' => 'Win Rate',    'value' => $stats['win_rate'] . '%'],
+                ] as $stat)
                 <div class="col-6 col-md-3">
                     <div class="stat-box">
-                        <div class="stat-num">{{ $dsRaces }}</div>
-                        <div class="stat-label">Races</div>
+                        <div class="stat-num">{{ $stat['value'] }}</div>
+                        <div class="stat-label">{{ $stat['label'] }}</div>
                     </div>
                 </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-box">
-                        <div class="stat-num">{{ $dsWins }}</div>
-                        <div class="stat-label">Wins</div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-box">
-                        <div class="stat-num">{{ $dsPods }}</div>
-                        <div class="stat-label">Podiums</div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-box">
-                        <div class="stat-num">{{ $dsRate }}%</div>
-                        <div class="stat-label">Win Rate</div>
-                    </div>
-                </div>
+                @endforeach
             </div>
         </div>
 

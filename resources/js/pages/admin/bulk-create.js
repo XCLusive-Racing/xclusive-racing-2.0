@@ -14,14 +14,11 @@ export function initBulkCreate(wrap) {
     const addRowBtn       = wrap.querySelector('[data-bulk-add-row]');
     const tbody           = wrap.querySelector('[data-bulk-tbody]');
     const defaultWeatherEl = wrap.querySelector('select[name="weather"]');
-    const defaultTimeEl    = wrap.querySelector('select[name="time_of_day"]');
+    const defaultTimeEl    = wrap.querySelector('input[name="time_of_day"]');
     const defaultAmbientTempEl = wrap.querySelector('input[name="ambient_temp"]');
 
     const WEATHER_OPTIONS = [
         ['', '— Not set —'], ['dry', 'Dry'], ['wet', 'Wet'], ['mixed', 'Mixed'], ['random', 'Random'],
-    ];
-    const TIME_OPTIONS = [
-        ['', '— Not set —'], ['day', 'Day'], ['dusk', 'Dusk'], ['night', 'Night'], ['dynamic', 'Dynamic'],
     ];
 
     function getDefaultWeather() { return defaultWeatherEl?.value || ''; }
@@ -91,8 +88,6 @@ export function initBulkCreate(wrap) {
         const ev = events[i];
         const weatherOptions = WEATHER_OPTIONS.map(([v, label]) =>
             `<option value="${v}" ${ev.weather === v ? 'selected' : ''}>${label}</option>`).join('');
-        const timeOptions = TIME_OPTIONS.map(([v, label]) =>
-            `<option value="${v}" ${ev.time_of_day === v ? 'selected' : ''}>${label}</option>`).join('');
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -114,9 +109,8 @@ export function initBulkCreate(wrap) {
                 </select>
             </td>
             <td>
-                <select name="events[${i}][time_of_day]" class="form-select form-select-sm" data-field="time_of_day">
-                    ${timeOptions}
-                </select>
+                <input type="time" name="events[${i}][time_of_day]" value="${esc(ev.time_of_day)}"
+                       class="form-control form-control-sm" data-field="time_of_day" step="3600">
             </td>
             <td>
                 <input type="number" name="events[${i}][ambient_temp]" value="${esc(ev.ambient_temp)}"
