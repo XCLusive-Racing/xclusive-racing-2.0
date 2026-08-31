@@ -147,8 +147,14 @@ function initSinglePicker(picker) {
         } catch {
             galleryItems = [];
         }
-        if (loadingEl) loadingEl.style.display = 'none';
-        if (grid)      grid.style.display      = '';
+        // The markup hides this with `!important` (it also has Bootstrap's .d-flex, which
+        // is itself !important) so a plain style.display='none' here loses to that class
+        // and the spinner stays stuck visible — has to be set with the same priority.
+        if (loadingEl) loadingEl.style.setProperty('display', 'none', 'important');
+        // Empty string clears the display property entirely rather than restoring it,
+        // which drops the grid back to block — divs then stack full-width. Must be set
+        // back to 'grid' explicitly, not cleared.
+        if (grid)      grid.style.display      = 'grid';
         renderGallery();
     }
 

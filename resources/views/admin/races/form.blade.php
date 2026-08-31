@@ -1479,6 +1479,9 @@ $mcExisting = $isEdit
             }
         }
 
+        // Format info block
+        const fmtBlock = $('prev-fmt-block');
+
         // In custom mode: show custom format block with title + sessions + multiplier
         if (isCustomMode) {
             if (fmtBlock) {
@@ -1513,8 +1516,6 @@ $mcExisting = $isEdit
             return;
         }
 
-        // Format info block
-        const fmtBlock = $('prev-fmt-block');
         if (fmtBlock) {
             if (fmtData) {
                 const nameLabel = $('prev-fmt-name-label');
