@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('no-sidebar', true)
-@section('title', 'Sign In - XCLusive Racing')
+@section('title', 'Forgot Password - XCLusive Racing')
 
 @section('content')
 <div class="xcl-auth-page py-5">
@@ -10,9 +10,15 @@
 
         <div class="text-center mb-4">
             <img src="/images/home/brand/xclusive_racing_logo.png" alt="XCLusive Racing" height="40" class="mb-3">
-            <h1 class="fs-3 fw-black text-uppercase fst-italic text-white mb-1">Sign In</h1>
-            <p class="text-white-50 small mb-0">Welcome back to XCLusive Racing</p>
+            <h1 class="fs-3 fw-black text-uppercase fst-italic text-white mb-1">Forgot Password</h1>
+            <p class="text-white-50 small mb-0">We'll email you a link to reset it</p>
         </div>
+
+        @if (session('success'))
+        <div class="alert border-0 rounded-3 mb-4 py-2 px-3" style="background:rgba(34,197,94,.15); border-left:3px solid #22c55e !important; border-left-width:3px !important;">
+            <div class="small text-success">{{ session('success') }}</div>
+        </div>
+        @endif
 
         @if ($errors->any())
         <div class="alert border-0 rounded-3 mb-4 py-2 px-3" style="background:rgba(239,68,68,.15); border-left:3px solid #ef4444 !important; border-left-width:3px !important;">
@@ -22,10 +28,10 @@
         </div>
         @endif
 
-        <form method="POST" action="{{ route('login') }}">
+        <form method="POST" action="{{ route('password.email') }}">
             @csrf
 
-            <div class="mb-3">
+            <div class="mb-4">
                 <label class="form-label small fw-bold text-uppercase text-white-50 mb-1">Email</label>
                 <input type="email" name="email" required value="{{ old('email') }}"
                        placeholder="your@email.com"
@@ -33,35 +39,14 @@
                        autocomplete="username">
             </div>
 
-            <div class="mb-2">
-                <label class="form-label small fw-bold text-uppercase text-white-50 mb-1">Password</label>
-                <input type="password" name="password" required
-                       placeholder="••••••••"
-                       class="form-control xcl-auth-input"
-                       autocomplete="current-password">
-            </div>
-
-            <div class="mb-4 text-end">
-                <a href="{{ route('password.request') }}" class="small text-white-50 text-decoration-none">Forgot password?</a>
-            </div>
-
-            <div class="mb-4">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
-                    <label class="form-check-label small fw-bold text-uppercase text-white-50" for="remember">
-                        Remember me
-                    </label>
-                </div>
-            </div>
-
             <button type="submit" class="btn w-100 fw-black text-uppercase text-white py-3 mb-4 bg-gradient-xcl border-0"
                     style="letter-spacing:.06em; border-radius:10px;">
-                Sign In
+                Send Reset Link
             </button>
 
             <p class="text-center mb-0" style="color:rgba(255,255,255,.4); font-size:.85rem;">
-                No account yet?
-                <a href="{{ route('register') }}" class="fw-bold text-xcl-purple text-decoration-none">Sign up</a>
+                Remembered it?
+                <a href="{{ route('login') }}" class="fw-bold text-xcl-purple text-decoration-none">Sign in</a>
             </p>
         </form>
 
