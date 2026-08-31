@@ -107,7 +107,13 @@ class RatingService
             }
         });
 
-        $byUserId->keys()->each(fn ($userId) => SyncDiscordRankRole::dispatch($userId));
+        // Spaced out like the bulk sweep (SyncDiscordRanksCommand) — dispatching one right
+        // after another for every finisher hits Discord's per-route rate limit, and a
+        // dropped update here just gets logged, never retried.
+        $byUserId->keys()->each(function ($userId) {
+            SyncDiscordRankRole::dispatch($userId);
+            usleep(300_000);
+        });
     }
 
     private function ratingField(string $game): ?string
