@@ -325,6 +325,7 @@ function initSinglePicker(picker) {
             fd.append('file', f);
             fd.append('_token', csrfToken);
             if (uploadFolder) fd.append('category', uploadFolder);
+            if (filterDefault && filterDefault !== 'all') fd.append('type', filterDefault);
             const r = await fetch(uploadUrl, { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
             if (r.ok) {
                 const data = await r.json();

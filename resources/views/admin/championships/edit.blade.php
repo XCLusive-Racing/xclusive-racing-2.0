@@ -306,7 +306,7 @@
                     <x-media-picker name="image" label="Background Image"
                         :current="$championship->image_url" :currentPath="$championship->image" />
                     <div class="mt-3">
-                        <x-media-picker name="icon" label="Championship Icon" currentType="icon" filterDefault="icon"
+                        <x-media-picker name="icon" label="Championship Icon"
                             :current="$championship->icon_url" :currentPath="$championship->icon" />
                     </div>
                 </div>
