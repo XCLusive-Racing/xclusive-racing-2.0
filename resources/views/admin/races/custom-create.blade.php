@@ -397,7 +397,7 @@ $tagsConfig = json_encode([
                         <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Media</p>
                         <x-media-picker name="image" label="Background Image" />
                         <div class="mt-3">
-                            <x-media-picker name="icon" label="Event Icon" currentType="icon" filterDefault="icon" />
+                            <x-media-picker name="icon" label="Event Icon" />
                         </div>
                     </div>
 

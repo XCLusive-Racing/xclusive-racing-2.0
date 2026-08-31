@@ -805,7 +805,7 @@ $mcExisting = $isEdit
                         <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Media</p>
                         <x-media-picker name="image" label="Background Image" :current="$isEdit ? $race->image : null" />
                         <div class="mt-3">
-                            <x-media-picker name="icon" label="Event Icon" :current="$isEdit ? $race->icon : null" currentType="icon" filterDefault="icon" />
+                            <x-media-picker name="icon" label="Event Icon" :current="$isEdit ? $race->icon : null" />
                         </div>
                     </div>
 
