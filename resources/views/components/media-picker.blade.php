@@ -182,7 +182,7 @@
                     <br>No files found. Click <strong>+ Upload</strong> to add one.
                 </div>
 
-                <div data-mp-grid style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.6rem"></div>
+                <div data-mp-grid style="display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,76px));gap:.4rem"></div>
 
             </div>
         </div>

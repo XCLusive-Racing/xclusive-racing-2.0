@@ -155,13 +155,18 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach(\App\Models\RaceResult::groupedByCar($raceResults, $selected) as $row)
+                                        @php
+                                            $groupedRaceResults = \App\Models\RaceResult::groupedByCar($raceResults->where('dns', false), $selected);
+                                            $classifiedPositions = \App\Models\RaceResult::classifiedPositions($groupedRaceResults->pluck('result'));
+                                        @endphp
+                                        @foreach($groupedRaceResults as $row)
                                         @php
                                             $result = $row->result;
+                                            $pos = $classifiedPositions->get($result->id);
                                             $notStarted = $result->dns || $result->dc;
                                             $notFinished = $result->dnf || $result->dsq;
                                             $rowTime = $result->total_time !== null ? (int) $result->total_time : null;
-                                            if ($result->position === 1 && $rowTime !== null) {
+                                            if ($pos === 1 && $rowTime !== null) {
                                                 $gapDisplay = \App\Models\RaceResult::formatMs($rowTime);
                                                 $gapColor   = '#374151';
                                             } elseif (!$notStarted && $rowTime !== null && $p1Time !== null) {
@@ -173,8 +178,8 @@
                                             }
                                         @endphp
                                         <tr style="border-bottom:1px solid #f9fafb">
-                                            <td class="ps-4 fw-bold" style="font-size:.9rem;{{ $result->position === 1 ? 'color:#f59e0b' : ($result->position === 2 ? 'color:#9ca3af' : ($result->position === 3 ? 'color:#cd7f32' : 'color:#374151')) }}">
-                                                {{ $result->dsq ? 'DSQ' : ($result->dc ? 'DC' : ($result->dns ? 'DNS' : ($result->dnf ? 'DNF' : $result->position))) }}
+                                            <td class="ps-4 fw-bold" style="font-size:.9rem;{{ $pos === 1 ? 'color:#f59e0b' : ($pos === 2 ? 'color:#9ca3af' : ($pos === 3 ? 'color:#cd7f32' : 'color:#374151')) }}">
+                                                {{ $result->dsq ? 'DSQ' : ($result->dc ? 'DC' : ($result->dns ? 'DNS' : ($result->dnf ? 'DNF' : $pos))) }}
                                             </td>
                                             <td>
                                                 <div class="d-flex align-items-center gap-2">

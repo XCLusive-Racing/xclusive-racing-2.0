@@ -241,18 +241,24 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach(\App\Models\RaceResult::groupedByCar($race->raceResults, $race) as $row)
-                                @php $result = $row->result; @endphp
+                                @php
+                                    $groupedRaceResults = \App\Models\RaceResult::groupedByCar($race->raceResults->where('dns', false), $race);
+                                    $classifiedPositions = \App\Models\RaceResult::classifiedPositions($groupedRaceResults->pluck('result'));
+                                @endphp
+                                @foreach($groupedRaceResults as $row)
+                                @php $result = $row->result; $pos = $classifiedPositions->get($result->id); @endphp
                                 <tr>
                                     <td>
-                                        @if($result->position === 1)
-                                            <span class="xcl-results-table__pos xcl-results-table__pos--gold">P{{ $result->position }}</span>
-                                        @elseif($result->position === 2)
-                                            <span class="xcl-results-table__pos xcl-results-table__pos--silver">P{{ $result->position }}</span>
-                                        @elseif($result->position === 3)
-                                            <span class="xcl-results-table__pos xcl-results-table__pos--bronze">P{{ $result->position }}</span>
+                                        @if($pos === 1)
+                                            <span class="xcl-results-table__pos xcl-results-table__pos--gold">P{{ $pos }}</span>
+                                        @elseif($pos === 2)
+                                            <span class="xcl-results-table__pos xcl-results-table__pos--silver">P{{ $pos }}</span>
+                                        @elseif($pos === 3)
+                                            <span class="xcl-results-table__pos xcl-results-table__pos--bronze">P{{ $pos }}</span>
+                                        @elseif($pos !== null)
+                                            <span class="xcl-results-table__pos">P{{ $pos }}</span>
                                         @else
-                                            <span class="xcl-results-table__pos">P{{ $result->position }}</span>
+                                            <span class="xcl-results-table__pos">—</span>
                                         @endif
                                     </td>
                                     <td class="fw-bold text-white">

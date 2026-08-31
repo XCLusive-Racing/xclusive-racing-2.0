@@ -35,7 +35,9 @@ class RacingTeam extends Model
 
     public function logoUrl(): ?string
     {
-        return $this->logo ? Storage::disk('media')->url($this->logo) : null;
+        if (!$this->logo) return null;
+        if (str_starts_with($this->logo, 'http')) return $this->logo;
+        return Storage::disk('media')->url($this->logo);
     }
 
     public function hasMember(User $user): bool

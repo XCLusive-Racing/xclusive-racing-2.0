@@ -152,11 +152,17 @@ class RacingTeamController extends Controller
         ]);
 
         if ($team->logo) {
-            \Storage::disk('media')->delete($team->logo);
+            if (str_starts_with($team->logo, 'http')) {
+                $diskUrl = rtrim(\Storage::disk('media')->url(''), '/');
+                $oldPath = ltrim(str_replace($diskUrl, '', $team->logo), '/');
+                if ($oldPath) \Storage::disk('media')->delete($oldPath);
+            } else {
+                \Storage::disk('media')->delete($team->logo);
+            }
         }
 
         $path = $request->file('logo')->store('team-logos', 'media');
-        $team->update(['logo' => $path]);
+        $team->update(['logo' => \Storage::disk('media')->url($path)]);
 
         return back()->with('team_success', 'Team logo updated.');
     }

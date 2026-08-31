@@ -217,7 +217,7 @@ function initSinglePicker(picker) {
         } else {
             const fit = isIcon ? 'contain' : 'cover';
             const sz  = isIcon ? '70%' : '100%';
-            inner = `<img src="${esc(item.url)}" alt="${esc(item.original_name)}" style="width:${sz};height:${sz};object-fit:${fit};display:block${isIcon ? ';margin:auto' : ''}">`;
+            inner = `<img src="${esc(item.url)}" alt="${esc(item.original_name)}" loading="lazy" decoding="async" style="width:${sz};height:${sz};object-fit:${fit};display:block${isIcon ? ';margin:auto' : ''}">`;
         }
         return `
             <div data-mp-item data-mp-item-id="${item.id}"
