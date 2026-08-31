@@ -143,6 +143,24 @@ class RaceResult extends Model
         })->values();
     }
 
+    /**
+     * Renumbers classified results 1..N after excluding DNS/DSQ rows, so a DSQ near the
+     * front doesn't leave the field stuck showing a gapped P2, P3... — everyone behind it
+     * shifts up to fill the gap. Keyed by result id; DNS/DSQ rows are absent from the map.
+     * DNF keeps its imported position since it still counts toward classification (see
+     * User::raceStats()).
+     *
+     * @param  \Illuminate\Support\Collection<int, self>  $results
+     * @return \Illuminate\Support\Collection<int, int>
+     */
+    public static function classifiedPositions(\Illuminate\Support\Collection $results): \Illuminate\Support\Collection
+    {
+        return $results->where('dns', false)->where('dsq', false)
+            ->sortBy('position')
+            ->values()
+            ->mapWithKeys(fn (self $r, int $i) => [$r->id => $i + 1]);
+    }
+
     public static function formatMs(?int $ms): string
     {
         if ($ms === null || $ms <= 0) {
