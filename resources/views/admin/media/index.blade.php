@@ -194,7 +194,7 @@
         $canMoveToUncat = $activeFolder !== '__uncategorised__';
         $showMove = $moveTargets->isNotEmpty() || $canMoveToUncat;
     @endphp
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,170px));gap:.75rem">
         @foreach($media as $item)
         <div class="admin-form-card p-0 overflow-hidden" data-media-item data-media-type="{{ $item->type }}">
             @php $thumbBg = $item->isIcon() ? '#f8f5ff' : '#111827'; @endphp
