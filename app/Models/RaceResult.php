@@ -194,7 +194,12 @@ class RaceResult extends Model
      * Splits groupedByCar() rows into one group per race class (own P1..N each) for a
      * multiclass race, or a single unlabeled group otherwise. A row whose car_class doesn't
      * match any of the race's configured classes (missing data, or a class removed after the
-     * race ran) still surfaces under an "Other" group instead of silently disappearing.
+     * race ran) still surfaces under an "Other" group instead of silently disappearing. A
+     * multiclass race also gets a leading "Overall" group across the whole grid, since a
+     * class win and an outright win are both things people want to see.
+     *
+     * Rows are cloned per group (not mutated in place) — the same result appears in both the
+     * "Overall" group and its own class group, each needing a different ->pos.
      *
      * @param  \Illuminate\Support\Collection<int, object{result: self, label: string, sub: ?string}>  $groupedRows
      * @return \Illuminate\Support\Collection<int, object{label: ?string, color: ?string, rows: \Illuminate\Support\Collection}>
@@ -203,7 +208,11 @@ class RaceResult extends Model
     {
         $applyPositions = function ($rows) {
             $positions = self::classifiedPositions($rows->pluck('result'));
-            return $rows->each(fn ($row) => $row->pos = $positions->get($row->result->id));
+            return $rows->map(function ($row) use ($positions) {
+                $clone      = clone $row;
+                $clone->pos = $positions->get($row->result->id);
+                return $clone;
+            })->values();
         };
 
         if (!$race->is_multiclass || $race->raceClasses->isEmpty()) {
@@ -213,6 +222,12 @@ class RaceResult extends Model
                 'rows'  => $applyPositions($groupedRows),
             ]]);
         }
+
+        $overall = (object) [
+            'label' => 'Overall',
+            'color' => null,
+            'rows'  => $applyPositions($groupedRows),
+        ];
 
         $classes = $race->raceClasses->sortBy('sort_order')->values();
         $groups  = $classes->map(function (RaceClass $class) use ($groupedRows, $applyPositions) {
@@ -239,7 +254,7 @@ class RaceResult extends Model
             ]);
         }
 
-        return $groups->filter(fn ($g) => $g->rows->isNotEmpty())->values();
+        return collect([$overall])->merge($groups)->filter(fn ($g) => $g->rows->isNotEmpty())->values();
     }
 
     public static function formatMs(?int $ms): string

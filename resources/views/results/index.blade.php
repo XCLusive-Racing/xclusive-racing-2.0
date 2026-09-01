@@ -158,8 +158,7 @@
                                             <th class="fw-bold text-uppercase text-secondary py-3 text-center" style="font-size:.7rem;letter-spacing:.06em">Laps</th>
                                             <th class="fw-bold text-uppercase text-secondary py-3 text-end" style="font-size:.7rem;letter-spacing:.06em">Best Lap</th>
                                             <th class="fw-bold text-uppercase text-secondary py-3 text-end" style="font-size:.7rem;letter-spacing:.06em">Gap</th>
-                                            <th class="fw-bold text-uppercase text-secondary py-3 text-center d-none d-lg-table-cell" style="font-size:.7rem;letter-spacing:.06em">Consistency</th>
-                                            <th class="fw-bold text-uppercase text-secondary py-3 text-center d-none d-lg-table-cell pe-4" style="font-size:.7rem;letter-spacing:.06em">Laps Led</th>
+                                            <th class="fw-bold text-uppercase text-secondary py-3 text-center d-none d-lg-table-cell pe-4" style="font-size:.7rem;letter-spacing:.06em">Consistency</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -206,11 +205,8 @@
                                             <td class="text-end fw-bold" style="font-size:.82rem;font-variant-numeric:tabular-nums;color:{{ $gapColor }}">
                                                 {{ $gapDisplay }}
                                             </td>
-                                            <td class="text-center text-secondary d-none d-lg-table-cell" style="font-size:.82rem">
-                                                {{ $result->consistency !== null ? number_format((float)$result->consistency, 1) . '%' : '—' }}
-                                            </td>
                                             <td class="text-center text-secondary d-none d-lg-table-cell pe-4" style="font-size:.82rem">
-                                                {{ $result->laps_led ?? '—' }}
+                                                {{ $result->consistency !== null ? number_format((float)$result->consistency, 1) . '%' : '—' }}
                                             </td>
                                         </tr>
                                         @endforeach
@@ -231,8 +227,17 @@
                             <p class="text-secondary text-center py-5" style="font-size:.85rem">No qualifying results available.</p>
                             @else
                             @php
-                                $poleTime = $qualiResults->whereNotNull('best_lap')->where('best_lap', '>', 0)->sortBy('best_lap')->first()?->best_lap;
+                                $groupedQualiResults = \App\Models\RaceResult::groupedByCar($qualiResults, $selected);
+                                $qualiClassGroups    = \App\Models\RaceResult::classGroups($groupedQualiResults, $selected);
                             @endphp
+                            @foreach($qualiClassGroups as $group)
+                            @php
+                                $poleRow  = $group->rows->firstWhere('pos', 1);
+                                $poleTime = ($poleRow && $poleRow->result->best_lap > 0) ? (int) $poleRow->result->best_lap : null;
+                            @endphp
+                            @if($group->label)
+                            <div class="px-4 pt-3 pb-1 fw-black text-uppercase" style="font-size:.72rem;letter-spacing:.05em;color:{{ $group->color ?? '#2563eb' }}">{{ $group->label }}</div>
+                            @endif
                             <div class="table-responsive">
                                 <table class="table align-middle mb-0" style="font-size:.875rem">
                                     <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
@@ -245,19 +250,20 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach(\App\Models\RaceResult::groupedByCar($qualiResults, $selected) as $row)
+                                        @foreach($group->rows as $row)
                                         @php
                                             $result = $row->result;
+                                            $pos = $row->pos;
                                             $lapMs = $result->best_lap ? (int) $result->best_lap : null;
-                                            if ($result->position === 1 || $poleTime === null || $lapMs === null) {
+                                            if ($pos === 1 || $poleTime === null || $lapMs === null) {
                                                 $poleGap = '—';
                                             } else {
-                                                $poleGap = '+' . \App\Models\RaceResult::formatMs($lapMs - (int) $poleTime);
+                                                $poleGap = '+' . \App\Models\RaceResult::formatMs($lapMs - $poleTime);
                                             }
                                         @endphp
                                         <tr style="border-bottom:1px solid #f9fafb">
-                                            <td class="ps-4 fw-bold" style="font-size:.9rem;{{ $result->position === 1 ? 'color:#f59e0b' : 'color:#374151' }}">
-                                                {{ $result->position }}
+                                            <td class="ps-4 fw-bold" style="font-size:.9rem;{{ $pos === 1 ? 'color:#f59e0b' : 'color:#374151' }}">
+                                                {{ $pos ?? '—' }}
                                             </td>
                                             <td class="fw-bold text-dark" style="font-size:.88rem">
                                                 {{ $row->label }}
@@ -277,6 +283,7 @@
                                     </tbody>
                                 </table>
                             </div>
+                            @endforeach
                             @endif
                         </div>
 
