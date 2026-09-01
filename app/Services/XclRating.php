@@ -10,6 +10,11 @@ class XclRating
     public float $STOP_LOSS_FLOOR = 500.0;
     public int   $MIN_DRIVERS = 8;
 
+    // A single race can never cost more than this, regardless of how bad the finish or how
+    // weak the field — protects a high-rated driver from a disproportionate crash off one
+    // bad night. Applied as a floor on the final elo_change, after every other adjustment.
+    public float $MAX_RACE_LOSS = 125.0;
+
     public float $R_HIGH = 1.18;
     public float $R_LOW  = -0.85;
 
@@ -143,6 +148,7 @@ class XclRating
                 $eloChange   = $rawChange;
             }
 
+            $eloChange    = max($eloChange, -$this->MAX_RACE_LOSS);
             $newRating    = $oldRating + $eloChange;
             $licenceAfter = $this->getLicence($newRating);
 

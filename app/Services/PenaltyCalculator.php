@@ -7,6 +7,9 @@ class PenaltyCalculator
     /** Codes that carry no rating/SR consequence — processing these dismisses the report instead of resolving it. */
     public const NO_PENALTY_CODES = ['NONE', 'RI', 'INVALID', 'PENDING'];
 
+    /** A single incident report can never deduct more rating than this, regardless of severity/multiplier. */
+    public const MAX_RATING_DEDUCTION = 200.0;
+
     public static function codes(): array
     {
         return config('penalty_codes', []);
@@ -58,7 +61,7 @@ class PenaltyCalculator
         $s       = self::sessionMultiplier($sessionType);
         $m       = (float) $multiplier;
 
-        $ratingDeduction = $reportedRating / 100 * $p * $m * $s;
+        $ratingDeduction = min($reportedRating / 100 * $p * $m * $s, self::MAX_RATING_DEDUCTION);
         $ratingReturn    = $sessionType === 'R' ? ($ratingDeduction / 2.7) : 0.0;
         $srDeduction     = $baseSr * self::srMultiplier($m);
 
