@@ -68,8 +68,35 @@
                     $race1Start    = $quali1Start->copy();
                     if ($qualiMins) { $race1Start->addMinutes($qualiMins); }
 
+                    $headerSofByClass = collect();
+                    if ($selected->is_multiclass && $selected->raceClasses->isNotEmpty()) {
+                        $ratingField = match ($selected->game) {
+                            'acc'     => 'elo_acc',
+                            'lmu'     => 'elo_lmu',
+                            'iracing' => 'elo_iracing',
+                            default   => null,
+                        };
+
+                        foreach ($selected->raceClasses->sortBy('sort_order') as $cls) {
+                            $classResults = $raceResults->filter(
+                                fn($r) => $r->car_class && $cls->car_class && strtoupper($r->car_class) === strtoupper($cls->car_class)
+                            );
+
+                            // A class under the rating threshold never got its own SoF stored
+                            // (RatingService skipped it), but SoF is just the average rating of
+                            // whoever showed up — still worth showing even without a rating change.
+                            $storedSof = $classResults->first(fn($r) => $r->sof !== null)?->sof;
+                            if ($storedSof === null && $ratingField) {
+                                $ratings   = $classResults->map(fn($r) => $r->user?->{$ratingField})->filter();
+                                $storedSof = $ratings->isNotEmpty() ? $ratings->avg() : null;
+                            }
+
+                            $headerSofByClass[$cls->name] = $storedSof;
+                        }
+                    }
+
                     $headerRatingResults = $raceResults->filter(fn($r) => $r->elo_change !== null);
-                    $headerSof = $headerRatingResults->isNotEmpty() ? $headerRatingResults->first()->sof : null;
+                    $headerSof = $headerSofByClass->isEmpty() && $headerRatingResults->isNotEmpty() ? $headerRatingResults->first()->sof : null;
                 @endphp
                 <div data-tabs data-default-tab="race">
 
@@ -86,9 +113,18 @@
                                 {{ $selected->track }} &middot; {{ $selected->scheduledAtUk()->format('d M Y') }}
                             </div>
                         </div>
-                        @if($headerSof !== null || $fmt)
+                        @if($headerSof !== null || $headerSofByClass->isNotEmpty() || $fmt)
                         <div class="ms-auto d-flex align-items-center gap-4">
-                            @if($headerSof !== null)
+                            @if($headerSofByClass->isNotEmpty())
+                            <div class="text-end">
+                                <div class="text-secondary text-uppercase" style="font-size:.62rem;font-weight:800;letter-spacing:.07em">SoF</div>
+                                <div class="fw-black" style="font-size:.85rem;color:#7c3aed">
+                                    @foreach($headerSofByClass as $clsName => $sof)
+                                    <span>{{ $clsName }} {{ $sof !== null ? number_format($sof, 0) : '—' }}</span>@if(!$loop->last)&nbsp;&middot;&nbsp;@endif
+                                    @endforeach
+                                </div>
+                            </div>
+                            @elseif($headerSof !== null)
                             <div class="text-end">
                                 <div class="text-secondary text-uppercase" style="font-size:.62rem;font-weight:800;letter-spacing:.07em">SoF</div>
                                 <div class="fw-black" style="font-size:.95rem;color:#7c3aed">{{ number_format($headerSof, 0) }}</div>
@@ -140,14 +176,20 @@
                                 $groupedRaceResults = \App\Models\RaceResult::groupedByCar($raceResults->where('dns', false), $selected);
                                 $classGroups        = \App\Models\RaceResult::classGroups($groupedRaceResults, $selected);
                             @endphp
+                            <div data-accordions>
                             @foreach($classGroups as $group)
                             @php
                                 $p1Row  = $group->rows->firstWhere('pos', 1);
                                 $p1Time = $p1Row ? (int) $p1Row->result->total_time : null;
                             @endphp
+                            <div @if($group->label) data-accordion="closed" @endif style="border-bottom:1px solid #f3f4f6">
                             @if($group->label)
-                            <div class="px-4 pt-3 pb-1 fw-black text-uppercase" style="font-size:.72rem;letter-spacing:.05em;color:{{ $group->color ?? '#7c3aed' }}">{{ $group->label }}</div>
+                            <div class="d-flex align-items-center gap-2 px-4 pt-3 pb-1" data-accordion-header style="cursor:pointer">
+                                <svg data-accordion-arrow width="12" height="12" viewBox="0 0 20 20" fill="currentColor" class="text-secondary" style="transition:transform .15s;flex-shrink:0"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+                                <span class="fw-black text-uppercase" style="font-size:.72rem;letter-spacing:.05em;color:{{ $group->color ?? '#7c3aed' }}">{{ $group->label }}</span>
+                            </div>
                             @endif
+                            <div @if($group->label) data-accordion-body style="display:none" @endif>
                             <div class="table-responsive">
                                 <table class="table align-middle mb-0" style="font-size:.875rem">
                                     <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
@@ -158,8 +200,7 @@
                                             <th class="fw-bold text-uppercase text-secondary py-3 text-center" style="font-size:.7rem;letter-spacing:.06em">Laps</th>
                                             <th class="fw-bold text-uppercase text-secondary py-3 text-end" style="font-size:.7rem;letter-spacing:.06em">Best Lap</th>
                                             <th class="fw-bold text-uppercase text-secondary py-3 text-end" style="font-size:.7rem;letter-spacing:.06em">Gap</th>
-                                            <th class="fw-bold text-uppercase text-secondary py-3 text-center d-none d-lg-table-cell" style="font-size:.7rem;letter-spacing:.06em">Consistency</th>
-                                            <th class="fw-bold text-uppercase text-secondary py-3 text-center d-none d-lg-table-cell pe-4" style="font-size:.7rem;letter-spacing:.06em">Laps Led</th>
+                                            <th class="fw-bold text-uppercase text-secondary py-3 text-center d-none d-lg-table-cell pe-4" style="font-size:.7rem;letter-spacing:.06em">Consistency</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -206,18 +247,18 @@
                                             <td class="text-end fw-bold" style="font-size:.82rem;font-variant-numeric:tabular-nums;color:{{ $gapColor }}">
                                                 {{ $gapDisplay }}
                                             </td>
-                                            <td class="text-center text-secondary d-none d-lg-table-cell" style="font-size:.82rem">
-                                                {{ $result->consistency !== null ? number_format((float)$result->consistency, 1) . '%' : '—' }}
-                                            </td>
                                             <td class="text-center text-secondary d-none d-lg-table-cell pe-4" style="font-size:.82rem">
-                                                {{ $result->laps_led ?? '—' }}
+                                                {{ $result->consistency !== null ? number_format((float)$result->consistency, 1) . '%' : '—' }}
                                             </td>
                                         </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
                             </div>
+                            </div>
+                            </div>
                             @endforeach
+                            </div>{{-- /data-accordions --}}
                             @endif
                         </div>
 
@@ -231,8 +272,23 @@
                             <p class="text-secondary text-center py-5" style="font-size:.85rem">No qualifying results available.</p>
                             @else
                             @php
-                                $poleTime = $qualiResults->whereNotNull('best_lap')->where('best_lap', '>', 0)->sortBy('best_lap')->first()?->best_lap;
+                                $groupedQualiResults = \App\Models\RaceResult::groupedByCar($qualiResults, $selected);
+                                $qualiClassGroups    = \App\Models\RaceResult::classGroups($groupedQualiResults, $selected);
                             @endphp
+                            <div data-accordions>
+                            @foreach($qualiClassGroups as $group)
+                            @php
+                                $poleRow  = $group->rows->firstWhere('pos', 1);
+                                $poleTime = ($poleRow && $poleRow->result->best_lap > 0) ? (int) $poleRow->result->best_lap : null;
+                            @endphp
+                            <div @if($group->label) data-accordion="closed" @endif style="border-bottom:1px solid #f3f4f6">
+                            @if($group->label)
+                            <div class="d-flex align-items-center gap-2 px-4 pt-3 pb-1" data-accordion-header style="cursor:pointer">
+                                <svg data-accordion-arrow width="12" height="12" viewBox="0 0 20 20" fill="currentColor" class="text-secondary" style="transition:transform .15s;flex-shrink:0"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+                                <span class="fw-black text-uppercase" style="font-size:.72rem;letter-spacing:.05em;color:{{ $group->color ?? '#2563eb' }}">{{ $group->label }}</span>
+                            </div>
+                            @endif
+                            <div @if($group->label) data-accordion-body style="display:none" @endif>
                             <div class="table-responsive">
                                 <table class="table align-middle mb-0" style="font-size:.875rem">
                                     <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
@@ -245,19 +301,20 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach(\App\Models\RaceResult::groupedByCar($qualiResults, $selected) as $row)
+                                        @foreach($group->rows as $row)
                                         @php
                                             $result = $row->result;
+                                            $pos = $row->pos;
                                             $lapMs = $result->best_lap ? (int) $result->best_lap : null;
-                                            if ($result->position === 1 || $poleTime === null || $lapMs === null) {
+                                            if ($pos === 1 || $poleTime === null || $lapMs === null) {
                                                 $poleGap = '—';
                                             } else {
-                                                $poleGap = '+' . \App\Models\RaceResult::formatMs($lapMs - (int) $poleTime);
+                                                $poleGap = '+' . \App\Models\RaceResult::formatMs($lapMs - $poleTime);
                                             }
                                         @endphp
                                         <tr style="border-bottom:1px solid #f9fafb">
-                                            <td class="ps-4 fw-bold" style="font-size:.9rem;{{ $result->position === 1 ? 'color:#f59e0b' : 'color:#374151' }}">
-                                                {{ $result->position }}
+                                            <td class="ps-4 fw-bold" style="font-size:.9rem;{{ $pos === 1 ? 'color:#f59e0b' : 'color:#374151' }}">
+                                                {{ $pos ?? '—' }}
                                             </td>
                                             <td class="fw-bold text-dark" style="font-size:.88rem">
                                                 {{ $row->label }}
@@ -277,14 +334,55 @@
                                     </tbody>
                                 </table>
                             </div>
+                            </div>
+                            </div>
+                            @endforeach
+                            </div>{{-- /data-accordions --}}
                             @endif
                         </div>
 
                         {{-- Rating changes --}}
                         <div data-tab-panel="rating" style="display:none">
-                            @php $ratingResults = $raceResults->filter(fn($r) => $r->elo_change !== null); @endphp
-                            @if($ratingResults->isEmpty())
-                            <p class="text-secondary text-center py-5" style="font-size:.85rem">No rating data available for this race.</p>
+                            @php
+                                $ratingGroups = collect();
+
+                                if ($selected->is_multiclass && $selected->raceClasses->isNotEmpty()) {
+                                    $minNeeded = (new \App\Services\XclRating())->MIN_DRIVERS;
+
+                                    foreach ($selected->raceClasses->sortBy('sort_order') as $cls) {
+                                        $classRows = $raceResults->filter(
+                                            fn($r) => $r->car_class && $cls->car_class && strtoupper($r->car_class) === strtoupper($cls->car_class)
+                                        );
+                                        $rated = $classRows->filter(fn($r) => $r->elo_change !== null);
+                                        $positions = \App\Models\RaceResult::classifiedPositions($classRows);
+                                        $finisherCount = $classRows->filter(function ($r) {
+                                            $isTrueDnf = $r->dnf && (int) ($r->lap_count ?? 0) <= 1;
+                                            return !$r->dsq && !$r->dns && !$r->dc && !$isTrueDnf;
+                                        })->count();
+
+                                        $ratingGroups->push((object) [
+                                            'label' => $cls->name, 'color' => $cls->color, 'rows' => $rated,
+                                            'positions' => $positions, 'finisherCount' => $finisherCount, 'minNeeded' => $minNeeded,
+                                        ]);
+                                    }
+                                } else {
+                                    $rows = $raceResults->filter(fn($r) => $r->elo_change !== null);
+                                    $ratingGroups->push((object) [
+                                        'label' => null, 'color' => null, 'rows' => $rows,
+                                        'positions' => \App\Models\RaceResult::classifiedPositions($raceResults), 'finisherCount' => null, 'minNeeded' => null,
+                                    ]);
+                                }
+                            @endphp
+                            @foreach($ratingGroups as $group)
+                            @if($group->label)
+                            <div class="px-4 pt-3 pb-1 fw-black text-uppercase" style="font-size:.72rem;letter-spacing:.05em;color:{{ $group->color ?? '#7c3aed' }}">{{ $group->label }}</div>
+                            @endif
+                            @if($group->rows->isEmpty())
+                                @if($group->label)
+                                <p class="text-secondary px-4 pb-4" style="font-size:.82rem">Minimum of {{ $group->minNeeded }} finishers not reached ({{ $group->finisherCount }} finished) no rating calculated for this class.</p>
+                                @else
+                                <p class="text-secondary text-center py-5" style="font-size:.85rem">No rating data available for this race.</p>
+                                @endif
                             @else
                             <div class="table-responsive">
                                 <table class="table align-middle mb-0" style="font-size:.875rem">
@@ -298,11 +396,14 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($ratingResults as $result)
-                                        @php $change = round((float)$result->elo_change); @endphp
+                                        @foreach($group->rows as $result)
+                                        @php
+                                            $change = round((float) $result->elo_change);
+                                            $pos    = $group->positions->get($result->id);
+                                        @endphp
                                         <tr style="border-bottom:1px solid #f9fafb">
                                             <td class="ps-4 fw-bold text-secondary" style="font-size:.85rem">
-                                                {{ $result->dsq ? 'DSQ' : ($result->dc ? 'DC' : ($result->dns ? 'DNS' : ($result->dnf ? 'DNF' : $result->position))) }}
+                                                {{ $result->dsq ? 'DSQ' : ($result->dc ? 'DC' : ($result->dns ? 'DNS' : ($result->dnf ? 'DNF' : $pos))) }}
                                             </td>
                                             <td class="fw-bold text-dark" style="font-size:.88rem">{{ $result->displayName() }}</td>
                                             <td class="text-end text-secondary" style="font-size:.85rem;font-variant-numeric:tabular-nums">{{ number_format((float)$result->rating_before) }}</td>
@@ -318,6 +419,7 @@
                                 </table>
                             </div>
                             @endif
+                            @endforeach
                         </div>
 
                     </div>
