@@ -50,6 +50,8 @@ class RaceController extends Controller
 
     public function show(Race $race, AccServerConfigService $config)
     {
+        $race->loadMissing(['raceClasses', 'teamEntries']);
+
         $raceResults   = $race->results()->where('session_type', 'race')->with('user')->get();
         $qualiResults  = $race->results()->where('session_type', 'quali')->with('user')->get();
         $registrations = $race->registrations()->with('user')->orderBy('created_at')->get();
