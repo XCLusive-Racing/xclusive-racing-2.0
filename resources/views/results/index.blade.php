@@ -379,7 +379,7 @@
                             @endif
                             @if($group->rows->isEmpty())
                                 @if($group->label)
-                                <p class="text-secondary px-4 pb-4" style="font-size:.82rem">Minimum of {{ $group->minNeeded }} finishers not reached ({{ $group->finisherCount }} finished) — no rating calculated for this class.</p>
+                                <p class="text-secondary px-4 pb-4" style="font-size:.82rem">Minimum of {{ $group->minNeeded }} finishers not reached ({{ $group->finisherCount }} finished) no rating calculated for this class.</p>
                                 @else
                                 <p class="text-secondary text-center py-5" style="font-size:.85rem">No rating data available for this race.</p>
                                 @endif
