@@ -70,10 +70,28 @@
 
                     $headerSofByClass = collect();
                     if ($selected->is_multiclass && $selected->raceClasses->isNotEmpty()) {
+                        $ratingField = match ($selected->game) {
+                            'acc'     => 'elo_acc',
+                            'lmu'     => 'elo_lmu',
+                            'iracing' => 'elo_iracing',
+                            default   => null,
+                        };
+
                         foreach ($selected->raceClasses->sortBy('sort_order') as $cls) {
-                            $headerSofByClass[$cls->name] = $raceResults->first(
-                                fn($r) => $r->car_class && $cls->car_class && strtoupper($r->car_class) === strtoupper($cls->car_class) && $r->sof !== null
-                            )?->sof;
+                            $classResults = $raceResults->filter(
+                                fn($r) => $r->car_class && $cls->car_class && strtoupper($r->car_class) === strtoupper($cls->car_class)
+                            );
+
+                            // A class under the rating threshold never got its own SoF stored
+                            // (RatingService skipped it), but SoF is just the average rating of
+                            // whoever showed up — still worth showing even without a rating change.
+                            $storedSof = $classResults->first(fn($r) => $r->sof !== null)?->sof;
+                            if ($storedSof === null && $ratingField) {
+                                $ratings   = $classResults->map(fn($r) => $r->user?->{$ratingField})->filter();
+                                $storedSof = $ratings->isNotEmpty() ? $ratings->avg() : null;
+                            }
+
+                            $headerSofByClass[$cls->name] = $storedSof;
                         }
                     }
 
@@ -158,14 +176,20 @@
                                 $groupedRaceResults = \App\Models\RaceResult::groupedByCar($raceResults->where('dns', false), $selected);
                                 $classGroups        = \App\Models\RaceResult::classGroups($groupedRaceResults, $selected);
                             @endphp
+                            <div data-accordions>
                             @foreach($classGroups as $group)
                             @php
                                 $p1Row  = $group->rows->firstWhere('pos', 1);
                                 $p1Time = $p1Row ? (int) $p1Row->result->total_time : null;
                             @endphp
+                            <div @if($group->label) data-accordion="closed" @endif style="border-bottom:1px solid #f3f4f6">
                             @if($group->label)
-                            <div class="px-4 pt-3 pb-1 fw-black text-uppercase" style="font-size:.72rem;letter-spacing:.05em;color:{{ $group->color ?? '#7c3aed' }}">{{ $group->label }}</div>
+                            <div class="d-flex align-items-center gap-2 px-4 pt-3 pb-1" data-accordion-header style="cursor:pointer">
+                                <svg data-accordion-arrow width="12" height="12" viewBox="0 0 20 20" fill="currentColor" class="text-secondary" style="transition:transform .15s;flex-shrink:0"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+                                <span class="fw-black text-uppercase" style="font-size:.72rem;letter-spacing:.05em;color:{{ $group->color ?? '#7c3aed' }}">{{ $group->label }}</span>
+                            </div>
                             @endif
+                            <div @if($group->label) data-accordion-body style="display:none" @endif>
                             <div class="table-responsive">
                                 <table class="table align-middle mb-0" style="font-size:.875rem">
                                     <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
@@ -231,7 +255,10 @@
                                     </tbody>
                                 </table>
                             </div>
+                            </div>
+                            </div>
                             @endforeach
+                            </div>{{-- /data-accordions --}}
                             @endif
                         </div>
 
@@ -248,14 +275,20 @@
                                 $groupedQualiResults = \App\Models\RaceResult::groupedByCar($qualiResults, $selected);
                                 $qualiClassGroups    = \App\Models\RaceResult::classGroups($groupedQualiResults, $selected);
                             @endphp
+                            <div data-accordions>
                             @foreach($qualiClassGroups as $group)
                             @php
                                 $poleRow  = $group->rows->firstWhere('pos', 1);
                                 $poleTime = ($poleRow && $poleRow->result->best_lap > 0) ? (int) $poleRow->result->best_lap : null;
                             @endphp
+                            <div @if($group->label) data-accordion="closed" @endif style="border-bottom:1px solid #f3f4f6">
                             @if($group->label)
-                            <div class="px-4 pt-3 pb-1 fw-black text-uppercase" style="font-size:.72rem;letter-spacing:.05em;color:{{ $group->color ?? '#2563eb' }}">{{ $group->label }}</div>
+                            <div class="d-flex align-items-center gap-2 px-4 pt-3 pb-1" data-accordion-header style="cursor:pointer">
+                                <svg data-accordion-arrow width="12" height="12" viewBox="0 0 20 20" fill="currentColor" class="text-secondary" style="transition:transform .15s;flex-shrink:0"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+                                <span class="fw-black text-uppercase" style="font-size:.72rem;letter-spacing:.05em;color:{{ $group->color ?? '#2563eb' }}">{{ $group->label }}</span>
+                            </div>
                             @endif
+                            <div @if($group->label) data-accordion-body style="display:none" @endif>
                             <div class="table-responsive">
                                 <table class="table align-middle mb-0" style="font-size:.875rem">
                                     <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
@@ -301,7 +334,10 @@
                                     </tbody>
                                 </table>
                             </div>
+                            </div>
+                            </div>
                             @endforeach
+                            </div>{{-- /data-accordions --}}
                             @endif
                         </div>
 
