@@ -14,7 +14,7 @@ class ResultsController extends Controller
             ->get();
 
         $selectedId = request('race') ?? $races->first()?->id;
-        $selected   = $selectedId ? Race::with('eventFormat')->find($selectedId) : null;
+        $selected   = $selectedId ? Race::with(['eventFormat', 'raceClasses', 'teamEntries'])->find($selectedId) : null;
 
         $raceResults  = $selected?->raceResults()->with('user')->get() ?? collect();
         $qualiResults = $selected?->qualiResults()->with('user')->get() ?? collect();

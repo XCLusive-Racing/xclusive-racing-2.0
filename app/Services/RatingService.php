@@ -14,7 +14,12 @@ class RatingService
 
     /**
      * Calculate and persist ratings for all linked users in a race session.
-     * Skips results with no linked user_id.
+     * Skips results with no linked user_id. For a multiclass race, each class is scored as
+     * its own self-contained field (own SoF, own finish-position scale, own MIN_DRIVERS gate)
+     * instead of one mixed grid — a GT4 class win shouldn't be scored as "6th out of 16"
+     * just because five GT3 cars finished ahead. A class that doesn't reach MIN_DRIVERS
+     * finishers is skipped on its own, same as a whole small race is skipped today; the rest
+     * of the race's classes still get rated.
      */
     public function processRace(Race $race): void
     {
@@ -34,53 +39,72 @@ class RatingService
             return;
         }
 
-        $entries = $results->map(function (RaceResult $r) use ($ratingField) {
-            // Undo this result's own previously-applied elo_change (if any) so recalculating
-            // after a manual DSQ/DC correction re-baselines from the pre-this-race rating
-            // instead of stacking a second delta on top of the first.
-            $rating = (float) ($r->user->{$ratingField} ?? 1500) - (float) ($r->elo_change ?? 0);
-
-            // The dnf flag itself (set on import from the 70%-of-leader-laps heuristic)
-            // drives the DNF badge/status and freezes Safety Rating either way — but the
-            // flat DNF rating penalty is reserved for an actual lap-0/1 retirement. Anyone
-            // dnf-flagged who completed 2+ laps still just keeps their real ACC finishing
-            // position and goes through the normal position-based formula.
-            $isTrueDnf = $r->dnf && (int) ($r->lap_count ?? 0) <= 1;
-            $status    = $r->dsq ? 'DSQ' : ($r->dns ? 'DNS' : ($r->dc ? 'DC' : ($isTrueDnf ? 'DNF' : 'FIN')));
-
-            return [
-                'driver_id'  => $r->user_id,
-                'name'       => $r->displayName(),
-                'rating'     => $rating,
-                'finish_pos' => ($status === 'FIN') ? $r->position : null,
-                'status'     => $status,
-            ];
-        })->values()->all();
-
-        $finisherCount = collect($entries)->where('status', 'FIN')->count();
-        \Log::info('RatingService: starting calculation', [
-            'race_id'        => $race->id,
-            'linked_drivers' => count($entries),
-            'finishers'      => $finisherCount,
-            'min_required'   => $this->calculator->MIN_DRIVERS,
-        ]);
-
         // Priority: format multiplier > custom xcl_r_multiplier > legacy duration_key > 1.0 default
         $this->calculator->MULTIPLIER = $race->eventFormat?->xcl_r_multiplier
             ?? $race->xcl_r_multiplier
             ?? ($race->duration_key ? ($this->calculator->DURATION_MULTIPLIERS[$race->duration_key] ?? 1.0) : 1.0);
 
-        try {
-            $calculated = $this->calculator->processRace(
-                ['name' => $race->title, 'race_date' => $race->scheduled_at->toDateString()],
-                $entries
-            );
-        } catch (\InvalidArgumentException $e) {
-            \Log::warning('RatingService: skipped — ' . $e->getMessage(), ['race_id' => $race->id]);
+        $groups = $race->is_multiclass
+            ? $results->groupBy(fn (RaceResult $r) => $r->car_class ?? 'Other')
+            : collect(['__all__' => $results]);
+
+        $calculated = collect();
+
+        foreach ($groups as $classKey => $classResults) {
+            // Class-relative finishing order (P1..N within this class only), not the raw
+            // grid position — reuses the same ranking the public results page shows per class.
+            $positions = RaceResult::classifiedPositions($classResults);
+
+            $entries = $classResults->map(function (RaceResult $r) use ($ratingField, $positions) {
+                // Undo this result's own previously-applied elo_change (if any) so recalculating
+                // after a manual DSQ/DC correction re-baselines from the pre-this-race rating
+                // instead of stacking a second delta on top of the first.
+                $rating = (float) ($r->user->{$ratingField} ?? 1500) - (float) ($r->elo_change ?? 0);
+
+                // The dnf flag itself (set on import from the 70%-of-leader-laps heuristic)
+                // drives the DNF badge/status and freezes Safety Rating either way — but the
+                // flat DNF rating penalty is reserved for an actual lap-0/1 retirement. Anyone
+                // dnf-flagged who completed 2+ laps still just keeps their real ACC finishing
+                // position and goes through the normal position-based formula.
+                $isTrueDnf = $r->dnf && (int) ($r->lap_count ?? 0) <= 1;
+                $status    = $r->dsq ? 'DSQ' : ($r->dns ? 'DNS' : ($r->dc ? 'DC' : ($isTrueDnf ? 'DNF' : 'FIN')));
+
+                return [
+                    'driver_id'  => $r->user_id,
+                    'name'       => $r->displayName(),
+                    'rating'     => $rating,
+                    'finish_pos' => ($status === 'FIN') ? $positions->get($r->id) : null,
+                    'status'     => $status,
+                ];
+            })->values()->all();
+
+            $finisherCount = collect($entries)->where('status', 'FIN')->count();
+            \Log::info('RatingService: starting calculation', [
+                'race_id'        => $race->id,
+                'class'          => $classKey,
+                'linked_drivers' => count($entries),
+                'finishers'      => $finisherCount,
+                'min_required'   => $this->calculator->MIN_DRIVERS,
+            ]);
+
+            try {
+                $classCalculated = $this->calculator->processRace(
+                    ['name' => $race->title, 'race_date' => $race->scheduled_at->toDateString()],
+                    $entries
+                );
+            } catch (\InvalidArgumentException $e) {
+                \Log::warning('RatingService: skipped — ' . $e->getMessage(), ['race_id' => $race->id, 'class' => $classKey]);
+                continue;
+            }
+
+            $calculated = $calculated->merge($classCalculated);
+        }
+
+        if ($calculated->isEmpty()) {
             return;
         }
 
-        $byUserId = collect($calculated)->keyBy('driver_id');
+        $byUserId = $calculated->keyBy('driver_id');
         $srField  = $this->srField($race->game);
 
         DB::transaction(function () use ($results, $byUserId, $ratingField, $srField) {
