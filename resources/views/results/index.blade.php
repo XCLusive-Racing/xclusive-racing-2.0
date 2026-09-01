@@ -343,9 +343,46 @@
 
                         {{-- Rating changes --}}
                         <div data-tab-panel="rating" style="display:none">
-                            @php $ratingResults = $raceResults->filter(fn($r) => $r->elo_change !== null); @endphp
-                            @if($ratingResults->isEmpty())
-                            <p class="text-secondary text-center py-5" style="font-size:.85rem">No rating data available for this race.</p>
+                            @php
+                                $ratingGroups = collect();
+
+                                if ($selected->is_multiclass && $selected->raceClasses->isNotEmpty()) {
+                                    $minNeeded = (new \App\Services\XclRating())->MIN_DRIVERS;
+
+                                    foreach ($selected->raceClasses->sortBy('sort_order') as $cls) {
+                                        $classRows = $raceResults->filter(
+                                            fn($r) => $r->car_class && $cls->car_class && strtoupper($r->car_class) === strtoupper($cls->car_class)
+                                        );
+                                        $rated = $classRows->filter(fn($r) => $r->elo_change !== null);
+                                        $positions = \App\Models\RaceResult::classifiedPositions($classRows);
+                                        $finisherCount = $classRows->filter(function ($r) {
+                                            $isTrueDnf = $r->dnf && (int) ($r->lap_count ?? 0) <= 1;
+                                            return !$r->dsq && !$r->dns && !$r->dc && !$isTrueDnf;
+                                        })->count();
+
+                                        $ratingGroups->push((object) [
+                                            'label' => $cls->name, 'color' => $cls->color, 'rows' => $rated,
+                                            'positions' => $positions, 'finisherCount' => $finisherCount, 'minNeeded' => $minNeeded,
+                                        ]);
+                                    }
+                                } else {
+                                    $rows = $raceResults->filter(fn($r) => $r->elo_change !== null);
+                                    $ratingGroups->push((object) [
+                                        'label' => null, 'color' => null, 'rows' => $rows,
+                                        'positions' => \App\Models\RaceResult::classifiedPositions($raceResults), 'finisherCount' => null, 'minNeeded' => null,
+                                    ]);
+                                }
+                            @endphp
+                            @foreach($ratingGroups as $group)
+                            @if($group->label)
+                            <div class="px-4 pt-3 pb-1 fw-black text-uppercase" style="font-size:.72rem;letter-spacing:.05em;color:{{ $group->color ?? '#7c3aed' }}">{{ $group->label }}</div>
+                            @endif
+                            @if($group->rows->isEmpty())
+                                @if($group->label)
+                                <p class="text-secondary px-4 pb-4" style="font-size:.82rem">Minimum of {{ $group->minNeeded }} finishers not reached ({{ $group->finisherCount }} finished) — no rating calculated for this class.</p>
+                                @else
+                                <p class="text-secondary text-center py-5" style="font-size:.85rem">No rating data available for this race.</p>
+                                @endif
                             @else
                             <div class="table-responsive">
                                 <table class="table align-middle mb-0" style="font-size:.875rem">
@@ -359,11 +396,14 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($ratingResults as $result)
-                                        @php $change = round((float)$result->elo_change); @endphp
+                                        @foreach($group->rows as $result)
+                                        @php
+                                            $change = round((float) $result->elo_change);
+                                            $pos    = $group->positions->get($result->id);
+                                        @endphp
                                         <tr style="border-bottom:1px solid #f9fafb">
                                             <td class="ps-4 fw-bold text-secondary" style="font-size:.85rem">
-                                                {{ $result->dsq ? 'DSQ' : ($result->dc ? 'DC' : ($result->dns ? 'DNS' : ($result->dnf ? 'DNF' : $result->position))) }}
+                                                {{ $result->dsq ? 'DSQ' : ($result->dc ? 'DC' : ($result->dns ? 'DNS' : ($result->dnf ? 'DNF' : $pos))) }}
                                             </td>
                                             <td class="fw-bold text-dark" style="font-size:.88rem">{{ $result->displayName() }}</td>
                                             <td class="text-end text-secondary" style="font-size:.85rem;font-variant-numeric:tabular-nums">{{ number_format((float)$result->rating_before) }}</td>
@@ -379,6 +419,7 @@
                                 </table>
                             </div>
                             @endif
+                            @endforeach
                         </div>
 
                     </div>
