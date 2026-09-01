@@ -137,9 +137,17 @@
                             <p class="text-secondary text-center py-5" style="font-size:.85rem">No race results available.</p>
                             @else
                             @php
-                                $p1Row      = $raceResults->where('dns', false)->where('dsq', false)->sortBy('position')->first();
-                                $p1Time     = $p1Row ? (int) $p1Row->total_time : null;
+                                $groupedRaceResults = \App\Models\RaceResult::groupedByCar($raceResults->where('dns', false), $selected);
+                                $classGroups        = \App\Models\RaceResult::classGroups($groupedRaceResults, $selected);
                             @endphp
+                            @foreach($classGroups as $group)
+                            @php
+                                $p1Row  = $group->rows->firstWhere('pos', 1);
+                                $p1Time = $p1Row ? (int) $p1Row->result->total_time : null;
+                            @endphp
+                            @if($group->label)
+                            <div class="px-4 pt-3 pb-1 fw-black text-uppercase" style="font-size:.72rem;letter-spacing:.05em;color:{{ $group->color ?? '#7c3aed' }}">{{ $group->label }}</div>
+                            @endif
                             <div class="table-responsive">
                                 <table class="table align-middle mb-0" style="font-size:.875rem">
                                     <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
@@ -155,14 +163,10 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @php
-                                            $groupedRaceResults = \App\Models\RaceResult::groupedByCar($raceResults->where('dns', false), $selected);
-                                            $classifiedPositions = \App\Models\RaceResult::classifiedPositions($groupedRaceResults->pluck('result'));
-                                        @endphp
-                                        @foreach($groupedRaceResults as $row)
+                                        @foreach($group->rows as $row)
                                         @php
                                             $result = $row->result;
-                                            $pos = $classifiedPositions->get($result->id);
+                                            $pos = $row->pos;
                                             $notStarted = $result->dns || $result->dc;
                                             $notFinished = $result->dnf || $result->dsq;
                                             $rowTime = $result->total_time !== null ? (int) $result->total_time : null;
@@ -213,6 +217,7 @@
                                     </tbody>
                                 </table>
                             </div>
+                            @endforeach
                             @endif
                         </div>
 

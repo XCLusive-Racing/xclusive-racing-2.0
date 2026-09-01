@@ -161,6 +161,7 @@ class AccResultImportService
                         'driver_name'       => $driverName ?: null,
                         'car_number'        => $carNumber,
                         'vehicle'           => RaceResult::accCarName($carModel),
+                        'car_class'         => RaceResult::accCarClass($carModel),
                         'position'          => $index + 1,
                         'best_lap'          => $bestLap,
                         'lap_count'         => $lapCount,

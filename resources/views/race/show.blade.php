@@ -228,8 +228,15 @@
 
                 {{-- Race Results --}}
                 @if($race->status === 'finished' && $race->raceResults->isNotEmpty())
+                @php
+                    $groupedRaceResults = \App\Models\RaceResult::groupedByCar($race->raceResults->where('dns', false), $race);
+                    $classGroups        = \App\Models\RaceResult::classGroups($groupedRaceResults, $race);
+                @endphp
+                @foreach($classGroups as $group)
                 <div class="xcl-event-card">
-                    <h2 class="xcl-event-card__heading">RACE RESULTS</h2>
+                    <h2 class="xcl-event-card__heading">
+                        RACE RESULTS{{ $group->label ? ' — ' . strtoupper($group->label) : '' }}
+                    </h2>
                     <div class="table-responsive">
                         <table class="xcl-results-table">
                             <thead>
@@ -241,12 +248,8 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @php
-                                    $groupedRaceResults = \App\Models\RaceResult::groupedByCar($race->raceResults->where('dns', false), $race);
-                                    $classifiedPositions = \App\Models\RaceResult::classifiedPositions($groupedRaceResults->pluck('result'));
-                                @endphp
-                                @foreach($groupedRaceResults as $row)
-                                @php $result = $row->result; $pos = $classifiedPositions->get($result->id); @endphp
+                                @foreach($group->rows as $row)
+                                @php $result = $row->result; $pos = $row->pos; @endphp
                                 <tr>
                                     <td>
                                         @if($pos === 1)
@@ -291,6 +294,7 @@
                         </table>
                     </div>
                 </div>
+                @endforeach
                 @endif
 
             </div>

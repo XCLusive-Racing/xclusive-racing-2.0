@@ -10,7 +10,7 @@ class RaceResult extends Model
     protected $fillable = [
         'race_id', 'race_title', 'race_track', 'race_game', 'race_scheduled_at',
         'session_type', 'user_id',
-        'player_id', 'driver_name', 'car_number', 'vehicle',
+        'player_id', 'driver_name', 'car_number', 'vehicle', 'car_class',
         'position', 'best_lap', 'lap_count', 'laps_led', 'total_time', 'consistency',
         'fastest_lap', 'dnf', 'dns', 'dsq', 'dc',
         'rating_before', 'rating_after', 'elo_change', 'sof', 'sr_change',
@@ -73,10 +73,39 @@ class RaceResult extends Model
         86 => 'Porsche 935 (2019)',
     ];
 
+    // ACC's fixed homologation class per car model id (same ids as ACC_CARS above) — not
+    // derivable from the car name string alone, since Cup/Challenge/SuperTrofeo cars often
+    // contain "GT3" in their name despite racing in their own class, not the GT3 pro class.
+    private const ACC_CAR_CLASSES = [
+        0 => 'GT3', 1 => 'GT3', 2 => 'GT3', 3 => 'GT3', 4 => 'GT3', 5 => 'GT3', 6 => 'GT3',
+        7 => 'GT3', 8 => 'GT3', 9 => 'GTC', 10 => 'GT3', 11 => 'GT3', 12 => 'GT3', 13 => 'GT3',
+        14 => 'GT3', 15 => 'GT3', 16 => 'GT3', 17 => 'GT3', 18 => 'GTC', 19 => 'GT3',
+        20 => 'GT4', 21 => 'GT3', 22 => 'GT3', 23 => 'GT3', 24 => 'GT3', 25 => 'GT3',
+        26 => 'GT3', 27 => 'GTC', 28 => 'TCX', 29 => 'GTC', 30 => 'GTC', 31 => 'GT3',
+        32 => 'GT3', 33 => 'GT3', 34 => 'GT3', 35 => 'GT3', 36 => 'GT3',
+        50 => 'GT4', 51 => 'GT4', 52 => 'GT4', 53 => 'GT4', 55 => 'GT4', 56 => 'GT4',
+        57 => 'GT4', 58 => 'GT4', 59 => 'GT4', 60 => 'GT4', 61 => 'GT4',
+        80 => 'GT2', 82 => 'GT2', 83 => 'GT2', 84 => 'GT2', 85 => 'GT2', 86 => 'GT2',
+    ];
+
     public static function accCarName(?int $modelId): ?string
     {
         if ($modelId === null) return null;
         return self::ACC_CARS[$modelId] ?? 'Car #' . $modelId;
+    }
+
+    public static function accCarClass(?int $modelId): ?string
+    {
+        if ($modelId === null) return null;
+        return self::ACC_CAR_CLASSES[$modelId] ?? null;
+    }
+
+    /** Reverse lookup used to backfill car_class on rows imported before that column existed. */
+    public static function accCarClassFromName(?string $vehicle): ?string
+    {
+        if ($vehicle === null) return null;
+        $modelId = array_search($vehicle, self::ACC_CARS, true);
+        return $modelId === false ? null : self::accCarClass($modelId);
     }
 
     protected function casts(): array
@@ -159,6 +188,58 @@ class RaceResult extends Model
             ->sortBy('position')
             ->values()
             ->mapWithKeys(fn (self $r, int $i) => [$r->id => $i + 1]);
+    }
+
+    /**
+     * Splits groupedByCar() rows into one group per race class (own P1..N each) for a
+     * multiclass race, or a single unlabeled group otherwise. A row whose car_class doesn't
+     * match any of the race's configured classes (missing data, or a class removed after the
+     * race ran) still surfaces under an "Other" group instead of silently disappearing.
+     *
+     * @param  \Illuminate\Support\Collection<int, object{result: self, label: string, sub: ?string}>  $groupedRows
+     * @return \Illuminate\Support\Collection<int, object{label: ?string, color: ?string, rows: \Illuminate\Support\Collection}>
+     */
+    public static function classGroups(\Illuminate\Support\Collection $groupedRows, Race $race): \Illuminate\Support\Collection
+    {
+        $applyPositions = function ($rows) {
+            $positions = self::classifiedPositions($rows->pluck('result'));
+            return $rows->each(fn ($row) => $row->pos = $positions->get($row->result->id));
+        };
+
+        if (!$race->is_multiclass || $race->raceClasses->isEmpty()) {
+            return collect([(object) [
+                'label' => null,
+                'color' => null,
+                'rows'  => $applyPositions($groupedRows),
+            ]]);
+        }
+
+        $classes = $race->raceClasses->sortBy('sort_order')->values();
+        $groups  = $classes->map(function (RaceClass $class) use ($groupedRows, $applyPositions) {
+            $rows = $groupedRows->filter(
+                fn ($row) => $row->result->car_class && $class->car_class
+                    && strtoupper($row->result->car_class) === strtoupper($class->car_class)
+            )->values();
+
+            return (object) [
+                'label' => $class->name,
+                'color' => $class->color,
+                'rows'  => $applyPositions($rows),
+            ];
+        });
+
+        $matchedIds = $groups->flatMap(fn ($g) => $g->rows->pluck('result.id'));
+        $leftover   = $groupedRows->reject(fn ($row) => $matchedIds->contains($row->result->id))->values();
+
+        if ($leftover->isNotEmpty()) {
+            $groups->push((object) [
+                'label' => 'Other',
+                'color' => null,
+                'rows'  => $applyPositions($leftover),
+            ]);
+        }
+
+        return $groups->filter(fn ($g) => $g->rows->isNotEmpty())->values();
     }
 
     public static function formatMs(?int $ms): string
