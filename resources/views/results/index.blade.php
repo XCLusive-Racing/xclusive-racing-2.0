@@ -301,7 +301,9 @@
                                         @foreach($ratingResults as $result)
                                         @php $change = round((float)$result->elo_change); @endphp
                                         <tr style="border-bottom:1px solid #f9fafb">
-                                            <td class="ps-4 fw-bold text-secondary" style="font-size:.85rem">{{ $result->position }}</td>
+                                            <td class="ps-4 fw-bold text-secondary" style="font-size:.85rem">
+                                                {{ $result->dsq ? 'DSQ' : ($result->dc ? 'DC' : ($result->dns ? 'DNS' : ($result->dnf ? 'DNF' : $result->position))) }}
+                                            </td>
                                             <td class="fw-bold text-dark" style="font-size:.88rem">{{ $result->displayName() }}</td>
                                             <td class="text-end text-secondary" style="font-size:.85rem;font-variant-numeric:tabular-nums">{{ number_format((float)$result->rating_before) }}</td>
                                             <td class="text-end fw-black" style="font-size:.9rem;font-variant-numeric:tabular-nums;color:{{ $change >= 0 ? '#10b981' : '#ef4444' }}">
