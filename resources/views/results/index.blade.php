@@ -68,8 +68,17 @@
                     $race1Start    = $quali1Start->copy();
                     if ($qualiMins) { $race1Start->addMinutes($qualiMins); }
 
+                    $headerSofByClass = collect();
+                    if ($selected->is_multiclass && $selected->raceClasses->isNotEmpty()) {
+                        foreach ($selected->raceClasses->sortBy('sort_order') as $cls) {
+                            $headerSofByClass[$cls->name] = $raceResults->first(
+                                fn($r) => $r->car_class && $cls->car_class && strtoupper($r->car_class) === strtoupper($cls->car_class) && $r->sof !== null
+                            )?->sof;
+                        }
+                    }
+
                     $headerRatingResults = $raceResults->filter(fn($r) => $r->elo_change !== null);
-                    $headerSof = $headerRatingResults->isNotEmpty() ? $headerRatingResults->first()->sof : null;
+                    $headerSof = $headerSofByClass->isEmpty() && $headerRatingResults->isNotEmpty() ? $headerRatingResults->first()->sof : null;
                 @endphp
                 <div data-tabs data-default-tab="race">
 
@@ -86,9 +95,18 @@
                                 {{ $selected->track }} &middot; {{ $selected->scheduledAtUk()->format('d M Y') }}
                             </div>
                         </div>
-                        @if($headerSof !== null || $fmt)
+                        @if($headerSof !== null || $headerSofByClass->isNotEmpty() || $fmt)
                         <div class="ms-auto d-flex align-items-center gap-4">
-                            @if($headerSof !== null)
+                            @if($headerSofByClass->isNotEmpty())
+                            <div class="text-end">
+                                <div class="text-secondary text-uppercase" style="font-size:.62rem;font-weight:800;letter-spacing:.07em">SoF</div>
+                                <div class="fw-black" style="font-size:.85rem;color:#7c3aed">
+                                    @foreach($headerSofByClass as $clsName => $sof)
+                                    <span>{{ $clsName }} {{ $sof !== null ? number_format($sof, 0) : '—' }}</span>@if(!$loop->last)&nbsp;&middot;&nbsp;@endif
+                                    @endforeach
+                                </div>
+                            </div>
+                            @elseif($headerSof !== null)
                             <div class="text-end">
                                 <div class="text-secondary text-uppercase" style="font-size:.62rem;font-weight:800;letter-spacing:.07em">SoF</div>
                                 <div class="fw-black" style="font-size:.95rem;color:#7c3aed">{{ number_format($headerSof, 0) }}</div>
