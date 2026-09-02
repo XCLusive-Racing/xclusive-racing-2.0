@@ -58,6 +58,17 @@ class PushGPortalConfigs extends Command
 
             Log::info("gPortal {$label}: race #{$race->id} ({$race->title}) → {$server->name}");
 
+            // A saved settings.json override freezes whatever password/serverName the
+            // server had at save time — if the race is later reassigned to a different
+            // server, that override goes stale. Force these two fields fresh every push.
+            $freshSettings = $config->settings($race, $server);
+            $settingsData  = $race->configFile('settings.json')
+                ? array_merge(json_decode($race->configFile('settings.json'), true), [
+                    'password'   => $freshSettings['password'],
+                    'serverName' => $freshSettings['serverName'],
+                ])
+                : $freshSettings;
+
             $files = [
                 'entrylist.json' => json_encode(
                     $race->configFile('entrylist.json')
@@ -71,12 +82,7 @@ class PushGPortalConfigs extends Command
                         : $config->configuration($race, $server),
                     JSON_PRETTY_PRINT
                 ),
-                'settings.json' => json_encode(
-                    $race->configFile('settings.json')
-                        ? json_decode($race->configFile('settings.json'), true)
-                        : $config->settings($race, $server),
-                    JSON_PRETTY_PRINT
-                ),
+                'settings.json' => json_encode($settingsData, JSON_PRETTY_PRINT),
                 'eventrules.json' => json_encode(
                     $race->configFile('eventrules.json')
                         ? json_decode($race->configFile('eventrules.json'), true)

@@ -50,14 +50,13 @@ class AccServerConfigService
             } else {
                 // Solo driver
                 $user      = $reg->user;
-                $lastName  = $user->team ? $user->name . "\n" . $user->team : ($user->name ?? '');
                 $shortName = mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3));
 
                 $entries[] = [
                     'drivers' => [
                         [
                             'firstName'      => '',
-                            'lastName'       => $lastName,
+                            'lastName'       => $user->name ?? '',
                             'shortName'      => $shortName,
                             'playerID'       => $user->platform_id ?? '',
                             'driverCategory' => $user->ratingClass($race->game),
