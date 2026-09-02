@@ -322,24 +322,20 @@ class User extends Authenticatable
         return end(self::ranks());
     }
 
-    // --- Rating class (0–3) based on XCL rating score ---
-
-    public static function ratingClasses(): array
-    {
-        return [
-            ['min' => 0,    'max' => 2000,  'class' => 0],
-            ['min' => 2001, 'max' => 4000,  'class' => 1],
-            ['min' => 4001, 'max' => 5000,  'class' => 2],
-            ['min' => 5001, 'max' => 10000, 'class' => 3],
-        ];
-    }
-
+    // --- ACC entrylist driverCategory (0/1/2), derived from rank ---
+    // In-game number banner colour per driverCategory: 0=red, 1=grey, 2=white.
+    // Rookie -> red, Bronze/Silver -> grey, Gold/Platinum/Alien -> white.
     public function ratingClass(string $game = 'acc'): int
     {
-        $elo = $this->{"elo_{$game}"} ?? 0;
-        foreach (self::ratingClasses() as $tier) {
-            if ($elo >= $tier['min'] && $elo <= $tier['max']) {
-                return $tier['class'];
+        $elo = (int) ($this->{"elo_{$game}"} ?? 0);
+        foreach (self::ranks() as $rank) {
+            if ($elo >= $rank['min']) {
+                return match ($rank['slug']) {
+                    'rookie'                       => 0,
+                    'bronze', 'silver'              => 1,
+                    'gold', 'platinum', 'alien'     => 2,
+                    default                          => 0,
+                };
             }
         }
         return 0;
