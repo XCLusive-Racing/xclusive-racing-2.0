@@ -206,7 +206,7 @@
             <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
                 <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Description <span class="fw-normal" style="text-transform:none">(optional)</span></p>
                 <textarea name="description" rows="3"
-                          class="form-control @error('description') is-invalid @enderror"
+                          class="form-control rich-editor @error('description') is-invalid @enderror"
                           placeholder="Applies to all events...">{{ old('description') }}</textarea>
                 @error('description') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>

@@ -108,7 +108,7 @@
                 @if($race->description)
                 <div class="xcl-event-card mb-4">
                     <h2 class="xcl-event-card__heading">ABOUT THIS EVENT</h2>
-                    <p class="xcl-event-card__text">{{ $race->description }}</p>
+                    <div class="xcl-event-card__text">{!! Illuminate\Support\Str::markdown($race->description, ['renderer' => ['soft_break' => "<br />\n"]]) !!}</div>
                 </div>
                 @endif
 

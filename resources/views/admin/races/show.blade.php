@@ -114,7 +114,7 @@
                         @if($race->description)
                         <div class="mb-4 p-3 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
                             <p class="fw-black text-uppercase fst-italic mb-2" style="font-size:.68rem;letter-spacing:.08em;color:#9ca3af">Description</p>
-                            <p class="mb-0 text-secondary" style="font-size:.875rem;line-height:1.6">{{ $race->description }}</p>
+                            <div class="admin-desc-md mb-0 text-secondary" style="font-size:.875rem;line-height:1.6">{!! Illuminate\Support\Str::markdown($race->description, ['renderer' => ['soft_break' => "<br />\n"]]) !!}</div>
                         </div>
                         @endif
 
@@ -1277,6 +1277,10 @@
 <style>
 details.ftp-group > summary svg { transform: rotate(0deg); transition: transform .15s; }
 details.ftp-group:not([open]) > summary svg { transform: rotate(-90deg); }
+.admin-desc-md p { margin: 0 0 .6rem; }
+.admin-desc-md p:last-child { margin-bottom: 0; }
+.admin-desc-md a { color: #7c3aed; text-decoration: underline; }
+.admin-desc-md a:hover { color: #6d28d9; }
 </style>
 @endpush
 

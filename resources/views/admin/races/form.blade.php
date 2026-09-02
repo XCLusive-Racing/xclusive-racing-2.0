@@ -797,7 +797,7 @@ $mcExisting = $isEdit
 
                         <div>
                             <label class="form-label">Description <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
-                            <textarea name="description" rows="3" class="form-control" placeholder="Additional event info…">{{ old('description', $isEdit ? $race->description : '') }}</textarea>
+                            <textarea name="description" rows="3" class="form-control rich-editor" placeholder="Additional event info…">{{ old('description', $isEdit ? $race->description : '') }}</textarea>
                         </div>
                     </div>
 

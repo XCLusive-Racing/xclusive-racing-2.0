@@ -260,7 +260,7 @@
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Additional</p>
                     <div>
                         <label class="form-label">Description <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
-                        <textarea name="description" rows="3" class="form-control" placeholder="Additional round info…">{{ old('description') }}</textarea>
+                        <textarea name="description" rows="3" class="form-control rich-editor" placeholder="Additional round info…">{{ old('description') }}</textarea>
                     </div>
                 </div>
             </div>
