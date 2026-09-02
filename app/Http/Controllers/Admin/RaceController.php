@@ -50,6 +50,8 @@ class RaceController extends Controller
 
     public function show(Race $race, AccServerConfigService $config)
     {
+        $race->loadMissing(['raceClasses', 'teamEntries']);
+
         $raceResults   = $race->results()->where('session_type', 'race')->with('user')->get();
         $qualiResults  = $race->results()->where('session_type', 'quali')->with('user')->get();
         $registrations = $race->registrations()->with('user')->orderBy('created_at')->get();
@@ -116,14 +118,13 @@ class RaceController extends Controller
 
         $entries = $registrations->map(function ($reg) use ($race) {
             $user      = $reg->user;
-            $lastName  = $user->team ? $user->name . "\n" . $user->team : ($user->name ?? '');
             $shortName = mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3));
 
             return [
                 'drivers' => [
                     [
                         'firstName'      => '',
-                        'lastName'       => $lastName,
+                        'lastName'       => $user->name ?? '',
                         'shortName'      => $shortName,
                         'playerID'       => $user->platform_id ?? '',
                         'driverCategory' => $user->ratingClass($race->game),
@@ -806,6 +807,24 @@ class RaceController extends Controller
 
         $server = FtpServer::findOrFail($request->server_id);
 
+        // A saved/pasted settings.json can carry a password or serverName left over from
+        // a different server — force these two fields to match the server we're pushing
+        // to now, so a stale override can never send the wrong password to a live server.
+        $freshSettings   = $config->settings($race, $server);
+        $settingsInput   = $request->input('settings_json') ?? $race->configFile('settings.json');
+        $decodedSettings = $settingsInput ? json_decode($settingsInput, true) : null;
+        $settingsData    = $decodedSettings
+            ? array_merge($decodedSettings, [
+                'password'   => $freshSettings['password'],
+                'serverName' => $freshSettings['serverName'],
+            ])
+            : $freshSettings;
+        // Malformed pasted JSON is passed through as-is so the validation loop below
+        // still reports it, instead of the fresh-fields merge silently masking it.
+        $settingsJson = ($settingsInput && $decodedSettings === null)
+            ? $settingsInput
+            : json_encode($settingsData, JSON_PRETTY_PRINT);
+
         $files = [
             'entrylist.json'  => $request->input('entrylist_json')
                 ?? $race->configFile('entrylist.json')
@@ -813,9 +832,7 @@ class RaceController extends Controller
             'event.json'      => $request->input('event_json')
                 ?? $race->configFile('event.json')
                 ?? json_encode($config->configuration($race, $server), JSON_PRETTY_PRINT),
-            'settings.json'   => $request->input('settings_json')
-                ?? $race->configFile('settings.json')
-                ?? json_encode($config->settings($race, $server), JSON_PRETTY_PRINT),
+            'settings.json'   => $settingsJson,
             'eventrules.json'  => $race->configFile('eventrules.json')
                 ?? json_encode($config->eventRules($race, $server), JSON_PRETTY_PRINT),
             'assistrules.json' => json_encode($config->assistRules($server), JSON_PRETTY_PRINT),

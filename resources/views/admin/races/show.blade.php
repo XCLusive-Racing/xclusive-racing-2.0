@@ -114,7 +114,7 @@
                         @if($race->description)
                         <div class="mb-4 p-3 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
                             <p class="fw-black text-uppercase fst-italic mb-2" style="font-size:.68rem;letter-spacing:.08em;color:#9ca3af">Description</p>
-                            <p class="mb-0 text-secondary" style="font-size:.875rem;line-height:1.6">{{ $race->description }}</p>
+                            <div class="admin-desc-md mb-0 text-secondary" style="font-size:.875rem;line-height:1.6">{!! Illuminate\Support\Str::markdown($race->description, ['renderer' => ['soft_break' => "<br />\n"]]) !!}</div>
                         </div>
                         @endif
 
@@ -659,6 +659,109 @@
                         <div class="fw-bold text-dark" style="font-size:.95rem">No race results yet</div>
                         <div class="text-secondary mt-1" style="font-size:.82rem">Import a result file via FTP or manual upload above.</div>
                     </div>
+                    @elseif($race->is_multiclass && $race->raceClasses->isNotEmpty())
+                    @php
+                        $groupedRaceResults = \App\Models\RaceResult::groupedByCar($raceResults, $race);
+                        $classGroups        = \App\Models\RaceResult::classGroups($groupedRaceResults, $race);
+                    @endphp
+                    <div data-accordions>
+                    @foreach($classGroups as $group)
+                    <div @if($group->label) data-accordion="closed" @endif style="border-bottom:1px solid #f3f4f6">
+                    @if($group->label)
+                    <div class="d-flex align-items-center gap-2 px-4 pt-3 pb-2" data-accordion-header style="cursor:pointer">
+                        <svg data-accordion-arrow width="12" height="12" viewBox="0 0 20 20" fill="currentColor" class="text-secondary" style="transition:transform .15s;flex-shrink:0"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+                        <span class="fw-black text-uppercase" style="font-size:.78rem;letter-spacing:.05em;color:{{ $group->color ?? '#7c3aed' }}">{{ $group->label }}</span>
+                        <span class="badge ms-1" style="background:#f3f4f6;color:#6b7280;font-size:.65rem;padding:2px 7px;border-radius:10px">{{ $group->rows->count() }}</span>
+                    </div>
+                    @endif
+                    <div @if($group->label) data-accordion-body style="display:none" @endif>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" style="font-size:.82rem">
+                            <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+                                <tr>
+                                    <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:50px">Pos</th>
+                                    <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:55px">No</th>
+                                    <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Driver</th>
+                                    <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Vehicle</th>
+                                    <th class="fw-bold text-uppercase text-center" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:60px">Laps</th>
+                                    <th class="fw-bold text-uppercase text-center" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:115px">Time/Retired</th>
+                                    <th class="fw-bold text-uppercase text-center" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:110px">Best Lap</th>
+                                    <th class="fw-bold text-uppercase text-center pe-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Consistency</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($group->rows as $row)
+                                @php $result = $row->result; $pos = $row->pos; @endphp
+                                <tr>
+                                    <td class="ps-4">
+                                        @if($result->dsq)
+                                            <span class="fw-bold" style="color:#dc2626">DSQ</span>
+                                        @elseif($result->dc)
+                                            <span class="fw-bold text-secondary">DC</span>
+                                        @elseif($result->dns)
+                                            <span class="fw-bold text-secondary">DNS</span>
+                                        @elseif($pos !== null)
+                                            <x-race-position :position="$pos" />
+                                        @else
+                                            <span class="fw-bold text-secondary">—</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($result->car_number !== null)
+                                        <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.72rem">#{{ $result->car_number }}</span>
+                                        @else
+                                        <span class="text-secondary">—</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            @if($result->user?->avatarUrl())
+                                            <img src="{{ $result->user->avatarUrl() }}" alt="" class="rounded-circle flex-shrink-0" style="width:28px;height:28px;object-fit:cover">
+                                            @else
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
+                                                 style="width:28px;height:28px;font-size:.68rem;background:{{ $race->gameColor() }}">
+                                                {{ strtoupper(substr($row->label, 0, 1)) }}
+                                            </div>
+                                            @endif
+                                            <div>
+                                                <div class="fw-bold">{{ $row->label }}</div>
+                                                @if($row->sub)
+                                                <div class="text-secondary" style="font-size:.65rem">{{ $row->sub }}</div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-secondary" style="font-size:.78rem">{{ $result->vehicle ?? '—' }}</td>
+                                    <td class="text-center fw-bold">{{ $result->lap_count ?? '—' }}</td>
+                                    <td class="text-center" style="font-family:monospace;font-size:.8rem">
+                                        @if($result->dsq)
+                                            <span class="badge" style="background:#fef2f2;color:#dc2626;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DSQ</span>
+                                        @elseif($result->dc)
+                                            <span class="badge" style="background:#f3f4f6;color:#6b7280;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DC</span>
+                                        @elseif($result->dns)
+                                            <span class="badge" style="background:#fef2f2;color:#6b7280;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DNS</span>
+                                        @elseif($result->dnf)
+                                            <span class="badge" style="background:#fef2f2;color:#dc2626;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DNF</span>
+                                        @else
+                                            {{ \App\Models\RaceResult::formatMs($result->total_time) }}
+                                        @endif
+                                    </td>
+                                    <td class="text-center fw-bold" style="font-family:monospace;font-size:.8rem">
+                                        {{ \App\Models\RaceResult::formatMs($result->best_lap) }}
+                                        @if($result->fastest_lap)
+                                        <span class="badge ms-1" style="background:#7c3aed;font-size:.58rem;padding:2px 5px">FL</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center pe-4" style="font-size:.78rem">{{ $result->consistency !== null ? $result->consistency . '%' : '—' }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    </div>
+                    </div>
+                    @endforeach
+                    </div>{{-- /data-accordions --}}
                     @else
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0" style="font-size:.82rem">
@@ -678,7 +781,17 @@
                             <tbody>
                                 @foreach($raceResults as $result)
                                 <tr>
-                                    <td class="ps-4"><x-race-position :position="$result->position" /></td>
+                                    <td class="ps-4">
+                                        @if($result->dsq)
+                                            <span class="fw-bold" style="color:#dc2626">DSQ</span>
+                                        @elseif($result->dc)
+                                            <span class="fw-bold text-secondary">DC</span>
+                                        @elseif($result->dns)
+                                            <span class="fw-bold text-secondary">DNS</span>
+                                        @else
+                                            <x-race-position :position="$result->position" />
+                                        @endif
+                                    </td>
                                     <td>
                                         @if($result->car_number !== null)
                                         <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.72rem">#{{ $result->car_number }}</span>
@@ -706,6 +819,8 @@
                                     <td class="text-center" style="font-family:monospace;font-size:.8rem">
                                         @if($result->dsq)
                                             <span class="badge" style="background:#fef2f2;color:#dc2626;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DSQ</span>
+                                        @elseif($result->dc)
+                                            <span class="badge" style="background:#f3f4f6;color:#6b7280;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DC</span>
                                         @elseif($result->dns)
                                             <span class="badge" style="background:#fef2f2;color:#6b7280;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DNS</span>
                                         @elseif($result->dnf)
@@ -737,6 +852,87 @@
                         <div class="fw-bold text-dark" style="font-size:.95rem">No qualifying results yet</div>
                         <div class="text-secondary mt-1" style="font-size:.82rem">Import a qualifying session file to populate this tab.</div>
                     </div>
+                    @elseif($race->is_multiclass && $race->raceClasses->isNotEmpty())
+                    @php
+                        $groupedQualiResults = \App\Models\RaceResult::groupedByCar($qualiResults, $race);
+                        $qualiClassGroups    = \App\Models\RaceResult::classGroups($groupedQualiResults, $race);
+                    @endphp
+                    <div data-accordions>
+                    @foreach($qualiClassGroups as $group)
+                    <div @if($group->label) data-accordion="closed" @endif style="border-bottom:1px solid #f3f4f6">
+                    @if($group->label)
+                    <div class="d-flex align-items-center gap-2 px-4 pt-3 pb-2" data-accordion-header style="cursor:pointer">
+                        <svg data-accordion-arrow width="12" height="12" viewBox="0 0 20 20" fill="currentColor" class="text-secondary" style="transition:transform .15s;flex-shrink:0"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+                        <span class="fw-black text-uppercase" style="font-size:.78rem;letter-spacing:.05em;color:{{ $group->color ?? '#2563eb' }}">{{ $group->label }}</span>
+                        <span class="badge ms-1" style="background:#f3f4f6;color:#6b7280;font-size:.65rem;padding:2px 7px;border-radius:10px">{{ $group->rows->count() }}</span>
+                    </div>
+                    @endif
+                    <div @if($group->label) data-accordion-body style="display:none" @endif>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" style="font-size:.875rem">
+                            <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+                                <tr>
+                                    <th class="fw-bold text-uppercase ps-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:60px">Pos</th>
+                                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:60px">Car #</th>
+                                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Driver</th>
+                                    <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:80px">Laps</th>
+                                    <th class="fw-bold text-uppercase text-center pe-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:130px">Best Lap</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($group->rows as $row)
+                                @php $result = $row->result; $pos = $row->pos; @endphp
+                                <tr>
+                                    <td class="ps-4">
+                                        @if($pos !== null)
+                                        <x-race-position :position="$pos" />
+                                        @else
+                                        <span class="fw-bold text-secondary">—</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($result->car_number)
+                                        <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.72rem">#{{ $result->car_number }}</span>
+                                        @else
+                                        <span class="text-secondary">—</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            @if($result->user?->avatarUrl())
+                                            <img src="{{ $result->user->avatarUrl() }}" alt="" class="rounded-circle flex-shrink-0" style="width:30px;height:30px;object-fit:cover">
+                                            @else
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
+                                                 style="width:30px;height:30px;font-size:.72rem;background:#2563eb">
+                                                {{ strtoupper(substr($row->label, 0, 1)) }}
+                                            </div>
+                                            @endif
+                                            <div>
+                                                <div class="fw-bold">{{ $row->label }}</div>
+                                                @if($row->sub)
+                                                <div class="text-secondary" style="font-size:.68rem">{{ $row->sub }}</div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center fw-bold">{{ $result->lap_count ?? '—' }}</td>
+                                    <td class="text-center pe-4">
+                                        <span class="fw-bold" style="font-family:monospace">
+                                            {{ \App\Models\RaceResult::formatMs($result->best_lap) }}
+                                        </span>
+                                        @if($result->fastest_lap)
+                                        <span class="badge ms-1" style="background:#7c3aed;font-size:.6rem;padding:2px 6px">FL</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    </div>
+                    </div>
+                    @endforeach
+                    </div>{{-- /data-accordions --}}
                     @else
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0" style="font-size:.875rem">
@@ -795,11 +991,117 @@
                 {{-- Ratings sub-tab --}}
                 <div data-tab-panel="ratings" style="display:none">
                     @php $ratedResults = $raceResults->whereNotNull('rating_after')->sortBy('position'); @endphp
-                    @if($ratedResults->isEmpty())
+                    @if($ratedResults->isEmpty() && !($race->is_multiclass && $race->raceClasses->isNotEmpty()))
                     <div class="p-5 text-center">
                         <div class="fw-bold text-dark" style="font-size:.95rem">No rating data yet</div>
                         <div class="text-secondary mt-1" style="font-size:.82rem">Import race results first — ratings are calculated automatically.</div>
                     </div>
+                    @elseif($race->is_multiclass && $race->raceClasses->isNotEmpty())
+                    @php
+                        $minNeeded = (new \App\Services\XclRating())->MIN_DRIVERS;
+                        $ratingGroups = $race->raceClasses->sortBy('sort_order')->map(function ($cls) use ($raceResults, $minNeeded) {
+                            $classRows = $raceResults->filter(
+                                fn($r) => $r->car_class && $cls->car_class && strtoupper($r->car_class) === strtoupper($cls->car_class)
+                            );
+                            $finisherCount = $classRows->filter(function ($r) {
+                                $isTrueDnf = $r->dnf && (int) ($r->lap_count ?? 0) <= 1;
+                                return !$r->dsq && !$r->dns && !$r->dc && !$isTrueDnf;
+                            })->count();
+                            $positions = \App\Models\RaceResult::classifiedPositions($classRows);
+
+                            return (object) [
+                                'label' => $cls->name, 'color' => $cls->color,
+                                'rows' => $classRows->sortBy(fn($r) => $positions->get($r->id) ?? PHP_INT_MAX)->values(),
+                                'positions' => $positions,
+                                'sof' => $classRows->first(fn($r) => $r->sof !== null)?->sof,
+                                'rated' => $classRows->contains(fn($r) => $r->elo_change !== null),
+                                'finisherCount' => $finisherCount, 'minNeeded' => $minNeeded,
+                            ];
+                        });
+                    @endphp
+                    @foreach($ratingGroups as $group)
+                    <div class="px-4 pt-3 pb-2 d-flex align-items-center gap-2" style="border-bottom:1px solid #f3f4f6;background:#f9fafb">
+                        <span class="fw-black text-uppercase fst-italic" style="font-size:.78rem;color:{{ $group->color ?? '#7c3aed' }}">{{ $group->label }}</span>
+                        @if($group->sof !== null)
+                        <span class="badge fw-bold" style="background:#7c3aed;color:white;font-size:.72rem;padding:3px 9px;border-radius:6px">SoF {{ number_format($group->sof, 0) }}</span>
+                        @endif
+                    </div>
+                    @if(!$group->rated)
+                    <p class="text-secondary px-4 pt-3 mb-0" style="font-size:.82rem">Minimum of {{ $group->minNeeded }} finishers not reached ({{ $group->finisherCount }} finished) — no rating calculated for this class.</p>
+                    @endif
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" style="font-size:.82rem">
+                            <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+                                <tr>
+                                    <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:50px">Pos</th>
+                                    <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Driver</th>
+                                    <th class="fw-bold text-uppercase text-center" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:80px">Status</th>
+                                    <th class="fw-bold text-uppercase text-end" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:110px">Before</th>
+                                    <th class="fw-bold text-uppercase text-end" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:100px">Elo Δ</th>
+                                    <th class="fw-bold text-uppercase text-end pe-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:110px">After</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($group->rows as $result)
+                                @php
+                                    $pos    = $group->positions->get($result->id);
+                                    $change = $result->elo_change !== null ? (float) $result->elo_change : null;
+                                @endphp
+                                <tr>
+                                    <td class="ps-4">
+                                        @if($result->dsq)
+                                            <span class="fw-bold" style="color:#dc2626">DSQ</span>
+                                        @elseif($result->dc)
+                                            <span class="fw-bold text-secondary">DC</span>
+                                        @elseif($result->dns)
+                                            <span class="fw-bold text-secondary">DNS</span>
+                                        @elseif($pos !== null)
+                                            <x-race-position :position="$pos" />
+                                        @else
+                                            <span class="fw-bold text-secondary">—</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            @if($result->user?->avatarUrl())
+                                            <img src="{{ $result->user->avatarUrl() }}" alt="" class="rounded-circle flex-shrink-0" style="width:28px;height:28px;object-fit:cover">
+                                            @else
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
+                                                 style="width:28px;height:28px;font-size:.68rem;background:{{ $race->gameColor() }}">
+                                                {{ strtoupper(substr($result->displayName(), 0, 1)) }}
+                                            </div>
+                                            @endif
+                                            <span class="fw-bold">{{ $result->displayName() }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        @if($result->dsq)
+                                            <span class="badge" style="background:#fef2f2;color:#dc2626;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">DSQ</span>
+                                        @elseif($result->dc)
+                                            <span class="badge" style="background:#f3f4f6;color:#6b7280;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">DC</span>
+                                        @elseif($result->dns)
+                                            <span class="badge" style="background:#f3f4f6;color:#6b7280;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">DNS</span>
+                                        @elseif($result->dnf)
+                                            <span class="badge" style="background:#fef2f2;color:#dc2626;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">DNF</span>
+                                        @else
+                                            <span class="badge" style="background:#f0fdf4;color:#16a34a;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">FIN</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end text-secondary" style="font-family:monospace;font-size:.8rem">
+                                        {{ $result->rating_before !== null ? number_format((float) $result->rating_before, 0) : '—' }}
+                                    </td>
+                                    <td class="text-end fw-black" style="font-family:monospace;font-size:.85rem;color:{{ $change === null ? '#6b7280' : ($change >= 0 ? '#059669' : '#dc2626') }}">
+                                        {{ $change !== null ? ($change >= 0 ? '+' : '') . number_format($change, 0) : '—' }}
+                                    </td>
+                                    <td class="text-end pe-4 fw-bold" style="font-family:monospace;font-size:.8rem">
+                                        {{ $result->rating_after !== null ? number_format((float) $result->rating_after, 0) : '—' }}
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @endforeach
                     @else
                     @php $sof = $ratedResults->first()->sof; @endphp
                     <div class="px-4 py-3 d-flex align-items-center gap-3" style="border-bottom:1px solid #f3f4f6;background:#f9fafb">
@@ -824,7 +1126,17 @@
                                 @foreach($ratedResults as $result)
                                 @php $change = (float) $result->elo_change; @endphp
                                 <tr>
-                                    <td class="ps-4"><x-race-position :position="$result->position" /></td>
+                                    <td class="ps-4">
+                                        @if($result->dsq)
+                                            <span class="fw-bold" style="color:#dc2626">DSQ</span>
+                                        @elseif($result->dc)
+                                            <span class="fw-bold text-secondary">DC</span>
+                                        @elseif($result->dns)
+                                            <span class="fw-bold text-secondary">DNS</span>
+                                        @else
+                                            <x-race-position :position="$result->position" />
+                                        @endif
+                                    </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
                                             @if($result->user?->avatarUrl())
@@ -839,7 +1151,13 @@
                                         </div>
                                     </td>
                                     <td class="text-center">
-                                        @if($result->dnf)
+                                        @if($result->dsq)
+                                            <span class="badge" style="background:#fef2f2;color:#dc2626;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">DSQ</span>
+                                        @elseif($result->dc)
+                                            <span class="badge" style="background:#f3f4f6;color:#6b7280;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">DC</span>
+                                        @elseif($result->dns)
+                                            <span class="badge" style="background:#f3f4f6;color:#6b7280;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">DNS</span>
+                                        @elseif($result->dnf)
                                             <span class="badge" style="background:#fef2f2;color:#dc2626;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">DNF</span>
                                         @else
                                             <span class="badge" style="background:#f0fdf4;color:#16a34a;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">FIN</span>
@@ -959,6 +1277,10 @@
 <style>
 details.ftp-group > summary svg { transform: rotate(0deg); transition: transform .15s; }
 details.ftp-group:not([open]) > summary svg { transform: rotate(-90deg); }
+.admin-desc-md p { margin: 0 0 .6rem; }
+.admin-desc-md p:last-child { margin-bottom: 0; }
+.admin-desc-md a { color: #7c3aed; text-decoration: underline; }
+.admin-desc-md a:hover { color: #6d28d9; }
 </style>
 @endpush
 

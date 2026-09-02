@@ -23,6 +23,8 @@ class RaceResultController extends Controller
 
     public function create(Race $race)
     {
+        $race->loadMissing(['raceClasses', 'teamEntries']);
+
         $raceResults  = $race->results()->where('session_type', 'race')->with('user')->get();
         $qualiResults = $race->results()->where('session_type', 'quali')->with('user')->get();
 

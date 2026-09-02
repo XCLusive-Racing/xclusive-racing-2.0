@@ -2713,6 +2713,24 @@ span.flatpickr-weekday {
         color: rgba(255,255,255,.65);
         line-height: 1.65;
         margin: 0;
+
+        p {
+            margin: 0 0 .75rem;
+
+            &:last-child {
+                margin-bottom: 0;
+            }
+        }
+
+        a {
+            color: #f472b6;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+
+            &:hover {
+                color: #f9a8d4;
+            }
+        }
     }
 }
 

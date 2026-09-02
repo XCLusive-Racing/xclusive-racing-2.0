@@ -62,7 +62,7 @@
                                 @if($user->is_supporter)
                                 <input type="text" name="team" value="{{ old('team', $user->team) }}"
                                        class="form-control" placeholder="Supporter"
-                                       maxlength="25">
+                                       maxlength="16">
                                 @else
                                 <input type="text" class="form-control" value="{{ $user->displayTeam() ?? '' }}"
                                        disabled style="opacity:.5;cursor:not-allowed">
