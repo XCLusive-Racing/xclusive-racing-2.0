@@ -5,9 +5,21 @@
 
 @section('page-actions')
     <a href="{{ route('admin.applications.index') }}" class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.78rem">← Back</a>
+    <form action="{{ route('admin.applications.send-to-inbox', $application) }}" method="POST" class="d-inline">
+        @csrf
+        <button type="submit" class="btn btn-sm fw-bold text-uppercase text-white" style="background:#7c3aed;font-size:.78rem"
+                title="Send to info@xclusiveracing.com">Send to Inbox</button>
+    </form>
 @endsection
 
 @section('content')
+
+@if(session('success'))
+<div class="alert border-0 text-white fw-bold mb-4 rounded-3" style="background:#16a34a">{{ session('success') }}</div>
+@endif
+@if(session('error'))
+<div class="alert border-0 text-white fw-bold mb-4 rounded-3" style="background:#dc2626">{{ session('error') }}</div>
+@endif
 
 <div class="row g-4">
 

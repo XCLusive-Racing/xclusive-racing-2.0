@@ -8,6 +8,9 @@
 @if(session('success'))
 <div class="alert border-0 text-white fw-bold mb-4 rounded-3" style="background:#16a34a">{{ session('success') }}</div>
 @endif
+@if(session('error'))
+<div class="alert border-0 text-white fw-bold mb-4 rounded-3" style="background:#dc2626">{{ session('error') }}</div>
+@endif
 
 <div class="admin-card p-0 overflow-hidden">
     @if($applications->isEmpty())
@@ -22,7 +25,7 @@
                     <th class="fw-bold text-uppercase text-secondary py-3 d-none d-md-table-cell" style="font-size:.68rem;letter-spacing:.06em">Email</th>
                     <th class="fw-bold text-uppercase text-secondary py-3 d-none d-lg-table-cell" style="font-size:.68rem;letter-spacing:.06em">Discord</th>
                     <th class="fw-bold text-uppercase text-secondary py-3 d-none d-lg-table-cell" style="font-size:.68rem;letter-spacing:.06em">Date</th>
-                    <th style="width:60px"></th>
+                    <th style="width:150px"></th>
                 </tr>
             </thead>
             <tbody>
@@ -35,8 +38,15 @@
                     <td class="text-secondary d-none d-lg-table-cell" style="font-size:.78rem">{{ $application->discord ?: '—' }}</td>
                     <td class="text-secondary d-none d-lg-table-cell" style="font-size:.78rem">{{ $application->created_at->format('d M Y') }}</td>
                     <td class="text-end pe-3">
-                        <a href="{{ route('admin.applications.show', $application) }}"
-                           class="btn btn-xs btn-outline-secondary fw-bold" style="font-size:.7rem;padding:2px 8px">View</a>
+                        <div class="d-inline-flex gap-2">
+                            <a href="{{ route('admin.applications.show', $application) }}"
+                               class="btn btn-xs btn-outline-secondary fw-bold" style="font-size:.7rem;padding:2px 8px">View</a>
+                            <form action="{{ route('admin.applications.send-to-inbox', $application) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="btn btn-xs btn-outline-secondary fw-bold" style="font-size:.7rem;padding:2px 8px"
+                                        title="Send to info@xclusiveracing.com">Send to Inbox</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 @endforeach

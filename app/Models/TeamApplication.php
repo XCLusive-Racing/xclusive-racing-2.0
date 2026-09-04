@@ -26,13 +26,14 @@ class TeamApplication extends Model
     ];
 
     protected $fillable = [
-        'name', 'email', 'discord', 'role', 'platforms', 'motivation',
+        'name', 'email', 'discord', 'role', 'platforms', 'motivation', 'viewed_at',
     ];
 
     protected function casts(): array
     {
         return [
             'platforms' => 'array',
+            'viewed_at' => 'datetime',
         ];
     }
 

@@ -324,6 +324,7 @@ Route::middleware(['auth', 'role:owner,admin,broadcaster'])->prefix('admin')->na
 Route::middleware(['auth', 'role:owner,admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/applications', [AdminApplicationController::class, 'index'])->name('applications.index');
     Route::get('/applications/{application}', [AdminApplicationController::class, 'show'])->name('applications.show');
+    Route::post('/applications/{application}/send-to-inbox', [AdminApplicationController::class, 'sendToInbox'])->name('applications.send-to-inbox');
 });
 
 // Owner only

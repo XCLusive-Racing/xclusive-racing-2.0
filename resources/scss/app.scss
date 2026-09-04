@@ -3459,6 +3459,23 @@ body.admin-body {
     }
 }
 
+.admin-nav-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 5px;
+    margin-left: auto;
+    border-radius: 999px;
+    background: #f97316;
+    color: #fff;
+    font-size: .65rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    line-height: 1;
+}
+
 .admin-sidebar-footer {
     margin-top: auto;
     padding: .9rem 1.25rem;
