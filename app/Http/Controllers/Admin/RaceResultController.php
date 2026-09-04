@@ -13,6 +13,7 @@ use App\Services\FtpService;
 use App\Services\RatingService;
 use App\Services\XclRating;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class RaceResultController extends Controller
@@ -129,9 +130,23 @@ class RaceResultController extends Controller
             $counts['race']  += $sessionCounts['race'];
             $counts['quali'] += $sessionCounts['quali'];
             $errors = array_merge($errors, $sessionErrors);
+
+            if ($sessionCounts['race'] > 0) {
+                $this->storeResultsJson($race, $content);
+            }
         }
 
         return $this->redirectWithCounts($counts, $errors);
+    }
+
+    // Keeps the full decoded race-session JSON (laps, sectors, penalties) around so the
+    // public results page can build detailed stats — the aggregate RaceResult rows alone
+    // don't carry that per-lap detail.
+    private function storeResultsJson(Race $race, string $content): void
+    {
+        $path = 'race-results/' . $race->id . '.json';
+        Storage::disk('local')->put($path, $content);
+        $race->update(['results_json_path' => $path]);
     }
 
     public function ftpImport(Request $request, Race $race)
@@ -181,6 +196,10 @@ class RaceResultController extends Controller
             $counts['race']  += $sessionCounts['race'];
             $counts['quali'] += $sessionCounts['quali'];
             $errors = array_merge($errors, $sessionErrors);
+
+            if ($sessionCounts['race'] > 0) {
+                $this->storeResultsJson($race, $content);
+            }
         } catch (\Throwable $e) {
             \Log::error('FTP import exception', [
                 'file'    => $filename,

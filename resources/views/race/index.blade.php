@@ -146,7 +146,7 @@
                                 @endif
                                 {{-- Format image: centered overlay (max 60% of card width) --}}
                                 <div class="xcl-ec2__badge-wrap">
-                                    @if($race->icon)
+                                    @if($race->icon_url)
                                     <div class="xcl-ec2__icon-badge">
                                         <img src="{{ $race->icon_url }}" alt="{{ $race->title }}" class="xcl-ec2__icon-badge-img">
                                     </div>

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Storage;
 
 class Race extends Model
 {
-    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon', 'duration_key', 'xcl_r_multiplier', 'practice_duration', 'qualifying_duration', 'race_duration', 'pitstop_count', 'min_stop_secs', 'car_class', 'sr_requirement', 'min_rating', 'max_rating', 'weather', 'weather_randomness', 'rain_level', 'time_of_day', 'ambient_temp', 'config_overrides', 'championship_id', 'round_number', 'is_multiclass', 'is_endurance', 'driver_stint_time_mins', 'max_total_driving_time_mins', 'mandatory_driver_swap', 'event_format_id', 'ftp_server_id', 'slot_time', 'config_pushed_at', 'config_push_status', 'config_push_attempts', 'config_push_error'];
+    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon', 'duration_key', 'xcl_r_multiplier', 'practice_duration', 'qualifying_duration', 'race_duration', 'pitstop_count', 'min_stop_secs', 'car_class', 'sr_requirement', 'min_rating', 'max_rating', 'weather', 'weather_randomness', 'rain_level', 'time_of_day', 'ambient_temp', 'config_overrides', 'results_json_path', 'championship_id', 'round_number', 'is_multiclass', 'is_endurance', 'driver_stint_time_mins', 'max_total_driving_time_mins', 'mandatory_driver_swap', 'event_format_id', 'ftp_server_id', 'slot_time', 'config_pushed_at', 'config_push_status', 'config_push_attempts', 'config_push_error'];
 
     protected function casts(): array
     {
@@ -167,7 +167,31 @@ class Race extends Model
 
     public function getIconUrlAttribute(): ?string
     {
-        return $this->icon ? Storage::disk('media')->url($this->icon) : null;
+        $icon = $this->icon ?: $this->defaultCustomIconPath();
+
+        return $icon ? Storage::disk('media')->url($icon) : null;
+    }
+
+    // Custom races (no event_format_id) have no format-derived icon, so without an
+    // admin-chosen one they'd show the plain text badge instead of a logo. Fall back
+    // to the shared "special event" logo in that case.
+    private static ?string $specialEventIconPath = null;
+    private static bool $specialEventIconResolved = false;
+
+    private function defaultCustomIconPath(): ?string
+    {
+        if ($this->event_format_id) {
+            return null;
+        }
+
+        if (!self::$specialEventIconResolved) {
+            self::$specialEventIconResolved = true;
+            self::$specialEventIconPath = Media::where('title', 'special_event')
+                ->orWhere('original_name', 'like', 'special_event%')
+                ->value('path');
+        }
+
+        return self::$specialEventIconPath;
     }
 
     public function gameColor(): string
