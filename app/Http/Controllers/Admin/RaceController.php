@@ -207,6 +207,7 @@ class RaceController extends Controller
             'events.*.time_of_day'     => 'nullable|date_format:H:i',
             'events.*.ambient_temp'    => 'nullable|integer|min:-30|max:50',
             'events.*.max_drivers'     => 'nullable|integer|min:1',
+            'events.*.car_class'       => 'nullable|string|max:50',
         ]);
 
         $shared = [
@@ -255,6 +256,7 @@ class RaceController extends Controller
                 'time_of_day'      => $event['time_of_day'] ?: $shared['time_of_day'],
                 'ambient_temp'     => $event['ambient_temp'] ?? $shared['ambient_temp'],
                 'max_drivers'      => $event['max_drivers'] ?: $shared['max_drivers'],
+                'car_class'        => ($event['car_class'] ?? null) ?: $shared['car_class'],
             ])));
         }
 
@@ -764,7 +766,16 @@ class RaceController extends Controller
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
         $data = $this->normalizeRainLevel($data);
 
+        // Preserve driver swap fields before deriveFormatFields() resets them for format-based races
+        $driverSwap = [
+            'is_endurance'                => $data['is_endurance'],
+            'mandatory_driver_swap'       => $data['mandatory_driver_swap'],
+            'driver_stint_time_mins'      => $data['driver_stint_time_mins'] ?? null,
+            'max_total_driving_time_mins' => $data['max_total_driving_time_mins'] ?? null,
+        ];
+
         $data = $this->deriveFormatFields($data);
+        $data = array_merge($data, $driverSwap);
 
         if (!empty($data['ftp_server_id'])) {
             $server = FtpServer::find($data['ftp_server_id']);
@@ -968,6 +979,8 @@ class RaceController extends Controller
             return;
         }
 
+        // Null out race_class_id on registrations before deleting classes to prevent cascade wipe
+        $race->registrations()->whereNotNull('race_class_id')->update(['race_class_id' => null]);
         $race->raceClasses()->delete();
 
         foreach ($classes as $i => $class) {
