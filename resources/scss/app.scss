@@ -2113,6 +2113,15 @@ span.flatpickr-weekday {
         display: flex;
         align-items: center;
         justify-content: center;
+
+        &::before {
+            content: '';
+            position: absolute;
+            inset: -18%;
+            background: radial-gradient(closest-side, rgba(0,0,0,.6), rgba(0,0,0,0) 72%);
+            filter: blur(16px);
+            z-index: -1;
+        }
     }
 
     &__badge {
@@ -2168,10 +2177,10 @@ span.flatpickr-weekday {
     }
 
     &__icon-badge-img {
-        max-width: 60%;
+        max-width: 74%;
         width: auto;
         height: auto;
-        max-height: 80%;
+        max-height: 92%;
         object-fit: contain;
         filter: drop-shadow(0 3px 18px rgba(0,0,0,.85));
         display: block;
