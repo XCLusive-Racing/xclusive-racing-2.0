@@ -92,7 +92,7 @@ const drivers = [
         { type: 'tiktok',    href: 'https://www.tiktok.com/@alexxluckyy?_r=1&_t=ZN-95QVr8UQG06' },
     ] },
     { name: 'Michael Martinz',  cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Martinz.png', flag: 'austria',          role: 'esports', socials: [] },
-    { name: 'Matteo Mastromauro', cat: 'acc',   platform: 'console', platformLabel: 'Console', photo: null, flag: 'italy',           role: 'esports', socials: [] },
+    { name: 'Matteo Mastromauro', cat: 'acc',   platform: 'console', platformLabel: 'Console', photo: '/images/drivers/matteomastromauro.png', flag: 'italy', role: 'esports', socials: [] },
     { name: 'Danny Meeldijk',   cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/Danny.png', flag: 'netherlands',      role: 'esports', socials: [] },
     { name: 'Elmārs Miķelsons', cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/elmars.png', flag: 'latvia',           role: 'esports', socials: [] },
     { name: 'Melvin Milasten',  cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/m.milasten.png', flag: 'sweden',        role: 'esports', socials: [
