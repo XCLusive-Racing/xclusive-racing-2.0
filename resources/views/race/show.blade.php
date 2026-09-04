@@ -310,35 +310,144 @@
                 <div class="xcl-event-card mb-4">
                     <h3 class="xcl-event-card__heading">TEAM ENTRY</h3>
 
-                    @if($myTeamEntry)
-                        <div class="xcl-event-reg-status xcl-event-reg-status--registered mb-3">
-                            Registered!
-                        </div>
-                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+                    @if($myTeamEntries->isNotEmpty())
+                        {{-- Show each registered car --}}
+                        @foreach($myTeamEntries as $myTeamEntry)
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
                             @if($userTeam->logoUrl())
-                            <img src="{{ $userTeam->logoUrl() }}" width="44" height="44"
+                            <img src="{{ $userTeam->logoUrl() }}" width="36" height="36"
                                  style="border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.15);flex-shrink:0">
                             @else
-                            <div style="width:44px;height:44px;border-radius:50%;background:#374151;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:900;color:#e5e7eb;flex-shrink:0">
+                            <div style="width:36px;height:36px;border-radius:50%;background:#374151;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:900;color:#e5e7eb;flex-shrink:0">
                                 {{ strtoupper(substr($userTeam->name, 0, 1)) }}
                             </div>
                             @endif
-                            <div>
-                                <div style="font-size:.95rem;font-weight:800;color:#e5e7eb">[{{ $userTeam->tag }}] {{ $userTeam->name }}</div>
+                            <div style="flex:1">
+                                <div style="font-size:.88rem;font-weight:800;color:#e5e7eb">[{{ $userTeam->tag }}] {{ $userTeam->name }}</div>
                                 @if($myTeamEntry->car_number || $myTeamEntry->car_model)
-                                <div style="font-size:.78rem;color:#9ca3af;margin-top:2px">
+                                <div style="font-size:.75rem;color:#9ca3af;margin-top:1px">
                                     @if($myTeamEntry->car_number)<span style="color:#e5e7eb;font-weight:700">#{{ $myTeamEntry->car_number }}</span>@endif
                                     @if($myTeamEntry->car_model)<span> — {{ $myTeamEntry->car_model }}</span>@endif
                                 </div>
                                 @endif
                             </div>
+                            @if($race->status === 'open')
+                            <form action="{{ route('events.unregister-team', [$race, $myTeamEntry]) }}" method="POST" class="flex-shrink-0">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="xcl-event-unreg-btn" style="font-size:.7rem;padding:4px 10px">REMOVE</button>
+                            </form>
+                            @endif
                         </div>
-                        @if($race->status === 'open')
-                        <form action="{{ route('events.unregister-team', $race) }}" method="POST">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="xcl-event-unreg-btn w-100">UNREGISTER TEAM</button>
-                        </form>
+                        @endforeach
+
+                        @if($race->registrationOpen())
+                        <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)">
+                            <p style="font-size:.78rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Add another car</p>
+                            <form action="{{ route('events.register-team', $race) }}" method="POST">
+                                @csrf
+                                @php
+                                    $carList = \App\Models\Car::where('game', $race->game)
+                                        ->when($race->car_class, fn($q) => $q->where('car_class', $race->car_class))
+                                        ->orderBy('name')
+                                        ->pluck('name');
+                                @endphp
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <label class="xcl-event-card__text d-block mb-1" style="font-size:.75rem">Car Number</label>
+                                        <input type="number" name="car_number" min="0" max="999"
+                                               class="form-control form-control-sm"
+                                               style="background:#1f2937;border-color:#374151;color:#e5e7eb"
+                                               placeholder="e.g. 7" required>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="xcl-event-card__text d-block mb-1" style="font-size:.75rem">Car Model</label>
+                                        @if($carList->isNotEmpty())
+                                        <select name="car_model" class="form-select form-select-sm"
+                                                style="background:#1f2937;border-color:#374151;color:#e5e7eb">
+                                            <option value="">— Select car —</option>
+                                            @foreach($carList as $car)
+                                            <option value="{{ $car }}">{{ $car }}</option>
+                                            @endforeach
+                                        </select>
+                                        @else
+                                        <input type="text" name="car_model" maxlength="60"
+                                               class="form-control form-control-sm"
+                                               style="background:#1f2937;border-color:#374151;color:#e5e7eb"
+                                               placeholder="e.g. Ferrari 296">
+                                        @endif
+                                    </div>
+                                </div>
+                                <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:4px 8px;margin-bottom:8px">
+                                    <span style="font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">Driver</span>
+                                    <span style="font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;text-align:center">Starts</span>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input class="form-check-input m-0" type="checkbox" name="driver_ids[]"
+                                               value="{{ $userTeam->owner_id }}" id="driver2_{{ $userTeam->owner_id }}"
+                                               checked onchange="syncStarter2(this)">
+                                        <label for="driver2_{{ $userTeam->owner_id }}" class="d-flex align-items-center gap-2" style="color:#e5e7eb;font-size:.85rem;cursor:pointer">
+                                            @if(auth()->user()->avatarUrl())
+                                            <img src="{{ auth()->user()->avatarUrl() }}" width="22" height="22"
+                                                 style="border-radius:50%;object-fit:cover;flex-shrink:0">
+                                            @else
+                                            <div style="width:22px;height:22px;border-radius:50%;background:#374151;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#e5e7eb;flex-shrink:0">
+                                                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                                            </div>
+                                            @endif
+                                            {{ auth()->user()->displayName() }}
+                                            <span style="color:#6b7280;font-size:.75rem">(you)</span>
+                                        </label>
+                                    </div>
+                                    <div class="text-center">
+                                        <input type="radio" name="starting_driver_id" value="{{ $userTeam->owner_id }}"
+                                               id="starter2_{{ $userTeam->owner_id }}" checked
+                                               style="width:15px;height:15px;cursor:pointer;accent-color:{{ $race->gameColor() }}">
+                                    </div>
+                                    @foreach($userTeam->members as $member)
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input class="form-check-input m-0" type="checkbox" name="driver_ids[]"
+                                               value="{{ $member->id }}" id="driver2_{{ $member->id }}"
+                                               onchange="syncStarter2(this)">
+                                        <label for="driver2_{{ $member->id }}" class="d-flex align-items-center gap-2" style="color:#e5e7eb;font-size:.85rem;cursor:pointer">
+                                            @if($member->avatarUrl())
+                                            <img src="{{ $member->avatarUrl() }}" width="22" height="22"
+                                                 style="border-radius:50%;object-fit:cover;flex-shrink:0">
+                                            @else
+                                            <div style="width:22px;height:22px;border-radius:50%;background:#374151;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#e5e7eb;flex-shrink:0">
+                                                {{ strtoupper(substr($member->name, 0, 1)) }}
+                                            </div>
+                                            @endif
+                                            {{ $member->displayName() }}
+                                        </label>
+                                    </div>
+                                    <div class="text-center">
+                                        <input type="radio" name="starting_driver_id" value="{{ $member->id }}"
+                                               id="starter2_{{ $member->id }}"
+                                               style="width:15px;height:15px;cursor:pointer;accent-color:{{ $race->gameColor() }}">
+                                    </div>
+                                    @endforeach
+                                </div>
+                                <script>
+                                function syncStarter2(checkbox) {
+                                    const radio = document.getElementById('starter2_' + checkbox.value);
+                                    if (!radio) return;
+                                    if (!checkbox.checked) {
+                                        if (radio.checked) {
+                                            const first = document.querySelector('input[name="driver_ids[]"]:checked');
+                                            if (first) document.getElementById('starter2_' + first.value)?.click();
+                                        }
+                                        radio.disabled = true;
+                                    } else {
+                                        radio.disabled = false;
+                                    }
+                                }
+                                </script>
+                                <button type="submit" class="xcl-event-reg-btn w-100 mt-3"
+                                        style="background:{{ $race->gameColor() }}">
+                                    ADD CAR →
+                                </button>
+                            </form>
+                        </div>
                         @endif
                     @elseif($race->registrationOpen())
                         <p class="xcl-event-card__text mb-3" style="font-size:.82rem">

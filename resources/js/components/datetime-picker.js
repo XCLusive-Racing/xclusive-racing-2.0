@@ -14,7 +14,7 @@ export function initDateTimePickers() {
             minuteIncrement,
             dateFormat: 'Y-m-d\\TH:i',
             altInput: true,
-            altFormat: 'D, d M Y \\a\\t H:i',
+            altFormat: el.dataset.compact !== undefined ? 'd M · H:i' : 'D, d M Y \\a\\t H:i',
             minDate: el.dataset.minToday === 'true' ? 'today' : undefined,
             locale: { firstDayOfWeek: 1 }, // Monday, not flatpickr's US-default Sunday
             onReady: (selectedDates, dateStr, instance) => {

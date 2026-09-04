@@ -13,17 +13,11 @@ export function initBulkCreate(wrap) {
     const countDisplays   = wrap.querySelectorAll('[data-bulk-count-display]');
     const addRowBtn       = wrap.querySelector('[data-bulk-add-row]');
     const tbody           = wrap.querySelector('[data-bulk-tbody]');
-    const defaultWeatherEl = wrap.querySelector('select[name="weather"]');
-    const defaultTimeEl    = wrap.querySelector('input[name="time_of_day"]');
-    const defaultAmbientTempEl = wrap.querySelector('input[name="ambient_temp"]');
+    const defaultCarClassEl    = wrap.querySelector('select[name="car_class"]');
 
-    const WEATHER_OPTIONS = [
-        ['', '— Not set —'], ['dry', 'Dry'], ['wet', 'Wet'], ['mixed', 'Mixed'], ['random', 'Random'],
-    ];
+    function getDefaultCarClass()   { return defaultCarClassEl?.value || ''; }
 
-    function getDefaultWeather() { return defaultWeatherEl?.value || ''; }
-    function getDefaultTime()    { return defaultTimeEl?.value || ''; }
-    function getDefaultAmbientTemp() { return defaultAmbientTempEl?.value || ''; }
+    const CAR_CLASS_OPTIONS = ['GT3', 'GT4', 'GT2', 'GTC', 'TCX'];
 
     let events = [];
 
@@ -83,11 +77,20 @@ export function initBulkCreate(wrap) {
         });
     });
 
+    const WEATHER_OPTIONS = ['dry', 'wet', 'mixed', 'random'];
+
+    function weatherLabel(v) {
+        return v.charAt(0).toUpperCase() + v.slice(1);
+    }
+
     // Row rendering — title hidden, mirrors track
     function renderRow(i) {
         const ev = events[i];
-        const weatherOptions = WEATHER_OPTIONS.map(([v, label]) =>
-            `<option value="${v}" ${ev.weather === v ? 'selected' : ''}>${label}</option>`).join('');
+        const carClassOptions = CAR_CLASS_OPTIONS.map(v =>
+            `<option value="${v}" ${ev.car_class === v ? 'selected' : ''}>${v}</option>`).join('');
+        const weatherOptions = WEATHER_OPTIONS.map(v =>
+            `<option value="${v}" ${ev.weather === v ? 'selected' : ''}>${weatherLabel(v)}</option>`).join('');
+        const rainNeeded = ev.weather === 'wet' || ev.weather === 'mixed';
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -100,21 +103,23 @@ export function initBulkCreate(wrap) {
             </td>
             <td>
                 <input type="text" name="events[${i}][scheduled_at]" value="${esc(ev.scheduled_at)}"
-                       data-flatpickr data-min-today="true"
+                       data-flatpickr data-min-today="true" data-compact
                        class="form-control form-control-sm" data-field="scheduled_at" required>
             </td>
             <td>
-                <select name="events[${i}][weather]" class="form-select form-select-sm" data-field="weather">
-                    ${weatherOptions}
+                <select name="events[${i}][car_class]" class="form-select form-select-sm" data-field="car_class">
+                    ${carClassOptions}
                 </select>
             </td>
             <td>
-                <input type="time" name="events[${i}][time_of_day]" value="${esc(ev.time_of_day)}"
-                       class="form-control form-control-sm" data-field="time_of_day" step="3600">
-            </td>
-            <td>
-                <input type="number" name="events[${i}][ambient_temp]" value="${esc(ev.ambient_temp)}"
-                       class="form-control form-control-sm" data-field="ambient_temp" placeholder="Default">
+                <select name="events[${i}][weather]" class="form-select form-select-sm mb-1" data-field="weather">
+                    ${weatherOptions}
+                </select>
+                <input type="number" name="events[${i}][rain_level]" data-field="rain_level"
+                       min="0" max="1" step="0.1" value="${esc(ev.rain_level ?? '')}"
+                       placeholder="0.0–1.0"
+                       class="form-control form-control-sm"
+                       style="display:${rainNeeded ? '' : 'none'};font-size:.75rem">
             </td>
             <td class="pe-4">
                 <button type="button" data-remove
@@ -129,9 +134,9 @@ export function initBulkCreate(wrap) {
         const maxDriversHidden = tr.querySelector('[data-field="max_drivers"]');
         const trackInput       = tr.querySelector('[data-field="track"]');
         const dateInput        = tr.querySelector('[data-field="scheduled_at"]');
+        const carClassInput    = tr.querySelector('[data-field="car_class"]');
         const weatherInput     = tr.querySelector('[data-field="weather"]');
-        const timeInput        = tr.querySelector('[data-field="time_of_day"]');
-        const ambientTempInput = tr.querySelector('[data-field="ambient_temp"]');
+        const rainInput        = tr.querySelector('[data-field="rain_level"]');
 
         // Track drives title and max-drivers automatically, same as single mode
         trackInput.addEventListener('input', () => {
@@ -142,9 +147,18 @@ export function initBulkCreate(wrap) {
         });
         // flatpickr's own minuteIncrement:60/hour-only mode keeps this whole-hour already
         dateInput.addEventListener('change', () => { events[i].scheduled_at = dateInput.value; });
-        weatherInput.addEventListener('change', () => { events[i].weather = weatherInput.value; });
-        timeInput.addEventListener('change', () => { events[i].time_of_day = timeInput.value; });
-        ambientTempInput.addEventListener('input', () => { events[i].ambient_temp = ambientTempInput.value; });
+        carClassInput.addEventListener('change', () => { events[i].car_class = carClassInput.value; });
+        weatherInput.addEventListener('change', () => {
+            events[i].weather = weatherInput.value;
+            const needsRain = weatherInput.value === 'wet' || weatherInput.value === 'mixed';
+            rainInput.style.display = needsRain ? '' : 'none';
+            if (!needsRain) {
+                events[i].rain_level = ''; rainInput.value = '';
+            } else if (!rainInput.value) {
+                events[i].rain_level = '0.3'; rainInput.value = '0.3';
+            }
+        });
+        rainInput.addEventListener('input', () => { events[i].rain_level = rainInput.value; });
 
         tr.querySelector('[data-remove]').addEventListener('click', () => {
             events.splice(i, 1);
@@ -175,29 +189,23 @@ export function initBulkCreate(wrap) {
         const [th]    = time.split(':').map(Number); // whole-hour only, minutes always :00
         const defTrack = getDefaultTrack();
 
-        // Find Monday of the week containing start date
-        const seed   = new Date(startDateInput.value + 'T12:00');
-        const jsDay  = seed.getDay(); // 0=Sun…6=Sat
-        const toMon  = jsDay === 0 ? -6 : 1 - jsDay;
-        const monday = new Date(seed);
-        monday.setDate(monday.getDate() + toMon);
-
-        const defWeather = getDefaultWeather();
-        const defTime    = getDefaultTime();
-        const defAmbientTemp = getDefaultAmbientTemp();
+        // Iterate day-by-day from start date for nWeeks * 7 days,
+        // picking each day whose weekday matches a selected day (0=Mon…6=Sun).
+        const seed = new Date(startDateInput.value + 'T12:00');
 
         events = [];
-        for (let w = 0; w < nWeeks; w++) {
-            checkedDays.forEach(dayOffset => {
-                const d = new Date(monday);
-                d.setDate(d.getDate() + w * 7 + dayOffset);
-                d.setHours(th, 0, 0, 0);
-                // Skip dates before start date
-                if (d < seed) return;
-                events.push({
-                    title: defTrack, track: defTrack, scheduled_at: formatDate(d),
-                    weather: defWeather, time_of_day: defTime, ambient_temp: defAmbientTemp,
-                });
+        for (let day = 0; day < nWeeks * 7; day++) {
+            const d = new Date(seed);
+            d.setDate(d.getDate() + day);
+            d.setHours(th, 0, 0, 0);
+            // Convert JS getDay() (0=Sun…6=Sat) to our offset (0=Mon…6=Sun)
+            const jsDay  = d.getDay();
+            const ourDay = jsDay === 0 ? 6 : jsDay - 1;
+            if (!checkedDays.includes(ourDay)) continue;
+            events.push({
+                title: defTrack, track: defTrack, scheduled_at: formatDate(d),
+                car_class: getDefaultCarClass() || 'GT3',
+                weather: 'dry', rain_level: '',
             });
         }
 
@@ -216,7 +224,8 @@ export function initBulkCreate(wrap) {
         const defTrack = getDefaultTrack();
         events.push({
             title: defTrack, track: defTrack, scheduled_at: nextDate,
-            weather: getDefaultWeather(), time_of_day: getDefaultTime(), ambient_temp: getDefaultAmbientTemp(),
+            car_class: getDefaultCarClass(),
+            weather: 'dry', rain_level: '',
         });
         render();
     }

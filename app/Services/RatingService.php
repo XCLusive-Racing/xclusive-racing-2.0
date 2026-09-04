@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Jobs\SyncDiscordRankRole;
 use App\Models\Race;
 use App\Models\RaceResult;
 use App\Models\User;
