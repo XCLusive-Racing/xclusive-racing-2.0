@@ -6,9 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RaceTeamEntry extends Model
 {
+    use SoftDeletes;
     protected $fillable = ['race_id', 'racing_team_id', 'car_number', 'car_model', 'starting_driver_id'];
 
     public function race(): BelongsTo

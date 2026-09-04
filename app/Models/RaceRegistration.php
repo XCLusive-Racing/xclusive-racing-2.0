@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RaceRegistration extends Model
 {
+    use SoftDeletes;
     protected $fillable = ['race_id', 'user_id', 'race_class_id', 'team_entry_id'];
 
     public function race(): BelongsTo
