@@ -35,18 +35,18 @@ class RaceController extends Controller
         $race->load(['raceClasses', 'registrations.user', 'registrations.raceClass', 'registrations.teamEntry.team', 'raceResults.user', 'eventFormat', 'teamEntries']);
         $isRegistered   = false;
         $myRegistration = null;
-        $userTeam       = null;
-        $myTeamEntry    = null;
+        $userTeam        = null;
+        $myTeamEntries   = collect();
 
         if (auth()->check()) {
             $myRegistration = $race->registrations->firstWhere('user_id', auth()->id());
             $isRegistered   = $myRegistration !== null;
             $userTeam       = auth()->user()->ownedRacingTeams()->with('members')->first();
             if ($userTeam) {
-                $myTeamEntry = RaceTeamEntry::where('race_id', $race->id)
+                $myTeamEntries = RaceTeamEntry::where('race_id', $race->id)
                     ->where('racing_team_id', $userTeam->id)
                     ->with(['registrations.user', 'startingDriver'])
-                    ->first();
+                    ->get();
             }
         }
 
@@ -55,7 +55,7 @@ class RaceController extends Controller
             ->get(['id', 'xuid_psid'])
             ->keyBy('xuid_psid');
 
-        return view('race.show', compact('race', 'isRegistered', 'myRegistration', 'driverMap', 'userTeam', 'myTeamEntry'));
+        return view('race.show', compact('race', 'isRegistered', 'myRegistration', 'driverMap', 'userTeam', 'myTeamEntries'));
     }
 
     public function register(Request $request, Race $race)
@@ -106,11 +106,21 @@ class RaceController extends Controller
 
         try {
             DB::transaction(function () use ($race, $raceClassId) {
-                RaceRegistration::create([
-                    'race_id'       => $race->id,
-                    'user_id'       => auth()->id(),
-                    'race_class_id' => $raceClassId,
-                ]);
+                $existing = RaceRegistration::withTrashed()
+                    ->where('race_id', $race->id)
+                    ->where('user_id', auth()->id())
+                    ->first();
+
+                if ($existing) {
+                    $existing->restore();
+                    $existing->update(['race_class_id' => $raceClassId]);
+                } else {
+                    RaceRegistration::create([
+                        'race_id'       => $race->id,
+                        'user_id'       => auth()->id(),
+                        'race_class_id' => $raceClassId,
+                    ]);
+                }
 
                 $config     = app(AccServerConfigService::class)->settings($race, $race->ftpServer);
                 $serverName = $config['serverName'] ?? 'To be announced';
@@ -158,14 +168,6 @@ class RaceController extends Controller
         $team = auth()->user()->ownedRacingTeams()->with('members')->first();
         if (!$team) {
             return back()->with('error', 'You do not own a racing team.');
-        }
-
-        $existingEntry = RaceTeamEntry::where('race_id', $race->id)
-            ->where('racing_team_id', $team->id)
-            ->exists();
-
-        if ($existingEntry) {
-            return back()->with('error', 'Your team is already registered for this race.');
         }
 
         $validated = $request->validate([
@@ -230,11 +232,21 @@ class RaceController extends Controller
                 ]);
 
                 foreach ($selectedIds as $userId) {
-                    RaceRegistration::create([
-                        'race_id'       => $race->id,
-                        'user_id'       => $userId,
-                        'team_entry_id' => $entry->id,
-                    ]);
+                    $existingReg = RaceRegistration::withTrashed()
+                        ->where('race_id', $race->id)
+                        ->where('user_id', $userId)
+                        ->first();
+
+                    if ($existingReg) {
+                        $existingReg->restore();
+                        $existingReg->update(['team_entry_id' => $entry->id, 'race_class_id' => null]);
+                    } else {
+                        RaceRegistration::create([
+                            'race_id'       => $race->id,
+                            'user_id'       => $userId,
+                            'team_entry_id' => $entry->id,
+                        ]);
+                    }
                 }
 
                 $config     = app(AccServerConfigService::class)->settings($race, $race->ftpServer);
@@ -259,7 +271,7 @@ class RaceController extends Controller
         return back()->with('success', $team->name . ' has been registered for ' . $race->title . '!');
     }
 
-    public function unregisterTeam(Race $race)
+    public function unregisterTeam(Race $race, RaceTeamEntry $entry)
     {
         if ($race->status !== 'open') {
             return back()->with('error', 'You cannot unregister from a closed race.');
@@ -270,12 +282,8 @@ class RaceController extends Controller
             return back()->with('error', 'You do not own a racing team.');
         }
 
-        $entry = RaceTeamEntry::where('race_id', $race->id)
-            ->where('racing_team_id', $team->id)
-            ->first();
-
-        if (!$entry) {
-            return back()->with('error', 'Your team is not registered for this race.');
+        if ($entry->race_id !== $race->id || $entry->racing_team_id !== $team->id) {
+            return back()->with('error', 'This entry does not belong to your team.');
         }
 
         DB::transaction(function () use ($entry) {
@@ -283,6 +291,6 @@ class RaceController extends Controller
             $entry->delete();
         });
 
-        return back()->with('success', 'Your team has been unregistered from ' . $race->title . '.');
+        return back()->with('success', 'Car #' . $entry->car_number . ' has been unregistered from ' . $race->title . '.');
     }
 }

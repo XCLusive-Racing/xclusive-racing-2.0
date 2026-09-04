@@ -10,5 +10,5 @@ Artisan::command('inspire', function () {
 
 Schedule::command('gportal:push-configs')->everyMinute()->onOneServer();
 Schedule::command('gportal:import-results')->everyMinute()->onOneServer(); // TEMP: testing, revert to everyFifteenMinutes() after
-Schedule::command('xcl:discord:sync-ranks')->daily()->onOneServer();
+Schedule::command('xcl:discord:sync-ranks')->everyFiveMinutes()->onOneServer();
 Schedule::command('races:announce-daily')->dailyAt('12:00')->timezone('Europe/London')->onOneServer();

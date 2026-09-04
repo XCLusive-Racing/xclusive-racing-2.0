@@ -332,7 +332,7 @@ class AccServerConfigService
         }
 
         // Nordschleife always gets short regardless of format — a full lap takes too long.
-        if ($this->trackSlug($race->track) === 'nordschleife') {
+        if ($this->trackSlug($race->track) === 'nurburgring_24h') {
             return 1;
         }
 
