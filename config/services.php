@@ -30,6 +30,8 @@ return [
         'webhook_mrs_racewell'  => env('DISCORD_WEBHOOK_MRS_RACEWELL'),
         'bot_token'             => env('DISCORD_BOT_TOKEN'),
         'guild_id'              => env('DISCORD_GUILD_ID'),
+        'announcer_webhook'     => env('DISCORD_ANNOUNCER_WEBHOOK'),
+        'xcl_member_role_id'    => env('DISCORD_XCL_MEMBER_ROLE_ID'),
         'rank_roles'            => [
             'alien'    => env('DISCORD_ROLE_RANK_ALIEN'),
             'platinum' => env('DISCORD_ROLE_RANK_PLATINUM'),
