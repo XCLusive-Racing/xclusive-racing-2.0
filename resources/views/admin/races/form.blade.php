@@ -1701,7 +1701,15 @@ $mcExisting = $isEdit
     const minToggle = document.getElementById('ce-custom-minstop-toggle');
     const minVal    = document.getElementById('ce-custom-minstop-val');
     if (!toggle || !panel) return;
-    toggle.addEventListener('change', () => { panel.style.display = toggle.checked ? '' : 'none'; });
+    const countInput = document.getElementById('ce-custom-pitstop-count');
+    toggle.addEventListener('change', () => {
+        panel.style.display = toggle.checked ? '' : 'none';
+        if (!toggle.checked && countInput) {
+            countInput.value = '0';
+        } else if (toggle.checked && countInput && (countInput.value === '0' || !countInput.value)) {
+            countInput.value = '1';
+        }
+    });
     if (minToggle && minVal) {
         minToggle.addEventListener('change', () => { minVal.value = minToggle.checked ? '25' : ''; });
     }
