@@ -746,11 +746,20 @@
                     @if($race->registrations->isEmpty())
                         <p class="xcl-event-card__text mb-0">No drivers registered yet. Be the first!</p>
                     @else
-                        @php $driverCount = $race->registrations->count(); @endphp
+                        @php
+                            $sortedRegs = $race->registrations
+                                ->filter(fn($r) => $r->user)
+                                ->sortByDesc(fn($r) => $r->user->{"elo_{$race->game}"} ?? 0)
+                                ->values();
+                            $driverCount = $sortedRegs->count();
+                        @endphp
                         <div class="xcl-drivers-grid-wrap {{ $driverCount <= 8 ? 'no-overflow' : '' }}">
                             <div class="xcl-drivers-grid">
-                                @foreach($race->registrations as $reg)
-                                @php $driverRecord = $driverMap->get($reg->user->platform_id ?? '') @endphp
+                                @foreach($sortedRegs as $reg)
+                                @php
+                                    $driverRecord = $driverMap->get($reg->user->platform_id ?? '');
+                                    $rankColor = $reg->user->rank($race->game)['color'];
+                                @endphp
                                 @if($driverRecord)
                                 <a href="{{ route('drivers.show', $driverRecord) }}" class="xcl-drivers-grid__item text-decoration-none">
                                 @else
@@ -764,7 +773,7 @@
                                         @endif
                                     </div>
                                     <div class="xcl-drivers-grid__info">
-                                        <span class="xcl-drivers-grid__name">{{ $reg->user->displayName() }}</span>
+                                        <span class="xcl-drivers-grid__name" style="color:{{ $rankColor }}">{{ $reg->user->displayName() }}</span>
                                         @if($reg->teamEntry)
                                         <span class="xcl-drivers-grid__class-badge" style="background:#374151;color:#9ca3af;border:1px solid #4b5563">
                                             {{ $reg->teamEntry->team->name }}
