@@ -94,9 +94,9 @@
                         <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
                             <tr>
                                 <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:36px">#</th>
-                                <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Title</th>
                                 <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Track</th>
                                 <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:200px">Date & Time (BST/GMT)</th>
+                                <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:110px">Car Class</th>
                                 <th class="pe-4" style="width:40px"></th>
                             </tr>
                         </thead>
@@ -156,6 +156,17 @@
                            min="1">
                     @error('max_drivers') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Default Car Class <span class="fw-normal text-secondary" style="text-transform:none">(overridable per event)</span></label>
+                    <select name="car_class" id="bulk-car-class-default" class="form-select @error('car_class') is-invalid @enderror">
+                        <option value="">— Not set —</option>
+                        @foreach(['GT3','GT4','GT2','GTC','TCX'] as $cls)
+                        <option value="{{ $cls }}" {{ old('car_class') === $cls ? 'selected' : '' }}>{{ $cls }}</option>
+                        @endforeach
+                    </select>
+                    @error('car_class') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
             </div>
 
             <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
@@ -203,6 +214,7 @@
                 </div>
             </div>
 
+
             <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
                 <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Description <span class="fw-normal" style="text-transform:none">(optional)</span></p>
                 <textarea name="description" rows="3"
@@ -217,5 +229,4 @@
 </div>
 </form>
 </div>
-
 @endsection

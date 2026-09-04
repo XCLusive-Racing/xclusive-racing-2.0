@@ -313,7 +313,7 @@ $mcExisting = $isEdit
                                 <div id="ce-track-hint" class="form-text" style="display:none"></div>
                                 @error('track')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
-                            <div class="col-sm-4">
+                            <div class="col-sm-4" data-mode-single>
                                 <label class="form-label">Rain</label>
                                 @php $weatherVal = old('weather', $isEdit ? ($race->weather ?: 'dry') : 'dry'); @endphp
                                 <select name="weather" id="ce-weather-select" class="form-select">
@@ -324,7 +324,7 @@ $mcExisting = $isEdit
                                     <option value="random" {{ $weatherVal === 'random' ? 'selected' : '' }}>Random</option>
                                 </select>
                             </div>
-                            <div class="col-sm-3" id="ce-rain-level-wrap" style="display:none">
+                            <div class="col-sm-3" id="ce-rain-level-wrap" data-mode-single style="display:none">
                                 @php
                                     $savedRainLevel = old('rain_level', $isEdit ? $race->rain_level : null);
                                 @endphp
@@ -343,7 +343,7 @@ $mcExisting = $isEdit
                                 </div>
                                 <div class="form-text">0.0 dry · 0.3 damp · 0.5 light · 0.8 heavy · 1.0 flooded</div>
                             </div>
-                            <div class="col-sm-3">
+                            <div class="col-sm-3" data-mode-single>
                                 <label class="form-label">Race Start Time</label>
                                 @php
                                     // Legacy races were saved with a day/dusk/night/dynamic preset instead of an
@@ -582,9 +582,8 @@ $mcExisting = $isEdit
                                         <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:36px">#</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Track</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:190px">Date & Time (BST/GMT)</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:120px">Weather</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:120px">In-game Time</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:100px">Amb. Temp</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:110px">Car Class</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:130px">Condition</th>
                                         <th class="pe-4" style="width:40px"></th>
                                     </tr>
                                 </thead>
@@ -799,6 +798,8 @@ $mcExisting = $isEdit
                             <label class="form-label">Description <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
                             <textarea name="description" rows="3" class="form-control rich-editor" placeholder="Additional event info…">{{ old('description', $isEdit ? $race->description : '') }}</textarea>
                         </div>
+
+
                     </div>
 
                     <div id="ce-media-section" class="px-4 py-3" style="border-top:1px solid #f3f4f6;{{ $isEdit && !$hasFormat ? '' : 'display:none' }}">
