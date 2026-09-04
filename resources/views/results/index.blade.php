@@ -102,7 +102,7 @@
 
                     {{-- Event header --}}
                     <div class="bg-white rounded-3 shadow-sm mb-3 p-3 d-flex align-items-center gap-3">
-                        @if($selected->icon)
+                        @if($selected->icon_url)
                         <img src="{{ $selected->icon_url }}" alt="" width="40" height="40" style="object-fit:contain;border-radius:6px">
                         @endif
                         <div>

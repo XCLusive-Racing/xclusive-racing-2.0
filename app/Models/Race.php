@@ -167,7 +167,31 @@ class Race extends Model
 
     public function getIconUrlAttribute(): ?string
     {
-        return $this->icon ? Storage::disk('media')->url($this->icon) : null;
+        $icon = $this->icon ?: $this->defaultCustomIconPath();
+
+        return $icon ? Storage::disk('media')->url($icon) : null;
+    }
+
+    // Custom races (no event_format_id) have no format-derived icon, so without an
+    // admin-chosen one they'd show the plain text badge instead of a logo. Fall back
+    // to the shared "special event" logo in that case.
+    private static ?string $specialEventIconPath = null;
+    private static bool $specialEventIconResolved = false;
+
+    private function defaultCustomIconPath(): ?string
+    {
+        if ($this->event_format_id) {
+            return null;
+        }
+
+        if (!self::$specialEventIconResolved) {
+            self::$specialEventIconResolved = true;
+            self::$specialEventIconPath = Media::where('title', 'special_event')
+                ->orWhere('original_name', 'like', 'special_event%')
+                ->value('path');
+        }
+
+        return self::$specialEventIconPath;
     }
 
     public function gameColor(): string

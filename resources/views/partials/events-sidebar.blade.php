@@ -233,7 +233,7 @@ foreach ($sbGames as $game => $col) {
 
                                 <div class="xcl-sb-next__hero-gradient"></div>
 
-                                @if($sbNextEvent->icon)
+                                @if($sbNextEvent->icon_url)
                                 <div class="xcl-sb-next__icon-overlay">
                                     <img src="{{ $sbNextEvent->icon_url }}" alt="{{ $sbNextEvent->title }}">
                                 </div>
@@ -359,7 +359,7 @@ foreach ($sbGames as $game => $col) {
                                      class="xcl-sb-up-card__img">
                                 <div class="xcl-sb-up-card__img-gradient"></div>
 
-                                @if($event->icon)
+                                @if($event->icon_url)
                                 <div class="xcl-sb-up-card__icon-overlay">
                                     <img src="{{ $event->icon_url }}" alt="{{ $event->title }}">
                                 </div>

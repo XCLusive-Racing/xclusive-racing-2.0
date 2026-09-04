@@ -49,7 +49,7 @@
             </div>
 
             {{-- Icon centered --}}
-            @if($race->icon)
+            @if($race->icon_url)
             <div class="xcl-event-hero__icon">
                 <img src="{{ $race->icon_url }}" alt="">
             </div>
