@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Race;
+use App\Services\AccResultsParser;
+use Illuminate\Support\Facades\Storage;
 
 class ResultsController extends Controller
 {
@@ -19,6 +21,11 @@ class ResultsController extends Controller
         $raceResults  = $selected?->raceResults()->with('user')->get() ?? collect();
         $qualiResults = $selected?->qualiResults()->with('user')->get() ?? collect();
 
-        return view('results.index', compact('races', 'selected', 'raceResults', 'qualiResults'));
+        $stats = null;
+        if ($selected?->results_json_path && Storage::disk('local')->exists($selected->results_json_path)) {
+            $stats = (new AccResultsParser())->parse(Storage::disk('local')->path($selected->results_json_path));
+        }
+
+        return view('results.index', compact('races', 'selected', 'raceResults', 'qualiResults', 'stats'));
     }
 }
