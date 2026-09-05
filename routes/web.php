@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ApplicationController as AdminApplicationController;
 use App\Http\Controllers\Admin\BopController as AdminBopController;
+use App\Http\Controllers\Admin\BroadcastController;
 use App\Http\Controllers\Admin\ChampionshipController as AdminChampionshipController;
 use App\Http\Controllers\ChampionshipController;
 use App\Http\Controllers\CoachingController;
@@ -321,6 +322,12 @@ Route::middleware(['auth', 'role:owner,admin,broadcaster'])->prefix('admin')->na
     Route::get('/news/tags',                  [NewsTagController::class, 'index'])->name('news.tags.index');
     Route::post('/news/tags',                 [NewsTagController::class, 'store'])->name('news.tags.store');
     Route::delete('/news/tags/{newsTag}',     [NewsTagController::class, 'destroy'])->name('news.tags.destroy');
+
+    Route::get('/broadcasts',                 [BroadcastController::class, 'index'])->name('broadcasts.index');
+    Route::post('/broadcasts',                [BroadcastController::class, 'store'])->name('broadcasts.store');
+    Route::get('/broadcasts/{broadcast}/edit', [BroadcastController::class, 'edit'])->name('broadcasts.edit');
+    Route::put('/broadcasts/{broadcast}',     [BroadcastController::class, 'update'])->name('broadcasts.update');
+    Route::delete('/broadcasts/{broadcast}',  [BroadcastController::class, 'destroy'])->name('broadcasts.destroy');
 });
 
 // Team Applications — admin, owner only

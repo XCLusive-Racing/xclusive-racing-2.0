@@ -333,37 +333,49 @@
     <div class="live-section-label">Upcoming Broadcasts</div>
 
     <div class="d-flex flex-column gap-3 mb-5">
-        @foreach($schedule as $event)
-        @php $isPast = $event['date']->isPast(); @endphp
-        <div class="live-schedule-card {{ $isPast ? 'opacity-50' : '' }}"
-             style="border-left-color:{{ $event['color'] }}"
-             @if(!$isPast) data-live-countdown="{{ $event['date']->toIso8601String() }}" @endif>
+        @forelse($schedule as $event)
+        @php $isLive = $event->isLive(); @endphp
+        <div class="live-schedule-card"
+             style="border-left-color:{{ $event->color }}"
+             @if(!$isLive) data-live-countdown="{{ $event->starts_at->toIso8601String() }}" @endif>
 
             {{-- Date block --}}
             <div class="live-card-date">
-                <div class="live-card-date__day">{{ $event['date']->format('d') }}</div>
-                <div class="live-card-date__month">{{ $event['date']->format('M Y') }}</div>
+                <div class="live-card-date__day">{{ $event->starts_at->timezone('Europe/London')->format('d') }}</div>
+                <div class="live-card-date__month">{{ $event->starts_at->timezone('Europe/London')->format('M Y') }}</div>
             </div>
 
             <div class="live-card-divider"></div>
 
             {{-- Info --}}
             <div class="live-card-info">
-                <span class="live-card-series" style="background:{{ $event['color'] }}25;color:{{ $event['color'] }};border:1px solid {{ $event['color'] }}50">
-                    {{ $event['series'] }}
+                @if($event->series)
+                <span class="live-card-series" style="background:{{ $event->color }}25;color:{{ $event->color }};border:1px solid {{ $event->color }}50">
+                    {{ $event->series }}
                 </span>
-                <div class="live-card-title">{{ $event['title'] }}</div>
-                <div class="live-card-subtitle">{{ $event['subtitle'] }}</div>
+                @endif
+                <div class="live-card-title">{{ $event->title }}</div>
+                @if($event->subtitle)
+                <div class="live-card-subtitle">{{ $event->subtitle }}</div>
+                @endif
                 <div class="live-card-time">
                     <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-.1em;opacity:.5">
                         <circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 6v6l4 2"/>
                     </svg>
-                    {{ $event['date']->format('H:i') }} CET
+                    {{ $event->starts_at->timezone('Europe/London')->format('H:i T') }}
                 </div>
             </div>
 
-            {{-- Countdown --}}
-            @if(!$isPast)
+            {{-- Countdown / live state --}}
+            @if($isLive)
+            <div class="live-card-countdown">
+                <span class="live-badge"><span class="live-badge__dot"></span>LIVE NOW</span>
+                <a href="{{ $event->watch_url }}" target="_blank" rel="noopener"
+                   style="display:inline-block;margin-top:.5rem;background:#cc0000;color:#fff;font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;padding:.3rem .75rem;border-radius:5px;text-decoration:none">
+                    ▶ WATCH LIVE
+                </a>
+            </div>
+            @else
             <div class="live-card-countdown">
                 <div class="live-card-countdown__nums">
                     <span class="live-card-countdown__num" data-cd-d>--</span><span class="live-card-countdown__sep">d</span>
@@ -371,18 +383,19 @@
                     <span class="live-card-countdown__num" data-cd-m>--</span><span class="live-card-countdown__sep">m</span>
                 </div>
                 <div class="live-card-countdown__label">until broadcast</div>
-                <a href="https://www.twitch.tv/trueracingrevival" target="_blank" rel="noopener"
+                <a href="{{ $event->watch_url }}" target="_blank" rel="noopener"
                    style="display:inline-block;margin-top:.5rem;background:#cc0000;color:#fff;font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;padding:.3rem .75rem;border-radius:5px;text-decoration:none">
                     ▶ WATCH LIVE
                 </a>
             </div>
-            @else
-            <div class="live-card-countdown" style="color:rgba(255,255,255,.3);font-size:.72rem;font-weight:700;text-transform:uppercase">
-                Completed
-            </div>
             @endif
         </div>
-        @endforeach
+        @empty
+        <div class="text-center py-5" style="color:#9ca3af">
+            <p class="fw-bold mb-0" style="font-size:.95rem">No upcoming broadcasts scheduled.</p>
+            <p style="font-size:.85rem">Check back soon — TRTN adds new broadcasts regularly.</p>
+        </div>
+        @endforelse
     </div>
 
     {{-- ── TRTN footer bar ───────────────────────────────────────── --}}
