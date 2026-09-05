@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\NormalizesDiscordRoleId;
 use App\Models\Race;
 use App\Models\TeamEvent;
 use Illuminate\Console\Command;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\Log;
 
 class AnnounceDailyRaces extends Command
 {
+    use NormalizesDiscordRoleId;
+
     protected $signature = 'races:announce-daily {--dry-run : Build the message and log it instead of posting to Discord} {--force : Post even if already announced today}';
 
     protected $description = 'Posts upcoming races in the next 24h to Discord';
@@ -50,7 +53,7 @@ class AnnounceDailyRaces extends Command
         }
 
         $webhook = config('services.discord.announcer_webhook');
-        $roleId  = config('services.discord.xcl_member_role_id');
+        $roleId  = $this->normalizeRoleId(config('services.discord.xcl_member_role_id'));
 
         if (!$webhook || !$roleId) {
             $this->error('DISCORD_ANNOUNCER_WEBHOOK / DISCORD_XCL_MEMBER_ROLE_ID are not configured.');
