@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\TeamApplication;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -20,6 +21,11 @@ class AppServiceProvider extends ServiceProvider
         if (config('app.env') === 'production') {
             \URL::forceScheme('https');
         }
+
+        // The site is Bootstrap 5 throughout — without this, pagination falls back to
+        // Laravel's default Tailwind markup, which has no matching CSS here and renders
+        // as oversized unstyled links (e.g. the news page paginator).
+        Paginator::useBootstrapFive();
 
         Event::listen(function (SocialiteWasCalled $event) {
             $event->extendSocialite('steam', \SocialiteProviders\Steam\Provider::class);
