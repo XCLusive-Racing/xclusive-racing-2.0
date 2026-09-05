@@ -119,6 +119,28 @@
     margin: 2rem 0;
 }
 
+/* Like button */
+.news-like-btn {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    background: rgba(255,255,255,.15);
+    border: none;
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 700;
+    padding: .4rem .85rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background .15s;
+    flex-shrink: 0;
+}
+.news-like-btn:hover { background: rgba(255,255,255,.28); }
+.news-like-btn svg { transition: transform .15s; }
+.news-like-btn.is-liked svg { fill: #fff; }
+.news-like-btn.is-animating svg { transform: scale(1.25); }
+
 /* Back link */
 .news-back-link {
     font-size: .8rem;
@@ -177,8 +199,27 @@
                 {{ $article->author->name ?? 'XCL Editorial' }}
                 &nbsp;·&nbsp;
                 {{ $article->published_at?->format('d F Y, H:i') }}
+                &nbsp;·&nbsp;
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                {{ number_format($article->views_count) }} {{ Illuminate\Support\Str::plural('view', $article->views_count) }}
             </div>
         </div>
+
+        <button type="button"
+                class="news-like-btn {{ $liked ? 'is-liked' : '' }}"
+                id="news-like-btn"
+                data-liked="{{ $liked ? '1' : '0' }}"
+                data-url="{{ route('news.like', $article->slug) }}"
+                data-authed="{{ auth()->check() ? '1' : '0' }}"
+                data-login-url="{{ route('login') }}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="{{ $liked ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+            </svg>
+            <span id="news-like-count">{{ number_format($article->liked_by_users_count) }}</span>
+        </button>
     </div>
 
     {{-- Article body --}}
@@ -201,3 +242,38 @@
 </div>
 </main>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    var btn = document.getElementById('news-like-btn');
+    if (!btn) return;
+
+    btn.addEventListener('click', function () {
+        if (btn.dataset.authed !== '1') {
+            window.location.href = btn.dataset.loginUrl;
+            return;
+        }
+
+        btn.disabled = true;
+
+        fetch(btn.dataset.url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                'Accept': 'application/json',
+            },
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                btn.classList.toggle('is-liked', data.liked);
+                btn.classList.add('is-animating');
+                setTimeout(function () { btn.classList.remove('is-animating'); }, 150);
+                btn.querySelector('svg').setAttribute('fill', data.liked ? 'currentColor' : 'none');
+                document.getElementById('news-like-count').textContent = data.count.toLocaleString();
+            })
+            .finally(function () { btn.disabled = false; });
+    });
+})();
+</script>
+@endpush

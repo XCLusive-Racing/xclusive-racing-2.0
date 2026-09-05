@@ -13,7 +13,7 @@ class NewsArticle extends Model
 {
     protected $fillable = [
         'title', 'slug', 'excerpt', 'body', 'cover_image',
-        'author_id', 'status', 'published_at',
+        'author_id', 'status', 'published_at', 'views_count',
     ];
 
     protected function casts(): array
@@ -54,6 +54,16 @@ class NewsArticle extends Model
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(NewsTag::class, 'news_article_tag', 'article_id', 'tag_id');
+    }
+
+    public function likedByUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'news_article_likes', 'article_id', 'user_id')->withTimestamps();
+    }
+
+    public function isLikedBy(?User $user): bool
+    {
+        return $user && $this->likedByUsers()->where('user_id', $user->id)->exists();
     }
 
     public function getCoverImageUrlAttribute(): ?string

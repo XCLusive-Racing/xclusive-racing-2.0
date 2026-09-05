@@ -80,6 +80,7 @@ Route::delete('/championships/{championship}/unregister', [ChampionshipControlle
 // News - public
 Route::get('/news',         [NewsController::class, 'index'])->name('news.index');
 Route::get('/news/{slug}',  [NewsController::class, 'show'])->name('news.show');
+Route::post('/news/{slug}/like', [NewsController::class, 'toggleLike'])->name('news.like')->middleware('auth');
 
 // Live broadcasts
 Route::get('/live', [LiveController::class, 'index'])->name('live');
@@ -206,6 +207,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/races/{race}/push-config', [AdminRaceController::class, 'pushConfig'])->name('races.push-config');
     Route::post('/races/{race}/save-config', [AdminRaceController::class, 'saveConfig'])->name('races.save-config');
     Route::post('/races/{race}/upload-entrylist', [AdminRaceController::class, 'uploadEntrylist'])->name('races.upload-entrylist');
+    Route::delete('/races/{race}/registrations/{registration}', [AdminRaceController::class, 'removeRegistration'])->name('races.registrations.destroy');
+    Route::delete('/races/{race}/team-entries/{entry}', [AdminRaceController::class, 'removeTeamEntry'])->name('races.team-entries.destroy');
     Route::delete('/races/bulk-destroy', [AdminRaceController::class, 'bulkDestroy'])->name('races.bulk-destroy');
     Route::delete('/races/{race}/reset-config', [AdminRaceController::class, 'resetConfig'])->name('races.reset-config');
     Route::delete('/races/{race}', [AdminRaceController::class, 'destroy'])->name('races.destroy');

@@ -417,7 +417,74 @@
             </div>
             @endif
 
-            @if($registrations->isEmpty())
+            @if($race->is_endurance)
+
+                @if($teamEntryRows->isEmpty())
+                <div class="p-5 text-center">
+                    <div class="fw-bold text-dark" style="font-size:.95rem">No teams registered yet</div>
+                    <div class="text-secondary mt-1" style="font-size:.82rem">Teams can register via the public event page.</div>
+                </div>
+                @else
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" style="font-size:.875rem">
+                        <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+                            <tr>
+                                <th class="fw-bold text-uppercase ps-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:70px">Car #</th>
+                                <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Team</th>
+                                <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Drivers</th>
+                                <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:140px">Registered</th>
+                                <th class="fw-bold text-uppercase pe-4 text-end" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:90px"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($teamEntryRows as $entry)
+                            <tr>
+                                <td class="ps-4">
+                                    <span class="badge fw-bold" style="background:#f3f4f6;color:#374151;font-size:.75rem">#{{ $entry->car_number }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        @if($entry->team?->logoUrl())
+                                        <img src="{{ $entry->team->logoUrl() }}" alt="" class="rounded-circle flex-shrink-0" style="width:28px;height:28px;object-fit:cover">
+                                        @else
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0"
+                                             style="width:28px;height:28px;font-size:.68rem;background:linear-gradient(135deg,#7c3aed,#db2777)">
+                                            {{ strtoupper(substr($entry->team?->name ?? '?', 0, 1)) }}
+                                        </div>
+                                        @endif
+                                        <span class="fw-bold text-dark">{{ $entry->team?->name ?? 'Unknown team' }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-secondary" style="font-size:.82rem">
+                                    @forelse($entry->registrations as $reg)
+                                        {{ $reg->user->name ?? 'Unknown' }}{{ $entry->starting_driver_id === $reg->user_id ? ' (starting)' : '' }}{{ !$loop->last ? ', ' : '' }}
+                                    @empty
+                                        <span class="text-secondary">—</span>
+                                    @endforelse
+                                </td>
+                                <td class="text-secondary" style="font-size:.78rem">
+                                    {{ $entry->created_at->timezone('Europe/London')->format('d M Y') }}
+                                </td>
+                                <td class="pe-4 text-end">
+                                    <form action="{{ route('admin.races.team-entries.destroy', [$race, $entry]) }}" method="POST" style="margin:0;display:inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="button"
+                                                onclick="xcDeleteSubmit(this.closest('form'), 'Remove this team?', '\'{{ addslashes($entry->team?->name ?? 'This team') }}\' (car #{{ $entry->car_number }}) and all its drivers will be removed from the entry list.')"
+                                                class="btn btn-sm fw-bold text-uppercase"
+                                                style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.68rem;padding:4px 10px;border-radius:6px">
+                                            Remove
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @endif
+
+            @elseif($registrations->isEmpty())
             <div class="p-5 text-center">
                 <div class="fw-bold text-dark" style="font-size:.95rem">No registrations yet</div>
                 <div class="text-secondary mt-1" style="font-size:.82rem">Drivers can register via the public event page.</div>
@@ -431,7 +498,8 @@
                             <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Driver</th>
                             <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Platform ID</th>
                             <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Team</th>
-                            <th class="fw-bold text-uppercase pe-4 text-end" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:140px">Registered</th>
+                            <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:140px">Registered</th>
+                            <th class="fw-bold text-uppercase pe-4 text-end" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:90px"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -466,8 +534,20 @@
                                 @endif
                             </td>
                             <td class="text-secondary" style="font-size:.82rem">{{ $reg->user->team ?? '—' }}</td>
-                            <td class="pe-4 text-end text-secondary" style="font-size:.78rem">
+                            <td class="text-secondary" style="font-size:.78rem">
                                 {{ $reg->created_at->timezone('Europe/London')->format('d M Y') }}
+                            </td>
+                            <td class="pe-4 text-end">
+                                <form action="{{ route('admin.races.registrations.destroy', [$race, $reg]) }}" method="POST" style="margin:0;display:inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="button"
+                                            onclick="xcDeleteSubmit(this.closest('form'), 'Remove this driver?', '\'{{ addslashes($reg->user->name) }}\' will be removed from the entry list.')"
+                                            class="btn btn-sm fw-bold text-uppercase"
+                                            style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.68rem;padding:4px 10px;border-radius:6px">
+                                        Remove
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         @endforeach

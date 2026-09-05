@@ -10,9 +10,12 @@ use App\Models\FtpServer;
 use App\Models\Media;
 use App\Models\Race;
 use App\Models\RaceClass;
+use App\Models\RaceRegistration;
+use App\Models\RaceTeamEntry;
 use App\Services\AccServerConfigService;
 use App\Services\FtpService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class RaceController extends Controller
@@ -56,6 +59,9 @@ class RaceController extends Controller
         $qualiResults  = $race->results()->where('session_type', 'quali')->with('user')->get();
         $registrations = $race->registrations()->with('user')->orderBy('created_at')->get();
         $teamEntries   = $race->is_endurance ? $race->teamEntries()->count() : null;
+        $teamEntryRows = $race->is_endurance
+            ? $race->teamEntries()->with(['team', 'startingDriver', 'registrations.user'])->orderBy('created_at')->get()
+            : collect();
 
         $ftpServers     = FtpServer::where('active', true)->orderBy('name')->get();
         $selectedServer = null;
@@ -106,10 +112,39 @@ class RaceController extends Controller
         }
 
         return view('admin.races.show', compact(
-            'race', 'raceResults', 'qualiResults', 'registrations', 'teamEntries',
+            'race', 'raceResults', 'qualiResults', 'registrations', 'teamEntries', 'teamEntryRows',
             'ftpServers', 'selectedServer', 'ftpFiles', 'ftpAllFiles', 'ftpError', 'importedFiles',
             'entrylistDrivers'
         ))->with('configData', $config);
+    }
+
+    // Admin override — removes a single driver's registration regardless of race status,
+    // for cases where a driver needs pulling and can no longer unregister themselves
+    // (race closed, they've lost access, etc).
+    public function removeRegistration(Race $race, RaceRegistration $registration)
+    {
+        abort_unless($registration->race_id === $race->id, 404);
+
+        $name = $registration->user?->name ?? 'Driver';
+        $registration->delete();
+
+        return back()->with('success', "{$name} has been removed from the entry list.");
+    }
+
+    // Admin override — removes an entire team entry (and its driver registrations)
+    // regardless of race status.
+    public function removeTeamEntry(Race $race, RaceTeamEntry $entry)
+    {
+        abort_unless($entry->race_id === $race->id, 404);
+
+        $label = $entry->team?->name ?? ('Car #' . $entry->car_number);
+
+        DB::transaction(function () use ($entry) {
+            $entry->registrations()->delete();
+            $entry->delete();
+        });
+
+        return back()->with('success', "{$label} has been removed from the entry list.");
     }
 
     public function downloadEntryList(Race $race)

@@ -464,6 +464,7 @@
                     <div class="news-card__footer">
                         <span class="news-card__meta">
                             {{ $article->author->name ?? 'XCL' }} · {{ $article->published_at?->format('d M Y') }}
+                            · {{ number_format($article->views_count) }} {{ Illuminate\Support\Str::plural('view', $article->views_count) }}
                         </span>
                         <span class="news-card__read-more">Read more →</span>
                     </div>
