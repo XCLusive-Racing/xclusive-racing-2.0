@@ -1,19 +1,112 @@
 <footer style="background:#0d0d14;border-top:1px solid rgba(255,255,255,.06)">
 
+    <style>
+        .xcl-footer__grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 2.5rem;
+        }
+        .xcl-footer__brand { grid-column: span 4; }
+        .xcl-footer__links {
+            grid-column: span 8;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+        }
+        .xcl-footer__platform-badges { display: flex; flex-wrap: wrap; gap: .5rem; }
+        .xcl-footer__platform-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: .3rem .75rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,.15);
+            color: #9ca3af;
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+        .xcl-footer__social { display: flex; gap: .75rem; margin-top: 1rem; }
+        .xcl-footer__social-icon {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: .5rem;
+            background: rgba(255,255,255,.06);
+            color: #9ca3af;
+            text-decoration: none;
+            transition: all .2s;
+        }
+        .xcl-footer__cta {
+            display: flex;
+            gap: 2.5rem;
+            border-top: 1px solid rgba(255,255,255,.06);
+            padding: 2rem 0;
+            margin-top: 1rem;
+        }
+        .xcl-footer__cta > div { flex: 1 1 0; }
+        .xcl-footer__cta-label {
+            color: #9ca3af;
+            font-size: .68rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            margin-bottom: .4rem;
+        }
+        .xcl-footer__discord-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            border: 1.5px solid #5865F2;
+            background: transparent;
+            color: #5865F2;
+            padding: .5rem 1rem;
+            border-radius: .5rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: .78rem;
+            text-decoration: none;
+            transition: all .2s;
+        }
+        .xcl-footer__discord-btn:hover { background: #5865F2; color: #fff; }
+
+        @media (max-width: 991.98px) {
+            .xcl-footer__grid { grid-template-columns: 1fr; }
+            .xcl-footer__brand { grid-column: span 1; }
+            .xcl-footer__links { grid-column: span 1; grid-template-columns: repeat(2, 1fr); }
+            .xcl-footer__cta { flex-direction: column; gap: 1.75rem; }
+        }
+
+        @media (max-width: 575.98px) {
+            .xcl-footer__brand { text-align: center; }
+            .xcl-footer__brand .xcl-footer__platform-badges,
+            .xcl-footer__brand .xcl-footer__social { justify-content: center; }
+            .footer-link { display: flex; align-items: center; min-height: 44px; }
+        }
+    </style>
+
     <div class="container-xl px-4 py-5">
-        <div class="row g-5">
+        <div class="xcl-footer__grid">
 
             {{-- Brand --}}
-            <div class="col-lg-4">
+            <div class="xcl-footer__brand">
                 <img src="/logo.png" alt="XCLusive" height="48" class="mb-4">
                 <p style="color:#6b7280;font-size:.9rem;line-height:1.7;max-width:280px">
                     Dominating sim racing from console to PC.<br>
                     Join the pride.
                 </p>
-                <div class="d-flex gap-3 mt-4">
+
+                <div class="xcl-footer__platform-badges">
+                    <span class="xcl-footer__platform-badge">ACC</span>
+                    <span class="xcl-footer__platform-badge">iRacing</span>
+                    <span class="xcl-footer__platform-badge">Le Mans Ultimate</span>
+                </div>
+
+                <div class="xcl-footer__social">
                     <a href="{{ config('xcl.discord_url') }}" target="_blank"
-                       class="d-flex align-items-center justify-content-center rounded-2 text-decoration-none"
-                       style="width:36px;height:36px;background:rgba(255,255,255,.06);color:#9ca3af;transition:all .2s"
+                       class="xcl-footer__social-icon"
                        onmouseover="this.style.background='#7c3aed';this.style.color='white'"
                        onmouseout="this.style.background='rgba(255,255,255,.06)';this.style.color='#9ca3af'"
                        title="Discord">
@@ -22,8 +115,7 @@
                         </svg>
                     </a>
                     <a href="https://www.instagram.com/xclusive_esport/" target="_blank"
-                       class="d-flex align-items-center justify-content-center rounded-2 text-decoration-none"
-                       style="width:36px;height:36px;background:rgba(255,255,255,.06);color:#9ca3af;transition:all .2s"
+                       class="xcl-footer__social-icon"
                        onmouseover="this.style.background='#db2777';this.style.color='white'"
                        onmouseout="this.style.background='rgba(255,255,255,.06)';this.style.color='#9ca3af'"
                        title="Instagram">
@@ -32,8 +124,7 @@
                         </svg>
                     </a>
                     <a href="https://www.youtube.com/@XCL_TV" target="_blank"
-                       class="d-flex align-items-center justify-content-center rounded-2 text-decoration-none"
-                       style="width:36px;height:36px;background:rgba(255,255,255,.06);color:#9ca3af;transition:all .2s"
+                       class="xcl-footer__social-icon"
                        onmouseover="this.style.background='#ef4444';this.style.color='white'"
                        onmouseout="this.style.background='rgba(255,255,255,.06)';this.style.color='#9ca3af'"
                        title="YouTube">
@@ -41,38 +132,93 @@
                             <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                         </svg>
                     </a>
+                    {{-- TODO: no TikTok profile URL configured anywhere in the codebase yet --}}
+                    <a href="#"
+                       class="xcl-footer__social-icon"
+                       onmouseover="this.style.background='#7c3aed';this.style.color='white'"
+                       onmouseout="this.style.background='rgba(255,255,255,.06)';this.style.color='#9ca3af'"
+                       title="TikTok">
+                        <i class="fa-brands fa-tiktok" style="font-size:16px"></i>
+                    </a>
+                    {{-- TODO: no X (Twitter) profile URL configured anywhere in the codebase yet --}}
+                    <a href="#"
+                       class="xcl-footer__social-icon"
+                       onmouseover="this.style.background='#db2777';this.style.color='white'"
+                       onmouseout="this.style.background='rgba(255,255,255,.06)';this.style.color='#9ca3af'"
+                       title="X">
+                        <i class="fa-brands fa-x-twitter" style="font-size:16px"></i>
+                    </a>
                 </div>
             </div>
 
-            {{-- Quick links --}}
-            <div class="col-6 col-lg-2 offset-lg-1">
-                <div class="fw-black text-white text-uppercase mb-4" style="font-size:.78rem;letter-spacing:.1em">Navigate</div>
-                <div class="d-flex flex-column gap-2">
-                    <a href="{{ url('/#about') }}"    class="footer-link">About Us</a>
-                    <a href="{{ url('/#teams') }}"    class="footer-link">Teams</a>
-                    <a href="{{ route('events.index') }}"     class="footer-link">Events</a>
-                    <a href="{{ route('calendar') }}" class="footer-link">Calendar</a>
-                    <a href="{{ url('/#partners') }}" class="footer-link">Partners</a>
+            {{-- Link columns --}}
+            <div class="xcl-footer__links">
+
+                <div>
+                    <div class="fw-black text-white text-uppercase mb-4" style="font-size:.78rem;letter-spacing:.1em">Navigate</div>
+                    <div class="d-flex flex-column gap-2">
+                        {{-- TODO: no "about" route or homepage section exists --}}
+                        <a href="#" class="footer-link">About Us</a>
+                        <a href="{{ route('team') }}" class="footer-link">Teams</a>
+                        <a href="{{ route('events.index') }}" class="footer-link">Events</a>
+                        <a href="{{ route('calendar') }}" class="footer-link">Calendar</a>
+                        <a href="{{ route('home') }}#partners" class="footer-link">Partners</a>
+                        {{-- TODO: no "contact" route exists --}}
+                        <a href="#" class="footer-link">Contact</a>
+                    </div>
                 </div>
+
+                <div>
+                    <div class="fw-black text-white text-uppercase mb-4" style="font-size:.78rem;letter-spacing:.1em">Racing</div>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="{{ route('championships.index') }}" class="footer-link">Championships</a>
+                        {{-- TODO: no standalone standings route exists --}}
+                        <a href="#" class="footer-link">Standings</a>
+                        <a href="{{ route('results.index') }}" class="footer-link">Results</a>
+                        {{-- TODO: no public XCL Rating / licences info route exists --}}
+                        <a href="#" class="footer-link">XCL Rating and Licences</a>
+                        {{-- TODO: no rules and regulations route exists --}}
+                        <a href="#" class="footer-link">Rules and Regulations</a>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="fw-black text-white text-uppercase mb-4" style="font-size:.78rem;letter-spacing:.1em">Community</div>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="{{ route('news.index') }}" class="footer-link">News</a>
+                        <a href="{{ route('coaching.index') }}" class="footer-link">Coaching</a>
+                        <a href="{{ route('team.join') }}" class="footer-link">Join The Team</a>
+                        <a href="https://raven.gg/stores/xclusive-esports/" target="_blank" class="footer-link">Merchandise</a>
+                        <a href="{{ config('xcl.discord_url') }}" target="_blank" class="footer-link">Discord</a>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="fw-black text-white text-uppercase mb-4" style="font-size:.78rem;letter-spacing:.1em">Account</div>
+                    <div class="d-flex flex-column gap-2">
+                        @auth
+                            <a href="{{ route('profile') }}" class="footer-link">My Profile</a>
+                            {{-- TODO: race history/upcoming events live on the profile page but have no dedicated route or section anchor --}}
+                            <a href="#" class="footer-link">My Races</a>
+                            <a href="{{ route('racing-teams.index') }}" class="footer-link">My Team</a>
+                            {{-- TODO: no dashboard route exists --}}
+                            <a href="#" class="footer-link">Dashboard</a>
+                        @else
+                            <a href="{{ route('login') }}" class="footer-link">Log In</a>
+                            <a href="{{ route('register') }}" class="footer-link">Register</a>
+                            <a href="{{ route('team.join') }}" class="footer-link">Join The Team</a>
+                        @endauth
+                    </div>
+                </div>
+
             </div>
 
-            {{-- Account --}}
-            <div class="col-6 col-lg-2">
-                <div class="fw-black text-white text-uppercase mb-4" style="font-size:.78rem;letter-spacing:.1em">Account</div>
-                <div class="d-flex flex-column gap-2">
-                    @auth
-                        <a href="{{ route('profile') }}"  class="footer-link">My Profile</a>
-                        <a href="{{ route('events.index') }}"     class="footer-link">My Races</a>
-                    @else
-                        <a href="{{ route('login') }}"    class="footer-link">Login</a>
-                        <a href="{{ route('register') }}" class="footer-link">Register</a>
-                    @endauth
-                </div>
-            </div>
+        </div>
 
-            {{-- Shop / CTA --}}
-            <div class="col-lg-3">
-                <div class="fw-black text-white text-uppercase mb-4" style="font-size:.78rem;letter-spacing:.1em">Merchandise</div>
+        {{-- CTA strip --}}
+        <div class="xcl-footer__cta">
+            <div>
+                <div class="xcl-footer__cta-label">Merchandise</div>
                 <p style="color:#6b7280;font-size:.85rem;margin-bottom:1rem">Represent the pride. Wear the purple.</p>
                 <a href="https://raven.gg/stores/xclusive-esports/" target="_blank"
                    class="btn btn-sm fw-black text-uppercase text-white px-3 py-2"
@@ -80,7 +226,13 @@
                     SHOP NOW →
                 </a>
             </div>
-
+            <div>
+                <div class="xcl-footer__cta-label">Community</div>
+                <p style="color:#6b7280;font-size:.85rem;margin-bottom:1rem">11,000+ racers. One Discord.</p>
+                <a href="{{ config('xcl.discord_url') }}" target="_blank" class="xcl-footer__discord-btn">
+                    JOIN DISCORD
+                </a>
+            </div>
         </div>
     </div>
 
@@ -91,6 +243,9 @@
                 &copy; {{ date('Y') }} XCLusive Gaming Events. All rights reserved.
                 &nbsp;&middot;&nbsp;
                 <a href="{{ route('privacy') }}" class="text-decoration-none" style="color:#6b7280">Privacy Policy</a>
+                &nbsp;&middot;&nbsp;
+                {{-- TODO: no terms of service route or view exists --}}
+                <a href="#" class="text-decoration-none" style="color:#6b7280">Terms of Service</a>
             </span>
             <span class="fw-black text-uppercase fst-italic" style="font-size:.72rem;color:#4b5563;letter-spacing:.06em">
                 THE LION IS BORN TO DOMINATE
