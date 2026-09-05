@@ -243,6 +243,13 @@
                 </svg>
                 <span>Create Article</span>
             </a>
+            <a href="{{ route('admin.broadcasts.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.broadcasts.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                </svg>
+                <span>Broadcast</span>
+            </a>
             <a href="{{ route('admin.news.tags.index') }}"
                class="admin-nav-link {{ request()->routeIs('admin.news.tags.*') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
