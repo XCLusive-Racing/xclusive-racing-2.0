@@ -32,6 +32,8 @@ return [
         'guild_id'              => env('DISCORD_GUILD_ID'),
         'announcer_webhook'     => env('DISCORD_ANNOUNCER_WEBHOOK'),
         'xcl_member_role_id'    => env('DISCORD_XCL_MEMBER_ROLE_ID'),
+        'penalty_webhook'       => env('DISCORD_PENALTY_WEBHOOK'),
+        'steward_role_id'       => env('DISCORD_STEWARD_ROLE_ID'),
         'rank_roles'            => [
             'alien'    => env('DISCORD_ROLE_RANK_ALIEN'),
             'platinum' => env('DISCORD_ROLE_RANK_PLATINUM'),
