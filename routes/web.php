@@ -80,6 +80,7 @@ Route::delete('/championships/{championship}/unregister', [ChampionshipControlle
 // News - public
 Route::get('/news',         [NewsController::class, 'index'])->name('news.index');
 Route::get('/news/{slug}',  [NewsController::class, 'show'])->name('news.show');
+Route::post('/news/{slug}/like', [NewsController::class, 'toggleLike'])->name('news.like')->middleware('auth');
 
 // Live broadcasts
 Route::get('/live', [LiveController::class, 'index'])->name('live');
