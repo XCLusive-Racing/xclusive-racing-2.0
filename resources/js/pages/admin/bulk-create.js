@@ -14,8 +14,10 @@ export function initBulkCreate(wrap) {
     const addRowBtn       = wrap.querySelector('[data-bulk-add-row]');
     const tbody           = wrap.querySelector('[data-bulk-tbody]');
     const defaultCarClassEl    = wrap.querySelector('select[name="car_class"]');
+    const defaultTodEl         = wrap.querySelector('[data-bulk-tod], [data-bulk-default-tod]');
 
     function getDefaultCarClass()   { return defaultCarClassEl?.value || ''; }
+    function getDefaultTod()        { return defaultTodEl?.value || ''; }
 
     const CAR_CLASS_OPTIONS = ['GT3', 'GT4', 'GT2', 'GTC', 'TCX'];
 
@@ -107,6 +109,10 @@ export function initBulkCreate(wrap) {
                        class="form-control form-control-sm" data-field="scheduled_at" required>
             </td>
             <td>
+                <input type="time" name="events[${i}][time_of_day]" value="${esc(ev.time_of_day)}" step="3600"
+                       class="form-control form-control-sm" data-field="time_of_day">
+            </td>
+            <td>
                 <select name="events[${i}][car_class]" class="form-select form-select-sm" data-field="car_class">
                     ${carClassOptions}
                 </select>
@@ -134,6 +140,7 @@ export function initBulkCreate(wrap) {
         const maxDriversHidden = tr.querySelector('[data-field="max_drivers"]');
         const trackInput       = tr.querySelector('[data-field="track"]');
         const dateInput        = tr.querySelector('[data-field="scheduled_at"]');
+        const todInput         = tr.querySelector('[data-field="time_of_day"]');
         const carClassInput    = tr.querySelector('[data-field="car_class"]');
         const weatherInput     = tr.querySelector('[data-field="weather"]');
         const rainInput        = tr.querySelector('[data-field="rain_level"]');
@@ -147,6 +154,7 @@ export function initBulkCreate(wrap) {
         });
         // flatpickr's own minuteIncrement:60/hour-only mode keeps this whole-hour already
         dateInput.addEventListener('change', () => { events[i].scheduled_at = dateInput.value; });
+        todInput.addEventListener('change', () => { events[i].time_of_day = todInput.value; });
         carClassInput.addEventListener('change', () => { events[i].car_class = carClassInput.value; });
         weatherInput.addEventListener('change', () => {
             events[i].weather = weatherInput.value;
@@ -204,6 +212,7 @@ export function initBulkCreate(wrap) {
             if (!checkedDays.includes(ourDay)) continue;
             events.push({
                 title: defTrack, track: defTrack, scheduled_at: formatDate(d),
+                time_of_day: getDefaultTod(),
                 car_class: getDefaultCarClass() || 'GT3',
                 weather: 'dry', rain_level: '',
             });
@@ -224,6 +233,7 @@ export function initBulkCreate(wrap) {
         const defTrack = getDefaultTrack();
         events.push({
             title: defTrack, track: defTrack, scheduled_at: nextDate,
+            time_of_day: getDefaultTod(),
             car_class: getDefaultCarClass(),
             weather: 'dry', rain_level: '',
         });

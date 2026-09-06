@@ -164,7 +164,7 @@ class User extends Authenticatable
 
     public function displayTeam(): ?string
     {
-        return $this->is_supporter ? $this->team : null;
+        return $this->team;
     }
 
     public function avatarUrl(): ?string

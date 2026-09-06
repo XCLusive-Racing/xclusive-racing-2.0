@@ -343,7 +343,7 @@ $mcExisting = $isEdit
                                 </div>
                                 <div class="form-text">0.0 dry · 0.3 damp · 0.5 light · 0.8 heavy · 1.0 flooded</div>
                             </div>
-                            <div class="col-sm-3" data-mode-single>
+                            <div class="col-sm-3">
                                 <label class="form-label">Race Start Time</label>
                                 @php
                                     // Legacy races were saved with a day/dusk/night/dynamic preset instead of an
@@ -582,6 +582,7 @@ $mcExisting = $isEdit
                                         <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:36px">#</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Track</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:190px">Date & Time (BST/GMT)</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">In-Game Time</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:110px">Car Class</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:130px">Condition</th>
                                         <th class="pe-4" style="width:40px"></th>
@@ -715,14 +716,14 @@ $mcExisting = $isEdit
                             <p class="fw-black text-uppercase fst-italic mb-2" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Driver Swap Rules <span class="fw-normal" style="text-transform:none">(pushed to the gPortal server)</span></p>
                             <div class="row g-2 mb-2">
                                 <div class="col-sm-6">
-                                    <label class="form-label" style="font-size:.8rem">Min. Stint Time</label>
+                                    <label class="form-label" style="font-size:.8rem">Max. Stint Time</label>
                                     <div class="input-group input-group-sm">
                                         <input type="number" name="driver_stint_time_mins"
                                                value="{{ old('driver_stint_time_mins', $isEdit ? $race->driver_stint_time_mins : '') }}"
-                                               class="form-control" min="1" max="1440" placeholder="No minimum">
+                                               class="form-control" min="1" max="1440" placeholder="No limit">
                                         <span class="input-group-text">min</span>
                                     </div>
-                                    <div class="form-text" style="font-size:.7rem">Shortest time before a driver may hand over the car.</div>
+                                    <div class="form-text" style="font-size:.7rem">Longest time a driver may stay in the car before a swap is required.</div>
                                 </div>
                                 <div class="col-sm-6">
                                     <label class="form-label" style="font-size:.8rem">Max Driving Time / Driver</label>
