@@ -157,12 +157,20 @@ class RaceResult extends Model
             ]);
         }
 
-        $teamByCarNumber = $race->teamEntries->keyBy('car_number');
+        // Primary lookup is via each driver's registration, not the imported car_number —
+        // a driver's in-game car number can drift from what they registered under (wrong
+        // livery slot, renumbered mid-event), which used to make team names appear to show
+        // up "randomly". The registration's team_entry_id is authoritative regardless.
+        $teamEntryIdByUserId = $race->registrations->whereNotNull('team_entry_id')->pluck('team_entry_id', 'user_id');
+        $teamEntriesById     = $race->teamEntries->keyBy('id');
+        $teamByCarNumber     = $race->teamEntries->keyBy('car_number');
 
-        return $results->groupBy('car_number')->map(function ($group) use ($teamByCarNumber) {
+        return $results->groupBy('car_number')->map(function ($group) use ($teamEntryIdByUserId, $teamEntriesById, $teamByCarNumber) {
             $primary = $group->first();
-            $team    = $teamByCarNumber->get($primary->car_number);
             $names   = $group->map->displayName()->implode(' / ');
+
+            $teamEntryId = $group->map(fn ($r) => $teamEntryIdByUserId->get($r->user_id))->filter()->first();
+            $team        = $teamEntryId ? $teamEntriesById->get($teamEntryId) : $teamByCarNumber->get($primary->car_number);
 
             return (object) [
                 'result' => $primary,

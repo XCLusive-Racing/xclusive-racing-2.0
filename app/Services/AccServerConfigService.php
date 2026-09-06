@@ -46,6 +46,7 @@ class AccServerConfigService
                     'ballastKg'           => 0,
                     'forcedCarModel'      => -1,
                     'overrideDriverInfo'  => 1,
+                    'teamName'            => $teamEntry?->team?->name ?? '',
                 ];
             } else {
                 // Solo driver
@@ -67,6 +68,7 @@ class AccServerConfigService
                     'ballastKg'           => 0,
                     'forcedCarModel'      => -1,
                     'overrideDriverInfo'  => 1,
+                    'teamName'            => $user->team ?? '',
                 ];
             }
         }
