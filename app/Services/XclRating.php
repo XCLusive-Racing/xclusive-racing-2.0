@@ -80,14 +80,19 @@ class XclRating
         $nFin   = count($finishers);
         $nTotal = count($entries);
 
-        if ($nFin < $this->MIN_DRIVERS) {
+        // Gate on the whole field, not just classified finishers — a DNF still entered and
+        // still counts toward a race being "big enough" to rate; it's excluded from the
+        // podium-relative scoring below, but not from whether the race qualifies at all.
+        if ($nTotal < $this->MIN_DRIVERS) {
             throw new \InvalidArgumentException(
-                "Need at least {$this->MIN_DRIVERS} classified finishers; got {$nFin}."
+                "Need at least {$this->MIN_DRIVERS} drivers; got {$nTotal}."
             );
         }
 
         $sof   = array_sum(array_column($entries, 'rating')) / $nTotal;
-        $rStep = ($this->R_HIGH - $this->R_LOW) / ($nFin - 1);
+        // Fewer than 2 finishers leaves nothing to rank against each other; rFactor for a
+        // lone finisher is R_HIGH regardless (finishPos=1), so rStep is never actually used.
+        $rStep = $nFin > 1 ? ($this->R_HIGH - $this->R_LOW) / ($nFin - 1) : 0.0;
 
         $transformedRatings = [];
         $sumTransformed     = 0.0;

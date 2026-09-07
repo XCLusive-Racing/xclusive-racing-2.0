@@ -746,13 +746,13 @@
 
         <div class="px-4 pt-3 pb-2 d-flex align-items-center justify-content-between" style="border-bottom:1px solid #f3f4f6">
             <div>
-                @if($linkedFinishers < $minRatingDrivers)
+                @if($linkedDrivers < $minRatingDrivers)
                 <span style="font-size:.78rem;color:#dc2626;font-weight:700">
-                    ⚠ Need {{ $minRatingDrivers }} linked finishers — have {{ $linkedFinishers }}.
+                    ⚠ Need {{ $minRatingDrivers }} linked drivers — have {{ $linkedDrivers }}.
                     Make sure drivers have accounts matched to their platform ID.
                 </span>
                 @else
-                <span style="font-size:.78rem;color:#6b7280">{{ $linkedFinishers }} linked finishers</span>
+                <span style="font-size:.78rem;color:#6b7280">{{ $linkedDrivers }} linked drivers</span>
                 @endif
             </div>
             @if($raceResults->isNotEmpty())
@@ -771,8 +771,8 @@
         <div class="p-5 text-center">
             <div class="fw-bold text-dark" style="font-size:.95rem">No rating data yet</div>
             <div class="text-secondary mt-1" style="font-size:.82rem">
-                @if($linkedFinishers < $minRatingDrivers)
-                    Not enough linked finishers. Add DNS entries or link more drivers to their accounts, then click Recalculate.
+                @if($linkedDrivers < $minRatingDrivers)
+                    Not enough linked drivers. Add DNS entries or link more drivers to their accounts, then click Recalculate.
                 @else
                     Click "Recalculate Ratings" above to calculate.
                 @endif
@@ -785,10 +785,7 @@
                 $classRows = $raceResults->filter(
                     fn($r) => $r->car_class && $cls->car_class && strtoupper($r->car_class) === strtoupper($cls->car_class)
                 );
-                $finisherCount = $classRows->filter(function ($r) {
-                    $isTrueDnf = $r->dnf && (int) ($r->lap_count ?? 0) <= 1;
-                    return !$r->dsq && !$r->dns && !$r->dc && !$isTrueDnf;
-                })->count();
+                $driverCount = $classRows->whereNotNull('user_id')->count();
                 $positions = \App\Models\RaceResult::classifiedPositions($classRows);
 
                 return (object) [
@@ -797,7 +794,7 @@
                     'positions' => $positions,
                     'sof' => $classRows->first(fn($r) => $r->sof !== null)?->sof,
                     'rated' => $classRows->contains(fn($r) => $r->elo_change !== null),
-                    'finisherCount' => $finisherCount, 'minNeeded' => $minNeeded,
+                    'driverCount' => $driverCount, 'minNeeded' => $minNeeded,
                 ];
             });
         @endphp
@@ -809,7 +806,7 @@
             @endif
         </div>
         @if(!$group->rated)
-        <p class="text-secondary px-4 pt-3 mb-0" style="font-size:.82rem">Minimum of {{ $group->minNeeded }} finishers not reached ({{ $group->finisherCount }} finished) — no rating calculated for this class.</p>
+        <p class="text-secondary px-4 pt-3 mb-0" style="font-size:.82rem">Minimum of {{ $group->minNeeded }} drivers not reached ({{ $group->driverCount }} entered) — no rating calculated for this class.</p>
         @endif
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" style="font-size:.82rem">

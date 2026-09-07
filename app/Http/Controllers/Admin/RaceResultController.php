@@ -97,13 +97,13 @@ class RaceResultController extends Controller
             }
         }
 
-        $linkedFinishers  = $raceResults->where('dns', false)->where('dnf', false)->where('dsq', false)->where('dc', false)->whereNotNull('user_id')->count();
+        $linkedDrivers    = $raceResults->whereNotNull('user_id')->count();
         $minRatingDrivers = (new XclRating())->MIN_DRIVERS;
 
         return view('admin.races.results', compact(
             'race', 'raceResults', 'qualiResults',
             'ftpServers', 'selectedServer', 'ftpFiles', 'ftpAllFiles', 'ftpError', 'importedFiles',
-            'dnsCandidates', 'entrylistDnsCandidates', 'linkedFinishers', 'minRatingDrivers'
+            'dnsCandidates', 'entrylistDnsCandidates', 'linkedDrivers', 'minRatingDrivers'
         ));
     }
 
@@ -309,13 +309,12 @@ class RaceResultController extends Controller
             ->whereNotNull('user_id')
             ->get();
 
-        $finishers = $results->where('dns', false)->where('dnf', false)->where('dsq', false)->where('dc', false)->count();
         $linked    = $results->count();
         $minNeeded = (new \App\Services\XclRating())->MIN_DRIVERS;
 
-        if ($finishers < $minNeeded) {
+        if ($linked < $minNeeded) {
             return back()->with('error',
-                "Cannot calculate ratings: need {$minNeeded} linked finishers, have {$finishers}. " .
+                "Cannot calculate ratings: need {$minNeeded} linked drivers, have {$linked}. " .
                 "Make sure drivers have accounts and are matched to their platform ID."
             );
         }
