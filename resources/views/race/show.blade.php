@@ -651,6 +651,47 @@
                 </div>
                 @endif
 
+                {{-- Practice Server --}}
+                @if($race->has_practice_server && $race->practiceServerSession)
+                @php $ps = $race->practiceServerSession; @endphp
+                <div class="xcl-event-card mb-4" style="border-left:3px solid #7c3aed">
+                    <h3 class="xcl-event-card__heading">PRACTICE SERVER</h3>
+                    <p class="xcl-event-card__text mb-2">
+                        A practice server runs with the exact race conditions ahead of the event, so you can
+                        learn the track and set-up before it counts.
+                    </p>
+                    <p class="xcl-event-card__text mb-3" style="font-weight:700;color:#f472b6">
+                        Register before
+                        <span data-local-time="{{ $ps->upload_at->toIso8601String() }}">{{ $ps->upload_at->timezone('Europe/London')->format('D d M, H:i T') }}</span>
+                        to get practice access. You can still register and race after that moment, you just won't be
+                        able to join the practice server.
+                    </p>
+
+                    @if($isRegistered && $myRegisteredAt)
+                        @if($myRegisteredAt->lt($ps->upload_at))
+                        <div class="p-2 rounded-2 mb-2" style="background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3)">
+                            <span style="color:#4ade80;font-weight:700;font-size:.85rem">✓ You're included in the practice entry list.</span>
+                        </div>
+                        @else
+                        <div class="p-2 rounded-2 mb-2" style="background:rgba(156,163,175,.12);border:1px solid rgba(156,163,175,.3)">
+                            <span style="color:#d1d5db;font-weight:700;font-size:.85rem">You registered too late for practice, but you're all set for the race.</span>
+                        </div>
+                        @endif
+                    @endif
+
+                    @if($ps->isPushed())
+                    <div class="p-2 rounded-2" style="background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.3)">
+                        <div class="fw-bold mb-1" style="color:#c4b5fd;font-size:.85rem">
+                            {{ $ps->practiceServer->ftpServer->name ?? 'Practice server' }} is live
+                        </div>
+                        @if($race->practice_notes)
+                        <div class="xcl-event-card__text" style="font-size:.82rem;white-space:pre-line">{{ $race->practice_notes }}</div>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+                @endif
+
                 {{-- Requirements --}}
                 @php
                     $classesWithReqs = $race->is_multiclass
@@ -800,3 +841,16 @@
     </div>
 </main>
 @endsection
+
+@push('scripts')
+<script>
+document.querySelectorAll('[data-local-time]').forEach(el => {
+    const date = new Date(el.dataset.localTime);
+    if (isNaN(date.getTime())) return;
+    el.textContent = date.toLocaleString(undefined, {
+        weekday: 'short', day: '2-digit', month: 'short',
+        hour: '2-digit', minute: '2-digit',
+    });
+});
+</script>
+@endpush

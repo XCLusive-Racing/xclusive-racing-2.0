@@ -8,12 +8,17 @@ use App\Models\EventTag;
 use App\Models\FtpImportedFile;
 use App\Models\FtpServer;
 use App\Models\Media;
+use App\Models\PracticeServer;
 use App\Models\Race;
 use App\Models\RaceClass;
 use App\Models\RaceRegistration;
 use App\Models\RaceTeamEntry;
+use App\Rules\PracticeWindowNotOverlapping;
 use App\Services\AccServerConfigService;
 use App\Services\FtpService;
+use App\Services\PracticeServer\PracticeServerSessionManager;
+use App\Services\PracticeServer\PracticeWindowCalculator;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -648,7 +653,10 @@ class RaceController extends Controller
         $data = $request->validate([
             'game'                 => 'required|in:acc,lmu,iracing,ac',
             'track'                => 'required|string|max:255',
-            'scheduled_at'         => 'required|date',
+            'scheduled_at'         => array_filter([
+                'required', 'date',
+                $request->boolean('has_practice_server') ? new PracticeWindowNotOverlapping() : null,
+            ]),
             'event_tag'            => 'required|exists:event_tags,slug',
             'event_format_id'      => 'nullable|exists:event_formats,id',
             'title'                => 'required_without:event_format_id|string|max:255',
@@ -680,11 +688,14 @@ class RaceController extends Controller
             'icon_path'            => 'nullable|string|max:500',
             'pitstop_count'        => 'nullable|integer|min:0|max:9',
             'min_stop_secs'        => 'nullable|integer|min:1|max:3600',
+            'has_practice_server'  => 'nullable|boolean',
+            'practice_notes'       => 'nullable|string|max:2000',
         ]);
 
         $data['scheduled_at']  = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
         $data['is_multiclass'] = $request->boolean('is_multiclass');
         $data['is_endurance']  = $request->boolean('is_endurance');
+        $data['has_practice_server'] = $request->boolean('has_practice_server');
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
         $data = $this->normalizeRainLevel($data);
 
@@ -726,7 +737,12 @@ class RaceController extends Controller
 
         $this->syncRaceClasses($request, $race);
 
-        return redirect()->route('admin.races.index')->with('success', 'Race created successfully!');
+        $practiceWarning = (new PracticeServerSessionManager())
+            ->sync($race, $data['has_practice_server']);
+
+        $redirect = redirect()->route('admin.races.index')->with('success', 'Race created successfully!');
+
+        return $practiceWarning ? $redirect->with('practice_warning', $practiceWarning) : $redirect;
     }
 
     public function edit(Race $race)
@@ -736,7 +752,7 @@ class RaceController extends Controller
                 ->with('error', 'Past races cannot be edited. You can still manage results.');
         }
 
-        $race->load('raceClasses');
+        $race->load(['raceClasses', 'practiceServerSession']);
         $tags        = EventTag::orderBy('name')->get();
         $prefillDate = null;
 
@@ -758,7 +774,10 @@ class RaceController extends Controller
         $data = $request->validate([
             'game'                 => 'required|in:acc,lmu,iracing,ac',
             'track'                => 'required|string|max:255',
-            'scheduled_at'         => 'required|date',
+            'scheduled_at'         => array_filter([
+                'required', 'date',
+                $request->boolean('has_practice_server') ? new PracticeWindowNotOverlapping($race->id) : null,
+            ]),
             'status'               => 'required|in:open,closed,finished',
             'event_tag'            => 'required|exists:event_tags,slug',
             'event_format_id'      => 'nullable|exists:event_formats,id',
@@ -793,11 +812,14 @@ class RaceController extends Controller
             'ftp_server_id'        => 'nullable|exists:ftp_servers,id',
             'pitstop_count'        => 'nullable|integer|min:0|max:9',
             'min_stop_secs'        => 'nullable|integer|min:1|max:3600',
+            'has_practice_server'  => 'nullable|boolean',
+            'practice_notes'       => 'nullable|string|max:2000',
         ]);
 
         $data['scheduled_at']  = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
         $data['is_multiclass'] = $request->boolean('is_multiclass');
         $data['is_endurance']  = $request->boolean('is_endurance');
+        $data['has_practice_server'] = $request->boolean('has_practice_server');
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
         $data = $this->normalizeRainLevel($data);
 
@@ -844,7 +866,38 @@ class RaceController extends Controller
 
         $this->syncRaceClasses($request, $race);
 
-        return redirect()->route('admin.races.index')->with('success', 'Race updated successfully!');
+        $practiceWarning = (new PracticeServerSessionManager())
+            ->sync($race, $data['has_practice_server']);
+
+        $redirect = redirect()->route('admin.races.index')->with('success', 'Race updated successfully!');
+
+        return $practiceWarning ? $redirect->with('practice_warning', $practiceWarning) : $redirect;
+    }
+
+    // Live preview of the computed practice window for the create/edit form — recomputes
+    // via the same PracticeWindowCalculator used on save, so there's a single source of
+    // truth for the math shown to admins.
+    public function practiceWindowPreview(Request $request)
+    {
+        $request->validate(['starts_at' => 'required|date_format:Y-m-d\TH:i']);
+
+        $server = PracticeServer::where('is_active', true)->first();
+
+        if (!$server) {
+            return response()->json(['error' => 'No active practice server is configured.'], 422);
+        }
+
+        $startsAt = Carbon::createFromFormat('Y-m-d\TH:i', $request->starts_at, 'Europe/London')->utc();
+        $race     = new Race(['scheduled_at' => $startsAt]);
+
+        $window = (new PracticeWindowCalculator())->calculate($race, $server);
+
+        return response()->json([
+            'window_start' => $window->windowStart->timezone('Europe/London')->format('D d M, H:i T'),
+            'upload_at'    => $window->uploadAt->timezone('Europe/London')->format('D d M, H:i T'),
+            'window_end'   => $window->windowEnd->timezone('Europe/London')->format('D d M, H:i T'),
+            'is_past'      => $window->isAlreadyPast(),
+        ]);
     }
 
     public function pushConfig(Request $request, Race $race, AccServerConfigService $config)

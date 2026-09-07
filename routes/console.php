@@ -13,3 +13,4 @@ Schedule::command('gportal:import-results')->everyMinute()->onOneServer(); // TE
 Schedule::command('xcl:discord:sync-ranks')->everyFiveMinutes()->onOneServer();
 Schedule::command('races:announce-daily')->dailyAt('12:00')->timezone('Europe/London')->onOneServer();
 Schedule::command('reports:announce-daily')->dailyAt('12:00')->timezone('Europe/London')->onOneServer();
+Schedule::command('practice:push-due')->everyFiveMinutes()->onOneServer();

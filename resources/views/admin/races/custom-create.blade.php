@@ -229,6 +229,31 @@ $tagsConfig = json_encode([
                                 @error('ftp_server_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
+
+                        <div class="mt-3 pt-3" style="border-top:1px dashed #e5e7eb">
+                            <div class="form-check">
+                                <input type="checkbox" name="has_practice_server" id="cr-practice-checkbox" value="1"
+                                       class="form-check-input" data-practice-toggle
+                                       {{ old('has_practice_server') ? 'checked' : '' }}>
+                                <label class="form-check-label fw-bold" for="cr-practice-checkbox">Add practice server</label>
+                                @error('scheduled_at')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                            </div>
+                            <div id="ce-practice-details" style="display:{{ old('has_practice_server') ? '' : 'none' }}">
+                                <div class="mt-2 p-2 rounded-2" style="background:#f9fafb;border:1px solid #e5e7eb;font-size:.82rem">
+                                    <span class="text-secondary">Practice window:</span>
+                                    <strong data-practice-window-text>Set a date &amp; time above to see the computed window</strong>
+                                </div>
+                                <div class="mt-2">
+                                    <label class="form-label">
+                                        Practice Notes
+                                        <span class="text-secondary fw-normal" style="text-transform:none">(optional, shown to drivers)</span>
+                                    </label>
+                                    <textarea name="practice_notes" rows="2" class="form-control @error('practice_notes') is-invalid @enderror"
+                                              placeholder="Joining instructions, server name reminders, etc.">{{ old('practice_notes') }}</textarea>
+                                    @error('practice_notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {{-- Configuration --}}
@@ -821,6 +846,42 @@ $tagsConfig = json_encode([
     });
 
     updatePreview();
+})();
+</script>
+
+<script>
+(function () {
+    const checkbox   = document.querySelector('[data-practice-toggle]');
+    const details    = document.getElementById('ce-practice-details');
+    const windowText = document.querySelector('[data-practice-window-text]');
+    const schedInput = document.getElementById('cr-scheduled-at');
+    if (!checkbox || !details) return;
+
+    function toggle() {
+        details.style.display = checkbox.checked ? '' : 'none';
+        if (checkbox.checked) refreshPreview();
+    }
+
+    function refreshPreview() {
+        const startsAt = schedInput?.value;
+        if (!startsAt || !windowText) return;
+
+        fetch('{{ route('admin.races.practice-window-preview') }}?starts_at=' + encodeURIComponent(startsAt))
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    windowText.textContent = data.error;
+                    return;
+                }
+                windowText.textContent = data.window_start + ' → ' + data.window_end
+                    + ' (registration cutoff ' + data.upload_at + ')'
+                    + (data.is_past ? ' — already in the past, no session will be scheduled' : '');
+            })
+            .catch(() => {});
+    }
+
+    checkbox.addEventListener('change', toggle);
+    schedInput?.addEventListener('change', () => { if (checkbox.checked) refreshPreview(); });
 })();
 </script>
 

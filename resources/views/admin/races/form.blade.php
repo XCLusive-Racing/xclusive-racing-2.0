@@ -476,6 +476,47 @@ $mcExisting = $isEdit
                                 </div>
                             </div>
                             @endif
+
+                            @php
+                                $hasPractice    = old('has_practice_server', $isEdit ? $race->has_practice_server : false);
+                                $practiceSession = $isEdit ? $race->practiceServerSession : null;
+                            @endphp
+                            <div class="mt-3 pt-3" style="border-top:1px dashed #e5e7eb">
+                                <div class="form-check">
+                                    <input type="checkbox" name="has_practice_server" id="ce-practice-checkbox" value="1"
+                                           class="form-check-input" data-practice-toggle
+                                           {{ $hasPractice ? 'checked' : '' }}>
+                                    <label class="form-check-label fw-bold" for="ce-practice-checkbox">Add practice server</label>
+                                    @error('scheduled_at')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                </div>
+                                <div id="ce-practice-details" style="display:{{ $hasPractice ? '' : 'none' }}">
+                                    <div class="mt-2 p-2 rounded-2" style="background:#f9fafb;border:1px solid #e5e7eb;font-size:.82rem">
+                                        <span class="text-secondary">Practice window:</span>
+                                        <strong data-practice-window-text>
+                                            @if($practiceSession)
+                                                {{ $practiceSession->window_start->timezone('Europe/London')->format('D d M, H:i T') }}
+                                                &rarr;
+                                                {{ $practiceSession->window_end->timezone('Europe/London')->format('D d M, H:i T') }}
+                                                (registration cutoff {{ $practiceSession->upload_at->timezone('Europe/London')->format('H:i T') }})
+                                            @else
+                                                Set a date &amp; time above to see the computed window
+                                            @endif
+                                        </strong>
+                                        @if($practiceSession?->isPushed())
+                                        <div class="text-secondary mt-1" style="font-size:.75rem">Already pushed — times are locked and won't change if you edit the date.</div>
+                                        @endif
+                                    </div>
+                                    <div class="mt-2">
+                                        <label class="form-label">
+                                            Practice Notes
+                                            <span class="text-secondary fw-normal" style="text-transform:none">(optional, shown to drivers)</span>
+                                        </label>
+                                        <textarea name="practice_notes" rows="2" class="form-control @error('practice_notes') is-invalid @enderror"
+                                                  placeholder="Joining instructions, server name reminders, etc.">{{ old('practice_notes', $isEdit ? $race->practice_notes : '') }}</textarea>
+                                        @error('practice_notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         {{-- Bulk schedule panel --}}
@@ -1759,6 +1800,42 @@ $mcExisting = $isEdit
 
     weatherSelect?.addEventListener('change', updateWrap);
     updateWrap();
+})();
+</script>
+
+<script>
+(function () {
+    const checkbox   = document.querySelector('[data-practice-toggle]');
+    const details     = document.getElementById('ce-practice-details');
+    const windowText  = document.querySelector('[data-practice-window-text]');
+    const schedInput  = document.querySelector('[name="scheduled_at"]');
+    if (!checkbox || !details) return;
+
+    function toggle() {
+        details.style.display = checkbox.checked ? '' : 'none';
+        if (checkbox.checked) refreshPreview();
+    }
+
+    function refreshPreview() {
+        const startsAt = schedInput?.value;
+        if (!startsAt || !windowText) return;
+
+        fetch('{{ route('admin.races.practice-window-preview') }}?starts_at=' + encodeURIComponent(startsAt))
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    windowText.textContent = data.error;
+                    return;
+                }
+                windowText.textContent = data.window_start + ' → ' + data.window_end
+                    + ' (registration cutoff ' + data.upload_at + ')'
+                    + (data.is_past ? ' — already in the past, no session will be scheduled' : '');
+            })
+            .catch(() => {});
+    }
+
+    checkbox.addEventListener('change', toggle);
+    schedInput?.addEventListener('change', () => { if (checkbox.checked) refreshPreview(); });
 })();
 </script>
 
