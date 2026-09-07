@@ -250,13 +250,15 @@ class ProDriverController extends Controller
         $driver         = $all[$slug];
         $driver['slug'] = $slug;
 
-        // Auto-pick the latest hero image uploaded via the media library
-        $heroCategory   = $driver['hero_category'] ?? ('driver-' . $slug);
-        $hero           = Media::where('category', $heroCategory)
-            ->where('type', 'image')
-            ->latest()
-            ->first();
-        $driver['hero'] = $hero?->url;
+        // Hero/banner image, tried in order:
+        //  1. an explicit hero_category override (e.g. a sponsor-branded banner)
+        //  2. a media library upload named "<drivername>_banner" (any separator/case —
+        //     matched by stripping non-alphanumerics, so "Dirk Schouten_Banner.png",
+        //     "dirkschouten-banner" etc. all match)
+        //  3. the legacy driver-<slug> category, kept for backwards compatibility
+        $driver['hero'] = $this->findHeroByCategory($driver['hero_category'] ?? null)
+            ?? $this->findHeroByDriverName($driver['name'])
+            ?? $this->findHeroByCategory('driver-' . $slug);
 
         // Profile photo (shown beside upcoming races)
         $driver['profile_image'] = null;
@@ -269,5 +271,48 @@ class ProDriverController extends Controller
         }
 
         return view('teams.pro.show', compact('driver'));
+    }
+
+    private function findHeroByCategory(?string $category): ?string
+    {
+        if (!$category) {
+            return null;
+        }
+
+        return Media::where('category', $category)
+            ->where('type', 'image')
+            ->latest()
+            ->first()?->url;
+    }
+
+    // Matches a media title/filename like "<drivername>_banner" against the driver's
+    // name, ignoring case and any separators (spaces, underscores, hyphens) on both
+    // sides — so "Dirk Schouten Banner.png", "dirk_schouten-banner" etc. all match.
+    private function findHeroByDriverName(string $name): ?string
+    {
+        $needle = self::normalizeForMatch($name) . 'banner';
+
+        $candidates = Media::where('type', 'image')
+            ->where(function ($q) {
+                $q->where('title', 'like', '%banner%')
+                  ->orWhere('original_name', 'like', '%banner%');
+            })
+            ->latest()
+            ->get(['id', 'title', 'original_name', 'path', 'type', 'youtube_id']);
+
+        foreach ($candidates as $media) {
+            $label = $media->title ?: $media->original_name;
+            if (self::normalizeForMatch($label) === $needle) {
+                return $media->url;
+            }
+        }
+
+        return null;
+    }
+
+    private static function normalizeForMatch(string $value): string
+    {
+        $value = preg_replace('/\.[a-z0-9]{2,5}$/i', '', $value); // strip file extension
+        return strtolower(preg_replace('/[^a-z0-9]/i', '', $value));
     }
 }
