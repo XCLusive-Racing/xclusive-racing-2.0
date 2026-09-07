@@ -32,21 +32,29 @@ class RaceController extends Controller
 
     public function show(Race $race)
     {
-        $race->load(['raceClasses', 'registrations.user', 'registrations.raceClass', 'registrations.teamEntry.team', 'raceResults.user', 'eventFormat', 'teamEntries']);
+        $race->load(['raceClasses', 'registrations.user', 'registrations.raceClass', 'registrations.teamEntry.team', 'raceResults.user', 'eventFormat', 'teamEntries', 'practiceServerSession']);
         $isRegistered   = false;
         $myRegistration = null;
         $userTeam        = null;
         $myTeamEntries   = collect();
+        $myRegisteredAt  = null;
 
         if (auth()->check()) {
             $myRegistration = $race->registrations->firstWhere('user_id', auth()->id());
             $isRegistered   = $myRegistration !== null;
+            $myRegisteredAt = $myRegistration?->created_at;
             $userTeam       = auth()->user()->ownedRacingTeams()->with('members')->first();
             if ($userTeam) {
                 $myTeamEntries = RaceTeamEntry::where('race_id', $race->id)
                     ->where('racing_team_id', $userTeam->id)
                     ->with(['registrations.user', 'startingDriver'])
                     ->get();
+
+                $earliestTeamEntry = $myTeamEntries->min('created_at');
+                if ($earliestTeamEntry && (!$myRegisteredAt || $earliestTeamEntry < $myRegisteredAt)) {
+                    $myRegisteredAt = $earliestTeamEntry;
+                    $isRegistered   = true;
+                }
             }
         }
 
@@ -55,7 +63,7 @@ class RaceController extends Controller
             ->get(['id', 'xuid_psid'])
             ->keyBy('xuid_psid');
 
-        return view('race.show', compact('race', 'isRegistered', 'myRegistration', 'driverMap', 'userTeam', 'myTeamEntries'));
+        return view('race.show', compact('race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries'));
     }
 
     public function register(Request $request, Race $race)

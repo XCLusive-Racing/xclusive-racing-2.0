@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ApplicationController as AdminApplicationControll
 use App\Http\Controllers\Admin\BopController as AdminBopController;
 use App\Http\Controllers\Admin\BroadcastController;
 use App\Http\Controllers\Admin\ChampionshipController as AdminChampionshipController;
+use App\Http\Controllers\Admin\PracticeServerSessionController;
 use App\Http\Controllers\ChampionshipController;
 use App\Http\Controllers\CoachingController;
 use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
@@ -193,6 +194,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/races/bulk-import-csv', [AdminRaceController::class, 'bulkImportCsv'])->name('races.bulk-import-csv');
     Route::get('/races/export-csv', [AdminRaceController::class, 'exportCsv'])->name('races.export-csv');
     Route::get('/races/custom-create', [AdminRaceController::class, 'customCreate'])->name('races.custom-create');
+    Route::get('/races/practice-window-preview', [AdminRaceController::class, 'practiceWindowPreview'])->name('races.practice-window-preview');
     Route::post('/races', [AdminRaceController::class, 'store'])->name('races.store');
     Route::get('/races/{race}', [AdminRaceController::class, 'show'])->name('races.show');
     Route::get('/races/{race}/entry-list', [AdminRaceController::class, 'downloadEntryList'])->name('races.entry-list');
@@ -210,6 +212,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/races/{race}/upload-entrylist', [AdminRaceController::class, 'uploadEntrylist'])->name('races.upload-entrylist');
     Route::delete('/races/{race}/registrations/{registration}', [AdminRaceController::class, 'removeRegistration'])->name('races.registrations.destroy');
     Route::delete('/races/{race}/team-entries/{entry}', [AdminRaceController::class, 'removeTeamEntry'])->name('races.team-entries.destroy');
+    Route::get('/practice-servers', [PracticeServerSessionController::class, 'index'])->name('practice-servers.index');
+    Route::post('/practice-servers/{practiceServerSession}/push', [PracticeServerSessionController::class, 'push'])->name('practice-servers.push');
     Route::delete('/races/bulk-destroy', [AdminRaceController::class, 'bulkDestroy'])->name('races.bulk-destroy');
     Route::delete('/races/{race}/reset-config', [AdminRaceController::class, 'resetConfig'])->name('races.reset-config');
     Route::delete('/races/{race}', [AdminRaceController::class, 'destroy'])->name('races.destroy');

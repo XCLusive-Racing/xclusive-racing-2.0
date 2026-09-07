@@ -362,7 +362,7 @@ class AccServerConfigService
         };
     }
 
-    private function startHour(?string $timeOfDay): int
+    public function startHour(?string $timeOfDay): int
     {
         if ($timeOfDay && preg_match('/^(\d{1,2}):(\d{2})$/', $timeOfDay, $m)) {
             return (int) $m[1];
@@ -404,7 +404,7 @@ class AccServerConfigService
             ?? strtolower(preg_replace('/[^a-z0-9_]/i', '_', $track));
     }
 
-    private function carGroup(?string $carClass): string
+    public function carGroup(?string $carClass): string
     {
         if (!$carClass) return 'FreeForAll';
 
