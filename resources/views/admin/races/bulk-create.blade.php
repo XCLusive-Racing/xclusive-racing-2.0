@@ -43,6 +43,10 @@
                         <label class="form-label">In-Game Time <span class="fw-normal text-secondary" style="text-transform:none">(overridable per event)</span></label>
                         <input type="time" data-bulk-default-tod step="3600" class="form-control">
                     </div>
+                    <div class="col-sm-4">
+                        <label class="form-label">Ambient Temp (°C) <span class="fw-normal text-secondary" style="text-transform:none">(overridable per event)</span></label>
+                        <input type="number" data-bulk-default-ambient-temp class="form-control" placeholder="Server default">
+                    </div>
                 </div>
 
                 <div class="row g-3 mb-3">
@@ -101,6 +105,7 @@
                                 <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Track</th>
                                 <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:200px">Date & Time (BST/GMT)</th>
                                 <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">In-Game Time</th>
+                                <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Amb. Temp</th>
                                 <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:110px">Car Class</th>
                                 <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:130px">Weather</th>
                                 <th class="pe-4" style="width:40px"></th>
