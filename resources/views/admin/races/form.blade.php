@@ -624,6 +624,7 @@ $mcExisting = $isEdit
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Track</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:190px">Date & Time (BST/GMT)</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">In-Game Time</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Amb. Temp</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:110px">Car Class</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:130px">Condition</th>
                                         <th class="pe-4" style="width:40px"></th>

@@ -44,7 +44,7 @@ $coreParams = [
     'K_FACTOR'        => ['default' => 50,   'step' => 1,    'desc' => 'Global scale factor — determines how hard ratings move. Higher = bigger swings per race.'],
     'STARTING_RATING' => ['default' => 1500, 'step' => 50,   'desc' => 'Starting rating for new drivers.'],
     'STOP_LOSS_FLOOR' => ['default' => 500,  'step' => 50,   'desc' => 'Drivers at or below this rating will not lose points on a normal finish. Only DNF/DNS/DC/DSQ still cause losses.'],
-    'MIN_DRIVERS'     => ['default' => 8,    'step' => 1,    'desc' => 'Minimum number of classified finishers for a valid rating calculation. Races with fewer drivers are skipped.'],
+    'MIN_DRIVERS'     => ['default' => 8,    'step' => 1,    'desc' => 'Minimum number of linked drivers (finishers and DNFs both count) for a valid rating calculation. Races with a smaller field are skipped.'],
 ];
 $rHigh = isset($configs['R_HIGH']) ? (float) $configs['R_HIGH']->value : 1.18;
 $rLow  = isset($configs['R_LOW'])  ? (float) $configs['R_LOW']->value  : -0.85;

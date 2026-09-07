@@ -355,21 +355,18 @@
                                         );
                                         $rated = $classRows->filter(fn($r) => $r->elo_change !== null);
                                         $positions = \App\Models\RaceResult::classifiedPositions($classRows);
-                                        $finisherCount = $classRows->filter(function ($r) {
-                                            $isTrueDnf = $r->dnf && (int) ($r->lap_count ?? 0) <= 1;
-                                            return !$r->dsq && !$r->dns && !$r->dc && !$isTrueDnf;
-                                        })->count();
+                                        $driverCount = $classRows->whereNotNull('user_id')->count();
 
                                         $ratingGroups->push((object) [
                                             'label' => $cls->name, 'color' => $cls->color, 'rows' => $rated,
-                                            'positions' => $positions, 'finisherCount' => $finisherCount, 'minNeeded' => $minNeeded,
+                                            'positions' => $positions, 'driverCount' => $driverCount, 'minNeeded' => $minNeeded,
                                         ]);
                                     }
                                 } else {
                                     $rows = $raceResults->filter(fn($r) => $r->elo_change !== null);
                                     $ratingGroups->push((object) [
                                         'label' => null, 'color' => null, 'rows' => $rows,
-                                        'positions' => \App\Models\RaceResult::classifiedPositions($raceResults), 'finisherCount' => null, 'minNeeded' => null,
+                                        'positions' => \App\Models\RaceResult::classifiedPositions($raceResults), 'driverCount' => null, 'minNeeded' => null,
                                     ]);
                                 }
                             @endphp
@@ -379,7 +376,7 @@
                             @endif
                             @if($group->rows->isEmpty())
                                 @if($group->label)
-                                <p class="text-secondary px-4 pb-4" style="font-size:.82rem">Minimum of {{ $group->minNeeded }} finishers not reached ({{ $group->finisherCount }} finished) no rating calculated for this class.</p>
+                                <p class="text-secondary px-4 pb-4" style="font-size:.82rem">Minimum of {{ $group->minNeeded }} drivers not reached ({{ $group->driverCount }} entered) no rating calculated for this class.</p>
                                 @else
                                 <p class="text-secondary text-center py-5" style="font-size:.85rem">No rating data available for this race.</p>
                                 @endif
