@@ -66,10 +66,12 @@ class RaceController extends Controller
         return view('race.show', compact('race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries'));
     }
 
-    // Downloads a single-event .ics file — the universal format every calendar app
-    // (Apple Calendar, Outlook, etc.) opens directly. Google Calendar gets its own
-    // deep-link built client-side instead (see race/show.blade.php), since it can add
-    // the event with one click without a file download.
+    // Serves a single-event .ics — the universal format every calendar app opens. Linked
+    // to as a webcal:// URL for "Apple Calendar" (see race/partials/add-to-calendar.blade.php),
+    // which hands off straight to the OS calendar app instead of downloading a file;
+    // "inline" here backs that up for browsers that fetch it as a plain https:// URL
+    // instead of honoring the webcal: scheme. Google/Outlook get their own one-click
+    // deep-links built from Race::googleCalendarUrl()/outlookCalendarUrl() instead.
     public function calendar(Race $race)
     {
         [$start, $end] = $race->calendarWindow();
@@ -99,7 +101,7 @@ class RaceController extends Controller
 
         return response(implode("\r\n", $lines) . "\r\n", 200, [
             'Content-Type'        => 'text/calendar; charset=utf-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
         ]);
     }
 
