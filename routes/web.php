@@ -90,6 +90,7 @@ Route::get('/live', [LiveController::class, 'index'])->name('live');
 // Events - public
 Route::get('/events', [RaceController::class, 'index'])->name('events.index');
 Route::get('/events/{race}', [RaceController::class, 'show'])->name('events.show');
+Route::get('/events/{race}/calendar.ics', [RaceController::class, 'calendar'])->name('events.calendar');
 
 // Calendar
 Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');

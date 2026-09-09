@@ -143,6 +143,46 @@ class Race extends Model
         return $this->scheduled_at->timezone('Europe/London');
     }
 
+    // [start, end] for calendar exports — practice+qualifying+race summed from the
+    // effective session durations (already resolved from the format if any), with a
+    // 30-minute floor for races that have no duration data at all (e.g. a bare stub).
+    public function calendarWindow(): array
+    {
+        $start   = $this->scheduled_at->copy()->utc();
+        $minutes = (int) $this->practice_duration + (int) $this->qualifying_duration + (int) $this->race_duration;
+        $end     = $start->copy()->addMinutes(max($minutes, 30));
+
+        return [$start, $end];
+    }
+
+    public function googleCalendarUrl(): string
+    {
+        [$start, $end] = $this->calendarWindow();
+
+        return 'https://calendar.google.com/calendar/render?' . http_build_query([
+            'action'   => 'TEMPLATE',
+            'text'     => $this->title . ' — ' . $this->track,
+            'dates'    => $start->format('Ymd\THis\Z') . '/' . $end->format('Ymd\THis\Z'),
+            'location' => $this->track . ' (' . $this->gameLabel() . ')',
+            'details'  => route('events.show', $this),
+        ]);
+    }
+
+    public function outlookCalendarUrl(): string
+    {
+        [$start, $end] = $this->calendarWindow();
+
+        return 'https://outlook.live.com/calendar/0/deeplink/compose?' . http_build_query([
+            'path'     => '/calendar/action/compose',
+            'rru'      => 'addevent',
+            'subject'  => $this->title . ' — ' . $this->track,
+            'startdt'  => $start->toIso8601String(),
+            'enddt'    => $end->toIso8601String(),
+            'location' => $this->track . ' (' . $this->gameLabel() . ')',
+            'body'     => route('events.show', $this),
+        ]);
+    }
+
     /** Total on-track race time in minutes, from the event format (race1 + race2 for double races). */
     public function raceDurationMinutes(): ?int
     {
