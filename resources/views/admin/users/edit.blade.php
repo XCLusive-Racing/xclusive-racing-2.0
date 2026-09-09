@@ -5,6 +5,13 @@
 
 
 @section('page-actions')
+    <form action="{{ route('admin.users.reset-password', $user) }}" method="POST" class="d-inline"
+          onsubmit="return confirm('Reset the password for {{ addslashes($user->name) }}? A new password will be generated and their current password will stop working.');">
+        @csrf
+        <button type="submit" class="btn btn-sm btn-outline-danger fw-bold text-uppercase" style="font-size:.78rem">
+            Reset Password
+        </button>
+    </form>
     <a href="{{ route('admin.users.index') }}" class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.78rem">
         ← Back
     </a>
@@ -13,6 +20,16 @@
 @section('content')
 <div class="row justify-content-center">
 <div class="col-12 col-xl-8">
+
+@if(session('generated_password'))
+<div class="admin-card mb-4 p-3" style="background:#fefce8;border:1px solid #fde047">
+    <div class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.06em;color:#854d0e">New Password Generated</div>
+    <div class="d-flex align-items-center gap-2">
+        <code class="fw-bold" style="font-size:1rem;color:#854d0e">{{ session('generated_password') }}</code>
+    </div>
+    <div class="text-secondary mt-1" style="font-size:.75rem">Share this with the user — it's shown once and they'll be asked to set their own password on next login.</div>
+</div>
+@endif
 
 {{-- User strip --}}
 <div class="admin-card mb-4 p-0 overflow-hidden">

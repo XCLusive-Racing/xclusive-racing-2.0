@@ -311,6 +311,7 @@ Route::middleware(['auth', 'role:owner,moderator,event_manager'])->prefix('admin
     Route::get('/users/data', [AdminUserController::class, 'data'])->name('users.data');
     Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
     Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
+    Route::post('/users/{user}/reset-password', [AdminUserController::class, 'resetPassword'])->name('users.reset-password');
     Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
 });
 

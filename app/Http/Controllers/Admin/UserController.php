@@ -7,6 +7,8 @@ use App\Jobs\SyncDiscordRankRole;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -160,6 +162,23 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User "' . $user->name . '" updated successfully.');
+    }
+
+    // Generates a fresh random password for the user and shows it to the admin once —
+    // the user must set their own password on next login (must_set_password), same
+    // gate imported/invited accounts go through.
+    public function resetPassword(User $user)
+    {
+        $password = Str::password(12);
+
+        $user->update([
+            'password'          => Hash::make($password),
+            'must_set_password' => true,
+        ]);
+
+        return redirect()->route('admin.users.edit', $user)
+            ->with('success', 'Password reset for "' . $user->name . '".')
+            ->with('generated_password', $password);
     }
 
     public function destroy(User $user)
