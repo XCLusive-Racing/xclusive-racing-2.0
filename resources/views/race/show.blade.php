@@ -341,6 +341,8 @@
                         </div>
                         @endforeach
 
+                        @include('race.partials.add-to-calendar', ['race' => $race])
+
                         @if($race->registrationOpen())
                         <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)">
                             <p style="font-size:.78rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Add another car</p>
@@ -593,6 +595,9 @@
                                 </span>
                                 @endif
                             </div>
+
+                            @include('race.partials.add-to-calendar', ['race' => $race])
+
                             @if($race->status === 'open' && !$myRegistration?->teamEntry)
                             <form action="{{ route('events.unregister', $race) }}" method="POST">
                                 @csrf

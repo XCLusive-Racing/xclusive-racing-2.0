@@ -29,7 +29,7 @@ class PracticeServerConfigService
         $base['sessions'] = [[
             'hourOfDay'              => $this->raceConfig->startHour($race->time_of_day),
             'dayOfWeekend'           => 2,
-            'timeMultiplier'         => 1,
+            'timeMultiplier'         => (int) ($race->practice_time_multiplier ?: 1),
             'sessionType'            => 'P',
             'sessionDurationMinutes' => $durationMinutes,
         ]];

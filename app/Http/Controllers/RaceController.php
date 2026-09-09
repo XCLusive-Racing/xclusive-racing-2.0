@@ -66,6 +66,45 @@ class RaceController extends Controller
         return view('race.show', compact('race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries'));
     }
 
+    // Serves a single-event .ics — the universal format every calendar app opens. Linked
+    // to as a webcal:// URL for "Apple Calendar" (see race/partials/add-to-calendar.blade.php),
+    // which hands off straight to the OS calendar app instead of downloading a file;
+    // "inline" here backs that up for browsers that fetch it as a plain https:// URL
+    // instead of honoring the webcal: scheme. Google/Outlook get their own one-click
+    // deep-links built from Race::googleCalendarUrl()/outlookCalendarUrl() instead.
+    public function calendar(Race $race)
+    {
+        [$start, $end] = $race->calendarWindow();
+
+        $escape = fn (string $v) => addcslashes($v, ",;\\") ;
+        $fold   = fn (string $line) => wordwrap($line, 73, "\r\n ", true);
+
+        $lines = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//XCLusive Racing//Events//EN',
+            'CALSCALE:GREGORIAN',
+            'BEGIN:VEVENT',
+            'UID:race-' . $race->id . '@xclusiveracing.com',
+            'DTSTAMP:' . now()->utc()->format('Ymd\THis\Z'),
+            'DTSTART:' . $start->format('Ymd\THis\Z'),
+            'DTEND:' . $end->format('Ymd\THis\Z'),
+            $fold('SUMMARY:' . $escape($race->title . ' — ' . $race->track)),
+            $fold('LOCATION:' . $escape($race->track . ' (' . $race->gameLabel() . ')')),
+            $fold('DESCRIPTION:' . $escape(route('events.show', $race))),
+            $fold('URL:' . route('events.show', $race)),
+            'END:VEVENT',
+            'END:VCALENDAR',
+        ];
+
+        $filename = \Illuminate\Support\Str::slug($race->title . '-' . $race->track) . '.ics';
+
+        return response(implode("\r\n", $lines) . "\r\n", 200, [
+            'Content-Type'        => 'text/calendar; charset=utf-8',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
+    }
+
     public function register(Request $request, Race $race)
     {
         if (auth()->user()->isSuspended()) {

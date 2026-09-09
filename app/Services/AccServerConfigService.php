@@ -94,7 +94,7 @@ class AccServerConfigService
             $sessions[] = [
                 'hourOfDay'              => $hour,
                 'dayOfWeekend'           => 2,
-                'timeMultiplier'         => 1,
+                'timeMultiplier'         => (int) ($race->practice_time_multiplier ?: 1),
                 'sessionType'            => 'P',
                 'sessionDurationMinutes' => (int) $race->practice_duration,
             ];
@@ -104,7 +104,7 @@ class AccServerConfigService
             $sessions[] = [
                 'hourOfDay'              => max($hour - 1, 0),
                 'dayOfWeekend'           => 3,
-                'timeMultiplier'         => 1,
+                'timeMultiplier'         => (int) ($race->qualifying_time_multiplier ?: 1),
                 'sessionType'            => 'Q',
                 'sessionDurationMinutes' => (int) $race->qualifying_duration,
             ];
@@ -113,7 +113,7 @@ class AccServerConfigService
         $sessions[] = [
             'hourOfDay'              => $hour,
             'dayOfWeekend'           => 3,
-            'timeMultiplier'         => 1,
+            'timeMultiplier'         => (int) ($race->race_time_multiplier ?: 1),
             'sessionType'            => 'R',
             'sessionDurationMinutes' => (int) ($race->race_duration ?? 20),
         ];

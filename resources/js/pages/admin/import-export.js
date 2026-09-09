@@ -78,6 +78,15 @@ export function initImportExport(wrap) {
         return opts.map(([v, label]) => `<option value="${v}" ${selected === v ? 'selected' : ''}>${esc(label)}</option>`).join('');
     }
 
+    function timeMultiplierSelect(i, field, selected) {
+        const sel = String(selected ?? '1');
+        let opts = '';
+        for (let m = 1; m <= 24; m++) {
+            opts += `<option value="${m}" ${sel === String(m) ? 'selected' : ''}>${m}×</option>`;
+        }
+        return `<select name="events[${i}][${field}]" class="form-select form-select-sm" data-field="${field}">${opts}</select>`;
+    }
+
     function showErrors(list) {
         if (!errorsBox) return;
         if (!list || !list.length) {
@@ -142,6 +151,15 @@ export function initImportExport(wrap) {
                 <input type="number" name="events[${i}][ambient_temp]" value="${esc(ev.ambient_temp)}"
                        class="form-control form-control-sm" data-field="ambient_temp" placeholder="Default">
             </td>
+            <td>
+                ${timeMultiplierSelect(i, 'practice_time_multiplier', ev.practice_time_multiplier)}
+            </td>
+            <td>
+                ${timeMultiplierSelect(i, 'qualifying_time_multiplier', ev.qualifying_time_multiplier)}
+            </td>
+            <td>
+                ${timeMultiplierSelect(i, 'race_time_multiplier', ev.race_time_multiplier)}
+            </td>
             <td class="pe-4">
                 <button type="button" data-remove
                         class="btn btn-sm d-flex align-items-center justify-content-center"
@@ -161,6 +179,9 @@ export function initImportExport(wrap) {
         const weatherInput     = tr.querySelector('[data-field="weather"]');
         const timeInput        = tr.querySelector('[data-field="time_of_day"]');
         const ambientTempInput = tr.querySelector('[data-field="ambient_temp"]');
+        const practiceMultInput   = tr.querySelector('[data-field="practice_time_multiplier"]');
+        const qualifyingMultInput = tr.querySelector('[data-field="qualifying_time_multiplier"]');
+        const raceMultInput       = tr.querySelector('[data-field="race_time_multiplier"]');
 
         trackInput.addEventListener('input', () => {
             events[i].track = trackInput.value;
@@ -183,6 +204,9 @@ export function initImportExport(wrap) {
         weatherInput.addEventListener('change', () => { events[i].weather = weatherInput.value; });
         timeInput.addEventListener('change', () => { events[i].time_of_day = timeInput.value; });
         ambientTempInput.addEventListener('input', () => { events[i].ambient_temp = ambientTempInput.value; });
+        practiceMultInput.addEventListener('change', () => { events[i].practice_time_multiplier = practiceMultInput.value; });
+        qualifyingMultInput.addEventListener('change', () => { events[i].qualifying_time_multiplier = qualifyingMultInput.value; });
+        raceMultInput.addEventListener('change', () => { events[i].race_time_multiplier = raceMultInput.value; });
 
         tr.querySelector('[data-remove]').addEventListener('click', () => {
             events.splice(i, 1);
@@ -205,6 +229,7 @@ export function initImportExport(wrap) {
             title: '', track: '', scheduled_at: '',
             event_tag: '', event_format_id: '', ftp_server_id: '',
             weather: '', time_of_day: '', ambient_temp: '',
+            practice_time_multiplier: '1', qualifying_time_multiplier: '1', race_time_multiplier: '1',
         });
         render();
     }
@@ -220,7 +245,7 @@ export function initImportExport(wrap) {
     function downloadCsv() {
         if (!events.length) return;
 
-        const header = ['track', 'date', 'time', 'format', 'event_tag', 'server', 'weather', 'time_of_day', 'ambient_temp'];
+        const header = ['track', 'date', 'time', 'format', 'event_tag', 'server', 'weather', 'time_of_day', 'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier', 'race_time_multiplier'];
         const lines = [header.join(',')];
 
         events.forEach(ev => {
@@ -232,6 +257,7 @@ export function initImportExport(wrap) {
                 ev.track || '', date || '', time || '',
                 format?.label || '', ev.event_tag || '', server ? (server.number ?? server.label) : '',
                 ev.weather || '', ev.time_of_day || '', ev.ambient_temp ?? '',
+                ev.practice_time_multiplier || '1', ev.qualifying_time_multiplier || '1', ev.race_time_multiplier || '1',
             ].map(csvCell).join(','));
         });
 

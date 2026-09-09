@@ -369,6 +369,26 @@ $mcExisting = $isEdit
                             </div>
                         </div>
 
+                        <div class="row g-3 mt-0">
+                            @php
+                                $timeMultFields = [
+                                    'practice_time_multiplier'   => 'Practice Time Multiplier',
+                                    'qualifying_time_multiplier' => 'Qualifying Time Multiplier',
+                                    'race_time_multiplier'       => 'Race Time Multiplier',
+                                ];
+                            @endphp
+                            @foreach($timeMultFields as $tmField => $tmLabel)
+                                <div class="col-sm-4 col-6">
+                                    <label class="form-label">{{ $tmLabel }}</label>
+                                    <select name="{{ $tmField }}" class="form-select">
+                                        @for($m = 1; $m <= 24; $m++)
+                                            <option value="{{ $m }}" {{ (int) old($tmField, $isEdit ? ($race->$tmField ?? 1) : 1) === $m ? 'selected' : '' }}>{{ $m }}×</option>
+                                        @endfor
+                                    </select>
+                                </div>
+                            @endforeach
+                        </div>
+
                         <div class="mt-3">
                             <label class="form-label">Weather</label>
                             <div class="d-flex align-items-end gap-3 flex-wrap" id="ce-weather-pills">
@@ -625,6 +645,9 @@ $mcExisting = $isEdit
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:190px">Date & Time (BST/GMT)</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">In-Game Time</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Amb. Temp</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:75px">Prac. ×</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:75px">Qual. ×</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:75px">Race ×</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:110px">Car Class</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:130px">Condition</th>
                                         <th class="pe-4" style="width:40px"></th>
