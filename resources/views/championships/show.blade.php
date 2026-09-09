@@ -2,12 +2,16 @@
 
 @section('title', $championship->name . ' — ' . config('xcl.name'))
 
+@php
+    $accent = $championship->league?->primary_color ?? $championship->gameColor();
+@endphp
+
 @section('content')
 <main class="xcl-page pb-5">
     <div class="about-section__topo" style="background-image:url('/topo.png')"></div>
 
     {{-- Hero --}}
-    <div style="position:relative;overflow:hidden;min-height:260px;background:linear-gradient(135deg,{{ $championship->gameColor() }}22,#0a0a0f)">
+    <div style="position:relative;overflow:hidden;min-height:260px;background:linear-gradient(135deg,{{ $accent }}22,#0a0a0f)">
         @if($championship->image_url)
         <img src="{{ $championship->image_url }}" alt="{{ $championship->name }}"
              style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.25">
@@ -20,6 +24,13 @@
                 <img src="{{ $championship->icon_url }}" alt="" style="width:56px;height:56px;object-fit:contain">
                 @endif
                 <div>
+                    @if($championship->league)
+                    <a href="{{ route('championships.index', ['league' => $championship->league->slug]) }}"
+                       class="d-inline-flex align-items-center gap-1 mb-2 text-decoration-none fw-bold text-uppercase"
+                       style="color:{{ $accent }};font-size:.75rem;letter-spacing:.04em">
+                        {{ $championship->league->name }}
+                    </a>
+                    @endif
                     <div class="d-flex gap-2 flex-wrap mb-2">
                         <span class="badge text-white fw-bold" style="background:{{ $championship->gameColor() }};font-size:.7rem;padding:4px 10px;border-radius:6px">
                             {{ $championship->gameLabel() }}
@@ -27,9 +38,11 @@
                         <span class="badge fw-bold" style="background:#ffffff18;color:#e5e7eb;font-size:.7rem;padding:4px 10px;border-radius:6px">
                             Season {{ $championship->season }}
                         </span>
-                        @php $sc = ['active'=>'#16a34a','finished'=>'#9ca3af','draft'=>'#f59e0b'][$championship->status] ?? '#9ca3af'; @endphp
+                        @php
+                            $sc = ['active'=>'#16a34a','finished'=>'#9ca3af','draft'=>'#f59e0b','published'=>'#2563eb','registration_open'=>'#16a34a','registration_closed'=>'#6b7280','running'=>'#7c3aed','completed'=>'#9ca3af','cancelled'=>'#dc2626'][$championship->status] ?? '#9ca3af';
+                        @endphp
                         <span class="badge fw-bold" style="background:{{ $sc }}33;color:{{ $sc }};font-size:.7rem;padding:4px 10px;border-radius:6px">
-                            {{ ucfirst($championship->status) }}
+                            {{ ucfirst(str_replace('_', ' ', $championship->status)) }}
                         </span>
                         @if($championship->is_multiclass)
                         <span class="badge fw-bold" style="background:#db277733;color:#db2777;font-size:.7rem;padding:4px 10px;border-radius:6px">
@@ -168,11 +181,15 @@
                         <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Registration</h2>
                     </div>
                     <div class="px-4 py-4">
-                        @if($championship->status !== 'active')
-                        <p style="color:#6b7280;font-size:.875rem">Registration is only available for active championships.</p>
+                        @if(!in_array($championship->status, ['active', 'registration_open']))
+                        <p style="color:#6b7280;font-size:.875rem">Registration is not open yet.</p>
 
                         @elseif($championship->isRegistered(auth()->user()))
+                        @if($championship->isRegistrationWaitlisted(auth()->user()))
+                        <p class="fw-bold mb-3" style="color:#f59e0b;font-size:.875rem">You are on the waiting list for this championship.</p>
+                        @else
                         <p class="text-white fw-bold mb-3" style="font-size:.875rem">You are registered for this championship.</p>
+                        @endif
                         <form method="POST" action="{{ route('championships.unregister', $championship) }}" onsubmit="return confirm('Unregister from this championship?')">
                             @csrf @method('DELETE')
                             <button class="btn btn-sm fw-bold text-uppercase text-danger w-100" style="background:#fee2e2;border:1px solid #fca5a5;font-size:.75rem">
@@ -180,10 +197,10 @@
                             </button>
                         </form>
 
-                        @elseif(!$championship->registration_open)
+                        @elseif(!$championship->registration_open || !$championship->registrationIsOpen())
                         <p style="color:#6b7280;font-size:.875rem">Registration is currently closed.</p>
 
-                        @elseif($championship->isFull())
+                        @elseif($championship->isFull() && !$championship->waitlistEnabled())
                         <p style="color:#f59e0b;font-size:.875rem;font-weight:700">This championship is full.</p>
 
                         @else
@@ -208,9 +225,13 @@
                             </p>
                             @endif
 
+                            @if($championship->isFull())
+                            <p class="fw-bold mb-3" style="color:#f59e0b;font-size:.8rem">Full — you'll join the waiting list.</p>
+                            @endif
+
                             <button type="submit" class="btn fw-black text-uppercase text-white w-100"
-                                    style="background:#db2777;font-size:.82rem">
-                                Register Now
+                                    style="background:{{ $accent }};font-size:.82rem">
+                                {{ $championship->isFull() ? 'Join Waiting List' : 'Register Now' }}
                             </button>
                         </form>
                         @endif
@@ -232,6 +253,9 @@
                         <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">
                             Drivers
                             <span style="color:#6b7280;font-weight:400">({{ $championship->registrations->count() }}{{ $championship->max_drivers ? '/' . $championship->max_drivers : '' }})</span>
+                            @if($championship->waitlistCount() > 0)
+                            <span style="color:#f59e0b;font-weight:400">· {{ $championship->waitlistCount() }} waiting</span>
+                            @endif
                         </h2>
                     </div>
 

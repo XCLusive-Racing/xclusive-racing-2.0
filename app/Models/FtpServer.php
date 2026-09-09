@@ -2,18 +2,25 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Tenantable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class FtpServer extends Model
 {
+    use Tenantable;
+
     protected $fillable = [
         'name', 'server_number', 'host', 'port', 'username', 'password', 'path', 'cfg_path', 'active',
         'server_type', 'reset_start_hour', 'reset_interval_minutes',
         'settings_defaults', 'eventrules_defaults', 'assistrules_defaults', 'event_defaults',
+        'league_id',
     ];
 
     protected $casts = [
+        // Credentials are encrypted at rest and never rendered back to the browser.
+        'username'                => 'encrypted',
         'password'                => 'encrypted',
         'active'                  => 'boolean',
         'port'                    => 'integer',
@@ -24,6 +31,11 @@ class FtpServer extends Model
         'assistrules_defaults'    => 'array',
         'event_defaults'          => 'array',
     ];
+
+    public function league(): BelongsTo
+    {
+        return $this->belongsTo(League::class);
+    }
 
     public function importedFiles(): HasMany
     {

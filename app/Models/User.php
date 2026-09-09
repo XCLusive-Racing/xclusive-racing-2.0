@@ -110,6 +110,8 @@ class User extends Authenticatable
     public function isDriver(): bool       { return $this->hasRole('driver'); }
     public function isSuperAdmin(): bool   { return $this->isOwner(); }
     public function isBroadcaster(): bool  { return $this->hasRole('broadcaster'); }
+    public function isLeagueManager(): bool { return $this->hasRole('league_manager'); }
+    public function isLeagueSteward(): bool { return $this->hasRole('league_steward'); }
 
     public function canManage(): bool
     {
@@ -143,18 +145,70 @@ class User extends Authenticatable
 
     public function canAccessAdminPanel(): bool
     {
-        return $this->hasAnyRole(['owner', 'admin', 'moderator', 'event_manager', 'steward', 'broadcaster']);
+        return $this->hasAnyRole(['owner', 'admin', 'moderator', 'event_manager', 'steward', 'broadcaster', 'league_manager', 'league_steward']);
     }
 
     public function adminLandingRoute(): string
     {
         return match (true) {
-            $this->canManage()     => 'admin.races.index',
-            $this->canSeeUsers()   => 'admin.users.index',
-            $this->isSteward()     => 'admin.reports.index',
-            $this->canBroadcast()  => 'admin.news.index',
-            default                => 'home',
+            $this->canManage()      => 'admin.races.index',
+            $this->canSeeUsers()    => 'admin.users.index',
+            $this->isSteward()      => 'admin.reports.index',
+            $this->canBroadcast()   => 'admin.news.index',
+            $this->isLeagueManager() => 'admin.leagues.index',
+            default                 => 'home',
         };
+    }
+
+    // --- Leagues ---
+
+    public function leagueMemberships(): HasMany
+    {
+        return $this->hasMany(LeagueUser::class);
+    }
+
+    public function leagues(): BelongsToMany
+    {
+        return $this->belongsToMany(League::class, 'league_user')->withPivot('role')->withTimestamps();
+    }
+
+    public function leagueIds(): \Illuminate\Support\Collection
+    {
+        return $this->leagueMemberships()->pluck('league_id')->unique()->values();
+    }
+
+    public function managesLeague(League $league): bool
+    {
+        return $this->leagueMemberships()->where('league_id', $league->id)->where('role', 'manager')->exists();
+    }
+
+    public function stewardsLeague(League $league): bool
+    {
+        return $this->leagueMemberships()->where('league_id', $league->id)->where('role', 'steward')->exists();
+    }
+
+    // Keeps the global league_manager/league_steward role flags (used for admin nav
+    // and route gating) in step with this user's actual league_user memberships —
+    // the memberships are the source of truth for what a user can actually do.
+    public function syncLeagueRoleFlags(): void
+    {
+        $hasManager = $this->leagueMemberships()->where('role', 'manager')->exists();
+        $hasSteward = $this->leagueMemberships()->where('role', 'steward')->exists();
+
+        foreach (['league_manager' => $hasManager, 'league_steward' => $hasSteward] as $slug => $shouldHave) {
+            $role = Role::where('slug', $slug)->first();
+            if (!$role) {
+                continue;
+            }
+
+            if ($shouldHave) {
+                $this->roles()->syncWithoutDetaching([$role->id]);
+            } else {
+                $this->roles()->detach($role->id);
+            }
+        }
+
+        $this->unsetRelation('roles');
     }
 
     public function displayName(): string

@@ -1,0 +1,233 @@
+<?php
+
+namespace App\Settings;
+
+use Illuminate\Support\Arr;
+
+// The single source of truth for every championship rule that isn't a real,
+// queried/filtered database column. Every rule costs a schema entry here, not a
+// migration — the wizard form, its per-step validation, and the model's typed
+// settings object are all generated from this one definition.
+//
+// Versioning: CURRENT_VERSION bumps whenever a field is added, renamed or
+// retyped. upgrade() always fills whatever the current schema defines but a
+// stored blob is missing, regardless of the blob's own settings_version — so a
+// championship saved under an old version keeps loading (and gets top-up
+// defaults for new keys) once this class gains fields for a new version.
+class ChampionshipSettingsSchema
+{
+    const CURRENT_VERSION = 1;
+
+    const STEPS = [
+        'basics'       => 'Basics',
+        'rounds'       => 'Rounds',
+        'format'       => 'Format',
+        'sessions'     => 'Sessions',
+        'scoring'      => 'Scoring',
+        'requirements' => 'Requirements',
+        'penalties'    => 'Penalties & Balance',
+        'review'       => 'Review',
+    ];
+
+    // Settings groups, in the order they appear on the Penalties & Balance step
+    // (balance isn't a wizard step of its own — it's rendered as a second section
+    // on that step, since the wizard has a fixed 7-step list that doesn't name it).
+    const GROUPS = ['format', 'sessions', 'scoring', 'requirements', 'penalties', 'balance'];
+
+    // Maps a wizard step slug to the settings group(s) it edits and validates.
+    const STEP_GROUPS = [
+        'format'       => ['format'],
+        'sessions'     => ['sessions'],
+        'scoring'      => ['scoring'],
+        'requirements' => ['requirements'],
+        'penalties'    => ['penalties', 'balance'],
+    ];
+
+    public static function fields(): array
+    {
+        return [
+            // --- Format ---
+            ['group' => 'format', 'key' => 'multiclass_enabled', 'type' => 'boolean', 'default' => false,
+                'label' => 'Multiclass', 'help' => 'Split entries into separate classes, each with their own standings.'],
+            ['group' => 'format', 'key' => 'classes', 'type' => 'list', 'default' => [],
+                'label' => 'Classes', 'help' => 'Each class has a name and a list of eligible cars. Only used when multiclass is on.'],
+            ['group' => 'format', 'key' => 'max_entries', 'type' => 'integer', 'nullable' => true, 'default' => null,
+                'label' => 'Maximum Drivers/Teams', 'help' => 'Entry cap for the whole championship. Ignored when multiclass is on — set a cap per class instead.'],
+            ['group' => 'format', 'key' => 'car_class', 'type' => 'enum', 'options' => ['GT2', 'GT3', 'GT4', 'TCX', 'GTC'], 'nullable' => true, 'default' => null,
+                'label' => 'Car Class', 'help' => 'Same for every round of the championship. Ignored when multiclass is on — set a class per class below instead.'],
+            ['group' => 'format', 'key' => 'spectator_slots', 'type' => 'integer', 'nullable' => true, 'default' => 0,
+                'label' => 'Spectator Slots', 'help' => 'Extra slots reserved for spectators, on top of the entry cap.'],
+            ['group' => 'format', 'key' => 'driver_swaps_enabled', 'type' => 'boolean', 'default' => false,
+                'label' => 'Driver Swaps', 'help' => 'Allow more than one driver to share a car during a round.'],
+            ['group' => 'format', 'key' => 'min_drivers_per_car', 'type' => 'integer', 'nullable' => true, 'default' => null,
+                'label' => 'Minimum Drivers per Car', 'help' => 'Only used when driver swaps are on.'],
+            ['group' => 'format', 'key' => 'max_drivers_per_car', 'type' => 'integer', 'nullable' => true, 'default' => null,
+                'label' => 'Maximum Drivers per Car', 'help' => 'Only used when driver swaps are on.'],
+
+            // --- Sessions ---
+            ['group' => 'sessions', 'key' => 'race_length_minutes', 'type' => 'integer', 'default' => 30,
+                'label' => 'Race Length (minutes)', 'help' => 'Length of the race session.', 'rule' => 'required|integer|min:1|max:999'],
+            ['group' => 'sessions', 'key' => 'practice_enabled', 'type' => 'boolean', 'default' => true,
+                'label' => 'Practice Session', 'help' => 'Run a practice session before qualifying.'],
+            ['group' => 'sessions', 'key' => 'practice_length_minutes', 'type' => 'integer', 'nullable' => true, 'default' => 15,
+                'label' => 'Practice Length (minutes)', 'help' => 'Only used when a practice session runs.'],
+            ['group' => 'sessions', 'key' => 'qualifying_enabled', 'type' => 'boolean', 'default' => true,
+                'label' => 'Qualifying Session', 'help' => 'Run a qualifying session before the race.'],
+            ['group' => 'sessions', 'key' => 'qualifying_length_minutes', 'type' => 'integer', 'nullable' => true, 'default' => 15,
+                'label' => 'Qualifying Length (minutes)', 'help' => 'Only used when a qualifying session runs.'],
+            ['group' => 'sessions', 'key' => 'weather_mode', 'type' => 'enum', 'options' => ['fixed', 'randomised'], 'default' => 'fixed',
+                'label' => 'Weather', 'help' => 'Fixed weather is set once here; randomised is rolled per round.', 'rule' => 'required|in:fixed,randomised'],
+            ['group' => 'sessions', 'key' => 'ambient_temp', 'type' => 'integer', 'nullable' => true, 'default' => 20,
+                'label' => 'Ambient Temperature (°C)', 'help' => 'Only used when weather is fixed.'],
+            ['group' => 'sessions', 'key' => 'track_temp', 'type' => 'integer', 'nullable' => true, 'default' => 26,
+                'label' => 'Track Temperature (°C)', 'help' => 'Only used when weather is fixed.'],
+            ['group' => 'sessions', 'key' => 'cloud_level', 'type' => 'float', 'nullable' => true, 'default' => 0.2,
+                'label' => 'Cloud Level (0–1)', 'help' => 'Only used when weather is fixed.'],
+            ['group' => 'sessions', 'key' => 'rain_level', 'type' => 'float', 'nullable' => true, 'default' => 0.0,
+                'label' => 'Rain Level (0–1)', 'help' => 'Only used when weather is fixed.'],
+            ['group' => 'sessions', 'key' => 'time_of_day', 'type' => 'time', 'default' => '14:00',
+                'label' => 'Time of Day', 'help' => 'In-game start time for the session.', 'rule' => 'required|date_format:H:i'],
+            ['group' => 'sessions', 'key' => 'formation_lap_type', 'type' => 'enum', 'options' => ['none', 'formation', 'rolling_start'], 'default' => 'formation',
+                'label' => 'Formation Lap', 'help' => 'How the field is sent to green.', 'rule' => 'required|in:none,formation,rolling_start'],
+
+            // --- Scoring ---
+            ['group' => 'scoring', 'key' => 'points_scheme_id', 'type' => 'integer', 'nullable' => true, 'default' => null,
+                'label' => 'Points Scheme', 'help' => 'Pick a template or one you copied. League managers copy a template to create their own rather than editing a shared one.'],
+            ['group' => 'scoring', 'key' => 'drop_rounds', 'type' => 'integer', 'default' => 0,
+                'label' => 'Drop Rounds', 'help' => 'Number of a driver\'s lowest-scoring rounds excluded from their total.', 'rule' => 'required|integer|min:0|max:20'],
+            ['group' => 'scoring', 'key' => 'fastest_lap_point', 'type' => 'boolean', 'default' => false,
+                'label' => 'Fastest Lap Scores a Point', 'help' => ''],
+            ['group' => 'scoring', 'key' => 'pole_point', 'type' => 'boolean', 'default' => false,
+                'label' => 'Pole Position Scores a Point', 'help' => ''],
+            ['group' => 'scoring', 'key' => 'team_points_enabled', 'type' => 'boolean', 'default' => false,
+                'label' => 'Separate Team Points', 'help' => 'Score teams independently of individual drivers.'],
+
+            // --- Requirements ---
+            ['group' => 'requirements', 'key' => 'min_xcl_rating_tier', 'type' => 'enum',
+                'options' => ['rookie', 'bronze', 'silver', 'gold', 'platinum', 'alien'], 'nullable' => true, 'default' => null,
+                'label' => 'Minimum XCL Rating', 'help' => 'Leave blank for no rating requirement.'],
+            ['group' => 'requirements', 'key' => 'min_safety_rating', 'type' => 'float', 'nullable' => true, 'default' => null,
+                'label' => 'Minimum Safety Rating', 'help' => 'On the 0–10 scale. Leave blank for no requirement.', 'rule' => 'nullable|numeric|between:0,10'],
+            ['group' => 'requirements', 'key' => 'discord_membership_required', 'type' => 'boolean', 'default' => false,
+                'label' => 'Discord Membership Required', 'help' => 'Entrants must be a member of this league\'s Discord to register.'],
+            ['group' => 'requirements', 'key' => 'manual_approval_required', 'type' => 'boolean', 'default' => false,
+                'label' => 'Manual Approval of Entries', 'help' => 'Entries wait for league staff to approve before they count.'],
+            ['group' => 'requirements', 'key' => 'notes', 'type' => 'text', 'nullable' => true, 'default' => null,
+                'label' => 'Additional Requirements', 'help' => 'Free text — anything the schema above doesn\'t cover.'],
+
+            // --- Registration ---
+            ['group' => 'requirements', 'key' => 'registration_mode', 'type' => 'enum',
+                'options' => ['always_open', 'closes_at_first_round', 'specific_period'], 'default' => 'always_open',
+                'label' => 'Registration Closes', 'help' => 'Always open (close it manually), automatically at the first round\'s start time, or during a specific period.',
+                'rule' => 'required|in:always_open,closes_at_first_round,specific_period'],
+            ['group' => 'requirements', 'key' => 'registration_opens_at', 'type' => 'datetime', 'nullable' => true, 'default' => null,
+                'label' => 'Registration Opens At', 'help' => 'Only used when Registration Closes is "Specific period".'],
+            ['group' => 'requirements', 'key' => 'registration_closes_at', 'type' => 'datetime', 'nullable' => true, 'default' => null,
+                'label' => 'Registration Closes At', 'help' => 'Only used when Registration Closes is "Specific period".'],
+            ['group' => 'requirements', 'key' => 'waitlist_enabled', 'type' => 'boolean', 'default' => false,
+                'label' => 'Waiting List', 'help' => 'Once full, new entries join a waiting list instead of being rejected. A spot that opens up is automatically taken by whoever is next on the list.'],
+
+            // --- Penalties & Rating ---
+            ['group' => 'penalties', 'key' => 'stewarding_enabled', 'type' => 'boolean', 'default' => false,
+                'label' => 'Use XCL Stewarding', 'help' => 'Let this championship use XCL\'s report and steward workflow.'],
+            ['group' => 'penalties', 'key' => 'affects', 'type' => 'enum', 'options' => ['points', 'rating', 'both', 'none'], 'default' => 'none',
+                'label' => 'Penalties Affect', 'help' => 'What a steward-issued penalty changes. Only used when stewarding is on.', 'rule' => 'required|in:points,rating,both,none'],
+            ['group' => 'penalties', 'key' => 'post_race_time_penalties_enabled', 'type' => 'boolean', 'default' => false,
+                'label' => 'Post-Race Time Penalties', 'help' => 'Allow a time penalty to be applied to a result after the race.'],
+            ['group' => 'penalties', 'key' => 'xcl_rating_requested', 'type' => 'boolean', 'default' => false,
+                'label' => 'Request XCL Rating', 'help' => 'Raises a request for an XCL admin to review. It does not turn rating on by itself — only an admin can approve it.'],
+
+            // --- Balance (rendered on the Penalties & Balance step) ---
+            ['group' => 'balance', 'key' => 'adjustments', 'type' => 'list', 'default' => [],
+                'label' => 'Ballast & Restrictor Adjustments', 'help' => 'Per-driver or per-car overrides. Stored as a growing list rather than fixed columns.'],
+        ];
+    }
+
+    public static function fieldsForGroup(string $group): array
+    {
+        return array_values(array_filter(self::fields(), fn ($f) => $f['group'] === $group));
+    }
+
+    public static function fieldsForStep(string $step): array
+    {
+        $groups = self::STEP_GROUPS[$step] ?? [];
+        return array_values(array_filter(self::fields(), fn ($f) => in_array($f['group'], $groups, true)));
+    }
+
+    // The fully-populated, nested default settings array — every group, every key.
+    public static function defaults(): array
+    {
+        $defaults = [];
+        foreach (self::fields() as $field) {
+            Arr::set($defaults, $field['group'] . '.' . $field['key'], $field['default']);
+        }
+        return $defaults;
+    }
+
+    // Fills any key the current schema defines but $stored is missing, at any
+    // depth, without disturbing keys $stored already has — the upgrade path.
+    public static function upgrade(array $stored): array
+    {
+        return array_replace_recursive(self::defaults(), $stored);
+    }
+
+    // Laravel validation rules for one or more groups, dot-keyed under $prefix so
+    // they line up with the settings.{group}.{key} shape a request submits.
+    // List-type fields are intentionally skipped — they're validated by hand in
+    // the controller, since a repeatable structure doesn't reduce to one rule string.
+    public static function rulesForGroups(array $groups, string $prefix = 'settings'): array
+    {
+        $rules = [];
+        foreach (self::fields() as $field) {
+            if (!in_array($field['group'], $groups, true) || $field['type'] === 'list') {
+                continue;
+            }
+
+            $key = $prefix . '.' . $field['group'] . '.' . $field['key'];
+            $rules[$key] = $field['rule'] ?? self::inferredRule($field);
+        }
+        return $rules;
+    }
+
+    public static function rules(string $prefix = 'settings'): array
+    {
+        return self::rulesForGroups(self::GROUPS, $prefix);
+    }
+
+    // Plain-language rendering of one field's current value, for the Review step —
+    // an organiser reads this back rather than interpreting raw form values.
+    public static function humanValue(array $field, mixed $value): string
+    {
+        if ($field['type'] === 'list') {
+            $count = is_array($value) ? count($value) : 0;
+            return $count === 0 ? 'None set' : $count . ' set';
+        }
+
+        if ($value === null || $value === '') {
+            return 'Not set';
+        }
+
+        return match ($field['type']) {
+            'boolean' => $value ? 'Yes' : 'No',
+            'enum'    => ucfirst(str_replace('_', ' ', (string) $value)),
+            'time'    => (string) $value,
+            'float'   => rtrim(rtrim(number_format((float) $value, 2), '0'), '.'),
+            default   => (string) $value,
+        };
+    }
+
+    private static function inferredRule(array $field): string
+    {
+        $nullable = ($field['nullable'] ?? false) ? 'nullable' : 'sometimes';
+
+        return match ($field['type']) {
+            'boolean'  => 'boolean',
+            'integer'  => $nullable . '|integer',
+            'float'    => $nullable . '|numeric|between:0,1',
+            'enum'     => $nullable . '|in:' . implode(',', $field['options'] ?? []),
+            'text'     => $nullable . '|string|max:5000',
+            'datetime' => $nullable . '|date',
+            default    => $nullable . '|string|max:255',
+        };
+    }
+}

@@ -75,13 +75,6 @@
                 </svg>
                 <span>Special Events</span>
             </a>
-            <a href="{{ route('admin.championships.index') }}"
-               class="admin-nav-link {{ request()->routeIs('admin.championships.*') ? 'active' : '' }}">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
-                </svg>
-                <span>Championships</span>
-            </a>
             <a href="{{ route('admin.calendar') }}"
                class="admin-nav-link {{ request()->routeIs('admin.calendar') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -261,6 +254,50 @@
         </div>
         @endif
 
+        @if(auth()->user()->canManage() || auth()->user()->isLeagueManager())
+        {{-- Leagues --}}
+        <div class="admin-nav-section-header" data-section="leagues">
+            <span>Leagues</span>
+            <svg data-section-arrow width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="transition:transform .2s">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </div>
+        <div class="admin-nav-section-divider" style="display:none"></div>
+
+        <div data-section-content="leagues">
+            <a href="{{ route('admin.leagues.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.leagues.index') || request()->routeIs('admin.leagues.create') || request()->routeIs('admin.leagues.edit') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l8-4v18M13 21V11l6 3v7M9 9v.01M9 12v.01M9 15v.01"/>
+                </svg>
+                <span>Leagues</span>
+            </a>
+            <a href="{{ route('admin.leagues.championships.select') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.leagues.championships.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                </svg>
+                <span>Championships</span>
+            </a>
+            <a href="{{ route('admin.points-schemes.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.points-schemes.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h2a2 2 0 012 2m0 12a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m0 0v14m0-14a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2"/>
+                </svg>
+                <span>Points Schemes</span>
+            </a>
+            @if(auth()->user()->hasAnyRole(['owner', 'admin']))
+            <a href="{{ route('admin.league-servers.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.league-servers.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
+                </svg>
+                <span>FTP Servers</span>
+            </a>
+            @endif
+        </div>
+        @endif
+
         @if(auth()->user()->hasAnyRole(['owner', 'admin', 'event_manager']))
         {{-- Configuration --}}
         <div class="admin-nav-section-header" data-section="ftp">
@@ -359,7 +396,7 @@
 
             {{-- Breadcrumb --}}
             <div class="admin-breadcrumb">
-                <a href="{{ route('admin.races.index') }}">Admin</a>
+                <a href="{{ route(auth()->user()->adminLandingRoute()) }}">Admin</a>
                 <span class="sep">/</span>
                 <span class="current">@yield('page-title', 'Dashboard')</span>
             </div>

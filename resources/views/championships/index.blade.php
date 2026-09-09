@@ -9,7 +9,39 @@
     <div class="container-xl" style="position:relative;z-index:1">
 
         <div class="pt-4 mb-5">
+            <a href="{{ route('championships.index') }}" class="d-inline-flex align-items-center gap-1 mb-3 text-decoration-none fw-bold text-uppercase"
+               style="color:#9ca3af;font-size:.78rem;letter-spacing:.04em">
+                &larr; All leagues
+            </a>
+
+            @if(isset($league))
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3 p-3" style="border-radius:12px;background:linear-gradient(90deg, {{ $league->primary_color }}26, {{ $league->accent_color }}12)">
+                <div class="d-flex align-items-center gap-3">
+                    @if($league->logo_url)
+                    <img src="{{ $league->logo_url }}" alt="" style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:#fff;padding:4px">
+                    @else
+                    <span style="width:14px;height:14px;border-radius:50%;background:{{ $league->primary_color }};flex-shrink:0"></span>
+                    @endif
+                    <h1 class="display-4 fw-black text-uppercase fst-italic text-white mb-0" style="font-size:clamp(1.7rem, 3.2vw, 2.6rem)">{{ $league->name }}</h1>
+                </div>
+
+                @if($league->discord_invite_url)
+                <a href="{{ $league->discord_invite_url }}" target="_blank" rel="noopener"
+                   class="btn fw-black text-uppercase text-white px-4 flex-shrink-0"
+                   style="background:{{ $league->primary_color }};font-size:.8rem">
+                    Join Discord
+                </a>
+                @endif
+            </div>
+
+            @if($league->requires_discord_membership)
+            <div class="mb-3 fw-bold" style="color:#f87171;font-size:.82rem">
+                You must join the {{ $league->name }} Discord before you can register for their championships.
+            </div>
+            @endif
+            @else
             <h1 class="display-4 fw-black text-uppercase fst-italic about-section__heading mb-3">CHAMPIONSHIPS</h1>
+            @endif
             <div class="section-divider" style="margin-left:0"></div>
         </div>
 
