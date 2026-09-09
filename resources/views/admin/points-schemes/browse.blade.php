@@ -5,6 +5,13 @@
 
 @section('content')
 
+@php
+    $psPreview = function ($scheme, $count = 6) {
+        $table = collect($scheme->points_table ?? [])->sortKeys();
+        return $table->take($count)->map(fn ($pts, $pos) => $pos . ':' . rtrim(rtrim((string) $pts, '0'), '.'))->implode(', ');
+    };
+@endphp
+
 <div class="admin-card mb-4">
     <div class="admin-card-header">
         <div>
@@ -25,22 +32,19 @@
         <table class="table table-hover align-middle mb-0" style="font-size:.85rem">
             <tbody>
                 @foreach($group as $scheme)
-                @php $drivers = $scheme->points_map['drivers'] ?? []; ksort($drivers); @endphp
                 <tr>
                     <td class="ps-0">
                         <div class="fw-bold text-dark">{{ $scheme->name }}</div>
                         <div class="text-secondary" style="font-size:.75rem">
-                            {{ implode(', ', array_slice($drivers, 0, 8)) }}{{ count($drivers) > 8 ? '…' : '' }}
+                            {{ $psPreview($scheme) }}{{ count($scheme->points_table ?? []) > 6 ? '…' : '' }}
                         </div>
-                    </td>
-                    <td class="text-center d-none d-md-table-cell text-secondary" style="width:140px">
-                        FL {{ $scheme->fastest_lap_points }} · Pole {{ $scheme->pole_points }}
-                        @if(!empty($scheme->points_map['teams']))
-                        <br><span style="color:#7c3aed">has team points</span>
+                        @if($scheme->scope_note)
+                        <div class="text-secondary fst-italic" style="font-size:.72rem">{{ $scheme->scope_note }}</div>
                         @endif
                     </td>
-                    <td class="text-end pe-0" style="width:90px">
-                        <a href="{{ route('admin.points-schemes.export', $scheme) }}" class="fw-bold" style="color:#7c3aed;font-size:.8rem">CSV →</a>
+                    <td class="text-center d-none d-md-table-cell text-secondary text-capitalize" style="width:90px">{{ $scheme->type }}</td>
+                    <td class="text-center d-none d-md-table-cell text-secondary" style="width:150px">
+                        FL {{ $scheme->fastest_lap_points }} · Pole {{ $scheme->pole_points }} · Lead {{ $scheme->leading_lap_points }}
                     </td>
                 </tr>
                 @endforeach

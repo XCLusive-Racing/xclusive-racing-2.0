@@ -25,7 +25,10 @@ class RaceController extends Controller
             ->get();
         $races->loadCount(['registrations', 'teamEntries']);
 
-        $eventTags = EventTag::orderBy('name')->get();
+        // "Rookies" and "Test Event" are real EventTag rows (so any race still
+        // tagged with one keeps working) but aren't genuine event-type filters
+        // for the public browse page — excluded here rather than deleted.
+        $eventTags = EventTag::whereNotIn('slug', ['rookies', 'test-event'])->orderBy('name')->get();
 
         return view('race.index', compact('races', 'eventTags'));
     }

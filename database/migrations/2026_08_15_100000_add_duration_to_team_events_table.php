@@ -15,10 +15,14 @@ return new class extends Migration
         });
 
         // Backfill ends_at for rows that existed before this column, so the
-        // ends_at-based "upcoming" scope doesn't hide them immediately.
-        DB::table('team_events')->whereNull('ends_at')->update([
-            'ends_at' => DB::raw('DATE_ADD(starts_at, INTERVAL duration_minutes MINUTE)'),
-        ]);
+        // ends_at-based "upcoming" scope doesn't hide them immediately. MySQL-only
+        // (production/dev) — on a fresh install (e.g. the sqlite test database)
+        // this table is empty at migration time, so there's nothing to backfill.
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::table('team_events')->whereNull('ends_at')->update([
+                'ends_at' => DB::raw('DATE_ADD(starts_at, INTERVAL duration_minutes MINUTE)'),
+            ]);
+        }
     }
 
     public function down(): void

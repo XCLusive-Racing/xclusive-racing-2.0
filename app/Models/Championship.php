@@ -23,6 +23,9 @@ class Championship extends Model
         'qualifying_duration', 'race_duration', 'weather', 'time_of_day', 'duration_key',
         // League-scoped championships (see 2026_09_08_000010_add_league_fields_to_championships_table.php)
         'league_id', 'slug', 'platform', 'visibility', 'starts_at', 'ends_at', 'settings',
+        // Default server for new rounds, set on the Basics step — see
+        // 2026_09_09_000001_add_ftp_server_id_to_championships_table.php.
+        'ftp_server_id',
     ];
 
     protected function casts(): array
@@ -49,15 +52,70 @@ class Championship extends Model
         return $this->belongsTo(League::class);
     }
 
+    public function ftpServer(): BelongsTo
+    {
+        return $this->belongsTo(FtpServer::class);
+    }
+
+    // Suggests when round $roundNumber should run, from the Basics-step
+    // recurrence settings — start_date, recurrence and (for weekly/biweekly)
+    // day_of_week. Returns null when there's nothing to suggest from (no start
+    // date set, or recurrence is "none"), in which case Add Round is left blank
+    // for the manager to fill in by hand. Always just a starting suggestion —
+    // Add Round never enforces it, so one round can still be moved freely.
+    public function scheduledDateTimeForRound(int $roundNumber): ?\Carbon\Carbon
+    {
+        $schedule   = $this->settings->schedule;
+        $startDate  = $schedule->start_date ?? null;
+        $recurrence = $schedule->recurrence ?? 'none';
+        $dayOfWeek  = $schedule->day_of_week ?? null;
+        $timeOfDay  = $schedule->time_of_day ?? '14:00';
+
+        if (!$startDate || $recurrence === 'none') {
+            return null;
+        }
+
+        $first = \Carbon\Carbon::parse($startDate, 'Europe/London')->startOfDay();
+
+        $daysOfWeek = ['sunday' => 0, 'monday' => 1, 'tuesday' => 2, 'wednesday' => 3, 'thursday' => 4, 'friday' => 5, 'saturday' => 6];
+
+        if (in_array($recurrence, ['weekly', 'biweekly'], true) && isset($daysOfWeek[$dayOfWeek])) {
+            while ($first->dayOfWeek !== $daysOfWeek[$dayOfWeek]) {
+                $first->addDay();
+            }
+        }
+
+        $date = match ($recurrence) {
+            'daily'    => $first->copy()->addDays($roundNumber - 1),
+            'weekly'   => $first->copy()->addWeeks($roundNumber - 1),
+            'biweekly' => $first->copy()->addWeeks(($roundNumber - 1) * 2),
+            'monthly'  => $first->copy()->addMonthsNoOverflow($roundNumber - 1),
+            default    => null,
+        };
+
+        if (!$date) {
+            return null;
+        }
+
+        [$hour, $minute] = array_pad(array_map('intval', explode(':', $timeOfDay)), 2, 0);
+
+        return $date->setTime($hour, $minute);
+    }
+
     public function ratingApprovedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'xcl_rating_approved_by');
     }
 
+    // Bypasses the tenant scope deliberately — standings must resolve
+    // correctly for an unauthenticated public visitor (no league membership
+    // at all) reading this championship's public page, and a points scheme
+    // carries no credentials or infrastructure, so reading it isn't a leak
+    // (same reasoning as PointsSchemeController::browse()).
     public function pointsScheme(): ?PointsScheme
     {
         $id = $this->settings->scoring->points_scheme_id ?? null;
-        return $id ? PointsScheme::find($id) : null;
+        return $id ? PointsScheme::withoutTenantScope()->find($id) : null;
     }
 
     // League manager side: raises the request. Does not enable rating.
@@ -248,12 +306,23 @@ class Championship extends Model
         return $grouped;
     }
 
+    // League-owned championships (settings.scoring.points_scheme_id set) score
+    // from that PointsScheme's own resolved, stored points_table and bonus
+    // values; XCL's own native championships (no scheme selected) keep using
+    // the legacy flat columns exactly as before. Points already on the board
+    // for a scored round never move because of this — the scheme's table is
+    // itself locked the moment a round is scored (PointsScheme::isLockedByCompletedRounds()),
+    // so only the *shape of future rounds* can ever be affected by an edit.
     private function buildDriverStandings(): array
     {
+        $scheme = $this->pointsScheme();
+
         $pointsSystem = $this->points_system ?? [];
-        $bonusFL      = $this->bonus_fastest_lap;
-        $bonusPole    = $this->bonus_pole;
-        $dropRounds   = $this->drop_rounds;
+        $pointsTable  = $scheme?->points_table ?? [];
+        $bonusFL      = $scheme?->fastest_lap_points ?? $this->bonus_fastest_lap;
+        $bonusPole    = $scheme?->pole_points ?? $this->bonus_pole;
+        $bonusLead    = $scheme?->leading_lap_points ?? 0;
+        $dropRounds   = $scheme ? (int) ($this->settings->scoring->drop_rounds ?? 0) : $this->drop_rounds;
 
         $finishedRounds = $this->rounds()
             ->where('status', 'finished')
@@ -268,6 +337,13 @@ class Championship extends Model
             $qualiResults = $race->qualiResults()->get();
             $poleUserId   = $qualiResults->first()?->user_id;
 
+            // Percentage-depth schemes resolve their scoring cutoff fresh per
+            // round, against that round's own classified-finisher count —
+            // never the starting grid, so a retirement elsewhere in the field
+            // never changes what a classified finisher scores.
+            $classifiedCount = $race->raceResults->where('dnf', false)->count();
+            $cutoff          = $scheme ? $scheme->scoringCutoffFor($classifiedCount) : null;
+
             foreach ($race->raceResults as $result) {
                 $userId = $result->user_id;
                 if (!isset($driverData[$userId])) {
@@ -278,16 +354,26 @@ class Championship extends Model
                     ];
                 }
 
-                $pos    = $result->dnf ? null : ($result->position ?? null);
-                $pts    = 0;
-                if ($pos !== null && isset($pointsSystem[$pos - 1])) {
-                    $pts = (int) $pointsSystem[$pos - 1];
+                $pos = $result->dnf ? null : ($result->position ?? null);
+                $pts = 0;
+
+                if ($pos !== null) {
+                    if ($scheme) {
+                        if ($pos <= $cutoff) {
+                            $pts = (float) ($pointsTable[$pos] ?? 0);
+                        }
+                    } elseif (isset($pointsSystem[$pos - 1])) {
+                        $pts = (int) $pointsSystem[$pos - 1];
+                    }
                 }
                 if ($result->fastest_lap) {
                     $pts += $bonusFL;
                 }
                 if ($poleUserId && $poleUserId === $userId) {
                     $pts += $bonusPole;
+                }
+                if ($bonusLead > 0 && $result->laps_led > 0) {
+                    $pts += $bonusLead;
                 }
 
                 $driverData[$userId]['rounds'][] = [

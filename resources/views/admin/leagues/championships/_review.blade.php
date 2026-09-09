@@ -18,7 +18,7 @@
     </div>
 </div>
 
-@foreach(['format' => 'Format', 'sessions' => 'Sessions', 'scoring' => 'Scoring', 'requirements' => 'Requirements', 'penalties' => 'Penalties', 'balance' => 'Balance'] as $group => $label)
+@foreach(['schedule' => 'Schedule', 'format' => 'Format', 'sessions' => 'Sessions', 'scoring' => 'Scoring', 'requirements' => 'Requirements', 'penalties' => 'Penalties', 'balance' => 'Balance'] as $group => $label)
 <div class="admin-card mb-4">
     <div class="admin-card-header">
         <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.9rem">{{ $label }}</div>

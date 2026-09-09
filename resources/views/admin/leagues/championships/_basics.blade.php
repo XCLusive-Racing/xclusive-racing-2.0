@@ -58,3 +58,62 @@
         @error('image') <div class="invalid-feedback">{{ $message }}</div> @enderror
     </div>
 </div>
+
+<hr class="my-4">
+<p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Server <span class="fw-normal" style="text-transform:none">(optional)</span></p>
+
+@if($servers->isEmpty())
+<p class="text-secondary mb-0" style="font-size:.82rem">
+    No servers assigned to {{ $league->name }} yet — an XCL admin needs to assign one from the League page before rounds can auto-push.
+</p>
+@else
+<div class="row g-3 mb-3">
+    <div class="col-sm-6">
+        <label class="form-label">Default Server</label>
+        <select name="ftp_server_id" class="form-select @error('ftp_server_id') is-invalid @enderror">
+            <option value="">— No server assigned —</option>
+            @foreach($servers as $srv)
+            <option value="{{ $srv->id }}" {{ (string) old('ftp_server_id', $championship->ftp_server_id) === (string) $srv->id ? 'selected' : '' }}>{{ $srv->name }}</option>
+            @endforeach
+        </select>
+        <div class="form-text" style="font-size:.72rem;color:#9ca3af">Pre-selected on every new round — still overridable per round in Add Round.</div>
+        @error('ftp_server_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+    </div>
+</div>
+@endif
+
+<hr class="my-4">
+<p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Schedule</p>
+<p class="text-secondary mb-3" style="font-size:.8rem">
+    Set the pattern rounds normally follow — Add Round will suggest each round's date and time from this, and you can still change any single round by hand.
+</p>
+
+@foreach(\App\Settings\ChampionshipSettingsSchema::fieldsForGroup('schedule') as $field)
+    @include('admin.leagues.championships._field', ['field' => $field])
+@endforeach
+
+<hr class="my-4">
+<p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Session Defaults</p>
+<p class="text-secondary mb-3" style="font-size:.8rem">
+    Standard practice/qualifying/race lengths and conditions — each round can still override these when it needs to differ.
+</p>
+
+@foreach(\App\Settings\ChampionshipSettingsSchema::fieldsForGroup('sessions') as $field)
+    @include('admin.leagues.championships._field', ['field' => $field])
+@endforeach
+
+<script>
+(function () {
+    var recurrence = document.getElementById('f-schedule-recurrence');
+    var dayWrap    = document.getElementById('f-schedule-day_of_week')?.closest('.mb-3');
+
+    function updateDayVisibility() {
+        if (!recurrence || !dayWrap) return;
+        dayWrap.style.display = ['weekly', 'biweekly'].includes(recurrence.value) ? '' : 'none';
+    }
+    if (recurrence) {
+        recurrence.addEventListener('change', updateDayVisibility);
+        updateDayVisibility();
+    }
+})();
+</script>

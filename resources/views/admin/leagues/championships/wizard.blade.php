@@ -70,7 +70,9 @@
                         @include('admin.leagues.championships._basics')
                     @else
                         @foreach($fields as $field)
-                            @if($field['type'] !== 'list')
+                            {{-- points_scheme_id gets its own picker below, with an inline table
+                                 preview a plain integer input can't show — skip the generic one. --}}
+                            @if($field['type'] !== 'list' && !($step === 'scoring' && $field['key'] === 'points_scheme_id'))
                                 @include('admin.leagues.championships._field', ['field' => $field])
                             @endif
                         @endforeach

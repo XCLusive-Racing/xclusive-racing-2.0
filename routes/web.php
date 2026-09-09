@@ -394,10 +394,10 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/cha
     Route::get('/', [ChampionshipWizardController::class, 'index'])->name('index');
     Route::post('/', [ChampionshipWizardController::class, 'store'])->name('store');
     Route::get('/{championship}/wizard/{step}', [ChampionshipWizardController::class, 'edit'])
-        ->where('step', 'basics|rounds|format|sessions|scoring|requirements|penalties|review')
+        ->where('step', 'basics|rounds|format|scoring|requirements|penalties|review')
         ->name('wizard');
     Route::put('/{championship}/wizard/{step}', [ChampionshipWizardController::class, 'update'])
-        ->where('step', 'basics|format|sessions|scoring|requirements|penalties')
+        ->where('step', 'basics|format|scoring|requirements|penalties')
         ->name('wizard.update');
     Route::get('/{championship}/rounds/create', [ChampionshipWizardController::class, 'roundCreate'])->name('rounds.create');
     Route::post('/{championship}/rounds', [ChampionshipWizardController::class, 'addRound'])->name('rounds.store');
@@ -411,16 +411,21 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/cha
 });
 
 // Points Schemes — templates (league_id null) plus each league's own copies.
+// Templates are copied via copy(), never edited/deleted here — there is no
+// edit/update/destroy route a template's id could ever reach.
 Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/points-schemes')->name('admin.leagues.points-schemes.')->group(function () {
     Route::get('/', [PointsSchemeController::class, 'index'])->name('index');
+    Route::get('/create', [PointsSchemeController::class, 'create'])->name('create');
     Route::post('/', [PointsSchemeController::class, 'store'])->name('store');
     Route::post('/{template}/copy', [PointsSchemeController::class, 'copy'])->name('copy');
+    Route::get('/{scheme}/edit', [PointsSchemeController::class, 'edit'])->name('edit');
+    Route::put('/{scheme}', [PointsSchemeController::class, 'update'])->name('update');
+    Route::delete('/{scheme}', [PointsSchemeController::class, 'destroy'])->name('destroy');
 });
 
 // Points Schemes — cross-league browse. Not nested under {league}: every league's
 // own scheme (and every XCL template) is visible here, read-only, on purpose.
 Route::middleware(['auth', 'league.access'])->prefix('admin/points-schemes')->name('admin.points-schemes.')->group(function () {
     Route::get('/', [PointsSchemeController::class, 'browse'])->name('index');
-    Route::get('/{scheme}/export', [PointsSchemeController::class, 'export'])->name('export');
 });
 

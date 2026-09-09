@@ -25,7 +25,7 @@ class PushGPortalConfigs extends Command
             ->whereIn('config_push_status', ['pending', 'failed', null])
             ->where('config_push_attempts', '<', 15)
             ->whereBetween('slot_time', [$now->copy()->subMinutes(30), $now->copy()->addMinutes(5)])
-            ->with('ftpServer')
+            ->with(['ftpServer' => fn ($q) => $q->withoutTenantScope()])
             ->get();
 
         // Phase 2: safety repush — already pushed, but from 5min before slot to 2min after and last push was >5min ago
@@ -38,7 +38,7 @@ class PushGPortalConfigs extends Command
                 $q->whereNull('config_pushed_at')
                   ->orWhere('config_pushed_at', '<', $now->copy()->subMinutes(5));
             })
-            ->with('ftpServer')
+            ->with(['ftpServer' => fn ($q) => $q->withoutTenantScope()])
             ->get();
 
         $races = $normalRaces->merge($safetyRaces)->unique('id');

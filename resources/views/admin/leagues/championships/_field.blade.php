@@ -39,6 +39,9 @@
         @elseif($field['type'] === 'time')
         <input type="time" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
                class="form-control @error($errorKey) is-invalid @enderror" style="max-width:160px">
+        @elseif($field['type'] === 'date')
+        <input type="date" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
+               class="form-control @error($errorKey) is-invalid @enderror" style="max-width:200px">
         @elseif($field['type'] === 'datetime')
         <input type="datetime-local" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
                class="form-control @error($errorKey) is-invalid @enderror" style="max-width:220px">

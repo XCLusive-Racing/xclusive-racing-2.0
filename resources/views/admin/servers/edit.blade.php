@@ -78,9 +78,11 @@
                     <div class="row g-3">
                         <div class="col-sm-6">
                             <label class="form-label">FTP Username</label>
-                            <input type="text" name="username" value="{{ old('username', $server->username) }}"
+                            <input type="text" name="username" value="{{ old('username') }}"
                                    class="form-control @error('username') is-invalid @enderror"
-                                   autocomplete="off">
+                                   autocomplete="off"
+                                   placeholder="Leave blank to keep current">
+                            <div class="form-text" style="font-size:.72rem;color:#9ca3af">Leave blank to keep the existing username.</div>
                             @error('username') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-sm-6">

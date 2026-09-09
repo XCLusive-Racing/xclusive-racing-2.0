@@ -65,8 +65,12 @@
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label">Date &amp; Time <span class="text-danger">*</span> <span class="fw-normal text-secondary" style="text-transform:none">(on the hour, BST)</span></label>
-                    <input type="datetime-local" name="scheduled_at" value="{{ old('scheduled_at') }}" step="3600"
+                    <input type="datetime-local" name="scheduled_at"
+                           value="{{ old('scheduled_at', optional($suggestedScheduledAt)->format('Y-m-d\TH:i')) }}" step="3600"
                            class="form-control @error('scheduled_at') is-invalid @enderror">
+                    @if($suggestedScheduledAt && !old('scheduled_at'))
+                    <div class="form-text" style="font-size:.72rem;color:#9ca3af">Suggested from the championship's schedule — change it just for this round if needed.</div>
+                    @endif
                     @error('scheduled_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
@@ -96,7 +100,7 @@
                 </div>
                 <div class="col-6 col-sm-3">
                     <label class="form-label" style="font-size:.75rem">Start Time <span class="fw-normal text-secondary">(in-game)</span></label>
-                    <input type="time" name="time_of_day" class="form-control form-control-sm" value="{{ old('time_of_day', $sessionDefaults->time_of_day ?? '14:00') }}" step="3600">
+                    <input type="time" name="time_of_day" class="form-control form-control-sm" value="{{ old('time_of_day', $championship->settings->schedule->time_of_day ?? '14:00') }}" step="3600">
                 </div>
                 <div class="col-6 col-sm-3">
                     <label class="form-label" style="font-size:.75rem">Ambient Temp (°C)</label>
@@ -117,17 +121,6 @@
                         <option value="random" {{ old('weather') === 'random' ? 'selected' : '' }}>Random</option>
                     </select>
                 </div>
-                <div class="col-sm-3" id="rc-rain-level-wrap" style="display:none">
-                    @php $savedRainLevel = old('rain_level'); @endphp
-                    <label class="form-label" style="font-size:.75rem">Rain Level <span class="fw-normal text-secondary">(0–1)</span></label>
-                    <div class="d-flex align-items-center gap-2">
-                        <input type="range" name="rain_level" id="rc-rain-level" min="0" max="1" step="0.1"
-                               value="{{ $savedRainLevel ?? '0.3' }}" class="form-range flex-grow-1" style="accent-color:#7c3aed">
-                        <span id="rc-rain-level-val" class="fw-bold text-dark" style="min-width:2rem;font-size:.82rem;text-align:right">
-                            {{ $savedRainLevel !== null ? number_format($savedRainLevel, 1) : '0.3' }}
-                        </span>
-                    </div>
-                </div>
                 <div class="col-sm-4">
                     <label class="form-label" style="font-size:.75rem">Dynamic Weather <span class="fw-normal text-secondary" style="text-transform:none">(how much it changes mid-session)</span></label>
                     <select name="weather_randomness" class="form-select form-select-sm">
@@ -142,6 +135,17 @@
                         <option value="random" {{ old('weather_randomness') === 'random' ? 'selected' : '' }}>Randomize</option>
                     </select>
                 </div>
+                <div class="col-sm-3" id="rc-rain-level-wrap" style="display:none">
+                    @php $savedRainLevel = old('rain_level'); @endphp
+                    <label class="form-label" style="font-size:.75rem">Rain Level <span class="fw-normal text-secondary">(0–1)</span></label>
+                    <div class="d-flex align-items-center gap-2">
+                        <input type="range" name="rain_level" id="rc-rain-level" min="0" max="1" step="0.1"
+                               value="{{ $savedRainLevel ?? '0.3' }}" class="form-range flex-grow-1" style="accent-color:#7c3aed">
+                        <span id="rc-rain-level-val" class="fw-bold text-dark" style="min-width:2rem;font-size:.82rem;text-align:right">
+                            {{ $savedRainLevel !== null ? number_format($savedRainLevel, 1) : '0.3' }}
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -155,7 +159,7 @@
             <select name="ftp_server_id" class="form-select form-select-sm">
                 <option value="">— No server assigned —</option>
                 @foreach($servers as $srv)
-                <option value="{{ $srv->id }}" {{ old('ftp_server_id') == $srv->id ? 'selected' : '' }}>{{ $srv->name }}</option>
+                <option value="{{ $srv->id }}" {{ (string) old('ftp_server_id', $championship->ftp_server_id) === (string) $srv->id ? 'selected' : '' }}>{{ $srv->name }}</option>
                 @endforeach
             </select>
             @endif

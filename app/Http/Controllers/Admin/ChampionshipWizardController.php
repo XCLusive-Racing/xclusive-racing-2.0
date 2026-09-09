@@ -76,6 +76,11 @@ class ChampionshipWizardController extends Controller
 
         $pointsSchemes = PointsScheme::orderByDesc('is_template')->orderBy('name')->get();
 
+        // Only needed by the Basics step's Server dropdown, but cheap enough to
+        // always pass — scoped to this league's own active servers, same as
+        // roundCreate() below.
+        $servers = $league->ftpServers()->where('active', true)->orderBy('name')->get();
+
         return view('admin.leagues.championships.wizard', [
             'league'        => $league,
             'championship'  => $championship,
@@ -83,6 +88,7 @@ class ChampionshipWizardController extends Controller
             'steps'         => ChampionshipSettingsSchema::STEPS,
             'fields'        => ChampionshipSettingsSchema::fieldsForStep($step),
             'pointsSchemes' => $pointsSchemes,
+            'servers'       => $servers,
             'canApproveRating' => $request->user()->can('approveRating', $championship),
         ]);
     }
@@ -107,7 +113,19 @@ class ChampionshipWizardController extends Controller
                 unset($data['image']);
             }
 
+            // Nested settings.{schedule,sessions}.* come along in validated() too
+            // (they ride on this same step) — applyStepSettings() below is what
+            // actually merges those into the settings blob; passing the raw
+            // partial array straight to update() would blow away every other
+            // settings group instead of just schedule/sessions.
+            unset($data['settings']);
+
+            if (!empty($data['ftp_server_id']) && !$league->ftpServers()->where('id', $data['ftp_server_id'])->exists()) {
+                abort(403, 'That server does not belong to this league.');
+            }
+
             $championship->update($data);
+            $this->applyStepSettings($request, $championship, 'basics');
         } else {
             $this->applyStepSettings($request, $championship, $step);
         }
@@ -129,7 +147,10 @@ class ChampionshipWizardController extends Controller
         // must never be able to push a round's config to another league's server.
         $servers = $league->ftpServers()->where('active', true)->orderBy('name')->get();
 
-        return view('admin.leagues.championships.round-create', compact('league', 'championship', 'servers'));
+        $nextRoundNumber      = $championship->rounds()->max('round_number') + 1;
+        $suggestedScheduledAt = $championship->scheduledDateTimeForRound($nextRoundNumber);
+
+        return view('admin.leagues.championships.round-create', compact('league', 'championship', 'servers', 'suggestedScheduledAt'));
     }
 
     public function addRound(Request $request, League $league, Championship $championship)

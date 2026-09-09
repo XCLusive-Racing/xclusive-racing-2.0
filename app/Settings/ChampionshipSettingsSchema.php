@@ -16,13 +16,12 @@ use Illuminate\Support\Arr;
 // defaults for new keys) once this class gains fields for a new version.
 class ChampionshipSettingsSchema
 {
-    const CURRENT_VERSION = 1;
+    const CURRENT_VERSION = 2;
 
     const STEPS = [
         'basics'       => 'Basics',
         'rounds'       => 'Rounds',
         'format'       => 'Format',
-        'sessions'     => 'Sessions',
         'scoring'      => 'Scoring',
         'requirements' => 'Requirements',
         'penalties'    => 'Penalties & Balance',
@@ -31,13 +30,16 @@ class ChampionshipSettingsSchema
 
     // Settings groups, in the order they appear on the Penalties & Balance step
     // (balance isn't a wizard step of its own — it's rendered as a second section
-    // on that step, since the wizard has a fixed 7-step list that doesn't name it).
-    const GROUPS = ['format', 'sessions', 'scoring', 'requirements', 'penalties', 'balance'];
+    // on that step, since the wizard has a fixed step list that doesn't name it).
+    const GROUPS = ['schedule', 'format', 'sessions', 'scoring', 'requirements', 'penalties', 'balance'];
 
     // Maps a wizard step slug to the settings group(s) it edits and validates.
+    // "schedule" and "sessions" both ride on the Basics step — there's no
+    // dedicated Sessions step any more, so a round's session/weather defaults
+    // are set once on Basics and only re-typed in Add Round when overriding.
     const STEP_GROUPS = [
+        'basics'       => ['schedule', 'sessions'],
         'format'       => ['format'],
-        'sessions'     => ['sessions'],
         'scoring'      => ['scoring'],
         'requirements' => ['requirements'],
         'penalties'    => ['penalties', 'balance'],
@@ -46,6 +48,20 @@ class ChampionshipSettingsSchema
     public static function fields(): array
     {
         return [
+            // --- Schedule (rendered on the Basics step) ---
+            ['group' => 'schedule', 'key' => 'start_date', 'type' => 'date', 'nullable' => true, 'default' => null,
+                'label' => 'First Round Date', 'help' => 'Date of Round 1. Later rounds are suggested automatically from the recurrence below — still fully editable per round in Add Round.', 'rule' => 'nullable|date'],
+            ['group' => 'schedule', 'key' => 'recurrence', 'type' => 'enum', 'options' => ['none', 'daily', 'weekly', 'biweekly', 'monthly'], 'default' => 'weekly',
+                'label' => 'Recurrence', 'help' => 'How often rounds repeat. "None" leaves every round\'s date blank by default.', 'rule' => 'required|in:none,daily,weekly,biweekly,monthly'],
+            ['group' => 'schedule', 'key' => 'day_of_week', 'type' => 'enum',
+                'options' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], 'nullable' => true, 'default' => null,
+                'label' => 'Race Day', 'help' => 'Only used when recurrence is weekly or bi-weekly.'],
+            ['group' => 'schedule', 'key' => 'time_of_day', 'type' => 'time', 'default' => '14:00',
+                'label' => 'Start Time', 'help' => 'In-game and real-world start time for every round — always on the hour.',
+                // Array form, not a pipe-delimited string — the regex itself
+                // contains a "|", which a string rule would wrongly split on.
+                'rule' => ['required', 'date_format:H:i', 'regex:/^([01]\d|2[0-3]):00$/']],
+
             // --- Format ---
             ['group' => 'format', 'key' => 'multiclass_enabled', 'type' => 'boolean', 'default' => false,
                 'label' => 'Multiclass', 'help' => 'Split entries into separate classes, each with their own standings.'],
@@ -85,8 +101,6 @@ class ChampionshipSettingsSchema
                 'label' => 'Cloud Level (0–1)', 'help' => 'Only used when weather is fixed.'],
             ['group' => 'sessions', 'key' => 'rain_level', 'type' => 'float', 'nullable' => true, 'default' => 0.0,
                 'label' => 'Rain Level (0–1)', 'help' => 'Only used when weather is fixed.'],
-            ['group' => 'sessions', 'key' => 'time_of_day', 'type' => 'time', 'default' => '14:00',
-                'label' => 'Time of Day', 'help' => 'In-game start time for the session.', 'rule' => 'required|date_format:H:i'],
             ['group' => 'sessions', 'key' => 'formation_lap_type', 'type' => 'enum', 'options' => ['none', 'formation', 'rolling_start'], 'default' => 'formation',
                 'label' => 'Formation Lap', 'help' => 'How the field is sent to green.', 'rule' => 'required|in:none,formation,rolling_start'],
 
@@ -95,10 +109,9 @@ class ChampionshipSettingsSchema
                 'label' => 'Points Scheme', 'help' => 'Pick a template or one you copied. League managers copy a template to create their own rather than editing a shared one.'],
             ['group' => 'scoring', 'key' => 'drop_rounds', 'type' => 'integer', 'default' => 0,
                 'label' => 'Drop Rounds', 'help' => 'Number of a driver\'s lowest-scoring rounds excluded from their total.', 'rule' => 'required|integer|min:0|max:20'],
-            ['group' => 'scoring', 'key' => 'fastest_lap_point', 'type' => 'boolean', 'default' => false,
-                'label' => 'Fastest Lap Scores a Point', 'help' => ''],
-            ['group' => 'scoring', 'key' => 'pole_point', 'type' => 'boolean', 'default' => false,
-                'label' => 'Pole Position Scores a Point', 'help' => ''],
+            // Fastest lap / pole / leading-a-lap bonus points live on the points
+            // scheme itself now (PointsScheme::fastest_lap_points etc), not here —
+            // a flat yes/no toggle couldn't carry an actual point value anyway.
             ['group' => 'scoring', 'key' => 'team_points_enabled', 'type' => 'boolean', 'default' => false,
                 'label' => 'Separate Team Points', 'help' => 'Score teams independently of individual drivers.'],
 

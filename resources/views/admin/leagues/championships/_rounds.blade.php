@@ -10,7 +10,7 @@
     <div class="px-4 pb-4">
         <p class="text-secondary mb-3" style="font-size:.8rem">
             Set which days you race, on which tracks, in what conditions, and how long practice/qualifying/race run —
-            each round can override the defaults you'll set on the Sessions step next.
+            each round can override the schedule and session defaults you set on the Basics step.
         </p>
 
         @forelse($championship->rounds as $round)

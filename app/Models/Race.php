@@ -143,6 +143,32 @@ class Race extends Model
         return $this->scheduled_at->timezone('Europe/London');
     }
 
+    // Which region(s) this race's start time falls in "prime time" evening
+    // hours for — used only by the public Events page's Timezone filter, so
+    // people browsing for their own region's evening slot aren't shown every
+    // race we run. A race can match more than one region at once (the windows
+    // are independent local-hour checks), so this returns every match rather
+    // than a single label. 17:00-23:59 local is a reasonable default "evening"
+    // window; adjust here if the actual prime-time slots end up different.
+    public function eveningRegions(): array
+    {
+        $regions = [
+            'europe'    => 'Europe/London',
+            'australia' => 'Australia/Sydney',
+            'us'        => 'America/New_York',
+        ];
+
+        $matches = [];
+        foreach ($regions as $region => $timezone) {
+            $hour = $this->scheduled_at->copy()->timezone($timezone)->hour;
+            if ($hour >= 17 && $hour <= 23) {
+                $matches[] = $region;
+            }
+        }
+
+        return $matches;
+    }
+
     // [start, end] for calendar exports — practice+qualifying+race summed from the
     // effective session durations (already resolved from the format if any), with a
     // 30-minute floor for races that have no duration data at all (e.g. a bare stub).
