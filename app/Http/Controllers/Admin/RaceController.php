@@ -228,6 +228,9 @@ class RaceController extends Controller
             'rain_level'           => 'nullable|numeric|min:0|max:1',
             'time_of_day'          => 'nullable|date_format:H:i',
             'ambient_temp'         => 'nullable|integer|min:-30|max:50',
+            'practice_time_multiplier'   => 'nullable|integer|min:1|max:24',
+            'qualifying_time_multiplier' => 'nullable|integer|min:1|max:24',
+            'race_time_multiplier'       => 'nullable|integer|min:1|max:24',
             'sr_requirement'       => 'nullable|numeric|in:3,4,5,6,7,8,9',
             'min_rating'           => 'nullable|string|in:rookie,bronze,silver,gold,platinum,alien',
             'max_rating'           => 'nullable|string|in:rookie,bronze,silver,gold,platinum,alien',
@@ -246,6 +249,9 @@ class RaceController extends Controller
             'events.*.weather'         => 'nullable|in:dry,wet,mixed,random',
             'events.*.time_of_day'     => 'nullable|date_format:H:i',
             'events.*.ambient_temp'    => 'nullable|integer|min:-30|max:50',
+            'events.*.practice_time_multiplier'   => 'nullable|integer|min:1|max:24',
+            'events.*.qualifying_time_multiplier' => 'nullable|integer|min:1|max:24',
+            'events.*.race_time_multiplier'       => 'nullable|integer|min:1|max:24',
             'events.*.max_drivers'     => 'nullable|integer|min:1',
             'events.*.car_class'       => 'nullable|string|max:50',
         ]);
@@ -264,6 +270,9 @@ class RaceController extends Controller
             'rain_level'           => $request->filled('rain_level') ? (float) $request->rain_level : null,
             'time_of_day'          => $request->time_of_day ?: null,
             'ambient_temp'         => $request->ambient_temp ?? null,
+            'practice_time_multiplier'   => $request->practice_time_multiplier ?: 1,
+            'qualifying_time_multiplier' => $request->qualifying_time_multiplier ?: 1,
+            'race_time_multiplier'       => $request->race_time_multiplier ?: 1,
             'sr_requirement'       => $request->sr_requirement ?: null,
             'min_rating'           => $request->min_rating ?: null,
             'max_rating'           => $request->max_rating ?: null,
@@ -295,6 +304,9 @@ class RaceController extends Controller
                 'weather'          => $event['weather'] ?: $shared['weather'],
                 'time_of_day'      => $event['time_of_day'] ?: $shared['time_of_day'],
                 'ambient_temp'     => $event['ambient_temp'] ?? $shared['ambient_temp'],
+                'practice_time_multiplier'   => $event['practice_time_multiplier'] ?? $shared['practice_time_multiplier'],
+                'qualifying_time_multiplier' => $event['qualifying_time_multiplier'] ?? $shared['qualifying_time_multiplier'],
+                'race_time_multiplier'       => $event['race_time_multiplier'] ?? $shared['race_time_multiplier'],
                 'max_drivers'      => $event['max_drivers'] ?: $shared['max_drivers'],
                 'car_class'        => ($event['car_class'] ?? null) ?: $shared['car_class'],
             ])));
@@ -445,6 +457,10 @@ class RaceController extends Controller
                 $ambientTemp = '';
             }
 
+            $practiceTimeMultiplier   = $this->parseTimeMultiplierColumn($line, $colIndex, 'practice_time_multiplier', $lineNum, $errors);
+            $qualifyingTimeMultiplier = $this->parseTimeMultiplierColumn($line, $colIndex, 'qualifying_time_multiplier', $lineNum, $errors);
+            $raceTimeMultiplier       = $this->parseTimeMultiplierColumn($line, $colIndex, 'race_time_multiplier', $lineNum, $errors);
+
             $eventTagSlug = '';
             $rawTag = isset($colIndex['event_tag']) ? trim($line[$colIndex['event_tag']] ?? '') : '';
             if ($rawTag !== '') {
@@ -482,6 +498,9 @@ class RaceController extends Controller
                 'weather'          => $weather,
                 'time_of_day'      => $timeOfDay,
                 'ambient_temp'     => $ambientTemp,
+                'practice_time_multiplier'   => $practiceTimeMultiplier,
+                'qualifying_time_multiplier' => $qualifyingTimeMultiplier,
+                'race_time_multiplier'       => $raceTimeMultiplier,
             ];
         }
         fclose($handle);
@@ -491,6 +510,19 @@ class RaceController extends Controller
         }
 
         return response()->json(['rows' => $rows, 'errors' => $errors]);
+    }
+
+    // Parses one of the three optional time-multiplier CSV columns (1-24) for a single row,
+    // appending a warning and falling back to blank (→ shared default) on an invalid value.
+    private function parseTimeMultiplierColumn(array $line, array $colIndex, string $column, int $lineNum, array &$errors): string
+    {
+        $value = isset($colIndex[$column]) ? trim($line[$colIndex[$column]] ?? '') : '';
+        if ($value !== '' && (!ctype_digit($value) || (int) $value < 1 || (int) $value > 24)) {
+            $errors[] = "Row {$lineNum}: invalid {$column} \"{$value}\" — ignored.";
+            $value = '';
+        }
+
+        return $value;
     }
 
     // Exports races in a date range (optionally filtered to one game) back out in the
@@ -513,7 +545,7 @@ class RaceController extends Controller
 
         return response()->streamDownload(function () use ($races) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['track', 'date', 'time', 'weather', 'time_of_day', 'ambient_temp'], ',', '"', '\\');
+            fputcsv($out, ['track', 'date', 'time', 'weather', 'time_of_day', 'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier', 'race_time_multiplier'], ',', '"', '\\');
             foreach ($races as $race) {
                 $local = $race->scheduledAtUk();
                 fputcsv($out, [
@@ -523,6 +555,9 @@ class RaceController extends Controller
                     $race->weather,
                     $race->time_of_day,
                     $race->ambient_temp,
+                    $race->practice_time_multiplier,
+                    $race->qualifying_time_multiplier,
+                    $race->race_time_multiplier,
                 ], ',', '"', '\\');
             }
             fclose($out);
@@ -674,6 +709,9 @@ class RaceController extends Controller
             'rain_level'           => 'nullable|numeric|min:0|max:1',
             'time_of_day'          => 'nullable|date_format:H:i',
             'ambient_temp'         => 'nullable|integer|min:-30|max:50',
+            'practice_time_multiplier'   => 'nullable|integer|min:1|max:24',
+            'qualifying_time_multiplier' => 'nullable|integer|min:1|max:24',
+            'race_time_multiplier'       => 'nullable|integer|min:1|max:24',
             'max_drivers'          => 'nullable|integer|min:1',
             'description'          => 'nullable|string',
             'is_multiclass'        => 'nullable|boolean',
@@ -697,6 +735,9 @@ class RaceController extends Controller
         $data['is_endurance']  = $request->boolean('is_endurance');
         $data['has_practice_server'] = $request->boolean('has_practice_server');
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
+        $data['practice_time_multiplier']   = $data['practice_time_multiplier']   ?? 1;
+        $data['qualifying_time_multiplier'] = $data['qualifying_time_multiplier'] ?? 1;
+        $data['race_time_multiplier']       = $data['race_time_multiplier']       ?? 1;
         $data = $this->normalizeRainLevel($data);
 
         $data = $this->deriveFormatFields($data);
@@ -796,6 +837,9 @@ class RaceController extends Controller
             'rain_level'           => 'nullable|numeric|min:0|max:1',
             'time_of_day'          => 'nullable|date_format:H:i',
             'ambient_temp'         => 'nullable|integer|min:-30|max:50',
+            'practice_time_multiplier'   => 'nullable|integer|min:1|max:24',
+            'qualifying_time_multiplier' => 'nullable|integer|min:1|max:24',
+            'race_time_multiplier'       => 'nullable|integer|min:1|max:24',
             'max_drivers'          => 'nullable|integer|min:1',
             'description'          => 'nullable|string',
             'image'                => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,ogg,mov|max:204800',
@@ -821,6 +865,9 @@ class RaceController extends Controller
         $data['is_endurance']  = $request->boolean('is_endurance');
         $data['has_practice_server'] = $request->boolean('has_practice_server');
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
+        $data['practice_time_multiplier']   = $data['practice_time_multiplier']   ?? 1;
+        $data['qualifying_time_multiplier'] = $data['qualifying_time_multiplier'] ?? 1;
+        $data['race_time_multiplier']       = $data['race_time_multiplier']       ?? 1;
         $data = $this->normalizeRainLevel($data);
 
         // Preserve driver swap fields before deriveFormatFields() resets them for format-based races

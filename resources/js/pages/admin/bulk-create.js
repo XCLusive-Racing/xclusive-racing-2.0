@@ -16,10 +16,25 @@ export function initBulkCreate(wrap) {
     const defaultCarClassEl    = wrap.querySelector('select[name="car_class"]');
     const defaultTodEl         = wrap.querySelector('[data-bulk-tod], [data-bulk-default-tod]');
     const defaultAmbientTempEl = wrap.querySelector('input[name="ambient_temp"], [data-bulk-default-ambient-temp]');
+    const defaultPracticeMultEl   = wrap.querySelector('select[name="practice_time_multiplier"]');
+    const defaultQualifyingMultEl = wrap.querySelector('select[name="qualifying_time_multiplier"]');
+    const defaultRaceMultEl       = wrap.querySelector('select[name="race_time_multiplier"]');
 
     function getDefaultCarClass()   { return defaultCarClassEl?.value || ''; }
     function getDefaultTod()        { return defaultTodEl?.value || ''; }
     function getDefaultAmbientTemp() { return defaultAmbientTempEl?.value || ''; }
+    function getDefaultPracticeMult()   { return defaultPracticeMultEl?.value || '1'; }
+    function getDefaultQualifyingMult() { return defaultQualifyingMultEl?.value || '1'; }
+    function getDefaultRaceMult()       { return defaultRaceMultEl?.value || '1'; }
+
+    function timeMultiplierSelect(i, field, selected) {
+        const sel = String(selected ?? '1');
+        let opts = '';
+        for (let m = 1; m <= 24; m++) {
+            opts += `<option value="${m}" ${sel === String(m) ? 'selected' : ''}>${m}×</option>`;
+        }
+        return `<select name="events[${i}][${field}]" class="form-select form-select-sm" data-field="${field}">${opts}</select>`;
+    }
 
     const CAR_CLASS_OPTIONS = ['GT3', 'GT4', 'GT2', 'GTC', 'TCX'];
 
@@ -119,6 +134,15 @@ export function initBulkCreate(wrap) {
                        class="form-control form-control-sm" data-field="ambient_temp" placeholder="Default">
             </td>
             <td>
+                ${timeMultiplierSelect(i, 'practice_time_multiplier', ev.practice_time_multiplier)}
+            </td>
+            <td>
+                ${timeMultiplierSelect(i, 'qualifying_time_multiplier', ev.qualifying_time_multiplier)}
+            </td>
+            <td>
+                ${timeMultiplierSelect(i, 'race_time_multiplier', ev.race_time_multiplier)}
+            </td>
+            <td>
                 <select name="events[${i}][car_class]" class="form-select form-select-sm" data-field="car_class">
                     ${carClassOptions}
                 </select>
@@ -148,6 +172,9 @@ export function initBulkCreate(wrap) {
         const dateInput        = tr.querySelector('[data-field="scheduled_at"]');
         const todInput         = tr.querySelector('[data-field="time_of_day"]');
         const ambientTempInput = tr.querySelector('[data-field="ambient_temp"]');
+        const practiceMultInput   = tr.querySelector('[data-field="practice_time_multiplier"]');
+        const qualifyingMultInput = tr.querySelector('[data-field="qualifying_time_multiplier"]');
+        const raceMultInput       = tr.querySelector('[data-field="race_time_multiplier"]');
         const carClassInput    = tr.querySelector('[data-field="car_class"]');
         const weatherInput     = tr.querySelector('[data-field="weather"]');
         const rainInput        = tr.querySelector('[data-field="rain_level"]');
@@ -163,6 +190,9 @@ export function initBulkCreate(wrap) {
         dateInput.addEventListener('change', () => { events[i].scheduled_at = dateInput.value; });
         todInput.addEventListener('change', () => { events[i].time_of_day = todInput.value; });
         ambientTempInput.addEventListener('input', () => { events[i].ambient_temp = ambientTempInput.value; });
+        practiceMultInput.addEventListener('change', () => { events[i].practice_time_multiplier = practiceMultInput.value; });
+        qualifyingMultInput.addEventListener('change', () => { events[i].qualifying_time_multiplier = qualifyingMultInput.value; });
+        raceMultInput.addEventListener('change', () => { events[i].race_time_multiplier = raceMultInput.value; });
         carClassInput.addEventListener('change', () => { events[i].car_class = carClassInput.value; });
         weatherInput.addEventListener('change', () => {
             events[i].weather = weatherInput.value;
@@ -222,6 +252,9 @@ export function initBulkCreate(wrap) {
                 title: defTrack, track: defTrack, scheduled_at: formatDate(d),
                 time_of_day: getDefaultTod(),
                 ambient_temp: getDefaultAmbientTemp(),
+                practice_time_multiplier: getDefaultPracticeMult(),
+                qualifying_time_multiplier: getDefaultQualifyingMult(),
+                race_time_multiplier: getDefaultRaceMult(),
                 car_class: getDefaultCarClass() || 'GT3',
                 weather: 'dry', rain_level: '',
             });
@@ -244,6 +277,9 @@ export function initBulkCreate(wrap) {
             title: defTrack, track: defTrack, scheduled_at: nextDate,
             time_of_day: getDefaultTod(),
             ambient_temp: getDefaultAmbientTemp(),
+            practice_time_multiplier: getDefaultPracticeMult(),
+            qualifying_time_multiplier: getDefaultQualifyingMult(),
+            race_time_multiplier: getDefaultRaceMult(),
             car_class: getDefaultCarClass(),
             weather: 'dry', rain_level: '',
         });
