@@ -2789,8 +2789,6 @@ span.flatpickr-weekday {
 }
 
 .xcl-event-cal {
-    position: relative;
-
     > summary {
         display: block;
         list-style: none;
@@ -2816,11 +2814,6 @@ span.flatpickr-weekday {
 }
 
 .xcl-event-cal-menu {
-    position: absolute;
-    z-index: 5;
-    top: 100%;
-    left: 0;
-    right: 0;
     background: #1f2937;
     border: 1.5px solid rgba(124,58,237,.4);
     border-top: none;
