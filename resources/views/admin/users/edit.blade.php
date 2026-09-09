@@ -27,7 +27,6 @@
     <div class="d-flex align-items-center gap-2">
         <code class="fw-bold" style="font-size:1rem;color:#854d0e">{{ session('generated_password') }}</code>
     </div>
-    <div class="text-secondary mt-1" style="font-size:.75rem">Share this with the user — it's shown once and they'll be asked to set their own password on next login.</div>
 </div>
 @endif
 
