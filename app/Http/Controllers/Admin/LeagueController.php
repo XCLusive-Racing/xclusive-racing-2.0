@@ -8,6 +8,7 @@ use App\Models\League;
 use App\Models\LeagueUser;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\DiscordRoleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -52,6 +53,7 @@ class LeagueController extends Controller
             'accent_color'                 => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'description'                  => 'nullable|string|max:5000',
             'discord_invite_url'           => 'nullable|url|max:255',
+            'discord_guild_id'             => 'nullable|string|max:32',
             'website_url'                  => 'nullable|url|max:255',
             'requires_discord_membership'  => 'nullable|boolean',
             'status'                       => 'required|in:draft,active,archived',
@@ -89,7 +91,13 @@ class LeagueController extends Controller
         $servers           = $canEdit ? $league->ftpServers()->orderBy('name')->get() : collect();
         $unassignedServers = $isAdmin ? FtpServer::withoutTenantScope()->where('league_id', League::system()->id)->orderBy('name')->get() : collect();
 
-        return view('admin.leagues.edit', compact('league', 'isAdmin', 'canEdit', 'members', 'users', 'servers', 'unassignedServers'));
+        // null = "couldn't check" (no bot token configured, or Discord unreachable),
+        // distinct from a real true/false — see DiscordRoleService::isBotInGuild().
+        $discordBotInGuild = $league->discord_guild_id
+            ? app(DiscordRoleService::class)->isBotInGuild($league->discord_guild_id)
+            : null;
+
+        return view('admin.leagues.edit', compact('league', 'isAdmin', 'canEdit', 'members', 'users', 'servers', 'unassignedServers', 'discordBotInGuild'));
     }
 
     public function update(Request $request, League $league)
@@ -119,6 +127,7 @@ class LeagueController extends Controller
             $rules['slug']                        = 'required|alpha_dash|max:150|unique:leagues,slug,' . $league->id;
             $rules['status']                      = 'required|in:draft,active,archived';
             $rules['requires_discord_membership'] = 'nullable|boolean';
+            $rules['discord_guild_id']            = 'nullable|string|max:32';
         }
 
         $data = $request->validate($rules);

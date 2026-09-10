@@ -6,7 +6,12 @@ use App\Models\Championship;
 use App\Models\ChampionshipClass;
 use App\Models\ChampionshipRegistration;
 use App\Models\League;
+use App\Models\RacingTeam;
+use App\Models\User;
+use App\Services\DiscordRoleService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class ChampionshipController extends Controller
 {
@@ -81,11 +86,50 @@ class ChampionshipController extends Controller
             return back()->with('error', 'You are already registered.');
         }
 
+        if ($failure = $this->discordMembershipFailure($championship, $user)) {
+            return back()->with('error', $failure);
+        }
+
+        // Spectators sit in their own pool (settings.format.spectator_slots), not
+        // against max_drivers, and skip the driver-only checks below entirely —
+        // they aren't racing, so an SR/rating requirement doesn't apply to them.
+        if ($request->boolean('is_spectator')) {
+            if ($championship->isSpectatorFull()) {
+                return back()->with('error', 'There are no spectator slots left.');
+            }
+
+            ChampionshipRegistration::create([
+                'championship_id' => $championship->id,
+                'user_id'         => $user->id,
+                'is_spectator'    => true,
+            ]);
+
+            return back()->with('success', 'You have been registered as a spectator!');
+        }
+
+        // Driver-swaps-enabled championships register a team (one row, one of its
+        // members' RaceTeamEntry per round handles the actual swap roster) rather
+        // than each driver separately — same "owner registers the team" rule
+        // RaceController::registerTeam() already uses for individual rounds.
+        $team = null;
+        if ($championship->settings->format->driver_swaps_enabled ?? false) {
+            if ($request->filled('racing_team_id')) {
+                $team = RacingTeam::where('id', $request->integer('racing_team_id'))
+                    ->where('owner_id', $user->id)
+                    ->firstOrFail();
+
+                if ($championship->registrations()->where('racing_team_id', $team->id)->exists()) {
+                    return back()->with('error', 'Your team is already registered for this championship.');
+                }
+            }
+        }
+
         if ($championship->isFull() && !$championship->waitlistEnabled()) {
             return back()->with('error', 'Championship is full.');
         }
 
-        if ($failure = $user->requirementFailure($championship->game, $championship->sr_requirement, $championship->min_rating)) {
+        $thresholds = $championship->requirementThresholds();
+        if ($failure = $user->requirementFailure($championship->game, $thresholds['sr'], $thresholds['min'])) {
             return back()->with('error', $failure);
         }
 
@@ -98,6 +142,10 @@ class ChampionshipController extends Controller
                 ->where('championship_id', $championship->id)
                 ->firstOrFail();
 
+            if ($class->isFull()) {
+                return back()->with('error', 'The selected class is full.');
+            }
+
             if ($failure = $user->requirementFailure($championship->game, $class->sr_requirement, $class->min_rating)) {
                 return back()->with('error', $failure);
             }
@@ -107,13 +155,65 @@ class ChampionshipController extends Controller
             'championship_id'       => $championship->id,
             'user_id'               => $user->id,
             'championship_class_id' => $classId,
+            'racing_team_id'        => $team?->id,
         ]);
 
         $message = $championship->isRegistrationWaitlisted($user)
             ? 'The championship is full — you have been added to the waiting list.'
-            : 'You have been registered for the championship!';
+            : ($team ? 'Your team has been registered for the championship!' : 'You have been registered for the championship!');
 
         return back()->with('success', $message);
+    }
+
+    // Phase 4 (docs/championships/PLAN.md): requires_discord_membership was purely
+    // cosmetic (a warning string on the public page) until now. Returns null when
+    // registration may proceed, or a user-facing error message when it may not.
+    // A positive membership result is cached briefly per user+guild so repeated
+    // registration attempts (e.g. retrying after fixing something else) don't
+    // hit Discord's API every time; a negative/unknown result is never cached,
+    // so someone who just joined the server isn't stuck behind a stale "no."
+    private function discordMembershipFailure(Championship $championship, User $user): ?string
+    {
+        // Bypass the tenant scope deliberately — a driver checking whether they can
+        // register for a public championship isn't a member of that league (that's
+        // the whole point), so the plain $championship->league relation would
+        // silently resolve to null for them and skip this check entirely.
+        $league = $championship->league()->withoutTenantScope()->first();
+        if (!$league || !$league->requires_discord_membership) {
+            return null;
+        }
+
+        if (!$league->discord_guild_id) {
+            // League opted in but nobody configured the guild — an XCL/league setup
+            // gap, not something to block a driver's registration over.
+            Log::warning('League requires Discord membership but has no discord_guild_id set', ['league_id' => $league->id]);
+            return null;
+        }
+
+        $discord = $user->connectedAccount('discord');
+        if (!$discord) {
+            return 'Connect your Discord account on your profile before registering — ' . $league->name . ' requires Discord membership.';
+        }
+
+        $cacheKey = "discord-membership:{$league->discord_guild_id}:{$discord->provider_id}";
+
+        if (Cache::get($cacheKey)) {
+            return null;
+        }
+
+        $isMember = app(DiscordRoleService::class)->isGuildMember($league->discord_guild_id, $discord->provider_id);
+
+        if ($isMember === true) {
+            Cache::put($cacheKey, true, now()->addMinutes(10));
+            return null;
+        }
+
+        if ($isMember === false) {
+            return 'You must join ' . $league->name . "'s Discord server before registering."
+                . ($league->discord_invite_url ? ' Join here: ' . $league->discord_invite_url : '');
+        }
+
+        return "Couldn't verify your Discord membership right now — please try again in a moment.";
     }
 
     public function unregister(int $championship)

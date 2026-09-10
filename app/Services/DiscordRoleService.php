@@ -87,6 +87,72 @@ class DiscordRoleService
         }
     }
 
+    /**
+     * Is $discordUserId a member of $guildId? Generalizes the guild-scoped lookup
+     * `syncUser()` already does for XCL's own guild (Phase 4,
+     * docs/championships/PLAN.md) to an arbitrary league's guild. Returns null
+     * (not false) when the check couldn't actually be performed — no bot token
+     * configured, or a connection/unexpected-response error — so a caller can
+     * tell "not a member" apart from "couldn't verify," which matter for very
+     * different user-facing messages.
+     */
+    public function isGuildMember(string $guildId, string $discordUserId): ?bool
+    {
+        if (! config('services.discord.bot_token')) {
+            return null;
+        }
+
+        try {
+            $member = $this->http()->get("/guilds/{$guildId}/members/{$discordUserId}");
+        } catch (ConnectionException $e) {
+            Log::warning('Discord membership check: could not reach Discord', [
+                'guild_id'         => $guildId,
+                'discord_user_id'  => $discordUserId,
+                'error'            => $e->getMessage(),
+            ]);
+            return null;
+        }
+
+        if ($member->status() === 404) {
+            return false;
+        }
+
+        if (! $member->successful()) {
+            Log::warning('Discord membership check: unexpected response', [
+                'guild_id' => $guildId,
+                'status'   => $member->status(),
+            ]);
+            return null;
+        }
+
+        return true;
+    }
+
+    /**
+     * Has XCL's bot actually been invited into $guildId yet? Surfaced on the
+     * league edit screen so a manager gets a clear status instead of every
+     * membership check silently failing later. Same null-means-"couldn't check"
+     * convention as isGuildMember().
+     */
+    public function isBotInGuild(string $guildId): ?bool
+    {
+        if (! config('services.discord.bot_token')) {
+            return null;
+        }
+
+        try {
+            $res = $this->http()->get("/guilds/{$guildId}");
+        } catch (ConnectionException $e) {
+            return null;
+        }
+
+        if (in_array($res->status(), [403, 404], true)) {
+            return false;
+        }
+
+        return $res->successful() ? true : null;
+    }
+
     private function modifyRole(string $guildId, string $memberId, string $roleId, bool $add): void
     {
         // Discord's per-route rate limit for role add/remove is easily hit during a bulk

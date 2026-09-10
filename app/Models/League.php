@@ -15,7 +15,7 @@ class League extends Model
 
     protected $fillable = [
         'name', 'slug', 'logo', 'banner', 'primary_color', 'accent_color',
-        'description', 'discord_invite_url', 'website_url',
+        'description', 'discord_invite_url', 'discord_guild_id', 'website_url',
         'requires_discord_membership', 'status',
     ];
 
@@ -86,5 +86,27 @@ class League extends Model
     public function getBannerUrlAttribute(): ?string
     {
         return $this->banner ? Storage::disk('media')->url($this->banner) : null;
+    }
+
+    // Bot-invite (not user-OAuth) URL for this league's own Discord server — the
+    // bot-per-league direction decided for Phase 4 (docs/championships/PLAN.md).
+    // Inviting the bot only gets it into the guild; actually being able to read
+    // membership also requires XCL's bot application to have the "Server Members
+    // Intent" toggle enabled once, globally, in the Discord Developer Portal —
+    // that's an application-wide setting, not something a per-guild invite can grant.
+    public function discordBotInviteUrl(): ?string
+    {
+        $clientId = config('services.discord.client_id');
+        if (! $this->discord_guild_id || ! $clientId) {
+            return null;
+        }
+
+        return 'https://discord.com/oauth2/authorize?' . http_build_query([
+            'client_id'            => $clientId,
+            'scope'                => 'bot',
+            'permissions'          => 0,
+            'guild_id'             => $this->discord_guild_id,
+            'disable_guild_select' => 'true',
+        ]);
     }
 }

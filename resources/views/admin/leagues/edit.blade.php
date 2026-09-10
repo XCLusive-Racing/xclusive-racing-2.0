@@ -166,6 +166,36 @@
                     </div>
 
                     @if($isAdmin)
+                    <div class="mb-3">
+                        <label class="form-label">Discord Server (Guild) ID</label>
+                        <input type="text" name="discord_guild_id" value="{{ old('discord_guild_id', $league->discord_guild_id) }}"
+                               class="form-control @error('discord_guild_id') is-invalid @enderror" placeholder="e.g. 123456789012345678"
+                               style="font-family:monospace">
+                        <div class="form-text" style="font-size:.72rem;color:#9ca3af">
+                            Right-click the league's Discord server icon (Developer Mode on) → Copy Server ID. Needed for membership checks —
+                            the invite link above is just a "join" link and doesn't give XCL's bot access on its own.
+                        </div>
+                        @error('discord_guild_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+
+                    @if($league->discord_guild_id)
+                    <div class="mb-3 d-flex align-items-center gap-2 flex-wrap">
+                        @if($discordBotInGuild === true)
+                        <span class="badge fw-bold" style="background:#dcfce7;color:#166534;font-size:.7rem;padding:4px 10px;border-radius:6px">Bot installed</span>
+                        @elseif($discordBotInGuild === false)
+                        <span class="badge fw-bold" style="background:#fee2e2;color:#991b1b;font-size:.7rem;padding:4px 10px;border-radius:6px">Bot not in this server yet</span>
+                        @else
+                        <span class="badge fw-bold" style="background:#f3f4f6;color:#6b7280;font-size:.7rem;padding:4px 10px;border-radius:6px">Couldn't check right now</span>
+                        @endif
+                        @if($league->discordBotInviteUrl())
+                        <a href="{{ $league->discordBotInviteUrl() }}" target="_blank" rel="noopener"
+                           class="btn btn-sm fw-bold text-uppercase" style="background:#5865F2;color:#fff;font-size:.72rem">
+                            Invite bot to this server →
+                        </a>
+                        @endif
+                    </div>
+                    @endif
+
                     <div class="form-check mb-0">
                         <input class="form-check-input" type="checkbox" name="requires_discord_membership" id="requires_discord" value="1"
                                {{ old('requires_discord_membership', $league->requires_discord_membership) ? 'checked' : '' }}>

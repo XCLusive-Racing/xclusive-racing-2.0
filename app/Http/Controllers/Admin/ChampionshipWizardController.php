@@ -395,13 +395,58 @@ class ChampionshipWizardController extends Controller
         // Car class and driver cap are championship-wide and set once here — every
         // round reads them from the championship itself rather than asking again,
         // and registration (isFull(), requirementFailure()) already reads these
-        // same two real columns, not the settings blob.
+        // same two real columns, not the settings blob. is_multiclass is the real
+        // column the public registration flow (ChampionshipController::register())
+        // branches on — settings.format.multiclass_enabled alone was never wired
+        // to it, so a league championship's multiclass setup silently never took
+        // effect at registration until now.
         if ($step === 'format') {
-            $championship->car_class   = $settings['format']['car_class'] ?? null;
-            $championship->max_drivers = $settings['format']['max_entries'] ?? null;
+            $championship->car_class    = $settings['format']['car_class'] ?? null;
+            $championship->max_drivers  = $settings['format']['max_entries'] ?? null;
+            $championship->is_multiclass = (bool) ($settings['format']['multiclass_enabled'] ?? false);
         }
 
         $championship->save();
+
+        if ($step === 'format') {
+            $this->syncChampionshipClasses($championship, $settings['format']['classes'] ?? []);
+        }
+    }
+
+    // Keeps the real ChampionshipClass rows the public registration flow
+    // (ChampionshipController::register(), reused as-is per Phase 4's brief) reads
+    // in sync with the wizard's settings.format.classes JSON list. Matched by name
+    // rather than replace-all: championship_class_id cascades on delete
+    // (2026_06_15_000003_create_championship_registrations_table.php), so blowing
+    // away every class on each save would silently unregister every driver in it —
+    // only a class actually removed from the list should take its registrations
+    // with it.
+    private function syncChampionshipClasses(Championship $championship, array $classes): void
+    {
+        $existing = $championship->classes()->get()->keyBy('name');
+        $keepNames = [];
+
+        foreach ($classes as $i => $classData) {
+            $name = trim($classData['name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
+            $keepNames[] = $name;
+
+            $attrs = [
+                'car_class'   => !empty($classData['eligible_cars']) ? implode(', ', (array) $classData['eligible_cars']) : null,
+                'max_drivers' => $classData['max_entries'] ?? null,
+                'sort_order'  => $i,
+            ];
+
+            if ($existing->has($name)) {
+                $existing[$name]->update($attrs);
+            } else {
+                $championship->classes()->create(array_merge(['name' => $name], $attrs));
+            }
+        }
+
+        $championship->classes()->whereNotIn('name', $keepNames)->delete();
     }
 
     private function decodeList(?string $json, array $allowedKeys): array

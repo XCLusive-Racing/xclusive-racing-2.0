@@ -206,12 +206,54 @@ class Championship extends Model
         if ($this->max_drivers === null) {
             return false;
         }
-        return $this->registrations()->count() >= $this->max_drivers;
+        return $this->registrations()->where('is_spectator', false)->count() >= $this->max_drivers;
     }
 
+    public function spectatorSlots(): int
+    {
+        return (int) ($this->settings->format->spectator_slots ?? 0);
+    }
+
+    public function isSpectatorFull(): bool
+    {
+        $slots = $this->spectatorSlots();
+        if ($slots <= 0) {
+            return true;
+        }
+
+        return $this->registrations()->where('is_spectator', true)->count() >= $slots;
+    }
+
+    // Which entry-requirement thresholds gate registration — a league-owned
+    // championship (built through the wizard) reads its own settings.requirements;
+    // XCL's own native championship (league_id = XCL's system league, Phase 2.5)
+    // keeps reading the legacy flat columns exactly as before, since the wizard
+    // never touches them and the native admin form still writes to them directly.
+    public function requirementThresholds(): array
+    {
+        if ($this->league_id !== null && $this->league_id !== League::system()->id) {
+            return [
+                'sr'  => $this->settings->requirements->min_safety_rating ?? null,
+                'min' => $this->settings->requirements->min_xcl_rating_tier ?? null,
+            ];
+        }
+
+        return [
+            'sr'  => $this->sr_requirement,
+            'min' => $this->min_rating,
+        ];
+    }
+
+    // Registered directly, or a member of a team that's already registered
+    // (driver-swaps-enabled championships register the team, not each driver).
     public function isRegistered(User $user): bool
     {
-        return $this->registrations()->where('user_id', $user->id)->exists();
+        return $this->registrations()
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)
+                    ->orWhereIn('racing_team_id', $user->allRacingTeams()->pluck('id'));
+            })
+            ->exists();
     }
 
     public function waitlistEnabled(): bool
@@ -229,12 +271,12 @@ class Championship extends Model
             return false;
         }
 
-        $registration = $this->registrations()->where('user_id', $user->id)->first();
+        $registration = $this->registrations()->where('user_id', $user->id)->where('is_spectator', false)->first();
         if (!$registration) {
             return false;
         }
 
-        $rank = $this->registrations()->where('created_at', '<', $registration->created_at)->count();
+        $rank = $this->registrations()->where('is_spectator', false)->where('created_at', '<', $registration->created_at)->count();
 
         return $rank >= $this->max_drivers;
     }
@@ -245,7 +287,7 @@ class Championship extends Model
             return 0;
         }
 
-        return max(0, $this->registrations()->count() - $this->max_drivers);
+        return max(0, $this->registrations()->where('is_spectator', false)->count() - $this->max_drivers);
     }
 
     // Governs the registration form itself — status/registration_open still gate

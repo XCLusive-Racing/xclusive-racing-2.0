@@ -185,27 +185,62 @@
                         <p style="color:#6b7280;font-size:.875rem">Registration is not open yet.</p>
 
                         @elseif($championship->isRegistered(auth()->user()))
+                        @php $ownRegistration = $championship->registrations()->where('user_id', auth()->id())->first(); @endphp
                         @if($championship->isRegistrationWaitlisted(auth()->user()))
                         <p class="fw-bold mb-3" style="color:#f59e0b;font-size:.875rem">You are on the waiting list for this championship.</p>
                         @else
-                        <p class="text-white fw-bold mb-3" style="font-size:.875rem">You are registered for this championship.</p>
+                        <p class="text-white fw-bold mb-3" style="font-size:.875rem">
+                            @if($ownRegistration?->racing_team_id)
+                                Your team is registered for this championship.
+                            @else
+                                You are registered for this championship.
+                            @endif
+                        </p>
                         @endif
+                        @if($ownRegistration)
                         <form method="POST" action="{{ route('championships.unregister', $championship) }}" onsubmit="return confirm('Unregister from this championship?')">
                             @csrf @method('DELETE')
                             <button class="btn btn-sm fw-bold text-uppercase text-danger w-100" style="background:#fee2e2;border:1px solid #fca5a5;font-size:.75rem">
                                 Unregister
                             </button>
                         </form>
+                        @else
+                        <p style="color:#6b7280;font-size:.78rem" class="mb-0">Your team's owner registered you — only they can unregister the team.</p>
+                        @endif
 
                         @elseif(!$championship->registration_open || !$championship->registrationIsOpen())
                         <p style="color:#6b7280;font-size:.875rem">Registration is currently closed.</p>
 
-                        @elseif($championship->isFull() && !$championship->waitlistEnabled())
-                        <p style="color:#f59e0b;font-size:.875rem;font-weight:700">This championship is full.</p>
-
                         @else
+                        @php
+                            $driverSwaps    = $championship->settings->format->driver_swaps_enabled ?? false;
+                            $driverFull     = $championship->isFull() && !$championship->waitlistEnabled();
+                            $spectatorOpen  = $championship->spectatorSlots() > 0 && !$championship->isSpectatorFull();
+                            $ownedTeam      = $driverSwaps ? auth()->user()->ownedRacingTeams()->first() : null;
+                        @endphp
+
+                        @if($driverFull && !$spectatorOpen)
+                        <p style="color:#f59e0b;font-size:.875rem;font-weight:700">This championship is full.</p>
+                        @endif
+
+                        @if(!$driverFull)
                         <form method="POST" action="{{ route('championships.register', $championship) }}">
                             @csrf
+                            @if($driverSwaps)
+                            <div class="mb-3">
+                                <label class="form-label text-white" style="font-size:.82rem">Register as</label>
+                                @if($ownedTeam)
+                                <select name="racing_team_id" class="form-select form-select-sm"
+                                        style="background:#1f2937;border-color:#374151;color:#e5e7eb">
+                                    <option value="">Just me (no team)</option>
+                                    <option value="{{ $ownedTeam->id }}">My team — {{ $ownedTeam->name }}</option>
+                                </select>
+                                @else
+                                <p style="color:#6b7280;font-size:.78rem" class="mb-0">This championship allows driver swaps, but you don't own a racing team — registering as an individual.</p>
+                                @endif
+                            </div>
+                            @endif
+
                             @if($championship->is_multiclass && $championship->classes->isNotEmpty())
                             <div class="mb-3">
                                 <label class="form-label text-white" style="font-size:.82rem">Select Class</label>
@@ -234,6 +269,18 @@
                                 {{ $championship->isFull() ? 'Join Waiting List' : 'Register Now' }}
                             </button>
                         </form>
+                        @endif
+
+                        @if($spectatorOpen)
+                        <form method="POST" action="{{ route('championships.register', $championship) }}" class="{{ $driverFull ? '' : 'mt-2' }}">
+                            @csrf
+                            <input type="hidden" name="is_spectator" value="1">
+                            <button type="submit" class="btn btn-sm fw-bold text-uppercase w-100"
+                                    style="background:transparent;border:1px solid #374151;color:#9ca3af;font-size:.75rem">
+                                Register as Spectator
+                            </button>
+                        </form>
+                        @endif
                         @endif
                     </div>
                 </div>

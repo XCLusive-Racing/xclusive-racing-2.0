@@ -11,18 +11,16 @@ up without re-deriving context.
 
 ## Current State
 
-- **Phase in progress:** none — **Phase 2.5 ("XCL becomes a first-class
-  League") and Phase 3 ("Rounds, event generation and league scoped
-  servers") are both complete (2026-09-10)**, see their own entries below
-  for what shipped, including a dead-schema finding
-  (`settings.sessions.track_temp`/`cloud_level`) that still needs a
-  decision. **Phase 4 ("Registrations, teams, driver swaps and entry
-  requirements") is next** and has not been started — see its Discord
-  bullet below for the bot-per-league direction already decided. The
-  points-scheme slice of Phase 5 was pulled forward and completed out of
-  order on 2026-09-09, on an explicit, self-contained task naming it
-  directly — see that phase's own entry below for what shipped and what's
-  still open there.
+- **Phase in progress:** none — **Phases 2.5, 3 and 4 are all complete
+  (2026-09-10)**, see their own entries below for what shipped, including
+  two real bugs found and fixed along the way (a missing
+  `ChampionshipClass::isFull()`, and the wizard's multiclass setting never
+  reaching the real `is_multiclass` column) and a dead-schema finding
+  (`settings.sessions.track_temp`/`cloud_level`) still needing a decision.
+  **Phase 6 ("Stewarding, penalties and results adjustment") is next** —
+  Phase 5 is done except two small loose ends noted in its own entry
+  (multiclass-standings parameterisation, the `max_missed_rounds`
+  investigation), neither blocking Phase 6.
 - **Also completed out of order (2026-09-09), same session:** the Basics step
   gained a Server default (`championships.ftp_server_id`) and a Schedule
   group (`start_date`/`recurrence`/`day_of_week`/`time_of_day` in
@@ -677,61 +675,102 @@ persistence itself, which the resumable-draft requirement makes necessary.
       and the wizard page renders the button) — the queue is faked in tests,
       no real FTP connection attempted.
 
-## Phase 4 — Registrations, teams, driver swaps and entry requirements
+## Phase 4 — Registrations, teams, driver swaps and entry requirements ✅ complete (2026-09-10)
 
-- [ ] Reuse `RaceRegistration` (per-round individual signup) and
-      `RaceTeamEntry`/`RacingTeam` (team entry + driver-swap roster,
-      `app/Models/RaceTeamEntry.php`, `app/Models/RacingTeam.php`) for
-      round-level entries — these already model owner/members, car
-      number/model, starting driver, and swap roster.
-- [ ] Extend the championship-level registration concept
-      (`app/Models/ChampionshipRegistration.php`, currently individual-only)
-      to optionally reference a `RacingTeam`/team entry for championships
-      where driver swaps are enabled, so a team doesn't have to re-enter per
-      round.
-- [ ] Source `User::requirementFailure()`'s
-      (`app/Models/User.php:46`) thresholds from the championship's `settings`
-      schema (Phase 2) instead of the ad hoc `sr_requirement`/`min_rating`/
-      `max_rating` columns used today.
-- [ ] Extend `Championship::isFull()`/registration logic
-      (`app/Models/Championship.php:85-96`) to track a separate spectator-slot
-      pool alongside `max_drivers`.
-- [ ] Design and build Discord-membership-as-entry-requirement — genuinely new;
-      no per-league guild-membership check exists (`SyncDiscordRankRole` only
-      syncs XCL's own single guild). **Direction decided 2026-09-10** (see
-      the resolved Open Question below): an XCL-owned bot gets invited into
-      each league's own Discord server, rather than requesting a broader
-      OAuth scope on each user's personally-connected account. Concretely:
-      - `leagues` needs a new `discord_guild_id` column — it was in this
-        plan's original Phase 1 sketch but was dropped from what actually
-        shipped; only `discord_invite_url` and the currently-cosmetic
-        `requires_discord_membership` flag exist today
-        (`resources/views/championships/index.blade.php:37-41` only
-        renders a warning string, nothing blocks registration yet).
-      - A bot-invite flow: a Discord OAuth2 **bot-invite** URL (not a
-        user-OAuth flow) pre-filled with the league's guild id and
-        `View Server Members` permission, surfaced on the league edit
-        screen, plus a lightweight "is the bot actually in this guild yet"
-        check (`GET /guilds/{id}` with the bot token; 403/404 = not
-        installed).
-      - Generalize `App\Services\DiscordRoleService`'s member-lookup call
-        (`GET /guilds/{guild}/members/{user}`, 404 = not a member — the
-        exact call already exists) to take an arbitrary guild id instead of
-        reading `config('services.discord.guild_id')`.
-      - Wire the check into registration with a short-TTL cache per
-        user+guild, so a registration attempt doesn't hit Discord's API on
-        every load — same pattern as `User::requirementFailure()`'s other
-        threshold checks (the "source thresholds from settings" bullet
-        above).
-      - Reusable as-is: `ConnectedAccount`/`User::connectedAccount('discord')`
-        for the user's Discord identity (snowflake only — Socialite never
-        keeps an OAuth token around, confirming a per-user API approach was
-        never viable anyway), and the existing `ShouldQueue` + database
-        queue setup.
-- [ ] League-scope the existing `ChampionshipClass`/class-picker pattern
-      (`app/Models/ChampionshipClass.php`,
-      `AdminChampionshipController::syncClasses`) — no new model needed for
-      multiclass entry.
+- [x] **Found while wiring this up, fixed in passing:** `ChampionshipClass` had
+      no `isFull()` method at all — `ChampionshipController::register()`'s
+      multiclass branch would have thrown a fatal error the first time anyone
+      actually tried to register into a full class, on *any* multiclass
+      championship, league or native. Added, mirroring `Championship::isFull()`.
+- [x] **Found while wiring multiclass, fixed the same way:** the wizard's
+      Format step wrote `settings.format.multiclass_enabled`/`classes` (JSON)
+      but never touched the real `is_multiclass` column or created real
+      `ChampionshipClass` rows — the two things
+      `ChampionshipController::register()` actually branches on. A league
+      championship's multiclass setup silently never took effect at
+      registration. `ChampionshipWizardController::applyStepSettings()` now
+      also sets `is_multiclass` and calls a new
+      `syncChampionshipClasses()` — matched by **name**, not replace-all:
+      `championship_class_id` cascades on delete
+      (`2026_06_15_000003_create_championship_registrations_table.php`), so
+      a naive delete-and-recreate on every save would have silently
+      unregistered every driver in an untouched class. Only a class actually
+      removed from the list takes its registrations with it. Covered by
+      `tests/Feature/ChampionshipRegistrationTest.php`.
+- [x] Source `User::requirementFailure()`'s thresholds from the championship's
+      `settings.requirements` for a league-owned championship;
+      `Championship::requirementThresholds()` picks the source (settings vs.
+      the legacy flat `sr_requirement`/`min_rating` columns) based on whether
+      `league_id` is XCL's own system league or a real one — same
+      extend-don't-fork branch `buildDriverStandings()` already uses for
+      points schemes. XCL's own native championships are completely
+      unaffected.
+- [x] Spectator slot pool: new `championship_registrations.is_spectator`
+      column (`2026_09_10_000004_...`); `Championship::isFull()` now only
+      counts non-spectator registrations, `spectatorSlots()`/`isSpectatorFull()`
+      read `settings.format.spectator_slots` (already existed on the schema,
+      never wired to anything). The public registration form
+      (`resources/views/championships/show.blade.php`) shows a separate
+      "Register as Spectator" action that stays available even once driver
+      slots are full — a spectator isn't racing, so no SR/rating requirement
+      applies to them either.
+- [x] Championship-level team registration for driver-swaps-enabled
+      championships: new `championship_registrations.racing_team_id`
+      (same migration as `is_spectator`) — a team's **owner** registers the
+      whole team in one row (same "owner registers, not any member" rule
+      `RaceController::registerTeam()` already uses per-round), and
+      `Championship::isRegistered()` now also recognises any member of an
+      already-registered team. **Deliberately not built in this pass**: true
+      roster carry-over into each round's own `RaceTeamEntry` — a team still
+      registers separately at the championship level and per round for now;
+      only the championship-level "don't ask individually" gate is done.
+- [x] Discord-membership-as-entry-requirement, direction from the prior
+      session (bot invited into each league's own guild, not a broader
+      user-OAuth scope) fully built:
+      - `leagues.discord_guild_id` (`2026_09_10_000005_...`), admin-only
+        editable (same gate as `requires_discord_membership`).
+      - `League::discordBotInviteUrl()` — a Discord OAuth2 **bot-invite**
+        link, not a user-login flow. Note recorded for whoever operates
+        this: the invite alone doesn't grant membership-read access — XCL's
+        bot application also needs the "Server Members Intent" toggle
+        enabled **once, globally**, in the Discord Developer Portal; that's
+        an application-wide setting, not something a per-guild invite
+        controls.
+      - `DiscordRoleService::isGuildMember(guildId, discordUserId): ?bool`
+        and `isBotInGuild(guildId): ?bool` — generalized the existing
+        single-guild lookup; `null` (not `false`) means "couldn't check"
+        (no bot token configured, connection error, unexpected response),
+        kept distinct from a real negative because the two need very
+        different user-facing messages. The league edit screen shows a live
+        "Bot installed / not in this server / couldn't check" badge next to
+        the invite link.
+      - Registration enforcement in `ChampionshipController::register()`
+        (`discordMembershipFailure()`): no connected Discord account → blocked
+        with a "connect it first" message; guild membership confirmed →
+        proceed, cached 10 minutes per user+guild so repeated attempts don't
+        re-hit Discord's API; confirmed *not* a member → blocked with the
+        league's invite link; verification failed (`null`) → blocked with a
+        "try again in a moment" message, never silently let through. A
+        league that turned the flag on but never configured a guild id
+        fails open (logged as a misconfiguration) rather than blocking real
+        registrations over someone else's setup gap.
+      - **Real bug found and fixed while testing this**: the naive
+        `$championship->league` relation resolves to `null` for the exact
+        audience this check is for — a driver who isn't a member of that
+        league — because `League`'s own tenant key is `id` and `TenantScope`
+        scopes it same as everything else. Reads
+        `$championship->league()->withoutTenantScope()->first()` instead,
+        same reasoning as every other public-page league read in this file.
+- [x] `ChampionshipClass` needed no league-scoping of its own — it has no
+      `league_id`/`Tenantable` at all, and is implicitly scoped through its
+      parent `Championship` (already tenant-scoped) via `championship_id`.
+      What actually needed fixing was the wizard→real-rows sync above, not a
+      missing scope.
+- **Not done in this pass, explicitly deferred**: reusing
+  `RaceRegistration`/`RaceTeamEntry` for round-level team entries was
+  already true before this phase (rounds are just `Race` rows, unchanged);
+  what's still open is the "don't re-enter per round" carry-over noted
+  above.
 
 ## Phase 5 — Points schemes, drop rounds and multiclass standings
 
