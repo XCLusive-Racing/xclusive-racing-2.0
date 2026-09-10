@@ -9,7 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('ftp_servers', function (Blueprint $table) {
-            // Null means the server belongs to XCL itself, not any league.
+            // Historical note: this column was nullable with null meaning "belongs
+            // to XCL itself" until Phase 2.5 (docs/championships/PLAN.md), which
+            // gave XCL its own real League row and backfilled every null here to
+            // it — see 2026_09_10_000002_create_xcl_league_and_backfill_tenants.
             $table->foreignId('league_id')->nullable()->after('id')->constrained()->nullOnDelete();
         });
     }

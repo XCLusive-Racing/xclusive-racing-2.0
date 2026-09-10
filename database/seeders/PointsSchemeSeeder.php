@@ -2,12 +2,13 @@
 
 namespace Database\Seeders;
 
+use App\Models\League;
 use App\Models\PointsScheme;
 use App\Services\PointsSchemeGenerator;
 use Illuminate\Database\Seeder;
 
-// XCL-provided templates (league_id null, is_template true) — copied into a
-// league's own scheme, never referenced or edited directly (see
+// XCL-provided templates (owned by XCL's own League row, is_template true) —
+// copied into a league's own scheme, never referenced or edited directly (see
 // PointsScheme::copyFor(), PointsSchemePolicy). Every real-world table below
 // was checked against a live source before seeding rather than written from
 // memory — the exact search/fetch used is noted per template so the numbers
@@ -17,6 +18,8 @@ class PointsSchemeSeeder extends Seeder
 {
     public function run(): void
     {
+        $xclLeagueId = League::system()->id;
+
         $templates = [
             // Source: web search "Formula 1 points system 2025", cross-checked
             // against planetf1.com/RacingNews365/Crash.net coverage of the 2025
@@ -147,7 +150,7 @@ class PointsSchemeSeeder extends Seeder
         // Console context, no authenticated user — bypass the tenant scope explicitly.
         foreach ($templates as $data) {
             PointsScheme::withoutTenantScope()->updateOrCreate(
-                ['name' => $data['name'], 'league_id' => null],
+                ['name' => $data['name'], 'league_id' => $xclLeagueId],
                 array_merge($data, ['config' => null, 'is_template' => true])
             );
         }
@@ -166,7 +169,7 @@ class PointsSchemeSeeder extends Seeder
         $fullFieldTable = PointsSchemeGenerator::curved(30, 1, $fullFieldDepth, 'gentle');
 
         PointsScheme::withoutTenantScope()->updateOrCreate(
-            ['name' => 'Full Field Participation', 'league_id' => null],
+            ['name' => 'Full Field Participation', 'league_id' => $xclLeagueId],
             [
                 'type'               => 'curved',
                 'description'        => 'Everyone who finishes scores something, tapering gently from the win to the back of the field.',

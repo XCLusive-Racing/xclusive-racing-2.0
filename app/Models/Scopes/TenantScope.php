@@ -20,17 +20,12 @@ class TenantScope implements Scope
         $leagueIds = $user ? $user->leagueIds() : collect();
         $column    = $model->qualifyColumn($model->getTenantKeyName());
 
-        $builder->where(function (Builder $query) use ($column, $leagueIds) {
-            // A null tenant key means the row belongs to XCL itself (e.g. an FtpServer
-            // XCL owns directly, not any league), so it stays visible to everyone —
-            // isolation only needs to bite on rows that actually belong to a league.
-            // For models keyed by their own id (League itself), this branch never
-            // matches anything, since a primary key is never null.
-            $query->whereNull($column);
-
-            if ($leagueIds->isNotEmpty()) {
-                $query->orWhereIn($column, $leagueIds);
-            }
-        });
+        // Phase 2.5 (docs/championships/PLAN.md): XCL is a real League row now, not
+        // `league_id = NULL` — there is no more universally-visible null tenant.
+        // Someone with no league membership at all sees zero league-owned rows,
+        // XCL's own included; a read site that must show XCL's own data to everyone
+        // regardless of tenant (e.g. RaceController::register() loading the race's
+        // FTP server) does so via an explicit ->withoutTenantScope() of its own.
+        $builder->whereIn($column, $leagueIds->isNotEmpty() ? $leagueIds->all() : [0]);
     }
 }

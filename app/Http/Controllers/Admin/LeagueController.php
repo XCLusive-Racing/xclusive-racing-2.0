@@ -87,7 +87,7 @@ class LeagueController extends Controller
         // or its manager) — but the cross-league picker of XCL's other unassigned
         // servers, and every other league's own list, stays admin-only.
         $servers           = $canEdit ? $league->ftpServers()->orderBy('name')->get() : collect();
-        $unassignedServers = $isAdmin ? FtpServer::withoutTenantScope()->whereNull('league_id')->orderBy('name')->get() : collect();
+        $unassignedServers = $isAdmin ? FtpServer::withoutTenantScope()->where('league_id', League::system()->id)->orderBy('name')->get() : collect();
 
         return view('admin.leagues.edit', compact('league', 'isAdmin', 'canEdit', 'members', 'users', 'servers', 'unassignedServers'));
     }
@@ -141,6 +141,7 @@ class LeagueController extends Controller
     public function archive(Request $request, League $league)
     {
         abort_unless($request->user()->canManage(), 403);
+        abort_if($league->is_system, 403, 'The XCL league cannot be archived.');
 
         $league->update(['status' => 'archived']);
         AuditLogger::record($request->user(), $league, 'league.archived');
@@ -212,7 +213,7 @@ class LeagueController extends Controller
         abort_unless($user->canManage() || $user->managesLeague($league), 403);
         abort_unless($server->league_id === $league->id, 404);
 
-        $server->update(['league_id' => null]);
+        $server->update(['league_id' => League::system()->id]);
 
         AuditLogger::record($user, $league, 'league.server_unassigned', ['ftp_server_id' => $server->id]);
 

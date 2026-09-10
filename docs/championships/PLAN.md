@@ -12,16 +12,13 @@ up without re-deriving context.
 ## Current State
 
 - **Phase in progress:** none — **Phase 2.5 ("XCL becomes a first-class
-  League")** is next and has not been started; it was inserted ahead of
-  Phase 3 on 2026-09-10 once the three Open Questions below were resolved
-  (see their "Resolved" notes) — decision 1 there reopens part of what
-  Phase 1/2 already shipped, so it should land before Phase 3 builds
-  further on the tenant model. Phase 3 ("Rounds, event generation and
-  league scoped servers") remains next after that and has not been
-  started. The points-scheme slice of Phase 5 was pulled forward and
-  completed out of order on 2026-09-09, on an explicit, self-contained
-  task naming it directly — see that phase's own entry below for what
-  shipped and what's still open there. Phase 3/4 themselves are untouched.
+  League") is complete (2026-09-10)**, see that phase's own entry below for
+  what shipped. **Phase 3 ("Rounds, event generation and league scoped
+  servers") is next** and has not been started. The points-scheme slice of
+  Phase 5 was pulled forward and completed out of order on 2026-09-09, on
+  an explicit, self-contained task naming it directly — see that phase's
+  own entry below for what shipped and what's still open there. Phase 3/4
+  themselves are untouched.
 - **Also completed out of order (2026-09-09), same session:** the Basics step
   gained a Server default (`championships.ftp_server_id`) and a Schedule
   group (`start_date`/`recurrence`/`day_of_week`/`time_of_day` in
@@ -462,67 +459,96 @@ pattern as the race wizard's `classes_json` (add/remove rows in JS, serialize
 to a hidden field on submit). The one deliberate divergence is per-step
 persistence itself, which the resumable-draft requirement makes necessary.
 
-## Phase 2.5 — XCL becomes a first-class League
+## Phase 2.5 — XCL becomes a first-class League ✅ complete (2026-09-10)
 
 > Inserted 2026-09-10, after resolving the "should XCL itself become a
-> League row" Open Question below. `TenantScope` currently treats
-> `league_id IS NULL` as "belongs to XCL, visible to everyone"
-> (`app/Models/Scopes/TenantScope.php:23-34`) — this phase replaces that
-> null-bypass with a real, seeded XCL `League` row, so nothing in the
-> pipeline is special-cased on null any more. Do this before continuing
-> Phase 3 — Phase 3 extends league-scoping on `FtpServer`/rounds, which is
-> simpler to build once the tenant model is final.
+> League row" Open Question below. `TenantScope` used to treat
+> `league_id IS NULL` as "belongs to XCL, visible to everyone" — this
+> phase replaced that null-bypass with a real, seeded XCL `League` row, so
+> nothing in the pipeline is special-cased on null any more. Landed before
+> continuing Phase 3, which is simpler to build now the tenant model is
+> final.
 
-- [ ] Seed an "XCLusive Racing" `League` row. Decide how it's protected
-      from accidental deletion (a new `is_system` boolean, or a policy
-      guard blocking archive/delete on a known id) — needed before the
-      backfill below, since `points_schemes.league_id` uses
-      `cascadeOnDelete()` (`database/migrations/2026_09_08_000011_create_points_schemes_table.php:13-14`),
-      unlike `ftp_servers`/`championships` (`nullOnDelete()`). That's inert
-      today because `NULL` never cascades — once XCL templates point at a
-      real, deletable `League` row, deleting it would cascade-delete every
-      seeded template. Fix by switching this FK to `nullOnDelete()`, or by
-      relying on the system-league delete guard.
-- [ ] Backfill migration: every `league_id IS NULL` row on `ftp_servers`,
-      `championships`, `points_schemes` → XCL's real league id.
-- [ ] Remove `TenantScope`'s `whereNull($column)` branch
-      (`app/Models/Scopes/TenantScope.php:29`) now that nothing is
-      genuinely null for "belongs to XCL" — keep the column nullable for a
-      true future "unowned" edge case, just stop treating null as meaning
-      XCL.
-- [ ] **Highest-risk regression, fix explicitly:**
-      `RaceController::register()`/`registerTeam()`
-      (`app/Http/Controllers/RaceController.php:155,175,272,302`) load
-      `$race->ftpServer` with no `withoutTenantScope()` and no null-check —
-      they only work today because of the null-bypass (an ordinary driver,
-      member of no league, still needs to see XCL's own server to get its
-      connection details in their registration-confirmation message). Once
-      XCL's servers carry a real `league_id`, this relation load must
-      bypass the tenant scope explicitly, the same way
-      `Championship::pointsScheme()` already does for its own public-read
-      case.
-- [ ] Fix the other null-based queries found during exploration:
-      `Admin\LeagueController::edit()` (`app/Http/Controllers/Admin/LeagueController.php:90`,
-      `FtpServer::withoutTenantScope()->whereNull('league_id')` → `where('league_id', $xclLeagueId)`),
-      `Admin\LeagueController::unassignServer()` (`app/Http/Controllers/Admin/LeagueController.php:215`,
-      writes `league_id => null` to mean "back to XCL" → write the real id
-      instead), and `Admin\LeagueFtpServerController::index()`
-      (`app/Http/Controllers/Admin/LeagueFtpServerController.php:20`,
-      `whereNotNull('league_id')` → `where('league_id', '!=', $xclLeagueId)`).
-- [ ] Re-point `database/seeders/PointsSchemeSeeder.php`'s `updateOrCreate`
-      match key (currently `league_id => null`, lines ~150/169) to the
-      XCL league id, and sequence it **after** a new seeding step creates
-      the XCL league row — `LeagueSeeder`/`DatabaseSeeder` currently seed
-      NLRL/SRC/EER only, nothing seeds "XCL" itself.
-- [ ] Update the now-stale "null means XCL's own" comments in
+- [x] Seeded a permanent "XCLusive Racing" `League` row (`slug`
+      `xclusive-racing`), protected from accidental deletion via a new
+      `is_system` boolean (`database/migrations/2026_09_10_000001_add_is_system_to_leagues_table.php`,
+      deliberately absent from `League::$fillable`) — `Admin\LeagueController::archive()`
+      now `abort_if($league->is_system, 403, ...)`. `points_schemes.league_id`
+      keeps its `cascadeOnDelete()` FK as-is: harmless, since no route can
+      hard-delete a `League` at all (`archive()` only flips `status`) and
+      that one route is now guarded. `League::system()` is the one place
+      that resolves this row (`withoutTenantScope()->where('is_system', true)->firstOrFail()`).
+- [x] Backfill migration
+      (`database/migrations/2026_09_10_000002_create_xcl_league_and_backfill_tenants.php`):
+      creates the row (idempotent) and updates every `league_id IS NULL`
+      row on `ftp_servers`, `championships`, `points_schemes` to it. Raw
+      `DB::table()`, not Eloquent — those models' own `TenantScope` would
+      otherwise hide rows from this no-auth migration context. Verified
+      against the real dev DB after running: 0 null rows left on all
+      three tables.
+- [x] Removed `TenantScope`'s null-bypass branch entirely
+      (`app/Models/Scopes/TenantScope.php`) — now
+      `whereIn($column, $leagueIds->isNotEmpty() ? $leagueIds->all() : [0])`.
+      Someone with no league membership at all now sees zero league-owned
+      rows via a plain scoped query, XCL's own included, matching how
+      `League` itself already behaved for a league-less user.
+- [x] **Regression sites fixed** (found via two research passes plus a
+      direct follow-up grep, then verified against real dev data through
+      read-only Tinker checks — see verification notes below):
+      - `RaceController::register()`/`registerTeam()`
+        (`app/Http/Controllers/RaceController.php`) — `$race->load('ftpServer')`
+        had no scope bypass; a driver's registration-confirmation message
+        (server name/password) would have silently broken for everyone
+        once XCL's servers stopped being null. Now
+        `$race->load(['ftpServer' => fn ($q) => $q->withoutTenantScope()])`.
+      - `RaceController::show()` — the public race page's practice-server
+        "is live" banner reads `$ps->practiceServer->ftpServer->name`;
+        fixed the same way via a nested eager-load constraint on
+        `practiceServerSession.practiceServer.ftpServer`.
+      - **Found beyond the original plan, while verifying:**
+        `PushPracticeServerConfigJob::handle()`
+        (`app/Jobs/PushPracticeServerConfigJob.php`) — already bypassed
+        the scope for `practiceServer.ftpServer`, but
+        `PracticeServerConfigService::configuration()`/`eventRules()`/`assistRules()`
+        separately lazy-load `$race->ftpServer` (the race's *own* assigned
+        server, a different relation) with no bypass at all — would have
+        thrown once that lazy load returned null in this no-auth queued-job
+        context. Fixed by adding `'race.ftpServer' => fn ($q) => $q->withoutTenantScope()`
+        to the job's own eager-load call.
+- [x] Fixed the other null-based queries found during exploration:
+      `Admin\LeagueController::edit()`'s unassigned-servers picker (now
+      `where('league_id', League::system()->id)`),
+      `Admin\LeagueController::unassignServer()` (now writes
+      `League::system()->id` instead of `null`), and
+      `Admin\LeagueFtpServerController::index()`'s cross-league list (now
+      `where('league_id', '!=', League::system()->id)`).
+- [x] Re-pointed `database/seeders/PointsSchemeSeeder.php`'s `updateOrCreate`
+      match key to `League::system()->id` — no seeder change needed to
+      create the XCL row itself, since migrations (which create it) always
+      run before seeders in any `migrate --seed` flow.
+- [x] Updated the now-historical "null means XCL's own" comments in
       `database/migrations/2026_09_08_000005_add_league_id_to_ftp_servers_table.php`,
       `..._000010_add_league_fields_to_championships_table.php`, and
-      `..._000011_create_points_schemes_table.php`.
-- [ ] Update `tests/Feature/LeagueTenantIsolationTest.php`'s "plain driver
-      still sees XCL's own null-league FTP server" test to use the real
-      XCL league instead of `league_id => null`; re-run the whole file
-      before/after to confirm isolation still holds once the null-bypass
-      is gone.
+      `..._000011_create_points_schemes_table.php` to point at this phase's
+      migration instead.
+- [x] Updated `tests/Feature/LeagueTenantIsolationTest.php`'s null-bypass
+      test — it now asserts the *opposite* on purpose: a plain driver's
+      scoped `FtpServer::find()` returns `null` for XCL's own server too
+      (only an explicit `withoutTenantScope()` read resolves it), matching
+      the new design. Also fixed two count assertions
+      (`test_admin_sees_every_league`, `test_console_context_without_a_user_sees_no_leagues_unless_bypassed`)
+      that undercounted by one once the XCL system league exists in every
+      migrated DB. Full suite: 34/35 passing (only the pre-existing,
+      unrelated `ExampleTest` fails, as already documented above).
+- **Verification beyond the test suite:** read-only Tinker checks against
+  the real dev DB (no writes left behind) confirmed both fixed regression
+  sites resolve correctly for a driver with zero league memberships —
+  `RaceController`'s `ftpServer` bypass returns the real XCL server and its
+  `AccServerConfigService::settings()` config, and the practice-server
+  job's `race.ftpServer`/`practiceServer.ftpServer` eager loads both
+  resolve. A `git grep` sweep for `->ftpServer`/`Championship::`/
+  `$race->championship` across `app/` turned up no further un-bypassed
+  reads reachable by a guest or league-less driver.
 - **No change needed, already safe:** `PushGPortalConfigs`,
   `ImportGportalResults`, `PushPracticeServerConfigJob` already call
   `withoutTenantScope()` unconditionally (the Phase 1 fix, see the

@@ -17,7 +17,7 @@ class LeagueFtpServerController extends Controller
     public function index()
     {
         $servers = FtpServer::withoutTenantScope()
-            ->whereNotNull('league_id')
+            ->where('league_id', '!=', League::system()->id)
             ->with('league')
             ->orderBy('league_id')
             ->orderBy('name')

@@ -77,7 +77,8 @@ class LeagueTenantIsolationTest extends TestCase
         $admin = $this->makeAdmin();
         $this->actingAs($admin);
 
-        $this->assertCount(2, League::all());
+        // +1 for the XCL system league every migration run creates (Phase 2.5).
+        $this->assertCount(3, League::all());
     }
 
     public function test_console_context_without_a_user_sees_no_leagues_unless_bypassed(): void
@@ -86,7 +87,8 @@ class LeagueTenantIsolationTest extends TestCase
 
         // No actingAs() — simulates a console/job context with no authenticated user.
         $this->assertCount(0, League::all());
-        $this->assertCount(1, League::withoutTenantScope()->get());
+        // +1 for the XCL system league every migration run creates (Phase 2.5).
+        $this->assertCount(2, League::withoutTenantScope()->get());
     }
 
     // --- HTTP routes: cross-league access must 404, not 403 ---
@@ -195,21 +197,26 @@ class LeagueTenantIsolationTest extends TestCase
         $this->assertNotNull(FtpServer::find($server->id));
     }
 
-    // XCL's own servers (league_id null) must stay visible to ordinary members —
-    // isolation exists to separate leagues from each other, not to hide XCL's own
-    // shared infrastructure from everyone who isn't in a league.
-    public function test_a_plain_driver_still_sees_xcls_own_null_league_ftp_server(): void
+    // Since Phase 2.5, XCL is a real League row, not `league_id = NULL` — so it is
+    // no longer special-cased by the scope itself. A plain driver with no league
+    // membership at all sees zero league-owned rows via a scoped query, XCL's own
+    // included, exactly like League itself already behaved. Anywhere that must
+    // still show XCL's own data to everyone regardless of tenant (e.g.
+    // RaceController::register() loading a race's FTP server) does so via an
+    // explicit ->withoutTenantScope() at that read site, not through this scope.
+    public function test_a_plain_driver_does_not_see_xcls_own_ftp_server_via_a_scoped_query(): void
     {
         $xclServer = FtpServer::create([
             'name' => 'XCL Server', 'host' => '1.2.3.4', 'port' => 21,
             'username' => 'u', 'password' => 'p', 'path' => '/results',
-            'server_type' => 'scheduled', 'league_id' => null,
+            'server_type' => 'scheduled', 'league_id' => League::system()->id,
         ]);
 
         $driver = User::factory()->create();
         $this->actingAs($driver);
 
-        $this->assertNotNull(FtpServer::find($xclServer->id));
+        $this->assertNull(FtpServer::find($xclServer->id));
+        $this->assertNotNull(FtpServer::withoutTenantScope()->find($xclServer->id));
     }
 
     public function test_a_plain_driver_cannot_see_a_leagues_ftp_server(): void

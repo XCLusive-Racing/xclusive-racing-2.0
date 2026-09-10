@@ -35,7 +35,13 @@ class RaceController extends Controller
 
     public function show(Race $race)
     {
-        $race->load(['raceClasses', 'registrations.user', 'registrations.raceClass', 'registrations.teamEntry.team', 'raceResults.user', 'eventFormat', 'teamEntries', 'practiceServerSession']);
+        $race->load([
+            'raceClasses', 'registrations.user', 'registrations.raceClass', 'registrations.teamEntry.team',
+            'raceResults.user', 'eventFormat', 'teamEntries',
+            // Same tenant-scope bypass as ftpServer above — a guest viewing this page
+            // must still see the practice server's name regardless of league.
+            'practiceServerSession.practiceServer.ftpServer' => fn ($q) => $q->withoutTenantScope(),
+        ]);
         $isRegistered   = false;
         $myRegistration = null;
         $userTeam        = null;
@@ -152,7 +158,11 @@ class RaceController extends Controller
             }
         }
 
-        $race->load('ftpServer');
+        // The registering driver must see the server's connection details regardless
+        // of their own league membership (most of the time this is XCL's own server,
+        // which is a real, tenant-scoped League row since Phase 2.5) — bypass
+        // explicitly rather than relying on the scope to let it through.
+        $race->load(['ftpServer' => fn ($q) => $q->withoutTenantScope()]);
 
         try {
             DB::transaction(function () use ($race, $raceClassId) {
@@ -269,7 +279,11 @@ class RaceController extends Controller
             }
         }
 
-        $race->load('ftpServer');
+        // The registering driver must see the server's connection details regardless
+        // of their own league membership (most of the time this is XCL's own server,
+        // which is a real, tenant-scoped League row since Phase 2.5) — bypass
+        // explicitly rather than relying on the scope to let it through.
+        $race->load(['ftpServer' => fn ($q) => $q->withoutTenantScope()]);
 
         try {
             DB::transaction(function () use ($race, $team, $selectedIds, $users, $validated, $startingDriverId) {

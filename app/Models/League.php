@@ -23,6 +23,7 @@ class League extends Model
     {
         return [
             'requires_discord_membership' => 'boolean',
+            'is_system'                   => 'boolean',
         ];
     }
 
@@ -30,6 +31,16 @@ class League extends Model
     public function getTenantKeyName(): string
     {
         return 'id';
+    }
+
+    // XCL's own permanent League row (Phase 2.5 — see docs/championships/PLAN.md),
+    // replacing the old "league_id = NULL means XCL's own" convention. Bypasses the
+    // tenant scope deliberately: this row must resolve for any caller — console
+    // commands, unauthenticated visitors, a league manager outside XCL alike — the
+    // row itself carries no credentials, same reasoning as PointsScheme::browse().
+    public static function system(): self
+    {
+        return static::withoutTenantScope()->where('is_system', true)->firstOrFail();
     }
 
     public function memberships(): HasMany
