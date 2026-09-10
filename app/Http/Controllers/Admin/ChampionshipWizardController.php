@@ -207,6 +207,69 @@ class ChampionshipWizardController extends Controller
             ->with('success', 'Round added.');
     }
 
+    public function roundEdit(Request $request, League $league, Championship $championship, Race $race)
+    {
+        $this->assertLeagueOfInterest($request, $league, $championship);
+        Gate::authorize('update', $championship);
+        abort_unless($race->championship_id === $championship->id, 404);
+
+        $servers = $league->ftpServers()->where('active', true)->orderBy('name')->get();
+
+        return view('admin.leagues.championships.round-edit', compact('league', 'championship', 'race', 'servers'));
+    }
+
+    // Same validity rules Add Round enforces (resolveRoundRow()), except the
+    // slot-collision check excludes this round's own current slot — otherwise
+    // editing a round without changing its time would reject against itself.
+    public function updateRound(Request $request, League $league, Championship $championship, Race $race)
+    {
+        $this->assertLeagueOfInterest($request, $league, $championship);
+        Gate::authorize('update', $championship);
+        abort_unless($race->championship_id === $championship->id, 404);
+
+        $data = $request->validate([
+            'track'               => 'required|string|max:255',
+            'scheduled_at'        => 'required|date',
+            'round_number'        => 'nullable|integer|min:1',
+            'practice_duration'   => 'nullable|integer|min:1|max:999',
+            'qualifying_duration' => 'nullable|integer|min:1|max:999',
+            'race_duration'       => 'nullable|integer|min:1|max:999',
+            'weather'             => 'nullable|in:dry,wet,mixed,random',
+            'weather_randomness'  => 'nullable|in:0,1,2,3,4,5,6,7,random',
+            'rain_level'          => 'nullable|numeric|min:0|max:1',
+            'time_of_day'         => 'nullable|date_format:H:i',
+            'ambient_temp'        => 'nullable|integer|min:-30|max:50',
+            'description'         => 'nullable|string',
+            'ftp_server_id'       => 'nullable|exists:ftp_servers,id',
+        ]);
+
+        $claimedSlots = [];
+        $result = $this->resolveRoundRow($data, $championship, $league, $claimedSlots, $race->id);
+
+        if (is_string($result)) {
+            return back()->withInput()->withErrors(['scheduled_at' => $result]);
+        }
+
+        // resolveRoundRow() is shared with round *creation*, where a race always
+        // starts 'open' — an edit must never reset a round that's already
+        // running/finished back to 'open'.
+        unset($result['status']);
+
+        // Switching servers (or dropping one) leaves any prior push status behind
+        // it — carrying it over would misreport a config as pushed to a server it
+        // was never actually sent to.
+        if (($result['ftp_server_id'] ?? null) !== $race->ftp_server_id) {
+            $result['config_push_status'] = $result['ftp_server_id'] ? 'pending' : null;
+        }
+
+        $race->update($result);
+
+        AuditLogger::record($request->user(), $championship, 'championship.round_updated', ['race_id' => $race->id]);
+
+        return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'rounds'])
+            ->with('success', 'Round updated.');
+    }
+
     // "Bulk" the same way admin/races/bulk-create.blade.php is: generate a run of
     // rounds from one shared set of session/weather/server settings, each only
     // needing its own track and date — reusing resolveRoundRow() per row so the
@@ -301,7 +364,7 @@ class ChampionshipWizardController extends Controller
     // $claimedSlots accumulates this batch's own slot times so two rows in the
     // same bulk submission can't collide with each other either, not just with
     // rounds already in the database.
-    private function resolveRoundRow(array $data, Championship $championship, League $league, array &$claimedSlots): array|string
+    private function resolveRoundRow(array $data, Championship $championship, League $league, array &$claimedSlots, ?int $excludeRaceId = null): array|string
     {
         if (!empty($data['ftp_server_id']) && !$league->ftpServers()->where('id', $data['ftp_server_id'])->exists()) {
             abort(403, 'That server does not belong to this league.');
@@ -343,7 +406,7 @@ class ChampionshipWizardController extends Controller
             if ($server && !$server->isValidSlot($data['scheduled_at'])) {
                 return 'That time is not a valid slot on this server.';
             }
-            if ($server && (in_array($slotKey, $server->takenSlots(), true) || in_array($slotKey, $claimedSlots, true))) {
+            if ($server && (in_array($slotKey, $server->takenSlots($excludeRaceId), true) || in_array($slotKey, $claimedSlots, true))) {
                 return 'That slot is already taken on this server.';
             }
 

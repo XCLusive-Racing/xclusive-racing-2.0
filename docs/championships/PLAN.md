@@ -16,8 +16,8 @@ up without re-deriving context.
   `max_missed_rounds` + `track_temp`/`cloud_level` (item 2), team standings
   (item 3), team registration per-round-vs-whole-championship (item 4),
   re-verifying `computeClassStandings()` (item 6), hardcoded standings
-  copy (item 7). Still open: Edit Round (item 8), and a real browser check
-  of everything built this session (item 9). Item 5 (Discord operational
+  copy (item 7), Edit Round (item 8). Still open: a real browser check of
+  everything built this session (item 9). Item 5 (Discord operational
   setup) is explicitly deferred by the user.
 - **Real, previously-latent bugs found and fixed along the way, worth
   knowing about even though they're already fixed**: a missing
@@ -1180,6 +1180,25 @@ explicit direction on each. Progress so far:
    is a real, correctly-named platform-wide feature a league can opt a
    championship into — not a branding leak — so it was left alone).
    (`tests/Feature/PublicChampionshipPageTest.php`.)
-8. **Edit Round — not yet done.** Rounds still only support Add/Remove.
-   Pending.
+8. **Edit Round — done.** New `GET .../rounds/{race}/edit` +
+   `PUT .../rounds/{race}` (`ChampionshipWizardController::roundEdit()`/
+   `updateRound()`), reusing `resolveRoundRow()`'s exact same validity rules
+   Add Round already enforces. Two things `resolveRoundRow()` assumes for
+   *creation* had to be corrected for *editing* an existing row: the
+   slot-collision check now excludes the round's own current slot
+   (`FtpServer::takenSlots($excludeRaceId)` already supported this, just
+   never had a caller), and the returned `status: 'open'` is stripped
+   before `$race->update()` — otherwise saving an edit on an
+   already-running/finished round would silently reset it back to `open`.
+   Switching (or removing) a round's server also resets its
+   `config_push_status`, since carrying over a prior "pushed" status would
+   misreport a config as sent to a server it never actually went to.
+   The edit form itself is a standalone view
+   (`round-edit.blade.php`) rather than reusing the create-only
+   `_round-shared-fields.blade.php` partial, since that partial's fields
+   default from the *championship's* settings (right for a new round) —
+   an edit form needs to default from the *round's own* current values.
+   (`tests/Feature/RoundCreationTest.php`, the six new
+   `test_round_edit_*`/`test_updating_a_round_*`/`test_editing_a_round_*`
+   cases.)
 9. **Browser check — not yet done.** Pending.

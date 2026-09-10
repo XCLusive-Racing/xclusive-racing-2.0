@@ -39,6 +39,10 @@
                     </button>
                 </form>
                 @endif
+                <a href="{{ route('admin.leagues.championships.rounds.edit', [$league, $championship, $round]) }}"
+                   class="btn btn-sm fw-bold" style="background:transparent;color:#374151;font-size:.72rem">
+                    Edit
+                </a>
                 <form action="{{ route('admin.leagues.championships.rounds.destroy', [$league, $championship, $round]) }}" method="POST" onsubmit="return false">
                     @csrf @method('DELETE')
                     <button type="button" class="btn btn-sm fw-bold" style="background:transparent;color:#dc2626;font-size:.72rem"
