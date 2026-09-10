@@ -12,13 +12,10 @@ up without re-deriving context.
 ## Current State
 
 - **All seven phases are now built (2026-09-10)**, plus a second refinement
-  batch (below), in progress. Done so far: steward scoping (item 1),
-  `max_missed_rounds` + `track_temp`/`cloud_level` (item 2), team standings
-  (item 3), team registration per-round-vs-whole-championship (item 4),
-  re-verifying `computeClassStandings()` (item 6), hardcoded standings
-  copy (item 7), Edit Round (item 8). Still open: a real browser check of
-  everything built this session (item 9). Item 5 (Discord operational
-  setup) is explicitly deferred by the user.
+  batch (below) — items 1-4 and 6-9 are all done. Item 5 (Discord
+  operational setup) is explicitly deferred by the user; nothing else is
+  open in this batch. Next session should pick a new area of work rather
+  than continue this list.
 - **Real, previously-latent bugs found and fixed along the way, worth
   knowing about even though they're already fixed**: a missing
   `ChampionshipClass::isFull()` that would have thrown on any full
@@ -1201,4 +1198,28 @@ explicit direction on each. Progress so far:
    (`tests/Feature/RoundCreationTest.php`, the six new
    `test_round_edit_*`/`test_updating_a_round_*`/`test_editing_a_round_*`
    cases.)
-9. **Browser check — not yet done.** Pending.
+9. **Browser check — done, with a caveat.** No headless-browser tool
+   (chromium-cli or similar) is installed on this Windows dev machine, so a
+   real click-through/screenshot check wasn't possible. Instead: started
+   `php artisan serve` against the real dev MySQL database (not the sqlite
+   test DB) and GET the public page for every championship that actually
+   exists there — all three render 200, and "Overall Standings" (item 7)
+   renders correctly against real data, not just the sqlite test suite.
+   Unauthenticated admin routes (`/admin/leagues`, `/admin/reports`, the
+   championship wizard) correctly redirect to login (302) rather than
+   fatal-erroring. `php artisan view:cache` force-compiled every Blade view
+   in the app, including every one touched this session
+   (`round-edit.blade.php`, `_field.blade.php`, `wizard.blade.php`,
+   `show.blade.php`, `edit.blade.php`, `_rounds.blade.php`) — none failed
+   to compile. Authenticated admin click-through (Add/Edit/Bulk Round,
+   Reports scoping) is instead covered by this batch's 121 passing feature
+   tests, which drive the real HTTP stack and assert on rendered content —
+   the strongest verification available without a real browser here.
+   **Unrelated observation, not touched**: the dev DB has stale test data
+   from earlier work this session — a second, archived, non-system
+   "XCLusive Racing" league row (id 1, `is_system=false`), and two of the
+   three existing championships point at it instead of the real system
+   league (id 2); one championship has no `league_id` at all. `League::system()`
+   still resolves correctly (id 2, the real one) since only it has
+   `is_system=true` — this isn't a live bug, just leftover dev/test rows,
+   left alone since cleaning it up wasn't asked for.
