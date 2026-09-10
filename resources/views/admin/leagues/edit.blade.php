@@ -313,6 +313,21 @@
                         </div>
                     </div>
                     <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <select name="game" class="form-select form-select-sm" required>
+                                <option value="acc">ACC</option>
+                                <option value="lmu">Le Mans Ultimate</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <select name="platform" class="form-select form-select-sm" required>
+                                <option value="console">Console</option>
+                                <option value="pc">PC</option>
+                                <option value="cross">Crossplay</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2">
                         <div class="col-8">
                             <input type="text" name="host" placeholder="Host / IP" class="form-control form-control-sm @error('host') is-invalid @enderror" required>
                             @error('host') <div class="invalid-feedback">{{ $message }}</div> @enderror

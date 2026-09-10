@@ -80,6 +80,23 @@
                 </div>
             </div>
             <div class="row g-3 mb-3">
+                <div class="col-sm-6">
+                    <label class="form-label">Game</label>
+                    <select name="game" class="form-select" required>
+                        <option value="acc">ACC</option>
+                        <option value="lmu">Le Mans Ultimate</option>
+                    </select>
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label">Platform</label>
+                    <select name="platform" class="form-select" required>
+                        <option value="console">Console</option>
+                        <option value="pc">PC</option>
+                        <option value="cross">Crossplay</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row g-3 mb-3">
                 <div class="col-sm-8">
                     <label class="form-label">Host</label>
                     <input type="text" name="host" class="form-control @error('host') is-invalid @enderror" required>

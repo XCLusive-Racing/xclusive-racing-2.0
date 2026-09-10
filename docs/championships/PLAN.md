@@ -12,13 +12,17 @@ up without re-deriving context.
 ## Current State
 
 - **Phase in progress:** none — **Phase 2.5 ("XCL becomes a first-class
-  League") is complete (2026-09-10)**, see that phase's own entry below for
-  what shipped. **Phase 3 ("Rounds, event generation and league scoped
-  servers") is next** and has not been started. The points-scheme slice of
-  Phase 5 was pulled forward and completed out of order on 2026-09-09, on
-  an explicit, self-contained task naming it directly — see that phase's
-  own entry below for what shipped and what's still open there. Phase 3/4
-  themselves are untouched.
+  League") and Phase 3 ("Rounds, event generation and league scoped
+  servers") are both complete (2026-09-10)**, see their own entries below
+  for what shipped, including a dead-schema finding
+  (`settings.sessions.track_temp`/`cloud_level`) that still needs a
+  decision. **Phase 4 ("Registrations, teams, driver swaps and entry
+  requirements") is next** and has not been started — see its Discord
+  bullet below for the bot-per-league direction already decided. The
+  points-scheme slice of Phase 5 was pulled forward and completed out of
+  order on 2026-09-09, on an explicit, self-contained task naming it
+  directly — see that phase's own entry below for what shipped and what's
+  still open there.
 - **Also completed out of order (2026-09-09), same session:** the Basics step
   gained a Server default (`championships.ftp_server_id`) and a Schedule
   group (`start_date`/`recurrence`/`day_of_week`/`time_of_day` in
@@ -563,7 +567,7 @@ persistence itself, which the resumable-draft requirement makes necessary.
   championships mixed with XCL's own today, regardless of this migration.
   Worth a follow-up someday, not blocking.
 
-## Phase 3 — Rounds, event generation and league scoped servers
+## Phase 3 — Rounds, event generation and league scoped servers ✅ complete (2026-09-10)
 
 - [x] Add nullable `league_id` FK to `ftp_servers`
       (`app/Models/FtpServer.php`, `database/migrations/2026_05_29_100000_create_ftp_servers_table.php`);
@@ -581,37 +585,97 @@ persistence itself, which the resumable-draft requirement makes necessary.
       as a judgment call: it's a connection address, not a secret, and the
       task's later, more specific Phase 1 instructions only ever called out
       "credentials" (username/password) for this treatment.
-- [ ] Add `game`/`platform` columns to `FtpServer` — today the console
-      assumption is hardcoded in `AccServerConfigService` defaults, not
-      schema — so a league server can declare console vs PC and, later, LMU.
-- [ ] Reuse `Race` as the round entity via the existing
+- [x] Add `game`/`platform` columns to `FtpServer`
+      (`database/migrations/2026_09_10_000003_add_game_and_platform_to_ftp_servers_table.php`,
+      backfilled every existing row to `platform = 'console'` — accurate,
+      since `AccServerConfigService` hardcoded "Playstation 5 & Xbox Series
+      S/X" into every server name up to now). Same `acc|lmu` /
+      `pc|console|cross` vocabulary as `Championship.game`/`platform`
+      (`SaveChampionshipStepRequest`). Added to every server create/edit
+      form: XCL's own (`admin/servers/{create,edit}.blade.php`,
+      `Admin\FtpServerController`), a league's own
+      (`admin/leagues/edit.blade.php`, `Admin\LeagueController::storeServer()`),
+      and the cross-league aggregate
+      (`admin/league-servers/index.blade.php`, `Admin\LeagueFtpServerController::store()`).
+      Kept `nullable` (not `required`) on `FtpServerController::update()`
+      specifically — an update that omits them (an older/partial submit)
+      leaves the existing value alone, same idiom already used for
+      username/password on that form; a real regression here (caught by
+      `LeagueAdminAccessTest`) is why this is `nullable` and not `required`
+      on update, unlike `store()`.
+- [x] Reuse `Race` as the round entity via the existing
       `championship_id`/`round_number` linkage; extend the cut-down
-      round-create form (`AdminChampionshipController::roundCreate`/`addRound`,
-      `resources/views/admin/championships/round-create.blade.php`) to
-      pre-fill from the championship's `settings` JSON instead of requiring
-      re-entry per round. **Partially done already**: the 2026-09-09
-      out-of-order session added `Championship::scheduledDateTimeForRound()`
-      and `ChampionshipWizardController::roundCreate()` already computes a
-      `$suggestedScheduledAt` from it — verify what's still missing
-      (session length/weather defaults into the round-create form) rather
-      than treating this bullet as untouched.
-- [ ] Scope the round-create FTP server picker
-      (`FtpServer::where('active', true)`, `Admin/ChampionshipController.php:173`)
-      to servers owned by the championship's league (or XCL's own, for native
-      championships).
-- [ ] Extract a `ServerConfigGenerator` interface that `AccServerConfigService`
-      implements, so a future `LmuServerConfigService` can be added without
-      touching the push pipeline — do this refactor now, while there is only
-      one implementation, per the brief's "must not assume ACC everywhere."
-- [ ] Audit the two synchronous push paths
-      (`app/Console/Commands/PushGPortalConfigs.php`,
-      `Admin\RaceController::pushConfig` line 903) against the queued
-      practice-server push (`app/Jobs/PushPracticeServerConfigJob.php`);
-      decide whether league-triggered pushes — running far more often, across
-      many more servers, operated by less-trusted users — should be converted
-      to a `ShouldQueue` job for retry/reliability.
-- [ ] Let league managers trigger manual push / adjust-and-push for their own
-      rounds only, reusing the existing push UI/action gated by league scope.
+      round-create form to pre-fill from the championship's `settings` JSON
+      instead of requiring re-entry per round. Session lengths, `time_of_day`
+      and `ambient_temp` were already prefilled from the 2026-09-09 session;
+      this pass added `rain_level` (from `settings.sessions.rain_level`) and
+      defaulting the weather picker to "Random" when
+      `settings.sessions.weather_mode` is `randomised` — the only two
+      remaining fields with an unambiguous mapping onto the round-level form.
+      **Found, not fixed — flagged as dead schema**: `settings.sessions.track_temp`/`cloud_level`
+      have help text saying "only used when weather is fixed," but nothing
+      anywhere (round-create form, `Race` columns, `AccServerConfigService`)
+      actually reads them — there's no round-level field for either at all.
+      Same category of gap as the `max_missed_rounds` finding in Phase 5;
+      needs its own decision (wire them up with new `Race` columns, or drop
+      them from the schema) rather than a silent fix here.
+- [x] Scope the round-create FTP server picker to servers owned by the
+      championship's league — the new league wizard's own
+      `ChampionshipWizardController::roundCreate()` already did this
+      correctly from Phase 2 (`$league->ftpServers()->where('active', true)`).
+      What was actually unscoped was the **legacy** XCL-native round-create
+      (`Admin\ChampionshipController::roundCreate()`,
+      `FtpServer::where('active', true)` with no league filter at all) — an
+      admin bypasses `TenantScope` entirely, so every league's private
+      servers were showing up in XCL's own native-championship dropdown.
+      Now scoped to `where('league_id', League::system()->id)`.
+- [x] Extracted `App\Services\Contracts\ServerConfigGenerator`
+      (`app/Services/Contracts/ServerConfigGenerator.php`) — the five methods
+      the push pipeline actually calls (`entryList`, `configuration`,
+      `settings`, `eventRules`, `assistRules`) plus the four `defaultX()`
+      accessors the config-editor UI reads. `AccServerConfigService`
+      implements it; bound in `AppServiceProvider::register()`. Every
+      consumer (`PushGPortalConfigs::handle()`,
+      `Admin\RaceController::show()`/`pushConfig()`,
+      `Admin\FtpServerController::update()`/`pushDefaults()`,
+      `RaceController::register()`/`registerTeam()`,
+      `admin/servers/edit.blade.php`'s config-defaults editor) now
+      type-hints/resolves the interface instead of the concrete class.
+      Deliberately **not** on the interface: `bop()`/`carGroup()`
+      (`Admin\BopController::pushBop()` still depends on the concrete
+      `AccServerConfigService` directly) — ACC's balance-of-performance
+      concept has no established LMU equivalent yet, so it isn't part of the
+      generic per-race config shape this interface targets.
+      `PracticeServerConfigService` also stays on the concrete class — it's
+      already an ACC-specific wrapper by its own design (constructs its own
+      `AccServerConfigService` as a default), not part of the generic
+      pipeline.
+- [x] **Decided**: XCL's own two synchronous push paths
+      (`PushGPortalConfigs`, `Admin\RaceController::pushConfig`) stay
+      synchronous — they're XCL-staff-operated, already working, and
+      converting them now carries real regression risk for no immediate
+      need. The **new** league-manager-facing push (this phase's next
+      bullet) is genuinely new code with no legacy behaviour to preserve, so
+      it was built as a `ShouldQueue` job from day one
+      (`app/Jobs/PushRoundConfigJob.php`), following the exact pattern
+      `PushPracticeServerConfigJob` already established (`tries`/`backoff`,
+      a `failed()` handler posting to the same Discord webhook). This
+      satisfies the "decide" bullet without a risky conversion of the
+      existing paths.
+- [x] Let league managers trigger manual push for their own rounds:
+      `ChampionshipWizardController::pushRoundConfig()` (route
+      `POST admin/leagues/{league}/championships/{championship}/rounds/{race}/push-config`)
+      — checks `assertLeagueOfInterest()` + `Gate::authorize('update', ...)` +
+      the race actually belongs to this championship, sets
+      `config_push_status = pending`, and dispatches `PushRoundConfigJob`.
+      A "Push Config" button plus a live `config_push_status` badge
+      (pending/pushed/failed) now sits next to each round with an assigned
+      server on the Rounds wizard step
+      (`admin/leagues/championships/_rounds.blade.php`). Covered by
+      `tests/Feature/ChampionshipRoundPushTest.php` (queues for your own
+      round, 404s with no assigned server, 404s on another league's round,
+      and the wizard page renders the button) — the queue is faked in tests,
+      no real FTP connection attempted.
 
 ## Phase 4 — Registrations, teams, driver swaps and entry requirements
 

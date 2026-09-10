@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Models\TeamApplication;
+use App\Services\AccServerConfigService;
+use App\Services\Contracts\ServerConfigGenerator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
@@ -13,7 +15,11 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // Every game currently supported resolves to the ACC generator — the point
+        // of the interface (Phase 3, docs/championships/PLAN.md) is that a future
+        // LmuServerConfigService only needs to change this one line, not every push
+        // call site.
+        $this->app->bind(ServerConfigGenerator::class, AccServerConfigService::class);
     }
 
     public function boot(): void

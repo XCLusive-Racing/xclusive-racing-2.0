@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Championship;
 use App\Models\ChampionshipPenalty;
 use App\Models\FtpServer;
+use App\Models\League;
 use App\Models\Media;
 use App\Models\Race;
 use App\Models\User;
@@ -170,7 +171,10 @@ class ChampionshipController extends Controller
             ->map(fn($fname) => $trackMediaByName->get($fname)?->url)
             ->all();
 
-        $servers = FtpServer::where('active', true)->orderBy('name')->get();
+        // XCL's own native championships only ever get pushed to XCL's own servers —
+        // an admin bypasses TenantScope entirely (canManage()), so without this filter
+        // every league's private server would show up here too.
+        $servers = FtpServer::where('league_id', League::system()->id)->where('active', true)->orderBy('name')->get();
 
         return view('admin.championships.round-create', compact('championship', 'trackPreviewUrls', 'servers'));
     }

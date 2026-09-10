@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Race;
-use App\Services\AccServerConfigService;
+use App\Services\Contracts\ServerConfigGenerator;
 use App\Services\FtpService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +15,7 @@ class PushGPortalConfigs extends Command
     protected $signature   = 'gportal:push-configs';
     protected $description = 'Auto-push ACC server config to gPortal before a race slot, with safety repush and retry logic';
 
-    public function handle(AccServerConfigService $config, FtpService $ftp): void
+    public function handle(ServerConfigGenerator $config, FtpService $ftp): void
     {
         $now = now();
 

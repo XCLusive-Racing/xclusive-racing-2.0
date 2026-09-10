@@ -10,7 +10,7 @@ use App\Models\RaceClass;
 use App\Models\RaceRegistration;
 use App\Models\RaceTeamEntry;
 use App\Models\User;
-use App\Services\AccServerConfigService;
+use App\Services\Contracts\ServerConfigGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -182,7 +182,7 @@ class RaceController extends Controller
                     ]);
                 }
 
-                $config     = app(AccServerConfigService::class)->settings($race, $race->ftpServer);
+                $config     = app(ServerConfigGenerator::class)->settings($race, $race->ftpServer);
                 $serverName = $config['serverName'] ?? 'To be announced';
                 $password   = $config['password']   ?? 'To be announced';
 
@@ -313,7 +313,7 @@ class RaceController extends Controller
                     }
                 }
 
-                $config     = app(AccServerConfigService::class)->settings($race, $race->ftpServer);
+                $config     = app(ServerConfigGenerator::class)->settings($race, $race->ftpServer);
                 $serverName = $config['serverName'] ?? 'To be announced';
                 $password   = $config['password']   ?? 'To be announced';
 

@@ -113,12 +113,19 @@
             <div class="row g-3 align-items-end">
                 <div class="col-sm-3">
                     <label class="form-label" style="font-size:.75rem">Weather</label>
+                    @php
+                        // "Randomised" maps cleanly onto the round's own "Random" option;
+                        // "fixed" doesn't map onto a single dry/wet/mixed value, so it's
+                        // left unset here — the round falls through to the server's own
+                        // event_defaults, same as today.
+                        $weatherDefault = old('weather', $sessionDefaults->weather_mode === 'randomised' ? 'random' : '');
+                    @endphp
                     <select name="weather" id="rc-weather" class="form-select form-select-sm">
                         <option value="">— Not set —</option>
-                        <option value="dry"    {{ old('weather') === 'dry'    ? 'selected' : '' }}>Dry</option>
-                        <option value="wet"    {{ old('weather') === 'wet'    ? 'selected' : '' }}>Wet</option>
-                        <option value="mixed"  {{ old('weather') === 'mixed'  ? 'selected' : '' }}>Mixed</option>
-                        <option value="random" {{ old('weather') === 'random' ? 'selected' : '' }}>Random</option>
+                        <option value="dry"    {{ $weatherDefault === 'dry'    ? 'selected' : '' }}>Dry</option>
+                        <option value="wet"    {{ $weatherDefault === 'wet'    ? 'selected' : '' }}>Wet</option>
+                        <option value="mixed"  {{ $weatherDefault === 'mixed'  ? 'selected' : '' }}>Mixed</option>
+                        <option value="random" {{ $weatherDefault === 'random' ? 'selected' : '' }}>Random</option>
                     </select>
                 </div>
                 <div class="col-sm-4">
@@ -136,13 +143,13 @@
                     </select>
                 </div>
                 <div class="col-sm-3" id="rc-rain-level-wrap" style="display:none">
-                    @php $savedRainLevel = old('rain_level'); @endphp
+                    @php $savedRainLevel = old('rain_level', $sessionDefaults->rain_level ?: 0.3); @endphp
                     <label class="form-label" style="font-size:.75rem">Rain Level <span class="fw-normal text-secondary">(0–1)</span></label>
                     <div class="d-flex align-items-center gap-2">
                         <input type="range" name="rain_level" id="rc-rain-level" min="0" max="1" step="0.1"
-                               value="{{ $savedRainLevel ?? '0.3' }}" class="form-range flex-grow-1" style="accent-color:#7c3aed">
+                               value="{{ $savedRainLevel }}" class="form-range flex-grow-1" style="accent-color:#7c3aed">
                         <span id="rc-rain-level-val" class="fw-bold text-dark" style="min-width:2rem;font-size:.82rem;text-align:right">
-                            {{ $savedRainLevel !== null ? number_format($savedRainLevel, 1) : '0.3' }}
+                            {{ number_format($savedRainLevel, 1) }}
                         </span>
                     </div>
                 </div>

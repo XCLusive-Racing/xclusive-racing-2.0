@@ -13,6 +13,9 @@
             each round can override the schedule and session defaults you set on the Basics step.
         </p>
 
+        @php
+            $pushStatusColors = ['pending' => '#9ca3af', 'pushed' => '#16a34a', 'failed' => '#dc2626'];
+        @endphp
         @forelse($championship->rounds as $round)
         <div class="d-flex align-items-center justify-content-between py-2" style="border-bottom:1px solid #f3f4f6">
             <div>
@@ -21,17 +24,29 @@
                     {{ $round->track }} · {{ $round->scheduledAtUk()->format('d M Y, H:i T') }}
                     @if($round->weather) · {{ ucfirst($round->weather) }} @endif
                     @if($round->ftp_server_id)
-                    · <span style="color:#16a34a">server assigned</span>
+                    · <span style="color:{{ $pushStatusColors[$round->config_push_status] ?? '#9ca3af' }}">
+                        config {{ $round->config_push_status ?? 'pending' }}
+                    </span>
                     @endif
                 </div>
             </div>
-            <form action="{{ route('admin.leagues.championships.rounds.destroy', [$league, $championship, $round]) }}" method="POST" onsubmit="return false">
-                @csrf @method('DELETE')
-                <button type="button" class="btn btn-sm fw-bold" style="background:transparent;color:#dc2626;font-size:.72rem"
-                        onclick="xcDeleteSubmit(this.closest('form'), 'Remove round {{ addslashes($round->title) }}?')">
-                    Remove
-                </button>
-            </form>
+            <div class="d-flex align-items-center gap-2">
+                @if($round->ftp_server_id)
+                <form action="{{ route('admin.leagues.championships.rounds.push-config', [$league, $championship, $round]) }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn btn-sm fw-bold" style="background:transparent;color:#7c3aed;font-size:.72rem">
+                        Push Config
+                    </button>
+                </form>
+                @endif
+                <form action="{{ route('admin.leagues.championships.rounds.destroy', [$league, $championship, $round]) }}" method="POST" onsubmit="return false">
+                    @csrf @method('DELETE')
+                    <button type="button" class="btn btn-sm fw-bold" style="background:transparent;color:#dc2626;font-size:.72rem"
+                            onclick="xcDeleteSubmit(this.closest('form'), 'Remove round {{ addslashes($round->title) }}?')">
+                        Remove
+                    </button>
+                </form>
+            </div>
         </div>
         @empty
         <p class="text-secondary mb-0" style="font-size:.82rem">No rounds scheduled yet — add your first one above.</p>

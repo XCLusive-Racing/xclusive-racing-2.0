@@ -15,7 +15,7 @@ class FtpServer extends Model
         'name', 'server_number', 'host', 'port', 'username', 'password', 'path', 'cfg_path', 'active',
         'server_type', 'reset_start_hour', 'reset_interval_minutes',
         'settings_defaults', 'eventrules_defaults', 'assistrules_defaults', 'event_defaults',
-        'league_id',
+        'league_id', 'game', 'platform',
     ];
 
     protected $casts = [

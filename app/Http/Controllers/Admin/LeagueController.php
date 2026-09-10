@@ -239,6 +239,8 @@ class LeagueController extends Controller
             'server_type'            => 'required|in:rolling,scheduled',
             'reset_start_hour'       => 'required_if:server_type,rolling|integer|min:0|max:23',
             'reset_interval_minutes' => 'required_if:server_type,rolling|integer|min:30|max:1440',
+            'game'                   => 'required|in:acc,lmu',
+            'platform'               => 'required|in:pc,console,cross',
         ]);
 
         $data['league_id'] = $league->id;

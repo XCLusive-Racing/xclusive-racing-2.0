@@ -402,6 +402,7 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/cha
     Route::get('/{championship}/rounds/create', [ChampionshipWizardController::class, 'roundCreate'])->name('rounds.create');
     Route::post('/{championship}/rounds', [ChampionshipWizardController::class, 'addRound'])->name('rounds.store');
     Route::delete('/{championship}/rounds/{race}', [ChampionshipWizardController::class, 'removeRound'])->name('rounds.destroy');
+    Route::post('/{championship}/rounds/{race}/push-config', [ChampionshipWizardController::class, 'pushRoundConfig'])->name('rounds.push-config');
     Route::post('/{championship}/publish', [ChampionshipWizardController::class, 'publish'])->name('publish');
     Route::post('/{championship}/open-registration', [ChampionshipWizardController::class, 'openRegistration'])->name('open-registration');
     Route::post('/{championship}/close-registration', [ChampionshipWizardController::class, 'closeRegistration'])->name('close-registration');

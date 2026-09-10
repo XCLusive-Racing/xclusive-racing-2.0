@@ -5,8 +5,9 @@ namespace App\Services;
 use App\Models\Bop;
 use App\Models\FtpServer;
 use App\Models\Race;
+use App\Services\Contracts\ServerConfigGenerator;
 
-class AccServerConfigService
+class AccServerConfigService implements ServerConfigGenerator
 {
     public function entryList(Race $race): array
     {

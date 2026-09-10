@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Championship\ApproveChampionshipRatingRequest;
 use App\Http\Requests\Championship\PublishChampionshipRequest;
 use App\Http\Requests\Championship\SaveChampionshipStepRequest;
+use App\Jobs\PushRoundConfigJob;
 use App\Models\Championship;
 use App\Models\FtpServer;
 use App\Models\League;
@@ -245,6 +246,26 @@ class ChampionshipWizardController extends Controller
 
         return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'rounds'])
             ->with('success', 'Round removed.');
+    }
+
+    // Manual "push now" for a league's own round — reuses the exact push pipeline
+    // XCL's own scheduled push uses (Phase 3, docs/championships/PLAN.md), just
+    // queued instead of synchronous since this is triggered by a less-trusted user,
+    // on demand, and shouldn't block the request on an FTP round-trip.
+    public function pushRoundConfig(Request $request, League $league, Championship $championship, Race $race)
+    {
+        $this->assertLeagueOfInterest($request, $league, $championship);
+        Gate::authorize('update', $championship);
+        abort_unless($race->championship_id === $championship->id, 404);
+        abort_unless($race->ftp_server_id, 404);
+
+        Race::where('id', $race->id)->update(['config_push_status' => 'pending']);
+
+        PushRoundConfigJob::dispatch($race->id);
+
+        AuditLogger::record($request->user(), $championship, 'championship.round_config_push_queued', ['race_id' => $race->id]);
+
+        return back()->with('success', 'Config push queued for ' . $race->title . '.');
     }
 
     public function publish(PublishChampionshipRequest $request, League $league, Championship $championship)

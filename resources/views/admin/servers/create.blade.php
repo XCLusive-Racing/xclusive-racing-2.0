@@ -36,6 +36,26 @@
                             @error('server_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                     </div>
+
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="form-label">Game</label>
+                            <select name="game" class="form-select @error('game') is-invalid @enderror">
+                                <option value="acc" {{ old('game', 'acc') === 'acc' ? 'selected' : '' }}>ACC</option>
+                                <option value="lmu" {{ old('game') === 'lmu' ? 'selected' : '' }}>Le Mans Ultimate</option>
+                            </select>
+                            @error('game') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Platform</label>
+                            <select name="platform" class="form-select @error('platform') is-invalid @enderror">
+                                <option value="console" {{ old('platform', 'console') === 'console' ? 'selected' : '' }}>Console</option>
+                                <option value="pc" {{ old('platform') === 'pc' ? 'selected' : '' }}>PC</option>
+                                <option value="cross" {{ old('platform') === 'cross' ? 'selected' : '' }}>Crossplay</option>
+                            </select>
+                            @error('platform') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                    </div>
                 </div>
 
                 <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
