@@ -16,7 +16,7 @@ use Illuminate\Support\Arr;
 // defaults for new keys) once this class gains fields for a new version.
 class ChampionshipSettingsSchema
 {
-    const CURRENT_VERSION = 2;
+    const CURRENT_VERSION = 3;
 
     const STEPS = [
         'basics'       => 'Basics',
@@ -127,6 +127,13 @@ class ChampionshipSettingsSchema
                 'label' => 'Manual Approval of Entries', 'help' => 'Entries wait for league staff to approve before they count.'],
             ['group' => 'requirements', 'key' => 'notes', 'type' => 'text', 'nullable' => true, 'default' => null,
                 'label' => 'Additional Requirements', 'help' => 'Free text — anything the schema above doesn\'t cover.'],
+
+            // --- Rules & Prizes (Phase 7, docs/championships/PLAN.md — shown on the
+            // public championship page; there was no free-text field for either before) ---
+            ['group' => 'requirements', 'key' => 'rules_text', 'type' => 'text', 'nullable' => true, 'default' => null,
+                'label' => 'Championship Rules', 'help' => 'Shown publicly on the championship page. Leave blank to show nothing.'],
+            ['group' => 'requirements', 'key' => 'prizes_text', 'type' => 'text', 'nullable' => true, 'default' => null,
+                'label' => 'Prizes', 'help' => 'Shown publicly on the championship page. Leave blank to show nothing.'],
 
             // --- Registration ---
             ['group' => 'requirements', 'key' => 'registration_mode', 'type' => 'enum',

@@ -57,12 +57,30 @@ class ChampionshipController extends Controller
     public function show(int $championship)
     {
         $championship = $this->findChampionship($championship);
-        $championship->load(['classes', 'registrations.user', 'registrations.championshipClass']);
+
+        // Real bug found while building Phase 7's branding: League carries the same
+        // TenantScope as everything else, so this relation silently resolved to null
+        // for anyone who isn't a member of the specific league being viewed — which
+        // is every ordinary public visitor. The entire "themed championship page"
+        // feature this controller already shipped in Phase 2 never actually worked
+        // for the public it was built for; only staff (canManage() bypass) or that
+        // league's own members ever saw it render.
+        $championship->load([
+            'league' => fn ($q) => $q->withoutTenantScope(),
+            'classes', 'registrations.user', 'registrations.championshipClass',
+        ]);
         $rounds         = $championship->rounds()->where('status', '!=', 'draft')->orderBy('round_number')->get();
         $standings      = $championship->computeStandings();
         $classStandings = $championship->computeClassStandings();
 
-        return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings'));
+        // Native championships (league_id = XCL's own system league, Phase 2.5) don't
+        // use the settings schema for requirements/penalties at all — they'd show as
+        // all-defaults here, which would misrepresent them. Only show the
+        // settings-driven Requirements/Rules/Prizes/Penalties sections (Phase 7) for
+        // an actual league-owned championship.
+        $isLeagueOwned = $championship->league && $championship->league->id !== League::system()->id;
+
+        return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'isLeagueOwned'));
     }
 
     public function register(Request $request, int $championship)
@@ -179,7 +197,17 @@ class ChampionshipController extends Controller
         // the whole point), so the plain $championship->league relation would
         // silently resolve to null for them and skip this check entirely.
         $league = $championship->league()->withoutTenantScope()->first();
-        if (!$league || !$league->requires_discord_membership) {
+
+        // Two independent opt-ins exist — League.requires_discord_membership (a
+        // league-wide default, Phase 1) and settings.requirements.discord_membership_required
+        // (per-championship, Phase 2's schema) — and Phase 4 originally only checked
+        // the first. Found while confirming this gate for Phase 7: either one
+        // requiring it is enough, so a championship-level opt-in on a league that
+        // doesn't require it league-wide still gets enforced.
+        $required = ($league && $league->requires_discord_membership)
+            || ($championship->settings->requirements->discord_membership_required ?? false);
+
+        if (!$league || !$required) {
             return null;
         }
 

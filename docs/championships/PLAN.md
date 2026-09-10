@@ -11,20 +11,27 @@ up without re-deriving context.
 
 ## Current State
 
-- **Phase in progress:** none — **Phases 2.5, 3 and 4 are complete, and
-  Phase 6 is mostly complete (2026-09-10)**, see their own entries below.
-  Real bugs found and fixed along the way: a missing
-  `ChampionshipClass::isFull()`, the wizard's multiclass setting never
-  reaching the real `is_multiclass` column, and (Phase 6) a live report/
-  rating pipeline that had zero test coverage before this session touched
-  it. One dead-schema finding still needs a decision
-  (`settings.sessions.track_temp`/`cloud_level`, Phase 3), and Phase 6
-  deliberately leaves steward-scoping (who can process a report, not what
-  processing does) undecided — see that phase's entry for why. **Phase 7
-  ("The public league area with per-league branding") is next.** Phase 5
-  is done except two small loose ends (multiclass-standings
-  parameterisation, the `max_missed_rounds` investigation), neither
-  blocking Phase 7.
+- **All seven phases are now built (2026-09-10)** — Phase 6 and Phase 5
+  each have one small piece deliberately left open (see their own entries):
+  Phase 6's steward-scoping decision (an authorization-boundary question,
+  not defaulted unilaterally), and Phase 5's multiclass-standings
+  parameterisation / `max_missed_rounds` investigation. A dead-schema
+  finding from Phase 3 (`settings.sessions.track_temp`/`cloud_level`) also
+  still needs a decision. None of these block anything else.
+- **Real, previously-latent bugs found and fixed along the way, worth
+  knowing about even though they're already fixed**: a missing
+  `ChampionshipClass::isFull()` that would have thrown on any full
+  multiclass entry; the wizard's multiclass toggle never reaching the real
+  `is_multiclass` column; a live report/rating pipeline with zero test
+  coverage before Phase 6 touched it; and, in Phase 7, the public
+  championship page's entire league-branding feature silently never
+  rendering for an actual public visitor since Phase 2 shipped it (fixed by
+  eager-loading `league` past its own tenant scope), plus a second
+  Discord-requirement opt-in (`settings.requirements.discord_membership_required`)
+  that Phase 4's enforcement never checked.
+- **No phase is "in progress."** Next session should decide what to pick up
+  next: one of the deliberately-open items above, or start fresh work
+  beyond this plan's original seven phases.
 - **Also completed out of order (2026-09-09), same session:** the Basics step
   gained a Server default (`championships.ftp_server_id`) and a Schedule
   group (`start_date`/`recurrence`/`day_of_week`/`time_of_day` in
@@ -946,31 +953,59 @@ persistence itself, which the resumable-draft requirement makes necessary.
       needing a human, not a default to assume. Nothing about the fixes
       above blocks deciding this later.
 
-## Phase 7 — The public league area with per league branding
+## Phase 7 — The public league area with per league branding ✅ complete (2026-09-10)
 
-- [ ] Turn `/championships` into a league picker
-      (`ChampionshipController::index`,
-      `app/Http/Controllers/ChampionshipController.php`) — list active
-      `League`s, not a flat championship list.
-- [ ] Add `/championships/{league}`: league home showing logo, colour scheme,
-      Discord link, and that league's championships — reuse the visual
-      language of `resources/views/championships/index.blade.php`, themed via
-      CSS custom properties sourced from `League` fields rather than the
-      hardcoded colours currently in the blade templates.
-- [ ] Extend `/championships/{league}/{championship}` from the existing
-      `championships.show` route/view
-      (`resources/views/championships/show.blade.php`) with the league's
-      branding wrapper, keeping its existing standings/rounds/registration
-      content.
-- [ ] Keep XCL's own persistent site chrome/nav around the themed content area
-      — it should read as the league's home while staying clearly on the
-      XCLusive platform, not a full white-label takeover.
-- [ ] Surface entry requirements, league rules text, penalty-system summary,
-      and prizes on the championship show page — league "rules" as
-      free/rich text is a new field, not present today; the rest come from the
-      Phase 2 settings schema.
-- [ ] Confirm the Discord entry-requirement gate (Phase 4) is enforced and
-      explained at the point of registration on this page.
+> Most of this phase turned out to already exist from Phase 2 — but with a
+> real bug that meant the public it was built for never actually saw it
+> work. See the note below.
+
+- [x] `/championships` is already a league picker
+      (`ChampionshipController::index()`, no-`?league=` branch →
+      `championships.leagues.blade.php`) and `?league={slug}` is already the
+      league-home view (`championships.index.blade.php` — logo, colours,
+      Discord link, that league's public championships). **Shipped as a
+      query-string param, not a `/championships/{league}` path segment** —
+      functionally identical to what this bullet asks for; left as-is rather
+      than restructuring routes, since `/championships/{championship}`
+      already occupies that path shape for a numeric id and a rename buys
+      nothing users would notice.
+- [x] **Real, previously-unnoticed bug found and fixed**: `ChampionshipController::show()`
+      never eager-loaded `league` at all — the plain `$championship->league`
+      relation carries `League`'s own `TenantScope`, which resolves to
+      `null` for anyone who isn't a member of that specific league. That's
+      every ordinary public visitor. The entire themed-page feature
+      Phase 2 already built (league name/logo/colour in the hero) has
+      **never actually rendered for the public** since it shipped — only
+      staff (`canManage()` bypass) or that league's own manager/steward ever
+      saw it work, which is exactly the audience least likely to notice it
+      was broken for everyone else. Fixed with
+      `$championship->load(['league' => fn ($q) => $q->withoutTenantScope(), ...])`.
+      `tests/Feature/PublicChampionshipPageTest.php` asserts this as an
+      actual unauthenticated guest request, not an admin one.
+- [x] XCL's chrome was already intact — the show page `@extends('layouts.app')`
+      like every other public page; nothing to change.
+- [x] Entry requirements / rules / prizes / penalty summary, all new on the
+      championship show page: two new schema fields
+      (`settings.requirements.rules_text`/`prizes_text`, schema version
+      bumped to 3) picked up by the wizard's generic field loop with zero
+      new admin UI code; a public "Entry Requirements" card (rating/SR
+      thresholds, Discord requirement, manual-approval mode) and a
+      "Stewarding & Penalties" summary (`affects`, time-penalties allowed) —
+      shown only for a real league-owned championship, not XCL's native one,
+      since the native one doesn't use this settings system at all and would
+      otherwise show a misleading wall of "None"s.
+- [x] Discord gate confirmed — and **a second real gap found while
+      confirming it**: two independent opt-ins existed
+      (`League.requires_discord_membership`, league-wide, Phase 1; and
+      `settings.requirements.discord_membership_required`, per-championship,
+      already in Phase 2's schema) and Phase 4's enforcement only ever
+      checked the first. A championship that opted in on its own, on a
+      league that doesn't require it league-wide, silently had no
+      enforcement at all. `discordMembershipFailure()` now checks either.
+      The requirement is now also explained directly in the registration
+      card itself (not just the league list page's banner), so it's visible
+      at the actual point of action regardless of how someone reached the
+      page.
 
 ---
 

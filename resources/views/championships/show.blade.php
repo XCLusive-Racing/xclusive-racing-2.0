@@ -4,6 +4,9 @@
 
 @php
     $accent = $championship->league?->primary_color ?? $championship->gameColor();
+    $req    = $championship->settings->requirements;
+    $pen    = $championship->settings->penalties;
+    $discordRequiredHere = ($championship->league?->requires_discord_membership) || ($req->discord_membership_required ?? false);
 @endphp
 
 @section('content')
@@ -169,10 +172,78 @@
                     @endif
                 </div>
 
+                @if($isLeagueOwned && ($req->rules_text || $req->prizes_text))
+                <div class="mt-4 row g-4">
+                    @if($req->rules_text)
+                    <div class="col-12 col-md-{{ $req->prizes_text ? '6' : '12' }}">
+                        <div style="background:#111827;border-radius:12px;overflow:hidden;height:100%">
+                            <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
+                                <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Rules</h2>
+                            </div>
+                            <div class="px-4 py-3" style="color:#c7ccd6;font-size:.85rem;white-space:pre-wrap">{{ $req->rules_text }}</div>
+                        </div>
+                    </div>
+                    @endif
+                    @if($req->prizes_text)
+                    <div class="col-12 col-md-{{ $req->rules_text ? '6' : '12' }}">
+                        <div style="background:#111827;border-radius:12px;overflow:hidden;height:100%">
+                            <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
+                                <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Prizes</h2>
+                            </div>
+                            <div class="px-4 py-3" style="color:#c7ccd6;font-size:.85rem;white-space:pre-wrap">{{ $req->prizes_text }}</div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+                @endif
+
             </div>
 
             {{-- Right: registration + drivers --}}
             <div class="col-12 col-lg-4">
+
+                @if($isLeagueOwned)
+                {{-- Entry requirements + stewarding summary (Phase 7) --}}
+                <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
+                    <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
+                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Entry Requirements</h2>
+                    </div>
+                    <div class="px-4 py-3" style="font-size:.82rem">
+                        <div class="d-flex justify-content-between py-1" style="border-bottom:1px solid #1f2937">
+                            <span style="color:#6b7280">Minimum XCL Rating</span>
+                            <span class="fw-bold text-white">{{ $req->min_xcl_rating_tier ? ucfirst($req->min_xcl_rating_tier) : 'None' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1" style="border-bottom:1px solid #1f2937">
+                            <span style="color:#6b7280">Minimum Safety Rating</span>
+                            <span class="fw-bold text-white">{{ $req->min_safety_rating ?? 'None' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1" style="border-bottom:1px solid #1f2937">
+                            <span style="color:#6b7280">Discord Membership</span>
+                            <span class="fw-bold" style="color:{{ $discordRequiredHere ? '#818cf8' : '#fff' }}">{{ $discordRequiredHere ? 'Required' : 'Not required' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span style="color:#6b7280">Entry Approval</span>
+                            <span class="fw-bold text-white">{{ ($req->manual_approval_required ?? false) ? 'Manually reviewed' : 'Automatic' }}</span>
+                        </div>
+                        @if($req->notes)
+                        <p class="mt-2 mb-0 pt-2" style="color:#9ca3af;font-size:.78rem;border-top:1px solid #1f2937;white-space:pre-wrap">{{ $req->notes }}</p>
+                        @endif
+                    </div>
+                    @if($pen->stewarding_enabled ?? false)
+                    <div class="px-4 py-3" style="border-top:1px solid #1f2937;font-size:.82rem">
+                        <div class="fw-bold text-uppercase mb-2" style="color:#6b7280;font-size:.68rem;letter-spacing:.06em">Stewarding &amp; Penalties</div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span style="color:#6b7280">Penalties affect</span>
+                            <span class="fw-bold text-white">{{ ucfirst($pen->affects ?? 'none') }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span style="color:#6b7280">Post-race time penalties</span>
+                            <span class="fw-bold text-white">{{ ($pen->post_race_time_penalties_enabled ?? false) ? 'Allowed' : 'Not used' }}</span>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+                @endif
 
                 {{-- Registration card --}}
                 @auth
@@ -218,6 +289,18 @@
                             $spectatorOpen  = $championship->spectatorSlots() > 0 && !$championship->isSpectatorFull();
                             $ownedTeam      = $driverSwaps ? auth()->user()->ownedRacingTeams()->first() : null;
                         @endphp
+
+                        @if($discordRequiredHere)
+                        <div class="mb-3 p-2" style="background:#5865F21a;border:1px solid #5865F244;border-radius:8px">
+                            <p class="mb-0" style="color:#c7d2fe;font-size:.78rem">
+                                <strong>Discord membership required.</strong> You must be a member of
+                                {{ $championship->league->name }}'s Discord server to register
+                                @if($championship->league->discord_invite_url)
+                                — <a href="{{ $championship->league->discord_invite_url }}" target="_blank" rel="noopener" style="color:#a5b4fc">join here</a>
+                                @endif.
+                            </p>
+                        </div>
+                        @endif
 
                         @if($driverFull && !$spectatorOpen)
                         <p style="color:#f59e0b;font-size:.875rem;font-weight:700">This championship is full.</p>
