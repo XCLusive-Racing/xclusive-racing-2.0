@@ -212,6 +212,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/races/{race}/results/recalculate', [RaceResultController::class, 'recalculate'])->name('races.results.recalculate');
     Route::post('/races/{race}/results/ftp-cancel', [RaceResultController::class, 'ftpCancel'])->name('races.results.ftp-cancel');
     Route::post('/races/{race}/results/{result}/status', [RaceResultController::class, 'updateStatus'])->name('races.results.status');
+    Route::post('/races/{race}/results/{result}/time-penalty', [RaceResultController::class, 'applyTimePenalty'])->name('races.results.time-penalty');
     Route::post('/races/{race}/push-config', [AdminRaceController::class, 'pushConfig'])->name('races.push-config');
     Route::post('/races/{race}/save-config', [AdminRaceController::class, 'saveConfig'])->name('races.save-config');
     Route::post('/races/{race}/upload-entrylist', [AdminRaceController::class, 'uploadEntrylist'])->name('races.upload-entrylist');

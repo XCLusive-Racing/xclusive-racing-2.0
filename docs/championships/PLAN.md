@@ -11,16 +11,20 @@ up without re-deriving context.
 
 ## Current State
 
-- **Phase in progress:** none — **Phases 2.5, 3 and 4 are all complete
-  (2026-09-10)**, see their own entries below for what shipped, including
-  two real bugs found and fixed along the way (a missing
-  `ChampionshipClass::isFull()`, and the wizard's multiclass setting never
-  reaching the real `is_multiclass` column) and a dead-schema finding
-  (`settings.sessions.track_temp`/`cloud_level`) still needing a decision.
-  **Phase 6 ("Stewarding, penalties and results adjustment") is next** —
-  Phase 5 is done except two small loose ends noted in its own entry
-  (multiclass-standings parameterisation, the `max_missed_rounds`
-  investigation), neither blocking Phase 6.
+- **Phase in progress:** none — **Phases 2.5, 3 and 4 are complete, and
+  Phase 6 is mostly complete (2026-09-10)**, see their own entries below.
+  Real bugs found and fixed along the way: a missing
+  `ChampionshipClass::isFull()`, the wizard's multiclass setting never
+  reaching the real `is_multiclass` column, and (Phase 6) a live report/
+  rating pipeline that had zero test coverage before this session touched
+  it. One dead-schema finding still needs a decision
+  (`settings.sessions.track_temp`/`cloud_level`, Phase 3), and Phase 6
+  deliberately leaves steward-scoping (who can process a report, not what
+  processing does) undecided — see that phase's entry for why. **Phase 7
+  ("The public league area with per-league branding") is next.** Phase 5
+  is done except two small loose ends (multiclass-standings
+  parameterisation, the `max_missed_rounds` investigation), neither
+  blocking Phase 7.
 - **Also completed out of order (2026-09-09), same session:** the Basics step
   gained a Server default (`championships.ftp_server_id`) and a Schedule
   group (`start_date`/`recurrence`/`day_of_week`/`time_of_day` in
@@ -882,32 +886,65 @@ persistence itself, which the resumable-draft requirement makes necessary.
       `resources/views/admin/championships/show.blade.php`) so they render
       correctly for any league.
 
-## Phase 6 — Stewarding, penalties and results adjustment
+## Phase 6 — Stewarding, penalties and results adjustment 🟡 mostly complete (2026-09-10)
 
-- [ ] Add a per-championship penalty-effects setting to the settings schema:
-      whether a steward-issued penalty affects championship points, XCL
-      Rating, both, or neither.
-- [ ] Wire `Admin\ReportController::process()` (line 276) and/or
-      `PenaltyCalculator` (`app/Services/PenaltyCalculator.php`) to consult
-      this setting; when points are in scope, create/update a
-      `ChampionshipPenalty` row instead of, or alongside, the current direct
-      rating-column mutation.
-- [ ] Route steward-issued rating changes through `RatingService`/`XclRating`
-      (`app/Services/RatingService.php`, `app/Services/XclRating.php`) instead
-      of `ReportController`'s direct `User.elo_{game}` mutation, so rating
-      changes stay auditable in one place — and gate this entirely behind the
-      championship's `xcl_rating_eligible` flag (Phase 2), never applying a
-      rating change for a non-eligible championship even if the league's
-      steward system is otherwise active.
-- [ ] Build "time penalties applied to results after a race": currently no
-      automatic position/time recalculation exists anywhere — this needs new
-      logic to apply a time penalty to a `RaceResult` and recompute affected
-      finishing positions and the points that flow from them.
-- [ ] Decide and implement steward scoping: whether a league's own designated
-      stewards (vs XCL's global `steward` role,
-      `User::isSteward()`/`app/Models/User.php:109`) can claim/rule on reports
-      for that league's races only. Today `steward` is a single global,
-      unscoped role.
+> This phase touches a **live, working, previously test-free** feature — the
+> Report/verdict/process pipeline that already deducts real rating from real
+> users today. Every change below was scoped to leave a report on a race with
+> no championship (or XCL's own native championship) behaving **exactly** as
+> before — new behaviour only ever activates for a real league-owned
+> championship. `tests/Feature/ReportProcessingTest.php` was written from
+> scratch (none existed) specifically to prove that boundary holds.
+
+- [x] The penalty-effects setting already existed —
+      `settings.penalties.affects` (`points`/`rating`/`both`/`none`,
+      default `none`) shipped in Phase 2's schema, alongside
+      `stewarding_enabled` and `post_race_time_penalties_enabled`. Nothing
+      to add here; it had just never been consulted anywhere.
+- [x] `Admin\ReportController::process()` now consults `affects` — but only
+      for a **league-owned** championship (`league_id` set to a real league,
+      not XCL's system league). Native championships and races with no
+      championship at all are treated as `affects = both` unconditionally,
+      preserving today's behaviour exactly. When `points`/`both` is in
+      scope, a `ChampionshipPenalty` is created. **Judgment call, flagged for
+      a league to revisit**: there's no existing formula for "how many
+      championship points does a rating-scale penalty cost" — this uses the
+      report's own computed `xcl_rating_deduction`, rounded, rather than an
+      invented flat number, so it's at least tied to the same severity
+      calculation, not arbitrary.
+- [x] Rating changes now go through a new
+      `RatingService::applyManualAdjustment()` — one auditable choke point
+      for a non-race-result rating mutation, instead of
+      `ReportController::process()` mutating `User.elo_{game}`/`sr_{game}`
+      inline. Identical math/rounding to what was there before (this was a
+      behaviour-preserving extraction, not a rewrite). Gated behind
+      `xcl_rating_enabled` for a league-owned championship regardless of
+      what `affects` says — a league manager's own setting can never turn on
+      real rating changes by itself, only an XCL admin's approval
+      (`Championship::approveXclRating()`, Phase 2) can. Native
+      championships / no-championship reports are ungated, as before.
+- [x] Post-race time penalties, built from nothing: `race_results.time_penalty_ms`
+      (additive, so repeated penalties stack), a new
+      `App\Services\ResultPenaltyService::recomputePositions()` that re-derives
+      finishing order for a race+session from scratch (most laps completed
+      wins, elapsed time — now including the penalty — only breaks a tie on
+      the same lap count; a multiclass race re-ranks each class separately),
+      and `Admin\RaceResultController::applyTimePenalty()` (new route, new
+      "Time Penalty" column on the Results tab's Penalties table). Points/
+      standings pick up the new position automatically
+      (`Championship::buildDriverStandings()` reads it live) — rating is
+      deliberately left alone, same as the existing DSQ/DC toggle: click
+      "Recalculate Ratings" separately if the outcome should move ratings
+      too, rather than this silently triggering a race-wide Elo recompute.
+- [ ] **Deliberately left open, not decided unilaterally**: steward scoping
+      — whether a league's own designated stewards can claim/rule on reports
+      for that league's races only, versus XCL's global `steward` role
+      staying as the single, unscoped pool it is today. Every fix above
+      changes what *processing a report does*, not *who can process one* —
+      that second question is a real authorization-boundary change on a
+      live moderation system, and PLAN.md already flagged it as a decision
+      needing a human, not a default to assume. Nothing about the fixes
+      above blocks deciding this later.
 
 ## Phase 7 — The public league area with per league branding
 

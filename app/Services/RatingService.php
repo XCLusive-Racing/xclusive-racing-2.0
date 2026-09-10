@@ -140,6 +140,28 @@ class RatingService
         });
     }
 
+    /**
+     * A single, auditable choke point for rating/SR changes that aren't a full race
+     * recalculation — today, a steward-processed report's penalty/return (Phase 6,
+     * docs/championships/PLAN.md). Behaviourally identical to what
+     * Admin\ReportController::process() did inline before this: floor rating/SR at
+     * zero, round the same way, update only the fields actually passed. Kept as
+     * plain column writes (not routed through XclRating's race-wide Elo exchange,
+     * which processRace() already handles for actual results) — this exists so
+     * every non-race-result rating mutation lives in one place, not to change the
+     * math.
+     */
+    public function applyManualAdjustment(User $user, string $eloField, float $eloDelta, ?string $srField = null, float $srDelta = 0.0): void
+    {
+        $updates = [$eloField => (int) round(max(0, (float) $user->{$eloField} + $eloDelta))];
+
+        if ($srField) {
+            $updates[$srField] = round(max(0, (float) $user->{$srField} + $srDelta), 2);
+        }
+
+        $user->update($updates);
+    }
+
     private function ratingField(string $game): ?string
     {
         return match ($game) {
