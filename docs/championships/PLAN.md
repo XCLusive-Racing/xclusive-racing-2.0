@@ -1080,3 +1080,25 @@ not new functionality.
   twice. Merged back into `notes` (relabelled), and removed the resulting
   on-page duplicate where the public championship page had started showing
   that same text in two different cards.
+- **Bulk Add Rounds**, modelled on the race wizard's Bulk Schedule
+  (`admin/races/form.blade.php` / `resources/js/pages/admin/bulk-create.js`):
+  a "Number of Rounds" input generates a table of rows (track + date, one
+  per round), pre-filled from the championship's own recurrence settings
+  via `Championship::scheduledDateTimeForRound()` — the same suggestion
+  single-round Add Round already uses, just for the next N rounds instead
+  of one. Session/weather/server settings are shared across the whole
+  batch rather than re-asked per round, since a season normally runs one
+  consistent set of conditions.
+  `Admin\ChampionshipWizardController::addRound()`'s validity logic (server
+  ownership, whole-hour start, slot validity/availability) was extracted
+  into `resolveRoundRow()` so the new `bulkAddRounds()` enforces exactly
+  the same rules per row, all-or-nothing (one bad or colliding row rejects
+  the whole batch, matching `Admin\RaceController::bulkStore()`'s own
+  convention) rather than creating half a season.
+  **Real bug caught by its own test**: the first version numbered every
+  bulk row "Round 1" — `resolveRoundRow()`'s auto-number fallback reads the
+  DB's current max round, which doesn't change until the whole batch is
+  actually persisted, so every row in one request saw the same stale max.
+  Fixed by numbering the batch once, sequentially, before creating any of
+  it. `tests/Feature/RoundCreationTest.php` covers this plus the
+  all-or-nothing and per-row-validation behaviour.

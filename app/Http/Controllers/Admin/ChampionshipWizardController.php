@@ -15,6 +15,7 @@ use App\Models\Race;
 use App\Services\AuditLogger;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
@@ -151,7 +152,18 @@ class ChampionshipWizardController extends Controller
         $nextRoundNumber      = $championship->rounds()->max('round_number') + 1;
         $suggestedScheduledAt = $championship->scheduledDateTimeForRound($nextRoundNumber);
 
-        return view('admin.leagues.championships.round-create', compact('league', 'championship', 'servers', 'suggestedScheduledAt'));
+        // Bulk mode (below) needs a suggestion per generated row, not just the next
+        // one — reuses the exact same recurrence math a single Add Round already
+        // suggests from, so there's only one place that logic lives.
+        $bulkSuggestions = [];
+        for ($i = 0; $i < 20; $i++) {
+            $suggestion = $championship->scheduledDateTimeForRound($nextRoundNumber + $i);
+            $bulkSuggestions[] = $suggestion?->format('Y-m-d\TH:i');
+        }
+
+        return view('admin.leagues.championships.round-create', compact(
+            'league', 'championship', 'servers', 'suggestedScheduledAt', 'nextRoundNumber', 'bulkSuggestions'
+        ));
     }
 
     public function addRound(Request $request, League $league, Championship $championship)
@@ -177,6 +189,95 @@ class ChampionshipWizardController extends Controller
             'ftp_server_id'       => 'nullable|exists:ftp_servers,id',
         ]);
 
+        $claimedSlots = [];
+        $result = $this->resolveRoundRow($data, $championship, $league, $claimedSlots);
+
+        if (is_string($result)) {
+            return back()->withInput()->withErrors(['scheduled_at' => $result]);
+        }
+
+        Race::create($result);
+
+        AuditLogger::record($request->user(), $championship, 'championship.round_added', ['title' => $result['title']]);
+
+        return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'rounds'])
+            ->with('success', 'Round added.');
+    }
+
+    // "Bulk" the same way admin/races/bulk-create.blade.php is: generate a run of
+    // rounds from one shared set of session/weather/server settings, each only
+    // needing its own track and date — reusing resolveRoundRow() per row so the
+    // exact same slot/validity rules single-round Add Round already enforces
+    // apply here too. All-or-nothing: one bad row rejects the whole batch rather
+    // than creating half of it, same convention bulkStore() uses for races.
+    public function bulkAddRounds(Request $request, League $league, Championship $championship)
+    {
+        $this->assertLeagueOfInterest($request, $league, $championship);
+        Gate::authorize('update', $championship);
+
+        $data = $request->validate([
+            'practice_duration'      => 'nullable|integer|min:1|max:999',
+            'qualifying_duration'    => 'nullable|integer|min:1|max:999',
+            'race_duration'          => 'nullable|integer|min:1|max:999',
+            'weather'                => 'nullable|in:dry,wet,mixed,random',
+            'weather_randomness'     => 'nullable|in:0,1,2,3,4,5,6,7,random',
+            'rain_level'             => 'nullable|numeric|min:0|max:1',
+            'time_of_day'            => 'nullable|date_format:H:i',
+            'ambient_temp'           => 'nullable|integer|min:-30|max:50',
+            'description'            => 'nullable|string',
+            'ftp_server_id'          => 'nullable|exists:ftp_servers,id',
+            'rounds'                 => 'required|array|min:1',
+            'rounds.*.track'         => 'required|string|max:255',
+            'rounds.*.scheduled_at'  => 'required|date',
+            'rounds.*.round_number'  => 'nullable|integer|min:1',
+        ]);
+
+        $shared = collect($data)->except('rounds')->all();
+        $rows   = [];
+        $claimedSlots = [];
+
+        // resolveRoundRow() auto-numbers a round from the DB's current max when
+        // none is given — fine for a single Add Round, but every row in this
+        // batch would read the same stale max before any of them are actually
+        // persisted. Numbered here instead, once, so they land 1, 2, 3…
+        $autoRoundNumber = $championship->rounds()->max('round_number') + 1;
+
+        foreach ($data['rounds'] as $i => $row) {
+            if (empty($row['round_number'])) {
+                $row['round_number'] = $autoRoundNumber++;
+            }
+
+            $result = $this->resolveRoundRow(array_merge($shared, $row), $championship, $league, $claimedSlots);
+
+            if (is_string($result)) {
+                return back()->withInput()->withErrors(['rounds' => 'Row ' . ($i + 1) . ' (' . ($row['track'] ?: '—') . '): ' . $result]);
+            }
+
+            $rows[] = $result;
+        }
+
+        DB::transaction(function () use ($rows) {
+            foreach ($rows as $row) {
+                Race::create($row);
+            }
+        });
+
+        AuditLogger::record($request->user(), $championship, 'championship.rounds_bulk_added', ['count' => count($rows)]);
+
+        return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'rounds'])
+            ->with('success', count($rows) . ' rounds added.');
+    }
+
+    // Shared by addRound() and bulkAddRounds() — turns one row's raw
+    // track/scheduled_at/round_number plus the shared session/weather/server
+    // fields into a finalized Race::create() payload, or returns a plain error
+    // string on the same validity rules single-round Add Round already enforced
+    // (server ownership, whole-hour start, slot validity/availability).
+    // $claimedSlots accumulates this batch's own slot times so two rows in the
+    // same bulk submission can't collide with each other either, not just with
+    // rounds already in the database.
+    private function resolveRoundRow(array $data, Championship $championship, League $league, array &$claimedSlots): array|string
+    {
         if (!empty($data['ftp_server_id']) && !$league->ftpServers()->where('id', $data['ftp_server_id'])->exists()) {
             abort(403, 'That server does not belong to this league.');
         }
@@ -199,7 +300,7 @@ class ChampionshipWizardController extends Controller
         // Rounds start on the hour only — the datetime picker already restricts
         // this client-side, but a raw request could still smuggle in a half hour.
         if ($data['scheduled_at']->minute !== 0) {
-            return back()->withInput()->withErrors(['scheduled_at' => 'Rounds can only start on the hour.']);
+            return 'Rounds can only start on the hour.';
         }
 
         if (empty($data['round_number'])) {
@@ -211,27 +312,24 @@ class ChampionshipWizardController extends Controller
         $data['title'] = $championship->name . ' — Round ' . $data['round_number'];
 
         if (!empty($data['ftp_server_id'])) {
-            $server = FtpServer::find($data['ftp_server_id']);
+            $server   = FtpServer::find($data['ftp_server_id']);
+            $slotKey  = $data['scheduled_at']->format('Y-m-d H:i');
 
             if ($server && !$server->isValidSlot($data['scheduled_at'])) {
-                return back()->withInput()->withErrors(['scheduled_at' => 'That time is not a valid slot on this server.']);
+                return 'That time is not a valid slot on this server.';
             }
-            if ($server && in_array($data['scheduled_at']->format('Y-m-d H:i'), $server->takenSlots(), true)) {
-                return back()->withInput()->withErrors(['scheduled_at' => 'That slot is already taken on this server.']);
+            if ($server && (in_array($slotKey, $server->takenSlots(), true) || in_array($slotKey, $claimedSlots, true))) {
+                return 'That slot is already taken on this server.';
             }
 
+            $claimedSlots[] = $slotKey;
             $data['slot_time']          = $data['scheduled_at']->copy();
             $data['config_push_status'] = 'pending';
         } else {
             $data['slot_time'] = null;
         }
 
-        Race::create($data);
-
-        AuditLogger::record($request->user(), $championship, 'championship.round_added', ['title' => $data['title']]);
-
-        return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'rounds'])
-            ->with('success', 'Round added.');
+        return $data;
     }
 
     public function removeRound(Request $request, League $league, Championship $championship, Race $race)

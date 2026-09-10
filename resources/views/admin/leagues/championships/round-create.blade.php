@@ -11,7 +11,7 @@
         'Zandvoort', 'Zolder',
     ];
     $sessionDefaults = $championship->settings->sessions;
-    $nextRoundNumber = old('round_number', $championship->rounds()->max('round_number') + 1);
+    $suggestedRoundNumber = old('round_number', $nextRoundNumber);
 @endphp
 
 @section('title', 'Add Round — ' . $championship->name)
@@ -25,16 +25,35 @@
 
 @section('content')
 
+{{-- Mode toggle — same tab-button pattern as admin/races/form.blade.php's
+     Single Event / Bulk Schedule / Custom Race switch. --}}
+<div class="d-flex mb-4" style="border-bottom:2px solid #e5e7eb">
+    <button type="button" data-rc-mode-btn="single"
+            class="btn fw-black text-uppercase rounded-0 border-0 px-4 py-2"
+            style="font-size:.76rem;letter-spacing:.08em;margin-bottom:-2px">
+        Single Round
+    </button>
+    <button type="button" data-rc-mode-btn="bulk"
+            class="btn fw-black text-uppercase rounded-0 border-0 px-4 py-2"
+            style="font-size:.76rem;letter-spacing:.08em;margin-bottom:-2px">
+        Bulk Add Rounds
+    </button>
+</div>
+
+{{-- ══════════════════════════════════════════════════════════════ --}}
+{{-- SINGLE ROUND                                                   --}}
+{{-- ══════════════════════════════════════════════════════════════ --}}
+<div data-rc-mode-panel="single">
 <form action="{{ route('admin.leagues.championships.rounds.store', [$league, $championship]) }}" method="POST">
     @csrf
 
     <div class="admin-card mb-4">
         <div class="px-4 pt-4 pb-2">
             <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">
-                Round {{ $nextRoundNumber }}
+                Round {{ $suggestedRoundNumber }}
             </p>
             <p class="text-secondary mb-0" style="font-size:.78rem">
-                Titled automatically: <strong>{{ $championship->name }} — Round {{ $nextRoundNumber }}</strong>
+                Titled automatically: <strong>{{ $championship->name }} — Round {{ $suggestedRoundNumber }}</strong>
             </p>
         </div>
 
@@ -76,106 +95,7 @@
             </div>
         </div>
 
-        <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-            <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Sessions &amp; Conditions</p>
-
-            <div class="row g-3 mb-3">
-                <div class="col-6 col-sm-2">
-                    <label class="form-label" style="font-size:.75rem">Practice <span class="fw-normal text-secondary">(min)</span></label>
-                    <input type="number" name="practice_duration" value="{{ old('practice_duration', $sessionDefaults->practice_enabled ? $sessionDefaults->practice_length_minutes : '') }}"
-                           class="form-control form-control-sm @error('practice_duration') is-invalid @enderror" min="1" max="999" placeholder="—">
-                    @error('practice_duration')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-6 col-sm-2">
-                    <label class="form-label" style="font-size:.75rem">Quali <span class="fw-normal text-secondary">(min)</span></label>
-                    <input type="number" name="qualifying_duration" value="{{ old('qualifying_duration', $sessionDefaults->qualifying_enabled ? $sessionDefaults->qualifying_length_minutes : '') }}"
-                           class="form-control form-control-sm @error('qualifying_duration') is-invalid @enderror" min="1" max="999" placeholder="—">
-                    @error('qualifying_duration')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-6 col-sm-2">
-                    <label class="form-label" style="font-size:.75rem">Race <span class="text-danger">*</span> <span class="fw-normal text-secondary">(min)</span></label>
-                    <input type="number" name="race_duration" value="{{ old('race_duration', $sessionDefaults->race_length_minutes) }}"
-                           class="form-control form-control-sm @error('race_duration') is-invalid @enderror" min="1" max="999" required>
-                    @error('race_duration')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-6 col-sm-3">
-                    <label class="form-label" style="font-size:.75rem">Start Time <span class="fw-normal text-secondary">(in-game)</span></label>
-                    <input type="time" name="time_of_day" class="form-control form-control-sm" value="{{ old('time_of_day', $championship->settings->schedule->time_of_day ?? '14:00') }}" step="3600">
-                </div>
-                <div class="col-6 col-sm-3">
-                    <label class="form-label" style="font-size:.75rem">Ambient Temp (°C)</label>
-                    <input type="number" name="ambient_temp" value="{{ old('ambient_temp', $sessionDefaults->ambient_temp) }}"
-                           class="form-control form-control-sm @error('ambient_temp') is-invalid @enderror" placeholder="Server default">
-                    @error('ambient_temp')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                </div>
-            </div>
-
-            <div class="row g-3 align-items-end">
-                <div class="col-sm-3">
-                    <label class="form-label" style="font-size:.75rem">Weather</label>
-                    @php
-                        // "Randomised" maps cleanly onto the round's own "Random" option;
-                        // "fixed" doesn't map onto a single dry/wet/mixed value, so it's
-                        // left unset here — the round falls through to the server's own
-                        // event_defaults, same as today.
-                        $weatherDefault = old('weather', $sessionDefaults->weather_mode === 'randomised' ? 'random' : '');
-                    @endphp
-                    <select name="weather" id="rc-weather" class="form-select form-select-sm">
-                        <option value="">— Not set —</option>
-                        <option value="dry"    {{ $weatherDefault === 'dry'    ? 'selected' : '' }}>Dry</option>
-                        <option value="wet"    {{ $weatherDefault === 'wet'    ? 'selected' : '' }}>Wet</option>
-                        <option value="mixed"  {{ $weatherDefault === 'mixed'  ? 'selected' : '' }}>Mixed</option>
-                        <option value="random" {{ $weatherDefault === 'random' ? 'selected' : '' }}>Random</option>
-                    </select>
-                </div>
-                <div class="col-sm-4">
-                    <label class="form-label" style="font-size:.75rem">Dynamic Weather <span class="fw-normal text-secondary" style="text-transform:none">(how much it changes mid-session)</span></label>
-                    <select name="weather_randomness" class="form-select form-select-sm">
-                        <option value="" {{ old('weather_randomness') === '' ? 'selected' : '' }}>— Not set —</option>
-                        <option value="0" {{ old('weather_randomness') === '0' ? 'selected' : '' }}>0 — Static</option>
-                        @foreach(['1','2','3','4'] as $n)
-                        <option value="{{ $n }}" {{ old('weather_randomness') === $n ? 'selected' : '' }}>{{ $n }} — Realistic</option>
-                        @endforeach
-                        @foreach(['5','6','7'] as $n)
-                        <option value="{{ $n }}" {{ old('weather_randomness') === $n ? 'selected' : '' }}>{{ $n }} — Sensational</option>
-                        @endforeach
-                        <option value="random" {{ old('weather_randomness') === 'random' ? 'selected' : '' }}>Randomize</option>
-                    </select>
-                </div>
-                <div class="col-sm-3" id="rc-rain-level-wrap" style="display:none">
-                    @php $savedRainLevel = old('rain_level', $sessionDefaults->rain_level ?: 0.3); @endphp
-                    <label class="form-label" style="font-size:.75rem">Rain Level <span class="fw-normal text-secondary">(0–1)</span></label>
-                    <div class="d-flex align-items-center gap-2">
-                        <input type="range" name="rain_level" id="rc-rain-level" min="0" max="1" step="0.1"
-                               value="{{ $savedRainLevel }}" class="form-range flex-grow-1" style="accent-color:#7c3aed">
-                        <span id="rc-rain-level-val" class="fw-bold text-dark" style="min-width:2rem;font-size:.82rem;text-align:right">
-                            {{ number_format($savedRainLevel, 1) }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-            <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Server <span class="fw-normal" style="text-transform:none">(optional)</span></p>
-            @if($servers->isEmpty())
-            <p class="text-secondary mb-0" style="font-size:.82rem">
-                No servers assigned to {{ $league->name }} yet — an XCL admin needs to assign one from the League page before rounds can auto-push.
-            </p>
-            @else
-            <select name="ftp_server_id" class="form-select form-select-sm">
-                <option value="">— No server assigned —</option>
-                @foreach($servers as $srv)
-                <option value="{{ $srv->id }}" {{ (string) old('ftp_server_id', $championship->ftp_server_id) === (string) $srv->id ? 'selected' : '' }}>{{ $srv->name }}</option>
-                @endforeach
-            </select>
-            @endif
-        </div>
-
-        <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-            <label class="form-label" style="font-size:.75rem">Notes <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
-            <textarea name="description" rows="2" class="form-control form-control-sm">{{ old('description') }}</textarea>
-        </div>
+        @include('admin.leagues.championships._round-shared-fields', ['idPrefix' => 'rc'])
     </div>
 
     <div class="d-flex gap-2">
@@ -183,20 +103,153 @@
         <a href="{{ route('admin.leagues.championships.wizard', [$league, $championship, 'rounds']) }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4">Cancel</a>
     </div>
 </form>
+</div>
+
+{{-- ══════════════════════════════════════════════════════════════ --}}
+{{-- BULK ADD ROUNDS                                                --}}
+{{-- ══════════════════════════════════════════════════════════════ --}}
+<div data-rc-mode-panel="bulk" style="display:none">
+<form action="{{ route('admin.leagues.championships.rounds.bulk-store', [$league, $championship]) }}" method="POST" id="rcb-form">
+    @csrf
+
+    <div class="admin-card mb-4">
+        <div class="px-4 pt-4 pb-3">
+            <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Generate Rounds</p>
+            <p class="text-secondary mb-3" style="font-size:.78rem">
+                Dates are suggested from the championship's own schedule (Basics step) — pick how many rounds to add, then fill in a track per round below.
+            </p>
+            <div class="row g-3 align-items-end">
+                <div class="col-sm-3">
+                    <label class="form-label">Number of Rounds</label>
+                    <input type="number" id="rcb-count" value="4" min="1" max="20" class="form-control">
+                </div>
+                <div class="col-sm-3">
+                    <button type="button" id="rcb-generate" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">
+                        Generate Rows
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="rcb-table-wrap" style="display:none">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" style="font-size:.85rem">
+                    <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+                        <tr>
+                            <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:50px">#</th>
+                            <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Track</th>
+                            <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:210px">Date &amp; Time (BST/GMT)</th>
+                            <th class="pe-4" style="width:40px"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="rcb-tbody"></tbody>
+                </table>
+            </div>
+            <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+                <button type="button" id="rcb-add-row" class="btn btn-sm fw-bold text-uppercase"
+                        style="font-size:.68rem;padding:3px 10px;background:rgba(124,58,237,.1);color:#7c3aed;border:1px solid rgba(124,58,237,.3);border-radius:6px">
+                    + Add Row
+                </button>
+            </div>
+        </div>
+
+        @include('admin.leagues.championships._round-shared-fields', ['idPrefix' => 'rcb'])
+    </div>
+
+    <div class="d-flex gap-2" id="rcb-submit-wrap" style="display:none">
+        <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">
+            Add <span id="rcb-submit-count">0</span> Rounds
+        </button>
+        <a href="{{ route('admin.leagues.championships.wizard', [$league, $championship, 'rounds']) }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4">Cancel</a>
+    </div>
+    @error('rounds')<div class="alert alert-danger mt-3">{{ $message }}</div>@enderror
+</form>
+</div>
 
 <script>
 (function () {
-    var weatherSel = document.getElementById('rc-weather');
-    var rainWrap   = document.getElementById('rc-rain-level-wrap');
-    var rainRange  = document.getElementById('rc-rain-level');
-    var rainVal    = document.getElementById('rc-rain-level-val');
+    // ── Mode toggle ──────────────────────────────────────────────
+    var modeBtns   = document.querySelectorAll('[data-rc-mode-btn]');
+    var modePanels = document.querySelectorAll('[data-rc-mode-panel]');
 
-    function updateRainVisibility() {
-        rainWrap.style.display = ['wet', 'mixed'].includes(weatherSel.value) ? '' : 'none';
+    function setMode(mode) {
+        modePanels.forEach(function (p) { p.style.display = p.dataset.rcModePanel === mode ? '' : 'none'; });
+        modeBtns.forEach(function (b) {
+            var active = b.dataset.rcModeBtn === mode;
+            b.style.background = active ? '#f3e8ff' : 'transparent';
+            b.style.color      = active ? '#7c3aed' : '#6b7280';
+            b.style.borderBottom = active ? '2px solid #7c3aed' : '2px solid transparent';
+        });
     }
-    weatherSel.addEventListener('change', updateRainVisibility);
-    rainRange.addEventListener('input', function () { rainVal.textContent = parseFloat(rainRange.value).toFixed(1); });
-    updateRainVisibility();
+    modeBtns.forEach(function (b) { b.addEventListener('click', function () { setMode(b.dataset.rcModeBtn); }); });
+    setMode('single');
+
+    // ── Bulk row generator ───────────────────────────────────────
+    var suggestions   = @json($bulkSuggestions);
+    var startRoundNum = {{ $nextRoundNumber }};
+    var countInput    = document.getElementById('rcb-count');
+    var generateBtn   = document.getElementById('rcb-generate');
+    var addRowBtn     = document.getElementById('rcb-add-row');
+    var tbody         = document.getElementById('rcb-tbody');
+    var tableWrap     = document.getElementById('rcb-table-wrap');
+    var submitWrap    = document.getElementById('rcb-submit-wrap');
+    var submitCount   = document.getElementById('rcb-submit-count');
+    var isAcc         = {{ $championship->game === 'acc' ? 'true' : 'false' }};
+
+    var rows = [];
+
+    function render() {
+        tbody.innerHTML = '';
+        rows.forEach(function (row, i) {
+            var tr = document.createElement('tr');
+            var trackField = isAcc
+                ? '<select name="rounds[' + i + '][track]" class="form-select form-select-sm" required>'
+                    + '<option value="">Select track…</option>'
+                    + @json($accTracks).map(function (t) {
+                        return '<option value="' + t + '"' + (row.track === t ? ' selected' : '') + '>' + t + '</option>';
+                    }).join('')
+                    + '</select>'
+                : '<input type="text" name="rounds[' + i + '][track]" value="' + (row.track || '') + '" class="form-control form-control-sm" placeholder="e.g. Le Mans" required>';
+
+            tr.innerHTML =
+                '<td class="ps-4 fw-bold text-secondary">' + (startRoundNum + i) + '</td>' +
+                '<td data-track-cell></td>' +
+                '<td><input type="datetime-local" name="rounds[' + i + '][scheduled_at]" value="' + (row.scheduled_at || '') + '" step="3600" class="form-control form-control-sm" required></td>' +
+                '<td class="pe-4">' +
+                    '<button type="button" data-rcb-remove class="btn btn-sm d-flex align-items-center justify-content-center" ' +
+                    'style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;width:28px;height:28px;padding:0;font-size:.85rem">✕</button>' +
+                '</td>';
+            tr.querySelector('[data-track-cell]').innerHTML = trackField;
+            tr.querySelector('[data-rcb-remove]').addEventListener('click', function () {
+                rows.splice(i, 1);
+                render();
+            });
+            tbody.appendChild(tr);
+        });
+
+        var has = rows.length > 0;
+        tableWrap.style.display  = has ? '' : 'none';
+        submitWrap.style.display = has ? '' : 'none';
+        submitCount.textContent  = rows.length;
+    }
+
+    function generate() {
+        var n = Math.min(Math.max(parseInt(countInput.value) || 1, 1), 20);
+        rows = [];
+        for (var i = 0; i < n; i++) {
+            rows.push({ track: '', scheduled_at: suggestions[i] || '' });
+        }
+        render();
+    }
+
+    function addRow() {
+        var last = rows[rows.length - 1];
+        rows.push({ track: '', scheduled_at: last ? last.scheduled_at : (suggestions[rows.length] || '') });
+        render();
+    }
+
+    generateBtn.addEventListener('click', generate);
+    addRowBtn.addEventListener('click', addRow);
 })();
 </script>
 
