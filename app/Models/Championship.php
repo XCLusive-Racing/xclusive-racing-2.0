@@ -348,6 +348,52 @@ class Championship extends Model
         return $grouped;
     }
 
+    // A separate team classification for a driver-swaps championship where teams
+    // register as a unit (Championship::registerTeam() equivalent flow,
+    // ChampionshipRegistration.racing_team_id) — settings.scoring.team_points_enabled
+    // existed since the points-scheme rebuild but never computed anything.
+    // A team's total is the combined points of every member who actually scored
+    // (owner or driver-swap member), not just whichever one holds the
+    // registration — round-by-round attribution to a specific member already
+    // lives in RaceResult/RaceRegistration.team_entry_id, not here.
+    public function computeTeamStandings(): array
+    {
+        if (!($this->settings->scoring->team_points_enabled ?? false)) {
+            return [];
+        }
+
+        $teamRegistrations = $this->registrations()
+            ->whereNotNull('racing_team_id')
+            ->with('racingTeam.members', 'racingTeam.owner')
+            ->get();
+
+        if ($teamRegistrations->isEmpty()) {
+            return [];
+        }
+
+        $driverStandings = collect($this->buildDriverStandings())->keyBy('user_id');
+
+        $teams = [];
+        foreach ($teamRegistrations as $registration) {
+            $team = $registration->racingTeam;
+            if (!$team || isset($teams[$team->id])) {
+                continue;
+            }
+
+            $memberIds = $team->members->pluck('id')->push($team->owner_id)->unique();
+
+            $teams[$team->id] = [
+                'team'         => $team,
+                'total_points' => $memberIds->sum(fn ($id) => $driverStandings->get($id)['total_points'] ?? 0),
+            ];
+        }
+
+        $teams = array_values($teams);
+        usort($teams, fn ($a, $b) => $b['total_points'] <=> $a['total_points']);
+
+        return $teams;
+    }
+
     // League-owned championships (settings.scoring.points_scheme_id set) score
     // from that PointsScheme's own resolved, stored points_table and bonus
     // values; XCL's own native championships (no scheme selected) keep using

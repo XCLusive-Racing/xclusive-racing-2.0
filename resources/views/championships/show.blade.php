@@ -142,6 +142,43 @@
                 </div>
                 @endforeach
 
+                {{-- Team Standings --}}
+                @if(!empty($teamStandings))
+                <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
+                    <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
+                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Team Standings</h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0" style="font-size:.875rem">
+                            <thead style="background:#0f172a">
+                                <tr>
+                                    <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;color:#6b7280;letter-spacing:.06em">Pos</th>
+                                    <th class="fw-bold text-uppercase" style="font-size:.68rem;color:#6b7280;letter-spacing:.06em">Team</th>
+                                    <th class="fw-bold text-uppercase text-center pe-4" style="font-size:.68rem;color:#6b7280;letter-spacing:.06em">PTS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($teamStandings as $i => $entry)
+                                @php $medalColors = ['#f59e0b','#9ca3af','#b45309']; @endphp
+                                <tr style="border-bottom:1px solid #1f2937">
+                                    <td class="ps-4 fw-black" style="color:{{ $medalColors[$i] ?? '#6b7280' }};font-size:.95rem">{{ $i + 1 }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            @if($entry['team']->logoUrl())
+                                            <img src="{{ $entry['team']->logoUrl() }}" alt="" style="width:26px;height:26px;object-fit:contain;border-radius:6px">
+                                            @endif
+                                            <span class="fw-bold text-white">{{ $entry['team']->name }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center pe-4 fw-black" style="color:#db2777;font-size:1rem">{{ $entry['total_points'] }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                @endif
+
                 {{-- Rounds --}}
                 <div style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
