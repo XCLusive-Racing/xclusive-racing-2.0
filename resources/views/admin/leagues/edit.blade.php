@@ -40,10 +40,19 @@
     </div>
 </div>
 
+@if($league->trashed())
+<div class="admin-card mb-4 px-4 py-3" style="border-left:4px solid #6b7280">
+    <p class="fw-bold mb-1" style="font-size:.85rem">This league is archived.</p>
+    <p class="text-secondary mb-0" style="font-size:.8rem">
+        Restore it from the <a href="{{ route('admin.leagues.index') }}">Leagues list</a> before making changes.
+    </p>
+</div>
+@endif
+
 <div class="row g-4 align-items-start">
     <div class="col-12 col-lg-7">
 
-        @if($canEdit)
+        @if($canEdit && !$league->trashed())
         <form action="{{ route('admin.leagues.update', $league) }}" method="POST" enctype="multipart/form-data">
             @csrf @method('PUT')
 
@@ -72,8 +81,10 @@
                         <select name="status" class="form-select @error('status') is-invalid @enderror">
                             <option value="draft" {{ old('status', $league->status) === 'draft' ? 'selected' : '' }}>Draft — not visible publicly</option>
                             <option value="active" {{ old('status', $league->status) === 'active' ? 'selected' : '' }}>Active</option>
-                            <option value="archived" {{ old('status', $league->status) === 'archived' ? 'selected' : '' }}>Archived</option>
                         </select>
+                        <div class="form-text" style="font-size:.72rem">
+                            Archiving is a separate, owner-only action from the Leagues list — not a status you set here.
+                        </div>
                         @error('status') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                 </div>

@@ -374,15 +374,18 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues')->name('adm
     Route::get('/', [LeagueController::class, 'index'])->name('index');
     Route::get('/create', [LeagueController::class, 'create'])->name('create');
     Route::post('/', [LeagueController::class, 'store'])->name('store');
-    Route::get('/{league}/edit', [LeagueController::class, 'edit'])->name('edit');
-    Route::put('/{league}', [LeagueController::class, 'update'])->name('update');
-    Route::post('/{league}/archive', [LeagueController::class, 'archive'])->name('archive');
-    Route::post('/{league}/restore', [LeagueController::class, 'restore'])->name('restore');
-    Route::post('/{league}/members', [LeagueController::class, 'addMember'])->name('members.store');
-    Route::delete('/{league}/members/{member}', [LeagueController::class, 'removeMember'])->name('members.destroy');
-    Route::post('/{league}/servers', [LeagueController::class, 'assignServer'])->name('servers.store');
-    Route::post('/{league}/servers/create', [LeagueController::class, 'storeServer'])->name('servers.create');
-    Route::delete('/{league}/servers/{server}', [LeagueController::class, 'unassignServer'])->name('servers.destroy');
+    // withTrashed(): an archived league is a real soft delete now (see
+    // LeagueController::archive()) — without this every one of these would 404
+    // on an archived league instead of letting an owner view/restore it.
+    Route::get('/{league}/edit', [LeagueController::class, 'edit'])->name('edit')->withTrashed();
+    Route::put('/{league}', [LeagueController::class, 'update'])->name('update')->withTrashed();
+    Route::post('/{league}/archive', [LeagueController::class, 'archive'])->name('archive')->withTrashed();
+    Route::post('/{league}/restore', [LeagueController::class, 'restore'])->name('restore')->withTrashed();
+    Route::post('/{league}/members', [LeagueController::class, 'addMember'])->name('members.store')->withTrashed();
+    Route::delete('/{league}/members/{member}', [LeagueController::class, 'removeMember'])->name('members.destroy')->withTrashed();
+    Route::post('/{league}/servers', [LeagueController::class, 'assignServer'])->name('servers.store')->withTrashed();
+    Route::post('/{league}/servers/create', [LeagueController::class, 'storeServer'])->name('servers.create')->withTrashed();
+    Route::delete('/{league}/servers/{server}', [LeagueController::class, 'unassignServer'])->name('servers.destroy')->withTrashed();
 });
 
 // Entry point for the Leagues nav's "Championships" link — picks (or auto-picks)

@@ -146,6 +146,58 @@ class LeagueAdminAccessTest extends TestCase
         $this->assertSame('archived', $league->fresh()->status);
     }
 
+    // --- Archiving is a real soft delete, not just a status flag ---
+
+    public function test_archiving_a_league_soft_deletes_it_and_it_disappears_from_a_plain_query(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $owner  = $this->makeOwner();
+
+        $this->actingAs($owner)->post(route('admin.leagues.archive', $league))->assertRedirect();
+
+        $this->assertSoftDeleted('leagues', ['id' => $league->id]);
+        $this->assertNull(League::find($league->id));
+    }
+
+    public function test_archived_leagues_still_show_on_the_admin_index_for_restoring(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $owner  = $this->makeOwner();
+        $this->actingAs($owner)->post(route('admin.leagues.archive', $league))->assertRedirect();
+
+        $this->actingAs($owner)
+            ->get(route('admin.leagues.index'))
+            ->assertOk()
+            ->assertSee('NLRL');
+    }
+
+    public function test_restoring_a_league_clears_the_soft_delete_and_resets_status_to_draft(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $owner  = $this->makeOwner();
+        $this->actingAs($owner)->post(route('admin.leagues.archive', $league))->assertRedirect();
+
+        $this->actingAs($owner)->post(route('admin.leagues.restore', $league))->assertRedirect();
+
+        $league->refresh();
+        $this->assertNull($league->deleted_at);
+        $this->assertSame('draft', $league->status);
+    }
+
+    public function test_the_general_edit_form_can_no_longer_set_status_to_archived(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $admin  = $this->makeAdmin();
+
+        $this->actingAs($admin)->put(route('admin.leagues.update', $league), [
+            'name' => 'NLRL', 'slug' => 'nlrl', 'status' => 'archived',
+            'primary_color' => '#111111', 'accent_color' => '#222222',
+        ])->assertSessionHasErrors('status');
+
+        $this->assertSame('draft', $league->fresh()->status);
+        $this->assertNull($league->fresh()->deleted_at);
+    }
+
     public function test_league_manager_edit_screen_never_renders_ftp_credentials(): void
     {
         $league = $this->makeLeague('nlrl');

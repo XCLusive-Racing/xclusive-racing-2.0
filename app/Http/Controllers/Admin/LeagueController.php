@@ -19,14 +19,17 @@ class LeagueController extends Controller
         $user = $request->user();
 
         if ($user->canManage()) {
-            $leagues = League::withoutTenantScope()->withCount('members')->orderBy('name')->get();
+            // withTrashed(): an archived league is now a real soft delete (see
+            // archive()) — without this it would vanish from the one screen that
+            // still needs to show it, with no way left to restore it.
+            $leagues = League::withoutTenantScope()->withTrashed()->withCount('members')->orderBy('name')->get();
             return view('admin.leagues.index', compact('leagues'));
         }
 
         // A league manager/steward attached to exactly one league lands straight on
         // it, rather than an index of one — they should never have to guess which
         // league they're acting in.
-        $leagues = League::orderBy('name')->get();
+        $leagues = League::withTrashed()->orderBy('name')->get();
 
         if ($leagues->count() === 1) {
             return redirect()->route('admin.leagues.edit', $leagues->first());
@@ -56,7 +59,7 @@ class LeagueController extends Controller
             'discord_guild_id'             => 'nullable|string|max:32',
             'website_url'                  => 'nullable|url|max:255',
             'requires_discord_membership'  => 'nullable|boolean',
-            'status'                       => 'required|in:draft,active,archived',
+            'status'                       => 'required|in:draft,active',
             'logo'                         => 'nullable|image|max:4096',
             'banner'                       => 'nullable|image|max:8192',
         ]);
@@ -125,7 +128,9 @@ class LeagueController extends Controller
         if ($isAdmin) {
             $rules['name']                        = 'required|string|max:150';
             $rules['slug']                        = 'required|alpha_dash|max:150|unique:leagues,slug,' . $league->id;
-            $rules['status']                      = 'required|in:draft,active,archived';
+            // "archived" is deliberately excluded here — that's now only reachable
+            // through archive(), which is owner-only and does a real soft delete.
+            $rules['status']                      = 'required|in:draft,active';
             $rules['requires_discord_membership'] = 'nullable|boolean';
             $rules['discord_guild_id']            = 'nullable|string|max:32';
         }
@@ -151,11 +156,17 @@ class LeagueController extends Controller
     {
         // Archiving is a league's "delete" — the only staff action that takes a
         // league out of use — so it's restricted to the owner role specifically,
-        // unlike everything else here which any canManage() staff can do.
+        // unlike everything else here which any canManage() staff can do. It's a
+        // real (Eloquent) soft delete, not just a status flag: League already had
+        // the softDeletes() column and SoftDeletes trait sitting unused. Deleting
+        // for real means every plain League:: query across the app now excludes
+        // an archived league automatically, instead of relying on every one of
+        // those call sites to remember to filter status != 'archived' itself.
         abort_unless($request->user()->isOwner(), 403);
         abort_if($league->is_system, 403, 'The XCL league cannot be archived.');
 
         $league->update(['status' => 'archived']);
+        $league->delete();
         AuditLogger::record($request->user(), $league, 'league.archived');
 
         return back()->with('success', $league->name . ' has been archived.');
@@ -165,6 +176,7 @@ class LeagueController extends Controller
     {
         abort_unless($request->user()->canManage(), 403);
 
+        $league->restore();
         $league->update(['status' => 'draft']);
         AuditLogger::record($request->user(), $league, 'league.restored');
 
