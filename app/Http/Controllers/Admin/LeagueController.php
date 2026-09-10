@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Championship;
 use App\Models\FtpServer;
 use App\Models\League;
 use App\Models\LeagueUser;
@@ -181,6 +182,33 @@ class LeagueController extends Controller
         AuditLogger::record($request->user(), $league, 'league.restored');
 
         return back()->with('success', $league->name . ' has been restored to draft.');
+    }
+
+    // Real, permanent removal — distinct from archive() above, which is
+    // reversible and keeps the league listed (as "Archived") for restoring.
+    // Only reachable on an already-archived league, and only when it has no
+    // championships left: championships.league_id is nullOnDelete(), so a
+    // championship still attached to a force-deleted league would be orphaned
+    // with a null league_id — invisible under TenantScope (no bypass for null
+    // since Phase 2.5) rather than actually gone, with its rounds/registrations/
+    // results silently stranded. Requiring the league to be emptied out first
+    // avoids ever creating that state.
+    public function destroy(Request $request, League $league)
+    {
+        abort_unless($request->user()->isOwner(), 403);
+        abort_if($league->is_system, 403, 'The XCL league cannot be deleted.');
+        abort_unless($league->trashed(), 422, 'Archive the league before deleting it permanently.');
+
+        // withTrashed(): a soft-deleted championship is still a real row that
+        // would otherwise get silently orphaned by the same nullOnDelete gap.
+        $championshipCount = Championship::withoutTenantScope()->withTrashed()->where('league_id', $league->id)->count();
+        abort_if($championshipCount > 0, 422, 'This league still has championships — remove or reassign them first.');
+
+        $name = $league->name;
+        AuditLogger::record($request->user(), $league, 'league.deleted');
+        $league->forceDelete();
+
+        return redirect()->route('admin.leagues.index')->with('success', $name . ' has been permanently deleted.');
     }
 
     public function addMember(Request $request, League $league)

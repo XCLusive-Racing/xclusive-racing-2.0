@@ -381,6 +381,7 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues')->name('adm
     Route::put('/{league}', [LeagueController::class, 'update'])->name('update')->withTrashed();
     Route::post('/{league}/archive', [LeagueController::class, 'archive'])->name('archive')->withTrashed();
     Route::post('/{league}/restore', [LeagueController::class, 'restore'])->name('restore')->withTrashed();
+    Route::delete('/{league}', [LeagueController::class, 'destroy'])->name('destroy')->withTrashed();
     Route::post('/{league}/members', [LeagueController::class, 'addMember'])->name('members.store')->withTrashed();
     Route::delete('/{league}/members/{member}', [LeagueController::class, 'removeMember'])->name('members.destroy')->withTrashed();
     Route::post('/{league}/servers', [LeagueController::class, 'assignServer'])->name('servers.store')->withTrashed();

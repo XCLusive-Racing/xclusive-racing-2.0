@@ -112,6 +112,15 @@
                                             Restore to Draft
                                         </button>
                                     </form>
+                                    @if(auth()->user()->isOwner())
+                                    <form action="{{ route('admin.leagues.destroy', $league) }}" method="POST" onsubmit="return false">
+                                        @csrf @method('DELETE')
+                                        <button type="button" class="dropdown-item fw-bold" style="color:#dc2626"
+                                                onclick="xcDeleteSubmit(this.closest('form'), 'Permanently delete {{ addslashes($league->name) }}? This cannot be undone — it must have no championships left.')">
+                                            Delete Permanently
+                                        </button>
+                                    </form>
+                                    @endif
                                     @elseif(auth()->user()->isOwner())
                                     <form action="{{ route('admin.leagues.archive', $league) }}" method="POST" onsubmit="return false">
                                         @csrf

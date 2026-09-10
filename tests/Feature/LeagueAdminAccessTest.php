@@ -184,6 +184,67 @@ class LeagueAdminAccessTest extends TestCase
         $this->assertSame('draft', $league->status);
     }
 
+    // --- Permanent delete (destroy()) — distinct from archive() ---
+
+    public function test_only_an_already_archived_empty_league_can_be_permanently_deleted_by_an_owner(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $owner  = $this->makeOwner();
+
+        $this->actingAs($owner)->post(route('admin.leagues.archive', $league))->assertRedirect();
+        $this->actingAs($owner)->delete(route('admin.leagues.destroy', $league))->assertRedirect();
+
+        $this->assertDatabaseMissing('leagues', ['id' => $league->id]);
+    }
+
+    public function test_a_non_archived_league_cannot_be_permanently_deleted(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $owner  = $this->makeOwner();
+
+        $this->actingAs($owner)->delete(route('admin.leagues.destroy', $league))->assertStatus(422);
+
+        $this->assertDatabaseHas('leagues', ['id' => $league->id]);
+    }
+
+    public function test_an_admin_cannot_permanently_delete_a_league_even_when_archived(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $owner  = $this->makeOwner();
+        $admin  = $this->makeAdmin();
+
+        $this->actingAs($owner)->post(route('admin.leagues.archive', $league))->assertRedirect();
+        $this->actingAs($admin)->delete(route('admin.leagues.destroy', $league))->assertForbidden();
+
+        $this->assertSoftDeleted('leagues', ['id' => $league->id]);
+    }
+
+    public function test_a_league_with_championships_cannot_be_permanently_deleted(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $owner        = $this->makeOwner();
+        $championship = \App\Models\Championship::create([
+            'league_id' => $league->id, 'name' => 'Test Cup', 'game' => 'acc', 'season' => 2026,
+            'status' => 'draft', 'settings' => \App\Settings\ChampionshipSettingsSchema::defaults(),
+        ]);
+
+        $this->actingAs($owner)->post(route('admin.leagues.archive', $league))->assertRedirect();
+        $this->actingAs($owner)->delete(route('admin.leagues.destroy', $league))->assertStatus(422);
+
+        $this->assertSoftDeleted('leagues', ['id' => $league->id]);
+        $this->assertDatabaseHas('championships', ['id' => $championship->id]);
+    }
+
+    public function test_the_system_league_can_never_be_permanently_deleted(): void
+    {
+        $xcl   = League::system();
+        $owner = $this->makeOwner();
+
+        $this->actingAs($owner)->delete(route('admin.leagues.destroy', $xcl))->assertForbidden();
+
+        $this->assertDatabaseHas('leagues', ['id' => $xcl->id]);
+    }
+
     public function test_the_general_edit_form_can_no_longer_set_status_to_archived(): void
     {
         $league = $this->makeLeague('nlrl');
