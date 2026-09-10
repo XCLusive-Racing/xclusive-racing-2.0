@@ -14,8 +14,8 @@ up without re-deriving context.
 - **All seven phases are now built (2026-09-10)**, plus a second refinement
   batch (below), in progress. Done so far: steward scoping (item 1),
   `max_missed_rounds` + `track_temp`/`cloud_level` (item 2), team standings
-  (item 3), team registration per-round-vs-whole-championship (item 4).
-  Still open: re-verifying `computeClassStandings()` (item 6),
+  (item 3), team registration per-round-vs-whole-championship (item 4),
+  re-verifying `computeClassStandings()` (item 6). Still open:
   parameterising XCL-branded copy in standings views (item 7), Edit Round
   (item 8), and a real browser check of everything built this session
   (item 9). Item 5 (Discord operational setup) is explicitly deferred by
@@ -1163,7 +1163,12 @@ explicit direction on each. Progress so far:
    cases.)
 5. **Discord operational setup — explicitly deferred** by the user; not
    touched this batch.
-6. **`computeClassStandings()` — not yet re-verified this batch.** Pending.
+6. **`computeClassStandings()` — verified, still correct.** No test covered
+   it at all before now, despite two of this session's own changes touching
+   the `buildDriverStandings()` data it groups (missed-rounds penalty,
+   points-scheme scoring). `tests/Feature/ClassStandingsTest.php` confirms
+   grouping-by-class, omission of unclassed drivers, and that a missed-rounds
+   penalty flows through into each class's own standings correctly.
 7. **XCL-branded copy in standings views — not yet done.** Pending.
 8. **Edit Round — not yet done.** Rounds still only support Add/Remove.
    Pending.
