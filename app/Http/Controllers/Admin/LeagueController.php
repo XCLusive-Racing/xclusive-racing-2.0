@@ -149,7 +149,10 @@ class LeagueController extends Controller
 
     public function archive(Request $request, League $league)
     {
-        abort_unless($request->user()->canManage(), 403);
+        // Archiving is a league's "delete" — the only staff action that takes a
+        // league out of use — so it's restricted to the owner role specifically,
+        // unlike everything else here which any canManage() staff can do.
+        abort_unless($request->user()->isOwner(), 403);
         abort_if($league->is_system, 403, 'The XCL league cannot be archived.');
 
         $league->update(['status' => 'archived']);

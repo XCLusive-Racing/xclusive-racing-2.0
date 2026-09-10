@@ -108,7 +108,7 @@
                                             Restore to Draft
                                         </button>
                                     </form>
-                                    @else
+                                    @elseif(auth()->user()->isOwner())
                                     <form action="{{ route('admin.leagues.archive', $league) }}" method="POST" onsubmit="return false">
                                         @csrf
                                         <button type="button" class="dropdown-item fw-bold" style="color:#dc2626"

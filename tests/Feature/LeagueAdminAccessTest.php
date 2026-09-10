@@ -40,6 +40,14 @@ class LeagueAdminAccessTest extends TestCase
         return $user;
     }
 
+    private function makeOwner(): User
+    {
+        $user = User::factory()->create();
+        $user->roles()->attach(Role::where('slug', 'owner')->first());
+
+        return $user;
+    }
+
     public function test_league_manager_cannot_create_a_league(): void
     {
         $manager = User::factory()->leagueManager()->create();
@@ -98,7 +106,7 @@ class LeagueAdminAccessTest extends TestCase
         $this->assertDatabaseMissing('league_user', ['league_id' => $league->id, 'user_id' => $recruit->id]);
     }
 
-    public function test_admin_can_create_edit_and_archive_a_league_and_assign_members(): void
+    public function test_admin_can_create_edit_a_league_and_assign_members_but_not_archive_it(): void
     {
         $admin = $this->makeAdmin();
 
@@ -115,8 +123,10 @@ class LeagueAdminAccessTest extends TestCase
 
         $this->assertSame('active', $league->fresh()->status);
 
-        $this->actingAs($admin)->post(route('admin.leagues.archive', $league))->assertRedirect();
-        $this->assertSame('archived', $league->fresh()->status);
+        // Archiving is a league's "delete" — restricted to the owner role only,
+        // even though an admin can otherwise fully manage a league.
+        $this->actingAs($admin)->post(route('admin.leagues.archive', $league))->assertForbidden();
+        $this->assertSame('active', $league->fresh()->status);
 
         $recruit = User::factory()->create();
         $this->actingAs($admin)->post(route('admin.leagues.members.store', $league), [
@@ -125,6 +135,15 @@ class LeagueAdminAccessTest extends TestCase
 
         $this->assertDatabaseHas('league_user', ['league_id' => $league->id, 'user_id' => $recruit->id, 'role' => 'manager']);
         $this->assertTrue($recruit->fresh()->isLeagueManager());
+    }
+
+    public function test_only_the_owner_role_can_archive_a_league(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $owner  = $this->makeOwner();
+
+        $this->actingAs($owner)->post(route('admin.leagues.archive', $league))->assertRedirect();
+        $this->assertSame('archived', $league->fresh()->status);
     }
 
     public function test_league_manager_edit_screen_never_renders_ftp_credentials(): void
