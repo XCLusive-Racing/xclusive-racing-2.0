@@ -12,15 +12,14 @@ up without re-deriving context.
 ## Current State
 
 - **All seven phases are now built (2026-09-10)**, plus a second refinement
-  batch (below), in progress. Done so far: `max_missed_rounds` +
-  `track_temp`/`cloud_level` (item 2), team standings (item 3), team
-  registration per-round-vs-whole-championship (item 4). Still open:
-  steward scoping (item 1 — a league may have its own stewards but must
-  also be able to use XCL's shared pool), re-verifying
-  `computeClassStandings()` (item 6), parameterising XCL-branded copy in
-  standings views (item 7), Edit Round (item 8), and a real browser check
-  of everything built this session (item 9). Item 5 (Discord operational
-  setup) is explicitly deferred by the user.
+  batch (below), in progress. Done so far: steward scoping (item 1),
+  `max_missed_rounds` + `track_temp`/`cloud_level` (item 2), team standings
+  (item 3), team registration per-round-vs-whole-championship (item 4).
+  Still open: re-verifying `computeClassStandings()` (item 6),
+  parameterising XCL-branded copy in standings views (item 7), Edit Round
+  (item 8), and a real browser check of everything built this session
+  (item 9). Item 5 (Discord operational setup) is explicitly deferred by
+  the user.
 - **Real, previously-latent bugs found and fixed along the way, worth
   knowing about even though they're already fixed**: a missing
   `ChampionshipClass::isFull()` that would have thrown on any full
@@ -946,15 +945,11 @@ persistence itself, which the resumable-draft requirement makes necessary.
       deliberately left alone, same as the existing DSQ/DC toggle: click
       "Recalculate Ratings" separately if the outcome should move ratings
       too, rather than this silently triggering a race-wide Elo recompute.
-- [ ] **Deliberately left open, not decided unilaterally**: steward scoping
-      — whether a league's own designated stewards can claim/rule on reports
-      for that league's races only, versus XCL's global `steward` role
-      staying as the single, unscoped pool it is today. Every fix above
-      changes what *processing a report does*, not *who can process one* —
-      that second question is a real authorization-boundary change on a
-      live moderation system, and PLAN.md already flagged it as a decision
-      needing a human, not a default to assume. Nothing about the fixes
-      above blocks deciding this later.
+- [x] **Steward scoping — resolved 2026-09-10, additively**: a league's own
+      designated stewards can now claim/rule on reports for that league's
+      races only, *and* XCL's global `steward` role stays exactly as
+      unscoped as before — both pools work at once. See "Refinements
+      (batch 2)" below for the implementation.
 
 ## Phase 7 — The public league area with per league branding ✅ complete (2026-09-10)
 
@@ -1111,9 +1106,23 @@ not new functionality.
 A follow-up review turned up a numbered backlog of 9 items; user gave
 explicit direction on each. Progress so far:
 
-1. **Steward scoping — not yet done.** A league must be able to use its own
-   stewards *or* opt into XCL's shared/global steward pool — a choice, not
-   an exclusive replacement. Left open.
+1. **Steward scoping — done.** Resolved additively, per Phase 6's own
+   open question: a league's own designated stewards (`league_user`
+   `role=steward`) can now claim/rule on reports for races belonging to
+   their own league's championships, but XCL's global `steward` role stays
+   exactly as unscoped as before — both pools work at once, never either/or.
+   `User::canModerateReport()` is the single choke point: `canManageEvents()`
+   or `isSteward()` (XCL's shared pool) always passes; otherwise the report's
+   race's championship must belong to a league the user steward's
+   (`stewardsLeague()`, already existed since Phase 1). `/admin/reports*`
+   routes now also admit the `league_steward` role (previously
+   `owner,admin,event_manager,steward` only); `ReportController::index()`
+   additionally scopes the list itself to a pure league steward's own
+   league(s); `show`/`updateStatus`/`startInvestigating`/`submitVerdict`/
+   `markReady`/`dismiss` all call `canModerateReport()` and 403 otherwise.
+   `process()` (owner/admin only) was untouched — league stewards were never
+   meant to finalize a penalty, only investigate/verdict/dismiss.
+   (`tests/Feature/ReportStewardScopingTest.php`.)
 2. **`max_missed_rounds` and `track_temp`/`cloud_level` — done.**
    `ChampionshipSettingsSchema` (`CURRENT_VERSION` 5) gained `scoring.max_missed_rounds`,
    `scoring.missed_rounds_action` (none/penalise), `scoring.missed_rounds_penalty_points`,

@@ -291,15 +291,17 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/servers/{ftpServer}/browse/save', [FtpBrowserController::class, 'save'])->name('servers.browse.save');
 });
 
-// Reports — owner, admin, event_manager, steward
-Route::middleware(['auth', 'role:owner,admin,event_manager,steward'])->prefix('admin')->name('admin.')->group(function () {
+// Reports — owner, admin, event_manager, steward, league_steward (a league's
+// own steward — scoped to that league's own championships, see
+// User::canModerateReport())
+Route::middleware(['auth', 'role:owner,admin,event_manager,steward,league_steward'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/{report}', [AdminReportController::class, 'show'])->name('reports.show');
     Route::patch('/reports/{report}/status', [AdminReportController::class, 'updateStatus'])->name('reports.status');
 });
 
-// Steward verdict workflow — owner, admin, steward only
-Route::middleware(['auth', 'role:owner,admin,steward'])->prefix('admin')->name('admin.')->group(function () {
+// Steward verdict workflow — owner, admin, steward, league_steward
+Route::middleware(['auth', 'role:owner,admin,steward,league_steward'])->prefix('admin')->name('admin.')->group(function () {
     Route::post('/reports/{report}/start-investigating', [AdminReportController::class, 'startInvestigating'])->name('reports.start-investigating');
     Route::post('/reports/{report}/verdict', [AdminReportController::class, 'submitVerdict'])->name('reports.verdict');
     Route::post('/reports/{report}/mark-ready', [AdminReportController::class, 'markReady'])->name('reports.mark-ready');

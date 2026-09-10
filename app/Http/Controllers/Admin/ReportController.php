@@ -45,6 +45,16 @@ class ReportController extends Controller
             ->with(['user', 'race', 'reviewer', 'steward1', 'steward2'])
             ->withCount('verdicts');
 
+        $user = $request->user();
+        // A pure league steward (no global steward/admin role — see
+        // User::canModerateReport()) only ever sees reports on races that
+        // belong to a championship owned by a league they steward. XCL's
+        // global steward pool keeps seeing everything, unscoped, as before.
+        if (!$user->canManageEvents() && !$user->isSteward()) {
+            $leagueIds = $user->leagueMemberships()->where('role', 'steward')->pluck('league_id');
+            $query->whereHas('race.championship', fn ($q) => $q->withoutTenantScope()->whereIn('league_id', $leagueIds));
+        }
+
         if ($status) {
             $query->where('reports.status', $status);
         }
@@ -69,6 +79,8 @@ class ReportController extends Controller
 
     public function show(Report $report)
     {
+        abort_unless(auth()->user()->canModerateReport($report), 403);
+
         $report->load(['user', 'race', 'reviewer', 'steward1', 'steward2', 'processedBy', 'verdicts.steward']);
 
         $penaltyCodes = PenaltyCalculator::codes();
@@ -82,6 +94,8 @@ class ReportController extends Controller
     /** Legacy quick status update — superseded by the verdict workflow below but kept for direct status corrections. */
     public function updateStatus(Request $request, Report $report)
     {
+        abort_unless($request->user()->canModerateReport($report), 403);
+
         $request->validate([
             'status'      => 'required|in:pending,investigating,resolved,dismissed',
             'admin_notes' => 'nullable|string|max:2000',
@@ -116,6 +130,7 @@ class ReportController extends Controller
     public function startInvestigating(Report $report)
     {
         $user = auth()->user();
+        abort_unless($user->canModerateReport($report), 403);
 
         if (in_array($report->status, ['resolved', 'dismissed'])) {
             return back()->with('error', 'This report has already been closed.');
@@ -144,6 +159,8 @@ class ReportController extends Controller
 
     public function submitVerdict(Request $request, Report $report)
     {
+        abort_unless($request->user()->canModerateReport($report), 403);
+
         if (in_array($report->status, ['resolved', 'dismissed'])) {
             return back()->with('error', 'This report has already been closed.');
         }
@@ -211,6 +228,8 @@ class ReportController extends Controller
 
     public function markReady(Report $report)
     {
+        abort_unless(auth()->user()->canModerateReport($report), 403);
+
         $report->load('verdicts');
 
         if (in_array($report->status, ['resolved', 'dismissed'])) {
@@ -249,6 +268,8 @@ class ReportController extends Controller
 
     public function dismiss(Request $request, Report $report)
     {
+        abort_unless($request->user()->canModerateReport($report), 403);
+
         if (in_array($report->status, ['resolved', 'dismissed'])) {
             return back()->with('error', 'This report has already been closed.');
         }

@@ -140,7 +140,7 @@ class User extends Authenticatable
 
     public function canModerateReports(): bool
     {
-        return $this->canManageEvents() || $this->isSteward();
+        return $this->canManageEvents() || $this->isSteward() || $this->isLeagueSteward();
     }
 
     public function canAccessAdminPanel(): bool
@@ -156,6 +156,7 @@ class User extends Authenticatable
             $this->isSteward()      => 'admin.reports.index',
             $this->canBroadcast()   => 'admin.news.index',
             $this->isLeagueManager() => 'admin.leagues.index',
+            $this->isLeagueSteward() => 'admin.reports.index',
             default                 => 'home',
         };
     }
@@ -185,6 +186,27 @@ class User extends Authenticatable
     public function stewardsLeague(League $league): bool
     {
         return $this->leagueMemberships()->where('league_id', $league->id)->where('role', 'steward')->exists();
+    }
+
+    // Refinement request: a league may designate its own stewards, but XCL's
+    // shared/global steward pool (canManageEvents()/isSteward()) must always
+    // remain an option too — additive, not exclusive. A pure league steward
+    // (no global steward/admin role) may only moderate reports on races that
+    // belong to a championship owned by a league they steward.
+    public function canModerateReport(Report $report): bool
+    {
+        if ($this->canManageEvents() || $this->isSteward()) {
+            return true;
+        }
+
+        $championship = $report->race?->championship()->withoutTenantScope()->first();
+        if (!$championship || !$championship->league_id) {
+            return false;
+        }
+
+        $league = League::withoutTenantScope()->find($championship->league_id);
+
+        return $league !== null && $this->stewardsLeague($league);
     }
 
     // Keeps the global league_manager/league_steward role flags (used for admin nav
