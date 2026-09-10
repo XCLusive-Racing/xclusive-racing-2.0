@@ -324,6 +324,7 @@
                             $driverFull     = $championship->isFull() && !$championship->waitlistEnabled();
                             $spectatorOpen  = $championship->spectatorSlots() > 0 && !$championship->isSpectatorFull();
                             $ownedTeam      = $driverSwaps ? auth()->user()->ownedRacingTeams()->first() : null;
+                            $teamScope      = $championship->settings->format->team_registration_scope ?? 'per_round';
                         @endphp
 
                         @if($discordRequiredHere)
@@ -349,8 +350,9 @@
                             <div class="mb-3">
                                 <label class="form-label text-white" style="font-size:.82rem">Register as</label>
                                 @if($ownedTeam)
-                                <select name="racing_team_id" class="form-select form-select-sm"
-                                        style="background:#1f2937;border-color:#374151;color:#e5e7eb">
+                                <select name="racing_team_id" id="racingTeamSelect" class="form-select form-select-sm"
+                                        style="background:#1f2937;border-color:#374151;color:#e5e7eb"
+                                        onchange="document.getElementById('teamEntryFields')?.classList.toggle('d-none', !this.value)">
                                     <option value="">Just me (no team)</option>
                                     <option value="{{ $ownedTeam->id }}">My team — {{ $ownedTeam->name }}</option>
                                 </select>
@@ -358,6 +360,34 @@
                                 <p style="color:#6b7280;font-size:.78rem" class="mb-0">This championship allows driver swaps, but you don't own a racing team — registering as an individual.</p>
                                 @endif
                             </div>
+
+                            @if($ownedTeam && $teamScope === 'championship')
+                            <div id="teamEntryFields" class="d-none mb-3 p-2" style="background:#1f293766;border:1px solid #374151;border-radius:8px">
+                                <p style="color:#9ca3af;font-size:.72rem" class="mb-2">
+                                    This championship registers your team once — the car number, model and starting driver below carry over to every round automatically.
+                                </p>
+                                <div class="mb-2">
+                                    <label class="form-label text-white" style="font-size:.78rem">Car Number</label>
+                                    <input type="number" name="car_number" min="0" max="999" class="form-control form-control-sm"
+                                           style="background:#1f2937;border-color:#374151;color:#e5e7eb">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label text-white" style="font-size:.78rem">Car Model</label>
+                                    <input type="text" name="car_model" class="form-control form-control-sm"
+                                           style="background:#1f2937;border-color:#374151;color:#e5e7eb">
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label text-white" style="font-size:.78rem">Starting Driver</label>
+                                    <select name="starting_driver_id" class="form-select form-select-sm"
+                                            style="background:#1f2937;border-color:#374151;color:#e5e7eb">
+                                        <option value="{{ $ownedTeam->owner_id }}">{{ $ownedTeam->owner->displayName() }} (owner)</option>
+                                        @foreach($ownedTeam->members as $member)
+                                        <option value="{{ $member->id }}">{{ $member->displayName() }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            @endif
                             @endif
 
                             @if($championship->is_multiclass && $championship->classes->isNotEmpty())

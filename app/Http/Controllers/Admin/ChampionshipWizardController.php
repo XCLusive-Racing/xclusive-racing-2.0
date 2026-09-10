@@ -10,9 +10,11 @@ use App\Jobs\PushRoundConfigJob;
 use App\Models\Championship;
 use App\Models\FtpServer;
 use App\Models\League;
+use App\Models\ChampionshipRegistration;
 use App\Models\PointsScheme;
 use App\Models\Race;
 use App\Services\AuditLogger;
+use App\Services\ChampionshipTeamEntryService;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -196,7 +198,8 @@ class ChampionshipWizardController extends Controller
             return back()->withInput()->withErrors(['scheduled_at' => $result]);
         }
 
-        Race::create($result);
+        $race = Race::create($result);
+        $this->syncTeamEntriesForNewRound($championship, $race);
 
         AuditLogger::record($request->user(), $championship, 'championship.round_added', ['title' => $result['title']]);
 
@@ -256,9 +259,10 @@ class ChampionshipWizardController extends Controller
             $rows[] = $result;
         }
 
-        DB::transaction(function () use ($rows) {
+        DB::transaction(function () use ($rows, $championship) {
             foreach ($rows as $row) {
-                Race::create($row);
+                $race = Race::create($row);
+                $this->syncTeamEntriesForNewRound($championship, $race);
             }
         });
 
@@ -266,6 +270,27 @@ class ChampionshipWizardController extends Controller
 
         return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'rounds'])
             ->with('success', count($rows) . ' rounds added.');
+    }
+
+    // "Championship"-scope team registrations (settings.format.team_registration_scope,
+    // see ChampionshipTeamEntryService) carried a car number/model/starting driver
+    // once instead of re-registering every round — a round added after the fact
+    // still needs its own RaceTeamEntry generated from that, which is what this does.
+    private function syncTeamEntriesForNewRound(Championship $championship, Race $race): void
+    {
+        $registrations = ChampionshipRegistration::where('championship_id', $championship->id)
+            ->whereNotNull('racing_team_id')
+            ->whereNotNull('car_number')
+            ->get();
+
+        if ($registrations->isEmpty()) {
+            return;
+        }
+
+        $service = app(ChampionshipTeamEntryService::class);
+        foreach ($registrations as $registration) {
+            $service->syncRoundEntry($registration, $race);
+        }
     }
 
     // Shared by addRound() and bulkAddRounds() — turns one row's raw

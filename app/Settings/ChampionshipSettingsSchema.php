@@ -16,7 +16,7 @@ use Illuminate\Support\Arr;
 // defaults for new keys) once this class gains fields for a new version.
 class ChampionshipSettingsSchema
 {
-    const CURRENT_VERSION = 4;
+    const CURRENT_VERSION = 5;
 
     const STEPS = [
         'basics'       => 'Basics',
@@ -91,6 +91,8 @@ class ChampionshipSettingsSchema
                 'label' => 'Minimum Drivers per Car', 'help' => 'Only used when driver swaps are on.'],
             ['group' => 'format', 'key' => 'max_drivers_per_car', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps',
                 'label' => 'Maximum Drivers per Car', 'help' => 'Only used when driver swaps are on.'],
+            ['group' => 'format', 'key' => 'team_registration_scope', 'type' => 'enum', 'options' => ['per_round', 'championship'], 'default' => 'per_round', 'section' => 'Driver Swaps',
+                'label' => 'Team Registration', 'help' => 'Only used when driver swaps are on. "Per round" (today\'s behaviour): a team still signs up separately for every round. "Whole championship": a team\'s car number, model and starting driver are captured once and copied into every round automatically — including rounds added later.'],
 
             // --- Sessions ---
             ['group' => 'sessions', 'key' => 'race_length_minutes', 'type' => 'integer', 'default' => 30,

@@ -11,13 +11,16 @@ up without re-deriving context.
 
 ## Current State
 
-- **All seven phases are now built (2026-09-10)** — Phase 6 and Phase 5
-  each have one small piece deliberately left open (see their own entries):
-  Phase 6's steward-scoping decision (an authorization-boundary question,
-  not defaulted unilaterally), and Phase 5's multiclass-standings
-  parameterisation / `max_missed_rounds` investigation. A dead-schema
-  finding from Phase 3 (`settings.sessions.track_temp`/`cloud_level`) also
-  still needs a decision. None of these block anything else.
+- **All seven phases are now built (2026-09-10)**, plus a second refinement
+  batch (below), in progress. Done so far: `max_missed_rounds` +
+  `track_temp`/`cloud_level` (item 2), team standings (item 3), team
+  registration per-round-vs-whole-championship (item 4). Still open:
+  steward scoping (item 1 — a league may have its own stewards but must
+  also be able to use XCL's shared pool), re-verifying
+  `computeClassStandings()` (item 6), parameterising XCL-branded copy in
+  standings views (item 7), Edit Round (item 8), and a real browser check
+  of everything built this session (item 9). Item 5 (Discord operational
+  setup) is explicitly deferred by the user.
 - **Real, previously-latent bugs found and fixed along the way, worth
   knowing about even though they're already fixed**: a missing
   `ChampionshipClass::isFull()` that would have thrown on any full
@@ -1102,3 +1105,57 @@ not new functionality.
   Fixed by numbering the batch once, sequentially, before creating any of
   it. `tests/Feature/RoundCreationTest.php` covers this plus the
   all-or-nothing and per-row-validation behaviour.
+
+## Refinements (batch 2, 2026-09-10)
+
+A follow-up review turned up a numbered backlog of 9 items; user gave
+explicit direction on each. Progress so far:
+
+1. **Steward scoping — not yet done.** A league must be able to use its own
+   stewards *or* opt into XCL's shared/global steward pool — a choice, not
+   an exclusive replacement. Left open.
+2. **`max_missed_rounds` and `track_temp`/`cloud_level` — done.**
+   `ChampionshipSettingsSchema` (`CURRENT_VERSION` 5) gained `scoring.max_missed_rounds`,
+   `scoring.missed_rounds_action` (none/penalise), `scoring.missed_rounds_penalty_points`,
+   modelled directly on the legacy flat-column championship admin form's
+   equivalent fields. `Championship::buildDriverStandings()` now computes and
+   subtracts a `missed_rounds_penalty` per driver
+   (`tests/Feature/MissedRoundsStandingsTest.php`). `track_temp`/`cloud_level`
+   have no existing UI anywhere (including the "dailies"/regular-race forms
+   this was asked to reuse — confirmed by searching for them first), so
+   rather than invent new round-level fields they were wired as a
+   championship-level fixed-weather fallback: when a league championship's
+   `settings.sessions.weather_mode` is `fixed`,
+   `AccServerConfigService::championshipFixedWeatherDefaults()` merges
+   `ambient_temp`/`track_temp`/`cloud_level`/`rain_level` into the generated
+   server config (`tests/Feature/ChampionshipFixedWeatherDefaultsTest.php`).
+3. **Team standings — done.** `Championship::computeTeamStandings()`
+   (gated on `settings.scoring.team_points_enabled`) sums each team's
+   registered members' individual standings points; rendered as a "Team
+   Standings" table on the public page between individual and class
+   standings (`tests/Feature/TeamStandingsTest.php`).
+4. **Team registration scope (per-round vs whole-championship) — done.**
+   New `settings.format.team_registration_scope` (`per_round` default |
+   `championship`). `championship_registrations` gained
+   `car_number`/`car_model`/`starting_driver_id` (same shape as
+   `race_team_entries`). When scope is `championship`,
+   `ChampionshipController::register()`'s team branch collects those three
+   fields once and `ChampionshipTeamEntryService::syncAllExistingRounds()`
+   auto-creates a `RaceTeamEntry` + one `RaceRegistration` per eligible
+   member for every existing round — no more per-round re-registration via
+   `RaceController::registerTeam()`. A round added *after* such a team
+   registered still gets auto-entered:
+   `Admin\ChampionshipWizardController::addRound()`/`bulkAddRounds()` both
+   call `syncTeamEntriesForNewRound()` right after creating the `Race`.
+   `per_round` scope (the default) is unaffected — a team must still
+   register per round the existing way.
+   (`tests/Feature/ChampionshipRegistrationTest.php`, the four
+   `test_championship_scope_*`/`test_per_round_scope_*`/`test_a_round_added_later_*`
+   cases.)
+5. **Discord operational setup — explicitly deferred** by the user; not
+   touched this batch.
+6. **`computeClassStandings()` — not yet re-verified this batch.** Pending.
+7. **XCL-branded copy in standings views — not yet done.** Pending.
+8. **Edit Round — not yet done.** Rounds still only support Add/Remove.
+   Pending.
+9. **Browser check — not yet done.** Pending.

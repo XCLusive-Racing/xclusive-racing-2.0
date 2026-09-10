@@ -8,6 +8,7 @@ use App\Models\ChampionshipRegistration;
 use App\Models\League;
 use App\Models\RacingTeam;
 use App\Models\User;
+use App\Services\ChampionshipTeamEntryService;
 use App\Services\DiscordRoleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -131,6 +132,8 @@ class ChampionshipController extends Controller
         // than each driver separately — same "owner registers the team" rule
         // RaceController::registerTeam() already uses for individual rounds.
         $team = null;
+        $teamEntryFields = [];
+        $teamRegistrationScope = $championship->settings->format->team_registration_scope ?? 'per_round';
         if ($championship->settings->format->driver_swaps_enabled ?? false) {
             if ($request->filled('racing_team_id')) {
                 $team = RacingTeam::where('id', $request->integer('racing_team_id'))
@@ -139,6 +142,29 @@ class ChampionshipController extends Controller
 
                 if ($championship->registrations()->where('racing_team_id', $team->id)->exists()) {
                     return back()->with('error', 'Your team is already registered for this championship.');
+                }
+
+                // "Whole championship" scope captures the car/driver once here and
+                // auto-creates the per-round RaceTeamEntry for every existing (and,
+                // via ChampionshipWizardController, future) round — see
+                // ChampionshipTeamEntryService.
+                if ($teamRegistrationScope === 'championship') {
+                    $validated = $request->validate([
+                        'car_number'         => 'required|integer|min:0|max:999',
+                        'car_model'          => 'nullable|string|max:255',
+                        'starting_driver_id' => 'required|integer',
+                    ]);
+
+                    $eligibleIds = $team->members->pluck('id')->push($team->owner_id)->unique();
+                    if (!$eligibleIds->contains((int) $validated['starting_driver_id'])) {
+                        return back()->with('error', 'The starting driver must be a member of your team.');
+                    }
+
+                    $teamEntryFields = [
+                        'car_number'         => $validated['car_number'],
+                        'car_model'          => $validated['car_model'] ?? null,
+                        'starting_driver_id' => $validated['starting_driver_id'],
+                    ];
                 }
             }
         }
@@ -170,12 +196,16 @@ class ChampionshipController extends Controller
             }
         }
 
-        ChampionshipRegistration::create([
+        $registration = ChampionshipRegistration::create(array_merge([
             'championship_id'       => $championship->id,
             'user_id'               => $user->id,
             'championship_class_id' => $classId,
             'racing_team_id'        => $team?->id,
-        ]);
+        ], $teamEntryFields));
+
+        if ($team && $teamRegistrationScope === 'championship') {
+            app(ChampionshipTeamEntryService::class)->syncAllExistingRounds($registration, $championship);
+        }
 
         $message = $championship->isRegistrationWaitlisted($user)
             ? 'The championship is full — you have been added to the waiting list.'

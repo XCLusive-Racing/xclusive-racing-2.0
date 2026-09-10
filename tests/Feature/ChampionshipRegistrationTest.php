@@ -8,6 +8,9 @@ use App\Models\ChampionshipRegistration;
 use App\Models\ConnectedAccount;
 use App\Models\League;
 use App\Models\LeagueUser;
+use App\Models\Race;
+use App\Models\RaceRegistration;
+use App\Models\RaceTeamEntry;
 use App\Models\RacingTeam;
 use App\Models\User;
 use App\Services\DiscordRoleService;
@@ -353,5 +356,123 @@ class ChampionshipRegistrationTest extends TestCase
         $this->assertDatabaseHas('championship_classes', ['id' => $pro->id, 'max_drivers' => 25]);
         // The registration tied to the class that was kept must survive.
         $this->assertDatabaseHas('championship_registrations', ['championship_class_id' => $pro->id]);
+    }
+
+    // --- Whole-championship team registration (settings.format.team_registration_scope) ---
+
+    private function makeRound(Championship $championship, int $roundNumber): Race
+    {
+        return Race::create([
+            'championship_id' => $championship->id, 'round_number' => $roundNumber,
+            'title' => 'Round ' . $roundNumber, 'track' => 'Monza', 'game' => 'acc',
+            'status' => 'scheduled', 'scheduled_at' => now()->addWeek($roundNumber),
+        ]);
+    }
+
+    public function test_championship_scope_team_registration_auto_creates_entries_for_existing_rounds(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+        $championship->settings = array_replace_recursive($championship->settings->toArray(), [
+            'format' => ['driver_swaps_enabled' => true, 'team_registration_scope' => 'championship'],
+        ]);
+        $championship->save();
+
+        $owner  = User::factory()->create();
+        $member = User::factory()->create();
+        $team   = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+        $team->members()->attach($member->id);
+
+        $r1 = $this->makeRound($championship, 1);
+        $r2 = $this->makeRound($championship, 2);
+
+        $this->actingAs($owner)
+            ->post(route('championships.register', $championship), [
+                'racing_team_id'     => $team->id,
+                'car_number'         => 42,
+                'car_model'          => 'Ferrari 296 GT3',
+                'starting_driver_id' => $member->id,
+            ])
+            ->assertRedirect();
+
+        foreach ([$r1, $r2] as $race) {
+            $this->assertDatabaseHas('race_team_entries', [
+                'race_id' => $race->id, 'racing_team_id' => $team->id, 'car_number' => 42, 'starting_driver_id' => $member->id,
+            ]);
+            $entry = RaceTeamEntry::where('race_id', $race->id)->where('racing_team_id', $team->id)->first();
+            $this->assertDatabaseHas('race_registrations', ['race_id' => $race->id, 'user_id' => $owner->id, 'team_entry_id' => $entry->id]);
+            $this->assertDatabaseHas('race_registrations', ['race_id' => $race->id, 'user_id' => $member->id, 'team_entry_id' => $entry->id]);
+        }
+    }
+
+    public function test_championship_scope_team_registration_requires_car_number_and_starting_driver(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+        $championship->settings = array_replace_recursive($championship->settings->toArray(), [
+            'format' => ['driver_swaps_enabled' => true, 'team_registration_scope' => 'championship'],
+        ]);
+        $championship->save();
+
+        $owner = User::factory()->create();
+        $team  = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+
+        $this->actingAs($owner)
+            ->post(route('championships.register', $championship), ['racing_team_id' => $team->id])
+            ->assertSessionHasErrors(['car_number', 'starting_driver_id']);
+
+        $this->assertFalse($championship->fresh()->isRegistered($owner));
+    }
+
+    public function test_a_round_added_later_still_gets_the_championship_scope_teams_entry(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+        $championship->settings = array_replace_recursive($championship->settings->toArray(), [
+            'format' => ['driver_swaps_enabled' => true, 'team_registration_scope' => 'championship'],
+        ]);
+        $championship->save();
+
+        $owner = User::factory()->create();
+        $team  = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+
+        $this->actingAs($owner)
+            ->post(route('championships.register', $championship), [
+                'racing_team_id' => $team->id, 'car_number' => 7, 'starting_driver_id' => $owner->id,
+            ])
+            ->assertRedirect();
+
+        $manager = User::factory()->leagueManager()->create();
+        $this->attachManager($manager, $league);
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
+                'track' => 'Spa', 'scheduled_at' => now()->addWeeks(3)->startOfHour()->format('Y-m-d\TH:i'),
+            ])
+            ->assertRedirect();
+
+        $race = $championship->fresh()->rounds()->where('track', 'Spa')->firstOrFail();
+        $this->assertDatabaseHas('race_team_entries', ['race_id' => $race->id, 'racing_team_id' => $team->id, 'car_number' => 7]);
+    }
+
+    public function test_per_round_scope_does_not_auto_create_round_entries(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+        $championship->settings = array_replace_recursive($championship->settings->toArray(), [
+            'format' => ['driver_swaps_enabled' => true, 'team_registration_scope' => 'per_round'],
+        ]);
+        $championship->save();
+
+        $owner = User::factory()->create();
+        $team  = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+        $race  = $this->makeRound($championship, 1);
+
+        $this->actingAs($owner)
+            ->post(route('championships.register', $championship), ['racing_team_id' => $team->id])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('championship_registrations', ['championship_id' => $championship->id, 'racing_team_id' => $team->id]);
+        $this->assertDatabaseMissing('race_team_entries', ['race_id' => $race->id, 'racing_team_id' => $team->id]);
     }
 }
