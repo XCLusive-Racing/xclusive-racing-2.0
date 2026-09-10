@@ -1,14 +1,23 @@
 {{-- Renders one ChampionshipSettingsSchema field. $field comes straight from the
      schema, so a new scalar rule added there appears in the wizard automatically —
-     nothing here needs to change for it to show up. --}}
+     nothing here needs to change for it to show up. Expects a parent <div class="row g-3">
+     around a run of these (see wizard.blade.php) — the col width below only makes
+     sense inside one, matching the race wizard's grid layout
+     (resources/views/admin/races/form.blade.php) instead of one full-width field
+     per line. --}}
 @php
     $name    = "settings[{$field['group']}][{$field['key']}]";
     $id      = "f-{$field['group']}-{$field['key']}";
     $current = $championship->settings->{$field['group']}->{$field['key']} ?? $field['default'];
     $errorKey = "settings.{$field['group']}.{$field['key']}";
+    $col = match ($field['type']) {
+        'boolean', 'text' => 'col-12',
+        'enum', 'datetime' => 'col-sm-4',
+        default => 'col-sm-3', // integer, float, date, time
+    };
 @endphp
 
-<div class="mb-3">
+<div class="{{ $col }}">
     @if($field['type'] === 'boolean')
         <div class="form-check">
             <input class="form-check-input" type="checkbox" name="{{ $name }}" id="{{ $id }}" value="1"
@@ -38,19 +47,19 @@
         <textarea name="{{ $name }}" id="{{ $id }}" rows="3" class="form-control @error($errorKey) is-invalid @enderror">{{ old($errorKey, $current) }}</textarea>
         @elseif($field['type'] === 'time')
         <input type="time" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror" style="max-width:160px">
+               class="form-control @error($errorKey) is-invalid @enderror">
         @elseif($field['type'] === 'date')
         <input type="date" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror" style="max-width:200px">
+               class="form-control @error($errorKey) is-invalid @enderror">
         @elseif($field['type'] === 'datetime')
         <input type="datetime-local" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror" style="max-width:220px">
+               class="form-control @error($errorKey) is-invalid @enderror">
         @elseif($field['type'] === 'float')
         <input type="number" step="0.01" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror" style="max-width:160px">
+               class="form-control @error($errorKey) is-invalid @enderror">
         @else
         <input type="number" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror" style="max-width:200px">
+               class="form-control @error($errorKey) is-invalid @enderror">
         @endif
 
         @if($field['help'])

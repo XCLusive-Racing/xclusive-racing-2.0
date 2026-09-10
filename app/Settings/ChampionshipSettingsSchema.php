@@ -33,6 +33,18 @@ class ChampionshipSettingsSchema
     // on that step, since the wizard has a fixed step list that doesn't name it).
     const GROUPS = ['schedule', 'format', 'sessions', 'scoring', 'requirements', 'penalties', 'balance'];
 
+    // Default subsection label for a field with no 'section' override of its own
+    // (below) — lets a wizard step split its fields under more than one heading,
+    // matching the race wizard's "Event" / "Track & Conditions" grouping
+    // (resources/views/admin/races/form.blade.php), instead of one undifferentiated
+    // pile of fields per step.
+    const GROUP_SECTION_LABELS = [
+        'format'       => 'Format',
+        'scoring'      => 'Scoring',
+        'requirements' => 'Entry Requirements',
+        'penalties'    => 'Stewarding & Penalties',
+    ];
+
     // Maps a wizard step slug to the settings group(s) it edits and validates.
     // "schedule" and "sessions" both ride on the Basics step — there's no
     // dedicated Sessions step any more, so a round's session/weather defaults
@@ -73,11 +85,11 @@ class ChampionshipSettingsSchema
                 'label' => 'Car Class', 'help' => 'Same for every round of the championship. Ignored when multiclass is on — set a class per class below instead.'],
             ['group' => 'format', 'key' => 'spectator_slots', 'type' => 'integer', 'nullable' => true, 'default' => 0,
                 'label' => 'Spectator Slots', 'help' => 'Extra slots reserved for spectators, on top of the entry cap.'],
-            ['group' => 'format', 'key' => 'driver_swaps_enabled', 'type' => 'boolean', 'default' => false,
+            ['group' => 'format', 'key' => 'driver_swaps_enabled', 'type' => 'boolean', 'default' => false, 'section' => 'Driver Swaps',
                 'label' => 'Driver Swaps', 'help' => 'Allow more than one driver to share a car during a round.'],
-            ['group' => 'format', 'key' => 'min_drivers_per_car', 'type' => 'integer', 'nullable' => true, 'default' => null,
+            ['group' => 'format', 'key' => 'min_drivers_per_car', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps',
                 'label' => 'Minimum Drivers per Car', 'help' => 'Only used when driver swaps are on.'],
-            ['group' => 'format', 'key' => 'max_drivers_per_car', 'type' => 'integer', 'nullable' => true, 'default' => null,
+            ['group' => 'format', 'key' => 'max_drivers_per_car', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps',
                 'label' => 'Maximum Drivers per Car', 'help' => 'Only used when driver swaps are on.'],
 
             // --- Sessions ---
@@ -125,26 +137,28 @@ class ChampionshipSettingsSchema
                 'label' => 'Discord Membership Required', 'help' => 'Entrants must be a member of this league\'s Discord to register.'],
             ['group' => 'requirements', 'key' => 'manual_approval_required', 'type' => 'boolean', 'default' => false,
                 'label' => 'Manual Approval of Entries', 'help' => 'Entries wait for league staff to approve before they count.'],
+            // Shown publicly on the championship page (Phase 7) as "Rules" — this is
+            // the one free-text field for that, not a second one. It used to be
+            // labelled "Additional Requirements" with a separate "Championship
+            // Rules" field added alongside it; the two were the same idea twice
+            // (both "public free text the structured fields above don't cover"), so
+            // they were merged back into this single field rather than shipping a
+            // wizard step with two near-identical textareas.
             ['group' => 'requirements', 'key' => 'notes', 'type' => 'text', 'nullable' => true, 'default' => null,
-                'label' => 'Additional Requirements', 'help' => 'Free text — anything the schema above doesn\'t cover.'],
-
-            // --- Rules & Prizes (Phase 7, docs/championships/PLAN.md — shown on the
-            // public championship page; there was no free-text field for either before) ---
-            ['group' => 'requirements', 'key' => 'rules_text', 'type' => 'text', 'nullable' => true, 'default' => null,
-                'label' => 'Championship Rules', 'help' => 'Shown publicly on the championship page. Leave blank to show nothing.'],
+                'label' => 'Rules & Additional Requirements', 'help' => 'Shown publicly on the championship page — anything the structured fields above don\'t cover.'],
             ['group' => 'requirements', 'key' => 'prizes_text', 'type' => 'text', 'nullable' => true, 'default' => null,
                 'label' => 'Prizes', 'help' => 'Shown publicly on the championship page. Leave blank to show nothing.'],
 
             // --- Registration ---
-            ['group' => 'requirements', 'key' => 'registration_mode', 'type' => 'enum',
+            ['group' => 'requirements', 'key' => 'registration_mode', 'type' => 'enum', 'section' => 'Registration',
                 'options' => ['always_open', 'closes_at_first_round', 'specific_period'], 'default' => 'always_open',
                 'label' => 'Registration Closes', 'help' => 'Always open (close it manually), automatically at the first round\'s start time, or during a specific period.',
                 'rule' => 'required|in:always_open,closes_at_first_round,specific_period'],
-            ['group' => 'requirements', 'key' => 'registration_opens_at', 'type' => 'datetime', 'nullable' => true, 'default' => null,
+            ['group' => 'requirements', 'key' => 'registration_opens_at', 'type' => 'datetime', 'nullable' => true, 'default' => null, 'section' => 'Registration',
                 'label' => 'Registration Opens At', 'help' => 'Only used when Registration Closes is "Specific period".'],
-            ['group' => 'requirements', 'key' => 'registration_closes_at', 'type' => 'datetime', 'nullable' => true, 'default' => null,
+            ['group' => 'requirements', 'key' => 'registration_closes_at', 'type' => 'datetime', 'nullable' => true, 'default' => null, 'section' => 'Registration',
                 'label' => 'Registration Closes At', 'help' => 'Only used when Registration Closes is "Specific period".'],
-            ['group' => 'requirements', 'key' => 'waitlist_enabled', 'type' => 'boolean', 'default' => false,
+            ['group' => 'requirements', 'key' => 'waitlist_enabled', 'type' => 'boolean', 'default' => false, 'section' => 'Registration',
                 'label' => 'Waiting List', 'help' => 'Once full, new entries join a waiting list instead of being rejected. A spot that opens up is automatically taken by whoever is next on the list.'],
 
             // --- Penalties & Rating ---
@@ -172,6 +186,24 @@ class ChampionshipSettingsSchema
     {
         $groups = self::STEP_GROUPS[$step] ?? [];
         return array_values(array_filter(self::fields(), fn ($f) => in_array($f['group'], $groups, true)));
+    }
+
+    // Groups a step's fields under a subsection label — a field's own 'section'
+    // wins, otherwise its group's default (GROUP_SECTION_LABELS). Lets the wizard
+    // render "Format" and "Driver Swaps" (say) as two visually separate blocks on
+    // one step instead of every field in a flat, undifferentiated stack, matching
+    // the race wizard's own grouped-subsection layout
+    // (resources/views/admin/races/form.blade.php). Preserves fields()' own
+    // definition order — PHP keeps insertion order for string array keys, and a
+    // group's fields are already contiguous there.
+    public static function sectionsForStep(string $step): array
+    {
+        $sections = [];
+        foreach (self::fieldsForStep($step) as $field) {
+            $label = $field['section'] ?? self::GROUP_SECTION_LABELS[$field['group']] ?? ucfirst($field['group']);
+            $sections[$label][] = $field;
+        }
+        return $sections;
     }
 
     // The fully-populated, nested default settings array — every group, every key.

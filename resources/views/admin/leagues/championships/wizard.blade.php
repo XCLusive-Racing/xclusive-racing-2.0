@@ -69,24 +69,50 @@
                     @if($step === 'basics')
                         @include('admin.leagues.championships._basics')
                     @else
-                        @foreach($fields as $field)
-                            {{-- points_scheme_id gets its own picker below, with an inline table
-                                 preview a plain integer input can't show — skip the generic one. --}}
-                            @if($field['type'] !== 'list' && !($step === 'scoring' && $field['key'] === 'points_scheme_id'))
-                                @include('admin.leagues.championships._field', ['field' => $field])
-                            @endif
+                        @php
+                            $sections = \App\Settings\ChampionshipSettingsSchema::sectionsForStep($step);
+                            $sectionIndex = 0;
+                        @endphp
+                        {{-- Grouped into subsections (race wizard's "Event" / "Track & Conditions"
+                             pattern, resources/views/admin/races/form.blade.php) instead of every
+                             field in one flat, undifferentiated stack. --}}
+                        @foreach($sections as $sectionLabel => $sectionFields)
+                            @php
+                                // points_scheme_id gets its own picker below, with an inline table
+                                // preview a plain integer input can't show — skip the generic one.
+                                $visibleFields = collect($sectionFields)->filter(fn ($f) =>
+                                    $f['type'] !== 'list' && !($step === 'scoring' && $f['key'] === 'points_scheme_id')
+                                )->values();
+                            @endphp
+                            @continue($visibleFields->isEmpty())
+                            @php $sectionIndex++; @endphp
+                            <div class="{{ $sectionIndex > 1 ? 'mt-4 pt-4' : '' }}" @if($sectionIndex > 1) style="border-top:1px solid #f3f4f6" @endif>
+                                <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">{{ $sectionLabel }}</p>
+                                <div class="row g-3">
+                                    @foreach($visibleFields as $field)
+                                        @include('admin.leagues.championships._field', ['field' => $field])
+                                    @endforeach
+                                </div>
+                            </div>
                         @endforeach
 
                         @if($step === 'format')
+                        <div class="mt-4 pt-4" style="border-top:1px solid #f3f4f6">
                             @include('admin.leagues.championships._classes-builder')
+                        </div>
                         @endif
 
                         @if($step === 'scoring')
+                        <div class="mt-4 pt-4" style="border-top:1px solid #f3f4f6">
                             @include('admin.leagues.championships._points-scheme-picker')
+                        </div>
                         @endif
 
                         @if($step === 'penalties')
+                        <div class="mt-4 pt-4" style="border-top:1px solid #f3f4f6">
+                            <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Balance &amp; Adjustments</p>
                             @include('admin.leagues.championships._adjustments-builder')
+                        </div>
                         @endif
                     @endif
                 </div>

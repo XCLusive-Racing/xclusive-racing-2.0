@@ -64,7 +64,7 @@ class PublicChampionshipPageTest extends TestCase
         $league       = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
         $championship->settings = array_replace_recursive($championship->settings->toArray(), [
-            'requirements' => ['rules_text' => 'No pit lane speeding.', 'prizes_text' => 'Winner gets a trophy.'],
+            'requirements' => ['notes' => 'No pit lane speeding.', 'prizes_text' => 'Winner gets a trophy.'],
         ]);
         $championship->save();
 

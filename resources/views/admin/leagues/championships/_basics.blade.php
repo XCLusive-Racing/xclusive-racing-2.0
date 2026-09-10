@@ -88,9 +88,11 @@
     Set the pattern rounds normally follow — Add Round will suggest each round's date and time from this, and you can still change any single round by hand.
 </p>
 
+<div class="row g-3">
 @foreach(\App\Settings\ChampionshipSettingsSchema::fieldsForGroup('schedule') as $field)
     @include('admin.leagues.championships._field', ['field' => $field])
 @endforeach
+</div>
 
 <hr class="my-4">
 <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Session Defaults</p>
@@ -98,9 +100,11 @@
     Standard practice/qualifying/race lengths and conditions — each round can still override these when it needs to differ.
 </p>
 
+<div class="row g-3">
 @foreach(\App\Settings\ChampionshipSettingsSchema::fieldsForGroup('sessions') as $field)
     @include('admin.leagues.championships._field', ['field' => $field])
 @endforeach
+</div>
 
 <script>
 (function () {

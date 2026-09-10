@@ -1057,3 +1057,26 @@ correctly — they are not decisions this plan makes on its own.
 - Should league-submitted FTP server credentials be connection-tested before
   saving, given league managers are less trusted than internal staff and a bad
   config could silently break their own events?
+
+---
+
+## Refinements (post-Phase-7, 2026-09-10)
+
+All seven phases are built (above). This is polish work on top, done on
+explicit request rather than as a plan phase — kept brief here since it is
+not new functionality.
+
+- **Wizard visual pass**: the generic step renderer (Format/Scoring/
+  Requirements/Penalties) now groups fields into labelled subsections inside
+  a responsive `row g-3` grid (`ChampionshipSettingsSchema::sectionsForStep()`,
+  `wizard.blade.php`, `_field.blade.php`), matching the race wizard's own
+  grouped-subsection layout (`resources/views/admin/races/form.blade.php`)
+  instead of one full-width field per line. `tests/Feature/WizardRenderSmokeTest.php`
+  GETs every step to catch a Blade regression here.
+- **Real duplicate found and removed**: Phase 7 had added a `rules_text`
+  field for the public "Rules" section, sitting right next to the
+  pre-existing `notes` field ("Additional Requirements") — both were the
+  same idea ("public free text the structured fields don't cover") shipped
+  twice. Merged back into `notes` (relabelled), and removed the resulting
+  on-page duplicate where the public championship page had started showing
+  that same text in two different cards.

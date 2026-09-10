@@ -172,20 +172,20 @@
                     @endif
                 </div>
 
-                @if($isLeagueOwned && ($req->rules_text || $req->prizes_text))
+                @if($isLeagueOwned && ($req->notes || $req->prizes_text))
                 <div class="mt-4 row g-4">
-                    @if($req->rules_text)
+                    @if($req->notes)
                     <div class="col-12 col-md-{{ $req->prizes_text ? '6' : '12' }}">
                         <div style="background:#111827;border-radius:12px;overflow:hidden;height:100%">
                             <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
                                 <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Rules</h2>
                             </div>
-                            <div class="px-4 py-3" style="color:#c7ccd6;font-size:.85rem;white-space:pre-wrap">{{ $req->rules_text }}</div>
+                            <div class="px-4 py-3" style="color:#c7ccd6;font-size:.85rem;white-space:pre-wrap">{{ $req->notes }}</div>
                         </div>
                     </div>
                     @endif
                     @if($req->prizes_text)
-                    <div class="col-12 col-md-{{ $req->rules_text ? '6' : '12' }}">
+                    <div class="col-12 col-md-{{ $req->notes ? '6' : '12' }}">
                         <div style="background:#111827;border-radius:12px;overflow:hidden;height:100%">
                             <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
                                 <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Prizes</h2>
@@ -225,9 +225,8 @@
                             <span style="color:#6b7280">Entry Approval</span>
                             <span class="fw-bold text-white">{{ ($req->manual_approval_required ?? false) ? 'Manually reviewed' : 'Automatic' }}</span>
                         </div>
-                        @if($req->notes)
-                        <p class="mt-2 mb-0 pt-2" style="color:#9ca3af;font-size:.78rem;border-top:1px solid #1f2937;white-space:pre-wrap">{{ $req->notes }}</p>
-                        @endif
+                        {{-- The free-text notes field has its own dedicated "Rules" card below,
+                             not repeated here too. --}}
                     </div>
                     @if($pen->stewarding_enabled ?? false)
                     <div class="px-4 py-3" style="border-top:1px solid #1f2937;font-size:.82rem">
