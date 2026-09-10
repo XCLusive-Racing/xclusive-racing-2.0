@@ -3,6 +3,10 @@
 @section('title', 'Leagues')
 @section('page-title', 'Leagues')
 
+@push('head')
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+@endpush
+
 @section('page-actions')
     @if(auth()->user()->canManage())
     <a href="{{ route('admin.leagues.create') }}" class="btn btn-sm fw-black text-uppercase text-white px-3"
@@ -51,7 +55,7 @@
     </div>
     @else
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0" style="font-size:.875rem">
+        <table id="leagues-table" class="table table-hover align-middle mb-0 w-100" style="font-size:.875rem">
             <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
                 <tr>
                     <th class="fw-bold text-uppercase ps-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">League</th>
@@ -131,3 +135,32 @@
 </div>
 
 @endsection
+
+@push('scripts')
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(function () {
+            if (!$('#leagues-table tbody tr').length) return; // "No leagues yet" empty state — nothing to enhance
+
+            $('#leagues-table').DataTable({
+                pageLength: 25,
+                order: [[0, 'asc']],
+                columnDefs: [{ targets: -1, orderable: false }],
+                language: { search: '', searchPlaceholder: 'Search leagues…' },
+            });
+
+            // The Actions dropdown was clipped by .table-responsive's overflow —
+            // setting only overflow-x also implies overflow-y: auto per the CSS
+            // spec, so a menu extending past the table's own height got cut off
+            // or scrolled behind it. A "fixed" Popper strategy positions the menu
+            // against the viewport instead of that clipping ancestor.
+            document.querySelectorAll('#leagues-table [data-bs-toggle="dropdown"]').forEach(function (el) {
+                bootstrap.Dropdown.getOrCreateInstance(el, {
+                    popperConfig: (defaultConfig) => ({ ...defaultConfig, strategy: 'fixed' }),
+                });
+            });
+        });
+    </script>
+@endpush
