@@ -130,4 +130,19 @@ class PublicChampionshipPageTest extends TestCase
             ->assertOk()
             ->assertDontSee('Entry Requirements');
     }
+
+    // Refinement request item 7: the single-class standings heading used to
+    // hardcode the generic word "Championship" ("Championship Standings"),
+    // redundant right below the hero already naming the actual championship —
+    // now reads "Overall Standings" instead, same on a league page or XCL's own.
+    public function test_single_class_standings_heading_says_overall_not_championship(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+
+        $this->get(route('championships.show', $championship->id))
+            ->assertOk()
+            ->assertSee('Overall Standings')
+            ->assertDontSee('Championship Standings');
+    }
 }

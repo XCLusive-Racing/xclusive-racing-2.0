@@ -80,7 +80,7 @@
                 <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-3 d-flex align-items-center gap-2" style="border-bottom:1px solid #1f2937">
                         <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">
-                            {{ $group['class'] ? $group['class']->name : 'Championship' }} Standings
+                            {{ $group['class'] ? $group['class']->name : 'Overall' }} Standings
                         </h2>
                         @if($group['class'])
                         <span class="badge fw-bold" style="background:{{ $group['class']->color }}22;color:{{ $group['class']->color }};font-size:.65rem;padding:3px 8px;border-radius:5px">

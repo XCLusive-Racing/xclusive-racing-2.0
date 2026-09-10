@@ -15,11 +15,10 @@ up without re-deriving context.
   batch (below), in progress. Done so far: steward scoping (item 1),
   `max_missed_rounds` + `track_temp`/`cloud_level` (item 2), team standings
   (item 3), team registration per-round-vs-whole-championship (item 4),
-  re-verifying `computeClassStandings()` (item 6). Still open:
-  parameterising XCL-branded copy in standings views (item 7), Edit Round
-  (item 8), and a real browser check of everything built this session
-  (item 9). Item 5 (Discord operational setup) is explicitly deferred by
-  the user.
+  re-verifying `computeClassStandings()` (item 6), hardcoded standings
+  copy (item 7). Still open: Edit Round (item 8), and a real browser check
+  of everything built this session (item 9). Item 5 (Discord operational
+  setup) is explicitly deferred by the user.
 - **Real, previously-latent bugs found and fixed along the way, worth
   knowing about even though they're already fixed**: a missing
   `ChampionshipClass::isFull()` that would have thrown on any full
@@ -1169,7 +1168,18 @@ explicit direction on each. Progress so far:
    points-scheme scoring). `tests/Feature/ClassStandingsTest.php` confirms
    grouping-by-class, omission of unclassed drivers, and that a missed-rounds
    penalty flows through into each class's own standings correctly.
-7. **XCL-branded copy in standings views — not yet done.** Pending.
+7. **Hardcoded copy in the standings view — done.** The only such copy
+   found on the public standings page (`championships/show.blade.php`,
+   the one view rendering standings for both XCL-native and real league
+   championships): a single-class championship's standings heading
+   hardcoded the generic word "Championship" ("Championship Standings"),
+   redundant right below the hero already naming the actual championship.
+   Now reads "Overall Standings" regardless of who owns the championship.
+   Everything else on that page already reads from the actual
+   league/championship data (`"XCL Rating"` in the Entry Requirements card
+   is a real, correctly-named platform-wide feature a league can opt a
+   championship into — not a branding leak — so it was left alone).
+   (`tests/Feature/PublicChampionshipPageTest.php`.)
 8. **Edit Round — not yet done.** Rounds still only support Add/Remove.
    Pending.
 9. **Browser check — not yet done.** Pending.
