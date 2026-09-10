@@ -11,12 +11,17 @@ up without re-deriving context.
 
 ## Current State
 
-- **Phase in progress:** none — Phase 3 ("Rounds, event generation and league
-  scoped servers") is still next and has not been started. The points-scheme
-  slice of Phase 5 was pulled forward and completed out of order on
-  2026-09-09, on an explicit, self-contained task naming it directly — see
-  that phase's own entry below for what shipped and what's still open there.
-  Phase 3/4 themselves are untouched.
+- **Phase in progress:** none — **Phase 2.5 ("XCL becomes a first-class
+  League")** is next and has not been started; it was inserted ahead of
+  Phase 3 on 2026-09-10 once the three Open Questions below were resolved
+  (see their "Resolved" notes) — decision 1 there reopens part of what
+  Phase 1/2 already shipped, so it should land before Phase 3 builds
+  further on the tenant model. Phase 3 ("Rounds, event generation and
+  league scoped servers") remains next after that and has not been
+  started. The points-scheme slice of Phase 5 was pulled forward and
+  completed out of order on 2026-09-09, on an explicit, self-contained
+  task naming it directly — see that phase's own entry below for what
+  shipped and what's still open there. Phase 3/4 themselves are untouched.
 - **Also completed out of order (2026-09-09), same session:** the Basics step
   gained a Server default (`championships.ftp_server_id`) and a Schedule
   group (`start_date`/`recurrence`/`day_of_week`/`time_of_day` in
@@ -457,6 +462,81 @@ pattern as the race wizard's `classes_json` (add/remove rows in JS, serialize
 to a hidden field on submit). The one deliberate divergence is per-step
 persistence itself, which the resumable-draft requirement makes necessary.
 
+## Phase 2.5 — XCL becomes a first-class League
+
+> Inserted 2026-09-10, after resolving the "should XCL itself become a
+> League row" Open Question below. `TenantScope` currently treats
+> `league_id IS NULL` as "belongs to XCL, visible to everyone"
+> (`app/Models/Scopes/TenantScope.php:23-34`) — this phase replaces that
+> null-bypass with a real, seeded XCL `League` row, so nothing in the
+> pipeline is special-cased on null any more. Do this before continuing
+> Phase 3 — Phase 3 extends league-scoping on `FtpServer`/rounds, which is
+> simpler to build once the tenant model is final.
+
+- [ ] Seed an "XCLusive Racing" `League` row. Decide how it's protected
+      from accidental deletion (a new `is_system` boolean, or a policy
+      guard blocking archive/delete on a known id) — needed before the
+      backfill below, since `points_schemes.league_id` uses
+      `cascadeOnDelete()` (`database/migrations/2026_09_08_000011_create_points_schemes_table.php:13-14`),
+      unlike `ftp_servers`/`championships` (`nullOnDelete()`). That's inert
+      today because `NULL` never cascades — once XCL templates point at a
+      real, deletable `League` row, deleting it would cascade-delete every
+      seeded template. Fix by switching this FK to `nullOnDelete()`, or by
+      relying on the system-league delete guard.
+- [ ] Backfill migration: every `league_id IS NULL` row on `ftp_servers`,
+      `championships`, `points_schemes` → XCL's real league id.
+- [ ] Remove `TenantScope`'s `whereNull($column)` branch
+      (`app/Models/Scopes/TenantScope.php:29`) now that nothing is
+      genuinely null for "belongs to XCL" — keep the column nullable for a
+      true future "unowned" edge case, just stop treating null as meaning
+      XCL.
+- [ ] **Highest-risk regression, fix explicitly:**
+      `RaceController::register()`/`registerTeam()`
+      (`app/Http/Controllers/RaceController.php:155,175,272,302`) load
+      `$race->ftpServer` with no `withoutTenantScope()` and no null-check —
+      they only work today because of the null-bypass (an ordinary driver,
+      member of no league, still needs to see XCL's own server to get its
+      connection details in their registration-confirmation message). Once
+      XCL's servers carry a real `league_id`, this relation load must
+      bypass the tenant scope explicitly, the same way
+      `Championship::pointsScheme()` already does for its own public-read
+      case.
+- [ ] Fix the other null-based queries found during exploration:
+      `Admin\LeagueController::edit()` (`app/Http/Controllers/Admin/LeagueController.php:90`,
+      `FtpServer::withoutTenantScope()->whereNull('league_id')` → `where('league_id', $xclLeagueId)`),
+      `Admin\LeagueController::unassignServer()` (`app/Http/Controllers/Admin/LeagueController.php:215`,
+      writes `league_id => null` to mean "back to XCL" → write the real id
+      instead), and `Admin\LeagueFtpServerController::index()`
+      (`app/Http/Controllers/Admin/LeagueFtpServerController.php:20`,
+      `whereNotNull('league_id')` → `where('league_id', '!=', $xclLeagueId)`).
+- [ ] Re-point `database/seeders/PointsSchemeSeeder.php`'s `updateOrCreate`
+      match key (currently `league_id => null`, lines ~150/169) to the
+      XCL league id, and sequence it **after** a new seeding step creates
+      the XCL league row — `LeagueSeeder`/`DatabaseSeeder` currently seed
+      NLRL/SRC/EER only, nothing seeds "XCL" itself.
+- [ ] Update the now-stale "null means XCL's own" comments in
+      `database/migrations/2026_09_08_000005_add_league_id_to_ftp_servers_table.php`,
+      `..._000010_add_league_fields_to_championships_table.php`, and
+      `..._000011_create_points_schemes_table.php`.
+- [ ] Update `tests/Feature/LeagueTenantIsolationTest.php`'s "plain driver
+      still sees XCL's own null-league FTP server" test to use the real
+      XCL league instead of `league_id => null`; re-run the whole file
+      before/after to confirm isolation still holds once the null-bypass
+      is gone.
+- **No change needed, already safe:** `PushGPortalConfigs`,
+  `ImportGportalResults`, `PushPracticeServerConfigJob` already call
+  `withoutTenantScope()` unconditionally (the Phase 1 fix, see the
+  "Implementation note: the null tenant key" above) — they keep working
+  once null becomes a real id. `Championship::pointsScheme()`'s bypass and
+  the public `ChampionshipController` are unaffected (neither depends on
+  null specifically). `PointsSchemePolicy`/`PointsSchemeController`
+  already key off `is_template`, not null — only their comments go stale.
+- **Pre-existing, unrelated gap noticed in passing, not part of this
+  phase:** legacy `Admin\ChampionshipController::index()` has no league
+  filtering at all — any `canManage()` admin already sees every league's
+  championships mixed with XCL's own today, regardless of this migration.
+  Worth a follow-up someday, not blocking.
+
 ## Phase 3 — Rounds, event generation and league scoped servers
 
 - [x] Add nullable `league_id` FK to `ftp_servers`
@@ -483,7 +563,12 @@ persistence itself, which the resumable-draft requirement makes necessary.
       round-create form (`AdminChampionshipController::roundCreate`/`addRound`,
       `resources/views/admin/championships/round-create.blade.php`) to
       pre-fill from the championship's `settings` JSON instead of requiring
-      re-entry per round.
+      re-entry per round. **Partially done already**: the 2026-09-09
+      out-of-order session added `Championship::scheduledDateTimeForRound()`
+      and `ChampionshipWizardController::roundCreate()` already computes a
+      `$suggestedScheduledAt` from it — verify what's still missing
+      (session length/weather defaults into the round-create form) rather
+      than treating this bullet as untouched.
 - [ ] Scope the round-create FTP server picker
       (`FtpServer::where('active', true)`, `Admin/ChampionshipController.php:173`)
       to servers owned by the championship's league (or XCL's own, for native
@@ -523,8 +608,36 @@ persistence itself, which the resumable-draft requirement makes necessary.
       pool alongside `max_drivers`.
 - [ ] Design and build Discord-membership-as-entry-requirement — genuinely new;
       no per-league guild-membership check exists (`SyncDiscordRankRole` only
-      syncs XCL's own single guild). See Open Questions for the integration
-      approach this depends on.
+      syncs XCL's own single guild). **Direction decided 2026-09-10** (see
+      the resolved Open Question below): an XCL-owned bot gets invited into
+      each league's own Discord server, rather than requesting a broader
+      OAuth scope on each user's personally-connected account. Concretely:
+      - `leagues` needs a new `discord_guild_id` column — it was in this
+        plan's original Phase 1 sketch but was dropped from what actually
+        shipped; only `discord_invite_url` and the currently-cosmetic
+        `requires_discord_membership` flag exist today
+        (`resources/views/championships/index.blade.php:37-41` only
+        renders a warning string, nothing blocks registration yet).
+      - A bot-invite flow: a Discord OAuth2 **bot-invite** URL (not a
+        user-OAuth flow) pre-filled with the league's guild id and
+        `View Server Members` permission, surfaced on the league edit
+        screen, plus a lightweight "is the bot actually in this guild yet"
+        check (`GET /guilds/{id}` with the bot token; 403/404 = not
+        installed).
+      - Generalize `App\Services\DiscordRoleService`'s member-lookup call
+        (`GET /guilds/{guild}/members/{user}`, 404 = not a member — the
+        exact call already exists) to take an arbitrary guild id instead of
+        reading `config('services.discord.guild_id')`.
+      - Wire the check into registration with a short-TTL cache per
+        user+guild, so a registration attempt doesn't hit Discord's API on
+        every load — same pattern as `User::requirementFailure()`'s other
+        threshold checks (the "source thresholds from settings" bullet
+        above).
+      - Reusable as-is: `ConnectedAccount`/`User::connectedAccount('discord')`
+        for the user's Discord identity (snowflake only — Socialite never
+        keeps an OAuth token around, confirming a per-user API approach was
+        never viable anyway), and the existing `ShouldQueue` + database
+        queue setup.
 - [ ] League-scope the existing `ChampionshipClass`/class-picker pattern
       (`app/Models/ChampionshipClass.php`,
       `AdminChampionshipController::syncClasses`) — no new model needed for
@@ -704,15 +817,29 @@ correctly — they are not decisions this plan makes on its own.
   (this plan's current default), or should XCL itself become a first-class
   `League` row so nothing in the pipeline is special-cased? This materially
   affects the `LeagueScope` design in Phase 1/2.
+  **Resolved (2026-09-10): XCL becomes its own `League` row.** See Phase 2.5
+  above for the full migration this implies.
 - What's the actual verification mechanism for "Discord membership as an entry
   requirement" — does each league install a bot/webhook XCL controls, or does
   XCL request a broader Discord OAuth scope (`guilds`/`guilds.members.read`)
   on the user's own connected account? Who does that integration work with
   each league?
+  **Resolved (2026-09-10): an XCL-owned bot gets invited into each league's
+  own Discord server** (not a broader OAuth scope on the user's personal
+  account — someone still has to actually join that league's Discord for
+  membership to mean anything). See Phase 4's Discord bullet above for the
+  concrete breakdown; who does the invite legwork per league is an
+  operational question, not a code one.
 - Is League Manager one seat per league, or can a league have multiple
   managers with different permission levels (e.g. a league admin vs a
   league-scoped steward)? Phase 1's `league_managers` pivot assumes
   many-to-many but not tiered permissions.
+  **Resolved (2026-09-10): multiple managers/stewards per league, no tiers
+  needed for now.** The shipped `league_user` pivot (`role`: manager|steward
+  per user per league) already is this — no schema change required. If a
+  finer split is wanted later (e.g. a league-admin who can invite other
+  managers vs. a plain manager who can't), that's a new tier and a
+  `LeagueUserPolicy`, not requested yet.
 - What happens to a league's data if the relationship with XCL ends —
   deletion, read-only archive, export to the league?
 - Should XCL's global `steward` role be extended to be league-scoped, or do
