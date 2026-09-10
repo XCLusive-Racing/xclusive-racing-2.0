@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\Bop;
+use App\Models\Championship;
 use App\Models\FtpServer;
+use App\Models\League;
 use App\Models\Race;
 use App\Services\Contracts\ServerConfigGenerator;
 
@@ -84,6 +86,18 @@ class AccServerConfigService implements ServerConfigGenerator
     public function configuration(Race $race, ?FtpServer $server = null): array
     {
         $defaults = $server?->event_defaults ?? $this->defaultEventConfig();
+
+        // A league championship's own "fixed weather" session settings
+        // (ambient/track temp, cloud level, rain) fill in ahead of the server's
+        // generic defaults for a round that doesn't override them itself —
+        // these settings existed since Phase 2 but were never actually read
+        // anywhere. There's still no per-round UI for raw track/cloud values
+        // (the reference "dailies" race form never exposed them either, only a
+        // simple weather/rain/ambient pattern, which rounds already have), so
+        // this is a championship-wide fallback layer, not a new round field.
+        if ($championshipDefaults = $this->championshipFixedWeatherDefaults($race)) {
+            $defaults = array_merge($defaults, $championshipDefaults);
+        }
 
         // Practice shows the same in-game lighting as the Race, since that's what
         // drivers are actually setting up for. Qualifying is set an hour earlier —
@@ -323,6 +337,37 @@ class AccServerConfigService implements ServerConfigGenerator
             'entries'       => $mapped,
             'configVersion' => 1,
         ];
+    }
+
+    // Bypasses the tenant scope deliberately — this runs from console commands
+    // with no authenticated user (PushGPortalConfigs), a queued job
+    // (PushRoundConfigJob), and a driver registering who isn't a member of the
+    // league at all (RaceController::register()); a championship carries no
+    // credentials, same reasoning as Championship::pointsScheme().
+    private function championshipFixedWeatherDefaults(Race $race): ?array
+    {
+        if (!$race->championship_id) {
+            return null;
+        }
+
+        $championship = Championship::withoutTenantScope()->find($race->championship_id);
+
+        if (!$championship || $championship->league_id === League::system()->id) {
+            return null;
+        }
+
+        $sessions = $championship->settings->sessions;
+
+        if (($sessions->weather_mode ?? 'fixed') !== 'fixed') {
+            return null;
+        }
+
+        return array_filter([
+            'ambientTemp' => $sessions->ambient_temp ?? null,
+            'trackTemp'   => $sessions->track_temp ?? null,
+            'cloudLevel'  => $sessions->cloud_level ?? null,
+            'rain'        => $sessions->rain_level ?? null,
+        ], fn ($v) => $v !== null);
     }
 
     private function shortFormationLap(Race $race, array $base): int

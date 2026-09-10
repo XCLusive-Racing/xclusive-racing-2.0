@@ -366,6 +366,21 @@ class Championship extends Model
         $bonusLead    = $scheme?->leading_lap_points ?? 0;
         $dropRounds   = $scheme ? (int) ($this->settings->scoring->drop_rounds ?? 0) : $this->drop_rounds;
 
+        // A league-owned championship reads its missed-rounds rule from settings;
+        // XCL's own native championships keep the legacy flat columns. Neither was
+        // ever actually wired into standings before now — the admin form (and, for
+        // leagues, the schema field) existed, but nothing here read them.
+        $isLeagueOwned = $this->league_id !== null && $this->league_id !== League::system()->id;
+        if ($isLeagueOwned) {
+            $maxMissedRounds    = $this->settings->scoring->max_missed_rounds ?? null;
+            $missedRoundsAction = $this->settings->scoring->missed_rounds_action ?? 'none';
+            $missedRoundsPoints = (int) ($this->settings->scoring->missed_rounds_penalty_points ?? 0);
+        } else {
+            $maxMissedRounds    = $this->max_missed_rounds;
+            $missedRoundsAction = $this->missed_rounds_action ?? 'none';
+            $missedRoundsPoints = (int) ($this->missed_rounds_penalty_points ?? 0);
+        }
+
         $finishedRounds = $this->rounds()
             ->where('status', 'finished')
             ->with(['raceResults.user'])
@@ -374,6 +389,21 @@ class Championship extends Model
         $penalties = $this->penalties()->get()->groupBy('user_id');
 
         $driverData = [];
+
+        // Seed every registered (non-spectator) entrant, even one with zero
+        // results so far — otherwise a driver who missed every round simply
+        // never appears in standings, and max_missed_rounds would have nobody
+        // to apply to. Matches how a real championship classification still
+        // lists a no-show at the back on zero points, rather than omitting them.
+        foreach ($this->registrations()->where('is_spectator', false)->with('user')->get() as $registration) {
+            if (!isset($driverData[$registration->user_id])) {
+                $driverData[$registration->user_id] = [
+                    'user_id' => $registration->user_id,
+                    'user'    => $registration->user,
+                    'rounds'  => [],
+                ];
+            }
+        }
 
         foreach ($finishedRounds as $race) {
             $qualiResults = $race->qualiResults()->get();
@@ -453,8 +483,21 @@ class Championship extends Model
                 ? $penalties[$userId]->sum('points')
                 : 0;
 
-            $data['dropped']      = $dropped;
-            $data['total_points'] = $total - $penaltyPts;
+            // Missed rounds only ever count against a driver, never for one —
+            // a round dropped as one of their worst scores above still counts
+            // as "participated" here, it just didn't score.
+            $missedPenalty = 0;
+            if ($missedRoundsAction === 'penalise' && $maxMissedRounds !== null && $finishedRounds->isNotEmpty()) {
+                $participated = collect($data['rounds'])->pluck('race_id')->unique()->count();
+                $missed       = $finishedRounds->count() - $participated;
+                if ($missed > $maxMissedRounds) {
+                    $missedPenalty = ($missed - $maxMissedRounds) * $missedRoundsPoints;
+                }
+            }
+
+            $data['dropped']               = $dropped;
+            $data['missed_rounds_penalty'] = $missedPenalty;
+            $data['total_points']          = $total - $penaltyPts - $missedPenalty;
         }
         unset($data);
 

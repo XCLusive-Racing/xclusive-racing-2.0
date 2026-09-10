@@ -16,7 +16,7 @@ use Illuminate\Support\Arr;
 // defaults for new keys) once this class gains fields for a new version.
 class ChampionshipSettingsSchema
 {
-    const CURRENT_VERSION = 3;
+    const CURRENT_VERSION = 4;
 
     const STEPS = [
         'basics'       => 'Basics',
@@ -126,6 +126,19 @@ class ChampionshipSettingsSchema
             // a flat yes/no toggle couldn't carry an actual point value anyway.
             ['group' => 'scoring', 'key' => 'team_points_enabled', 'type' => 'boolean', 'default' => false,
                 'label' => 'Separate Team Points', 'help' => 'Score teams independently of individual drivers.'],
+
+            // Mirrors the legacy native-championship form's "Rounds Allowed to
+            // Miss" / "If limit exceeded" fields exactly
+            // (resources/views/admin/championships/{create,edit}.blade.php) —
+            // present as flat columns since before leagues existed, but never
+            // actually wired into Championship::buildDriverStandings() for
+            // either a native or a league championship until now.
+            ['group' => 'scoring', 'key' => 'max_missed_rounds', 'type' => 'integer', 'nullable' => true, 'default' => null,
+                'label' => 'Rounds Allowed to Miss', 'help' => 'Leave blank for no limit.'],
+            ['group' => 'scoring', 'key' => 'missed_rounds_action', 'type' => 'enum', 'options' => ['none', 'penalise'], 'default' => 'none',
+                'label' => 'If Limit Exceeded', 'help' => 'What happens once a driver has missed more rounds than allowed.'],
+            ['group' => 'scoring', 'key' => 'missed_rounds_penalty_points', 'type' => 'integer', 'nullable' => true, 'default' => null,
+                'label' => 'Penalty Points per Extra Missed Round', 'help' => 'Only used when "If Limit Exceeded" is set to penalise. Deducted for every round missed beyond the allowed number.'],
 
             // --- Requirements ---
             ['group' => 'requirements', 'key' => 'min_xcl_rating_tier', 'type' => 'enum',
