@@ -182,7 +182,6 @@ class ChampionshipWizardController extends Controller
             'xcl_r_multiplier'    => 'nullable|numeric|min:0.1|max:10',
             'pitstop_count'       => 'nullable|integer|min:0|max:9',
             'fixed_stop_time'     => 'nullable|boolean',
-            'min_stop_secs'       => 'nullable|integer|min:1|max:3600',
             'driver_stint_time_mins'      => 'nullable|integer|min:1|max:1440',
             'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
             'mandatory_driver_swap'       => 'nullable|boolean',
@@ -192,9 +191,10 @@ class ChampionshipWizardController extends Controller
         ]);
 
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
-        if (!$request->boolean('fixed_stop_time')) {
-            $data['min_stop_secs'] = null;
-        }
+        // Plain on/off, no admin-entered number — 25s fixed when on, dynamic
+        // (null) when off. Same values applyStepSettings() derives for the
+        // championship-wide Sessions-step default.
+        $data['min_stop_secs'] = $request->boolean('fixed_stop_time') ? 25 : null;
 
         $claimedSlots = [];
         $result = $this->resolveRoundRow($data, $championship, $league, $claimedSlots);
@@ -248,7 +248,6 @@ class ChampionshipWizardController extends Controller
             'xcl_r_multiplier'    => 'nullable|numeric|min:0.1|max:10',
             'pitstop_count'       => 'nullable|integer|min:0|max:9',
             'fixed_stop_time'     => 'nullable|boolean',
-            'min_stop_secs'       => 'nullable|integer|min:1|max:3600',
             'driver_stint_time_mins'      => 'nullable|integer|min:1|max:1440',
             'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
             'mandatory_driver_swap'       => 'nullable|boolean',
@@ -256,9 +255,10 @@ class ChampionshipWizardController extends Controller
         ]);
 
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
-        if (!$request->boolean('fixed_stop_time')) {
-            $data['min_stop_secs'] = null;
-        }
+        // Plain on/off, no admin-entered number — 25s fixed when on, dynamic
+        // (null) when off. Same values applyStepSettings() derives for the
+        // championship-wide Sessions-step default.
+        $data['min_stop_secs'] = $request->boolean('fixed_stop_time') ? 25 : null;
 
         $claimedSlots = [];
         $result = $this->resolveRoundRow($data, $championship, $league, $claimedSlots, $race->id);
@@ -311,7 +311,6 @@ class ChampionshipWizardController extends Controller
             'xcl_r_multiplier'       => 'nullable|numeric|min:0.1|max:10',
             'pitstop_count'          => 'nullable|integer|min:0|max:9',
             'fixed_stop_time'        => 'nullable|boolean',
-            'min_stop_secs'          => 'nullable|integer|min:1|max:3600',
             'driver_stint_time_mins'      => 'nullable|integer|min:1|max:1440',
             'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
             'mandatory_driver_swap'       => 'nullable|boolean',
@@ -323,9 +322,10 @@ class ChampionshipWizardController extends Controller
         ]);
 
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
-        if (!$request->boolean('fixed_stop_time')) {
-            $data['min_stop_secs'] = null;
-        }
+        // Plain on/off, no admin-entered number — 25s fixed when on, dynamic
+        // (null) when off. Same values applyStepSettings() derives for the
+        // championship-wide Sessions-step default.
+        $data['min_stop_secs'] = $request->boolean('fixed_stop_time') ? 25 : null;
 
         $shared = collect($data)->except('rounds')->all();
         $rows   = [];
@@ -595,12 +595,12 @@ class ChampionshipWizardController extends Controller
             }
         }
 
-        // Explicit dynamic/fixed pitstop-time choice, not just "blank means
-        // dynamic" — clears any stale min_stop_secs left over from a previous
-        // edit when Fixed Stop Time is off, same normalization Add/Edit Round
-        // applies to the per-round override.
-        if ($step === 'sessions' && !($settings['sessions']['fixed_stop_time'] ?? false)) {
-            $settings['sessions']['min_stop_secs'] = null;
+        // Fixed Stop Time is a plain on/off button, no admin-entered number
+        // (user-directed) — min_stop_secs is always derived from it: 25 when
+        // on, dynamic (null) when off. Same derivation Add/Edit Round applies
+        // to the per-round override.
+        if ($step === 'sessions') {
+            $settings['sessions']['min_stop_secs'] = ($settings['sessions']['fixed_stop_time'] ?? false) ? 25 : null;
         }
 
         // Repeatable list fields ride in as pre-built JSON, the same pattern the

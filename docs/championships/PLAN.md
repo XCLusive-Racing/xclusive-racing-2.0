@@ -11,6 +11,20 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, fourth follow-up — Fixed Stop Time simplified to a plain
+  on/off button, no number field at all.** User-directed: "off = standaard
+  game, on = 25 seconds" — min_stop_secs is no longer admin-entered anywhere
+  (championship-wide Sessions step or per-round). The schema field is still
+  declared (`'hidden' => true`, new filter in `wizard.blade.php`'s
+  `$visibleFields`) purely so it keeps a tracked default/upgrade path; its
+  value is now always derived from `fixed_stop_time` — 25 when on, null when
+  off — in `applyStepSettings()`'s sessions-step branch and all three of
+  `ChampionshipWizardController`'s round-mutating actions. Help text under
+  the toggle spells out what on/off mean. Round-level number input + its
+  show/hide JS removed from `_round-shared-fields.blade.php` and
+  `round-edit.blade.php`. `RoundCreationTest` updated (25 instead of an
+  admin-supplied value; `min_stop_secs` no longer posted in the dynamic-case
+  test since nothing reads it anymore). 137 tests still passing.
 - **2026-09-11, third follow-up — item 9 generalized from grey-out to real
   show/hide, applied wherever a field only matters if another boolean is
   on.** User clarified item 9 further after the punch-list pass below: not

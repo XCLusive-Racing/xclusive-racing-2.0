@@ -170,15 +170,20 @@ class ChampionshipSettingsSchema
                 'label' => 'XCL-R Multiplier', 'help' => 'How much this round\'s races count toward rating changes. Leave blank for the default (1.0, same for every length). Only used once XCL Rating is enabled.', 'rule' => 'nullable|numeric|min:0.1|max:10'],
             ['group' => 'sessions', 'key' => 'pitstop_count', 'type' => 'integer', 'nullable' => true, 'default' => 0, 'section' => 'Rating & Pitstops',
                 'label' => 'Mandatory Pitstops', 'help' => 'Number of mandatory pitstops. Leave at 0 for none.', 'rule' => 'nullable|integer|min:0|max:9'],
-            // Explicit dynamic/fixed choice rather than inferring "fixed" purely
-            // from whether min_stop_secs happens to be filled in — AccServerConfigService
-            // still only reads min_stop_secs (isRefuellingTimeFixed = !empty(...)), so
-            // this boolean's only job is making sure that field is genuinely null
-            // when "dynamic" is chosen, not just left at a stale prior value.
+            // A plain on/off button, no accompanying number field — user-directed
+            // 2026-09: "off = standaard game, on = 25 seconds". min_stop_secs still
+            // exists as a real Race column (AccServerConfigService reads it,
+            // isRefuellingTimeFixed = !empty(...)) but is now always derived from
+            // this toggle (25 when on, null when off) rather than admin-entered —
+            // see applyStepSettings()/ChampionshipWizardController's round actions.
             ['group' => 'sessions', 'key' => 'fixed_stop_time', 'type' => 'boolean', 'default' => false, 'section' => 'Rating & Pitstops',
-                'label' => 'Fixed Stop Time', 'help' => 'Off = dynamic (driver-controlled) stop time. On = a fixed minimum, set below.'],
-            ['group' => 'sessions', 'key' => 'min_stop_secs', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Rating & Pitstops', 'depends_on' => 'fixed_stop_time',
-                'label' => 'Minimum Stop Time (seconds)', 'help' => 'Only used when Fixed Stop Time is on.', 'rule' => 'nullable|integer|min:1|max:3600'],
+                'label' => 'Fixed Stop Time', 'help' => 'Off = game default (dynamic). On = a fixed 25 seconds.'],
+            // Not rendered ('hidden') — no longer a user-editable field, purely the
+            // derived value the toggle above sets. Kept in the schema so it still
+            // gets a tracked default/upgrade path and Add/Edit Round's prefill
+            // (session defaults) keeps working the same way every other field here does.
+            ['group' => 'sessions', 'key' => 'min_stop_secs', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Rating & Pitstops', 'hidden' => true,
+                'label' => 'Minimum Stop Time (seconds)', 'help' => 'Derived from Fixed Stop Time — 25 when on, blank when off.', 'rule' => 'nullable|integer|min:1|max:3600'],
 
             // --- Scoring ---
             ['group' => 'scoring', 'key' => 'points_scheme_id', 'type' => 'integer', 'nullable' => true, 'default' => null,

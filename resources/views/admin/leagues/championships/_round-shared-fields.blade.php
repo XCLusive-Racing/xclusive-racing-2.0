@@ -132,19 +132,14 @@
                    class="form-control form-control-sm @error('pitstop_count') is-invalid @enderror">
             @error('pitstop_count')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         </div>
-        <div class="col-6 col-sm-3 d-flex align-items-end pb-1">
+        <div class="col-6 col-sm-3 d-flex flex-column justify-content-end pb-1">
             @php $fixedStopDefault = old('fixed_stop_time', $sessionDefaults->min_stop_secs !== null); @endphp
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" name="fixed_stop_time" id="{{ $idPrefix }}-fixed-stop" value="1"
                        {{ $fixedStopDefault ? 'checked' : '' }}>
                 <label class="form-check-label fw-bold" for="{{ $idPrefix }}-fixed-stop" style="font-size:.78rem">Fixed Stop Time</label>
             </div>
-        </div>
-        <div class="col-6 col-sm-3" id="{{ $idPrefix }}-min-stop-wrap" style="{{ $fixedStopDefault ? '' : 'display:none' }}">
-            <label class="form-label" style="font-size:.75rem">Min. Stop Time (s)</label>
-            <input type="number" name="min_stop_secs" min="1" max="3600" value="{{ old('min_stop_secs', $sessionDefaults->min_stop_secs) }}"
-                   class="form-control form-control-sm @error('min_stop_secs') is-invalid @enderror" placeholder="—">
-            @error('min_stop_secs')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+            <div class="form-text mt-0" style="font-size:.68rem;color:#9ca3af">Off = game default (dynamic). On = a fixed 25 seconds.</div>
         </div>
     </div>
 
@@ -179,14 +174,6 @@
     var rainVal    = document.getElementById('{{ $idPrefix }}-rain-level-val');
     if (rainRange) {
         rainRange.addEventListener('input', function () { rainVal.textContent = parseFloat(rainRange.value).toFixed(1); });
-    }
-
-    var fixedStop = document.getElementById('{{ $idPrefix }}-fixed-stop');
-    var minStopWrap = document.getElementById('{{ $idPrefix }}-min-stop-wrap');
-    if (fixedStop) {
-        fixedStop.addEventListener('change', function () {
-            minStopWrap.style.display = fixedStop.checked ? '' : 'none';
-        });
     }
 })();
 </script>

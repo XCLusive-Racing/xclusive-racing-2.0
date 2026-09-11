@@ -115,22 +115,23 @@ class RoundCreationTest extends TestCase
         $this->actingAs($manager)
             ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
                 'track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i'),
-                'xcl_r_multiplier' => 1.5, 'pitstop_count' => 2, 'fixed_stop_time' => 1, 'min_stop_secs' => 60,
+                'xcl_r_multiplier' => 1.5, 'pitstop_count' => 2, 'fixed_stop_time' => 1,
                 'driver_stint_time_mins' => 45, 'max_total_driving_time_mins' => 120, 'mandatory_driver_swap' => 1,
             ])
             ->assertRedirect();
 
         $this->assertDatabaseHas('races', [
             'championship_id' => $championship->id, 'track' => 'Monza',
-            'xcl_r_multiplier' => 1.5, 'pitstop_count' => 2, 'min_stop_secs' => 60,
+            'xcl_r_multiplier' => 1.5, 'pitstop_count' => 2, 'min_stop_secs' => 25,
             'driver_stint_time_mins' => 45, 'max_total_driving_time_mins' => 120, 'mandatory_driver_swap' => 1,
         ]);
     }
 
-    // The "dynamic vs fixed" pitstop time is an explicit checkbox, not inferred
-    // from whether min_stop_secs happens to be filled in — a stray leftover
-    // value must not survive once "dynamic" (fixed_stop_time unchecked) is chosen.
-    public function test_dynamic_pitstop_time_clears_any_submitted_min_stop_secs(): void
+    // Fixed Stop Time is a plain on/off button (user-directed 2026-09: "off =
+    // standaard game, on = 25 seconds") — min_stop_secs is always derived from
+    // it, never admin-entered, so a stray value doesn't survive once "dynamic"
+    // (fixed_stop_time unchecked) is chosen.
+    public function test_dynamic_pitstop_time_leaves_min_stop_secs_null(): void
     {
         $league       = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
@@ -139,7 +140,7 @@ class RoundCreationTest extends TestCase
         $this->actingAs($manager)
             ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
                 'track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i'),
-                'pitstop_count' => 2, 'min_stop_secs' => 60, // fixed_stop_time deliberately not sent
+                'pitstop_count' => 2, // fixed_stop_time deliberately not sent
             ])
             ->assertRedirect();
 

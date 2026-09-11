@@ -81,7 +81,7 @@
                                 // points_scheme_id gets its own picker below, with an inline table
                                 // preview a plain integer input can't show — skip the generic one.
                                 $visibleFields = collect($sectionFields)->filter(fn ($f) =>
-                                    $f['type'] !== 'list' && !($step === 'scoring' && $f['key'] === 'points_scheme_id')
+                                    $f['type'] !== 'list' && !($f['hidden'] ?? false) && !($step === 'scoring' && $f['key'] === 'points_scheme_id')
                                 )->values();
                             @endphp
                             @continue($visibleFields->isEmpty())
