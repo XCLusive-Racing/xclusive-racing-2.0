@@ -16,12 +16,6 @@ use Illuminate\Support\Facades\Log;
 
 class ChampionshipController extends Controller
 {
-    // A league championship's own lifecycle (set by the setup wizard) is
-    // draft/published/registration_open/registration_closed/running/completed/
-    // cancelled — distinct from the flat XCL championship's draft/active/finished.
-    // Anything from "published" onward is publicly visible; draft and cancelled are not.
-    private const LEAGUE_PUBLIC_STATUSES = ['published', 'registration_open', 'registration_closed', 'running', 'completed'];
-
     public function index(Request $request)
     {
         if ($slug = $request->query('league')) {
@@ -30,7 +24,7 @@ class ChampionshipController extends Controller
             $championships = Championship::withoutTenantScope()
                 ->withCount(['rounds', 'registrations'])
                 ->where('league_id', $league->id)
-                ->whereIn('status', self::LEAGUE_PUBLIC_STATUSES)
+                ->publiclyVisible()
                 ->orderBy('season', 'desc')
                 ->orderBy('name')
                 ->get();
@@ -40,7 +34,7 @@ class ChampionshipController extends Controller
 
         $leagues = League::withoutTenantScope()
             ->where('status', 'active')
-            ->withCount(['championships' => fn ($q) => $q->withoutTenantScope()->whereIn('status', self::LEAGUE_PUBLIC_STATUSES)])
+            ->withCount(['championships' => fn ($q) => $q->withoutTenantScope()->publiclyVisible()])
             ->orderBy('name')
             ->get();
 

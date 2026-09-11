@@ -54,6 +54,9 @@
                         <span class="badge" style="background:{{ $sc }}22;color:{{ $sc }};font-size:.68rem;padding:3px 8px;border-radius:6px;font-weight:700">
                             {{ ucfirst(str_replace('_', ' ', $c->status)) }}
                         </span>
+                        @if($c->visibility === 'unlisted')
+                        <span class="badge" style="background:#fef3c7;color:#92400e;font-size:.68rem;padding:3px 8px;border-radius:6px;font-weight:700">Hidden</span>
+                        @endif
                     </td>
                     <td class="text-center d-none d-lg-table-cell">
                         @if($c->xcl_rating_enabled)

@@ -11,6 +11,61 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, eighteenth follow-up — "Hide from Public" for a published
+  championship.** User: "en nadat hij gepublisht is wil ik ook de optie bij
+  de edit om de championship te hiden," then, mid-turn: "zodat hij niet bij
+  events te zien is" — hiding must also pull the championship's own rounds
+  off the public Events page, not just the championships listing.
+  - Repurposed the already-existing (but previously inert — found during
+    last follow-up's dead-code sweep) `visibility` column
+    (`public`/`unlisted`, set on Basics) instead of inventing a new
+    `status` value: a quick "Hide from Public" / "Make Public Again" toggle
+    button on the Review step's action row (next to Publish/Open/Close
+    Registration, same single-dynamic-button pattern as the XCL Rating
+    toggle), gated on `$championship->status !== 'draft'` — draft is
+    already excluded from every public listing by status alone, so the
+    button only appears once there's actually something to hide. Two new
+    routes/controller actions, `hide`/`unhide`, same `update()` policy gate
+    as every other routine edit — no new policy method needed.
+  - **Centralized the status whitelist that used to live only in
+    `ChampionshipController` as a private const** into
+    `Championship::PUBLIC_STATUSES` + a `scopePubliclyVisible()` query
+    scope (`whereIn('status', PUBLIC_STATUSES)->where('visibility', 'public')`)
+    on the model itself, so both the championships listing
+    (`ChampionshipController::index()`) and the new Events-page filter
+    share one definition of "actually public" instead of each keeping its
+    own copy of the same status list.
+  - **`RaceController::index()` (the public Events page) previously had no
+    notion of a championship's own status/visibility at all** — any Race
+    row not literally `status='finished'` showed up regardless, meaning a
+    still-*draft* championship's rounds were already leaking onto `/events`
+    before this fix, not just a newly-hidden one. Added a
+    `whereNull('championship_id')->orWhereHas('championship', ...
+    ->withoutTenantScope()->publiclyVisible())` filter — `withoutTenantScope()`
+    is required here since `Championship` carries `TenantScope` and an
+    anonymous Events-page visitor has no league membership at all, which
+    would otherwise make `whereHas('championship', ...)` match zero rows
+    for everyone (`TenantScope::apply()`'s empty-league-list case). Verified
+    against real dev data: 4 of 20 non-finished races were rounds of a
+    still-draft championship, silently visible on `/events` before this fix.
+  - "Hidden" badge added next to the status badge in both the wizard's own
+    context strip (every step, not just Review) and the admin championships
+    list, so the state is visible while editing, not just inferable from
+    the toggle button's current label.
+  - New tests: `test_hide_button_only_appears_once_published`,
+    `test_league_manager_can_hide_and_unhide_their_own_published_championship`,
+    `test_hide_route_rejects_a_draft_championship`,
+    `test_a_different_leagues_manager_cannot_hide_another_leagues_championship`
+    (`ChampionshipSettingsTest.php`), plus
+    `test_a_hidden_championships_own_page_is_still_reachable_directly` (same
+    "unlisted YouTube video" semantics — reachable by direct link, just not
+    listed), `test_a_hidden_championship_is_excluded_from_the_leagues_public_listing`,
+    `test_a_hidden_championships_rounds_are_excluded_from_the_public_events_page`
+    (`PublicChampionshipPageTest.php`). 157 tests passing.
+  - Separately, deleted a leftover test race ("test" / Indianapolis /
+    2026-12-31, id 215, zero registrations or results) per the user's own
+    request in the same message — unrelated to the hide feature, just
+    piggybacked onto this turn.
 - **2026-09-11, seventeenth follow-up — dead code sweep before merging to
   main.** User: "ruim deadcode op en kijk nog even na en dan kun je het naar
   main pushen." Audited every file this whole session's work touched

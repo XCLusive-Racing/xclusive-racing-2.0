@@ -521,6 +521,37 @@ class ChampionshipWizardController extends Controller
         return back()->with('success', 'Registration is now closed for ' . $championship->name . '.');
     }
 
+    // User-directed 2026-09: pulls an already-published championship out of
+    // the public championships listing and public Events page
+    // (Championship::scopePubliclyVisible(), used by both) without touching
+    // its status -- registrations, rounds and standings all stay exactly as
+    // they are, unlike reverting to draft. Only makes sense once published:
+    // a draft championship is already excluded from both by its status alone.
+    public function hide(Request $request, League $league, Championship $championship)
+    {
+        $this->assertLeagueOfInterest($request, $league, $championship);
+        Gate::authorize('update', $championship);
+        abort_unless($championship->status !== 'draft', 404);
+
+        $championship->update(['visibility' => 'unlisted']);
+
+        AuditLogger::record($request->user(), $championship, 'championship.hidden');
+
+        return back()->with('success', $championship->name . ' is now hidden from public listings.');
+    }
+
+    public function unhide(Request $request, League $league, Championship $championship)
+    {
+        $this->assertLeagueOfInterest($request, $league, $championship);
+        Gate::authorize('update', $championship);
+
+        $championship->update(['visibility' => 'public']);
+
+        AuditLogger::record($request->user(), $championship, 'championship.unhidden');
+
+        return back()->with('success', $championship->name . ' is public again.');
+    }
+
     // The only route that can ever turn xcl_rating_enabled on. Authorization is
     // enforced by ApproveChampionshipRatingRequest itself (policy-gated, same
     // gate as update() — a league manager can reach this for their own
