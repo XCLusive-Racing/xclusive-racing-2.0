@@ -44,7 +44,7 @@ class AccServerConfigService implements ServerConfigGenerator
 
                 $entries[] = [
                     'drivers'             => $drivers,
-                    'raceNumber'          => is_numeric($carNumber) ? (int) $carNumber : 0,
+                    'raceNumber'          => is_numeric($carNumber) ? (int) $carNumber : null,
                     'defaultGridPosition' => -1,
                     'ballastKg'           => 0,
                     'forcedCarModel'      => -1,
@@ -66,7 +66,7 @@ class AccServerConfigService implements ServerConfigGenerator
                             'driverCategory' => $user->ratingClass($race->game),
                         ],
                     ],
-                    'raceNumber'          => is_numeric($user->car_number) ? (int) $user->car_number : 0,
+                    'raceNumber'          => is_numeric($user->car_number) ? (int) $user->car_number : null,
                     'defaultGridPosition' => -1,
                     'ballastKg'           => 0,
                     'forcedCarModel'      => -1,
@@ -76,11 +76,49 @@ class AccServerConfigService implements ServerConfigGenerator
             }
         }
 
+        $this->assignUniqueRaceNumbers($entries);
+
         return [
             'entries'        => $entries,
             'configVersion'  => 1,
             'forceEntryList' => 1,
         ];
+    }
+
+    // ACC's dedicated server rejects an entrylist outright ("The payload is
+    // invalid") when two entries share a race number. A solo driver's number
+    // comes from their own profile (User::car_number), which many drivers
+    // never set -- every "not set" entry used to collapse to the same
+    // placeholder (0), so any race with two or more such drivers produced an
+    // invalid payload the server refused to load. Every entry now gets a
+    // genuinely unique number instead: whatever a driver/team actually chose
+    // is kept unless another entry already claimed it (first one in wins),
+    // and anyone with no number (or a clash) gets the lowest free number.
+    private function assignUniqueRaceNumbers(array &$entries): void
+    {
+        $claimed = [];
+
+        foreach ($entries as &$entry) {
+            $number = $entry['raceNumber'];
+            if ($number !== null && $number > 0 && !isset($claimed[$number])) {
+                $claimed[$number] = true;
+            } else {
+                $entry['raceNumber'] = null;
+            }
+        }
+        unset($entry);
+
+        $next = 1;
+        foreach ($entries as &$entry) {
+            if ($entry['raceNumber'] !== null) {
+                continue;
+            }
+            while (isset($claimed[$next])) {
+                $next++;
+            }
+            $entry['raceNumber'] = $next;
+            $claimed[$next] = true;
+        }
     }
 
     public function configuration(Race $race, ?FtpServer $server = null): array
