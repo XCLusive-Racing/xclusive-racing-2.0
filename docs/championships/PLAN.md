@@ -11,6 +11,41 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, twenty-fourth follow-up — live incident: config push failing
+  with "The payload is invalid."** User reported a live race (#228,
+  "Multiclass", Laguna Seca) not pushing. Two distinct real bugs found:
+  1. **`AccServerConfigService::entryList()`** — a solo driver's race number
+     came from their own profile (`User::car_number`), which many drivers
+     never set; every "not set" entry collapsed to the same placeholder
+     (`0`). ACC's dedicated server rejects an entrylist outright when two
+     entries share a number — race #228 had 34 entries but only 18 unique
+     numbers (16 all `0`). Fixed with a new `assignUniqueRaceNumbers()`
+     pass: a driver/team's own chosen number is kept unless another entry
+     already claimed it, anyone left over (no number, or a clash) gets the
+     lowest free number instead of a shared `0`. Applies to every race
+     going forward, not just this one. 178 tests still passing.
+  2. **The actual reported error, `DecryptException: The payload is
+     invalid.`, turned out to be unrelated** to (1) — a genuine data bug,
+     not a code bug: `FtpServer.username` uses Laravel's `encrypted` cast,
+     and every server in the system (ids 4-8, the whole XCL SERVER 1-5
+     fleet) had its `username` stored as **plain text** while `password`
+     was properly encrypted — Eloquent tried to auto-decrypt plain text on
+     every access and threw exactly that exception, blocking config push
+     for every race on every server, not just #228. Fixed by re-encrypting
+     each server's real (now-known) plaintext username through
+     `Crypt::encryptString()` directly against the database (this is data,
+     not code — no migration, no commit).
+  3. **Found while verifying (2) — still open**: every server's
+     `password` also fails to decrypt, but with a *different* exception
+     (`DecryptException: The MAC is invalid.`, not "the payload is
+     invalid") — the ciphertext is validly *shaped* but doesn't verify
+     under the current `APP_KEY`, meaning it was encrypted under a
+     different key at some point and there is no `APP_PREVIOUS_KEYS`
+     configured to fall back to. This cannot be fixed the same way as (2)
+     — there is no known plaintext to re-encrypt with. **Config push
+     remains broken for every server until the real FTP passwords are
+     re-entered** (via each server's edit page, which re-encrypts under
+     the current key on save) or the original encryption key is found.
 - **2026-09-11, twenty-third follow-up — cfg_path default + dropped
   Crossplay on the same "All League Servers" Add Server form.** User: "bij
   cfg path mag je standaard /cfg neerzetten, en bij platform mag je
