@@ -102,11 +102,6 @@ class Championship extends Model
         return $date->setTime($hour, $minute);
     }
 
-    public function ratingApprovedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'xcl_rating_approved_by');
-    }
-
     // Bypasses the tenant scope deliberately — standings must resolve
     // correctly for an unauthenticated public visitor (no league membership
     // at all) reading this championship's public page, and a points scheme

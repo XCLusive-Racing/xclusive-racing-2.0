@@ -11,6 +11,58 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, seventeenth follow-up — dead code sweep before merging to
+  main.** User: "ruim deadcode op en kijk nog even na en dan kun je het naar
+  main pushen." Audited every file this whole session's work touched
+  (routes, controller, policy, model, schema, every wizard partial, both
+  test files) for anything unreachable or unused:
+  - `Championship::ratingApprovedBy()` (a `BelongsTo` to the approving
+    admin) had zero callers left anywhere in the app — it existed only for
+    the "Approved by X on date" text removed from Basics/Review earlier
+    this session (eighth follow-up). Deleted; the raw
+    `xcl_rating_approved_by` column (set/read directly, never through the
+    relation) is untouched.
+  - Confirmed `_review.blade.php`'s route-model-binding-only usages, every
+    `use App\Models\...` import across the touched controller/model, and
+    every `_*.blade.php` partial in the championships directory are still
+    referenced somewhere — no orphaned files, no unused imports.
+  - **Found and fixed a real (pre-existing, unrelated to this session's own
+    changes) bug while reviewing `_basics.blade.php`**: the Schedule
+    section's day-of-week visibility script looked up its wrapper via
+    `document.getElementById('f-schedule-day_of_week')?.closest('.mb-3')` —
+    but `_field.blade.php`'s wrapper div only ever carries a `col-*` class,
+    never `mb-3`, so that lookup always returned `null` and the script
+    silently no-op'd on every page load. "Race Day" was therefore always
+    shown regardless of the Recurrence value, never actually hidden for
+    "none"/"daily"/"monthly" as the field's own help text ("Only used when
+    recurrence is weekly or bi-weekly") implied it would be. Fixed by
+    reading `.parentElement` instead, which — given `_field.blade.php`'s
+    actual markup (the input is a direct child of its column wrapper, not
+    nested another level down) — is exactly that wrapper. Client-side-only
+    visual behavior with no headless browser on this machine to assert
+    against, so left unit-untested; DOM structure double-checked by hand
+    against `_field.blade.php`'s exact template instead.
+  - **`ChampionshipWizardController::pushRoundConfig()` / the
+    `POST rounds/{race}/push-config` route were *not* removed** despite
+    having no UI trigger any more (the Rounds step's manual button was
+    removed in the seventh follow-up) — this isn't the same situation as
+    the Request-XCL-Rating flow removed last follow-up (which had a
+    same-as-`update()` policy gate that genuinely never added anything). The
+    regular event maker keeps an equivalent manual override button of its
+    own (`admin.races.push-config`, still live on `admin/races/show.blade.php`)
+    alongside its own auto-push schedule — a manual force-push isn't
+    inherently redundant with the automatic one, and this action still has
+    its own direct backend test coverage
+    (`ChampionshipRoundPushTest.php`'s three push-route tests). Left as a
+    reachable-by-URL, tested capability without a UI entry point for now,
+    rather than deleting working, tested code on a guess.
+  - Confirmed no other references anywhere to the request-rating flow
+    removed last follow-up (route, policy method, model method, schema
+    field, `championship.rating_requested` audit-log event) — full sweep,
+    all clean.
+  150 tests still passing (no behavior changed by the audit itself, other
+  than the day-of-week fix, which has no server-rendered signal to test
+  against).
 - **2026-09-11, sixteenth follow-up — Review step's cards collapsible +
   a Back button on every step's footer.** User: "nu als laatste bij review
   wil ik de cards kunnen inklappen en onderin naast de confirm button moet

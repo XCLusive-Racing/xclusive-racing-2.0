@@ -136,7 +136,7 @@
 <script>
 (function () {
     var recurrence = document.getElementById('f-schedule-recurrence');
-    var dayWrap    = document.getElementById('f-schedule-day_of_week')?.closest('.mb-3');
+    var dayWrap    = document.getElementById('f-schedule-day_of_week')?.parentElement;
 
     function updateDayVisibility() {
         if (!recurrence || !dayWrap) return;
