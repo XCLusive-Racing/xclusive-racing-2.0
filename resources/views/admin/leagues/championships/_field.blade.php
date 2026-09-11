@@ -49,11 +49,22 @@
              (resources/views/admin/users/edit.blade.php, [data-role-pill]) instead of
              a bare checkbox — one shared toggle script lives once in wizard.blade.php. --}}
         @php $isOn = (bool) old($errorKey, $current); @endphp
+        {{-- A locked pill always renders the same neutral grey regardless of
+             on/off -- reusing the normal on/off purple-vs-white colours at
+             reduced opacity (the div wrapper's opacity:.5 above) reads as
+             barely different from a normal *enabled* toggle when the value
+             happens to be off (white-on-white barely dims at all), so a
+             locked field wouldn't actually look disabled. The "(On)"/"(Off)"
+             suffix keeps the current value visible now that colour alone no
+             longer carries it. --}}
         <label data-bool-pill
                class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
-               style="cursor:{{ $locked ? 'not-allowed' : 'pointer' }};user-select:none;font-size:.82rem;transition:all .15s;{{ $isOn ? 'border:2px solid #7c3aed;background:#7c3aed18;color:#7c3aed' : 'border:2px solid #e5e7eb;background:#fff;color:#374151' }}">
+               style="cursor:{{ $locked ? 'not-allowed' : 'pointer' }};user-select:none;font-size:.82rem;transition:all .15s;{{ $locked ? 'border:2px solid #e5e7eb;background:#f3f4f6;color:#9ca3af' : ($isOn ? 'border:2px solid #7c3aed;background:#7c3aed18;color:#7c3aed' : 'border:2px solid #e5e7eb;background:#fff;color:#374151') }}">
             <input type="checkbox" name="{{ $name }}" id="{{ $id }}" value="1" class="d-none" {{ $isOn ? 'checked' : '' }} {{ $locked ? 'disabled' : '' }}>
             {{ $field['label'] }}
+            @if($locked)
+            <span class="fw-normal">({{ $isOn ? 'On' : 'Off' }})</span>
+            @endif
         </label>
         @if($field['help'])
         <div class="form-text" style="font-size:.72rem;color:#9ca3af">{{ $field['help'] }}</div>

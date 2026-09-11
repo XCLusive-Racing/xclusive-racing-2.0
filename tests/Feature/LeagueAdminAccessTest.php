@@ -383,4 +383,32 @@ class LeagueAdminAccessTest extends TestCase
             ->assertSee('disabled', false)
             ->assertSee('Temporarily locked — XCL is still finishing the operational Discord bot setup. Coming soon.');
     }
+
+    // User-directed 2026-09: "sorry bij create leagues" -- the same option was
+    // still a plain, fully live checkbox on the Create League page (never
+    // updated to match), so a brand new league could actually have it turned
+    // on despite the feature not being operational anywhere else. The lock
+    // itself is UI-only (same as every other "locked" field in this app --
+    // e.g. ChampionshipSettingsSchema's own copy of this option has no
+    // corresponding backend rule either), so this only covers what a real
+    // browser can actually submit through the rendered form -- the hidden
+    // input always sending 0, not a server-side rejection of any other value.
+    public function test_the_create_league_page_also_locks_the_discord_toggle(): void
+    {
+        $admin = $this->makeAdmin();
+
+        $this->actingAs($admin)
+            ->get(route('admin.leagues.create'))
+            ->assertOk()
+            ->assertSee('disabled', false)
+            ->assertSee('Temporarily locked — XCL is still finishing the operational Discord bot setup. Coming soon.');
+
+        $this->actingAs($admin)->post(route('admin.leagues.store'), [
+            'name' => 'EER', 'slug' => 'eer', 'primary_color' => '#111111', 'accent_color' => '#222222',
+            'status' => 'draft', 'requires_discord_membership' => '0',
+        ])->assertRedirect();
+
+        $league = League::withoutTenantScope()->where('slug', 'eer')->firstOrFail();
+        $this->assertFalse($league->requires_discord_membership);
+    }
 }

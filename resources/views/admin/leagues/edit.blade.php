@@ -212,12 +212,17 @@
                          (_field.blade.php's boolean+locked rendering) -- an option that
                          exists at both the league and championship level should read as
                          the same kind of thing wherever it shows up, not two different
-                         widgets that happen to mean the same thing. --}}
-                    <div style="opacity:.5">
+                         widgets that happen to mean the same thing. Always the same
+                         neutral grey regardless of on/off, with an explicit "(On)"/"(Off)"
+                         suffix carrying the current value -- the on/off purple-vs-white
+                         colours at reduced opacity barely read as "disabled" when the
+                         value happens to be off (white-on-white barely dims). --}}
+                    <div>
                         <label class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
-                               style="cursor:not-allowed;user-select:none;font-size:.82rem;{{ $league->requires_discord_membership ? 'border:2px solid #7c3aed;background:#7c3aed18;color:#7c3aed' : 'border:2px solid #e5e7eb;background:#fff;color:#374151' }}">
+                               style="cursor:not-allowed;user-select:none;font-size:.82rem;border:2px solid #e5e7eb;background:#f3f4f6;color:#9ca3af">
                             <input type="checkbox" class="d-none" disabled {{ $league->requires_discord_membership ? 'checked' : '' }}>
                             Require Discord membership to register
+                            <span class="fw-normal">({{ $league->requires_discord_membership ? 'On' : 'Off' }})</span>
                         </label>
                         {{-- Disabled checkboxes submit nothing — this hidden field carries the
                              real, unchanged value through the save instead. --}}
