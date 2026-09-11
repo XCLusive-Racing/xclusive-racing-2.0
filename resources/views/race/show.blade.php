@@ -302,11 +302,9 @@
             {{-- Right: sidebar --}}
             <div class="col-12 col-lg-4">
 
-                @php $isEndurance = (bool) $race->is_endurance; @endphp
-
-                {{-- Team Entry (endurance races only) --}}
+                {{-- Team Entry (endurance races and driver-swap championship rounds) --}}
                 @auth
-                @if($isEndurance && $userTeam)
+                @if($isTeamRace && $userTeam)
                 <div class="xcl-event-card mb-4">
                     <h3 class="xcl-event-card__heading">TEAM ENTRY</h3>
 
@@ -343,7 +341,10 @@
 
                         @include('race.partials.add-to-calendar', ['race' => $race])
 
-                        @if($race->registrationOpen())
+                        {{-- A championship-scope team is entered here from its one championship-level
+                             registration (ChampionshipTeamEntryService) — adding a second car per round
+                             isn't part of that model, only opting this round's entry out (REMOVE above). --}}
+                        @if($race->registrationOpen() && !$isChampionshipTeamRound)
                         <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)">
                             <p style="font-size:.78rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Add another car</p>
                             <form action="{{ route('events.register-team', $race) }}" method="POST">
@@ -451,6 +452,12 @@
                             </form>
                         </div>
                         @endif
+                    @elseif($isChampionshipTeamRound)
+                        <p class="xcl-event-card__text mb-0" style="font-size:.82rem">
+                            Register your team for the
+                            <a href="{{ route('championships.show', $race->championship_id) }}" style="color:#e5e7eb;text-decoration:underline">championship</a>
+                            to enter this round — every round is entered automatically once your team is in.
+                        </p>
                     @elseif($race->registrationOpen())
                         <p class="xcl-event-card__text mb-3" style="font-size:.82rem">
                             Register your team <strong style="color:#e5e7eb">{{ $userTeam->name }}</strong>. Select which drivers will participate:
@@ -575,8 +582,8 @@
                 @endif
                 @endauth
 
-                {{-- Registration (solo — hidden for endurance races) --}}
-                @if($race->status !== 'finished' && !$isEndurance)
+                {{-- Registration (solo — hidden for team races) --}}
+                @if($race->status !== 'finished' && !$isTeamRace)
                 <div class="xcl-event-card mb-4">
                     <h3 class="xcl-event-card__heading">REGISTRATION</h3>
 
@@ -768,15 +775,18 @@
                 {{-- Drivers --}}
                 <div class="xcl-event-card">
                     @php
-                        $sofRatings = $race->registrations->pluck('user')->filter()
-                            ->map(fn($u) => (int) ($u->{"elo_{$race->game}"} ?? 0))
-                            ->filter(fn($r) => $r > 0);
+                        $eloCol = \App\Models\User::eloColumn($race->game);
+                        $sofRatings = $eloCol
+                            ? $race->registrations->pluck('user')->filter()
+                                ->map(fn($u) => (int) ($u->{$eloCol} ?? 0))
+                                ->filter(fn($r) => $r > 0)
+                            : collect();
                         $sof = $sofRatings->isNotEmpty() ? $sofRatings->avg() : null;
                     @endphp
                     <h3 class="xcl-event-card__heading">
-                        {{ $isEndurance ? 'TEAMS' : 'DRIVERS' }}
+                        {{ $isTeamRace ? 'TEAMS' : 'DRIVERS' }}
                         <span class="xcl-event-card__heading-sub">
-                            @if($isEndurance)
+                            @if($isTeamRace)
                                 {{ $race->teamEntries->count() }}{{ $race->max_drivers ? '/' . $race->max_drivers : '' }}
                             @else
                                 {{ $race->registrations->count() }}{{ $race->max_drivers ? '/' . $race->max_drivers : '' }}
@@ -795,7 +805,7 @@
                         @php
                             $sortedRegs = $race->registrations
                                 ->filter(fn($r) => $r->user)
-                                ->sortByDesc(fn($r) => $r->user->{"elo_{$race->game}"} ?? 0)
+                                ->sortByDesc(fn($r) => $eloCol ? ($r->user->{$eloCol} ?? 0) : 0)
                                 ->values();
                             $driverCount = $sortedRegs->count();
                         @endphp

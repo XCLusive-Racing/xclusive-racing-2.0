@@ -9,8 +9,10 @@ use App\Models\Race;
 use App\Models\RaceResult;
 use App\Models\User;
 use App\Services\AccResultImportService;
+use App\Services\AuditLogger;
 use App\Services\FtpService;
 use App\Services\RatingService;
+use App\Services\ResultPenaltyService;
 use App\Services\XclRating;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -343,6 +345,39 @@ class RaceResultController extends Controller
         ]);
 
         return back()->with('success', $result->displayName() . ' status updated. Click "Recalculate Ratings" to apply it.');
+    }
+
+    // Phase 6 (docs/championships/PLAN.md): applies a time penalty and re-ranks the
+    // session immediately — points/standings pick up the new position automatically
+    // (Championship::buildDriverStandings() reads it live). Rating is left alone,
+    // same as updateStatus() above — click "Recalculate Ratings" separately for that.
+    public function applyTimePenalty(Request $request, Race $race, RaceResult $result, ResultPenaltyService $penalties)
+    {
+        abort_unless($result->race_id === $race->id, 404);
+
+        $data = $request->validate([
+            'penalty_seconds' => 'required|integer|min:1|max:3600',
+            'reason'          => 'nullable|string|max:500',
+        ]);
+
+        if ($result->dsq || $result->dns) {
+            return back()->with('error', 'Cannot apply a time penalty to a DSQ/DNS result.');
+        }
+
+        if ($result->total_time === null) {
+            return back()->with('error', 'This result has no recorded time to apply a penalty to.');
+        }
+
+        $penalties->applyPenalty($result, $data['penalty_seconds'] * 1000);
+
+        AuditLogger::record(auth()->user(), $result, 'race_result.time_penalty_applied', [
+            'penalty_seconds' => $data['penalty_seconds'],
+            'reason'          => $data['reason'] ?? null,
+        ]);
+
+        return back()->with('success',
+            "{$data['penalty_seconds']}s penalty applied to {$result->displayName()} — positions updated. Click \"Recalculate Ratings\" to apply it to ratings too."
+        );
     }
 
     private function redirectWithCounts(array $counts, array $errors): \Illuminate\Http\RedirectResponse

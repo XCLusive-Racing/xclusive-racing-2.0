@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ChampionshipPenalty;
+use App\Models\League;
 use App\Models\Message;
 use App\Models\Report;
 use App\Models\ReportVerdict;
 use App\Models\User;
 use App\Services\PenaltyCalculator;
+use App\Services\RatingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -42,6 +45,16 @@ class ReportController extends Controller
             ->with(['user', 'race', 'reviewer', 'steward1', 'steward2'])
             ->withCount('verdicts');
 
+        $user = $request->user();
+        // A pure league steward (no global steward/admin role — see
+        // User::canModerateReport()) only ever sees reports on races that
+        // belong to a championship owned by a league they steward. XCL's
+        // global steward pool keeps seeing everything, unscoped, as before.
+        if (!$user->canManageEvents() && !$user->isSteward()) {
+            $leagueIds = $user->leagueMemberships()->where('role', 'steward')->pluck('league_id');
+            $query->whereHas('race.championship', fn ($q) => $q->withoutTenantScope()->whereIn('league_id', $leagueIds));
+        }
+
         if ($status) {
             $query->where('reports.status', $status);
         }
@@ -66,6 +79,8 @@ class ReportController extends Controller
 
     public function show(Report $report)
     {
+        abort_unless(auth()->user()->canModerateReport($report), 403);
+
         $report->load(['user', 'race', 'reviewer', 'steward1', 'steward2', 'processedBy', 'verdicts.steward']);
 
         $penaltyCodes = PenaltyCalculator::codes();
@@ -79,6 +94,8 @@ class ReportController extends Controller
     /** Legacy quick status update — superseded by the verdict workflow below but kept for direct status corrections. */
     public function updateStatus(Request $request, Report $report)
     {
+        abort_unless($request->user()->canModerateReport($report), 403);
+
         $request->validate([
             'status'      => 'required|in:pending,investigating,resolved,dismissed',
             'admin_notes' => 'nullable|string|max:2000',
@@ -113,6 +130,7 @@ class ReportController extends Controller
     public function startInvestigating(Report $report)
     {
         $user = auth()->user();
+        abort_unless($user->canModerateReport($report), 403);
 
         if (in_array($report->status, ['resolved', 'dismissed'])) {
             return back()->with('error', 'This report has already been closed.');
@@ -141,6 +159,8 @@ class ReportController extends Controller
 
     public function submitVerdict(Request $request, Report $report)
     {
+        abort_unless($request->user()->canModerateReport($report), 403);
+
         if (in_array($report->status, ['resolved', 'dismissed'])) {
             return back()->with('error', 'This report has already been closed.');
         }
@@ -208,6 +228,8 @@ class ReportController extends Controller
 
     public function markReady(Report $report)
     {
+        abort_unless(auth()->user()->canModerateReport($report), 403);
+
         $report->load('verdicts');
 
         if (in_array($report->status, ['resolved', 'dismissed'])) {
@@ -246,6 +268,8 @@ class ReportController extends Controller
 
     public function dismiss(Request $request, Report $report)
     {
+        abort_unless($request->user()->canModerateReport($report), 403);
+
         if (in_array($report->status, ['resolved', 'dismissed'])) {
             return back()->with('error', 'This report has already been closed.');
         }
@@ -284,19 +308,56 @@ class ReportController extends Controller
             $reportedUser = $report->reportedUser();
             $ratingFields = $report->ratingFields();
 
-            if (! $noPenalty && $reportedUser && $ratingFields) {
-                $newElo = max(0, (float) $reportedUser->{$ratingFields['elo']} - (float) $report->xcl_rating_deduction);
-                $newSr  = max(0, (float) $reportedUser->{$ratingFields['sr']} - (float) $report->sr_deduction);
+            // A league championship can choose whether a steward-issued penalty
+            // touches points, rating, both or neither (settings.penalties.affects,
+            // Phase 2) — but that choice can never turn on real XCL Rating changes
+            // by itself: xcl_rating_enabled (an XCL-admin-only approval, Phase 2)
+            // gates rating regardless of what the league's own setting says. XCL's
+            // own native championships, and any report on a race with no
+            // championship at all, behave exactly as before this phase — rating
+            // always applies, no points side-effect.
+            $championship  = $report->race?->championship;
+            $isLeagueOwned = $championship && $championship->league_id !== null
+                && $championship->league_id !== League::system()->id;
 
-                $reportedUser->update([
-                    $ratingFields['elo'] => (int) round($newElo),
-                    $ratingFields['sr']  => round($newSr, 2),
-                ]);
+            $affects      = $isLeagueOwned ? ($championship->settings->penalties->affects ?? 'none') : 'both';
+            $applyRating  = $isLeagueOwned
+                ? (in_array($affects, ['rating', 'both'], true) && $championship->xcl_rating_enabled)
+                : true;
+            $applyPoints  = $isLeagueOwned && in_array($affects, ['points', 'both'], true);
+
+            if (! $noPenalty && $reportedUser && $ratingFields && $applyRating) {
+                $ratingService = app(RatingService::class);
+
+                $ratingService->applyManualAdjustment(
+                    $reportedUser,
+                    $ratingFields['elo'], -(float) $report->xcl_rating_deduction,
+                    $ratingFields['sr'], -(float) $report->sr_deduction
+                );
 
                 if ($report->session_type === 'R' && $report->user) {
-                    $reporter = $report->user;
-                    $reporter->update([
-                        $ratingFields['elo'] => (int) round((float) $reporter->{$ratingFields['elo']} + (float) $report->xcl_rating_return),
+                    $ratingService->applyManualAdjustment(
+                        $report->user,
+                        $ratingFields['elo'], (float) $report->xcl_rating_return
+                    );
+                }
+            }
+
+            if (! $noPenalty && $reportedUser && $applyPoints) {
+                // The championship-points cost of a rating-scale penalty has no
+                // existing formula to reuse — tied to the same rating_deduction the
+                // report already computed (rounded), rather than an invented flat
+                // number, but this is a judgment call a league may want to tune;
+                // see docs/championships/PLAN.md Phase 6 for the reasoning.
+                $points = (int) round((float) $report->xcl_rating_deduction);
+
+                if ($points > 0) {
+                    ChampionshipPenalty::create([
+                        'championship_id' => $championship->id,
+                        'user_id'         => $reportedUser->id,
+                        'race_id'         => $report->race_id,
+                        'points'          => $points,
+                        'reason'          => 'Steward penalty: ' . $report->final_penalty . ' (report #' . $report->id . ')',
                     ]);
                 }
             }

@@ -27,7 +27,13 @@ class PushPracticeServerConfigJob implements ShouldQueue
 
     public function handle(PracticeServerConfigService $configService): void
     {
-        $session = $this->session->fresh(['race', 'practiceServer.ftpServer']);
+        // PracticeServerConfigService also lazy-loads $race->ftpServer internally
+        // (a race's own assigned server, distinct from the practice server's own) —
+        // bypass that one too, same reasoning as practiceServer.ftpServer below.
+        $session = $this->session->fresh([
+            'race.ftpServer'           => fn ($q) => $q->withoutTenantScope(),
+            'practiceServer.ftpServer' => fn ($q) => $q->withoutTenantScope(),
+        ]);
 
         // Guard against double dispatch — if another worker already moved this past
         // "pushing" (or it was cancelled in the meantime), there's nothing to do.

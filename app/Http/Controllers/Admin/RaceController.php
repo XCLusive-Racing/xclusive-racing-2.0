@@ -14,7 +14,7 @@ use App\Models\RaceClass;
 use App\Models\RaceRegistration;
 use App\Models\RaceTeamEntry;
 use App\Rules\PracticeWindowNotOverlapping;
-use App\Services\AccServerConfigService;
+use App\Services\Contracts\ServerConfigGenerator;
 use App\Services\FtpService;
 use App\Services\PracticeServer\PracticeServerSessionManager;
 use App\Services\PracticeServer\PracticeWindowCalculator;
@@ -56,7 +56,7 @@ class RaceController extends Controller
         return view('admin.races.special', compact('races'));
     }
 
-    public function show(Race $race, AccServerConfigService $config)
+    public function show(Race $race, ServerConfigGenerator $config)
     {
         $race->loadMissing(['raceClasses', 'teamEntries']);
 
@@ -947,7 +947,7 @@ class RaceController extends Controller
         ]);
     }
 
-    public function pushConfig(Request $request, Race $race, AccServerConfigService $config)
+    public function pushConfig(Request $request, Race $race, ServerConfigGenerator $config)
     {
         $request->validate(['server_id' => 'required|exists:ftp_servers,id']);
 

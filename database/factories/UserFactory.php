@@ -78,4 +78,22 @@ class UserFactory extends Factory
             );
         });
     }
+
+    public function leagueManager(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            $user->roles()->syncWithoutDetaching(
+                Role::where('slug', 'league_manager')->pluck('id')
+            );
+        });
+    }
+
+    public function leagueSteward(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            $user->roles()->syncWithoutDetaching(
+                Role::where('slug', 'league_steward')->pluck('id')
+            );
+        });
+    }
 }

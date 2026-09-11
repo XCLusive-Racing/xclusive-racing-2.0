@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\FtpServer;
-use App\Services\AccServerConfigService;
+use App\Services\AuditLogger;
+use App\Services\Contracts\ServerConfigGenerator;
 use App\Services\FtpService;
 use Illuminate\Http\Request;
 
@@ -47,11 +48,17 @@ class FtpServerController extends Controller
             'server_type'             => 'required|in:rolling,scheduled',
             'reset_start_hour'        => 'required_if:server_type,rolling|integer|min:0|max:23',
             'reset_interval_minutes'  => 'required_if:server_type,rolling|integer|min:30|max:1440',
+            'game'                    => 'required|in:acc,lmu',
+            'platform'                => 'required|in:pc,console,cross',
         ]);
 
-        FtpServer::create($request->only(
+        $server = FtpServer::create($request->only(
             'name', 'server_number', 'host', 'port', 'username', 'password', 'path', 'cfg_path',
-            'server_type', 'reset_start_hour', 'reset_interval_minutes'
+            'server_type', 'reset_start_hour', 'reset_interval_minutes', 'game', 'platform'
+        ));
+
+        AuditLogger::record($request->user(), $server, 'ftp_server.created', $request->only(
+            'name', 'server_number', 'host', 'port', 'path', 'cfg_path', 'server_type'
         ));
 
         return redirect()->route('admin.servers.index')->with('success', 'Server added.');
@@ -69,18 +76,27 @@ class FtpServerController extends Controller
             'server_number'           => 'nullable|integer|min:1|max:9',
             'host'                    => 'required|string|max:255',
             'port'                    => 'required|integer|min:1|max:65535',
-            'username'                => 'required|string|max:100',
             'path'                    => 'required|string|max:255',
             'cfg_path'                => 'nullable|string|max:255',
             'server_type'             => 'required|in:rolling,scheduled',
             'reset_start_hour'        => 'required_if:server_type,rolling|integer|min:0|max:23',
             'reset_interval_minutes'  => 'required_if:server_type,rolling|integer|min:30|max:1440',
+            // Nullable, not required — an existing server already has both from the
+            // Phase 3 backfill; a request that omits them (an older/partial submit)
+            // leaves the current value untouched, same idiom as username/password below.
+            'game'                    => 'nullable|in:acc,lmu',
+            'platform'                => 'nullable|in:pc,console,cross',
             'event_defaults'          => 'nullable|string',
             'settings_defaults'       => 'nullable|string',
             'eventrules_defaults'     => 'nullable|string',
             'assistrules_defaults'    => 'nullable|string',
         ];
 
+        // Credential fields render empty in the form and only overwrite the stored,
+        // encrypted value when a new one is actually submitted.
+        if ($request->filled('username')) {
+            $rules['username'] = 'string|max:255';
+        }
         if ($request->filled('password')) {
             $rules['password'] = 'string|max:255';
         }
@@ -88,12 +104,12 @@ class FtpServerController extends Controller
         $request->validate($rules);
 
         $data = $request->only(
-            'name', 'server_number', 'host', 'port', 'username', 'path', 'cfg_path',
-            'server_type', 'reset_start_hour', 'reset_interval_minutes'
+            'name', 'server_number', 'host', 'port', 'path', 'cfg_path',
+            'server_type', 'reset_start_hour', 'reset_interval_minutes', 'game', 'platform'
         );
         $data['active'] = $request->boolean('active');
 
-        $configService = app(AccServerConfigService::class);
+        $configService = app(ServerConfigGenerator::class);
         $builtInDefaults = [
             'event_defaults'       => $configService->defaultEventConfig(),
             'settings_defaults'    => $configService->defaultSettings(),
@@ -114,23 +130,31 @@ class FtpServerController extends Controller
             $data[$field] = ($decoded == $builtIn) ? null : $decoded;
         }
 
+        if ($request->filled('username')) {
+            $data['username'] = $request->input('username');
+        }
         if ($request->filled('password')) {
             $data['password'] = $request->input('password');
         }
 
         $ftpServer->update($data);
 
+        AuditLogger::record($request->user(), $ftpServer, 'ftp_server.updated', $request->only(
+            'name', 'server_number', 'host', 'port', 'path', 'cfg_path', 'server_type', 'active'
+        ));
+
         return redirect()->route('admin.servers.index')->with('success', 'Server updated.');
     }
 
-    public function destroy(FtpServer $ftpServer)
+    public function destroy(Request $request, FtpServer $ftpServer)
     {
+        AuditLogger::record($request->user(), $ftpServer, 'ftp_server.deleted', ['name' => $ftpServer->name, 'host' => $ftpServer->host]);
         $ftpServer->delete();
 
         return redirect()->route('admin.servers.index')->with('success', 'Server deleted.');
     }
 
-    public function pushDefaults(FtpServer $ftpServer, FtpService $ftp, AccServerConfigService $config)
+    public function pushDefaults(FtpServer $ftpServer, FtpService $ftp, ServerConfigGenerator $config)
     {
         $files = [
             'settings.json'    => json_encode($config->settings(new \App\Models\Race(), $ftpServer), JSON_PRETTY_PRINT),

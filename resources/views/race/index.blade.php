@@ -82,14 +82,45 @@
                 BACK TO PLATFORMS
             </button>
 
-            {{-- Event type filter --}}
-            <div class="d-flex gap-2 flex-wrap mb-4">
-                <button data-event-filter="all"
-                        class="xcl-filter-btn fw-bold text-uppercase xcl-filter-btn--active">All</button>
-                @foreach($eventTags as $tag)
-                <button data-event-filter="{{ $tag->slug }}"
-                        class="xcl-filter-btn fw-bold text-uppercase">{{ $tag->name }}</button>
-                @endforeach
+            {{-- Filters: event type (left) + timezone (right), then requirements below --}}
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+                    {{-- Event type filter --}}
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button data-event-filter="all"
+                                class="xcl-filter-btn fw-bold text-uppercase xcl-filter-btn--active">All</button>
+                        @foreach($eventTags as $tag)
+                        <button data-event-filter="{{ $tag->slug }}"
+                                class="xcl-filter-btn fw-bold text-uppercase">{{ $tag->name }}</button>
+                        @endforeach
+                    </div>
+
+                    {{-- Timezone filter — which region's evening slot to show --}}
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button data-region-filter="all"
+                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase xcl-filter-btn--active">All Times</button>
+                        <button data-region-filter="europe"
+                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">Europe</button>
+                        <button data-region-filter="australia"
+                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">Australia</button>
+                        <button data-region-filter="us"
+                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">US</button>
+                    </div>
+                </div>
+
+                {{-- Requirements filter --}}
+                <div class="d-flex gap-2 flex-wrap">
+                    <button data-requirement-filter="all"
+                            class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase xcl-filter-btn--active">All Requirements</button>
+                    <button data-requirement-filter="sr"
+                            class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">SR Requirement</button>
+                    <button data-requirement-filter="rookie-only"
+                            class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">Rookie Only</button>
+                    <button data-requirement-filter="bronze-only"
+                            class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">Bronze Only</button>
+                    <button data-requirement-filter="bronze-plus"
+                            class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">Bronze+</button>
+                </div>
             </div>
 
             @foreach(['acc', 'lmu', 'iracing', 'ac'] as $game)
@@ -135,7 +166,11 @@
                     <div class="col"
                          data-event-card
                          data-tag="{{ $race->event_tag ?? 'daily' }}"
-                         data-date="{{ $race->scheduled_at->toIso8601String() }}">
+                         data-date="{{ $race->scheduled_at->toIso8601String() }}"
+                         data-regions="{{ implode(',', $race->eveningRegions()) }}"
+                         data-sr="{{ $race->sr_requirement ? '1' : '0' }}"
+                         data-min-rating="{{ $race->min_rating ?? '' }}"
+                         data-max-rating="{{ $race->max_rating ?? '' }}">
                         <div class="xcl-ec2">
                             <div class="xcl-ec2__img-wrap">
                                 {{-- Track image: full-bleed background --}}

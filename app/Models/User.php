@@ -39,25 +39,53 @@ class User extends Authenticatable
         ];
     }
 
+    // ACC PC and ACC Console are one shared rating board (2026-09 decision, first step of
+    // the ACC PC integration) — whichever platform you race on, it's the same elo_acc/
+    // sr_acc numbers. This is the single place that decides which game slugs share a
+    // rating column; every elo_{game}/sr_{game} lookup in the app should go through
+    // eloColumn()/srColumn() (or ratingGame() directly) rather than re-deriving it.
+    public static function ratingGame(string $game): ?string
+    {
+        return match ($game) {
+            'acc', 'ac' => 'acc',
+            'lmu'       => 'lmu',
+            'iracing'   => 'iracing',
+            default     => null,
+        };
+    }
+
+    public static function eloColumn(string $game): ?string
+    {
+        $ratingGame = self::ratingGame($game);
+        return $ratingGame ? "elo_{$ratingGame}" : null;
+    }
+
+    public static function srColumn(string $game): ?string
+    {
+        $ratingGame = self::ratingGame($game);
+        return $ratingGame ? "sr_{$ratingGame}" : null;
+    }
+
     // Checks this user's per-game rating (elo_{game}/sr_{game} — the same numbers shown on
     // the leaderboard) against an SR/rating requirement. Returns an error message if they
-    // don't qualify, or null if they do. Games with no tracked rating (e.g. ACC PC) can't
-    // be checked, so requirements are skipped rather than blocking everyone.
+    // don't qualify, or null if they do. A game with no tracked rating can't be checked,
+    // so requirements are skipped rather than blocking everyone.
     public function requirementFailure(string $game, ?string $srRequirement, ?string $minRating, ?string $maxRating = null): ?string
     {
-        if (!in_array($game, ['acc', 'lmu', 'iracing'])) {
+        $eloColumn = self::eloColumn($game);
+        if (!$eloColumn) {
             return null;
         }
 
         if ($srRequirement) {
-            $userSr = (float) ($this->{"sr_{$game}"} ?? 0);
+            $userSr = (float) ($this->{self::srColumn($game)} ?? 0);
             if ($userSr < (float) $srRequirement) {
                 return 'You need at least SR ' . number_format((float) $srRequirement, 1)
                     . ' to register (yours: ' . number_format($userSr, 1) . ').';
             }
         }
 
-        $userElo = (int) ($this->{"elo_{$game}"} ?? 0);
+        $userElo = (int) ($this->{$eloColumn} ?? 0);
         $ranks   = collect(self::ranks());
 
         if ($minRating && $minRating !== 'all') {
@@ -110,6 +138,8 @@ class User extends Authenticatable
     public function isDriver(): bool       { return $this->hasRole('driver'); }
     public function isSuperAdmin(): bool   { return $this->isOwner(); }
     public function isBroadcaster(): bool  { return $this->hasRole('broadcaster'); }
+    public function isLeagueManager(): bool { return $this->hasRole('league_manager'); }
+    public function isLeagueSteward(): bool { return $this->hasRole('league_steward'); }
 
     public function canManage(): bool
     {
@@ -138,23 +168,97 @@ class User extends Authenticatable
 
     public function canModerateReports(): bool
     {
-        return $this->canManageEvents() || $this->isSteward();
+        return $this->canManageEvents() || $this->isSteward() || $this->isLeagueSteward();
     }
 
     public function canAccessAdminPanel(): bool
     {
-        return $this->hasAnyRole(['owner', 'admin', 'moderator', 'event_manager', 'steward', 'broadcaster']);
+        return $this->hasAnyRole(['owner', 'admin', 'moderator', 'event_manager', 'steward', 'broadcaster', 'league_manager', 'league_steward']);
     }
 
     public function adminLandingRoute(): string
     {
         return match (true) {
-            $this->canManage()     => 'admin.races.index',
-            $this->canSeeUsers()   => 'admin.users.index',
-            $this->isSteward()     => 'admin.reports.index',
-            $this->canBroadcast()  => 'admin.news.index',
-            default                => 'home',
+            $this->canManage()      => 'admin.races.index',
+            $this->canSeeUsers()    => 'admin.users.index',
+            $this->isSteward()      => 'admin.reports.index',
+            $this->canBroadcast()   => 'admin.news.index',
+            $this->isLeagueManager() => 'admin.leagues.index',
+            $this->isLeagueSteward() => 'admin.reports.index',
+            default                 => 'home',
         };
+    }
+
+    // --- Leagues ---
+
+    public function leagueMemberships(): HasMany
+    {
+        return $this->hasMany(LeagueUser::class);
+    }
+
+    public function leagues(): BelongsToMany
+    {
+        return $this->belongsToMany(League::class, 'league_user')->withPivot('role')->withTimestamps();
+    }
+
+    public function leagueIds(): \Illuminate\Support\Collection
+    {
+        return $this->leagueMemberships()->pluck('league_id')->unique()->values();
+    }
+
+    public function managesLeague(League $league): bool
+    {
+        return $this->leagueMemberships()->where('league_id', $league->id)->where('role', 'manager')->exists();
+    }
+
+    public function stewardsLeague(League $league): bool
+    {
+        return $this->leagueMemberships()->where('league_id', $league->id)->where('role', 'steward')->exists();
+    }
+
+    // Refinement request: a league may designate its own stewards, but XCL's
+    // shared/global steward pool (canManageEvents()/isSteward()) must always
+    // remain an option too — additive, not exclusive. A pure league steward
+    // (no global steward/admin role) may only moderate reports on races that
+    // belong to a championship owned by a league they steward.
+    public function canModerateReport(Report $report): bool
+    {
+        if ($this->canManageEvents() || $this->isSteward()) {
+            return true;
+        }
+
+        $championship = $report->race?->championship()->withoutTenantScope()->first();
+        if (!$championship || !$championship->league_id) {
+            return false;
+        }
+
+        $league = League::withoutTenantScope()->find($championship->league_id);
+
+        return $league !== null && $this->stewardsLeague($league);
+    }
+
+    // Keeps the global league_manager/league_steward role flags (used for admin nav
+    // and route gating) in step with this user's actual league_user memberships —
+    // the memberships are the source of truth for what a user can actually do.
+    public function syncLeagueRoleFlags(): void
+    {
+        $hasManager = $this->leagueMemberships()->where('role', 'manager')->exists();
+        $hasSteward = $this->leagueMemberships()->where('role', 'steward')->exists();
+
+        foreach (['league_manager' => $hasManager, 'league_steward' => $hasSteward] as $slug => $shouldHave) {
+            $role = Role::where('slug', $slug)->first();
+            if (!$role) {
+                continue;
+            }
+
+            if ($shouldHave) {
+                $this->roles()->syncWithoutDetaching([$role->id]);
+            } else {
+                $this->roles()->detach($role->id);
+            }
+        }
+
+        $this->unsetRelation('roles');
     }
 
     public function displayName(): string
@@ -303,7 +407,7 @@ class User extends Authenticatable
 
     public function rank(string $game = 'acc'): array
     {
-        $elo = (int) ($this->{"elo_{$game}"} ?? 0);
+        $elo = (int) ($this->{self::eloColumn($game) ?? 'elo_acc'} ?? 0);
         foreach (self::ranks() as $rank) {
             if ($elo >= $rank['min']) return $rank;
         }
@@ -327,7 +431,7 @@ class User extends Authenticatable
     // Rookie -> red, Bronze/Silver -> grey, Gold/Platinum/Alien -> white.
     public function ratingClass(string $game = 'acc'): int
     {
-        $elo = (int) ($this->{"elo_{$game}"} ?? 0);
+        $elo = (int) ($this->{self::eloColumn($game) ?? 'elo_acc'} ?? 0);
         foreach (self::ranks() as $rank) {
             if ($elo >= $rank['min']) {
                 return match ($rank['slug']) {
@@ -358,7 +462,7 @@ class User extends Authenticatable
 
     public function srGrade(string $game = 'acc'): array
     {
-        $sr     = (float) ($this->{"sr_{$game}"} ?? 0);
+        $sr     = (float) ($this->{self::srColumn($game) ?? 'sr_acc'} ?? 0);
         $grades = self::srGrades();
 
         foreach ($grades as $grade) {

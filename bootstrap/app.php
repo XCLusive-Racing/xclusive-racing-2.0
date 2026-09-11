@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'superadmin'        => \App\Http\Middleware\IsSuperAdmin::class,
             'role'              => \App\Http\Middleware\HasRole::class,
             'password.setup'    => \App\Http\Middleware\EnsurePasswordIsSet::class,
+            'league.access'     => \App\Http\Middleware\LeagueAccess::class,
         ]);
 
         $middleware->appendToGroup('web', \App\Http\Middleware\EnsurePasswordIsSet::class);

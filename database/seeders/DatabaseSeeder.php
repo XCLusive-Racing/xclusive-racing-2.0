@@ -54,5 +54,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call(NewsTagSeeder::class);
+        $this->call(LeagueSeeder::class);
+        $this->call(PointsSchemeSeeder::class);
     }
 }

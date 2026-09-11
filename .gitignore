@@ -22,3 +22,5 @@ yarn-error.log
 *.pem
 /.claude/settings.local.json
 /.claude/worktrees/
+/ca-certificate.crt
+/backup.sql

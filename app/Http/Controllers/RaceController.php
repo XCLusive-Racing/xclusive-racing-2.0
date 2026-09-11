@@ -10,7 +10,7 @@ use App\Models\RaceClass;
 use App\Models\RaceRegistration;
 use App\Models\RaceTeamEntry;
 use App\Models\User;
-use App\Services\AccServerConfigService;
+use App\Services\Contracts\ServerConfigGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -25,19 +25,44 @@ class RaceController extends Controller
             ->get();
         $races->loadCount(['registrations', 'teamEntries']);
 
-        $eventTags = EventTag::orderBy('name')->get();
+        // "Rookies" and "Test Event" are real EventTag rows (so any race still
+        // tagged with one keeps working) but aren't genuine event-type filters
+        // for the public browse page — excluded here rather than deleted.
+        $eventTags = EventTag::whereNotIn('slug', ['rookies', 'test-event'])->orderBy('name')->get();
 
         return view('race.index', compact('races', 'eventTags'));
     }
 
     public function show(Race $race)
     {
-        $race->load(['raceClasses', 'registrations.user', 'registrations.raceClass', 'registrations.teamEntry.team', 'raceResults.user', 'eventFormat', 'teamEntries', 'practiceServerSession']);
+        $race->load([
+            'raceClasses', 'registrations.user', 'registrations.raceClass', 'registrations.teamEntry.team',
+            'raceResults.user', 'eventFormat', 'teamEntries',
+            // Same tenant-scope bypass as ftpServer above — a guest viewing this page
+            // must still see the practice server's name regardless of league.
+            'practiceServerSession.practiceServer.ftpServer' => fn ($q) => $q->withoutTenantScope(),
+        ]);
         $isRegistered   = false;
         $myRegistration = null;
         $userTeam        = null;
         $myTeamEntries   = collect();
         $myRegisteredAt  = null;
+
+        // A driver-swap championship round has no is_endurance flag of its own (that column
+        // is Custom-Race-only, see docs/championships/PLAN.md's Phase 4 scope decision) — a
+        // team is entered here automatically from the championship-level registration
+        // (ChampionshipTeamEntryService), so this round still needs the same TEAM ENTRY card
+        // (and its per-race unregister) that Custom Race endurance events already get.
+        $isTeamRace              = (bool) $race->is_endurance;
+        $isChampionshipTeamRound = false;
+
+        if (!$isTeamRace && $race->championship_id) {
+            $championship = $race->championship()->withoutTenantScope()->first();
+            if ($championship && ($championship->settings->format->driver_swaps_enabled ?? false)) {
+                $isTeamRace              = true;
+                $isChampionshipTeamRound = true;
+            }
+        }
 
         if (auth()->check()) {
             $myRegistration = $race->registrations->firstWhere('user_id', auth()->id());
@@ -63,7 +88,10 @@ class RaceController extends Controller
             ->get(['id', 'xuid_psid'])
             ->keyBy('xuid_psid');
 
-        return view('race.show', compact('race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries'));
+        return view('race.show', compact(
+            'race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries',
+            'isTeamRace', 'isChampionshipTeamRound'
+        ));
     }
 
     // Serves a single-event .ics — the universal format every calendar app opens. Linked
@@ -149,7 +177,11 @@ class RaceController extends Controller
             }
         }
 
-        $race->load('ftpServer');
+        // The registering driver must see the server's connection details regardless
+        // of their own league membership (most of the time this is XCL's own server,
+        // which is a real, tenant-scoped League row since Phase 2.5) — bypass
+        // explicitly rather than relying on the scope to let it through.
+        $race->load(['ftpServer' => fn ($q) => $q->withoutTenantScope()]);
 
         try {
             DB::transaction(function () use ($race, $raceClassId) {
@@ -169,7 +201,7 @@ class RaceController extends Controller
                     ]);
                 }
 
-                $config     = app(AccServerConfigService::class)->settings($race, $race->ftpServer);
+                $config     = app(ServerConfigGenerator::class)->settings($race, $race->ftpServer);
                 $serverName = $config['serverName'] ?? 'To be announced';
                 $password   = $config['password']   ?? 'To be announced';
 
@@ -266,7 +298,11 @@ class RaceController extends Controller
             }
         }
 
-        $race->load('ftpServer');
+        // The registering driver must see the server's connection details regardless
+        // of their own league membership (most of the time this is XCL's own server,
+        // which is a real, tenant-scoped League row since Phase 2.5) — bypass
+        // explicitly rather than relying on the scope to let it through.
+        $race->load(['ftpServer' => fn ($q) => $q->withoutTenantScope()]);
 
         try {
             DB::transaction(function () use ($race, $team, $selectedIds, $users, $validated, $startingDriverId) {
@@ -296,7 +332,7 @@ class RaceController extends Controller
                     }
                 }
 
-                $config     = app(AccServerConfigService::class)->settings($race, $race->ftpServer);
+                $config     = app(ServerConfigGenerator::class)->settings($race, $race->ftpServer);
                 $serverName = $config['serverName'] ?? 'To be announced';
                 $password   = $config['password']   ?? 'To be announced';
 

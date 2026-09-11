@@ -51,7 +51,7 @@ class ImportGportalResults extends Command
         $races = Race::whereNotNull('ftp_server_id')
             ->where('status', '!=', 'finished')
             ->where('scheduled_at', '<', now()->subMinutes(self::RESULT_WAIT_MINUTES))
-            ->with('ftpServer')
+            ->with(['ftpServer' => fn ($q) => $q->withoutTenantScope()])
             ->get()
             ->groupBy('ftp_server_id');
 

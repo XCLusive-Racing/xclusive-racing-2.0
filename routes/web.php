@@ -9,8 +9,12 @@ use App\Http\Controllers\ChampionshipController;
 use App\Http\Controllers\CoachingController;
 use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
 use App\Http\Controllers\Admin\EventTagController;
+use App\Http\Controllers\Admin\ChampionshipWizardController;
 use App\Http\Controllers\Admin\FtpBrowserController;
 use App\Http\Controllers\Admin\FtpServerController;
+use App\Http\Controllers\Admin\LeagueController;
+use App\Http\Controllers\Admin\LeagueFtpServerController;
+use App\Http\Controllers\Admin\PointsSchemeController;
 use App\Http\Controllers\Admin\EventFormatController;
 use App\Http\Controllers\Admin\RatingConfigController;
 use App\Http\Controllers\Admin\MediaController as AdminMediaController;
@@ -208,6 +212,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/races/{race}/results/recalculate', [RaceResultController::class, 'recalculate'])->name('races.results.recalculate');
     Route::post('/races/{race}/results/ftp-cancel', [RaceResultController::class, 'ftpCancel'])->name('races.results.ftp-cancel');
     Route::post('/races/{race}/results/{result}/status', [RaceResultController::class, 'updateStatus'])->name('races.results.status');
+    Route::post('/races/{race}/results/{result}/time-penalty', [RaceResultController::class, 'applyTimePenalty'])->name('races.results.time-penalty');
     Route::post('/races/{race}/push-config', [AdminRaceController::class, 'pushConfig'])->name('races.push-config');
     Route::post('/races/{race}/save-config', [AdminRaceController::class, 'saveConfig'])->name('races.save-config');
     Route::post('/races/{race}/upload-entrylist', [AdminRaceController::class, 'uploadEntrylist'])->name('races.upload-entrylist');
@@ -286,15 +291,17 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/servers/{ftpServer}/browse/save', [FtpBrowserController::class, 'save'])->name('servers.browse.save');
 });
 
-// Reports — owner, admin, event_manager, steward
-Route::middleware(['auth', 'role:owner,admin,event_manager,steward'])->prefix('admin')->name('admin.')->group(function () {
+// Reports — owner, admin, event_manager, steward, league_steward (a league's
+// own steward — scoped to that league's own championships, see
+// User::canModerateReport())
+Route::middleware(['auth', 'role:owner,admin,event_manager,steward,league_steward'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/{report}', [AdminReportController::class, 'show'])->name('reports.show');
     Route::patch('/reports/{report}/status', [AdminReportController::class, 'updateStatus'])->name('reports.status');
 });
 
-// Steward verdict workflow — owner, admin, steward only
-Route::middleware(['auth', 'role:owner,admin,steward'])->prefix('admin')->name('admin.')->group(function () {
+// Steward verdict workflow — owner, admin, steward, league_steward
+Route::middleware(['auth', 'role:owner,admin,steward,league_steward'])->prefix('admin')->name('admin.')->group(function () {
     Route::post('/reports/{report}/start-investigating', [AdminReportController::class, 'startInvestigating'])->name('reports.start-investigating');
     Route::post('/reports/{report}/verdict', [AdminReportController::class, 'submitVerdict'])->name('reports.verdict');
     Route::post('/reports/{report}/mark-ready', [AdminReportController::class, 'markReady'])->name('reports.mark-ready');
@@ -341,6 +348,13 @@ Route::middleware(['auth', 'role:owner,admin'])->prefix('admin')->name('admin.')
     Route::get('/applications', [AdminApplicationController::class, 'index'])->name('applications.index');
     Route::get('/applications/{application}', [AdminApplicationController::class, 'show'])->name('applications.show');
     Route::post('/applications/{application}/send-to-inbox', [AdminApplicationController::class, 'sendToInbox'])->name('applications.send-to-inbox');
+
+    // League FTP Servers — the cross-league aggregate view. Deliberately separate
+    // from admin.servers.* (Configuration, XCL's own core servers) and from a
+    // league's own server list (which its manager can see) — this one shows every
+    // league's servers together, so it stays Owner/Admin only.
+    Route::get('/league-servers', [LeagueFtpServerController::class, 'index'])->name('league-servers.index');
+    Route::post('/league-servers', [LeagueFtpServerController::class, 'store'])->name('league-servers.store');
 });
 
 // Owner only
@@ -352,3 +366,76 @@ Route::middleware(['auth', 'role:owner'])->prefix('admin')->name('admin.')->grou
     // Event Formats
     Route::resource('event-formats', EventFormatController::class);
 });
+
+// Leagues — XCL staff (full access) and League Manager/League Steward (their own
+// league only, enforced by the TenantScope on League/FtpServer). Kept as a
+// separate prefix/group from the rest of /admin, which is XCL-staff-only.
+Route::middleware(['auth', 'league.access'])->prefix('admin/leagues')->name('admin.leagues.')->group(function () {
+    Route::get('/', [LeagueController::class, 'index'])->name('index');
+    Route::get('/create', [LeagueController::class, 'create'])->name('create');
+    Route::post('/', [LeagueController::class, 'store'])->name('store');
+    // withTrashed(): an archived league is a real soft delete now (see
+    // LeagueController::archive()) — without this every one of these would 404
+    // on an archived league instead of letting an owner view/restore it.
+    Route::get('/{league}/edit', [LeagueController::class, 'edit'])->name('edit')->withTrashed();
+    Route::put('/{league}', [LeagueController::class, 'update'])->name('update')->withTrashed();
+    Route::post('/{league}/archive', [LeagueController::class, 'archive'])->name('archive')->withTrashed();
+    Route::post('/{league}/restore', [LeagueController::class, 'restore'])->name('restore')->withTrashed();
+    Route::delete('/{league}', [LeagueController::class, 'destroy'])->name('destroy')->withTrashed();
+    Route::post('/{league}/members', [LeagueController::class, 'addMember'])->name('members.store')->withTrashed();
+    Route::delete('/{league}/members/{member}', [LeagueController::class, 'removeMember'])->name('members.destroy')->withTrashed();
+    Route::post('/{league}/servers', [LeagueController::class, 'assignServer'])->name('servers.store')->withTrashed();
+    Route::post('/{league}/servers/create', [LeagueController::class, 'storeServer'])->name('servers.create')->withTrashed();
+    Route::delete('/{league}/servers/{server}', [LeagueController::class, 'unassignServer'])->name('servers.destroy')->withTrashed();
+});
+
+// Entry point for the Leagues nav's "Championships" link — picks (or auto-picks)
+// which league the manager is creating for, before handing off to the group below.
+Route::middleware(['auth', 'league.access'])->get('admin/leagues/championships', [ChampionshipWizardController::class, 'selectLeague'])
+    ->name('admin.leagues.championships.select');
+
+// Championships — league-scoped setup wizard. Nested under its league so a
+// canManage()-bypassing admin can't reach a championship through a mismatched
+// league id, and so the URL itself always says which league is being acted on.
+Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/championships')->name('admin.leagues.championships.')->group(function () {
+    Route::get('/', [ChampionshipWizardController::class, 'index'])->name('index');
+    Route::post('/', [ChampionshipWizardController::class, 'store'])->name('store');
+    Route::get('/{championship}/wizard/{step}', [ChampionshipWizardController::class, 'edit'])
+        ->where('step', 'basics|sessions|rounds|format|scoring|requirements|penalties|review')
+        ->name('wizard');
+    Route::put('/{championship}/wizard/{step}', [ChampionshipWizardController::class, 'update'])
+        ->where('step', 'basics|sessions|format|scoring|requirements|penalties')
+        ->name('wizard.update');
+    Route::get('/{championship}/rounds/create', [ChampionshipWizardController::class, 'roundCreate'])->name('rounds.create');
+    Route::post('/{championship}/rounds', [ChampionshipWizardController::class, 'addRound'])->name('rounds.store');
+    Route::post('/{championship}/rounds/bulk', [ChampionshipWizardController::class, 'bulkAddRounds'])->name('rounds.bulk-store');
+    Route::get('/{championship}/rounds/{race}/edit', [ChampionshipWizardController::class, 'roundEdit'])->name('rounds.edit');
+    Route::put('/{championship}/rounds/{race}', [ChampionshipWizardController::class, 'updateRound'])->name('rounds.update');
+    Route::delete('/{championship}/rounds/{race}', [ChampionshipWizardController::class, 'removeRound'])->name('rounds.destroy');
+    Route::post('/{championship}/rounds/{race}/push-config', [ChampionshipWizardController::class, 'pushRoundConfig'])->name('rounds.push-config');
+    Route::post('/{championship}/publish', [ChampionshipWizardController::class, 'publish'])->name('publish');
+    Route::post('/{championship}/open-registration', [ChampionshipWizardController::class, 'openRegistration'])->name('open-registration');
+    Route::post('/{championship}/close-registration', [ChampionshipWizardController::class, 'closeRegistration'])->name('close-registration');
+    Route::post('/{championship}/approve-rating', [ChampionshipWizardController::class, 'approveRating'])->name('approve-rating');
+    Route::post('/{championship}/revoke-rating', [ChampionshipWizardController::class, 'revokeRating'])->name('revoke-rating');
+});
+
+// Points Schemes — templates (league_id null) plus each league's own copies.
+// Templates are copied via copy(), never edited/deleted here — there is no
+// edit/update/destroy route a template's id could ever reach.
+Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/points-schemes')->name('admin.leagues.points-schemes.')->group(function () {
+    Route::get('/', [PointsSchemeController::class, 'index'])->name('index');
+    Route::get('/create', [PointsSchemeController::class, 'create'])->name('create');
+    Route::post('/', [PointsSchemeController::class, 'store'])->name('store');
+    Route::post('/{template}/copy', [PointsSchemeController::class, 'copy'])->name('copy');
+    Route::get('/{scheme}/edit', [PointsSchemeController::class, 'edit'])->name('edit');
+    Route::put('/{scheme}', [PointsSchemeController::class, 'update'])->name('update');
+    Route::delete('/{scheme}', [PointsSchemeController::class, 'destroy'])->name('destroy');
+});
+
+// Points Schemes — cross-league browse. Not nested under {league}: every league's
+// own scheme (and every XCL template) is visible here, read-only, on purpose.
+Route::middleware(['auth', 'league.access'])->prefix('admin/points-schemes')->name('admin.points-schemes.')->group(function () {
+    Route::get('/', [PointsSchemeController::class, 'browse'])->name('index');
+});
+

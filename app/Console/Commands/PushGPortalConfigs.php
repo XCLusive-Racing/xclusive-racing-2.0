@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Race;
-use App\Services\AccServerConfigService;
+use App\Services\Contracts\ServerConfigGenerator;
 use App\Services\FtpService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +15,7 @@ class PushGPortalConfigs extends Command
     protected $signature   = 'gportal:push-configs';
     protected $description = 'Auto-push ACC server config to gPortal before a race slot, with safety repush and retry logic';
 
-    public function handle(AccServerConfigService $config, FtpService $ftp): void
+    public function handle(ServerConfigGenerator $config, FtpService $ftp): void
     {
         $now = now();
 
@@ -25,7 +25,7 @@ class PushGPortalConfigs extends Command
             ->whereIn('config_push_status', ['pending', 'failed', null])
             ->where('config_push_attempts', '<', 15)
             ->whereBetween('slot_time', [$now->copy()->subMinutes(30), $now->copy()->addMinutes(5)])
-            ->with('ftpServer')
+            ->with(['ftpServer' => fn ($q) => $q->withoutTenantScope()])
             ->get();
 
         // Phase 2: safety repush — already pushed, but from 5min before slot to 2min after and last push was >5min ago
@@ -38,7 +38,7 @@ class PushGPortalConfigs extends Command
                 $q->whereNull('config_pushed_at')
                   ->orWhere('config_pushed_at', '<', $now->copy()->subMinutes(5));
             })
-            ->with('ftpServer')
+            ->with(['ftpServer' => fn ($q) => $q->withoutTenantScope()])
             ->get();
 
         $races = $normalRaces->merge($safetyRaces)->unique('id');

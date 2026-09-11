@@ -15,16 +15,21 @@ return new class extends Migration
         // Keep only the newest row per xuid_psid (highest id among the rows sharing
         // that xuid's latest updated_at) — repeated xcl:import:driverstats runs kept
         // inserting instead of updating because xuid_psid had no unique constraint.
-        DB::statement('
-            DELETE ds FROM driver_stats ds
-            INNER JOIN (
-                SELECT xuid_psid, MAX(id) as keep_id
-                FROM driver_stats ds2
-                WHERE updated_at = (SELECT MAX(updated_at) FROM driver_stats ds3 WHERE ds3.xuid_psid = ds2.xuid_psid)
-                GROUP BY xuid_psid
-            ) keep ON keep.xuid_psid = ds.xuid_psid
-            WHERE ds.id != keep.keep_id
-        ');
+        // MySQL-only multi-table DELETE syntax; on a fresh install (e.g. the sqlite
+        // test database) this table is empty at migration time, so there's nothing
+        // to dedupe.
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement('
+                DELETE ds FROM driver_stats ds
+                INNER JOIN (
+                    SELECT xuid_psid, MAX(id) as keep_id
+                    FROM driver_stats ds2
+                    WHERE updated_at = (SELECT MAX(updated_at) FROM driver_stats ds3 WHERE ds3.xuid_psid = ds2.xuid_psid)
+                    GROUP BY xuid_psid
+                ) keep ON keep.xuid_psid = ds.xuid_psid
+                WHERE ds.id != keep.keep_id
+            ');
+        }
 
         Schema::table('driver_stats', function (Blueprint $table) {
             $table->dropIndex(['xuid_psid']);

@@ -12,6 +12,10 @@ return new class extends Migration
             $table->id();
             $table->string('name', 40);
             $table->string('tag', 6);
+            // Also added by add_logo_to_racing_teams_table.php, whose timestamp
+            // predates this table's creation — included here directly so a fresh
+            // install ends up complete regardless of which migration ran first.
+            $table->string('logo')->nullable();
             $table->foreignId('owner_id')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
         });

@@ -1271,7 +1271,7 @@
             @else
             <div class="px-4 py-3 d-flex align-items-center justify-content-between" style="border-bottom:1px solid #f3f4f6;background:#f9fafb">
                 <div class="text-secondary" style="font-size:.78rem">
-                    Mark a driver <strong>DC</strong>or <strong>DSQ</strong>. Click "Recalculate Ratings" after changing this.
+                    Mark a driver <strong>DC</strong>or <strong>DSQ</strong>, or add a time penalty — positions update immediately, ratings only after "Recalculate Ratings".
                 </div>
                 <form action="{{ route('admin.races.results.recalculate', $race) }}" method="POST">
                     @csrf
@@ -1287,6 +1287,7 @@
                             <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:50px">Pos</th>
                             <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Driver</th>
                             <th class="fw-bold text-uppercase text-center" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Status</th>
+                            <th class="fw-bold text-uppercase text-center" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:150px">Time Penalty</th>
                             <th class="fw-bold text-uppercase text-center pe-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:140px">Actions</th>
                         </tr>
                     </thead>
@@ -1318,6 +1319,23 @@
                                     <span class="badge" style="background:#fef2f2;color:#dc2626;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">DNF</span>
                                 @else
                                     <span class="badge" style="background:#f0fdf4;color:#16a34a;font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">FIN</span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                @if($result->time_penalty_ms > 0)
+                                <div class="fw-bold mb-1" style="color:#b45309;font-size:.75rem">+{{ $result->time_penalty_ms / 1000 }}s</div>
+                                @endif
+                                @if($result->dsq || $result->dns || $result->total_time === null)
+                                <span class="text-secondary" style="font-size:.72rem">—</span>
+                                @else
+                                <form action="{{ route('admin.races.results.time-penalty', [$race, $result]) }}" method="POST" class="d-flex align-items-center justify-content-center gap-1">
+                                    @csrf
+                                    <input type="number" name="penalty_seconds" min="1" max="3600" placeholder="sec"
+                                           class="form-control form-control-sm" style="width:64px;font-size:.75rem" required>
+                                    <button type="submit" class="btn btn-sm fw-bold text-uppercase"
+                                            style="font-size:.68rem;padding:4px 10px;background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb"
+                                            title="Add a time penalty and re-rank the session">Apply</button>
+                                </form>
                                 @endif
                             </td>
                             <td class="text-center pe-4">

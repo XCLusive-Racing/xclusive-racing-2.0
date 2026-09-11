@@ -22,4 +22,13 @@ class ChampionshipClass extends Model
     {
         return $this->hasMany(ChampionshipRegistration::class);
     }
+
+    public function isFull(): bool
+    {
+        if ($this->max_drivers === null) {
+            return false;
+        }
+
+        return $this->registrations()->count() >= $this->max_drivers;
+    }
 }
