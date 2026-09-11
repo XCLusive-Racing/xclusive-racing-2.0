@@ -96,7 +96,6 @@ class ChampionshipSettingsTest extends TestCase
                 'image_path'  => 'images/media/picked-from-gallery.jpg',
                 'settings' => [
                     'schedule' => ['recurrence' => 'weekly', 'time_of_day' => '14:00'],
-                    'sessions' => ['race_length_minutes' => 30, 'weather_mode' => 'fixed', 'formation_lap_type' => 'formation'],
                 ],
             ]
         )->assertRedirect();
@@ -105,6 +104,36 @@ class ChampionshipSettingsTest extends TestCase
         $this->assertSame('ac', $championship->game);
         $this->assertSame('A friendly ACC PC series.', $championship->description);
         $this->assertSame('images/media/picked-from-gallery.jpg', $championship->image);
+    }
+
+    // 2026-09-11: Sessions was split back out of Basics into its own step
+    // (was growing past 15 fields, badly unbalancing the wizard's step sizes —
+    // user feedback: "1 kopje heel veel ... andere bijna niks"). Confirms the
+    // split step actually saves, and that Basics no longer touches it.
+    public function test_sessions_is_its_own_step_independent_of_basics(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $manager      = User::factory()->leagueManager()->create();
+        $this->attachManager($manager, $league);
+        $championship = $this->makeChampionship($league);
+
+        $this->actingAs($manager)->put(
+            route('admin.leagues.championships.wizard.update', [$league, $championship, 'sessions']),
+            [
+                'settings' => [
+                    'sessions' => [
+                        'race_length_minutes' => 45, 'weather_mode' => 'fixed', 'formation_lap_type' => 'formation',
+                        'xcl_r_multiplier' => '2.0', 'pitstop_count' => '1',
+                    ],
+                ],
+            ]
+        )->assertRedirect();
+
+        $championship->refresh();
+        $this->assertSame(45, $championship->settings->sessions->race_length_minutes);
+        $this->assertEquals(2.0, $championship->settings->sessions->xcl_r_multiplier);
+        // Untouched groups still hold their defaults.
+        $this->assertSame('weekly', $championship->settings->schedule->recurrence);
     }
 
     public function test_a_step_save_only_touches_its_own_settings_group(): void

@@ -94,18 +94,6 @@
 @endforeach
 </div>
 
-<hr class="my-4">
-<p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Session Defaults</p>
-<p class="text-secondary mb-3" style="font-size:.8rem">
-    Standard practice/qualifying/race lengths and conditions — each round can still override these when it needs to differ.
-</p>
-
-<div class="row g-3">
-@foreach(\App\Settings\ChampionshipSettingsSchema::fieldsForGroup('sessions') as $field)
-    @include('admin.leagues.championships._field', ['field' => $field])
-@endforeach
-</div>
-
 <script>
 (function () {
     var recurrence = document.getElementById('f-schedule-recurrence');

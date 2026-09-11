@@ -37,7 +37,7 @@ class SaveChampionshipStepRequest extends FormRequest
                 // league?) is checked in the controller, not here — a plain
                 // exists:ftp_servers,id can't scope that.
                 'ftp_server_id' => 'nullable|exists:ftp_servers,id',
-            ], ChampionshipSettingsSchema::rulesForGroups(['schedule', 'sessions']));
+            ], ChampionshipSettingsSchema::rulesForGroups(['schedule']));
         }
 
         $groups = ChampionshipSettingsSchema::STEP_GROUPS[$step] ?? [];

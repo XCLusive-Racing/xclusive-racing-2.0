@@ -11,6 +11,22 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, follow-up — Sessions split back out into its own wizard step.**
+  User feedback right after the restyle below: "ik wil niet dat 1 kopje heel
+  veel staat en dan bij andere bijna niks" — the event-maker-parity additions
+  had pushed Sessions (now 16 fields: lengths, weather, the new multiplier/
+  pitstop/practice-server fields) to ride along on the already-busy Basics
+  step (~28 fields total with Identity/Branding/Description/Server/Schedule),
+  while Penalties had only 4. `ChampionshipSettingsSchema::STEPS`/
+  `STEP_GROUPS` gained a `sessions` step of its own (order: Basics → Sessions
+  → Rounds → Format → Scoring → Requirements → Penalties → Review — the
+  `rounds`/`{step}` route `where()` constraint needed `sessions` added too,
+  easy to miss since `STEPS`/`STEP_GROUPS` alone don't guard the route).
+  Every `sessions` field also got a `'section'` tag (Session Lengths /
+  Weather / Rating & Pitstops / Practice Server) so the new step itself isn't
+  one more undivided wall of fields.
+  `tests/Feature/ChampionshipSettingsTest.php::test_sessions_is_its_own_step_independent_of_basics`.
+  136 tests passing.
 - **2026-09-11, championship maker restyle + event-maker option parity** (see
   `C:\Users\PC Olle\.claude\plans\mellow-leaping-bachman.md` for the approved
   plan this implemented): the championship-level wizard steps (Basics/Format/

@@ -20,6 +20,7 @@ class ChampionshipSettingsSchema
 
     const STEPS = [
         'basics'       => 'Basics',
+        'sessions'     => 'Sessions',
         'rounds'       => 'Rounds',
         'format'       => 'Format',
         'scoring'      => 'Scoring',
@@ -37,7 +38,11 @@ class ChampionshipSettingsSchema
     // (below) — lets a wizard step split its fields under more than one heading,
     // matching the race wizard's "Event" / "Track & Conditions" grouping
     // (resources/views/admin/races/form.blade.php), instead of one undifferentiated
-    // pile of fields per step.
+    // pile of fields per step. Every 'sessions' field carries its own 'section' tag
+    // (Session Lengths/Weather/Rating & Pitstops/Practice Server) rather than
+    // relying on this default — that step alone has too many fields for one
+    // undivided heading (2026-09, user feedback: "1 kopje heel veel ... andere
+    // bijna niks").
     const GROUP_SECTION_LABELS = [
         'format'       => 'Format',
         'scoring'      => 'Scoring',
@@ -46,11 +51,13 @@ class ChampionshipSettingsSchema
     ];
 
     // Maps a wizard step slug to the settings group(s) it edits and validates.
-    // "schedule" and "sessions" both ride on the Basics step — there's no
-    // dedicated Sessions step any more, so a round's session/weather defaults
-    // are set once on Basics and only re-typed in Add Round when overriding.
+    // "sessions" used to ride on the Basics step (a period where there was no
+    // dedicated Sessions step) — split back out once it grew past 15 fields on
+    // its own (event-maker option parity: multiplier/pitstops/practice server),
+    // which had made Basics enormous next to a thin Penalties step.
     const STEP_GROUPS = [
-        'basics'       => ['schedule', 'sessions'],
+        'basics'       => ['schedule'],
+        'sessions'     => ['sessions'],
         'format'       => ['format'],
         'scoring'      => ['scoring'],
         'requirements' => ['requirements'],
@@ -103,40 +110,42 @@ class ChampionshipSettingsSchema
             ['group' => 'format', 'key' => 'mandatory_driver_swap', 'type' => 'boolean', 'default' => false, 'section' => 'Driver Swaps',
                 'label' => 'Mandatory Pitstop Swap', 'help' => 'Only used when driver swaps are on. Requires a driver change at the mandatory pitstop.'],
 
-            // --- Sessions ---
-            ['group' => 'sessions', 'key' => 'race_length_minutes', 'type' => 'integer', 'default' => 30,
+            // --- Sessions --- (own wizard step, 'section' tags below split it into
+            // Session Lengths / Weather / Rating & Pitstops / Practice Server rather
+            // than one long undivided list)
+            ['group' => 'sessions', 'key' => 'race_length_minutes', 'type' => 'integer', 'default' => 30, 'section' => 'Session Lengths',
                 'label' => 'Race Length (minutes)', 'help' => 'Length of the race session.', 'rule' => 'required|integer|min:1|max:999'],
-            ['group' => 'sessions', 'key' => 'practice_enabled', 'type' => 'boolean', 'default' => true,
+            ['group' => 'sessions', 'key' => 'practice_enabled', 'type' => 'boolean', 'default' => true, 'section' => 'Session Lengths',
                 'label' => 'Practice Session', 'help' => 'Run a practice session before qualifying.'],
-            ['group' => 'sessions', 'key' => 'practice_length_minutes', 'type' => 'integer', 'nullable' => true, 'default' => 15,
+            ['group' => 'sessions', 'key' => 'practice_length_minutes', 'type' => 'integer', 'nullable' => true, 'default' => 15, 'section' => 'Session Lengths',
                 'label' => 'Practice Length (minutes)', 'help' => 'Only used when a practice session runs.'],
-            ['group' => 'sessions', 'key' => 'qualifying_enabled', 'type' => 'boolean', 'default' => true,
+            ['group' => 'sessions', 'key' => 'qualifying_enabled', 'type' => 'boolean', 'default' => true, 'section' => 'Session Lengths',
                 'label' => 'Qualifying Session', 'help' => 'Run a qualifying session before the race.'],
-            ['group' => 'sessions', 'key' => 'qualifying_length_minutes', 'type' => 'integer', 'nullable' => true, 'default' => 15,
+            ['group' => 'sessions', 'key' => 'qualifying_length_minutes', 'type' => 'integer', 'nullable' => true, 'default' => 15, 'section' => 'Session Lengths',
                 'label' => 'Qualifying Length (minutes)', 'help' => 'Only used when a qualifying session runs.'],
-            ['group' => 'sessions', 'key' => 'weather_mode', 'type' => 'enum', 'options' => ['fixed', 'randomised'], 'default' => 'fixed',
-                'label' => 'Weather', 'help' => 'Fixed weather is set once here; randomised is rolled per round.', 'rule' => 'required|in:fixed,randomised'],
-            ['group' => 'sessions', 'key' => 'ambient_temp', 'type' => 'integer', 'nullable' => true, 'default' => 20,
-                'label' => 'Ambient Temperature (°C)', 'help' => 'Only used when weather is fixed.'],
-            ['group' => 'sessions', 'key' => 'track_temp', 'type' => 'integer', 'nullable' => true, 'default' => 26,
-                'label' => 'Track Temperature (°C)', 'help' => 'Only used when weather is fixed.'],
-            ['group' => 'sessions', 'key' => 'cloud_level', 'type' => 'float', 'nullable' => true, 'default' => 0.2,
-                'label' => 'Cloud Level (0–1)', 'help' => 'Only used when weather is fixed.'],
-            ['group' => 'sessions', 'key' => 'rain_level', 'type' => 'float', 'nullable' => true, 'default' => 0.0,
-                'label' => 'Rain Level (0–1)', 'help' => 'Only used when weather is fixed.'],
-            ['group' => 'sessions', 'key' => 'formation_lap_type', 'type' => 'enum', 'options' => ['none', 'formation', 'rolling_start'], 'default' => 'formation',
+            ['group' => 'sessions', 'key' => 'formation_lap_type', 'type' => 'enum', 'options' => ['none', 'formation', 'rolling_start'], 'default' => 'formation', 'section' => 'Session Lengths',
                 'label' => 'Formation Lap', 'help' => 'How the field is sent to green.', 'rule' => 'required|in:none,formation,rolling_start'],
+            ['group' => 'sessions', 'key' => 'weather_mode', 'type' => 'enum', 'options' => ['fixed', 'randomised'], 'default' => 'fixed', 'section' => 'Weather',
+                'label' => 'Weather', 'help' => 'Fixed weather is set once here; randomised is rolled per round.', 'rule' => 'required|in:fixed,randomised'],
+            ['group' => 'sessions', 'key' => 'ambient_temp', 'type' => 'integer', 'nullable' => true, 'default' => 20, 'section' => 'Weather',
+                'label' => 'Ambient Temperature (°C)', 'help' => 'Only used when weather is fixed.'],
+            ['group' => 'sessions', 'key' => 'track_temp', 'type' => 'integer', 'nullable' => true, 'default' => 26, 'section' => 'Weather',
+                'label' => 'Track Temperature (°C)', 'help' => 'Only used when weather is fixed.'],
+            ['group' => 'sessions', 'key' => 'cloud_level', 'type' => 'float', 'nullable' => true, 'default' => 0.2, 'section' => 'Weather',
+                'label' => 'Cloud Level (0–1)', 'help' => 'Only used when weather is fixed.'],
+            ['group' => 'sessions', 'key' => 'rain_level', 'type' => 'float', 'nullable' => true, 'default' => 0.0, 'section' => 'Weather',
+                'label' => 'Rain Level (0–1)', 'help' => 'Only used when weather is fixed.'],
             // Mirrors the race wizard's Custom Race "XCL-R Multiplier" field exactly
             // (admin/races/form.blade.php — that field is manual-only too, no
             // auto-derivation from length exists anywhere in the app to reuse).
             // Without this, a championship round has neither an EventFormat nor an
             // explicit multiplier, so RatingService::processRace() falls all the way
             // through to a flat 1.0 — every round rated the same regardless of length.
-            ['group' => 'sessions', 'key' => 'xcl_r_multiplier', 'type' => 'float', 'nullable' => true, 'default' => null,
+            ['group' => 'sessions', 'key' => 'xcl_r_multiplier', 'type' => 'float', 'nullable' => true, 'default' => null, 'section' => 'Rating & Pitstops',
                 'label' => 'XCL-R Multiplier', 'help' => 'How much this round\'s races count toward rating changes. Leave blank for the default (1.0, same for every length).', 'rule' => 'nullable|numeric|min:0.1|max:10'],
-            ['group' => 'sessions', 'key' => 'pitstop_count', 'type' => 'integer', 'nullable' => true, 'default' => 0,
+            ['group' => 'sessions', 'key' => 'pitstop_count', 'type' => 'integer', 'nullable' => true, 'default' => 0, 'section' => 'Rating & Pitstops',
                 'label' => 'Mandatory Pitstops', 'help' => 'Number of mandatory pitstops. Leave at 0 for none.', 'rule' => 'nullable|integer|min:0|max:9'],
-            ['group' => 'sessions', 'key' => 'min_stop_secs', 'type' => 'integer', 'nullable' => true, 'default' => null,
+            ['group' => 'sessions', 'key' => 'min_stop_secs', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Rating & Pitstops',
                 'label' => 'Minimum Stop Time (seconds)', 'help' => 'Only used when there\'s at least 1 mandatory pitstop.', 'rule' => 'nullable|integer|min:1|max:3600'],
             ['group' => 'sessions', 'key' => 'has_practice_server', 'type' => 'boolean', 'default' => false, 'section' => 'Practice Server',
                 'label' => 'Practice Server', 'help' => 'Reserve a slot on XCL\'s shared practice server ahead of each round — only one round at a time can hold it, so this is a default suggestion, still toggled per round in Add/Edit Round.'],

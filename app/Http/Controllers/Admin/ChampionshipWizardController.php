@@ -113,11 +113,10 @@ class ChampionshipWizardController extends Controller
             $data['image'] = $this->resolveMedia($request);
             unset($data['image_path']);
 
-            // Nested settings.{schedule,sessions}.* come along in validated() too
-            // (they ride on this same step) — applyStepSettings() below is what
-            // actually merges those into the settings blob; passing the raw
-            // partial array straight to update() would blow away every other
-            // settings group instead of just schedule/sessions.
+            // Nested settings.schedule.* comes along in validated() too (it rides
+            // on this same step) — applyStepSettings() below is what actually
+            // merges that into the settings blob; passing the raw partial array
+            // straight to update() would blow away every other settings group.
             unset($data['settings']);
 
             if (!empty($data['ftp_server_id']) && !$league->ftpServers()->where('id', $data['ftp_server_id'])->exists()) {

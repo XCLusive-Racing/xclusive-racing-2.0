@@ -401,10 +401,10 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/cha
     Route::get('/', [ChampionshipWizardController::class, 'index'])->name('index');
     Route::post('/', [ChampionshipWizardController::class, 'store'])->name('store');
     Route::get('/{championship}/wizard/{step}', [ChampionshipWizardController::class, 'edit'])
-        ->where('step', 'basics|rounds|format|scoring|requirements|penalties|review')
+        ->where('step', 'basics|sessions|rounds|format|scoring|requirements|penalties|review')
         ->name('wizard');
     Route::put('/{championship}/wizard/{step}', [ChampionshipWizardController::class, 'update'])
-        ->where('step', 'basics|format|scoring|requirements|penalties')
+        ->where('step', 'basics|sessions|format|scoring|requirements|penalties')
         ->name('wizard.update');
     Route::get('/{championship}/rounds/create', [ChampionshipWizardController::class, 'roundCreate'])->name('rounds.create');
     Route::post('/{championship}/rounds', [ChampionshipWizardController::class, 'addRound'])->name('rounds.store');
