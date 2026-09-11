@@ -11,6 +11,46 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, sixteenth follow-up — Review step's cards collapsible +
+  a Back button on every step's footer.** User: "nu als laatste bij review
+  wil ik de cards kunnen inklappen en onderin naast de confirm button moet
+  een back button staan" — then, generalizing before I'd acted on it: "bij
+  elk ding trouwens moet een backbutton staan" (every step, not just
+  Review). Two separate pieces:
+  - **Collapsible cards** — `_review.blade.php`'s cards (Basics, each
+    settings group, Rounds, XCL Rating) reuse the house accordion component
+    already proven elsewhere (`initAccordions`,
+    `resources/js/components/tabs.js` — the same one driving the race
+    results page's class groups and the config-file editors on
+    `admin/races/show.blade.php`), auto-wired globally on
+    `DOMContentLoaded` for any `[data-accordions]` wrapper
+    (`resources/js/app.js`) — no page-specific script needed. Each card is
+    `data-accordion="open"` by default (nothing hidden on first load;
+    collapsing is just for cutting clutter), with a clickable header and a
+    rotating chevron. Rounds' header keeps its "Manage rounds →" link
+    working via `onclick="event.stopPropagation()"`, same trick the
+    config-file editor headers use for their own inline actions.
+  - **Back buttons everywhere** — `wizard.blade.php` now computes
+    `$prevStepKey` once (previous key in `ChampionshipSettingsSchema::STEPS`
+    order, null on Basics) and shares it into every step's partial via
+    Blade's normal `@include` scope sharing. Added to: the generic
+    schema-driven step's footer (next to "Save & Continue →"), `_rounds.blade.php`'s
+    footer (next to "Continue →" — Rounds has no settings form of its own),
+    and `_review.blade.php`'s footer (next to whichever confirm action
+    shows — Publish/Open Registration/Close Registration). Styled
+    `btn btn-outline-secondary fw-black text-uppercase px-4` to sit next to
+    the existing colored primary buttons at the same height (both use the
+    plain `.btn` base class, no `btn-sm`).
+  - **Test-writing gotcha**: `wizard.blade.php`'s `page-actions` slot
+    already renders its own unrelated "← Back" (to the championships index)
+    on literally every step, so a naive `assertSee('← Back')` /
+    `assertDontSee('← Back')` can't distinguish "no per-step Back button"
+    from "the always-there page-level one" — fixed by asserting an exact
+    `substr_count()` of the glyph (1 on Basics, 2 everywhere else) instead.
+    Three new tests: `test_first_step_has_no_back_button_but_a_later_one_does`,
+    `test_rounds_step_has_a_back_button_too`,
+    `test_review_step_cards_are_collapsible_and_has_a_back_button`. 150
+    tests passing.
 - **2026-09-11, fifteenth follow-up — removed the dead "Request XCL Rating"
   flow.** User pointed at the Penalties step's stale help text ("Raises a
   request for an XCL admin to review. It does not turn rating on by itself

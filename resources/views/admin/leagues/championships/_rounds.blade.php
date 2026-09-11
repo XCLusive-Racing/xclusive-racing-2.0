@@ -56,7 +56,15 @@
     </div>
 </div>
 
-<a href="{{ route('admin.leagues.championships.wizard', [$league, $championship, 'format']) }}"
-   class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">
-    Continue →
-</a>
+<div class="d-flex align-items-center gap-2">
+    @if($prevStepKey)
+    <a href="{{ route('admin.leagues.championships.wizard', [$league, $championship, $prevStepKey]) }}"
+       class="btn btn-outline-secondary fw-black text-uppercase px-4">
+        ← Back
+    </a>
+    @endif
+    <a href="{{ route('admin.leagues.championships.wizard', [$league, $championship, 'format']) }}"
+       class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">
+        Continue →
+    </a>
+</div>

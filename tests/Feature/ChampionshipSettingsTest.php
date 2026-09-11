@@ -456,6 +456,69 @@ class ChampionshipSettingsTest extends TestCase
             ->assertDontSee('Just Watching');
     }
 
+    // User-directed 2026-09: "bij elk ding trouwens moet een backbutton
+    // staan" — every step's footer gets a Back button to the previous step
+    // in STEPS order, except Basics (the first step, nothing to go back to).
+    // wizard.blade.php's page-actions slot *always* renders its own "← Back"
+    // (to the championships index, unrelated to step order) on every step,
+    // so presence/absence of the new per-step one is checked by counting
+    // occurrences of the glyph rather than a plain assertSee/assertDontSee,
+    // which can't tell the two apart.
+    public function test_first_step_has_no_back_button_but_a_later_one_does(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $admin        = $this->makeAdmin();
+        $championship = $this->makeChampionship($league);
+
+        $basics = $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'basics']))
+            ->assertOk();
+        $this->assertSame(1, substr_count($basics->getContent(), '← Back'));
+
+        $format = $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'format']))
+            ->assertOk();
+        $this->assertSame(2, substr_count($format->getContent(), '← Back'));
+    }
+
+    // Rounds has no settings form of its own (rounds are managed inline via
+    // Add/Edit/Remove) but still gets the same Back button as every other step.
+    public function test_rounds_step_has_a_back_button_too(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $admin        = $this->makeAdmin();
+        $championship = $this->makeChampionship($league);
+
+        $rounds = $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'rounds']))
+            ->assertOk();
+        $this->assertSame(2, substr_count($rounds->getContent(), '← Back'));
+    }
+
+    // User-directed 2026-09: "als laatste bij review wil ik de cards kunnen
+    // inklappen en onderin naast de confirm button moet een back button
+    // staan" — Review's cards use the same collapsible-accordion component
+    // the race-results class groups and config-file editors already use
+    // (initAccordions, resources/js/components/tabs.js), and its footer
+    // gets a Back button to Penalties (the step right before Review) next
+    // to whichever confirm action (Publish/Open/Close Registration) shows.
+    public function test_review_step_cards_are_collapsible_and_has_a_back_button(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $admin        = $this->makeAdmin();
+        $championship = $this->makeChampionship($league);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'review']))
+            ->assertOk();
+
+        $response->assertSee('data-accordions', false)
+            ->assertSee('data-accordion-header', false)
+            ->assertSee('data-accordion-body', false)
+            ->assertSee('Publish');
+        $this->assertSame(2, substr_count($response->getContent(), '← Back'));
+    }
+
     // --- Tenant isolation on the new championships table ---
 
     public function test_league_manager_cannot_reach_another_leagues_championship(): void

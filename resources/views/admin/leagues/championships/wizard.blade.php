@@ -49,6 +49,15 @@
     </div>
 </div>
 
+@php
+    // Every step's footer gets a Back button to the previous one in STEPS
+    // order (user-directed 2026-09: "bij elk ding moet een backbutton
+    // staan") — null on the very first step (Basics), where there's nothing
+    // to go back to inside the wizard.
+    $stepIndex   = array_search($step, $stepKeys, true);
+    $prevStepKey = $stepIndex > 0 ? $stepKeys[$stepIndex - 1] : null;
+@endphp
+
 <div class="row g-4">
     <div class="col-12 col-lg-8">
 
@@ -123,9 +132,17 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">
-                Save &amp; Continue →
-            </button>
+            <div class="d-flex align-items-center gap-2">
+                @if($prevStepKey)
+                <a href="{{ route('admin.leagues.championships.wizard', [$league, $championship, $prevStepKey]) }}"
+                   class="btn btn-outline-secondary fw-black text-uppercase px-4">
+                    ← Back
+                </a>
+                @endif
+                <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">
+                    Save &amp; Continue →
+                </button>
+            </div>
         </form>
         @endif
 
