@@ -18,6 +18,9 @@
         <span class="fw-black text-uppercase fst-italic text-dark" style="font-size:.8rem">{{ $league->name }}</span>
         <span class="text-secondary" style="font-size:.75rem">·</span>
         <span class="text-secondary text-uppercase" style="font-size:.72rem;letter-spacing:.05em">{{ ucfirst($championship->status) }}</span>
+        @if($championship->visibility === 'unlisted')
+        <span class="badge" style="background:#fef3c7;color:#92400e;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">Hidden</span>
+        @endif
     </div>
 </div>
 

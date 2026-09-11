@@ -18,9 +18,22 @@ class RaceController extends Controller
 {
     public function index()
     {
-        $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','event_tag','max_drivers','duration_key','image','icon','description','sr_requirement','min_rating','max_rating','car_class','weather','event_format_id','is_endurance'])
+        $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','event_tag','max_drivers','duration_key','image','icon','description','sr_requirement','min_rating','max_rating','car_class','weather','event_format_id','is_endurance','championship_id'])
             ->with('eventFormat:id,race1_mins,race2_mins')
             ->where('status', '!=', 'finished')
+            // A championship round is only a public event once its own championship
+            // is (Championship::PUBLIC_STATUSES + not hidden) -- a draft
+            // championship's rounds, or a published-but-hidden one's, shouldn't leak
+            // onto the public Events page just because the Race row itself is open.
+            // withoutTenantScope() here because Championship carries TenantScope
+            // (league-owned data) and this page has no league context to filter by
+            // -- an anonymous visitor has none, which would otherwise hide every
+            // championship round from every public visitor (TenantScope::apply()
+            // resolves an empty league list to "matches nothing").
+            ->where(function ($q) {
+                $q->whereNull('championship_id')
+                  ->orWhereHas('championship', fn ($cq) => $cq->withoutTenantScope()->publiclyVisible());
+            })
             ->orderBy('scheduled_at')
             ->get();
         $races->loadCount(['registrations', 'teamEntries']);

@@ -47,6 +47,24 @@ class Championship extends Model
         ];
     }
 
+    // A league championship's own lifecycle (set by the setup wizard) is
+    // draft/published/registration_open/registration_closed/running/completed/
+    // cancelled — distinct from the flat XCL championship's draft/active/finished.
+    // Anything from "published" onward is publicly visible; draft and cancelled
+    // are not. Shared between ChampionshipController (the public listing) and
+    // RaceController (the public Events page, for a championship's own rounds)
+    // rather than each keeping its own copy.
+    public const PUBLIC_STATUSES = ['published', 'registration_open', 'registration_closed', 'running', 'completed'];
+
+    // A publicly-listed status alone isn't enough once "Hide from Public"
+    // exists (visibility = unlisted) — a manager can pull an already-published
+    // championship out of public listings without reverting its status (and
+    // losing registrations/rounds/standings in the process).
+    public function scopePubliclyVisible($query)
+    {
+        return $query->whereIn('status', self::PUBLIC_STATUSES)->where('visibility', 'public');
+    }
+
     public function league(): BelongsTo
     {
         return $this->belongsTo(League::class);

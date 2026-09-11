@@ -139,4 +139,17 @@
         </button>
     </form>
     @endif
+    {{-- Independent of status -- pulling a championship out of public listings
+         (visibility = unlisted) doesn't revert it to draft or touch
+         registrations/rounds/standings, unlike the status actions above. Only
+         makes sense once published: draft is already excluded from public
+         listings by status alone (Championship::scopePubliclyVisible()). --}}
+    @if($championship->status !== 'draft')
+    <form action="{{ route('admin.leagues.championships.' . ($championship->visibility === 'public' ? 'hide' : 'unhide'), [$league, $championship]) }}" method="POST">
+        @csrf
+        <button type="submit" class="btn btn-outline-secondary fw-black text-uppercase px-4">
+            {{ $championship->visibility === 'public' ? 'Hide from Public' : 'Make Public Again' }}
+        </button>
+    </form>
+    @endif
 </div>

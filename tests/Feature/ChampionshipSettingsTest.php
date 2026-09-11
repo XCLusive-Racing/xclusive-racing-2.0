@@ -519,6 +519,78 @@ class ChampionshipSettingsTest extends TestCase
         $this->assertSame(2, substr_count($response->getContent(), '← Back'));
     }
 
+    // --- "Hide from Public" (user-directed 2026-09: "nadat hij gepublisht is
+    // wil ik ook de optie bij de edit om de championship te hiden") ---
+
+    // Draft is already excluded from every public listing by status alone
+    // (Championship::PUBLIC_STATUSES) -- the button only makes sense, and
+    // only appears, once there's something to actually hide.
+    public function test_hide_button_only_appears_once_published(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $admin        = $this->makeAdmin();
+        $championship = $this->makeChampionship($league);
+
+        $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'review']))
+            ->assertOk()
+            ->assertDontSee('Hide from Public');
+
+        $championship->update(['status' => 'published']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'review']))
+            ->assertOk()
+            ->assertSee('Hide from Public');
+    }
+
+    public function test_league_manager_can_hide_and_unhide_their_own_published_championship(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $manager      = User::factory()->leagueManager()->create();
+        $this->attachManager($manager, $league);
+        $championship = $this->makeChampionship($league);
+        $championship->update(['status' => 'published']);
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.hide', [$league, $championship]))
+            ->assertRedirect();
+        $this->assertSame('unlisted', $championship->fresh()->visibility);
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.unhide', [$league, $championship]))
+            ->assertRedirect();
+        $this->assertSame('public', $championship->fresh()->visibility);
+    }
+
+    public function test_hide_route_rejects_a_draft_championship(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $admin        = $this->makeAdmin();
+        $championship = $this->makeChampionship($league);
+
+        $this->actingAs($admin)
+            ->post(route('admin.leagues.championships.hide', [$league, $championship]))
+            ->assertNotFound();
+        $this->assertSame('public', $championship->fresh()->visibility);
+    }
+
+    public function test_a_different_leagues_manager_cannot_hide_another_leagues_championship(): void
+    {
+        $nlrl    = $this->makeLeague('nlrl');
+        $src     = $this->makeLeague('src');
+        $manager = User::factory()->leagueManager()->create();
+        $this->attachManager($manager, $nlrl);
+
+        $srcChampionship = $this->makeChampionship($src);
+        $srcChampionship->update(['status' => 'published']);
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.hide', [$src, $srcChampionship]))
+            ->assertNotFound();
+        $this->assertSame('public', $srcChampionship->fresh()->visibility);
+    }
+
     // --- Tenant isolation on the new championships table ---
 
     public function test_league_manager_cannot_reach_another_leagues_championship(): void
