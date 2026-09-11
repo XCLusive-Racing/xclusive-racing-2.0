@@ -11,6 +11,22 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, twelfth follow-up — Points Scheme picker (Scoring step)
+  reorganized and re-previewed.** User-directed general "make it clearer"
+  pass, not tied to a specific bug. The picker
+  (`_points-scheme-picker.blade.php`) previously mixed a league's own
+  schemes and XCL's read-only templates into one undifferentiated scrollable
+  list, each showing a terse "1:25, 2:18, 3:15" preview. Now split into two
+  labelled groups ("{League}'s Own" / "XCL Templates"), matching the same
+  owned-vs-template separation the standalone points-schemes management
+  index (`admin/leagues/points-schemes/index.blade.php`) already used — and
+  the preview reads "**P1** 25 · **P2** 18 · **P3** 15 · P4 12 …" (labelled,
+  podium positions bolded) on both pages now, not just the picker. FL/Pole
+  points also gained a Lead label to match the management index's column.
+  No backend/data changes — purely a rendering pass, both pages already
+  received the exact same `$pointsSchemes` split by `is_template`. 144
+  tests still passing (no dedicated points-scheme UI test existed before or
+  after this).
 - **2026-09-11, eleventh follow-up — corrected the tenth follow-up's
   "eligible cars" change.** User: "nee niet de autos, je moet gwn de
   dropdown weer terug brengen met de classes wanneer je op add class drukt
