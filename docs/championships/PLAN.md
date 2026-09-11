@@ -35,17 +35,35 @@ up without re-deriving context.
      each server's real (now-known) plaintext username through
      `Crypt::encryptString()` directly against the database (this is data,
      not code — no migration, no commit).
-  3. **Found while verifying (2) — still open**: every server's
-     `password` also fails to decrypt, but with a *different* exception
-     (`DecryptException: The MAC is invalid.`, not "the payload is
-     invalid") — the ciphertext is validly *shaped* but doesn't verify
-     under the current `APP_KEY`, meaning it was encrypted under a
-     different key at some point and there is no `APP_PREVIOUS_KEYS`
-     configured to fall back to. This cannot be fixed the same way as (2)
-     — there is no known plaintext to re-encrypt with. **Config push
-     remains broken for every server until the real FTP passwords are
-     re-entered** (via each server's edit page, which re-encrypts under
-     the current key on save) or the original encryption key is found.
+  3. **Found while verifying (2)**: every server's `password` also fails
+     to decrypt, but with a *different* exception (`DecryptException: The
+     MAC is invalid.`, not "the payload is invalid") — the ciphertext is
+     validly *shaped* but doesn't verify under the current `APP_KEY`,
+     meaning it was encrypted under a different key at some point, with no
+     `APP_PREVIOUS_KEYS` configured to fall back to. Unlike (2), there was
+     no known plaintext to silently re-encrypt with — this one genuinely
+     needed the admin to re-enter the real password.
+  4. **Re-entering it hit a second, real code bug**: saving a new password
+     through `/admin/servers/{id}/edit` threw the *exact same*
+     `DecryptException: The MAC is invalid.` — on save, before the new
+     value was ever written. Root cause: `FtpServerController::update()`
+     passed `username`/`password` through `$ftpServer->update($data)`
+     (plain Eloquent), and Eloquent's dirty-check for an `encrypted`-cast
+     attribute (`HasAttributes::originalIsEquivalent()`) decrypts *both*
+     the new value and the stored original to compare them — even though
+     the original is never actually read anywhere else. A corrupt/
+     undecryptable original therefore poisoned every future save attempt
+     too, with **no way to recover a broken credential through the UI at
+     all**. Fixed by writing `username`/`password` through a raw
+     `DB::table('ftp_servers')->update()` call instead (pre-encrypted via
+     `Crypt::encryptString()`), bypassing `$ftpServer`'s dirty-check
+     entirely — it only ever touches the new value now, never the old one.
+     `store()` (a plain INSERT, no original to compare against) was never
+     affected and needed no change. New regression test
+     `test_ftp_server_update_recovers_from_an_undecryptable_stored_password`,
+     reproducing a corrupted original directly (bypassing the model so
+     Eloquent never touches it until the `update()` call under test does).
+     179 tests passing.
 - **2026-09-11, twenty-third follow-up — cfg_path default + dropped
   Crossplay on the same "All League Servers" Add Server form.** User: "bij
   cfg path mag je standaard /cfg neerzetten, en bij platform mag je

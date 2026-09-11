@@ -8,6 +8,8 @@ use App\Services\AuditLogger;
 use App\Services\Contracts\ServerConfigGenerator;
 use App\Services\FtpService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 
 class FtpServerController extends Controller
 {
@@ -130,14 +132,27 @@ class FtpServerController extends Controller
             $data[$field] = ($decoded == $builtIn) ? null : $decoded;
         }
 
+        $ftpServer->update($data);
+
+        // Written directly, bypassing $ftpServer->update() -- Eloquent's dirty-check
+        // for an 'encrypted'-cast attribute decrypts *both* the new value and the
+        // stored original to compare them, even when the original is never read
+        // back anywhere else. If a server's stored ciphertext is ever corrupt or
+        // encrypted under a since-rotated key (exactly what happened here), that
+        // comparison throws DecryptException before the new credential is ever
+        // saved -- there would be no way to fix it back up through this same form.
+        // A raw update sidesteps the comparison entirely: it only ever encrypts
+        // the new value, never touches the old one.
+        $credentials = [];
         if ($request->filled('username')) {
-            $data['username'] = $request->input('username');
+            $credentials['username'] = Crypt::encryptString($request->input('username'));
         }
         if ($request->filled('password')) {
-            $data['password'] = $request->input('password');
+            $credentials['password'] = Crypt::encryptString($request->input('password'));
         }
-
-        $ftpServer->update($data);
+        if ($credentials) {
+            DB::table('ftp_servers')->where('id', $ftpServer->id)->update($credentials);
+        }
 
         AuditLogger::record($request->user(), $ftpServer, 'ftp_server.updated', $request->only(
             'name', 'server_number', 'host', 'port', 'path', 'cfg_path', 'server_type', 'active'

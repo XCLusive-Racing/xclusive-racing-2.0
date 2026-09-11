@@ -296,6 +296,37 @@ class LeagueAdminAccessTest extends TestCase
         $this->assertSame('original-pass', $server->password);
     }
 
+    // Real incident, 2026-09: every FTP server's password had somehow ended up
+    // encrypted under a since-rotated APP_KEY (unrelated data corruption, not
+    // reproduced here) -- undecryptable under the current key. Re-entering a
+    // fresh password through this exact form then threw DecryptException
+    // ("The MAC is invalid") *on save*, before the new value was ever
+    // written: Eloquent's dirty-check for an 'encrypted'-cast attribute
+    // decrypts both the new value and the stored original to compare them,
+    // so a corrupt original poisoned every future save too, with no way to
+    // recover through the UI. Reproduced here with garbage ciphertext
+    // written directly (bypassing the model, so Eloquent never touches it
+    // until the update() call under test does).
+    public function test_ftp_server_update_recovers_from_an_undecryptable_stored_password(): void
+    {
+        $admin  = $this->makeAdmin();
+        $server = FtpServer::create([
+            'name' => 'Server', 'host' => '1.2.3.4', 'port' => 21,
+            'username' => 'original-user', 'password' => 'original-pass',
+            'path' => '/results', 'server_type' => 'scheduled',
+        ]);
+        \Illuminate\Support\Facades\DB::table('ftp_servers')->where('id', $server->id)
+            ->update(['password' => 'not-valid-ciphertext-at-all']);
+
+        $this->actingAs($admin)->put(route('admin.servers.update', $server), [
+            'name' => 'Server', 'host' => '1.2.3.4', 'port' => 21,
+            'path' => '/results', 'server_type' => 'scheduled',
+            'username' => 'original-user', 'password' => 'brand-new-pass',
+        ])->assertRedirect(route('admin.servers.index'));
+
+        $this->assertSame('brand-new-pass', $server->fresh()->password);
+    }
+
     // --- Championship Manager: user-directed 2026-09 — "er moet een optie bij
     // de users tabel... waar wij ook rollen kunnen adden daar moet championship
     // manager komen" — a global role assigned from the Users admin page (not a
