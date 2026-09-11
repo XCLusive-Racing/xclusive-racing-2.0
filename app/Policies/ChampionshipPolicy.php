@@ -10,7 +10,12 @@ class ChampionshipPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->canManage() || $user->isLeagueManager() || $user->isLeagueSteward();
+        // isLeagueManager()/isLeagueSteward() are bare role-flag checks here (no
+        // specific League to test managesLeague()/stewardsLeague() against yet —
+        // this only gates whether the picker/index is reachable at all), so
+        // Championship Manager needs its own explicit check rather than routing
+        // through managesLeague() like every other method in this policy does.
+        return $user->canManage() || $user->isChampionshipManager() || $user->isLeagueManager() || $user->isLeagueSteward();
     }
 
     public function view(User $user, Championship $championship): bool

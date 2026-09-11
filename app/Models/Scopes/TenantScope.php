@@ -12,8 +12,10 @@ class TenantScope implements Scope
     {
         $user = auth()->user();
 
-        // Owner/Admin/Event Manager act across every league without restriction.
-        if ($user && $user->canManage()) {
+        // Owner/Admin/Event Manager act across every league without restriction —
+        // same for a Championship Manager (a global role, not a per-league
+        // membership row, so there's no leagueIds() entry to filter by below).
+        if ($user && ($user->canManage() || $user->isChampionshipManager())) {
             return;
         }
 

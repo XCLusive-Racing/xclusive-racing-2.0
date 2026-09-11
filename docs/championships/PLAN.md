@@ -11,6 +11,65 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, nineteenth follow-up — new "Championship Manager" global role
+  + League edit page styling pass.** User: "we moeten bepaalde mensen access
+  geven tot het admin panel om bij leagues en championship te komen," then,
+  after I found the League edit page's existing per-league Members section
+  and asked what they meant: "er moet een optie bij de users tabel en dan
+  users editten waar wij ook rollen kunnen adden daar moet championship
+  manager komen" — a brand new *global* role (`championship_manager`),
+  assigned from the Users admin page's existing role-pills UI
+  (`admin/users/edit.blade.php`), not a per-league `LeagueUser` row.
+  - **Design**: rather than bolting `|| $user->isChampionshipManager()` onto
+    every individual authorization check across `LeagueController`,
+    `ChampionshipPolicy`, `PointsSchemeController`/`PointsSchemePolicy` (many
+    call sites, easy to miss one), `User::managesLeague(League $league)`
+    itself now returns true unconditionally for a Championship Manager
+    before checking the real `LeagueUser` row — every one of those call
+    sites already gates on `managesLeague($league)`, so they all pick this
+    up automatically, for free, for *every* league at once (no membership
+    row needed per league). Only the handful of places that check the bare
+    global `isLeagueManager()`/`isLeagueSteward()` flags directly (no
+    specific League in scope to call `managesLeague($league)` against —
+    `ChampionshipPolicy::viewAny()`, `PointsSchemePolicy::view()`,
+    `PointsSchemeController::browse()`) needed their own explicit
+    `isChampionshipManager()` addition.
+  - Deliberately **not** given `canManage()`-tier admin actions: a league's
+    identity fields (name/slug/status), Discord requirement, Members
+    management (who else gets access — avoids a privilege-escalation loop),
+    archive/restore/permanent-delete, and cross-league FTP server
+    assignment all stay `canManage()`-only, untouched. A Championship
+    Manager gets exactly what a league's own Manager gets (branding,
+    description, links, championships, points schemes, rounds), just for
+    every league simultaneously instead of one at a time.
+  - `TenantScope::apply()` bypasses entirely for a Championship Manager
+    (same as `canManage()`) — necessary since they have no `LeagueUser` row
+    for `leagueIds()` to resolve; without it they'd see zero leagues despite
+    passing every other check.
+  - `LeagueAccess` middleware, the admin sidebar's Leagues/Championships/
+    Points Schemes nav section, and `adminLandingRoute()` all extended so
+    the role is actually reachable and visible, not just authorized.
+  - New migration `2026_09_11_000001_add_championship_manager_role.php`
+    (same insert-if-missing pattern as the original `league_manager`/
+    `league_steward` migration), `UserFactory::championshipManager()`
+    state. New tests in `LeagueAdminAccessTest.php`:
+    `test_championship_manager_sees_every_league_with_no_membership_rows_at_all`,
+    `test_championship_manager_can_edit_branding_but_not_identity_or_archive`,
+    `test_championship_manager_cannot_assign_league_roles`,
+    `test_championship_manager_can_create_and_manage_a_championship_for_any_league`.
+  - **Styling**: "styling updaten en ervoor zorgen dat we opties die bij
+    championships die ook bij leagues staan bij voorbeeld die require
+    members discord to join grayed out" — the League edit page's own
+    "Require Discord membership" toggle (already locked/disabled — XCL's
+    bot setup isn't operational yet, same reason the championship wizard's
+    copy of this exact option was locked in the thirteenth follow-up) used
+    an older plain-Bootstrap-checkbox-at-opacity:.55 look, visually
+    inconsistent with the newer pill-toggle-at-opacity:.5 look
+    `_field.blade.php` uses everywhere in the championship wizard. Restyled
+    to match exactly, so an option that exists at both levels reads as the
+    same kind of thing in both places. New test
+    `test_leagues_own_discord_toggle_is_locked_the_same_way_as_championships`.
+  - 162 tests passing.
 - **2026-09-11, eighteenth follow-up — "Hide from Public" for a published
   championship.** User: "en nadat hij gepublisht is wil ik ook de optie bij
   de edit om de championship te hiden," then, mid-turn: "zodat hij niet bij

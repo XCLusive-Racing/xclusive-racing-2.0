@@ -34,7 +34,7 @@ class PointsSchemeController extends Controller
     public function browse(Request $request)
     {
         $user = $request->user();
-        abort_unless($user->canManage() || $user->isLeagueManager() || $user->isLeagueSteward(), 403);
+        abort_unless($user->canManage() || $user->isChampionshipManager() || $user->isLeagueManager() || $user->isLeagueSteward(), 403);
 
         $schemes = PointsScheme::withoutTenantScope()
             ->with('league')

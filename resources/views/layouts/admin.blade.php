@@ -254,7 +254,7 @@
         </div>
         @endif
 
-        @if(auth()->user()->canManage() || auth()->user()->isLeagueManager())
+        @if(auth()->user()->canManage() || auth()->user()->isLeagueManager() || auth()->user()->isChampionshipManager())
         {{-- Leagues --}}
         <div class="admin-nav-section-header" data-section="leagues">
             <span>Leagues</span>

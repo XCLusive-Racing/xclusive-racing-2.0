@@ -295,4 +295,92 @@ class LeagueAdminAccessTest extends TestCase
         $this->assertSame('original-user', $server->username);
         $this->assertSame('original-pass', $server->password);
     }
+
+    // --- Championship Manager: user-directed 2026-09 — "er moet een optie bij
+    // de users tabel... waar wij ook rollen kunnen adden daar moet championship
+    // manager komen" — a global role assigned from the Users admin page (not a
+    // per-league membership row like manager/steward above) that acts as the
+    // manager of every league at once, so granting access is a single toggle
+    // rather than also needing a League Manager row added per league. ---
+
+    public function test_championship_manager_sees_every_league_with_no_membership_rows_at_all(): void
+    {
+        $this->makeLeague('nlrl');
+        $this->makeLeague('src');
+        $manager = User::factory()->championshipManager()->create();
+
+        $this->assertDatabaseMissing('league_user', ['user_id' => $manager->id]);
+
+        $this->actingAs($manager)
+            ->get(route('admin.leagues.index'))
+            ->assertOk()
+            ->assertSee('NLRL')
+            ->assertSee('SRC');
+    }
+
+    public function test_championship_manager_can_edit_branding_but_not_identity_or_archive(): void
+    {
+        $league  = $this->makeLeague('nlrl');
+        $manager = User::factory()->championshipManager()->create();
+
+        $this->actingAs($manager)->put(route('admin.leagues.update', $league), [
+            'primary_color' => '#111111',
+            'accent_color'  => '#222222',
+            'status'        => 'active', // attempted, must be ignored -- same as a per-league manager
+            'name'          => 'Renamed', // attempted, must be ignored
+        ])->assertRedirect(route('admin.leagues.edit', $league));
+
+        $league->refresh();
+        $this->assertSame('draft', $league->status);
+        $this->assertSame('NLRL', $league->name);
+        $this->assertSame('#111111', $league->primary_color);
+
+        $this->actingAs($manager)->post(route('admin.leagues.archive', $league))->assertForbidden();
+    }
+
+    public function test_championship_manager_cannot_assign_league_roles(): void
+    {
+        $league  = $this->makeLeague('nlrl');
+        $manager = User::factory()->championshipManager()->create();
+        $recruit = User::factory()->create();
+
+        $this->actingAs($manager)->post(route('admin.leagues.members.store', $league), [
+            'user_id' => $recruit->id,
+            'role'    => 'manager',
+        ])->assertForbidden();
+    }
+
+    public function test_championship_manager_can_create_and_manage_a_championship_for_any_league(): void
+    {
+        $league  = $this->makeLeague('nlrl');
+        $manager = User::factory()->championshipManager()->create();
+
+        $this->actingAs($manager)
+            ->get(route('admin.leagues.championships.index', $league))
+            ->assertOk();
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.store', $league))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('championships', ['league_id' => $league->id, 'name' => 'New Championship']);
+    }
+
+    // User-directed 2026-09: "ervoor zorgen dat we opties die bij championships
+    // die ook bij leagues staan bij voorbeeld die require members discord to
+    // join grayed out" — same locked pill-toggle look on both the league edit
+    // page and the championship wizard's Requirements step (both use the exact
+    // same "Temporarily locked" copy), instead of the league page's older plain
+    // opacity-checkbox style.
+    public function test_leagues_own_discord_toggle_is_locked_the_same_way_as_championships(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $admin  = $this->makeAdmin();
+
+        $this->actingAs($admin)
+            ->get(route('admin.leagues.edit', $league))
+            ->assertOk()
+            ->assertSee('disabled', false)
+            ->assertSee('Temporarily locked — XCL is still finishing the operational Discord bot setup. Coming soon.');
+    }
 }

@@ -96,4 +96,13 @@ class UserFactory extends Factory
             );
         });
     }
+
+    public function championshipManager(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            $user->roles()->syncWithoutDetaching(
+                Role::where('slug', 'championship_manager')->pluck('id')
+            );
+        });
+    }
 }
