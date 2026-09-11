@@ -73,12 +73,16 @@
              stranded below Save & Continue. Can't be a nested <form> (this
              is already inside the Basics one), so this is how it stays a
              real, separately-submitted action while living among the other
-             fields. --}}
+             fields. The enclosing form also carries @method('PUT') as a
+             hidden _method field for its own normal save — that field rides
+             along on every submit regardless of formmethod, so Laravel would
+             otherwise still treat this as a PUT and 405 on these POST-only
+             routes; the onclick blanks it out first. --}}
         @if($championship->xcl_rating_enabled)
         <button type="submit" formaction="{{ route('admin.leagues.championships.revoke-rating', [$league, $championship]) }}" formmethod="POST" formnovalidate
                 class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
-                style="cursor:pointer;font-size:.82rem;border:2px solid #16a34a;background:#16a34a18;color:#16a34a"
-                onclick="return confirm('Disable XCL Rating for {{ addslashes($championship->name) }}?')">
+                style="cursor:pointer;font-size:.82rem;border:2px solid #7c3aed;background:#7c3aed18;color:#7c3aed"
+                onclick="if(!confirm('Disable XCL Rating for {{ addslashes($championship->name) }}?')) return false; this.form.querySelector('input[name=_method]').value=''; return true;">
             Enabled — click to disable
         </button>
         <div class="form-text mt-1" style="font-size:.72rem;color:#9ca3af">
@@ -87,7 +91,8 @@
         @else
         <button type="submit" formaction="{{ route('admin.leagues.championships.approve-rating', [$league, $championship]) }}" formmethod="POST" formnovalidate
                 class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
-                style="cursor:pointer;font-size:.82rem;border:2px solid #e5e7eb;background:#fff;color:#374151">
+                style="cursor:pointer;font-size:.82rem;border:2px solid #e5e7eb;background:#fff;color:#374151"
+                onclick="this.form.querySelector('input[name=_method]').value=''; return true;">
             Disabled — click to enable
         </button>
         @endif

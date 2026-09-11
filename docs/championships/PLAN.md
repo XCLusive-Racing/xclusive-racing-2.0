@@ -11,6 +11,24 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, seventh follow-up — the Basics-step enable/disable button
+  405'd, and needed the wizard's purple styling.** Real bug: the enclosing
+  Basics `<form>` carries `@method('PUT')` as a hidden `_method` field for
+  its own normal save — that field rides along on *every* submit from
+  inside the form regardless of the button's own `formmethod="POST"`, so
+  Laravel's method-spoofing (reads `_method` on any POST body) still
+  resolved it to PUT and 405'd against the POST-only approve-rating/
+  revoke-rating routes. Fixed with an onclick that blanks `input[name=_method]`
+  before the button's own submit proceeds. Also restyled to the same purple
+  (`#7c3aed`) the rest of the wizard's toggles use, was green/neutral.
+  XCL-R Multiplier's minimum also raised to 0.6 (was 0.1) alongside the
+  existing 2.5 max — schema rule, all three round-mutating actions, both
+  round-level HTML `min` attributes.
+  `RoundCreationTest::test_xcl_r_multiplier_outside_0_6_to_2_5_is_rejected`.
+  The `_method` fix itself has no automated coverage — it's a browser-side
+  form-submission behavior PHPUnit's route-level tests don't exercise (they
+  POST directly to the routes, bypassing the button/form entirely). 140
+  tests passing.
 - **2026-09-11, sixth follow-up — XCL-R Multiplier capped at 2.5x** (was
   10x, matching the unrelated race-wizard Custom Race field's own cap — left
   that one alone, not part of this ask). Schema rule, all three of

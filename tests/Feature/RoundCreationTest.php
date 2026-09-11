@@ -127,19 +127,21 @@ class RoundCreationTest extends TestCase
         ]);
     }
 
-    // User-directed 2026-09: capped at 2.5x.
-    public function test_xcl_r_multiplier_above_2_5_is_rejected(): void
+    // User-directed 2026-09: bounded to 0.6–2.5x.
+    public function test_xcl_r_multiplier_outside_0_6_to_2_5_is_rejected(): void
     {
         $league       = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
         $manager      = $this->makeManager($league);
 
-        $this->actingAs($manager)
-            ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
-                'track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i'),
-                'xcl_r_multiplier' => 3.0,
-            ])
-            ->assertSessionHasErrors('xcl_r_multiplier');
+        foreach ([0.5, 3.0] as $tooExtreme) {
+            $this->actingAs($manager)
+                ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
+                    'track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i'),
+                    'xcl_r_multiplier' => $tooExtreme,
+                ])
+                ->assertSessionHasErrors('xcl_r_multiplier');
+        }
 
         $this->assertSame(0, $championship->rounds()->count());
     }

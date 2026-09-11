@@ -147,7 +147,7 @@
             <div class="row g-3 mb-3">
                 <div class="col-6 col-sm-3">
                     <label class="form-label" style="font-size:.75rem">XCL-R Multiplier</label>
-                    <input type="number" name="xcl_r_multiplier" step="0.1" min="0.1" max="2.5" value="{{ old('xcl_r_multiplier', $race->xcl_r_multiplier) }}"
+                    <input type="number" name="xcl_r_multiplier" step="0.1" min="0.6" max="2.5" value="{{ old('xcl_r_multiplier', $race->xcl_r_multiplier) }}"
                            class="form-control form-control-sm @error('xcl_r_multiplier') is-invalid @enderror" placeholder="1.0"
                            {{ $championship->xcl_rating_enabled ? '' : 'disabled' }}>
                     @error('xcl_r_multiplier')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
