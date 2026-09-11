@@ -76,6 +76,37 @@ class ChampionshipSettingsTest extends TestCase
         $this->assertSame(ChampionshipSettingsSchema::CURRENT_VERSION, $championship->fresh()->settings_version);
     }
 
+    // Event-maker option parity: Basics used to only offer acc/lmu (the race form
+    // offers acc/ac/lmu/iracing), had no Description field despite
+    // Championship::description being a real fillable column, and used a plain file
+    // input instead of <x-media-picker>'s gallery-pick flow.
+    public function test_basics_step_accepts_every_game_saves_the_description_and_a_gallery_picked_image(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $manager      = User::factory()->leagueManager()->create();
+        $this->attachManager($manager, $league);
+        $championship = $this->makeChampionship($league);
+
+        $this->actingAs($manager)->put(
+            route('admin.leagues.championships.wizard.update', [$league, $championship, 'basics']),
+            [
+                'name' => 'Test Cup', 'slug' => 'test-cup-' . $championship->id,
+                'game' => 'ac', 'platform' => 'pc', 'visibility' => 'public',
+                'description' => 'A friendly ACC PC series.',
+                'image_path'  => 'images/media/picked-from-gallery.jpg',
+                'settings' => [
+                    'schedule' => ['recurrence' => 'weekly', 'time_of_day' => '14:00'],
+                    'sessions' => ['race_length_minutes' => 30, 'weather_mode' => 'fixed', 'formation_lap_type' => 'formation'],
+                ],
+            ]
+        )->assertRedirect();
+
+        $championship->refresh();
+        $this->assertSame('ac', $championship->game);
+        $this->assertSame('A friendly ACC PC series.', $championship->description);
+        $this->assertSame('images/media/picked-from-gallery.jpg', $championship->image);
+    }
+
     public function test_a_step_save_only_touches_its_own_settings_group(): void
     {
         $league       = $this->makeLeague('nlrl');

@@ -174,7 +174,7 @@ class ChampionshipController extends Controller
         }
 
         $thresholds = $championship->requirementThresholds();
-        if ($failure = $user->requirementFailure($championship->game, $thresholds['sr'], $thresholds['min'])) {
+        if ($failure = $user->requirementFailure($championship->game, $thresholds['sr'], $thresholds['min'], $thresholds['max'])) {
             return back()->with('error', $failure);
         }
 

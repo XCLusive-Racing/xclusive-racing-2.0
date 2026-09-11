@@ -13,8 +13,10 @@ use App\Models\League;
 use App\Models\ChampionshipRegistration;
 use App\Models\PointsScheme;
 use App\Models\Race;
+use App\Rules\PracticeWindowNotOverlapping;
 use App\Services\AuditLogger;
 use App\Services\ChampionshipTeamEntryService;
+use App\Services\PracticeServer\PracticeServerSessionManager;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -108,14 +110,8 @@ class ChampionshipWizardController extends Controller
 
         if ($step === 'basics') {
             $data = $request->validated();
-
-            if ($request->hasFile('image')) {
-                $data['image'] = $request->file('image')->storeAs('images/championships', Str::uuid() . '.' . $request->file('image')->getClientOriginalExtension(), 'media');
-            } elseif ($request->boolean('image_remove')) {
-                $data['image'] = null;
-            } else {
-                unset($data['image']);
-            }
+            $data['image'] = $this->resolveMedia($request);
+            unset($data['image_path']);
 
             // Nested settings.{schedule,sessions}.* come along in validated() too
             // (they ride on this same step) — applyStepSettings() below is what
@@ -175,7 +171,10 @@ class ChampionshipWizardController extends Controller
 
         $data = $request->validate([
             'track'               => 'required|string|max:255',
-            'scheduled_at'        => 'required|date',
+            'scheduled_at'        => array_filter([
+                'required', 'date',
+                $request->boolean('has_practice_server') ? new PracticeWindowNotOverlapping() : null,
+            ]),
             'round_number'        => 'nullable|integer|min:1',
             'practice_duration'   => 'nullable|integer|min:1|max:999',
             'qualifying_duration' => 'nullable|integer|min:1|max:999',
@@ -186,10 +185,21 @@ class ChampionshipWizardController extends Controller
             'time_of_day'         => 'nullable|date_format:H:i',
             'ambient_temp'        => 'nullable|integer|min:-30|max:50',
             'description'         => 'nullable|string',
+            'xcl_r_multiplier'    => 'nullable|numeric|min:0.1|max:10',
+            'pitstop_count'       => 'nullable|integer|min:0|max:9',
+            'min_stop_secs'       => 'nullable|integer|min:1|max:3600',
+            'driver_stint_time_mins'      => 'nullable|integer|min:1|max:1440',
+            'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
+            'mandatory_driver_swap'       => 'nullable|boolean',
+            'has_practice_server'         => 'nullable|boolean',
+            'practice_notes'              => 'nullable|string|max:2000',
             // Restricted to this league's own servers — never any $id a manager
             // could otherwise guess, which is why this isn't just "exists:ftp_servers,id".
             'ftp_server_id'       => 'nullable|exists:ftp_servers,id',
         ]);
+
+        $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
+        $data['has_practice_server']   = $request->boolean('has_practice_server');
 
         $claimedSlots = [];
         $result = $this->resolveRoundRow($data, $championship, $league, $claimedSlots);
@@ -201,10 +211,14 @@ class ChampionshipWizardController extends Controller
         $race = Race::create($result);
         $this->syncTeamEntriesForNewRound($championship, $race);
 
+        $practiceWarning = (new PracticeServerSessionManager())->sync($race, $result['has_practice_server']);
+
         AuditLogger::record($request->user(), $championship, 'championship.round_added', ['title' => $result['title']]);
 
-        return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'rounds'])
+        $redirect = redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'rounds'])
             ->with('success', 'Round added.');
+
+        return $practiceWarning ? $redirect->with('practice_warning', $practiceWarning) : $redirect;
     }
 
     public function roundEdit(Request $request, League $league, Championship $championship, Race $race)
@@ -229,7 +243,10 @@ class ChampionshipWizardController extends Controller
 
         $data = $request->validate([
             'track'               => 'required|string|max:255',
-            'scheduled_at'        => 'required|date',
+            'scheduled_at'        => array_filter([
+                'required', 'date',
+                $request->boolean('has_practice_server') ? new PracticeWindowNotOverlapping($race->id) : null,
+            ]),
             'round_number'        => 'nullable|integer|min:1',
             'practice_duration'   => 'nullable|integer|min:1|max:999',
             'qualifying_duration' => 'nullable|integer|min:1|max:999',
@@ -240,8 +257,19 @@ class ChampionshipWizardController extends Controller
             'time_of_day'         => 'nullable|date_format:H:i',
             'ambient_temp'        => 'nullable|integer|min:-30|max:50',
             'description'         => 'nullable|string',
+            'xcl_r_multiplier'    => 'nullable|numeric|min:0.1|max:10',
+            'pitstop_count'       => 'nullable|integer|min:0|max:9',
+            'min_stop_secs'       => 'nullable|integer|min:1|max:3600',
+            'driver_stint_time_mins'      => 'nullable|integer|min:1|max:1440',
+            'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
+            'mandatory_driver_swap'       => 'nullable|boolean',
+            'has_practice_server'         => 'nullable|boolean',
+            'practice_notes'              => 'nullable|string|max:2000',
             'ftp_server_id'       => 'nullable|exists:ftp_servers,id',
         ]);
+
+        $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
+        $data['has_practice_server']   = $request->boolean('has_practice_server');
 
         $claimedSlots = [];
         $result = $this->resolveRoundRow($data, $championship, $league, $claimedSlots, $race->id);
@@ -264,10 +292,14 @@ class ChampionshipWizardController extends Controller
 
         $race->update($result);
 
+        $practiceWarning = (new PracticeServerSessionManager())->sync($race, $result['has_practice_server']);
+
         AuditLogger::record($request->user(), $championship, 'championship.round_updated', ['race_id' => $race->id]);
 
-        return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'rounds'])
+        $redirect = redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'rounds'])
             ->with('success', 'Round updated.');
+
+        return $practiceWarning ? $redirect->with('practice_warning', $practiceWarning) : $redirect;
     }
 
     // "Bulk" the same way admin/races/bulk-create.blade.php is: generate a run of
@@ -291,12 +323,29 @@ class ChampionshipWizardController extends Controller
             'time_of_day'            => 'nullable|date_format:H:i',
             'ambient_temp'           => 'nullable|integer|min:-30|max:50',
             'description'            => 'nullable|string',
+            'xcl_r_multiplier'       => 'nullable|numeric|min:0.1|max:10',
+            'pitstop_count'          => 'nullable|integer|min:0|max:9',
+            'min_stop_secs'          => 'nullable|integer|min:1|max:3600',
+            'driver_stint_time_mins'      => 'nullable|integer|min:1|max:1440',
+            'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
+            'mandatory_driver_swap'       => 'nullable|boolean',
+            // Not validated against overlapping practice-server windows here (unlike
+            // Add/Edit Round's PracticeWindowNotOverlapping) — one has_practice_server
+            // flag shared across a whole generated batch of dates makes a per-row
+            // overlap check meaningful only per row, not worth the added complexity
+            // for what's expected to be a rare combination; PracticeServerSessionManager
+            // itself still owns each individual sync below.
+            'has_practice_server'         => 'nullable|boolean',
+            'practice_notes'              => 'nullable|string|max:2000',
             'ftp_server_id'          => 'nullable|exists:ftp_servers,id',
             'rounds'                 => 'required|array|min:1',
             'rounds.*.track'         => 'required|string|max:255',
             'rounds.*.scheduled_at'  => 'required|date',
             'rounds.*.round_number'  => 'nullable|integer|min:1',
         ]);
+
+        $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
+        $data['has_practice_server']   = $request->boolean('has_practice_server');
 
         $shared = collect($data)->except('rounds')->all();
         $rows   = [];
@@ -323,9 +372,11 @@ class ChampionshipWizardController extends Controller
         }
 
         DB::transaction(function () use ($rows, $championship) {
+            $practiceManager = new PracticeServerSessionManager();
             foreach ($rows as $row) {
                 $race = Race::create($row);
                 $this->syncTeamEntriesForNewRound($championship, $race);
+                $practiceManager->sync($race, $row['has_practice_server']);
             }
         });
 
@@ -633,6 +684,20 @@ class ChampionshipWizardController extends Controller
         }
 
         $championship->classes()->whereNotIn('name', $keepNames)->delete();
+    }
+
+    // Same resolveMedia() pattern as the legacy native-championship form
+    // (Admin\ChampionshipController) — an uploaded file wins, otherwise use
+    // whatever <x-media-picker> left in image_path (a gallery pick, the kept
+    // current value, or empty if the picker was explicitly cleared).
+    private function resolveMedia(Request $request): ?string
+    {
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            return $file->storeAs('images/championships', Str::uuid() . '.' . $file->getClientOriginalExtension(), 'media');
+        }
+
+        return $request->filled('image_path') ? $request->image_path : null;
     }
 
     private function decodeList(?string $json, array $allowedKeys): array

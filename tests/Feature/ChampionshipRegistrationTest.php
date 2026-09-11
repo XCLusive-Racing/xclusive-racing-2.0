@@ -77,6 +77,34 @@ class ChampionshipRegistrationTest extends TestCase
         $this->assertSame('silver', $thresholds['min']);
     }
 
+    // Event-maker option parity: the race form's Requirements step has both a
+    // minimum AND maximum rating (for a "Rookie-only" style round) — the league
+    // championship schema only had the minimum until now.
+    public function test_registration_is_blocked_when_the_users_rating_is_above_the_settings_max_threshold(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+        $championship->settings = array_replace_recursive($championship->settings->toArray(), [
+            'requirements' => ['max_xcl_rating_tier' => 'bronze'],
+        ]);
+        $championship->save();
+
+        $tooHighRated = User::factory()->create(['elo_acc' => 6000]); // gold, above the bronze cap
+
+        $this->actingAs($tooHighRated)
+            ->post(route('championships.register', $championship))
+            ->assertRedirect();
+
+        $this->assertFalse($championship->fresh()->isRegistered($tooHighRated));
+
+        $eligible = User::factory()->create(['elo_acc' => 1000]); // rookie/bronze range
+        $this->actingAs($eligible)
+            ->post(route('championships.register', $championship))
+            ->assertRedirect();
+
+        $this->assertTrue($championship->fresh()->isRegistered($eligible));
+    }
+
     public function test_registration_is_blocked_when_the_users_rating_is_below_the_settings_threshold(): void
     {
         $league = $this->makeLeague('nlrl');

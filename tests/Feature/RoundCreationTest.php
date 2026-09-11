@@ -99,6 +99,60 @@ class RoundCreationTest extends TestCase
         $this->assertDatabaseHas('races', ['championship_id' => $championship->id, 'track' => 'Silverstone', 'round_number' => 3]);
     }
 
+    // Event-maker option parity: pitstop rule, rating multiplier, driver-swap
+    // enforcement and the practice-server toggle all reach the created Race row,
+    // not just the championship-wide settings defaults they're pre-filled from.
+    public function test_single_round_creation_carries_the_new_event_maker_options(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+        $championship->settings = array_replace_recursive($championship->settings->toArray(), [
+            'format' => ['driver_swaps_enabled' => true],
+        ]);
+        $championship->save();
+        $manager = $this->makeManager($league);
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
+                'track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i'),
+                'xcl_r_multiplier' => 1.5, 'pitstop_count' => 2, 'min_stop_secs' => 60,
+                'driver_stint_time_mins' => 45, 'max_total_driving_time_mins' => 120, 'mandatory_driver_swap' => 1,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('races', [
+            'championship_id' => $championship->id, 'track' => 'Monza',
+            'xcl_r_multiplier' => 1.5, 'pitstop_count' => 2, 'min_stop_secs' => 60,
+            'driver_stint_time_mins' => 45, 'max_total_driving_time_mins' => 120, 'mandatory_driver_swap' => 1,
+        ]);
+    }
+
+    // AccServerConfigService's swap-enforcement block was gated on is_endurance
+    // only (Custom-Race-only column) — a championship round with driver swaps on
+    // would carry these three columns but have them silently ignored. Confirms the
+    // broadened isDriverSwapRace() gate actually fires for a championship round.
+    public function test_driver_swap_enforcement_reaches_the_generated_config_for_a_championship_round(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+        $championship->settings = array_replace_recursive($championship->settings->toArray(), [
+            'format' => ['driver_swaps_enabled' => true],
+        ]);
+        $championship->save();
+
+        $race = Race::create([
+            'championship_id' => $championship->id, 'round_number' => 1, 'title' => 'Round 1',
+            'track' => 'Monza', 'game' => 'acc', 'status' => 'open', 'scheduled_at' => now()->addWeek(),
+            'driver_stint_time_mins' => 45, 'max_total_driving_time_mins' => 120, 'mandatory_driver_swap' => true,
+        ]);
+
+        $rules = app(\App\Services\AccServerConfigService::class)->eventRules($race);
+
+        $this->assertSame(45 * 60, $rules['driverStintTimeSec']);
+        $this->assertSame(120 * 60, $rules['maxTotalDrivingTime']);
+        $this->assertTrue($rules['isMandatoryPitstopSwapDriverRequired']);
+    }
+
     public function test_bulk_add_rounds_is_all_or_nothing_when_one_row_is_invalid(): void
     {
         $league       = $this->makeLeague('nlrl');

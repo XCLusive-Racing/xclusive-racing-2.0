@@ -127,4 +127,27 @@
     </div>
 </div>
 
+<script>
+(function () {
+    document.querySelectorAll('[data-bool-pill]').forEach(label => {
+        const cb = label.querySelector('input[type=checkbox]');
+        if (!cb) return;
+
+        function applyStyle() {
+            if (cb.checked) {
+                label.style.border     = '2px solid #7c3aed';
+                label.style.background = '#7c3aed18';
+                label.style.color      = '#7c3aed';
+            } else {
+                label.style.border     = '2px solid #e5e7eb';
+                label.style.background = '#fff';
+                label.style.color      = '#374151';
+            }
+        }
+
+        cb.addEventListener('change', applyStyle);
+    });
+})();
+</script>
+
 @endsection

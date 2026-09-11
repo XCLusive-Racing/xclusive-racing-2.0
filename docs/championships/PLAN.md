@@ -11,6 +11,69 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, championship maker restyle + event-maker option parity** (see
+  `C:\Users\PC Olle\.claude\plans\mellow-leaping-bachman.md` for the approved
+  plan this implemented): the championship-level wizard steps (Basics/Format/
+  Requirements/Sessions, rendered by `_field.blade.php` off
+  `ChampionshipSettingsSchema`) restyled with toggle pills for boolean fields
+  (matching `admin/users/edit.blade.php`'s role pills — one shared script in
+  `wizard.blade.php`), kept the existing multi-page-per-step architecture
+  (a JS single-page rebuild like the race form was considered and rejected —
+  bigger risk, no functional gain for a 30+-field settings form).
+  `CURRENT_VERSION` bumped to 6 with real missing options added end-to-end
+  (schema field → round creation → the service that actually reads it):
+  - Basics: `iracing`/`ac` added to the Game select (previously acc/lmu only);
+    `Championship.description` (a real, already-fillable column) exposed in
+    the UI for the first time; the plain file-upload banner swapped for
+    `<x-media-picker>` (same `resolveMedia()` pattern as the legacy native
+    championship forms).
+  - Sessions group: `xcl_r_multiplier`, `pitstop_count`/`min_stop_secs`,
+    `has_practice_server`/`practice_notes` — all previously entirely absent
+    from league championships. **Real rating-fairness bug found and fixed**:
+    without an `xcl_r_multiplier`, `RatingService::processRace()`'s fallback
+    chain (format multiplier → custom multiplier → legacy `duration_key` →
+    1.0) landed every championship round on a flat 1.0 regardless of length,
+    since a round has neither an `EventFormat` nor this field. Still manual
+    (like the race form's own field — no auto-derivation from length exists
+    anywhere in the app to reuse).
+  - Format/Driver Swaps section: `driver_stint_time_mins`/
+    `max_total_driving_time_mins`/`mandatory_driver_swap` added alongside the
+    existing `driver_swaps_enabled`. **Real backend gap found and fixed**:
+    `AccServerConfigService::eventRules()` only ever applied these three
+    values when `$race->is_endurance` was true — a column championship rounds
+    never carry (Custom-Race-only by the Phase 4 scope decision). New
+    `isDriverSwapRace()` broadens the gate to also cover a championship round
+    whose `settings.format.driver_swaps_enabled` is on — same class of fix as
+    `RaceController::show()`'s `$isTeamRace` from the previous session.
+  - Requirements: `max_xcl_rating_tier` added alongside the existing
+    `min_xcl_rating_tier` — threaded through
+    `Championship::requirementThresholds()`'s `'max'` key into
+    `User::requirementFailure()`'s existing (previously always-null for
+    league championships) 4th parameter. Native XCL championships have no
+    max-rating column of their own, so `'max'` is always `null` there — out
+    of scope, not requested.
+  - All of the above also added to Add/Edit Round and Bulk Add Rounds
+    (`_round-shared-fields.blade.php`, `round-edit.blade.php`,
+    `ChampionshipWizardController::resolveRoundRow()`), pre-filled from the
+    championship-wide defaults but overridable per round — same pattern
+    weather/rain/ambient_temp already used. `has_practice_server` also wired
+    to `PracticeServerSessionManager::sync()` (with the race form's
+    `PracticeWindowNotOverlapping` validation on the two single-round paths;
+    **known, accepted gap**: bulk-added rounds don't validate practice-server
+    window overlaps against each other, since one shared flag across many
+    generated dates makes a per-row check disproportionate to how rarely
+    that combination will actually be used).
+  - Tests: `tests/Feature/RoundCreationTest.php` (new field passthrough +
+    the `AccServerConfigService` gate fix), `tests/Feature/
+    ChampionshipRegistrationTest.php` (max-rating-cap blocking),
+    `tests/Feature/ChampionshipSettingsTest.php` (Basics step: new games,
+    description, gallery-picked image). 135 tests passing (was 131).
+  - **Not done, explicitly scoped out**: per-class `max_rating` (only
+    championship-wide); a single-page JS-driven wizard rebuild (rejected,
+    see above); enum fields as pill-buttons instead of `<select>` (only
+    booleans were restyled — enums were judged good enough as-is given the
+    time this would add for comparatively little visual gain; revisit if the
+    user still finds them inconsistent after seeing the boolean pills).
 - **2026-09-11 follow-up work, outside the phase/batch numbering below**
   (not yet folded into the checklists themselves — noted here so it isn't
   lost like the archive/delete work was):

@@ -19,13 +19,16 @@
 
 <div class="{{ $col }}">
     @if($field['type'] === 'boolean')
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="{{ $name }}" id="{{ $id }}" value="1"
-                   {{ old($errorKey, $current) ? 'checked' : '' }}>
-            <label class="form-check-label fw-bold text-dark" for="{{ $id }}" style="font-size:.82rem">
-                {{ $field['label'] }}
-            </label>
-        </div>
+        {{-- Toggle pill, same pattern as the admin user-roles page
+             (resources/views/admin/users/edit.blade.php, [data-role-pill]) instead of
+             a bare checkbox — one shared toggle script lives once in wizard.blade.php. --}}
+        @php $isOn = (bool) old($errorKey, $current); @endphp
+        <label data-bool-pill
+               class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
+               style="cursor:pointer;user-select:none;font-size:.82rem;transition:all .15s;{{ $isOn ? 'border:2px solid #7c3aed;background:#7c3aed18;color:#7c3aed' : 'border:2px solid #e5e7eb;background:#fff;color:#374151' }}">
+            <input type="checkbox" name="{{ $name }}" id="{{ $id }}" value="1" class="d-none" {{ $isOn ? 'checked' : '' }}>
+            {{ $field['label'] }}
+        </label>
         @if($field['help'])
         <div class="form-text" style="font-size:.72rem;color:#9ca3af">{{ $field['help'] }}</div>
         @endif

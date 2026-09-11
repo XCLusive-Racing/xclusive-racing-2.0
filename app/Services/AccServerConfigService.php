@@ -189,7 +189,7 @@ class AccServerConfigService implements ServerConfigGenerator
     {
         $base = $server?->eventrules_defaults ?? $this->defaultEventRules();
 
-        if ($race && $race->is_endurance) {
+        if ($race && $this->isDriverSwapRace($race)) {
             $base = array_merge($base, [
                 'driverStintTimeSec'                   => $race->driver_stint_time_mins ? $race->driver_stint_time_mins * 60 : -1,
                 'maxTotalDrivingTime'                  => $race->max_total_driving_time_mins ? $race->max_total_driving_time_mins * 60 : -1,
@@ -337,6 +337,27 @@ class AccServerConfigService implements ServerConfigGenerator
             'entries'       => $mapped,
             'configVersion' => 1,
         ];
+    }
+
+    // is_endurance is Custom-Race-only (Phase 4 scope decision,
+    // docs/championships/PLAN.md) — a championship round never carries it, even
+    // when its championship has driver swaps on. Without this, driver_stint_time_mins/
+    // max_total_driving_time_mins/mandatory_driver_swap would be silently ignored for
+    // every league championship round, same class of gap already fixed this session
+    // in RaceController::show()'s $isTeamRace.
+    private function isDriverSwapRace(Race $race): bool
+    {
+        if ($race->is_endurance) {
+            return true;
+        }
+
+        if (!$race->championship_id) {
+            return false;
+        }
+
+        $championship = Championship::withoutTenantScope()->find($race->championship_id);
+
+        return (bool) ($championship?->settings->format->driver_swaps_enabled ?? false);
     }
 
     // Bypasses the tenant scope deliberately — this runs from console commands

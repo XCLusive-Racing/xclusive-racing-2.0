@@ -16,7 +16,7 @@ use Illuminate\Support\Arr;
 // defaults for new keys) once this class gains fields for a new version.
 class ChampionshipSettingsSchema
 {
-    const CURRENT_VERSION = 5;
+    const CURRENT_VERSION = 6;
 
     const STEPS = [
         'basics'       => 'Basics',
@@ -93,6 +93,15 @@ class ChampionshipSettingsSchema
                 'label' => 'Maximum Drivers per Car', 'help' => 'Only used when driver swaps are on.'],
             ['group' => 'format', 'key' => 'team_registration_scope', 'type' => 'enum', 'options' => ['per_round', 'championship'], 'default' => 'per_round', 'section' => 'Driver Swaps',
                 'label' => 'Team Registration', 'help' => 'Only used when driver swaps are on. "Per round" (today\'s behaviour): a team still signs up separately for every round. "Whole championship": a team\'s car number, model and starting driver are captured once and copied into every round automatically — including rounds added later.'],
+            // Mirror the race wizard's own in-game swap-enforcement fields
+            // (admin/races/form.blade.php, AccServerConfigService::eventRules()) —
+            // default here, still overridable per round in Add/Edit Round.
+            ['group' => 'format', 'key' => 'driver_stint_time_mins', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps',
+                'label' => 'Max. Stint Time (minutes)', 'help' => 'Only used when driver swaps are on. Leave blank for no limit.', 'rule' => 'nullable|integer|min:1|max:1440'],
+            ['group' => 'format', 'key' => 'max_total_driving_time_mins', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps',
+                'label' => 'Max Driving Time / Driver (minutes)', 'help' => 'Only used when driver swaps are on. Leave blank for no limit.', 'rule' => 'nullable|integer|min:1|max:1440'],
+            ['group' => 'format', 'key' => 'mandatory_driver_swap', 'type' => 'boolean', 'default' => false, 'section' => 'Driver Swaps',
+                'label' => 'Mandatory Pitstop Swap', 'help' => 'Only used when driver swaps are on. Requires a driver change at the mandatory pitstop.'],
 
             // --- Sessions ---
             ['group' => 'sessions', 'key' => 'race_length_minutes', 'type' => 'integer', 'default' => 30,
@@ -117,6 +126,22 @@ class ChampionshipSettingsSchema
                 'label' => 'Rain Level (0–1)', 'help' => 'Only used when weather is fixed.'],
             ['group' => 'sessions', 'key' => 'formation_lap_type', 'type' => 'enum', 'options' => ['none', 'formation', 'rolling_start'], 'default' => 'formation',
                 'label' => 'Formation Lap', 'help' => 'How the field is sent to green.', 'rule' => 'required|in:none,formation,rolling_start'],
+            // Mirrors the race wizard's Custom Race "XCL-R Multiplier" field exactly
+            // (admin/races/form.blade.php — that field is manual-only too, no
+            // auto-derivation from length exists anywhere in the app to reuse).
+            // Without this, a championship round has neither an EventFormat nor an
+            // explicit multiplier, so RatingService::processRace() falls all the way
+            // through to a flat 1.0 — every round rated the same regardless of length.
+            ['group' => 'sessions', 'key' => 'xcl_r_multiplier', 'type' => 'float', 'nullable' => true, 'default' => null,
+                'label' => 'XCL-R Multiplier', 'help' => 'How much this round\'s races count toward rating changes. Leave blank for the default (1.0, same for every length).', 'rule' => 'nullable|numeric|min:0.1|max:10'],
+            ['group' => 'sessions', 'key' => 'pitstop_count', 'type' => 'integer', 'nullable' => true, 'default' => 0,
+                'label' => 'Mandatory Pitstops', 'help' => 'Number of mandatory pitstops. Leave at 0 for none.', 'rule' => 'nullable|integer|min:0|max:9'],
+            ['group' => 'sessions', 'key' => 'min_stop_secs', 'type' => 'integer', 'nullable' => true, 'default' => null,
+                'label' => 'Minimum Stop Time (seconds)', 'help' => 'Only used when there\'s at least 1 mandatory pitstop.', 'rule' => 'nullable|integer|min:1|max:3600'],
+            ['group' => 'sessions', 'key' => 'has_practice_server', 'type' => 'boolean', 'default' => false, 'section' => 'Practice Server',
+                'label' => 'Practice Server', 'help' => 'Reserve a slot on XCL\'s shared practice server ahead of each round — only one round at a time can hold it, so this is a default suggestion, still toggled per round in Add/Edit Round.'],
+            ['group' => 'sessions', 'key' => 'practice_notes', 'type' => 'text', 'nullable' => true, 'default' => null, 'section' => 'Practice Server',
+                'label' => 'Practice Server Notes', 'help' => 'Shown to drivers alongside the practice server details.'],
 
             // --- Scoring ---
             ['group' => 'scoring', 'key' => 'points_scheme_id', 'type' => 'integer', 'nullable' => true, 'default' => null,
@@ -146,6 +171,9 @@ class ChampionshipSettingsSchema
             ['group' => 'requirements', 'key' => 'min_xcl_rating_tier', 'type' => 'enum',
                 'options' => ['rookie', 'bronze', 'silver', 'gold', 'platinum', 'alien'], 'nullable' => true, 'default' => null,
                 'label' => 'Minimum XCL Rating', 'help' => 'Leave blank for no rating requirement.'],
+            ['group' => 'requirements', 'key' => 'max_xcl_rating_tier', 'type' => 'enum',
+                'options' => ['rookie', 'bronze', 'silver', 'gold', 'platinum', 'alien'], 'nullable' => true, 'default' => null,
+                'label' => 'Maximum XCL Rating', 'help' => 'For a low-rating-only round — leave blank for no upper cap.'],
             ['group' => 'requirements', 'key' => 'min_safety_rating', 'type' => 'float', 'nullable' => true, 'default' => null,
                 'label' => 'Minimum Safety Rating', 'help' => 'On the 0–10 scale. Leave blank for no requirement.', 'rule' => 'nullable|numeric|between:0,10'],
             ['group' => 'requirements', 'key' => 'discord_membership_required', 'type' => 'boolean', 'default' => false,

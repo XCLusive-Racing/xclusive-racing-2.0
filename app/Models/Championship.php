@@ -235,12 +235,16 @@ class Championship extends Model
             return [
                 'sr'  => $this->settings->requirements->min_safety_rating ?? null,
                 'min' => $this->settings->requirements->min_xcl_rating_tier ?? null,
+                'max' => $this->settings->requirements->max_xcl_rating_tier ?? null,
             ];
         }
 
+        // Native championships have no upper-rating-cap column — only the wizard-driven
+        // settings schema (above) supports it.
         return [
             'sr'  => $this->sr_requirement,
             'min' => $this->min_rating,
+            'max' => null,
         ];
     }
 
