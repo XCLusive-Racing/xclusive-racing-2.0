@@ -197,6 +197,40 @@
             </div>
         </div>
 
+        {{-- League Access -- same action as League edit's own Members section
+             (LeagueController::addMember()/removeMember(), same canManage() gate),
+             just combined here too so granting someone access doesn't need a
+             separate trip to every league's own edit page. Championship Manager
+             (the global role above) already covers "every league at once" --
+             this is for a plain per-league Manager/Steward instead. --}}
+        @if(auth()->user()->canManage())
+        <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+            <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">League Access</p>
+            <p class="text-secondary mb-3" style="font-size:.78rem">
+                Per-league Manager/Steward access -- for every league at once, use the Championship Manager role above instead.
+            </p>
+
+            @if($user->id === auth()->id())
+            <p class="text-secondary mb-0" style="font-size:.8rem">You cannot change your own league access.</p>
+            @elseif($leagues->isEmpty())
+            <p class="text-secondary mb-0" style="font-size:.8rem">No leagues exist yet.</p>
+            @else
+            <div class="row g-2">
+                @foreach($leagues as $l)
+                <div class="col-sm-6 d-flex align-items-center gap-2">
+                    <label class="form-label mb-0 flex-grow-1" style="font-size:.82rem">{{ $l->name }}</label>
+                    <select name="league_roles[{{ $l->id }}]" class="form-select form-select-sm" style="max-width:130px">
+                        <option value="" {{ old('league_roles.' . $l->id, $leagueRoles[$l->id] ?? '') === '' ? 'selected' : '' }}>— None —</option>
+                        <option value="manager" {{ old('league_roles.' . $l->id, $leagueRoles[$l->id] ?? '') === 'manager' ? 'selected' : '' }}>Manager</option>
+                        <option value="steward" {{ old('league_roles.' . $l->id, $leagueRoles[$l->id] ?? '') === 'steward' ? 'selected' : '' }}>Steward</option>
+                    </select>
+                </div>
+                @endforeach
+            </div>
+            @endif
+        </div>
+        @endif
+
         {{-- Driver info --}}
         <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
             <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Driver Info</p>

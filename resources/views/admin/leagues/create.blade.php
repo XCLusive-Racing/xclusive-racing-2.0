@@ -112,12 +112,23 @@
                         @error('website_url') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="requires_discord_membership" id="requires_discord" value="1"
-                               {{ old('requires_discord_membership') ? 'checked' : '' }}>
-                        <label class="form-check-label fw-bold text-dark" for="requires_discord" style="font-size:.82rem">
+                    {{-- Same locked grey pill as the edit page's copy of this exact
+                         option (admin/leagues/edit.blade.php) and the championship
+                         wizard's (_field.blade.php) -- not operational yet (no XCL
+                         Discord bot installed), so a brand new league can't turn it on
+                         any more than an existing one can. No existing value to
+                         preserve at creation time, so the hidden input is always 0. --}}
+                    <div>
+                        <label class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
+                               style="cursor:not-allowed;user-select:none;font-size:.82rem;border:2px solid #e5e7eb;background:#f3f4f6;color:#9ca3af">
+                            <input type="checkbox" class="d-none" disabled>
                             Require Discord membership to register
+                            <span class="fw-normal">(Off)</span>
                         </label>
+                        <input type="hidden" name="requires_discord_membership" value="0">
+                        <div class="form-text mt-1" style="font-size:.72rem;color:#9ca3af">
+                            Temporarily locked — XCL is still finishing the operational Discord bot setup. Coming soon.
+                        </div>
                     </div>
                 </div>
             </div>

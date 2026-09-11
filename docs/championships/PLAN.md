@@ -11,6 +11,78 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, twenty-first follow-up — combined per-league access onto the
+  Users edit page, and unified the two FTP "Add Server" forms.** User asked
+  what League Manager vs. Championship Manager actually meant (answered in
+  chat, no code change), then: "kunnen we dat combineren en de ftp bij
+  leagues sectie van de admin page wil je daar even opnieuw dingen
+  instellen het liefst wil ik hem gwn exact hetzelfde als die van ons."
+  - **Combined access management**: granting someone plain per-league
+    Manager/Steward access used to only be possible from that specific
+    league's own edit page (Members section). New "League Access" section
+    on the Users edit page (`UserController::edit()`/`update()`) lists
+    every league with a None/Manager/Steward select per league, pre-filled
+    from the user's current `LeagueUser` rows — same underlying action and
+    same `canManage()` gate as `LeagueController::addMember()`/
+    `removeMember()`, just reachable from one more place now, combined with
+    Championship Manager (global, "every league at once") right above it
+    on the same page. Only leagues whose role actually changed get
+    written/audit-logged on save. Discovered mid-implementation:
+    `/admin/users/*` is gated `role:owner,moderator,event_manager` — plain
+    'admin' can't reach it at all, so `canManage()` (owner/admin/
+    event_manager) and "can even load this page" only overlap at
+    owner/event_manager; a moderator sees the page (and the Roles pills
+    above, gated by the narrower `canManageRoles()`) but correctly never
+    sees League Access, matching what `addMember()` already required
+    everywhere else. Tests in new `UserLeagueAccessTest.php`.
+  - **Unified FTP "Add Server" forms**: the League edit page's own copy of
+    this form was a cramped, materially different field set (`form-control-sm`
+    grid, no Server No. field, no Reset Schedule section, no rolling/scheduled
+    JS toggle) from Configuration > Servers > Add Server
+    (`admin/servers/create.blade.php`) — user wants them "exact hetzelfde."
+    Extracted the real create page's fields into a shared partial
+    (`admin/servers/_add-server-fields.blade.php`, parameterized with an
+    `idPrefix` to keep element ids collision-safe if ever both render on one
+    page) and had both pages `@include` it, so they render byte-identical
+    field markup and can't drift apart again. `LeagueController::storeServer()`
+    gained `server_number` validation to match `FtpServerController::store()`'s
+    field set exactly. Left the separate, admin-only `/admin/league-servers`
+    cross-league aggregate page (`LeagueFtpServerController`) untouched — a
+    different, less-frequently-used surface with its own extra League
+    selector field; flagged to the user in case that one was what they
+    actually meant instead. New tests
+    `test_league_edit_pages_add_server_form_matches_the_main_add_server_page`,
+    `test_league_managers_own_server_can_carry_a_server_number`.
+  - 172 tests passing.
+- **2026-09-11, twentieth follow-up — locked boolean toggles now render an
+  actually-grey pill.** User: "de radio button van Require Discord
+  membership to register bij leagues is niet grijs." Root cause: both the
+  League edit page's copy and `_field.blade.php`'s generic
+  boolean-field-locked rendering reused the same purple(on)/white(off) pill
+  colours the *interactive* toggle uses, just wrapped in a 50%-opacity div
+  — for a field whose value happens to be off (white background on a white
+  page), 50% opacity barely changes anything visible, so it never actually
+  read as disabled/locked, only the (unrelated, unlabelled) cursor style
+  differed. Fixed on both pages: a locked pill now always renders the same
+  neutral grey (`#f3f4f6` background, `#9ca3af` text) regardless of on/off,
+  with an explicit "(On)"/"(Off)" suffix carrying the value that colour
+  used to (purple vs white) — colour no longer needs to do double duty as
+  both "locked" and "current value." Fixed on `_field.blade.php` (every
+  championship wizard boolean field, not just Discord) and the League edit
+  page. Mid-turn correction — "sorry bij create leagues" — the actual page
+  the user meant was Create League, not Edit: that page's copy of this
+  toggle turned out to still be a fully live, working checkbox, never
+  updated to match at all (a brand new league really could have this
+  turned on, unlike an existing one). Locked it the same way, hidden input
+  hardcoded to `0` (no existing value to preserve at creation time). New
+  test `test_the_create_league_page_also_locks_the_discord_toggle` —
+  confirms the rendered lock, not a server-side rejection of any other
+  value posted directly (this lock, like every other one in the app, is
+  UI-only; `ChampionshipSettingsSchema`'s own copy of this option has no
+  backend rule for it either — first attempt at asserting a raw smuggled
+  `requires_discord_membership=1` gets silently rejected server-side
+  failed, correctly, since nothing here was ever designed to reject that).
+  163 tests passing.
 - **2026-09-11, nineteenth follow-up — new "Championship Manager" global role
   + League edit page styling pass.** User: "we moeten bepaalde mensen access
   geven tot het admin panel om bij leagues en championship te komen," then,

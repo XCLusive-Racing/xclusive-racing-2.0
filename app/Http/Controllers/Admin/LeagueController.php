@@ -282,6 +282,7 @@ class LeagueController extends Controller
 
         $data = $request->validate([
             'name'                   => 'required|string|max:150',
+            'server_number'          => 'nullable|integer|min:1|max:9',
             'host'                   => 'required|string|max:255',
             'port'                   => 'required|integer|min:1|max:65535',
             'username'               => 'required|string|max:100',
