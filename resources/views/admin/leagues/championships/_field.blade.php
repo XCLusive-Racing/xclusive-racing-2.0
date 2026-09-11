@@ -15,22 +15,26 @@
         'enum', 'datetime' => 'col-sm-4',
         default => 'col-sm-3', // integer, float, date, time
     };
-    // Two independent sources: a section-level dependency the caller already
-    // resolved (wizard.blade.php's $disabled param), or — specific to this one
-    // field — XCL-R Multiplier only meaning anything once XCL Rating itself is on.
-    // Just the disabled attribute here (functional correctness — a disabled
-    // field never submits a value); the visual greying is wizard.blade.php's
-    // [data-depends-on] script, which stays reactive to a live toggle instead
-    // of freezing whatever this field's opacity was at page load. XCL-R
-    // Multiplier's own disabled state has no live toggle to react to (XCL
-    // Rating is admin-approval-only, not a form field on this page) so its grey
-    // style lives inline here instead.
-    $disabled = $disabled ?? false;
+    // 'depends_on' names another boolean field (same group) that gates whether
+    // this one is shown at all — wizard.blade.php's shared script shows/hides
+    // it live against that toggle (2026-09 user feedback: an unchecked option's
+    // fields should actually disappear, not just look disabled). The value
+    // still submits normally either way — hiding it doesn't clear it, so
+    // toggling back on restores whatever was there, rather than silently
+    // wiping it. Rendered hidden from the very first paint if the dependency
+    // is currently off, so there's no flash of it being visible pre-JS.
+    $dependsOnKey = $field['depends_on'] ?? null;
+    $dependsOnId  = $dependsOnKey ? "f-{$field['group']}-{$dependsOnKey}" : null;
+    $dependsOnOn  = $dependsOnKey ? (bool) old("settings.{$field['group']}.{$dependsOnKey}", $championship->settings->{$field['group']}->{$dependsOnKey} ?? false) : true;
+
+    // XCL-R Multiplier is a different case: gated on $championship->xcl_rating_enabled,
+    // which has no live form control on this page to hide/show against (only an
+    // XCL admin can flip it, elsewhere) — disabled + greyed in place instead.
     $xclGated = $field['key'] === 'xcl_r_multiplier' && !$championship->xcl_rating_enabled;
-    $disabled = $disabled || $xclGated;
 @endphp
 
-<div class="{{ $col }}" style="{{ $xclGated ? 'opacity:.5' : '' }}">
+<div class="{{ $col }}" style="{{ $xclGated ? 'opacity:.5' : '' }}"
+     @if($dependsOnId) data-shown-if="{{ $dependsOnId }}" @if(!$dependsOnOn) hidden @endif @endif>
     @if($field['type'] === 'boolean')
         {{-- Toggle pill, same pattern as the admin user-roles page
              (resources/views/admin/users/edit.blade.php, [data-role-pill]) instead of
@@ -38,8 +42,8 @@
         @php $isOn = (bool) old($errorKey, $current); @endphp
         <label data-bool-pill
                class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
-               style="cursor:{{ $disabled ? 'not-allowed' : 'pointer' }};user-select:none;font-size:.82rem;transition:all .15s;{{ $isOn ? 'border:2px solid #7c3aed;background:#7c3aed18;color:#7c3aed' : 'border:2px solid #e5e7eb;background:#fff;color:#374151' }}">
-            <input type="checkbox" name="{{ $name }}" id="{{ $id }}" value="1" class="d-none" {{ $isOn ? 'checked' : '' }} {{ $disabled ? 'disabled' : '' }}>
+               style="cursor:{{ $xclGated ? 'not-allowed' : 'pointer' }};user-select:none;font-size:.82rem;transition:all .15s;{{ $isOn ? 'border:2px solid #7c3aed;background:#7c3aed18;color:#7c3aed' : 'border:2px solid #e5e7eb;background:#fff;color:#374151' }}">
+            <input type="checkbox" name="{{ $name }}" id="{{ $id }}" value="1" class="d-none" {{ $isOn ? 'checked' : '' }} {{ $xclGated ? 'disabled' : '' }}>
             {{ $field['label'] }}
         </label>
         @if($field['help'])
@@ -49,7 +53,7 @@
         <label class="form-label" for="{{ $id }}">{{ $field['label'] }}</label>
 
         @if($field['type'] === 'enum')
-        <select name="{{ $name }}" id="{{ $id }}" class="form-select @error($errorKey) is-invalid @enderror" {{ $disabled ? 'disabled' : '' }}>
+        <select name="{{ $name }}" id="{{ $id }}" class="form-select @error($errorKey) is-invalid @enderror" {{ $xclGated ? 'disabled' : '' }}>
             @if($field['nullable'] ?? false)
             <option value="">— Not set —</option>
             @endif
@@ -60,22 +64,22 @@
             @endforeach
         </select>
         @elseif($field['type'] === 'text')
-        <textarea name="{{ $name }}" id="{{ $id }}" rows="3" class="form-control @error($errorKey) is-invalid @enderror" {{ $disabled ? 'disabled' : '' }}>{{ old($errorKey, $current) }}</textarea>
+        <textarea name="{{ $name }}" id="{{ $id }}" rows="3" class="form-control @error($errorKey) is-invalid @enderror" {{ $xclGated ? 'disabled' : '' }}>{{ old($errorKey, $current) }}</textarea>
         @elseif($field['type'] === 'time')
         <input type="time" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror" {{ $disabled ? 'disabled' : '' }}>
+               class="form-control @error($errorKey) is-invalid @enderror" {{ $xclGated ? 'disabled' : '' }}>
         @elseif($field['type'] === 'date')
         <input type="date" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror" {{ $disabled ? 'disabled' : '' }}>
+               class="form-control @error($errorKey) is-invalid @enderror" {{ $xclGated ? 'disabled' : '' }}>
         @elseif($field['type'] === 'datetime')
         <input type="datetime-local" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror" {{ $disabled ? 'disabled' : '' }}>
+               class="form-control @error($errorKey) is-invalid @enderror" {{ $xclGated ? 'disabled' : '' }}>
         @elseif($field['type'] === 'float')
         <input type="number" step="0.01" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror" {{ $disabled ? 'disabled' : '' }}>
+               class="form-control @error($errorKey) is-invalid @enderror" {{ $xclGated ? 'disabled' : '' }}>
         @else
         <input type="number" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror" {{ $disabled ? 'disabled' : '' }}>
+               class="form-control @error($errorKey) is-invalid @enderror" {{ $xclGated ? 'disabled' : '' }}>
         @endif
 
         @if($field['help'])

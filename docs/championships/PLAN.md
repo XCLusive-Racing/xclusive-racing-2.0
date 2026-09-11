@@ -11,6 +11,29 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, third follow-up — item 9 generalized from grey-out to real
+  show/hide, applied wherever a field only matters if another boolean is
+  on.** User clarified item 9 further after the punch-list pass below: not
+  just Driver Swaps greyed out, but a real show/hide "button" pattern
+  ("als hij dat niet wil kan hij ze weer uitklikken en dan verdwijnen de
+  velden ook"), and generalized to every such pair in the wizard, not just
+  Format. Replaced `SECTION_DEPENDENCIES` (section-level, grey+disable) with
+  per-field `'depends_on' => '<boolean key, same group>'` on the schema field
+  itself — `_field.blade.php` wraps a dependent field in
+  `data-shown-if="<toggle's id>"` (rendered already-hidden server-side if the
+  dependency is currently off, so there's no flash of it before JS runs);
+  one shared script in `wizard.blade.php` shows/hides it live on the toggle's
+  change event. Hiding does **not** disable the input — its value still
+  submits and round-trips unchanged, so flipping the toggle back on restores
+  whatever was there instead of silently losing it (the one deliberate
+  exception is `min_stop_secs`, which still gets explicitly nulled server-side
+  when Fixed Stop Time is off — a real business rule, not just a display
+  concern). Applied to: `driver_swaps_enabled` → the whole Driver Swaps
+  section, `practice_enabled`/`qualifying_enabled` → their own length
+  fields, `fixed_stop_time` → `min_stop_secs`, `stewarding_enabled` →
+  `affects`. XCL-R Multiplier's XCL-Rating-gating stayed disabled+greyed in
+  place (not this mechanism) since `xcl_rating_enabled` has no in-page toggle
+  to hide/show against. 137 tests still passing, no test changes needed.
 - **2026-09-11, second follow-up — a 9-item punch list from browsing the
   restyled wizard, all resolved except item 10 (see below, explicitly
   deferred pending its own plan).** Schema `CURRENT_VERSION` now 7.

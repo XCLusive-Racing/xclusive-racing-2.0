@@ -50,14 +50,13 @@ class ChampionshipSettingsSchema
         'penalties'    => 'Stewarding & Penalties',
     ];
 
-    // A section → the boolean field (in the same group) that gates whether the
-    // rest of that section actually does anything. wizard.blade.php greys those
-    // other fields out (not hides — still visible, just disabled) while the
-    // gating toggle itself stays interactive, instead of a flat pile of fields
-    // that look equally relevant whether the toggle is on or off.
-    const SECTION_DEPENDENCIES = [
-        'Driver Swaps' => 'driver_swaps_enabled',
-    ];
+    // A field can carry 'depends_on' => '<boolean field key, same group>' (see
+    // fields() below) — _field.blade.php renders it inside a wrapper
+    // wizard.blade.php's shared script actually shows/hides (not just greys)
+    // based on that boolean's live checked state, un-hiding again the moment
+    // it's re-checked, no page reload. 2026-09, user feedback: dependent
+    // fields for an unchecked option should disappear, "en als hij dat niet
+    // wil kan hij ze weer uitklikken en dan verdwijnen de velden ook."
 
     // Maps a wizard step slug to the settings group(s) it edits and validates.
     // "sessions" used to ride on the Basics step (a period where there was no
@@ -109,20 +108,20 @@ class ChampionshipSettingsSchema
                 'label' => 'Spectator Slots', 'help' => 'Extra slots reserved for spectators, on top of the entry cap.'],
             ['group' => 'format', 'key' => 'driver_swaps_enabled', 'type' => 'boolean', 'default' => false, 'section' => 'Driver Swaps',
                 'label' => 'Driver Swaps', 'help' => 'Allow more than one driver to share a car during a round.'],
-            ['group' => 'format', 'key' => 'min_drivers_per_car', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps',
+            ['group' => 'format', 'key' => 'min_drivers_per_car', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',
                 'label' => 'Minimum Drivers per Car', 'help' => 'Only used when driver swaps are on.'],
-            ['group' => 'format', 'key' => 'max_drivers_per_car', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps',
+            ['group' => 'format', 'key' => 'max_drivers_per_car', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',
                 'label' => 'Maximum Drivers per Car', 'help' => 'Only used when driver swaps are on.'],
-            ['group' => 'format', 'key' => 'team_registration_scope', 'type' => 'enum', 'options' => ['per_round', 'championship'], 'default' => 'per_round', 'section' => 'Driver Swaps',
+            ['group' => 'format', 'key' => 'team_registration_scope', 'type' => 'enum', 'options' => ['per_round', 'championship'], 'default' => 'per_round', 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',
                 'label' => 'Team Registration', 'help' => 'Only used when driver swaps are on. "Per round" (today\'s behaviour): a team still signs up separately for every round. "Whole championship": a team\'s car number, model and starting driver are captured once and copied into every round automatically — including rounds added later.'],
             // Mirror the race wizard's own in-game swap-enforcement fields
             // (admin/races/form.blade.php, AccServerConfigService::eventRules()) —
             // default here, still overridable per round in Add/Edit Round.
-            ['group' => 'format', 'key' => 'driver_stint_time_mins', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps',
+            ['group' => 'format', 'key' => 'driver_stint_time_mins', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',
                 'label' => 'Max. Stint Time (minutes)', 'help' => 'Only used when driver swaps are on. Leave blank for no limit.', 'rule' => 'nullable|integer|min:1|max:1440'],
-            ['group' => 'format', 'key' => 'max_total_driving_time_mins', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps',
+            ['group' => 'format', 'key' => 'max_total_driving_time_mins', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',
                 'label' => 'Max Driving Time / Driver (minutes)', 'help' => 'Only used when driver swaps are on. Leave blank for no limit.', 'rule' => 'nullable|integer|min:1|max:1440'],
-            ['group' => 'format', 'key' => 'mandatory_driver_swap', 'type' => 'boolean', 'default' => false, 'section' => 'Driver Swaps',
+            ['group' => 'format', 'key' => 'mandatory_driver_swap', 'type' => 'boolean', 'default' => false, 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',
                 'label' => 'Mandatory Pitstop Swap', 'help' => 'Only used when driver swaps are on. Requires a driver change at the mandatory pitstop.'],
 
             // --- Sessions --- (own wizard step, 'section' tags below split it into
@@ -132,11 +131,11 @@ class ChampionshipSettingsSchema
                 'label' => 'Race Length (minutes)', 'help' => 'Length of the race session.', 'rule' => 'required|integer|min:1|max:999'],
             ['group' => 'sessions', 'key' => 'practice_enabled', 'type' => 'boolean', 'default' => true, 'section' => 'Session Lengths',
                 'label' => 'Practice Session', 'help' => 'Run a practice session before qualifying.'],
-            ['group' => 'sessions', 'key' => 'practice_length_minutes', 'type' => 'integer', 'nullable' => true, 'default' => 15, 'section' => 'Session Lengths',
+            ['group' => 'sessions', 'key' => 'practice_length_minutes', 'type' => 'integer', 'nullable' => true, 'default' => 15, 'section' => 'Session Lengths', 'depends_on' => 'practice_enabled',
                 'label' => 'Practice Length (minutes)', 'help' => 'Only used when a practice session runs.'],
             ['group' => 'sessions', 'key' => 'qualifying_enabled', 'type' => 'boolean', 'default' => true, 'section' => 'Session Lengths',
                 'label' => 'Qualifying Session', 'help' => 'Run a qualifying session before the race.'],
-            ['group' => 'sessions', 'key' => 'qualifying_length_minutes', 'type' => 'integer', 'nullable' => true, 'default' => 15, 'section' => 'Session Lengths',
+            ['group' => 'sessions', 'key' => 'qualifying_length_minutes', 'type' => 'integer', 'nullable' => true, 'default' => 15, 'section' => 'Session Lengths', 'depends_on' => 'qualifying_enabled',
                 'label' => 'Qualifying Length (minutes)', 'help' => 'Only used when a qualifying session runs.'],
             // Split from schedule.time_of_day (the real-world start time) — see the
             // comment there. This is what prefills a round's own in-game clock in
@@ -178,7 +177,7 @@ class ChampionshipSettingsSchema
             // when "dynamic" is chosen, not just left at a stale prior value.
             ['group' => 'sessions', 'key' => 'fixed_stop_time', 'type' => 'boolean', 'default' => false, 'section' => 'Rating & Pitstops',
                 'label' => 'Fixed Stop Time', 'help' => 'Off = dynamic (driver-controlled) stop time. On = a fixed minimum, set below.'],
-            ['group' => 'sessions', 'key' => 'min_stop_secs', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Rating & Pitstops',
+            ['group' => 'sessions', 'key' => 'min_stop_secs', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Rating & Pitstops', 'depends_on' => 'fixed_stop_time',
                 'label' => 'Minimum Stop Time (seconds)', 'help' => 'Only used when Fixed Stop Time is on.', 'rule' => 'nullable|integer|min:1|max:3600'],
 
             // --- Scoring ---
@@ -245,7 +244,7 @@ class ChampionshipSettingsSchema
             // --- Penalties & Rating ---
             ['group' => 'penalties', 'key' => 'stewarding_enabled', 'type' => 'boolean', 'default' => false,
                 'label' => 'Use XCL Stewarding', 'help' => 'Let this championship use XCL\'s report and steward workflow.'],
-            ['group' => 'penalties', 'key' => 'affects', 'type' => 'enum', 'options' => ['points', 'rating', 'both', 'none'], 'default' => 'none',
+            ['group' => 'penalties', 'key' => 'affects', 'type' => 'enum', 'options' => ['points', 'rating', 'both', 'none'], 'default' => 'none', 'depends_on' => 'stewarding_enabled',
                 'label' => 'Penalties Affect', 'help' => 'What a steward-issued penalty changes. Only used when stewarding is on.', 'rule' => 'required|in:points,rating,both,none'],
             ['group' => 'penalties', 'key' => 'post_race_time_penalties_enabled', 'type' => 'boolean', 'default' => false,
                 'label' => 'Post-Race Time Penalties', 'help' => 'Allow a time penalty to be applied to a result after the race.'],
