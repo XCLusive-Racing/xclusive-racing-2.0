@@ -16,7 +16,7 @@ class PointsSchemePolicy
     public function view(User $user, PointsScheme $scheme): bool
     {
         // Read access is deliberately wide — see PointsSchemeController::browse().
-        return $user->canManage() || $user->isLeagueManager() || $user->isLeagueSteward();
+        return $user->canManage() || $user->isChampionshipManager() || $user->isLeagueManager() || $user->isLeagueSteward();
     }
 
     public function update(User $user, PointsScheme $scheme): bool

@@ -141,6 +141,14 @@ class User extends Authenticatable
     public function isLeagueManager(): bool { return $this->hasRole('league_manager'); }
     public function isLeagueSteward(): bool { return $this->hasRole('league_steward'); }
 
+    // A global role (assigned from the Users admin page, not per-league like
+    // manager/steward below) that acts as the manager of every league at
+    // once — for someone trusted to run the leagues/championships system
+    // platform-wide without needing a League Manager membership row added to
+    // each league individually, and without the rest of canManage()'s reach
+    // (races, users, news, etc., which stay admin/event-manager-only).
+    public function isChampionshipManager(): bool { return $this->hasRole('championship_manager'); }
+
     public function canManage(): bool
     {
         return $this->hasAnyRole(['owner', 'admin', 'event_manager']);
@@ -173,7 +181,7 @@ class User extends Authenticatable
 
     public function canAccessAdminPanel(): bool
     {
-        return $this->hasAnyRole(['owner', 'admin', 'moderator', 'event_manager', 'steward', 'broadcaster', 'league_manager', 'league_steward']);
+        return $this->hasAnyRole(['owner', 'admin', 'moderator', 'event_manager', 'steward', 'broadcaster', 'league_manager', 'league_steward', 'championship_manager']);
     }
 
     public function adminLandingRoute(): string
@@ -183,7 +191,7 @@ class User extends Authenticatable
             $this->canSeeUsers()    => 'admin.users.index',
             $this->isSteward()      => 'admin.reports.index',
             $this->canBroadcast()   => 'admin.news.index',
-            $this->isLeagueManager() => 'admin.leagues.index',
+            $this->isLeagueManager() || $this->isChampionshipManager() => 'admin.leagues.index',
             $this->isLeagueSteward() => 'admin.reports.index',
             default                 => 'home',
         };
@@ -206,9 +214,16 @@ class User extends Authenticatable
         return $this->leagueMemberships()->pluck('league_id')->unique()->values();
     }
 
+    // isChampionshipManager() is a global "manager of every league" role, not a
+    // per-league membership row — checked first so every existing call site that
+    // already gates an action on managesLeague($league) (ChampionshipPolicy,
+    // PointsSchemeController, LeagueController's own edit/update, etc.) picks it
+    // up automatically, without each one needing its own extra isChampionshipManager()
+    // check bolted on.
     public function managesLeague(League $league): bool
     {
-        return $this->leagueMemberships()->where('league_id', $league->id)->where('role', 'manager')->exists();
+        return $this->isChampionshipManager()
+            || $this->leagueMemberships()->where('league_id', $league->id)->where('role', 'manager')->exists();
     }
 
     public function stewardsLeague(League $league): bool

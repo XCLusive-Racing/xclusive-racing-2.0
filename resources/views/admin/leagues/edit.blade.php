@@ -207,16 +207,22 @@
                     </div>
                     @endif
 
-                    <div class="form-check mb-0" style="opacity:.55">
-                        <input class="form-check-input" type="checkbox" id="requires_discord" disabled
-                               {{ $league->requires_discord_membership ? 'checked' : '' }}>
+                    {{-- Same locked pill-toggle look as the championship wizard's own
+                         (now-also-locked) copy of this exact option
+                         (_field.blade.php's boolean+locked rendering) -- an option that
+                         exists at both the league and championship level should read as
+                         the same kind of thing wherever it shows up, not two different
+                         widgets that happen to mean the same thing. --}}
+                    <div style="opacity:.5">
+                        <label class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
+                               style="cursor:not-allowed;user-select:none;font-size:.82rem;{{ $league->requires_discord_membership ? 'border:2px solid #7c3aed;background:#7c3aed18;color:#7c3aed' : 'border:2px solid #e5e7eb;background:#fff;color:#374151' }}">
+                            <input type="checkbox" class="d-none" disabled {{ $league->requires_discord_membership ? 'checked' : '' }}>
+                            Require Discord membership to register
+                        </label>
                         {{-- Disabled checkboxes submit nothing — this hidden field carries the
                              real, unchanged value through the save instead. --}}
                         <input type="hidden" name="requires_discord_membership" value="{{ $league->requires_discord_membership ? '1' : '0' }}">
-                        <label class="form-check-label fw-bold text-dark" for="requires_discord" style="font-size:.82rem">
-                            Require Discord membership to register
-                        </label>
-                        <div class="form-text" style="font-size:.72rem">
+                        <div class="form-text mt-1" style="font-size:.72rem;color:#9ca3af">
                             Temporarily locked — XCL is still finishing the operational Discord bot setup. Coming soon.
                         </div>
                     </div>
