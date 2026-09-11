@@ -398,6 +398,65 @@ class ChampionshipSettingsTest extends TestCase
             ->assertSee('Temporarily locked');
     }
 
+    // User-directed 2026-09: "bij ballast en restrictor mag hij met filters
+    // van de carclass de autos pakken uit de db en bij driver uit de
+    // entrylist en driver moet driver/team worden" — the Ballast &
+    // Restrictor Adjustments builder's target field used to be free text;
+    // it now offers real DB cars (filtered to the championship's own car
+    // class(es)) for the "Car" scope, and the championship's actual entry
+    // list for the (renamed) "Driver/Team" scope.
+    public function test_adjustments_builder_offers_cars_filtered_by_the_championships_class(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $admin        = $this->makeAdmin();
+        $championship = $this->makeChampionship($league);
+        $championship->update(['car_class' => 'GT3']);
+
+        \App\Models\Car::create(['id' => 1001, 'game' => 'acc', 'car_class' => 'GT3', 'name' => 'Audi R8 LMS GT3']);
+        \App\Models\Car::create(['id' => 1002, 'game' => 'acc', 'car_class' => 'GT4', 'name' => 'BMW M4 GT4']);
+        \App\Models\Car::create(['id' => 1003, 'game' => 'lmu', 'car_class' => 'GT3', 'name' => 'Some LMU GT3']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'penalties']))
+            ->assertOk()
+            ->assertSee('Audi R8 LMS GT3')
+            ->assertDontSee('BMW M4 GT4')
+            ->assertDontSee('Some LMU GT3')
+            ->assertSee('Driver/Team');
+    }
+
+    public function test_adjustments_builder_offers_the_championships_own_entry_list(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $admin        = $this->makeAdmin();
+        $championship = $this->makeChampionship($league);
+
+        $solo = User::factory()->create(['name' => 'Solo Driver']);
+        \App\Models\ChampionshipRegistration::create([
+            'championship_id' => $championship->id, 'user_id' => $solo->id, 'is_spectator' => false,
+        ]);
+
+        $teamOwner = User::factory()->create();
+        $team = \App\Models\RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $teamOwner->id]);
+        \App\Models\ChampionshipRegistration::create([
+            'championship_id' => $championship->id, 'user_id' => $teamOwner->id,
+            'racing_team_id' => $team->id, 'is_spectator' => false,
+        ]);
+
+        $spectator = User::factory()->create(['name' => 'Just Watching']);
+        \App\Models\ChampionshipRegistration::create([
+            'championship_id' => $championship->id, 'user_id' => $spectator->id, 'is_spectator' => true,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'penalties']))
+            ->assertOk();
+
+        $response->assertSee('Solo Driver')
+            ->assertSee('Apex Racing')
+            ->assertDontSee('Just Watching');
+    }
+
     // --- Tenant isolation on the new championships table ---
 
     public function test_league_manager_cannot_reach_another_leagues_championship(): void

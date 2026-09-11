@@ -11,6 +11,34 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, fourteenth follow-up — Ballast & Restrictor Adjustments
+  builder (Penalties step) now picks real targets instead of free text.**
+  User: "bij ballast en restrictor mag hij met filters van de carclass de
+  autos pakken uit de db en bij driver uit de entrylist en driver moet
+  driver/team worden." `_adjustments-builder.blade.php`'s target field was
+  a plain `<input type="text">` ("Car model or driver") — now a
+  `<select data-adj-target>` whose option list depends on the row's own
+  scope, computed server-side for existing rows and swapped live by JS when
+  a row's scope `<select>` changes (both server-rendered rows and rows
+  added via "+ Add Adjustment" wire up the same `change` listener):
+  - **Car** scope: `App\Models\Car` rows filtered to the championship's own
+    `game`, and to its car class(es) — `$championship->classes->pluck('car_class')`
+    when multiclass, else the single `car_class` column. Falls through to
+    every car for the game if neither yields a class (no empty picker).
+  - **Driver** scope, relabeled **Driver/Team** in the option text per the
+    request: the championship's actual entry list
+    (`$championship->registrations()->with(['user','racingTeam'])`),
+    showing a team registration as `racingTeam.name` and an individual as
+    `user->displayName()`, spectators excluded.
+  Both option lists are also embedded once via `@json()` for the
+  add-row/scope-swap JS, HTML-escaped through a throwaway `textContent`
+  round-trip before insertion (`escapeHtml()`) since they're built with
+  `innerHTML` rather than Blade. New tests
+  `test_adjustments_builder_offers_cars_filtered_by_the_championships_class`
+  and `test_adjustments_builder_offers_the_championships_own_entry_list` in
+  `ChampionshipSettingsTest.php` (the latter needed `RacingTeam`'s `tag`
+  column, not previously known to be required by this test file — first
+  failure surfaced it). 147 tests passing.
 - **2026-09-11, thirteenth follow-up — Requirements step's "Discord
   Membership Required" toggle locked.** Same reason the League edit page's
   own Discord-requirement toggle was locked earlier this session: the
