@@ -95,16 +95,17 @@
                                          field appearing equally relevant regardless of the toggle's state. --}}
                                     @foreach($visibleFields as $field)
                                         @include('admin.leagues.championships._field', ['field' => $field])
+                                        {{-- Right under Multiclass itself, not stranded at the bottom of
+                                             the whole step — it already shows/hides on that same toggle. --}}
+                                        @if($step === 'format' && $field['key'] === 'multiclass_enabled')
+                                        <div class="col-12">
+                                            @include('admin.leagues.championships._classes-builder')
+                                        </div>
+                                        @endif
                                     @endforeach
                                 </div>
                             </div>
                         @endforeach
-
-                        @if($step === 'format')
-                        <div class="mt-4 pt-4" style="border-top:1px solid #f3f4f6">
-                            @include('admin.leagues.championships._classes-builder')
-                        </div>
-                        @endif
 
                         @if($step === 'scoring')
                         <div class="mt-4 pt-4" style="border-top:1px solid #f3f4f6">
@@ -155,9 +156,10 @@
     document.querySelectorAll('[data-shown-if]').forEach(field => {
         const toggle = document.getElementById(field.dataset.shownIf);
         if (!toggle) return;
+        const invert = field.hasAttribute('data-invert');
 
         function apply() {
-            field.hidden = !toggle.checked;
+            field.hidden = invert ? toggle.checked : !toggle.checked;
         }
 
         toggle.addEventListener('change', apply);

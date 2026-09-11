@@ -18,14 +18,19 @@
     // 'depends_on' names another boolean field (same group) that gates whether
     // this one is shown at all — wizard.blade.php's shared script shows/hides
     // it live against that toggle (2026-09 user feedback: an unchecked option's
-    // fields should actually disappear, not just look disabled). The value
-    // still submits normally either way — hiding it doesn't clear it, so
-    // toggling back on restores whatever was there, rather than silently
-    // wiping it. Rendered hidden from the very first paint if the dependency
-    // is currently off, so there's no flash of it being visible pre-JS.
-    $dependsOnKey = $field['depends_on'] ?? null;
-    $dependsOnId  = $dependsOnKey ? "f-{$field['group']}-{$dependsOnKey}" : null;
-    $dependsOnOn  = $dependsOnKey ? (bool) old("settings.{$field['group']}.{$dependsOnKey}", $championship->settings->{$field['group']}->{$dependsOnKey} ?? false) : true;
+    // fields should actually disappear, not just look disabled). A leading '!'
+    // inverts it — shown while that toggle is OFF, hidden once it's on (e.g.
+    // Car Class only makes sense while Multiclass is off). The value still
+    // submits normally either way — hiding it doesn't clear it, so toggling
+    // back restores whatever was there rather than silently wiping it.
+    // Rendered hidden from the very first paint if already applicable, so
+    // there's no flash of the wrong state pre-JS.
+    $dependsOnRaw    = $field['depends_on'] ?? null;
+    $dependsInverted = $dependsOnRaw !== null && str_starts_with($dependsOnRaw, '!');
+    $dependsOnKey    = $dependsOnRaw !== null ? ltrim($dependsOnRaw, '!') : null;
+    $dependsOnId     = $dependsOnKey ? "f-{$field['group']}-{$dependsOnKey}" : null;
+    $dependsOnOn     = $dependsOnKey ? (bool) old("settings.{$field['group']}.{$dependsOnKey}", $championship->settings->{$field['group']}->{$dependsOnKey} ?? false) : true;
+    $shouldShow      = $dependsInverted ? !$dependsOnOn : $dependsOnOn;
 
     // XCL-R Multiplier is a different case: gated on $championship->xcl_rating_enabled,
     // which has no live form control on this page to hide/show against (only an
@@ -33,8 +38,7 @@
     $xclGated = $field['key'] === 'xcl_r_multiplier' && !$championship->xcl_rating_enabled;
 @endphp
 
-<div class="{{ $col }}" style="{{ $xclGated ? 'opacity:.5' : '' }}"
-     @if($dependsOnId) data-shown-if="{{ $dependsOnId }}" @if(!$dependsOnOn) hidden @endif @endif>
+<div class="{{ $col }}" style="{{ $xclGated ? 'opacity:.5' : '' }}" @if($dependsOnId) data-shown-if="{{ $dependsOnId }}" @if($dependsInverted) data-invert @endif @if(!$shouldShow) hidden @endif @endif>
     @if($field['type'] === 'boolean')
         {{-- Toggle pill, same pattern as the admin user-roles page
              (resources/views/admin/users/edit.blade.php, [data-role-pill]) instead of

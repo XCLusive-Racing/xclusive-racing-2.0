@@ -102,8 +102,11 @@ class ChampionshipSettingsSchema
                 'label' => 'Classes', 'help' => 'Each class has a name and a list of eligible cars. Only used when multiclass is on.'],
             ['group' => 'format', 'key' => 'max_entries', 'type' => 'integer', 'nullable' => true, 'default' => null,
                 'label' => 'Maximum Drivers/Teams', 'help' => 'Entry cap for the whole championship. Ignored when multiclass is on — set a cap per class instead.'],
-            ['group' => 'format', 'key' => 'car_class', 'type' => 'enum', 'options' => ['GT2', 'GT3', 'GT4', 'TCX', 'GTC'], 'nullable' => true, 'default' => null,
-                'label' => 'Car Class', 'help' => 'Same for every round of the championship. Ignored when multiclass is on — set a class per class below instead.'],
+            // '!' prefix inverts the dependency — shown while multiclass is OFF,
+            // hidden once it's on (a single car class doesn't mean anything once
+            // there are several per-class ones instead).
+            ['group' => 'format', 'key' => 'car_class', 'type' => 'enum', 'options' => ['GT2', 'GT3', 'GT4', 'TCX', 'GTC'], 'nullable' => true, 'default' => null, 'depends_on' => '!multiclass_enabled',
+                'label' => 'Car Class', 'help' => 'Same for every round of the championship.'],
             ['group' => 'format', 'key' => 'spectator_slots', 'type' => 'integer', 'nullable' => true, 'default' => 0,
                 'label' => 'Spectator Slots', 'help' => 'Extra slots reserved for spectators, on top of the entry cap.'],
             ['group' => 'format', 'key' => 'driver_swaps_enabled', 'type' => 'boolean', 'default' => false, 'section' => 'Driver Swaps',

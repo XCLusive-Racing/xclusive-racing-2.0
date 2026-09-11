@@ -286,6 +286,72 @@ class ChampionshipSettingsTest extends TestCase
             ->assertSee('Disabled — click to enable');
     }
 
+    // User-directed 2026-09: the Classes builder ("+ Add Class") moved from
+    // the bottom of the Format step to right under the Multiclass toggle
+    // itself, and Car Class (the single, non-multiclass option) now hides
+    // once Multiclass is on instead of sitting there looking equally
+    // relevant. Both already share the same underlying toggle
+    // (multiclass_enabled) — this only asserts the rendering reacts to it
+    // correctly, not a second source of truth.
+    private function isFieldHidden(string $html, string $fieldId): bool
+    {
+        $dom = new \DOMDocument();
+        @$dom->loadHTML($html);
+        // getElementById needs a DTD-declared ID attribute to work reliably against
+        // loadHTML, which this markup doesn't have — an XPath id match doesn't.
+        $xpath = new \DOMXPath($dom);
+        $node = $xpath->query("//*[@id='{$fieldId}']")->item(0);
+        return $node && $node->parentNode->attributes->getNamedItem('hidden') !== null;
+    }
+
+    public function test_format_step_hides_car_class_once_multiclass_is_on(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $admin        = $this->makeAdmin();
+        $championship = $this->makeChampionship($league);
+
+        // Multiclass off (default): Car Class is visible.
+        $off = $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'format']))
+            ->assertOk();
+        $this->assertFalse($this->isFieldHidden($off->getContent(), 'f-format-car_class'));
+
+        $championship->settings = array_replace_recursive($championship->settings->toArray(), [
+            'format' => ['multiclass_enabled' => true],
+        ]);
+        $championship->save();
+
+        // Multiclass on: Car Class is rendered hidden.
+        $on = $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'format']))
+            ->assertOk();
+        $this->assertTrue($this->isFieldHidden($on->getContent(), 'f-format-car_class'));
+    }
+
+    // User-directed 2026-09: "Eligible cars" in the Classes builder must be
+    // real in-game cars (a <select multiple>), not free text — same source
+    // race/show.blade.php's own car picker already uses (App\Models\Car,
+    // scoped to the championship's game).
+    public function test_classes_builder_lists_real_cars_for_the_championships_game(): void
+    {
+        \App\Models\Car::create(['id' => 1, 'game' => 'acc', 'car_class' => 'GT3', 'name' => 'Ferrari 296 GT3']);
+        \App\Models\Car::create(['id' => 2, 'game' => 'acc', 'car_class' => 'GT4', 'name' => 'BMW M4 GT4']);
+        \App\Models\Car::create(['id' => 3, 'game' => 'lmu', 'car_class' => 'Hypercar', 'name' => 'Not This One']);
+
+        $league       = $this->makeLeague('nlrl');
+        $admin        = $this->makeAdmin();
+        $championship = $this->makeChampionship($league); // game: acc
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'format']))
+            ->assertOk();
+
+        $response->assertSee('Ferrari 296 GT3')
+            ->assertSee('BMW M4 GT4')
+            ->assertDontSee('Not This One')
+            ->assertDontSee('comma separated');
+    }
+
     // --- Tenant isolation on the new championships table ---
 
     public function test_league_manager_cannot_reach_another_leagues_championship(): void

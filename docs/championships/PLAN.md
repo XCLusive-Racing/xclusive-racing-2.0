@@ -11,6 +11,40 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, tenth follow-up — Format step reorganized: Classes builder
+  moved up, Car Class hides under Multiclass, eligible cars are real cars.**
+  Three user-directed pieces:
+  1. The Classes builder ("+ Add Class") was stranded at the very bottom of
+     the Format step, below Driver Swaps — moved to render immediately after
+     the Multiclass toggle field itself in `wizard.blade.php`'s field loop
+     (`_classes-builder.blade.php` already show/hides on that same toggle,
+     unchanged there).
+  2. Car Class (the single, non-multiclass car-class option) now hides once
+     Multiclass is on instead of sitting there looking equally relevant —
+     `_field.blade.php`'s `depends_on` mechanism (added in the ninth
+     follow-up, see below) gained a `!` inversion prefix
+     (`'depends_on' => '!multiclass_enabled'`): shown while the toggle is
+     OFF, hidden once it's ON. `data-shown-if`'s shared script in
+     `wizard.blade.php` gained a matching `data-invert` attribute check.
+  3. "Eligible cars" in the Classes builder was a raw comma-separated text
+     field — now a real `<select multiple>` sourced from `App\Models\Car`
+     scoped to the championship's own game, the same source
+     `race/show.blade.php`'s own car picker already uses. Rows added via
+     "+ Add Class" build the same select from a `@json()`-embedded car list
+     (HTML-escaped per option — car names come from an admin-editable table,
+     not hardcoded, so this isn't purely decorative).
+  - A real DOM-testing lesson from this pass: the first attempt at
+    `test_format_step_hides_car_class_once_multiclass_is_on` used a raw
+    `assertSee()` string match against the rendered `hidden` attribute and
+    kept failing — not because the feature was broken (three separate Tinker
+    checks with proper `Auth::login()` context all confirmed the setting
+    persisted and read back correctly), but because Blade's literal
+    whitespace between adjacent `@if` directives doesn't collapse the way a
+    single hand-written expected string assumes. Rewritten using
+    `DOMDocument`/`DOMXPath` instead, which passed immediately — prefer that
+    over exact-string `assertSee()` for anything checking an HTML *attribute*
+    (not just visible text) from now on in this file.
+  143 tests passing.
 - **2026-09-11, ninth follow-up — no manual "Push Config" button on the
   Rounds list.** User-directed: `gportal:push-configs`/`gportal:import-results`
   already run globally on a schedule (`routes/console.php`, every minute),
