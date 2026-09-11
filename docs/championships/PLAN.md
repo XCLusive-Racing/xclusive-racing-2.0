@@ -11,6 +11,30 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, twenty-second follow-up — trimmed the "All League Servers"
+  Add Server form.** User: "Reset Interval (min) (rolling only) die mag weg
+  want ze hebben hun eigen servers... cfg_path (optional) moet required
+  zijn" — this is the third, admin-only, cross-league server surface
+  (`/admin/league-servers`, `LeagueFtpServerController`) flagged but
+  deliberately left untouched in the previous follow-up; turns out it was
+  the one actually meant.
+  - Dropped the `reset_interval_minutes` field entirely — a league's own
+    server isn't part of XCL's shared rolling-restart pool, so this now
+    always falls through to the `ftp_servers.reset_interval_minutes`
+    column's own DB default (120) rather than being a per-league choice.
+    `LeagueFtpServerController::store()`'s validation rule for it dropped
+    accordingly (simply omitted from `$data`, so `FtpServer::create()`
+    never sets it and the column default applies). Reset Start Hour stays
+    — still a real per-league choice, offsetting where in that fixed
+    120-minute cycle their own server resets.
+  - `cfg_path` changed from `nullable` to `required` (validation rule +
+    the `required` HTML attribute + label's "(optional)" suffix removed).
+  - New tests
+    `test_league_servers_add_form_drops_reset_interval_and_requires_cfg_path`,
+    `test_league_servers_store_rejects_a_missing_cfg_path`,
+    `test_league_servers_store_no_longer_needs_a_reset_interval_and_defaults_to_120`
+    — first test file to touch `LeagueFtpServerController` at all. 175
+    tests passing.
 - **2026-09-11, twenty-first follow-up — combined per-league access onto the
   Users edit page, and unified the two FTP "Add Server" forms.** User asked
   what League Manager vs. Championship Manager actually meant (answered in

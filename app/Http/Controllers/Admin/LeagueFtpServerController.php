@@ -39,10 +39,9 @@ class LeagueFtpServerController extends Controller
             'username'               => 'required|string|max:100',
             'password'               => 'required|string|max:255',
             'path'                   => 'required|string|max:255',
-            'cfg_path'               => 'nullable|string|max:255',
+            'cfg_path'               => 'required|string|max:255',
             'server_type'            => 'required|in:rolling,scheduled',
             'reset_start_hour'       => 'required_if:server_type,rolling|integer|min:0|max:23',
-            'reset_interval_minutes' => 'required_if:server_type,rolling|integer|min:30|max:1440',
             'game'                   => 'required|in:acc,lmu',
             'platform'               => 'required|in:pc,console,cross',
         ]);
