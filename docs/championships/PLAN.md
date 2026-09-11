@@ -11,6 +11,25 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, twenty-third follow-up — cfg_path default + dropped
+  Crossplay on the same "All League Servers" Add Server form.** User: "bij
+  cfg path mag je standaard /cfg neerzetten, en bij platform mag je
+  crossplay weghalen." `cfg_path` now defaults to `/cfg` (matching the
+  same default the shared `_add-server-fields.blade.php` partial already
+  uses elsewhere). "Crossplay" removed from the Platform `<select>`, and
+  `LeagueFtpServerController::store()`'s validation tightened from
+  `in:pc,console,cross` to `in:pc,console` to match — not just hidden from
+  the form, actually rejected server-side too if still submitted.
+  Mid-turn, a real bug: "username en password mag je leeglaten want hij
+  pakt nu standaard mn email en password daarvan" — the FTP Username/
+  Password fields on this same form carried no `autocomplete` guard (the
+  main Add Server page's copy already did), so the browser's own saved
+  login for this exact domain was autofilling into them. Added
+  `autocomplete="off"`/`autocomplete="new-password"` to match. New tests
+  `test_league_servers_add_form_defaults_cfg_path_and_drops_crossplay`,
+  `test_league_servers_store_no_longer_accepts_crossplay`,
+  `test_league_servers_add_form_guards_credential_fields_against_browser_autofill`.
+  178 tests passing.
 - **2026-09-11, twenty-second follow-up — trimmed the "All League Servers"
   Add Server form.** User: "Reset Interval (min) (rolling only) die mag weg
   want ze hebben hun eigen servers... cfg_path (optional) moet required

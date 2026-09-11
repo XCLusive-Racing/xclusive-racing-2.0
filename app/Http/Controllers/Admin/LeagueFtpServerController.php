@@ -43,7 +43,10 @@ class LeagueFtpServerController extends Controller
             'server_type'            => 'required|in:rolling,scheduled',
             'reset_start_hour'       => 'required_if:server_type,rolling|integer|min:0|max:23',
             'game'                   => 'required|in:acc,lmu',
-            'platform'               => 'required|in:pc,console,cross',
+            // 'cross' dropped from the option list (user-directed 2026-09) --
+            // not accepted here either, so a crafted request can't smuggle it
+            // in through a hidden field the form itself no longer offers.
+            'platform'               => 'required|in:pc,console',
         ]);
 
         $data['active'] = true;
