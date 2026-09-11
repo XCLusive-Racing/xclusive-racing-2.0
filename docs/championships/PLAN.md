@@ -11,6 +11,75 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, second follow-up — a 9-item punch list from browsing the
+  restyled wizard, all resolved except item 10 (see below, explicitly
+  deferred pending its own plan).** Schema `CURRENT_VERSION` now 7.
+  1. **In-game vs. real-world start time split.** `schedule.time_of_day`
+     ("Real-World Start Time") only ever fed `Championship::scheduledDateTimeForRound()`'s
+     real-world scheduling suggestion; the round's own separate in-game clock
+     field was accidentally defaulting from that same value. New
+     `sessions.ingame_time_of_day` is the correct, independent default now.
+  2. **Formation Lap options fixed**: was `none/formation/rolling_start`
+     (default `formation`) — a setting that was never actually consumed
+     anywhere (`AccServerConfigService` doesn't read it), so purely a wording
+     fix — now `short/full` (default `full`), per explicit user correction.
+  3. **Rain Level is a standalone option again**, not hidden behind
+     Weather=wet/mixed — a league can want a rain chance regardless of the
+     fixed/random weather pick. Round-level `#…-rain-level-wrap` visibility
+     JS removed in both `_round-shared-fields.blade.php` and `round-edit.blade.php`.
+  4. **Pitstop time is now an explicit Fixed Stop Time checkbox**, not
+     inferred from whether Min. Stop Time happens to be filled in.
+     `AccServerConfigService` is unchanged — it still only reads
+     `min_stop_secs` (`isRefuellingTimeFixed = !empty(...)`) — the new
+     `fixed_stop_time` field/checkbox exists purely so "dynamic" genuinely
+     nulls that column instead of leaving a stale prior value
+     (`ChampionshipWizardController`'s three round-mutating actions and
+     `applyStepSettings()`'s 'sessions' step both enforce this).
+  5. **XCL-R Multiplier only usable once XCL Rating is enabled** for the
+     championship (`$championship->xcl_rating_enabled`) — rendered `disabled`
+     + greyed on the Sessions step and in Add/Edit Round otherwise. Backend
+     save path is unchanged (not blocked server-side) — a disabled input
+     simply never submits a value in the normal flow; not treated as a
+     security boundary.
+  6. **Practice Server option removed entirely** — leagues all run their own
+     servers, so XCL's single shared practice server never applied here.
+     Reverted `has_practice_server`/`practice_notes` from the schema, the
+     `PracticeServerSessionManager`/`PracticeWindowNotOverlapping` wiring in
+     `ChampionshipWizardController`, and the round-level UI.
+  7. **Bulk Add Rounds decluttered** — turned out to be the same fix as item
+     8 below, since both single and bulk mode render the same
+     `_round-shared-fields.blade.php` partial.
+  8. **Add/Edit Round no longer shows every session/weather/timing field
+     always-expanded** — those already have a championship-wide default (set
+     once on the Sessions step); showing them again on every single round was
+     the actual "too much" complaint. Now a collapsed `<details>` "Override
+     Session Defaults for This Round" panel (closed by default on Add Round,
+     open by default on Edit Round since there's existing state worth
+     seeing) — one click away, not gone.
+  9. **Format step: fields belonging to an off toggle are now greyed out**,
+     not shown at equal visual weight regardless of state. New
+     `ChampionshipSettingsSchema::SECTION_DEPENDENCIES` (currently just
+     `'Driver Swaps' => 'driver_swaps_enabled'`) — `wizard.blade.php` renders
+     the gating toggle normally and wraps its dependents in a
+     `[data-depends-on]` container a small shared script greys out
+     (`opacity` + `disabled`) and re-enables live on toggle, no reload
+     needed. Classes' own visibility (multiclass_enabled) already worked this
+     way via `_classes-builder.blade.php`'s existing show/hide JS — untouched.
+  - **Explicitly deferred, not attempted this pass — item 10**: "wizard-navigatie
+    zoals event creation" — replacing the current per-step-page-save flow
+    with a single-page, no-per-step-save stepper like the race form. This is
+    a genuine architecture change (consolidating every step's validation and
+    side effects — car-number/class sync, team-entry sync, points-scheme
+    application — into one final submit, or building a very different
+    partial-save model) that deserves its own scoping pass rather than being
+    bolted on at the end of an already-large session. Flagged to the user;
+    pick this up as its own piece of work.
+  - Tests: `RoundCreationTest::test_dynamic_pitstop_time_clears_any_submitted_min_stop_secs`
+    (and the earlier `test_single_round_creation_carries_the_new_event_maker_options`
+    updated for the new `fixed_stop_time` field);
+    `ChampionshipSettingsTest::test_sessions_is_its_own_step_independent_of_basics`
+    updated for `formation_lap_type`'s new options and the new required
+    `ingame_time_of_day`. 137 tests passing.
 - **2026-09-11, follow-up — Sessions split back out into its own wizard step.**
   User feedback right after the restyle below: "ik wil niet dat 1 kopje heel
   veel staat en dan bij andere bijna niks" — the event-maker-parity additions

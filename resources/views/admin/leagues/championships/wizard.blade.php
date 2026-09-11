@@ -85,12 +85,30 @@
                                 )->values();
                             @endphp
                             @continue($visibleFields->isEmpty())
-                            @php $sectionIndex++; @endphp
+                            @php
+                                $sectionIndex++;
+                                // A section can name a boolean field (in the same group) that
+                                // gates the rest of it — that field renders normally, its
+                                // siblings render inside a [data-depends-on] wrapper the shared
+                                // script below greys out (not hides) while it's off.
+                                $dependsOnKey = \App\Settings\ChampionshipSettingsSchema::SECTION_DEPENDENCIES[$sectionLabel] ?? null;
+                                $toggleField  = $dependsOnKey ? $visibleFields->firstWhere('key', $dependsOnKey) : null;
+                                $dependentFields = $toggleField ? $visibleFields->reject(fn ($f) => $f['key'] === $dependsOnKey) : $visibleFields;
+                                $dependsOnId  = $toggleField ? "f-{$toggleField['group']}-{$toggleField['key']}" : null;
+                            @endphp
                             <div class="{{ $sectionIndex > 1 ? 'mt-4 pt-4' : '' }}" @if($sectionIndex > 1) style="border-top:1px solid #f3f4f6" @endif>
                                 <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">{{ $sectionLabel }}</p>
-                                <div class="row g-3">
-                                    @foreach($visibleFields as $field)
-                                        @include('admin.leagues.championships._field', ['field' => $field])
+                                @if($toggleField)
+                                <div class="row g-3 mb-3">
+                                    @include('admin.leagues.championships._field', ['field' => $toggleField])
+                                </div>
+                                @endif
+                                <div class="row g-3" @if($dependsOnId) data-depends-on="{{ $dependsOnId }}" @endif>
+                                    @foreach($dependentFields as $field)
+                                        @include('admin.leagues.championships._field', [
+                                            'field' => $field,
+                                            'disabled' => $dependsOnId && !($championship->settings->{$field['group']}->{$dependsOnKey} ?? false),
+                                        ])
                                     @endforeach
                                 </div>
                             </div>
@@ -146,6 +164,20 @@
         }
 
         cb.addEventListener('change', applyStyle);
+    });
+
+    document.querySelectorAll('[data-depends-on]').forEach(section => {
+        const toggle = document.getElementById(section.dataset.dependsOn);
+        if (!toggle) return;
+
+        function apply() {
+            const on = toggle.checked;
+            section.style.opacity = on ? '1' : '.45';
+            section.querySelectorAll('input, select, textarea').forEach(el => { el.disabled = !on; });
+        }
+
+        toggle.addEventListener('change', apply);
+        apply();
     });
 })();
 </script>

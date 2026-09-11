@@ -122,12 +122,12 @@ class ChampionshipSettingsTest extends TestCase
             [
                 'settings' => [
                     'sessions' => [
-                        'race_length_minutes' => 45, 'weather_mode' => 'fixed', 'formation_lap_type' => 'formation',
-                        'xcl_r_multiplier' => '2.0', 'pitstop_count' => '1',
+                        'race_length_minutes' => 45, 'weather_mode' => 'fixed', 'formation_lap_type' => 'full',
+                        'ingame_time_of_day' => '18:00', 'xcl_r_multiplier' => '2.0', 'pitstop_count' => '1',
                     ],
                 ],
             ]
-        )->assertRedirect();
+        )->assertRedirect()->assertSessionDoesntHaveErrors();
 
         $championship->refresh();
         $this->assertSame(45, $championship->settings->sessions->race_length_minutes);

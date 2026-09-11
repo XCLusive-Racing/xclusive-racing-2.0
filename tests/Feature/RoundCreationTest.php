@@ -115,7 +115,7 @@ class RoundCreationTest extends TestCase
         $this->actingAs($manager)
             ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
                 'track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i'),
-                'xcl_r_multiplier' => 1.5, 'pitstop_count' => 2, 'min_stop_secs' => 60,
+                'xcl_r_multiplier' => 1.5, 'pitstop_count' => 2, 'fixed_stop_time' => 1, 'min_stop_secs' => 60,
                 'driver_stint_time_mins' => 45, 'max_total_driving_time_mins' => 120, 'mandatory_driver_swap' => 1,
             ])
             ->assertRedirect();
@@ -124,6 +124,27 @@ class RoundCreationTest extends TestCase
             'championship_id' => $championship->id, 'track' => 'Monza',
             'xcl_r_multiplier' => 1.5, 'pitstop_count' => 2, 'min_stop_secs' => 60,
             'driver_stint_time_mins' => 45, 'max_total_driving_time_mins' => 120, 'mandatory_driver_swap' => 1,
+        ]);
+    }
+
+    // The "dynamic vs fixed" pitstop time is an explicit checkbox, not inferred
+    // from whether min_stop_secs happens to be filled in — a stray leftover
+    // value must not survive once "dynamic" (fixed_stop_time unchecked) is chosen.
+    public function test_dynamic_pitstop_time_clears_any_submitted_min_stop_secs(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+        $manager      = $this->makeManager($league);
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
+                'track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i'),
+                'pitstop_count' => 2, 'min_stop_secs' => 60, // fixed_stop_time deliberately not sent
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('races', [
+            'championship_id' => $championship->id, 'track' => 'Monza', 'pitstop_count' => 2, 'min_stop_secs' => null,
         ]);
     }
 

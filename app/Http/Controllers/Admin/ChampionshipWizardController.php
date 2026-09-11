@@ -13,10 +13,8 @@ use App\Models\League;
 use App\Models\ChampionshipRegistration;
 use App\Models\PointsScheme;
 use App\Models\Race;
-use App\Rules\PracticeWindowNotOverlapping;
 use App\Services\AuditLogger;
 use App\Services\ChampionshipTeamEntryService;
-use App\Services\PracticeServer\PracticeServerSessionManager;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -170,10 +168,7 @@ class ChampionshipWizardController extends Controller
 
         $data = $request->validate([
             'track'               => 'required|string|max:255',
-            'scheduled_at'        => array_filter([
-                'required', 'date',
-                $request->boolean('has_practice_server') ? new PracticeWindowNotOverlapping() : null,
-            ]),
+            'scheduled_at'        => 'required|date',
             'round_number'        => 'nullable|integer|min:1',
             'practice_duration'   => 'nullable|integer|min:1|max:999',
             'qualifying_duration' => 'nullable|integer|min:1|max:999',
@@ -186,19 +181,20 @@ class ChampionshipWizardController extends Controller
             'description'         => 'nullable|string',
             'xcl_r_multiplier'    => 'nullable|numeric|min:0.1|max:10',
             'pitstop_count'       => 'nullable|integer|min:0|max:9',
+            'fixed_stop_time'     => 'nullable|boolean',
             'min_stop_secs'       => 'nullable|integer|min:1|max:3600',
             'driver_stint_time_mins'      => 'nullable|integer|min:1|max:1440',
             'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
             'mandatory_driver_swap'       => 'nullable|boolean',
-            'has_practice_server'         => 'nullable|boolean',
-            'practice_notes'              => 'nullable|string|max:2000',
             // Restricted to this league's own servers — never any $id a manager
             // could otherwise guess, which is why this isn't just "exists:ftp_servers,id".
             'ftp_server_id'       => 'nullable|exists:ftp_servers,id',
         ]);
 
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
-        $data['has_practice_server']   = $request->boolean('has_practice_server');
+        if (!$request->boolean('fixed_stop_time')) {
+            $data['min_stop_secs'] = null;
+        }
 
         $claimedSlots = [];
         $result = $this->resolveRoundRow($data, $championship, $league, $claimedSlots);
@@ -210,14 +206,10 @@ class ChampionshipWizardController extends Controller
         $race = Race::create($result);
         $this->syncTeamEntriesForNewRound($championship, $race);
 
-        $practiceWarning = (new PracticeServerSessionManager())->sync($race, $result['has_practice_server']);
-
         AuditLogger::record($request->user(), $championship, 'championship.round_added', ['title' => $result['title']]);
 
-        $redirect = redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'rounds'])
+        return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'rounds'])
             ->with('success', 'Round added.');
-
-        return $practiceWarning ? $redirect->with('practice_warning', $practiceWarning) : $redirect;
     }
 
     public function roundEdit(Request $request, League $league, Championship $championship, Race $race)
@@ -242,10 +234,7 @@ class ChampionshipWizardController extends Controller
 
         $data = $request->validate([
             'track'               => 'required|string|max:255',
-            'scheduled_at'        => array_filter([
-                'required', 'date',
-                $request->boolean('has_practice_server') ? new PracticeWindowNotOverlapping($race->id) : null,
-            ]),
+            'scheduled_at'        => 'required|date',
             'round_number'        => 'nullable|integer|min:1',
             'practice_duration'   => 'nullable|integer|min:1|max:999',
             'qualifying_duration' => 'nullable|integer|min:1|max:999',
@@ -258,17 +247,18 @@ class ChampionshipWizardController extends Controller
             'description'         => 'nullable|string',
             'xcl_r_multiplier'    => 'nullable|numeric|min:0.1|max:10',
             'pitstop_count'       => 'nullable|integer|min:0|max:9',
+            'fixed_stop_time'     => 'nullable|boolean',
             'min_stop_secs'       => 'nullable|integer|min:1|max:3600',
             'driver_stint_time_mins'      => 'nullable|integer|min:1|max:1440',
             'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
             'mandatory_driver_swap'       => 'nullable|boolean',
-            'has_practice_server'         => 'nullable|boolean',
-            'practice_notes'              => 'nullable|string|max:2000',
             'ftp_server_id'       => 'nullable|exists:ftp_servers,id',
         ]);
 
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
-        $data['has_practice_server']   = $request->boolean('has_practice_server');
+        if (!$request->boolean('fixed_stop_time')) {
+            $data['min_stop_secs'] = null;
+        }
 
         $claimedSlots = [];
         $result = $this->resolveRoundRow($data, $championship, $league, $claimedSlots, $race->id);
@@ -291,14 +281,10 @@ class ChampionshipWizardController extends Controller
 
         $race->update($result);
 
-        $practiceWarning = (new PracticeServerSessionManager())->sync($race, $result['has_practice_server']);
-
         AuditLogger::record($request->user(), $championship, 'championship.round_updated', ['race_id' => $race->id]);
 
-        $redirect = redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'rounds'])
+        return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'rounds'])
             ->with('success', 'Round updated.');
-
-        return $practiceWarning ? $redirect->with('practice_warning', $practiceWarning) : $redirect;
     }
 
     // "Bulk" the same way admin/races/bulk-create.blade.php is: generate a run of
@@ -324,18 +310,11 @@ class ChampionshipWizardController extends Controller
             'description'            => 'nullable|string',
             'xcl_r_multiplier'       => 'nullable|numeric|min:0.1|max:10',
             'pitstop_count'          => 'nullable|integer|min:0|max:9',
+            'fixed_stop_time'        => 'nullable|boolean',
             'min_stop_secs'          => 'nullable|integer|min:1|max:3600',
             'driver_stint_time_mins'      => 'nullable|integer|min:1|max:1440',
             'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
             'mandatory_driver_swap'       => 'nullable|boolean',
-            // Not validated against overlapping practice-server windows here (unlike
-            // Add/Edit Round's PracticeWindowNotOverlapping) — one has_practice_server
-            // flag shared across a whole generated batch of dates makes a per-row
-            // overlap check meaningful only per row, not worth the added complexity
-            // for what's expected to be a rare combination; PracticeServerSessionManager
-            // itself still owns each individual sync below.
-            'has_practice_server'         => 'nullable|boolean',
-            'practice_notes'              => 'nullable|string|max:2000',
             'ftp_server_id'          => 'nullable|exists:ftp_servers,id',
             'rounds'                 => 'required|array|min:1',
             'rounds.*.track'         => 'required|string|max:255',
@@ -344,7 +323,9 @@ class ChampionshipWizardController extends Controller
         ]);
 
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
-        $data['has_practice_server']   = $request->boolean('has_practice_server');
+        if (!$request->boolean('fixed_stop_time')) {
+            $data['min_stop_secs'] = null;
+        }
 
         $shared = collect($data)->except('rounds')->all();
         $rows   = [];
@@ -371,11 +352,9 @@ class ChampionshipWizardController extends Controller
         }
 
         DB::transaction(function () use ($rows, $championship) {
-            $practiceManager = new PracticeServerSessionManager();
             foreach ($rows as $row) {
                 $race = Race::create($row);
                 $this->syncTeamEntriesForNewRound($championship, $race);
-                $practiceManager->sync($race, $row['has_practice_server']);
             }
         });
 
@@ -614,6 +593,14 @@ class ChampionshipWizardController extends Controller
                     $settings[$group][$field['key']] = $request->boolean("settings.{$group}.{$field['key']}");
                 }
             }
+        }
+
+        // Explicit dynamic/fixed pitstop-time choice, not just "blank means
+        // dynamic" — clears any stale min_stop_secs left over from a previous
+        // edit when Fixed Stop Time is off, same normalization Add/Edit Round
+        // applies to the per-round override.
+        if ($step === 'sessions' && !($settings['sessions']['fixed_stop_time'] ?? false)) {
+            $settings['sessions']['min_stop_secs'] = null;
         }
 
         // Repeatable list fields ride in as pre-built JSON, the same pattern the

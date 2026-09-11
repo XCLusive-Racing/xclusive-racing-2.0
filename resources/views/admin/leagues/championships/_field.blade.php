@@ -15,9 +15,22 @@
         'enum', 'datetime' => 'col-sm-4',
         default => 'col-sm-3', // integer, float, date, time
     };
+    // Two independent sources: a section-level dependency the caller already
+    // resolved (wizard.blade.php's $disabled param), or — specific to this one
+    // field — XCL-R Multiplier only meaning anything once XCL Rating itself is on.
+    // Just the disabled attribute here (functional correctness — a disabled
+    // field never submits a value); the visual greying is wizard.blade.php's
+    // [data-depends-on] script, which stays reactive to a live toggle instead
+    // of freezing whatever this field's opacity was at page load. XCL-R
+    // Multiplier's own disabled state has no live toggle to react to (XCL
+    // Rating is admin-approval-only, not a form field on this page) so its grey
+    // style lives inline here instead.
+    $disabled = $disabled ?? false;
+    $xclGated = $field['key'] === 'xcl_r_multiplier' && !$championship->xcl_rating_enabled;
+    $disabled = $disabled || $xclGated;
 @endphp
 
-<div class="{{ $col }}">
+<div class="{{ $col }}" style="{{ $xclGated ? 'opacity:.5' : '' }}">
     @if($field['type'] === 'boolean')
         {{-- Toggle pill, same pattern as the admin user-roles page
              (resources/views/admin/users/edit.blade.php, [data-role-pill]) instead of
@@ -25,8 +38,8 @@
         @php $isOn = (bool) old($errorKey, $current); @endphp
         <label data-bool-pill
                class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
-               style="cursor:pointer;user-select:none;font-size:.82rem;transition:all .15s;{{ $isOn ? 'border:2px solid #7c3aed;background:#7c3aed18;color:#7c3aed' : 'border:2px solid #e5e7eb;background:#fff;color:#374151' }}">
-            <input type="checkbox" name="{{ $name }}" id="{{ $id }}" value="1" class="d-none" {{ $isOn ? 'checked' : '' }}>
+               style="cursor:{{ $disabled ? 'not-allowed' : 'pointer' }};user-select:none;font-size:.82rem;transition:all .15s;{{ $isOn ? 'border:2px solid #7c3aed;background:#7c3aed18;color:#7c3aed' : 'border:2px solid #e5e7eb;background:#fff;color:#374151' }}">
+            <input type="checkbox" name="{{ $name }}" id="{{ $id }}" value="1" class="d-none" {{ $isOn ? 'checked' : '' }} {{ $disabled ? 'disabled' : '' }}>
             {{ $field['label'] }}
         </label>
         @if($field['help'])
@@ -36,7 +49,7 @@
         <label class="form-label" for="{{ $id }}">{{ $field['label'] }}</label>
 
         @if($field['type'] === 'enum')
-        <select name="{{ $name }}" id="{{ $id }}" class="form-select @error($errorKey) is-invalid @enderror">
+        <select name="{{ $name }}" id="{{ $id }}" class="form-select @error($errorKey) is-invalid @enderror" {{ $disabled ? 'disabled' : '' }}>
             @if($field['nullable'] ?? false)
             <option value="">— Not set —</option>
             @endif
@@ -47,22 +60,22 @@
             @endforeach
         </select>
         @elseif($field['type'] === 'text')
-        <textarea name="{{ $name }}" id="{{ $id }}" rows="3" class="form-control @error($errorKey) is-invalid @enderror">{{ old($errorKey, $current) }}</textarea>
+        <textarea name="{{ $name }}" id="{{ $id }}" rows="3" class="form-control @error($errorKey) is-invalid @enderror" {{ $disabled ? 'disabled' : '' }}>{{ old($errorKey, $current) }}</textarea>
         @elseif($field['type'] === 'time')
         <input type="time" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror">
+               class="form-control @error($errorKey) is-invalid @enderror" {{ $disabled ? 'disabled' : '' }}>
         @elseif($field['type'] === 'date')
         <input type="date" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror">
+               class="form-control @error($errorKey) is-invalid @enderror" {{ $disabled ? 'disabled' : '' }}>
         @elseif($field['type'] === 'datetime')
         <input type="datetime-local" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror">
+               class="form-control @error($errorKey) is-invalid @enderror" {{ $disabled ? 'disabled' : '' }}>
         @elseif($field['type'] === 'float')
         <input type="number" step="0.01" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror">
+               class="form-control @error($errorKey) is-invalid @enderror" {{ $disabled ? 'disabled' : '' }}>
         @else
         <input type="number" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror">
+               class="form-control @error($errorKey) is-invalid @enderror" {{ $disabled ? 'disabled' : '' }}>
         @endif
 
         @if($field['help'])

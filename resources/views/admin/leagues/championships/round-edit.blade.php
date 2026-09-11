@@ -67,10 +67,14 @@
             </div>
         </div>
 
-        <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-            <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Sessions &amp; Conditions</p>
+        {{-- Editing an existing round — its own current values are worth seeing
+             right away, so unlike Add Round's collapsed panel this one starts open. --}}
+        <details class="px-4 py-3" style="border-top:1px solid #f3f4f6" open>
+            <summary class="fw-black text-uppercase fst-italic" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af;cursor:pointer;list-style:none">
+                <span style="display:inline-block;width:.8em">▸</span> Session Overrides for This Round
+            </summary>
 
-            <div class="row g-3 mb-3">
+            <div class="row g-3 mb-3 mt-2">
                 <div class="col-6 col-sm-2">
                     <label class="form-label" style="font-size:.75rem">Practice <span class="fw-normal text-secondary">(min)</span></label>
                     <input type="number" name="practice_duration" value="{{ old('practice_duration', $race->practice_duration) }}"
@@ -101,7 +105,7 @@
                 </div>
             </div>
 
-            <div class="row g-3 align-items-end">
+            <div class="row g-3 align-items-end mb-3">
                 <div class="col-sm-3">
                     <label class="form-label" style="font-size:.75rem">Weather</label>
                     <select name="weather" id="re-weather" class="form-select form-select-sm">
@@ -127,8 +131,8 @@
                         <option value="random" {{ $wr === 'random' ? 'selected' : '' }}>Randomize</option>
                     </select>
                 </div>
-                <div class="col-sm-3" id="re-rain-level-wrap" style="display:none">
-                    @php $savedRainLevel = old('rain_level', $race->rain_level ?? 0.3); @endphp
+                <div class="col-sm-3">
+                    @php $savedRainLevel = old('rain_level', $race->rain_level ?? 0.0); @endphp
                     <label class="form-label" style="font-size:.75rem">Rain Level <span class="fw-normal text-secondary">(0–1)</span></label>
                     <div class="d-flex align-items-center gap-2">
                         <input type="range" name="rain_level" id="re-rain-level" min="0" max="1" step="0.1"
@@ -139,17 +143,17 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-            <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Rating, Pitstops &amp; Practice</p>
 
             <div class="row g-3 mb-3">
                 <div class="col-6 col-sm-3">
                     <label class="form-label" style="font-size:.75rem">XCL-R Multiplier</label>
                     <input type="number" name="xcl_r_multiplier" step="0.1" value="{{ old('xcl_r_multiplier', $race->xcl_r_multiplier) }}"
-                           class="form-control form-control-sm @error('xcl_r_multiplier') is-invalid @enderror" placeholder="1.0">
+                           class="form-control form-control-sm @error('xcl_r_multiplier') is-invalid @enderror" placeholder="1.0"
+                           {{ $championship->xcl_rating_enabled ? '' : 'disabled' }}>
                     @error('xcl_r_multiplier')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                    @unless($championship->xcl_rating_enabled)
+                    <div class="form-text" style="font-size:.68rem;color:#9ca3af">Only available once XCL Rating is enabled for this championship.</div>
+                    @endunless
                 </div>
                 <div class="col-6 col-sm-3">
                     <label class="form-label" style="font-size:.75rem">Mandatory Pitstops</label>
@@ -157,23 +161,24 @@
                            class="form-control form-control-sm @error('pitstop_count') is-invalid @enderror">
                     @error('pitstop_count')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
-                <div class="col-6 col-sm-3">
+                <div class="col-6 col-sm-3 d-flex align-items-end pb-1">
+                    @php $fixedStopDefault = old('fixed_stop_time', $race->min_stop_secs !== null); @endphp
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="fixed_stop_time" id="re-fixed-stop" value="1"
+                               {{ $fixedStopDefault ? 'checked' : '' }}>
+                        <label class="form-check-label fw-bold" for="re-fixed-stop" style="font-size:.78rem">Fixed Stop Time</label>
+                    </div>
+                </div>
+                <div class="col-6 col-sm-3" id="re-min-stop-wrap" style="{{ $fixedStopDefault ? '' : 'display:none' }}">
                     <label class="form-label" style="font-size:.75rem">Min. Stop Time (s)</label>
                     <input type="number" name="min_stop_secs" min="1" max="3600" value="{{ old('min_stop_secs', $race->min_stop_secs) }}"
                            class="form-control form-control-sm @error('min_stop_secs') is-invalid @enderror" placeholder="—">
                     @error('min_stop_secs')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
-                <div class="col-6 col-sm-3 d-flex align-items-end pb-1">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="has_practice_server" id="re-practice" value="1"
-                               {{ old('has_practice_server', $race->has_practice_server) ? 'checked' : '' }}>
-                        <label class="form-check-label fw-bold" for="re-practice" style="font-size:.78rem">Practice Server</label>
-                    </div>
-                </div>
             </div>
 
             @if($championship->settings->format->driver_swaps_enabled ?? false)
-            <div class="row g-3 mb-3">
+            <div class="row g-3">
                 <div class="col-6 col-sm-4">
                     <label class="form-label" style="font-size:.75rem">Max. Stint Time (min)</label>
                     <input type="number" name="driver_stint_time_mins" value="{{ old('driver_stint_time_mins', $race->driver_stint_time_mins) }}"
@@ -195,14 +200,7 @@
                 </div>
             </div>
             @endif
-
-            <div class="row g-3">
-                <div class="col-12">
-                    <label class="form-label" style="font-size:.75rem">Practice Server Notes <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
-                    <textarea name="practice_notes" rows="2" class="form-control form-control-sm">{{ old('practice_notes', $race->practice_notes) }}</textarea>
-                </div>
-            </div>
-        </div>
+        </details>
 
         <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
             <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Server <span class="fw-normal" style="text-transform:none">(optional)</span></p>
@@ -234,18 +232,19 @@
 
 <script>
 (function () {
-    var weatherSel = document.getElementById('re-weather');
-    var rainWrap   = document.getElementById('re-rain-level-wrap');
-    var rainRange  = document.getElementById('re-rain-level');
-    var rainVal    = document.getElementById('re-rain-level-val');
-    if (!weatherSel) return;
-
-    function updateRainVisibility() {
-        rainWrap.style.display = ['wet', 'mixed'].includes(weatherSel.value) ? '' : 'none';
+    var rainRange = document.getElementById('re-rain-level');
+    var rainVal   = document.getElementById('re-rain-level-val');
+    if (rainRange) {
+        rainRange.addEventListener('input', function () { rainVal.textContent = parseFloat(rainRange.value).toFixed(1); });
     }
-    weatherSel.addEventListener('change', updateRainVisibility);
-    rainRange.addEventListener('input', function () { rainVal.textContent = parseFloat(rainRange.value).toFixed(1); });
-    updateRainVisibility();
+
+    var fixedStop   = document.getElementById('re-fixed-stop');
+    var minStopWrap = document.getElementById('re-min-stop-wrap');
+    if (fixedStop) {
+        fixedStop.addEventListener('change', function () {
+            minStopWrap.style.display = fixedStop.checked ? '' : 'none';
+        });
+    }
 })();
 </script>
 

@@ -16,7 +16,7 @@ use Illuminate\Support\Arr;
 // defaults for new keys) once this class gains fields for a new version.
 class ChampionshipSettingsSchema
 {
-    const CURRENT_VERSION = 6;
+    const CURRENT_VERSION = 7;
 
     const STEPS = [
         'basics'       => 'Basics',
@@ -50,6 +50,15 @@ class ChampionshipSettingsSchema
         'penalties'    => 'Stewarding & Penalties',
     ];
 
+    // A section → the boolean field (in the same group) that gates whether the
+    // rest of that section actually does anything. wizard.blade.php greys those
+    // other fields out (not hides — still visible, just disabled) while the
+    // gating toggle itself stays interactive, instead of a flat pile of fields
+    // that look equally relevant whether the toggle is on or off.
+    const SECTION_DEPENDENCIES = [
+        'Driver Swaps' => 'driver_swaps_enabled',
+    ];
+
     // Maps a wizard step slug to the settings group(s) it edits and validates.
     // "sessions" used to ride on the Basics step (a period where there was no
     // dedicated Sessions step) — split back out once it grew past 15 fields on
@@ -75,8 +84,14 @@ class ChampionshipSettingsSchema
             ['group' => 'schedule', 'key' => 'day_of_week', 'type' => 'enum',
                 'options' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], 'nullable' => true, 'default' => null,
                 'label' => 'Race Day', 'help' => 'Only used when recurrence is weekly or bi-weekly.'],
+            // Real-world clock time only — the separate in-game clock default lives
+            // on the Sessions step (sessions.ingame_time_of_day) since it's a
+            // session/weather-style concern, not a scheduling one. The two used to
+            // be one shared field; split 2026-09 since a league can want a fixed
+            // real-world slot (e.g. always 20:00 UK) with a different in-game time
+            // (e.g. sunset lighting) or vice versa.
             ['group' => 'schedule', 'key' => 'time_of_day', 'type' => 'time', 'default' => '14:00',
-                'label' => 'Start Time', 'help' => 'In-game and real-world start time for every round — always on the hour.',
+                'label' => 'Real-World Start Time', 'help' => 'Suggests each round\'s real-world date & time — always on the hour. Still editable per round in Add Round.',
                 // Array form, not a pipe-delimited string — the regex itself
                 // contains a "|", which a string rule would wrongly split on.
                 'rule' => ['required', 'date_format:H:i', 'regex:/^([01]\d|2[0-3]):00$/']],
@@ -123,8 +138,14 @@ class ChampionshipSettingsSchema
                 'label' => 'Qualifying Session', 'help' => 'Run a qualifying session before the race.'],
             ['group' => 'sessions', 'key' => 'qualifying_length_minutes', 'type' => 'integer', 'nullable' => true, 'default' => 15, 'section' => 'Session Lengths',
                 'label' => 'Qualifying Length (minutes)', 'help' => 'Only used when a qualifying session runs.'],
-            ['group' => 'sessions', 'key' => 'formation_lap_type', 'type' => 'enum', 'options' => ['none', 'formation', 'rolling_start'], 'default' => 'formation', 'section' => 'Session Lengths',
-                'label' => 'Formation Lap', 'help' => 'How the field is sent to green.', 'rule' => 'required|in:none,formation,rolling_start'],
+            // Split from schedule.time_of_day (the real-world start time) — see the
+            // comment there. This is what prefills a round's own in-game clock in
+            // Add/Edit Round, independent of the real-world slot.
+            ['group' => 'sessions', 'key' => 'ingame_time_of_day', 'type' => 'time', 'default' => '14:00', 'section' => 'Session Lengths',
+                'label' => 'In-Game Start Time', 'help' => 'The in-game clock time for every round — independent of the real-world start time on Basics.',
+                'rule' => ['required', 'date_format:H:i', 'regex:/^([01]\d|2[0-3]):00$/']],
+            ['group' => 'sessions', 'key' => 'formation_lap_type', 'type' => 'enum', 'options' => ['short', 'full'], 'default' => 'full', 'section' => 'Session Lengths',
+                'label' => 'Formation Lap', 'help' => 'How long the formation lap is.', 'rule' => 'required|in:short,full'],
             ['group' => 'sessions', 'key' => 'weather_mode', 'type' => 'enum', 'options' => ['fixed', 'randomised'], 'default' => 'fixed', 'section' => 'Weather',
                 'label' => 'Weather', 'help' => 'Fixed weather is set once here; randomised is rolled per round.', 'rule' => 'required|in:fixed,randomised'],
             ['group' => 'sessions', 'key' => 'ambient_temp', 'type' => 'integer', 'nullable' => true, 'default' => 20, 'section' => 'Weather',
@@ -141,16 +162,24 @@ class ChampionshipSettingsSchema
             // Without this, a championship round has neither an EventFormat nor an
             // explicit multiplier, so RatingService::processRace() falls all the way
             // through to a flat 1.0 — every round rated the same regardless of length.
+            // Only meaningful once XCL Rating is actually enabled for this
+            // championship — rendered disabled otherwise (wizard.blade.php /
+            // _round-shared-fields.blade.php / round-edit.blade.php all check
+            // $championship->xcl_rating_enabled directly, this field has no
+            // xcl_rating_enabled-awareness of its own).
             ['group' => 'sessions', 'key' => 'xcl_r_multiplier', 'type' => 'float', 'nullable' => true, 'default' => null, 'section' => 'Rating & Pitstops',
-                'label' => 'XCL-R Multiplier', 'help' => 'How much this round\'s races count toward rating changes. Leave blank for the default (1.0, same for every length).', 'rule' => 'nullable|numeric|min:0.1|max:10'],
+                'label' => 'XCL-R Multiplier', 'help' => 'How much this round\'s races count toward rating changes. Leave blank for the default (1.0, same for every length). Only used once XCL Rating is enabled.', 'rule' => 'nullable|numeric|min:0.1|max:10'],
             ['group' => 'sessions', 'key' => 'pitstop_count', 'type' => 'integer', 'nullable' => true, 'default' => 0, 'section' => 'Rating & Pitstops',
                 'label' => 'Mandatory Pitstops', 'help' => 'Number of mandatory pitstops. Leave at 0 for none.', 'rule' => 'nullable|integer|min:0|max:9'],
+            // Explicit dynamic/fixed choice rather than inferring "fixed" purely
+            // from whether min_stop_secs happens to be filled in — AccServerConfigService
+            // still only reads min_stop_secs (isRefuellingTimeFixed = !empty(...)), so
+            // this boolean's only job is making sure that field is genuinely null
+            // when "dynamic" is chosen, not just left at a stale prior value.
+            ['group' => 'sessions', 'key' => 'fixed_stop_time', 'type' => 'boolean', 'default' => false, 'section' => 'Rating & Pitstops',
+                'label' => 'Fixed Stop Time', 'help' => 'Off = dynamic (driver-controlled) stop time. On = a fixed minimum, set below.'],
             ['group' => 'sessions', 'key' => 'min_stop_secs', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Rating & Pitstops',
-                'label' => 'Minimum Stop Time (seconds)', 'help' => 'Only used when there\'s at least 1 mandatory pitstop.', 'rule' => 'nullable|integer|min:1|max:3600'],
-            ['group' => 'sessions', 'key' => 'has_practice_server', 'type' => 'boolean', 'default' => false, 'section' => 'Practice Server',
-                'label' => 'Practice Server', 'help' => 'Reserve a slot on XCL\'s shared practice server ahead of each round — only one round at a time can hold it, so this is a default suggestion, still toggled per round in Add/Edit Round.'],
-            ['group' => 'sessions', 'key' => 'practice_notes', 'type' => 'text', 'nullable' => true, 'default' => null, 'section' => 'Practice Server',
-                'label' => 'Practice Server Notes', 'help' => 'Shown to drivers alongside the practice server details.'],
+                'label' => 'Minimum Stop Time (seconds)', 'help' => 'Only used when Fixed Stop Time is on.', 'rule' => 'nullable|integer|min:1|max:3600'],
 
             // --- Scoring ---
             ['group' => 'scoring', 'key' => 'points_scheme_id', 'type' => 'integer', 'nullable' => true, 'default' => null,
