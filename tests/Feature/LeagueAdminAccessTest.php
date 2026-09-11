@@ -469,6 +469,52 @@ class LeagueAdminAccessTest extends TestCase
             ->assertSee('Reset Start Hour');
     }
 
+    // User-directed 2026-09: "bij cfg path mag je standaard /cfg neerzetten,
+    // en bij platform mag je crossplay weghalen."
+    public function test_league_servers_add_form_defaults_cfg_path_and_drops_crossplay(): void
+    {
+        $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
+
+        $this->actingAs($admin)
+            ->get(route('admin.league-servers.index'))
+            ->assertOk()
+            ->assertSee('value="/cfg"', false)
+            ->assertDontSee('Crossplay');
+    }
+
+    // User-directed 2026-09: "username en password mag je leeglaten want hij
+    // pakt nu standaard mn email en password daarvan" -- the browser's own
+    // saved login for this exact domain was autofilling into these unrelated
+    // FTP credential fields, since they carried no autocomplete guard (the
+    // main Add Server page's copy already had one).
+    public function test_league_servers_add_form_guards_credential_fields_against_browser_autofill(): void
+    {
+        $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
+
+        $this->actingAs($admin)
+            ->get(route('admin.league-servers.index'))
+            ->assertOk()
+            ->assertSee('name="username"', false)
+            ->assertSee('autocomplete="off"', false)
+            ->assertSee('autocomplete="new-password"', false);
+    }
+
+    public function test_league_servers_store_no_longer_accepts_crossplay(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $admin  = $this->makeAdmin();
+
+        $this->actingAs($admin)->post(route('admin.league-servers.store'), [
+            'league_id' => $league->id, 'name' => 'League Server', 'host' => '1.2.3.4', 'port' => 21,
+            'username' => 'u', 'password' => 'p', 'path' => '/results', 'cfg_path' => '/cfg',
+            'server_type' => 'scheduled', 'game' => 'acc', 'platform' => 'cross',
+        ])->assertSessionHasErrors('platform');
+
+        $this->assertDatabaseMissing('ftp_servers', ['league_id' => $league->id, 'name' => 'League Server']);
+    }
+
     public function test_league_servers_store_rejects_a_missing_cfg_path(): void
     {
         $league = $this->makeLeague('nlrl');

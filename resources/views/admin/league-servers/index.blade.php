@@ -92,7 +92,6 @@
                     <select name="platform" class="form-select" required>
                         <option value="console">Console</option>
                         <option value="pc">PC</option>
-                        <option value="cross">Crossplay</option>
                     </select>
                 </div>
             </div>
@@ -111,12 +110,16 @@
             <div class="row g-3 mb-3">
                 <div class="col-sm-6">
                     <label class="form-label">FTP Username</label>
-                    <input type="text" name="username" class="form-control @error('username') is-invalid @enderror" required>
+                    {{-- autocomplete="off" -- without it, the browser's own saved login
+                         for this site (the admin is logged into this exact domain) gets
+                         suggested/autofilled into these unrelated FTP credential fields,
+                         same fix the main Add Server page already has. --}}
+                    <input type="text" name="username" class="form-control @error('username') is-invalid @enderror" required autocomplete="off">
                     @error('username') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="col-sm-6">
                     <label class="form-label">FTP Password</label>
-                    <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" required>
+                    <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" required autocomplete="new-password">
                     @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
             </div>
@@ -128,7 +131,7 @@
                 </div>
                 <div class="col-sm-6">
                     <label class="form-label">cfg_path</label>
-                    <input type="text" name="cfg_path" class="form-control @error('cfg_path') is-invalid @enderror" required>
+                    <input type="text" name="cfg_path" value="{{ old('cfg_path', '/cfg') }}" class="form-control @error('cfg_path') is-invalid @enderror" required>
                     @error('cfg_path') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
             </div>
