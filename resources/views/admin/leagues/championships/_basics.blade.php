@@ -62,22 +62,23 @@
 @if($canApproveRating)
 <hr class="my-4">
 <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">XCL Rating</p>
-<p class="text-secondary mb-3" style="font-size:.8rem">Admin-only. Unlocks XCL-R Multiplier on the Sessions step.</p>
+<p class="text-secondary mb-3" style="font-size:.8rem">Unlocks XCL-R Multiplier on the Sessions step.</p>
 
 <div class="row g-3 mb-1">
     <div class="col-12">
         {{-- formaction/formmethod send just this button's click to
              approve-rating/revoke-rating instead of this step's own Save &
-             Continue action — the same admin-only routes the Review step's
-             card already used, just placed as an option here instead of
-             stranded below Save & Continue. Can't be a nested <form> (this
-             is already inside the Basics one), so this is how it stays a
-             real, separately-submitted action while living among the other
-             fields. The enclosing form also carries @method('PUT') as a
-             hidden _method field for its own normal save — that field rides
-             along on every submit regardless of formmethod, so Laravel would
-             otherwise still treat this as a PUT and 405 on these POST-only
-             routes; the onclick blanks it out first. --}}
+             Continue action — the same routes the Review step's card already
+             used (open to this championship's own league manager too, not
+             XCL-admin-only any more), just placed as an option here instead
+             of stranded below Save & Continue. Can't be a nested <form>
+             (this is already inside the Basics one), so this is how it
+             stays a real, separately-submitted action while living among
+             the other fields. The enclosing form also carries @method('PUT')
+             as a hidden _method field for its own normal save — that field
+             rides along on every submit regardless of formmethod, so
+             Laravel would otherwise still treat this as a PUT and 405 on
+             these POST-only routes; the onclick blanks it out first. --}}
         @if($championship->xcl_rating_enabled)
         <button type="submit" formaction="{{ route('admin.leagues.championships.revoke-rating', [$league, $championship]) }}" formmethod="POST" formnovalidate
                 class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
@@ -86,7 +87,7 @@
             Enabled — click to disable
         </button>
         <div class="form-text mt-1" style="font-size:.72rem;color:#9ca3af">
-            Approved by {{ $championship->ratingApprovedBy?->name ?? 'an XCL admin' }} on {{ $championship->xcl_rating_approved_at?->format('d M Y') }}.
+            {{ $championship->ratingApprovedBy ? 'Approved by ' . $championship->ratingApprovedBy->name : 'Approved' }} on {{ $championship->xcl_rating_approved_at?->format('d M Y') }}.
         </div>
         @else
         <button type="submit" formaction="{{ route('admin.leagues.championships.approve-rating', [$league, $championship]) }}" formmethod="POST" formnovalidate
