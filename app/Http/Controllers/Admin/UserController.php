@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\SyncDiscordRankRole;
+use App\Models\League;
+use App\Models\LeagueUser;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -110,7 +113,14 @@ class UserController extends Controller
         $user->load('roles');
         $roles = Role::orderBy('sort_order')->get();
 
-        return view('admin.users.edit', compact('user', 'roles'));
+        // Same gate as LeagueController::addMember()/removeMember() -- this is
+        // just that same "who gets access to which league" action surfaced here
+        // too, combined with the global role pills above, instead of only being
+        // reachable by going to each league's own edit page one at a time.
+        $leagues        = auth()->user()->canManage() ? League::withoutTenantScope()->orderBy('name')->get() : collect();
+        $leagueRoles    = $user->leagueMemberships()->pluck('role', 'league_id');
+
+        return view('admin.users.edit', compact('user', 'roles', 'leagues', 'leagueRoles'));
     }
 
     public function update(Request $request, User $user)
@@ -139,6 +149,12 @@ class UserController extends Controller
             'sr_acc'      => 'required|numeric|min:0|max:9.99',
             'sr_lmu'      => 'required|numeric|min:0|max:9.99',
             'sr_iracing'  => 'required|numeric|min:0|max:9.99',
+            // Keyed by league id -- 'manager'/'steward'/'' (empty select option = no
+            // membership). Not constrained to those two values here: an unrecognized
+            // or empty value is simply treated as "remove membership" below, same as
+            // an empty <select> option would be.
+            'league_roles'   => 'nullable|array',
+            'league_roles.*' => 'nullable|string',
         ]);
 
         $data['is_supporter'] = $request->boolean('is_supporter');
@@ -149,7 +165,7 @@ class UserController extends Controller
             $data['suspension_reason'] = null;
         }
 
-        $user->update(\Illuminate\Support\Arr::except($data, ['roles']));
+        $user->update(\Illuminate\Support\Arr::except($data, ['roles', 'league_roles']));
 
         if ($user->wasChanged(['elo_acc', 'elo_lmu', 'elo_iracing'])) {
             SyncDiscordRankRole::dispatch($user->id);
@@ -158,6 +174,38 @@ class UserController extends Controller
         if ($user->id !== auth()->id() && auth()->user()->canManageRoles()) {
             $roleIds = Role::whereIn('slug', $request->input('roles', []))->pluck('id');
             $user->roles()->sync($roleIds);
+        }
+
+        // Same gate as LeagueController::addMember()/removeMember() -- this is that
+        // exact action, just reachable from here too now, one league at a time
+        // rather than needing a separate trip to each league's own edit page.
+        // Only leagues whose role actually changed are written/logged, so saving
+        // this form without touching League Access doesn't create audit noise for
+        // every league in the system.
+        if ($user->id !== auth()->id() && auth()->user()->canManage()) {
+            $before = $user->leagueMemberships()->pluck('role', 'league_id');
+
+            foreach ($request->input('league_roles', []) as $leagueId => $role) {
+                $role = in_array($role, ['manager', 'steward'], true) ? $role : null;
+                if (($before[$leagueId] ?? null) === $role) {
+                    continue;
+                }
+
+                $league = League::withoutTenantScope()->find($leagueId);
+                if (!$league) {
+                    continue;
+                }
+
+                if ($role === null) {
+                    LeagueUser::where('league_id', $league->id)->where('user_id', $user->id)->delete();
+                    AuditLogger::record(auth()->user(), $league, 'league.member_removed', ['user_id' => $user->id]);
+                } else {
+                    LeagueUser::updateOrCreate(['league_id' => $league->id, 'user_id' => $user->id], ['role' => $role]);
+                    AuditLogger::record(auth()->user(), $league, 'league.member_added', ['user_id' => $user->id, 'role' => $role]);
+                }
+            }
+
+            $user->syncLeagueRoleFlags();
         }
 
         return redirect()->route('admin.users.index')

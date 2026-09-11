@@ -11,6 +11,49 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, twenty-first follow-up — combined per-league access onto the
+  Users edit page, and unified the two FTP "Add Server" forms.** User asked
+  what League Manager vs. Championship Manager actually meant (answered in
+  chat, no code change), then: "kunnen we dat combineren en de ftp bij
+  leagues sectie van de admin page wil je daar even opnieuw dingen
+  instellen het liefst wil ik hem gwn exact hetzelfde als die van ons."
+  - **Combined access management**: granting someone plain per-league
+    Manager/Steward access used to only be possible from that specific
+    league's own edit page (Members section). New "League Access" section
+    on the Users edit page (`UserController::edit()`/`update()`) lists
+    every league with a None/Manager/Steward select per league, pre-filled
+    from the user's current `LeagueUser` rows — same underlying action and
+    same `canManage()` gate as `LeagueController::addMember()`/
+    `removeMember()`, just reachable from one more place now, combined with
+    Championship Manager (global, "every league at once") right above it
+    on the same page. Only leagues whose role actually changed get
+    written/audit-logged on save. Discovered mid-implementation:
+    `/admin/users/*` is gated `role:owner,moderator,event_manager` — plain
+    'admin' can't reach it at all, so `canManage()` (owner/admin/
+    event_manager) and "can even load this page" only overlap at
+    owner/event_manager; a moderator sees the page (and the Roles pills
+    above, gated by the narrower `canManageRoles()`) but correctly never
+    sees League Access, matching what `addMember()` already required
+    everywhere else. Tests in new `UserLeagueAccessTest.php`.
+  - **Unified FTP "Add Server" forms**: the League edit page's own copy of
+    this form was a cramped, materially different field set (`form-control-sm`
+    grid, no Server No. field, no Reset Schedule section, no rolling/scheduled
+    JS toggle) from Configuration > Servers > Add Server
+    (`admin/servers/create.blade.php`) — user wants them "exact hetzelfde."
+    Extracted the real create page's fields into a shared partial
+    (`admin/servers/_add-server-fields.blade.php`, parameterized with an
+    `idPrefix` to keep element ids collision-safe if ever both render on one
+    page) and had both pages `@include` it, so they render byte-identical
+    field markup and can't drift apart again. `LeagueController::storeServer()`
+    gained `server_number` validation to match `FtpServerController::store()`'s
+    field set exactly. Left the separate, admin-only `/admin/league-servers`
+    cross-league aggregate page (`LeagueFtpServerController`) untouched — a
+    different, less-frequently-used surface with its own extra League
+    selector field; flagged to the user in case that one was what they
+    actually meant instead. New tests
+    `test_league_edit_pages_add_server_form_matches_the_main_add_server_page`,
+    `test_league_managers_own_server_can_carry_a_server_number`.
+  - 172 tests passing.
 - **2026-09-11, twentieth follow-up — locked boolean toggles now render an
   actually-grey pill.** User: "de radio button van Require Discord
   membership to register bij leagues is niet grijs." Root cause: both the

@@ -354,80 +354,21 @@
                 @endforelse
             </div>
 
-            <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-                <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Add Your Own Server</p>
+            <div style="border-top:1px solid #f3f4f6">
+                <div class="px-4 pt-3">
+                    <p class="fw-black text-uppercase fst-italic mb-0" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Add Your Own Server</p>
+                </div>
+                {{-- Exact same field set, sections and rolling/scheduled toggle as
+                     Configuration > Servers > Add Server (admin/servers/create.blade.php)
+                     -- shared partial so the two forms can't drift apart again. --}}
                 <form action="{{ route('admin.leagues.servers.create', $league) }}" method="POST">
                     @csrf
-                    <div class="row g-2 mb-2">
-                        <div class="col-7">
-                            <input type="text" name="name" placeholder="Server name" class="form-control form-control-sm @error('name') is-invalid @enderror" required>
-                            @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="col-5">
-                            <select name="server_type" class="form-select form-select-sm" required>
-                                <option value="rolling">Rolling restart</option>
-                                <option value="scheduled">Manual restart</option>
-                            </select>
-                        </div>
+                    @include('admin.servers._add-server-fields', ['idPrefix' => 'league-'])
+                    <div class="px-4 pb-4 pt-3">
+                        <button type="submit" class="btn btn-sm fw-black text-uppercase text-white w-100" style="background:#7c3aed;font-size:.78rem">
+                            Add Server
+                        </button>
                     </div>
-                    <div class="row g-2 mb-2">
-                        <div class="col-6">
-                            <select name="game" class="form-select form-select-sm" required>
-                                <option value="acc">ACC</option>
-                                <option value="lmu">Le Mans Ultimate</option>
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <select name="platform" class="form-select form-select-sm" required>
-                                <option value="console">Console</option>
-                                <option value="pc">PC</option>
-                                <option value="cross">Crossplay</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row g-2 mb-2">
-                        <div class="col-8">
-                            <input type="text" name="host" placeholder="Host / IP" class="form-control form-control-sm @error('host') is-invalid @enderror" required>
-                            @error('host') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="col-4">
-                            <input type="number" name="port" placeholder="Port" class="form-control form-control-sm @error('port') is-invalid @enderror" required>
-                            @error('port') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                    </div>
-                    <div class="row g-2 mb-2">
-                        <div class="col-6">
-                            <input type="text" name="username" placeholder="FTP username" class="form-control form-control-sm @error('username') is-invalid @enderror" required>
-                            @error('username') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="col-6">
-                            <input type="password" name="password" placeholder="FTP password" class="form-control form-control-sm @error('password') is-invalid @enderror" required>
-                            @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                    </div>
-                    <div class="row g-2 mb-2">
-                        <div class="col-6">
-                            <input type="text" name="path" placeholder="Config path" class="form-control form-control-sm @error('path') is-invalid @enderror" required>
-                            @error('path') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="col-6">
-                            <input type="text" name="cfg_path" placeholder="cfg_path (optional)" class="form-control form-control-sm @error('cfg_path') is-invalid @enderror">
-                            @error('cfg_path') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                    </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <input type="number" name="reset_start_hour" placeholder="Reset start hour (0-23)" class="form-control form-control-sm @error('reset_start_hour') is-invalid @enderror">
-                            @error('reset_start_hour') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="col-6">
-                            <input type="number" name="reset_interval_minutes" placeholder="Reset interval (min)" class="form-control form-control-sm @error('reset_interval_minutes') is-invalid @enderror">
-                            @error('reset_interval_minutes') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-sm fw-black text-uppercase text-white w-100" style="background:#7c3aed;font-size:.78rem">
-                        Add Server
-                    </button>
                 </form>
             </div>
 

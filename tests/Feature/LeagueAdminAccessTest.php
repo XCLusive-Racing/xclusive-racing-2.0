@@ -384,6 +384,46 @@ class LeagueAdminAccessTest extends TestCase
             ->assertSee('Temporarily locked — XCL is still finishing the operational Discord bot setup. Coming soon.');
     }
 
+    // User-directed 2026-09: "de ftp bij leagues sectie van de admin page...
+    // het liefst wil ik hem gwn exact hetzelfde als die van ons" -- the League
+    // edit page's own "Add Your Own Server" form used to be a cramped,
+    // different field set (no Server No., no Reset Schedule section) from
+    // Configuration > Servers > Add Server. Both now render the exact same
+    // shared partial (admin/servers/_add-server-fields.blade.php).
+    public function test_league_edit_pages_add_server_form_matches_the_main_add_server_page(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        // Configuration > Servers is canManage()-only, unlike the league page's
+        // own copy of this form (also reachable by that league's own manager) --
+        // an admin actor here so both pages can actually be fetched for comparison.
+        $admin = $this->makeAdmin();
+
+        $mainPage   = $this->actingAs($admin)->get(route('admin.servers.create'));
+        $leaguePage = $this->actingAs($admin)->get(route('admin.leagues.edit', $league));
+
+        foreach (['Server No.', 'Reset Schedule', 'Rolling resets (SERVER 1 / 2 / 3)', 'Results Path', 'Config Path'] as $needle) {
+            $mainPage->assertSee($needle);
+            $leaguePage->assertSee($needle);
+        }
+    }
+
+    public function test_league_managers_own_server_can_carry_a_server_number(): void
+    {
+        $league  = $this->makeLeague('nlrl');
+        $manager = User::factory()->leagueManager()->create();
+        $this->attach($manager, $league);
+
+        $this->actingAs($manager)->post(route('admin.leagues.servers.create', $league), [
+            'name' => 'League Server 1', 'server_number' => 2,
+            'host' => '1.2.3.4', 'port' => 21, 'username' => 'u', 'password' => 'p',
+            'path' => '/results', 'server_type' => 'rolling',
+            'reset_start_hour' => 1, 'reset_interval_minutes' => 120,
+            'game' => 'acc', 'platform' => 'console',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('ftp_servers', ['league_id' => $league->id, 'name' => 'League Server 1', 'server_number' => 2]);
+    }
+
     // User-directed 2026-09: "sorry bij create leagues" -- the same option was
     // still a plain, fully live checkbox on the Create League page (never
     // updated to match), so a brand new league could actually have it turned
