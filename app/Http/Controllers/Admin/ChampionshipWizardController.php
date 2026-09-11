@@ -657,7 +657,12 @@ class ChampionshipWizardController extends Controller
             $keepNames[] = $name;
 
             $attrs = [
-                'car_class'   => !empty($classData['eligible_cars']) ? implode(', ', (array) $classData['eligible_cars']) : null,
+                // A class picked from the fixed GT2/GT3/GT4/TCX/GTC dropdown (same
+                // list the race wizard's own multiclass picker uses) *is* its car
+                // class — the name and car_class are the same value. Falls back to
+                // a legacy eligible_cars list if a stored row still has one, from
+                // before the dropdown replaced free-typed names + a car picker.
+                'car_class'   => !empty($classData['eligible_cars']) ? implode(', ', (array) $classData['eligible_cars']) : $name,
                 'max_drivers' => $classData['max_entries'] ?? null,
                 'sort_order'  => $i,
             ];

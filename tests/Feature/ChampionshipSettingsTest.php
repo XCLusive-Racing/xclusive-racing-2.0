@@ -328,28 +328,54 @@ class ChampionshipSettingsTest extends TestCase
         $this->assertTrue($this->isFieldHidden($on->getContent(), 'f-format-car_class'));
     }
 
-    // User-directed 2026-09: "Eligible cars" in the Classes builder must be
-    // real in-game cars (a <select multiple>), not free text — same source
-    // race/show.blade.php's own car picker already uses (App\Models\Car,
-    // scoped to the championship's game).
-    public function test_classes_builder_lists_real_cars_for_the_championships_game(): void
+    // User-directed 2026-09 (corrected after an initial miss — "nee niet de
+    // autos, je moet gwn de dropdown weer terug brengen met de classes"): a
+    // championship class is picked from the same fixed GT2/GT3/GT4/TCX/GTC
+    // dropdown the race wizard's own multiclass picker uses
+    // (resources/js/components/multiclass.js), not a free-typed name with a
+    // separately hand-picked car list.
+    public function test_classes_builder_offers_the_fixed_class_dropdown(): void
     {
-        \App\Models\Car::create(['id' => 1, 'game' => 'acc', 'car_class' => 'GT3', 'name' => 'Ferrari 296 GT3']);
-        \App\Models\Car::create(['id' => 2, 'game' => 'acc', 'car_class' => 'GT4', 'name' => 'BMW M4 GT4']);
-        \App\Models\Car::create(['id' => 3, 'game' => 'lmu', 'car_class' => 'Hypercar', 'name' => 'Not This One']);
-
         $league       = $this->makeLeague('nlrl');
         $admin        = $this->makeAdmin();
-        $championship = $this->makeChampionship($league); // game: acc
+        $championship = $this->makeChampionship($league);
 
-        $response = $this->actingAs($admin)
+        // The fixed 5-class list rows added via "+ Add Class" build from is
+        // embedded once as JSON for the client-side script, independent of
+        // whether the championship already has any saved classes.
+        $this->actingAs($admin)
             ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'format']))
-            ->assertOk();
-
-        $response->assertSee('Ferrari 296 GT3')
-            ->assertSee('BMW M4 GT4')
-            ->assertDontSee('Not This One')
+            ->assertOk()
+            ->assertSee('Add Class')
+            ->assertSee('["GT2","GT3","GT4","TCX","GTC"]', false)
+            ->assertDontSee('Eligible cars')
             ->assertDontSee('comma separated');
+    }
+
+    // A class picked from the dropdown (name = "GT3") becomes that class's
+    // car_class directly, same as the race wizard's own multiclass model —
+    // no separate eligible_cars list to keep in sync any more.
+    public function test_saving_classes_sets_car_class_from_the_picked_class_name(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $manager      = User::factory()->leagueManager()->create();
+        $this->attachManager($manager, $league);
+        $championship = $this->makeChampionship($league);
+
+        $this->actingAs($manager)->put(
+            route('admin.leagues.championships.wizard.update', [$league, $championship, 'format']),
+            [
+                'settings' => ['format' => ['multiclass_enabled' => 1]],
+                'classes_json' => json_encode([
+                    ['name' => 'GT3', 'max_entries' => 20],
+                    ['name' => 'GT4', 'max_entries' => 10],
+                ]),
+            ]
+        )->assertRedirect();
+
+        $championship->refresh();
+        $this->assertSame('GT3', $championship->classes()->where('name', 'GT3')->value('car_class'));
+        $this->assertSame('GT4', $championship->classes()->where('name', 'GT4')->value('car_class'));
     }
 
     // --- Tenant isolation on the new championships table ---

@@ -11,6 +11,38 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, eleventh follow-up — corrected the tenth follow-up's
+  "eligible cars" change.** User: "nee niet de autos, je moet gwn de
+  dropdown weer terug brengen met de classes wanneer je op add class drukt
+  net zoals bij onze event maker" — I'd built a `<select multiple>` of
+  individual in-game *cars*; what was actually wanted was a plain `<select>`
+  of the fixed GT2/GT3/GT4/TCX/GTC *classes*, same as the race wizard's own
+  multiclass picker (`resources/js/components/multiclass.js` CLASS_DEFS) —
+  a class simply *is* one of those five, not a custom name with a
+  hand-picked car list. `_classes-builder.blade.php` reverted to a
+  `{name, max_entries}` shape: "Class name" is now that same fixed 5-option
+  dropdown (was free text before this whole detour started), "Eligible
+  cars" is gone entirely.
+  `ChampionshipWizardController::syncChampionshipClasses()`'s `car_class`
+  now derives from the picked class name directly, falling back to a legacy
+  `eligible_cars` list only if a stored row still has one (existing tests in
+  `ChampionshipRegistrationTest.php` that post `eligible_cars` directly
+  still pass unchanged). New tests:
+  `test_classes_builder_offers_the_fixed_class_dropdown` (checks the
+  JS-embedded `["GT2","GT3","GT4","TCX","GTC"]` array, not a specific saved
+  row's rendering — see the whitespace/`selected`-attribute lesson below)
+  and `test_saving_classes_sets_car_class_from_the_picked_class_name`.
+  144 tests passing.
+  - Another exact-string-`assertSee()` trap hit mid-fix: a test asserting
+    `<option value="GT3">GT3</option>` failed even though the feature
+    genuinely worked (independently re-confirmed via `Tinker` with proper
+    `Auth::login()` context) — the real markup for an already-selected
+    option is `<option value="GT3" selected>GT3</option>`, an extra
+    attribute my hand-written expected string didn't account for. Same
+    underlying lesson as the tenth follow-up's `DOMDocument` note: don't
+    hand-write an expected HTML fragment for anything with conditional
+    attributes: either assert on content that has no such variability
+    (a `@json()`-embedded array, plain visible text) or parse the DOM.
 - **2026-09-11, tenth follow-up — Format step reorganized: Classes builder
   moved up, Car Class hides under Multiclass, eligible cars are real cars.**
   Three user-directed pieces:
