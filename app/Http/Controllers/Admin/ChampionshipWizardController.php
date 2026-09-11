@@ -552,7 +552,7 @@ class ChampionshipWizardController extends Controller
     public function revokeRating(Request $request, League $league, Championship $championship)
     {
         $this->assertLeagueOfInterest($request, $league, $championship);
-        abort_unless($request->user()->canManage(), 403);
+        Gate::authorize('approveRating', $championship);
 
         $championship->revokeXclRating();
 

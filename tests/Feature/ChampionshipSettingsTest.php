@@ -177,7 +177,11 @@ class ChampionshipSettingsTest extends TestCase
         $this->assertTrue($championship->fresh()->settings->penalties->xcl_rating_requested);
     }
 
-    public function test_league_manager_cannot_reach_the_approve_rating_route(): void
+    // User-directed 2026-09: approveRating's gate is now the same as update()
+    // — a league manager can enable/disable XCL Rating for their own
+    // championship directly, no XCL admin approval step needed (was
+    // XCL-staff-only before this).
+    public function test_league_manager_can_approve_and_revoke_rating_for_their_own_championship(): void
     {
         $league       = $this->makeLeague('nlrl');
         $manager      = User::factory()->leagueManager()->create();
@@ -186,7 +190,33 @@ class ChampionshipSettingsTest extends TestCase
 
         $this->actingAs($manager)
             ->post(route('admin.leagues.championships.approve-rating', [$league, $championship]))
-            ->assertForbidden();
+            ->assertRedirect();
+
+        $this->assertTrue($championship->fresh()->xcl_rating_enabled);
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.revoke-rating', [$league, $championship]))
+            ->assertRedirect();
+
+        $this->assertFalse($championship->fresh()->xcl_rating_enabled);
+    }
+
+    // The tenant boundary still matters — managing a *different* league must
+    // not be enough. League itself is Tenantable, so implicit route-model
+    // binding for a league the outsider isn't a member of 404s before the
+    // controller/policy is even reached — same as every other cross-league
+    // test in this file (test_league_manager_cannot_reach_another_leagues_championship).
+    public function test_a_different_leagues_manager_still_cannot_approve_rating(): void
+    {
+        $owner        = $this->makeLeague('nlrl');
+        $otherLeague  = $this->makeLeague('src');
+        $outsider     = User::factory()->leagueManager()->create();
+        $this->attachManager($outsider, $otherLeague);
+        $championship = $this->makeChampionship($owner);
+
+        $this->actingAs($outsider)
+            ->post(route('admin.leagues.championships.approve-rating', [$owner, $championship]))
+            ->assertNotFound();
 
         $this->assertFalse($championship->fresh()->xcl_rating_enabled);
     }
@@ -243,7 +273,7 @@ class ChampionshipSettingsTest extends TestCase
             ->assertDontSee('disabled', false);
     }
 
-    public function test_basics_step_hides_the_rating_toggle_from_a_league_manager(): void
+    public function test_basics_step_shows_the_rating_toggle_to_the_leagues_own_manager_too(): void
     {
         $league       = $this->makeLeague('nlrl');
         $manager      = User::factory()->leagueManager()->create();
@@ -253,8 +283,7 @@ class ChampionshipSettingsTest extends TestCase
         $this->actingAs($manager)
             ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'basics']))
             ->assertOk()
-            ->assertDontSee('click to enable')
-            ->assertDontSee('click to disable');
+            ->assertSee('Disabled — click to enable');
     }
 
     // --- Tenant isolation on the new championships table ---

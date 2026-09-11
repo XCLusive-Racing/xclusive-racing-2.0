@@ -11,6 +11,27 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, eighth follow-up — XCL Rating approval opened up to a
+  league's own manager, no longer XCL-admin-only.** Real policy reversal,
+  user-directed after confirming: `ChampionshipPolicy::approveRating()` was
+  deliberately `canManage()`-only ("xcl_rating_enabled is never a League
+  Manager's call, because the rating only means something because XCL
+  controls what feeds it") — now the same gate as `update()`
+  (`canManage() || managesLeague($championship->league)`).
+  `ChampionshipWizardController::revokeRating()` switched from its own
+  `canManage()`-only `abort_unless` to `Gate::authorize('approveRating', ...)`
+  so it can't drift from the policy again. The Basics toggle and Review
+  step's card both already read `$canApproveRating`/re-check the policy, so
+  no view change was needed for either to now show a league manager the
+  control too. Tenant isolation is unaffected — a manager of a *different*
+  league still can't reach it (404s at route-model binding, same as every
+  other cross-league test in this file, before the policy is even
+  consulted). Tests replaced: `test_league_manager_cannot_reach_the_approve_rating_route`
+  → `test_league_manager_can_approve_and_revoke_rating_for_their_own_championship`
+  + `test_a_different_leagues_manager_still_cannot_approve_rating`;
+  `test_basics_step_hides_the_rating_toggle_from_a_league_manager` →
+  `test_basics_step_shows_the_rating_toggle_to_the_leagues_own_manager_too`.
+  141 tests passing.
 - **2026-09-11, seventh follow-up — the Basics-step enable/disable button
   405'd, and needed the wizard's purple styling.** Real bug: the enclosing
   Basics `<form>` carries `@method('PUT')` as a hidden `_method` field for
