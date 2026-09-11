@@ -167,7 +167,7 @@ class ChampionshipSettingsSchema
             // $championship->xcl_rating_enabled directly, this field has no
             // xcl_rating_enabled-awareness of its own).
             ['group' => 'sessions', 'key' => 'xcl_r_multiplier', 'type' => 'float', 'nullable' => true, 'default' => null, 'section' => 'Rating & Pitstops',
-                'label' => 'XCL-R Multiplier', 'help' => 'How much this round\'s races count toward rating changes. Leave blank for the default (1.0, same for every length). Only used once XCL Rating is enabled.', 'rule' => 'nullable|numeric|min:0.1|max:10'],
+                'label' => 'XCL-R Multiplier', 'help' => 'How much this round\'s races count toward rating changes (0.1–2.5). Leave blank for the default (1.0, same for every length). Only used once XCL Rating is enabled.', 'rule' => 'nullable|numeric|min:0.1|max:2.5'],
             ['group' => 'sessions', 'key' => 'pitstop_count', 'type' => 'integer', 'nullable' => true, 'default' => 0, 'section' => 'Rating & Pitstops',
                 'label' => 'Mandatory Pitstops', 'help' => 'Number of mandatory pitstops. Leave at 0 for none.', 'rule' => 'nullable|integer|min:0|max:9'],
             // A plain on/off button, no accompanying number field — user-directed

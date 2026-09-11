@@ -127,6 +127,23 @@ class RoundCreationTest extends TestCase
         ]);
     }
 
+    // User-directed 2026-09: capped at 2.5x.
+    public function test_xcl_r_multiplier_above_2_5_is_rejected(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+        $manager      = $this->makeManager($league);
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
+                'track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i'),
+                'xcl_r_multiplier' => 3.0,
+            ])
+            ->assertSessionHasErrors('xcl_r_multiplier');
+
+        $this->assertSame(0, $championship->rounds()->count());
+    }
+
     // Fixed Stop Time is a plain on/off button (user-directed 2026-09: "off =
     // standaard game, on = 25 seconds") — min_stop_secs is always derived from
     // it, never admin-entered, so a stray value doesn't survive once "dynamic"

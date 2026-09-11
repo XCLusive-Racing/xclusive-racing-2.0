@@ -11,6 +11,14 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, sixth follow-up — XCL-R Multiplier capped at 2.5x** (was
+  10x, matching the unrelated race-wizard Custom Race field's own cap — left
+  that one alone, not part of this ask). Schema rule, all three of
+  `ChampionshipWizardController`'s round-mutating actions, and the HTML
+  `min`/`max` attributes on the two hand-coded round-level inputs
+  (`_round-shared-fields.blade.php`/`round-edit.blade.php`) all updated
+  together. `RoundCreationTest::test_xcl_r_multiplier_above_2_5_is_rejected`.
+  140 tests passing.
 - **2026-09-11, fifth follow-up — XCL Rating enable/disable toggle added to
   Basics, as an in-form option, not a card below Save & Continue.** First cut
   put it in its own `<div class="admin-card">` after the closing `</form>` —
