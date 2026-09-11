@@ -11,6 +11,58 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, twenty-sixth follow-up — investigated "league of championship
+  managers kunnen de admin button niet zien," found no code bug.** User then
+  clarified the intended rule: "elke role behalve driver mag admin button
+  zien." Checked every layer: `User::canAccessAdminPanel()` already lists
+  every real role except `driver` (owner/admin/moderator/event_manager/
+  steward/broadcaster/league_manager/league_steward/championship_manager —
+  exactly the rule described), the actual rendered navbar
+  (`components/navbar.blade.php`, the `<x-navbar/>` component
+  `layouts/app.blade.php` actually uses — `layouts/_navbar.blade.php` is a
+  separate, unused file with its own copy of the same check, dead code but
+  not touched here since it's not in the render path) correctly gates the
+  ADMIN button on it in both its mobile and desktop copies, and
+  `adminLandingRoute()` resolves a valid route for both roles. Verified with
+  a full HTTP-rendered page as a real league manager and a real championship
+  manager (`assertSee('ADMIN')`, not just calling the model method in
+  isolation) — both pass. Cross-checked real production data too: every
+  existing league manager/steward LeagueUser row has its matching global
+  role correctly synced, and every existing `championship_manager` user's
+  `canAccessAdminPanel()` already returns true. Whatever the user saw isn't
+  reproducible from the code or the data as they stand — likely a stale
+  deployment/cache on the live site not yet reflecting this session's
+  earlier merges, not something fixable by further code changes. New tests
+  `AdminButtonVisibilityTest.php` (league manager, league steward,
+  championship manager all see it; a plain driver doesn't) lock in the
+  intended rule as a permanent regression check regardless. 187 tests
+  passing.
+- **2026-09-11, twenty-fifth follow-up — race registration could exceed
+  max_drivers under concurrent sign-ups.** User: "we hebben ook een keer de
+  max aantal mensen gehaald voor een baan en de registration stopt niet bij
+  het maximum maar gaat door" — not scoped to championships specifically
+  (`RaceController::register()`/`registerTeam()`, the regular event
+  registration flow), logged here anyway per this session's running
+  incident log. Classic check-then-act race condition: both methods called
+  `$race->isFull()` (solo) / compared `max_drivers` against a plain
+  `count()` (teams) *before* opening the `DB::transaction()` that actually
+  inserts the registration, with no row lock — two people registering for
+  the last spot at the same moment could each see "not full" before
+  either insert committed, letting the race fill past its cap. Same issue
+  for `registerTeam()`'s car-number-uniqueness check. Fixed by moving the
+  authoritative check inside the transaction, against a
+  `Race::lockForUpdate()` (and `RaceClass::lockForUpdate()` for a
+  multiclass race's per-class cap) row lock, which serializes concurrent
+  registration attempts for the same race — whoever gets the lock first
+  sees an accurate count; the next one waits, then sees the first one's
+  insert already counted. The original pre-transaction checks stay in
+  place too (an early, transaction-free rejection for the common,
+  non-racing case). New test file `RaceRegistrationCapacityTest.php` — true
+  concurrency isn't exercisable in single-threaded PHPUnit against SQLite,
+  so these lock in the corrected control flow itself (the authoritative
+  check now lives inside the transaction and correctly rejects once the
+  cap is reached) rather than the race condition directly. 183 tests
+  passing.
 - **2026-09-11, twenty-fourth follow-up — live incident: config push failing
   with "The payload is invalid."** User reported a live race (#228,
   "Multiclass", Laguna Seca) not pushing. Two distinct real bugs found:
