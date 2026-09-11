@@ -11,6 +11,57 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11 follow-up work, outside the phase/batch numbering below**
+  (not yet folded into the checklists themselves — noted here so it isn't
+  lost like the archive/delete work was):
+  - League archiving was hardened to a real soft delete (owner-role-only),
+    plus a genuine permanent delete for an already-archived, championship-free
+    league — `Admin\LeagueController`. Leagues list is now a DataTable.
+  - **Whole-championship team registration** (`settings.format.team_registration_scope
+    = 'championship'`) now lets a team opt out of a single round without
+    leaving the championship: the per-round `RaceTeamEntry` auto-created by
+    `ChampionshipTeamEntryService` is a normal, removable entry — the
+    round's own public page (`race/show.blade.php`) now shows the TEAM ENTRY
+    card (with its existing REMOVE button) for a driver-swaps championship
+    round too, not just a Custom-Race `is_endurance` event. See
+    `RaceController::show()`'s `$isTeamRace`/`$isChampionshipTeamRound`, and
+    `tests/Feature/ChampionshipRegistrationTest.php`'s
+    `test_championship_scope_team_can_opt_out_of_a_single_round_*`.
+  - **Discord "Require membership to register" toggle** (League edit,
+    admin-only) is now rendered disabled/greyed-out rather than removed —
+    the code path (Phase 4) is complete, but XCL hasn't finished installing
+    its bot into any real league's Discord server yet, so a league
+    shouldn't be able to turn on enforcement no one's tested end-to-end.
+    Existing values pass through unchanged via a hidden field. Re-enable by
+    dropping the `disabled` attribute once operational setup happens.
+  - **Rating engine: co-driver double-counting fixed** (the Phase 5c gap
+    noted in the Team feature — see the project's `project_team_feature_plan`
+    memory). `XclRating::processRace()` now groups entries by an optional
+    `field_key` (co-drivers sharing one car) for every field-relative number
+    — SoF, finisher count, rFactor scale, the win-% pool — so one car with
+    two rated humans no longer inflates the field or skews SoF for the whole
+    race. Each co-driver still gets their own individually-computed Elo
+    change from their own rating against that (now-correct) SoF — a
+    higher-rated co-driver still earns less / loses more than a lower-rated
+    one for the identical result, same mechanism as any two solo drivers.
+    `RatingService::processRace()` supplies `field_key` from the result's
+    registration `team_entry_id` (falling back to `car_number`, same
+    precedence as `RaceResult::groupedByCar()`). Covered by
+    `tests/Unit/XclRatingTest.php` (previously zero unit coverage on this
+    math at all).
+  - **ACC PC / ACC Console rating decision made — first step of the ACC PC
+    integration**: one shared rating board. Racing on either platform reads
+    and writes the same `elo_acc`/`sr_acc` columns. New `User::ratingGame()`/
+    `eloColumn()`/`srColumn()` are now the single place that decision lives;
+    `requirementFailure()`, `rank()`, `ratingClass()`, `srGrade()`,
+    `RatingService`'s field lookups, `Report::ratingFields()`, and
+    `race/show.blade.php`'s SoF/sort calculations all route through it
+    instead of their own `"elo_{$game}"` string-building (which silently
+    produced nothing for `ac` before this). Practical effect: ACC PC races
+    are now actually rated, entry requirements enforced, and driverCategory
+    banners computed — none of that worked before. Full ACC PC integration
+    (its own branding/assets, actual platform-specific server behaviour) is
+    still open, this was only the rating-model decision.
 - **All seven phases are now built (2026-09-10)**, plus a second refinement
   batch (below) — items 1-4 and 6-9 are all done. Item 5 (Discord
   operational setup) is explicitly deferred by the user; nothing else is

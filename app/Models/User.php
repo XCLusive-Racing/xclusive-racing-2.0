@@ -39,25 +39,53 @@ class User extends Authenticatable
         ];
     }
 
+    // ACC PC and ACC Console are one shared rating board (2026-09 decision, first step of
+    // the ACC PC integration) — whichever platform you race on, it's the same elo_acc/
+    // sr_acc numbers. This is the single place that decides which game slugs share a
+    // rating column; every elo_{game}/sr_{game} lookup in the app should go through
+    // eloColumn()/srColumn() (or ratingGame() directly) rather than re-deriving it.
+    public static function ratingGame(string $game): ?string
+    {
+        return match ($game) {
+            'acc', 'ac' => 'acc',
+            'lmu'       => 'lmu',
+            'iracing'   => 'iracing',
+            default     => null,
+        };
+    }
+
+    public static function eloColumn(string $game): ?string
+    {
+        $ratingGame = self::ratingGame($game);
+        return $ratingGame ? "elo_{$ratingGame}" : null;
+    }
+
+    public static function srColumn(string $game): ?string
+    {
+        $ratingGame = self::ratingGame($game);
+        return $ratingGame ? "sr_{$ratingGame}" : null;
+    }
+
     // Checks this user's per-game rating (elo_{game}/sr_{game} — the same numbers shown on
     // the leaderboard) against an SR/rating requirement. Returns an error message if they
-    // don't qualify, or null if they do. Games with no tracked rating (e.g. ACC PC) can't
-    // be checked, so requirements are skipped rather than blocking everyone.
+    // don't qualify, or null if they do. A game with no tracked rating can't be checked,
+    // so requirements are skipped rather than blocking everyone.
     public function requirementFailure(string $game, ?string $srRequirement, ?string $minRating, ?string $maxRating = null): ?string
     {
-        if (!in_array($game, ['acc', 'lmu', 'iracing'])) {
+        $eloColumn = self::eloColumn($game);
+        if (!$eloColumn) {
             return null;
         }
 
         if ($srRequirement) {
-            $userSr = (float) ($this->{"sr_{$game}"} ?? 0);
+            $userSr = (float) ($this->{self::srColumn($game)} ?? 0);
             if ($userSr < (float) $srRequirement) {
                 return 'You need at least SR ' . number_format((float) $srRequirement, 1)
                     . ' to register (yours: ' . number_format($userSr, 1) . ').';
             }
         }
 
-        $userElo = (int) ($this->{"elo_{$game}"} ?? 0);
+        $userElo = (int) ($this->{$eloColumn} ?? 0);
         $ranks   = collect(self::ranks());
 
         if ($minRating && $minRating !== 'all') {
@@ -379,7 +407,7 @@ class User extends Authenticatable
 
     public function rank(string $game = 'acc'): array
     {
-        $elo = (int) ($this->{"elo_{$game}"} ?? 0);
+        $elo = (int) ($this->{self::eloColumn($game) ?? 'elo_acc'} ?? 0);
         foreach (self::ranks() as $rank) {
             if ($elo >= $rank['min']) return $rank;
         }
@@ -403,7 +431,7 @@ class User extends Authenticatable
     // Rookie -> red, Bronze/Silver -> grey, Gold/Platinum/Alien -> white.
     public function ratingClass(string $game = 'acc'): int
     {
-        $elo = (int) ($this->{"elo_{$game}"} ?? 0);
+        $elo = (int) ($this->{self::eloColumn($game) ?? 'elo_acc'} ?? 0);
         foreach (self::ranks() as $rank) {
             if ($elo >= $rank['min']) {
                 return match ($rank['slug']) {
@@ -434,7 +462,7 @@ class User extends Authenticatable
 
     public function srGrade(string $game = 'acc'): array
     {
-        $sr     = (float) ($this->{"sr_{$game}"} ?? 0);
+        $sr     = (float) ($this->{self::srColumn($game) ?? 'sr_acc'} ?? 0);
         $grades = self::srGrades();
 
         foreach ($grades as $grade) {

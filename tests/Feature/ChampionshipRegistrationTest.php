@@ -455,6 +455,59 @@ class ChampionshipRegistrationTest extends TestCase
         $this->assertDatabaseHas('race_team_entries', ['race_id' => $race->id, 'racing_team_id' => $team->id, 'car_number' => 7]);
     }
 
+    public function test_championship_scope_team_can_opt_out_of_a_single_round_and_the_round_page_shows_it(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+        $championship->settings = array_replace_recursive($championship->settings->toArray(), [
+            'format' => ['driver_swaps_enabled' => true, 'team_registration_scope' => 'championship'],
+        ]);
+        $championship->save();
+
+        $owner = User::factory()->create();
+        $team  = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+
+        // 'open' (not makeRound()'s default 'scheduled') — unregisterTeam() and the
+        // REMOVE button both require an open race, same as the solo-registration path.
+        $r1 = tap($this->makeRound($championship, 1))->update(['status' => 'open']);
+        $r2 = tap($this->makeRound($championship, 2))->update(['status' => 'open']);
+
+        $this->actingAs($owner)
+            ->post(route('championships.register', $championship), [
+                'racing_team_id' => $team->id, 'car_number' => 42, 'starting_driver_id' => $owner->id,
+            ])
+            ->assertRedirect();
+
+        // The round's own public page has no is_endurance flag (Custom-Race-only column),
+        // but it's still a team race for a driver-swaps championship — the auto-entry from
+        // the championship-level registration must be visible and removable there.
+        $this->actingAs($owner)
+            ->get(route('events.show', $r1))
+            ->assertOk()
+            ->assertSee('TEAM ENTRY')
+            ->assertSee('#42');
+
+        $entry = RaceTeamEntry::where('race_id', $r1->id)->where('racing_team_id', $team->id)->firstOrFail();
+
+        $this->actingAs($owner)
+            ->delete(route('events.unregister-team', [$r1, $entry]))
+            ->assertRedirect();
+
+        $this->assertSoftDeleted('race_team_entries', ['id' => $entry->id]);
+        // Round 2's own entry, and the championship-level registration itself, are untouched —
+        // opting out of one round doesn't unregister the team from the season.
+        $this->assertDatabaseHas('race_team_entries', ['race_id' => $r2->id, 'racing_team_id' => $team->id, 'deleted_at' => null]);
+        $this->assertDatabaseHas('championship_registrations', ['championship_id' => $championship->id, 'racing_team_id' => $team->id]);
+
+        // A fresh request (the flash "Car #42 has been unregistered" notice from the
+        // redirect above is still visible for one more request, so don't assert against
+        // "#42" here) — the empty-state message replaces the entries list.
+        $this->actingAs($owner)
+            ->get(route('events.show', $r1))
+            ->assertOk()
+            ->assertSee('Register your team for the');
+    }
+
     public function test_per_round_scope_does_not_auto_create_round_entries(): void
     {
         $league = $this->makeLeague('nlrl');

@@ -207,12 +207,18 @@
                     </div>
                     @endif
 
-                    <div class="form-check mb-0">
-                        <input class="form-check-input" type="checkbox" name="requires_discord_membership" id="requires_discord" value="1"
-                               {{ old('requires_discord_membership', $league->requires_discord_membership) ? 'checked' : '' }}>
+                    <div class="form-check mb-0" style="opacity:.55">
+                        <input class="form-check-input" type="checkbox" id="requires_discord" disabled
+                               {{ $league->requires_discord_membership ? 'checked' : '' }}>
+                        {{-- Disabled checkboxes submit nothing — this hidden field carries the
+                             real, unchanged value through the save instead. --}}
+                        <input type="hidden" name="requires_discord_membership" value="{{ $league->requires_discord_membership ? '1' : '0' }}">
                         <label class="form-check-label fw-bold text-dark" for="requires_discord" style="font-size:.82rem">
                             Require Discord membership to register
                         </label>
+                        <div class="form-text" style="font-size:.72rem">
+                            Temporarily locked — XCL is still finishing the operational Discord bot setup. Coming soon.
+                        </div>
                     </div>
                     @else
                     <div class="form-text" style="font-size:.72rem;color:#9ca3af">

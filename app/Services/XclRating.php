@@ -74,11 +74,28 @@ class XclRating
         $k          = (float) ($race['k_factor']  ?? $this->K_FACTOR);
         $multiplier = (float) ($race['multiplier'] ?? $this->MULTIPLIER);
 
-        $finishers    = array_filter($entries, fn($e) => $e['status'] === 'FIN');
-        $nonFinishers = array_filter($entries, fn($e) => $e['status'] !== 'FIN');
+        // Entries sharing a field_key (co-drivers on the same car in a team race) are one
+        // competitive entry for every field-relative number below — SoF, finisher counts,
+        // rFactor scale, the win-percentage pool — so a car with two rated humans in it
+        // doesn't inflate the field or skew SoF for every other driver in the race, including
+        // solo ones. An entry with no field_key (the normal, non-team case) is its own group,
+        // exactly as before. Each co-driver still gets their own Elo change at the end, from
+        // their own rating against that shared SoF — a stronger co-driver earns less / loses
+        // more than a weaker one for the identical finish, same as any two solo drivers would.
+        $groups = [];
+        foreach ($entries as $entry) {
+            $groups[$entry['field_key'] ?? $entry['driver_id']][] = $entry;
+        }
 
-        $nFin   = count($finishers);
-        $nTotal = count($entries);
+        $groupStatus = [];
+        $groupRating = [];
+        foreach ($groups as $key => $members) {
+            $groupStatus[$key] = $members[0]['status'];
+            $groupRating[$key] = array_sum(array_column($members, 'rating')) / count($members);
+        }
+
+        $nFin   = count(array_filter($groupStatus, fn($s) => $s === 'FIN'));
+        $nTotal = count($groups);
 
         // Gate on the whole field, not just classified finishers — a DNF still entered and
         // still counts toward a race being "big enough" to rate; it's excluded from the
@@ -89,7 +106,7 @@ class XclRating
             );
         }
 
-        $sof   = array_sum(array_column($entries, 'rating')) / $nTotal;
+        $sof   = array_sum($groupRating) / $nTotal;
         // Fewer than 2 finishers leaves nothing to rank against each other; rFactor for a
         // lone finisher is R_HIGH regardless (finishPos=1), so rStep is never actually used.
         $rStep = $nFin > 1 ? ($this->R_HIGH - $this->R_LOW) / ($nFin - 1) : 0.0;
@@ -97,16 +114,19 @@ class XclRating
         $transformedRatings = [];
         $sumTransformed     = 0.0;
 
-        foreach ($finishers as $e) {
-            $tr = $this->transformedRating($e['rating']);
-            $transformedRatings[$e['driver_id']] = $tr;
+        foreach ($groupStatus as $key => $status) {
+            if ($status !== 'FIN') {
+                continue;
+            }
+            $tr = $this->transformedRating($groupRating[$key]);
+            $transformedRatings[$key] = $tr;
             $sumTransformed += $tr;
         }
 
         $results = [];
 
         foreach ($entries as $entry) {
-            $driverId     = $entry['driver_id'];
+            $key          = $entry['field_key'] ?? $entry['driver_id'];
             $oldRating    = (float) $entry['rating'];
             $status       = strtoupper($entry['status']);
             $finishPos    = $entry['finish_pos'] ?? null;
@@ -115,7 +135,7 @@ class XclRating
             if ($status === 'FIN') {
                 $rFactor     = $this->R_HIGH - ($finishPos - 1) * $rStep;
                 $winPct      = $sumTransformed > 0
-                    ? $transformedRatings[$driverId] / $sumTransformed
+                    ? $transformedRatings[$key] / $sumTransformed
                     : 0.0;
                 $actualScore = ($nTotal - $finishPos) / ($nTotal - 1);
                 $expScore    = $this->expectedScore($oldRating, $sof);

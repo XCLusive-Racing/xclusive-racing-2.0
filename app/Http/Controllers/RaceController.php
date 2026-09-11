@@ -48,6 +48,22 @@ class RaceController extends Controller
         $myTeamEntries   = collect();
         $myRegisteredAt  = null;
 
+        // A driver-swap championship round has no is_endurance flag of its own (that column
+        // is Custom-Race-only, see docs/championships/PLAN.md's Phase 4 scope decision) — a
+        // team is entered here automatically from the championship-level registration
+        // (ChampionshipTeamEntryService), so this round still needs the same TEAM ENTRY card
+        // (and its per-race unregister) that Custom Race endurance events already get.
+        $isTeamRace              = (bool) $race->is_endurance;
+        $isChampionshipTeamRound = false;
+
+        if (!$isTeamRace && $race->championship_id) {
+            $championship = $race->championship()->withoutTenantScope()->first();
+            if ($championship && ($championship->settings->format->driver_swaps_enabled ?? false)) {
+                $isTeamRace              = true;
+                $isChampionshipTeamRound = true;
+            }
+        }
+
         if (auth()->check()) {
             $myRegistration = $race->registrations->firstWhere('user_id', auth()->id());
             $isRegistered   = $myRegistration !== null;
@@ -72,7 +88,10 @@ class RaceController extends Controller
             ->get(['id', 'xuid_psid'])
             ->keyBy('xuid_psid');
 
-        return view('race.show', compact('race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries'));
+        return view('race.show', compact(
+            'race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries',
+            'isTeamRace', 'isChampionshipTeamRound'
+        ));
     }
 
     // Serves a single-event .ics — the universal format every calendar app opens. Linked

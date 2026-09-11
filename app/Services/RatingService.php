@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Jobs\SyncDiscordRankRole;
 use App\Models\Race;
+use App\Models\RaceRegistration;
 use App\Models\RaceResult;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -48,6 +49,16 @@ class RatingService
             ? $results->groupBy(fn (RaceResult $r) => $r->car_class ?? 'Other')
             : collect(['__all__' => $results]);
 
+        // Co-drivers sharing one car (Phase 5a) produce one RaceResult row each with
+        // identical car-level stats — without a shared key, XclRating would count that one
+        // car as multiple field entries, inflating SoF/field-size for the whole race. Same
+        // lookup precedence as RaceResult::groupedByCar(): the registration's team_entry_id
+        // is authoritative (car numbers can drift mid-event), falling back to car_number for
+        // any result with no linked registration.
+        $teamEntryIdByUserId = RaceRegistration::where('race_id', $race->id)
+            ->whereNotNull('team_entry_id')
+            ->pluck('team_entry_id', 'user_id');
+
         $calculated = collect();
 
         foreach ($groups as $classKey => $classResults) {
@@ -55,7 +66,7 @@ class RatingService
             // grid position — reuses the same ranking the public results page shows per class.
             $positions = RaceResult::classifiedPositions($classResults);
 
-            $entries = $classResults->map(function (RaceResult $r) use ($ratingField, $positions) {
+            $entries = $classResults->map(function (RaceResult $r) use ($ratingField, $positions, $teamEntryIdByUserId) {
                 // Undo this result's own previously-applied elo_change (if any) so recalculating
                 // after a manual DSQ/DC correction re-baselines from the pre-this-race rating
                 // instead of stacking a second delta on top of the first.
@@ -75,6 +86,7 @@ class RatingService
                     'rating'     => $rating,
                     'finish_pos' => ($status === 'FIN') ? $positions->get($r->id) : null,
                     'status'     => $status,
+                    'field_key'  => $teamEntryIdByUserId->get($r->user_id) ?? $r->car_number ?? ('solo_' . $r->id),
                 ];
             })->values()->all();
 
@@ -164,22 +176,12 @@ class RatingService
 
     private function ratingField(string $game): ?string
     {
-        return match ($game) {
-            'acc'     => 'elo_acc',
-            'lmu'     => 'elo_lmu',
-            'iracing' => 'elo_iracing',
-            default   => null,
-        };
+        return User::eloColumn($game);
     }
 
     private function srField(string $game): ?string
     {
-        return match ($game) {
-            'acc'     => 'sr_acc',
-            'lmu'     => 'sr_lmu',
-            'iracing' => 'sr_iracing',
-            default   => null,
-        };
+        return User::srColumn($game);
     }
 
     /**
