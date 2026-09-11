@@ -32,13 +32,18 @@
     $dependsOnOn     = $dependsOnKey ? (bool) old("settings.{$field['group']}.{$dependsOnKey}", $championship->settings->{$field['group']}->{$dependsOnKey} ?? false) : true;
     $shouldShow      = $dependsInverted ? !$dependsOnOn : $dependsOnOn;
 
-    // XCL-R Multiplier is a different case: gated on $championship->xcl_rating_enabled,
-    // which has no live form control on this page to hide/show against (only an
-    // XCL admin can flip it, elsewhere) — disabled + greyed in place instead.
+    // Two independent reasons a field can be locked (disabled + greyed) rather
+    // than just shown/hidden: XCL-R Multiplier is gated on
+    // $championship->xcl_rating_enabled, which has no in-page form control to
+    // react to; other fields (e.g. Discord Membership Required) just carry a
+    // static 'locked' => true in the schema, for something genuinely not
+    // operational yet regardless of any setting. Both render the same way.
     $xclGated = $field['key'] === 'xcl_r_multiplier' && !$championship->xcl_rating_enabled;
+    $locked   = $xclGated || ($field['locked'] ?? false);
+    $lockedHelp = $locked ? ($field['locked_help'] ?? null) : null;
 @endphp
 
-<div class="{{ $col }}" style="{{ $xclGated ? 'opacity:.5' : '' }}" @if($dependsOnId) data-shown-if="{{ $dependsOnId }}" @if($dependsInverted) data-invert @endif @if(!$shouldShow) hidden @endif @endif>
+<div class="{{ $col }}" style="{{ $locked ? 'opacity:.5' : '' }}" @if($dependsOnId) data-shown-if="{{ $dependsOnId }}" @if($dependsInverted) data-invert @endif @if(!$shouldShow) hidden @endif @endif>
     @if($field['type'] === 'boolean')
         {{-- Toggle pill, same pattern as the admin user-roles page
              (resources/views/admin/users/edit.blade.php, [data-role-pill]) instead of
@@ -46,18 +51,21 @@
         @php $isOn = (bool) old($errorKey, $current); @endphp
         <label data-bool-pill
                class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
-               style="cursor:{{ $xclGated ? 'not-allowed' : 'pointer' }};user-select:none;font-size:.82rem;transition:all .15s;{{ $isOn ? 'border:2px solid #7c3aed;background:#7c3aed18;color:#7c3aed' : 'border:2px solid #e5e7eb;background:#fff;color:#374151' }}">
-            <input type="checkbox" name="{{ $name }}" id="{{ $id }}" value="1" class="d-none" {{ $isOn ? 'checked' : '' }} {{ $xclGated ? 'disabled' : '' }}>
+               style="cursor:{{ $locked ? 'not-allowed' : 'pointer' }};user-select:none;font-size:.82rem;transition:all .15s;{{ $isOn ? 'border:2px solid #7c3aed;background:#7c3aed18;color:#7c3aed' : 'border:2px solid #e5e7eb;background:#fff;color:#374151' }}">
+            <input type="checkbox" name="{{ $name }}" id="{{ $id }}" value="1" class="d-none" {{ $isOn ? 'checked' : '' }} {{ $locked ? 'disabled' : '' }}>
             {{ $field['label'] }}
         </label>
         @if($field['help'])
         <div class="form-text" style="font-size:.72rem;color:#9ca3af">{{ $field['help'] }}</div>
         @endif
+        @if($lockedHelp)
+        <div class="form-text" style="font-size:.72rem;color:#9ca3af">{{ $lockedHelp }}</div>
+        @endif
     @else
         <label class="form-label" for="{{ $id }}">{{ $field['label'] }}</label>
 
         @if($field['type'] === 'enum')
-        <select name="{{ $name }}" id="{{ $id }}" class="form-select @error($errorKey) is-invalid @enderror" {{ $xclGated ? 'disabled' : '' }}>
+        <select name="{{ $name }}" id="{{ $id }}" class="form-select @error($errorKey) is-invalid @enderror" {{ $locked ? 'disabled' : '' }}>
             @if($field['nullable'] ?? false)
             <option value="">— Not set —</option>
             @endif
@@ -68,26 +76,29 @@
             @endforeach
         </select>
         @elseif($field['type'] === 'text')
-        <textarea name="{{ $name }}" id="{{ $id }}" rows="3" class="form-control @error($errorKey) is-invalid @enderror" {{ $xclGated ? 'disabled' : '' }}>{{ old($errorKey, $current) }}</textarea>
+        <textarea name="{{ $name }}" id="{{ $id }}" rows="3" class="form-control @error($errorKey) is-invalid @enderror" {{ $locked ? 'disabled' : '' }}>{{ old($errorKey, $current) }}</textarea>
         @elseif($field['type'] === 'time')
         <input type="time" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror" {{ $xclGated ? 'disabled' : '' }}>
+               class="form-control @error($errorKey) is-invalid @enderror" {{ $locked ? 'disabled' : '' }}>
         @elseif($field['type'] === 'date')
         <input type="date" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror" {{ $xclGated ? 'disabled' : '' }}>
+               class="form-control @error($errorKey) is-invalid @enderror" {{ $locked ? 'disabled' : '' }}>
         @elseif($field['type'] === 'datetime')
         <input type="datetime-local" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror" {{ $xclGated ? 'disabled' : '' }}>
+               class="form-control @error($errorKey) is-invalid @enderror" {{ $locked ? 'disabled' : '' }}>
         @elseif($field['type'] === 'float')
         <input type="number" step="0.01" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror" {{ $xclGated ? 'disabled' : '' }}>
+               class="form-control @error($errorKey) is-invalid @enderror" {{ $locked ? 'disabled' : '' }}>
         @else
         <input type="number" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
-               class="form-control @error($errorKey) is-invalid @enderror" {{ $xclGated ? 'disabled' : '' }}>
+               class="form-control @error($errorKey) is-invalid @enderror" {{ $locked ? 'disabled' : '' }}>
         @endif
 
         @if($field['help'])
         <div class="form-text" style="font-size:.72rem;color:#9ca3af">{{ $field['help'] }}</div>
+        @endif
+        @if($lockedHelp)
+        <div class="form-text" style="font-size:.72rem;color:#9ca3af">{{ $lockedHelp }}</div>
         @endif
         @error($errorKey) <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
     @endif

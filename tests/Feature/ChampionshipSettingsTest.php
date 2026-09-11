@@ -378,6 +378,26 @@ class ChampionshipSettingsTest extends TestCase
         $this->assertSame('GT4', $championship->classes()->where('name', 'GT4')->value('car_class'));
     }
 
+    // User-directed 2026-09: "de button hierboven moet grayed zijn want dat
+    // werkt og niet met de tekst vervanging door coming soon" — Discord
+    // Membership Required is fully built (ChampionshipController::
+    // discordMembershipFailure()) but not operationally ready (no XCL bot
+    // actually installed in a real league's Discord yet, same reason the
+    // League edit page's own Discord toggle is locked) — locked in the
+    // wizard too via the schema's generic 'locked' flag.
+    public function test_requirements_step_locks_the_discord_toggle(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $admin        = $this->makeAdmin();
+        $championship = $this->makeChampionship($league);
+
+        $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'requirements']))
+            ->assertOk()
+            ->assertSee('disabled', false)
+            ->assertSee('Temporarily locked');
+    }
+
     // --- Tenant isolation on the new championships table ---
 
     public function test_league_manager_cannot_reach_another_leagues_championship(): void

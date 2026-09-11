@@ -221,8 +221,14 @@ class ChampionshipSettingsSchema
                 'label' => 'Maximum XCL Rating', 'help' => 'For a low-rating-only round — leave blank for no upper cap.'],
             ['group' => 'requirements', 'key' => 'min_safety_rating', 'type' => 'float', 'nullable' => true, 'default' => null,
                 'label' => 'Minimum Safety Rating', 'help' => 'On the 0–10 scale. Leave blank for no requirement.', 'rule' => 'nullable|numeric|between:0,10'],
-            ['group' => 'requirements', 'key' => 'discord_membership_required', 'type' => 'boolean', 'default' => false,
-                'label' => 'Discord Membership Required', 'help' => 'Entrants must be a member of this league\'s Discord to register.'],
+            // Locked (disabled + greyed) same as the League edit page's own Discord
+            // toggle — the check itself is fully built (ChampionshipController::
+            // discordMembershipFailure()), but XCL hasn't finished installing its
+            // bot into a real league's Discord server yet, so nobody should be able
+            // to switch enforcement on before that's actually operational.
+            ['group' => 'requirements', 'key' => 'discord_membership_required', 'type' => 'boolean', 'default' => false, 'locked' => true,
+                'label' => 'Discord Membership Required', 'help' => 'Entrants must be a member of this league\'s Discord to register.',
+                'locked_help' => 'Temporarily locked — XCL is still finishing the operational Discord bot setup. Coming soon.'],
             ['group' => 'requirements', 'key' => 'manual_approval_required', 'type' => 'boolean', 'default' => false,
                 'label' => 'Manual Approval of Entries', 'help' => 'Entries wait for league staff to approve before they count.'],
             // Shown publicly on the championship page (Phase 7) as "Rules" — this is

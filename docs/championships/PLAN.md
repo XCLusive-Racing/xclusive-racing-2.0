@@ -11,6 +11,17 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, thirteenth follow-up — Requirements step's "Discord
+  Membership Required" toggle locked.** Same reason the League edit page's
+  own Discord-requirement toggle was locked earlier this session: the
+  check itself is fully built (`ChampionshipController::discordMembershipFailure()`)
+  but XCL hasn't finished installing its bot into a real league's Discord
+  server yet. `_field.blade.php`'s single field-specific `$xclGated` check
+  generalized into `$locked` — now sourced from either that same dynamic
+  XCL-Rating case, OR a new static `'locked' => true` (+ `'locked_help'`
+  text) on the schema field itself, so a future "not ready yet" field
+  doesn't need another one-off key check hardcoded into the partial.
+  `test_requirements_step_locks_the_discord_toggle`. 145 tests passing.
 - **2026-09-11, twelfth follow-up — Points Scheme picker (Scoring step)
   reorganized and re-previewed.** User-directed general "make it clearer"
   pass, not tied to a specific bug. The picker
