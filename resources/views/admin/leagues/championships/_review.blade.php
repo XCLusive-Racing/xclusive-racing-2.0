@@ -64,7 +64,6 @@
         @if($championship->xcl_rating_enabled)
         <p class="mb-2" style="font-size:.85rem">
             <span class="badge" style="background:#d1fae5;color:#065f46;font-size:.7rem;padding:4px 8px;border-radius:6px;font-weight:700">Enabled</span>
-            {{ $championship->ratingApprovedBy ? 'Approved by ' . $championship->ratingApprovedBy->name : 'Approved' }} on {{ $championship->xcl_rating_approved_at?->format('d M Y') }}.
         </p>
         @if($canApproveRating)
         <form action="{{ route('admin.leagues.championships.revoke-rating', [$league, $championship]) }}" method="POST" onsubmit="return false">

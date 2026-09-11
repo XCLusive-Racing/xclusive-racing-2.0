@@ -86,9 +86,6 @@
                 onclick="if(!confirm('Disable XCL Rating for {{ addslashes($championship->name) }}?')) return false; this.form.querySelector('input[name=_method]').value=''; return true;">
             Enabled — click to disable
         </button>
-        <div class="form-text mt-1" style="font-size:.72rem;color:#9ca3af">
-            {{ $championship->ratingApprovedBy ? 'Approved by ' . $championship->ratingApprovedBy->name : 'Approved' }} on {{ $championship->xcl_rating_approved_at?->format('d M Y') }}.
-        </div>
         @else
         <button type="submit" formaction="{{ route('admin.leagues.championships.approve-rating', [$league, $championship]) }}" formmethod="POST" formnovalidate
                 class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
