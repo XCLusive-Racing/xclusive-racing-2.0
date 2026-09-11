@@ -11,6 +11,19 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, fifth follow-up — XCL Rating enable/disable toggle added to
+  Basics.** Previously only reachable from the Review step's card. New
+  admin-only (`$canApproveRating`, same `ChampionshipPolicy::approveRating()`
+  = `canManage()` check as before) toggle-styled button in `wizard.blade.php`
+  right after the Basics form — a separate `<form>` posting to the existing
+  `approve-rating`/`revoke-rating` routes (no new backend action, no change
+  to the authorization boundary a league manager still can't cross). This
+  also closes the loop on XCL-R Multiplier's disabled state: it was already
+  reading `$championship->xcl_rating_enabled` live in `_field.blade.php`, but
+  there was no in-wizard way to actually flip that switch other than Review.
+  `ChampionshipSettingsTest::test_basics_step_shows_the_rating_toggle_for_an_admin_and_unlocks_the_multiplier`/
+  `test_basics_step_hides_the_rating_toggle_from_a_league_manager`. 139 tests
+  passing.
 - **2026-09-11, fourth follow-up — Fixed Stop Time simplified to a plain
   on/off button, no number field at all.** User-directed: "off = standaard
   game, on = 25 seconds" — min_stop_secs is no longer admin-entered anywhere

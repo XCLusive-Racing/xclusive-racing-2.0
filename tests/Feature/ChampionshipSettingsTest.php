@@ -207,6 +207,56 @@ class ChampionshipSettingsTest extends TestCase
         $this->assertSame($admin->id, $championship->xcl_rating_approved_by);
     }
 
+    // User-directed 2026-09: an enable/disable control for XCL Rating on
+    // Basics (not just Review), and XCL-R Multiplier (Sessions step) actually
+    // un-greys once it's on — same approve-rating/revoke-rating routes/policy
+    // as before, just a second, more visible entry point.
+    public function test_basics_step_shows_the_rating_toggle_for_an_admin_and_unlocks_the_multiplier(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $admin        = $this->makeAdmin();
+        $championship = $this->makeChampionship($league);
+
+        $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'basics']))
+            ->assertOk()
+            ->assertSee('Disabled — click to enable');
+
+        // Sessions step: the multiplier field is disabled while rating is off.
+        $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'sessions']))
+            ->assertOk()
+            ->assertSee('disabled', false);
+
+        $this->actingAs($admin)
+            ->post(route('admin.leagues.championships.approve-rating', [$league, $championship]))
+            ->assertRedirect();
+
+        $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'basics']))
+            ->assertOk()
+            ->assertSee('Enabled — click to disable');
+
+        $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'sessions']))
+            ->assertOk()
+            ->assertDontSee('disabled', false);
+    }
+
+    public function test_basics_step_hides_the_rating_toggle_from_a_league_manager(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $manager      = User::factory()->leagueManager()->create();
+        $this->attachManager($manager, $league);
+        $championship = $this->makeChampionship($league);
+
+        $this->actingAs($manager)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'basics']))
+            ->assertOk()
+            ->assertDontSee('click to enable')
+            ->assertDontSee('click to disable');
+    }
+
     // --- Tenant isolation on the new championships table ---
 
     public function test_league_manager_cannot_reach_another_leagues_championship(): void
