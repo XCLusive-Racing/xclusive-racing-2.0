@@ -451,4 +451,51 @@ class LeagueAdminAccessTest extends TestCase
         $league = League::withoutTenantScope()->where('slug', 'eer')->firstOrFail();
         $this->assertFalse($league->requires_discord_membership);
     }
+
+    // User-directed 2026-09: "Reset Interval (min) (rolling only) die mag weg
+    // want ze hebben hun eigen servers... cfg_path (optional) moet required
+    // zijn" -- both on the admin-only cross-league "All League Servers" Add
+    // Server form (admin/league-servers/index.blade.php,
+    // LeagueFtpServerController).
+    public function test_league_servers_add_form_drops_reset_interval_and_requires_cfg_path(): void
+    {
+        $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
+
+        $this->actingAs($admin)
+            ->get(route('admin.league-servers.index'))
+            ->assertOk()
+            ->assertDontSee('Reset Interval (min)')
+            ->assertSee('Reset Start Hour');
+    }
+
+    public function test_league_servers_store_rejects_a_missing_cfg_path(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $admin  = $this->makeAdmin();
+
+        $this->actingAs($admin)->post(route('admin.league-servers.store'), [
+            'league_id' => $league->id, 'name' => 'League Server', 'host' => '1.2.3.4', 'port' => 21,
+            'username' => 'u', 'password' => 'p', 'path' => '/results',
+            'server_type' => 'scheduled', 'game' => 'acc', 'platform' => 'console',
+        ])->assertSessionHasErrors('cfg_path');
+
+        $this->assertDatabaseMissing('ftp_servers', ['league_id' => $league->id, 'name' => 'League Server']);
+    }
+
+    public function test_league_servers_store_no_longer_needs_a_reset_interval_and_defaults_to_120(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $admin  = $this->makeAdmin();
+
+        $this->actingAs($admin)->post(route('admin.league-servers.store'), [
+            'league_id' => $league->id, 'name' => 'League Server', 'host' => '1.2.3.4', 'port' => 21,
+            'username' => 'u', 'password' => 'p', 'path' => '/results', 'cfg_path' => '/cfg',
+            'server_type' => 'rolling', 'reset_start_hour' => 1,
+            'game' => 'acc', 'platform' => 'console',
+        ])->assertRedirect();
+
+        $server = FtpServer::where('league_id', $league->id)->where('name', 'League Server')->firstOrFail();
+        $this->assertSame(120, $server->reset_interval_minutes);
+    }
 }

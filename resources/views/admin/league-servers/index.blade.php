@@ -127,21 +127,22 @@
                     @error('path') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="col-sm-6">
-                    <label class="form-label">cfg_path <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
-                    <input type="text" name="cfg_path" class="form-control @error('cfg_path') is-invalid @enderror">
+                    <label class="form-label">cfg_path</label>
+                    <input type="text" name="cfg_path" class="form-control @error('cfg_path') is-invalid @enderror" required>
                     @error('cfg_path') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
             </div>
+            {{-- Reset Interval dropped -- user-directed 2026-09: a league's own
+                 server isn't part of XCL's shared rolling-restart pool, so this
+                 stays a fixed 120 minutes (the ftp_servers.reset_interval_minutes
+                 column default) for every league server rather than a per-league
+                 choice. Reset Start Hour stays -- still genuinely useful, letting
+                 a league offset where in that cycle their own server resets. --}}
             <div class="row g-3 mb-3">
                 <div class="col-sm-6">
                     <label class="form-label">Reset Start Hour <span class="fw-normal text-secondary" style="text-transform:none">(rolling only)</span></label>
                     <input type="number" name="reset_start_hour" min="0" max="23" class="form-control @error('reset_start_hour') is-invalid @enderror">
                     @error('reset_start_hour') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
-                <div class="col-sm-6">
-                    <label class="form-label">Reset Interval (min) <span class="fw-normal text-secondary" style="text-transform:none">(rolling only)</span></label>
-                    <input type="number" name="reset_interval_minutes" min="30" max="1440" class="form-control @error('reset_interval_minutes') is-invalid @enderror">
-                    @error('reset_interval_minutes') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
             </div>
             <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">
