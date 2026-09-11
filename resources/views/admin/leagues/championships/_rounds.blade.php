@@ -31,14 +31,12 @@
                 </div>
             </div>
             <div class="d-flex align-items-center gap-2">
-                @if($round->ftp_server_id)
-                <form action="{{ route('admin.leagues.championships.rounds.push-config', [$league, $championship, $round]) }}" method="POST">
-                    @csrf
-                    <button type="submit" class="btn btn-sm fw-bold" style="background:transparent;color:#7c3aed;font-size:.72rem">
-                        Push Config
-                    </button>
-                </form>
-                @endif
+                {{-- No manual "Push Config" button — gportal:push-configs already
+                     auto-pushes every race's config on a schedule, championship
+                     rounds included, the same as a regular event. Results import
+                     the same way (gportal:import-results, also global). Status is
+                     still surfaced above (config pending/pushed/failed) so a
+                     manager can see it, just nothing to click here to force it. --}}
                 <a href="{{ route('admin.leagues.championships.rounds.edit', [$league, $championship, $round]) }}"
                    class="btn btn-sm fw-bold" style="background:transparent;color:#374151;font-size:.72rem">
                     Edit

@@ -11,6 +11,17 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, ninth follow-up — no manual "Push Config" button on the
+  Rounds list.** User-directed: `gportal:push-configs`/`gportal:import-results`
+  already run globally on a schedule (`routes/console.php`, every minute),
+  championship rounds included — the same automatic behaviour a regular
+  event already gets (its own manual push button was removed back on
+  2026-08-15 once the auto-push status card landed). The button in
+  `_rounds.blade.php` is gone; the passive status text (config pending/
+  pushed/failed) stays. The `rounds.push-config` route/controller/
+  `PushRoundConfigJob` are untouched — still a working manual retry path,
+  just not linked from this list. `ChampionshipRoundPushTest`'s render test
+  renamed/inverted to confirm the button's absence. 141 tests passing.
 - **2026-09-11, eighth follow-up — XCL Rating approval opened up to a
   league's own manager, no longer XCL-admin-only.** Real policy reversal,
   user-directed after confirming: `ChampionshipPolicy::approveRating()` was
