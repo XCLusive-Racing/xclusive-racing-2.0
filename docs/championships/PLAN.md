@@ -12,15 +12,21 @@ up without re-deriving context.
 ## Current State
 
 - **2026-09-11, fifth follow-up — XCL Rating enable/disable toggle added to
-  Basics.** Previously only reachable from the Review step's card. New
-  admin-only (`$canApproveRating`, same `ChampionshipPolicy::approveRating()`
-  = `canManage()` check as before) toggle-styled button in `wizard.blade.php`
-  right after the Basics form — a separate `<form>` posting to the existing
-  `approve-rating`/`revoke-rating` routes (no new backend action, no change
-  to the authorization boundary a league manager still can't cross). This
-  also closes the loop on XCL-R Multiplier's disabled state: it was already
-  reading `$championship->xcl_rating_enabled` live in `_field.blade.php`, but
-  there was no in-wizard way to actually flip that switch other than Review.
+  Basics, as an in-form option, not a card below Save & Continue.** First cut
+  put it in its own `<div class="admin-card">` after the closing `</form>` —
+  user feedback: "hij moet als optie ertussen staan, hij staat nu onder
+  save" — moved into `_basics.blade.php` itself, its own subsection between
+  Description and Server, same visual treatment as everything else on the
+  step. Still a separately-submitted action (approve-rating/revoke-rating,
+  not the step's own `wizard.update` save) even though it can't be a nested
+  `<form>` inside the Basics one — done with `formaction`/`formmethod` on the
+  button itself (HTML5 lets one submit button in a form override where *that
+  button's* click submits to, everything else in the form still goes to the
+  form's own action). Same admin-only policy/routes as before, no change to
+  the authorization boundary a league manager still can't cross. Also closes
+  the loop on XCL-R Multiplier's disabled state, which was already reading
+  `$championship->xcl_rating_enabled` live in `_field.blade.php` but had no
+  in-wizard way to flip that switch other than Review.
   `ChampionshipSettingsTest::test_basics_step_shows_the_rating_toggle_for_an_admin_and_unlocks_the_multiplier`/
   `test_basics_step_hides_the_rating_toggle_from_a_league_manager`. 139 tests
   passing.

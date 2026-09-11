@@ -126,48 +126,6 @@
                 Save &amp; Continue →
             </button>
         </form>
-
-        {{-- XCL Rating enable/disable — admin-only (approveRating policy), same
-             approve-rating/revoke-rating routes the Review step's card already
-             uses. Lives here too so an admin doesn't have to jump to Review just
-             to turn it on — Basics is the first thing anyone sees. A separate
-             <form> since it can't nest inside the Basics form above. --}}
-        @if($step === 'basics' && $canApproveRating)
-        <div class="admin-card mb-4">
-            <div class="admin-card-header">
-                <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.9rem">XCL Rating</div>
-            </div>
-            <div class="px-4 py-3">
-                @if($championship->xcl_rating_enabled)
-                <form action="{{ route('admin.leagues.championships.revoke-rating', [$league, $championship]) }}" method="POST" onsubmit="return false">
-                    @csrf
-                    <button type="button"
-                            class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold border-0"
-                            style="cursor:pointer;font-size:.82rem;border:2px solid #16a34a;background:#16a34a18;color:#16a34a"
-                            onclick="xcDeleteSubmit(this.closest('form'), 'Disable XCL Rating for {{ addslashes($championship->name) }}?')">
-                        Enabled — click to disable
-                    </button>
-                </form>
-                <div class="form-text mt-2" style="font-size:.72rem;color:#9ca3af">
-                    Approved by {{ $championship->ratingApprovedBy?->name ?? 'an XCL admin' }} on {{ $championship->xcl_rating_approved_at?->format('d M Y') }}.
-                    Unlocks XCL-R Multiplier on the Sessions step.
-                </div>
-                @else
-                <form action="{{ route('admin.leagues.championships.approve-rating', [$league, $championship]) }}" method="POST">
-                    @csrf
-                    <button type="submit"
-                            class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
-                            style="cursor:pointer;font-size:.82rem;border:2px solid #e5e7eb;background:#fff;color:#374151">
-                        Disabled — click to enable
-                    </button>
-                </form>
-                <div class="form-text mt-2" style="font-size:.72rem;color:#9ca3af">
-                    Also unlocks XCL-R Multiplier on the Sessions step.
-                </div>
-                @endif
-            </div>
-        </div>
-        @endif
         @endif
 
     </div>
