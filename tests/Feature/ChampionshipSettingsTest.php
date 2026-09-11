@@ -169,12 +169,11 @@ class ChampionshipSettingsTest extends TestCase
             route('admin.leagues.championships.wizard.update', [$league, $championship, 'penalties']),
             [
                 'xcl_rating_enabled' => '1',
-                'settings' => ['penalties' => ['stewarding_enabled' => '0', 'affects' => 'none', 'post_race_time_penalties_enabled' => '0', 'xcl_rating_requested' => '1']],
+                'settings' => ['penalties' => ['stewarding_enabled' => '0', 'affects' => 'none', 'post_race_time_penalties_enabled' => '0']],
             ]
         )->assertRedirect();
 
         $this->assertFalse($championship->fresh()->xcl_rating_enabled);
-        $this->assertTrue($championship->fresh()->settings->penalties->xcl_rating_requested);
     }
 
     // User-directed 2026-09: approveRating's gate is now the same as update()

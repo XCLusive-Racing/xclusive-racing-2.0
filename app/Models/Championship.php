@@ -118,17 +118,7 @@ class Championship extends Model
         return $id ? PointsScheme::withoutTenantScope()->find($id) : null;
     }
 
-    // League manager side: raises the request. Does not enable rating.
-    public function requestXclRating(): void
-    {
-        $settings = $this->settings;
-        $penalties = $settings->penalties->toArray();
-        $penalties['xcl_rating_requested'] = true;
-        $this->settings = array_replace($settings->toArray(), ['penalties' => $penalties]);
-        $this->save();
-    }
-
-    // XCL admin side: the only place xcl_rating_enabled is ever set to true.
+    // The only place xcl_rating_enabled is ever set to true.
     // Callers must check ChampionshipPolicy::approveRating before calling this.
     // These three columns are deliberately absent from $fillable — set only here,
     // by direct attribute assignment, never through mass assignment — so no

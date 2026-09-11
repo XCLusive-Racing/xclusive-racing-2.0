@@ -73,25 +73,10 @@
             </button>
         </form>
         @endif
-        @elseif($settings->penalties->xcl_rating_requested ?? false)
-        <p class="mb-2" style="font-size:.85rem">
-            <span class="badge" style="background:#fef3c7;color:#92400e;font-size:.7rem;padding:4px 8px;border-radius:6px;font-weight:700">Requested</span>
-            @if($canApproveRating)
-                Ready to approve below, or from the XCL Rating option on Basics.
-            @else
-                Waiting for approval.
-            @endif
-        </p>
-        @if($canApproveRating)
-        <form action="{{ route('admin.leagues.championships.approve-rating', [$league, $championship]) }}" method="POST">
-            @csrf
-            <button type="submit" class="btn btn-sm fw-black text-uppercase text-white" style="background:#16a34a;font-size:.75rem">
-                Approve XCL Rating
-            </button>
-        </form>
-        @endif
+        @elseif($canApproveRating)
+        <p class="text-secondary mb-0" style="font-size:.85rem">Not enabled. Turn it on from the XCL Rating option on Basics.</p>
         @else
-        <p class="text-secondary mb-0" style="font-size:.85rem">Not requested. Raise a request from the Penalties &amp; Balance step.</p>
+        <p class="text-secondary mb-0" style="font-size:.85rem">Not enabled.</p>
         @endif
     </div>
 </div>

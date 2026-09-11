@@ -521,21 +521,10 @@ class ChampionshipWizardController extends Controller
         return back()->with('success', 'Registration is now closed for ' . $championship->name . '.');
     }
 
-    public function requestRating(Request $request, League $league, Championship $championship)
-    {
-        $this->assertLeagueOfInterest($request, $league, $championship);
-        Gate::authorize('requestRating', $championship);
-
-        $championship->requestXclRating();
-
-        AuditLogger::record($request->user(), $championship, 'championship.rating_requested');
-
-        return back()->with('success', 'XCL Rating requested. An XCL admin will review it.');
-    }
-
     // The only route that can ever turn xcl_rating_enabled on. Authorization is
-    // enforced by ApproveChampionshipRatingRequest itself (policy-gated), not
-    // just by this controller — a league manager can never reach this action.
+    // enforced by ApproveChampionshipRatingRequest itself (policy-gated, same
+    // gate as update() — a league manager can reach this for their own
+    // championship, from the Basics step's own toggle), not just here.
     public function approveRating(ApproveChampionshipRatingRequest $request, League $league, Championship $championship)
     {
         $this->assertLeagueOfInterest($request, $league, $championship);

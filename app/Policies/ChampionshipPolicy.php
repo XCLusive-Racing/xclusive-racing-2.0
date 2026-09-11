@@ -35,12 +35,6 @@ class ChampionshipPolicy
         return $user->canManage() || $user->managesLeague($championship->league);
     }
 
-    // A league manager may raise the request (this is the same gate as "update").
-    public function requestRating(User $user, Championship $championship): bool
-    {
-        return $this->update($user, $championship);
-    }
-
     // Same gate as update() — user-directed 2026-09 (was XCL-staff-only; a
     // league manager can now enable/disable XCL Rating for their own
     // championship directly from the Basics step, no XCL admin approval step

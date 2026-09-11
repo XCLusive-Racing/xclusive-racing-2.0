@@ -416,7 +416,6 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/cha
     Route::post('/{championship}/publish', [ChampionshipWizardController::class, 'publish'])->name('publish');
     Route::post('/{championship}/open-registration', [ChampionshipWizardController::class, 'openRegistration'])->name('open-registration');
     Route::post('/{championship}/close-registration', [ChampionshipWizardController::class, 'closeRegistration'])->name('close-registration');
-    Route::post('/{championship}/request-rating', [ChampionshipWizardController::class, 'requestRating'])->name('request-rating');
     Route::post('/{championship}/approve-rating', [ChampionshipWizardController::class, 'approveRating'])->name('approve-rating');
     Route::post('/{championship}/revoke-rating', [ChampionshipWizardController::class, 'revokeRating'])->name('revoke-rating');
 });

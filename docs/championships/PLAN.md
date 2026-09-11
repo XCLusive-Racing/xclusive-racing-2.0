@@ -11,6 +11,29 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, fifteenth follow-up — removed the dead "Request XCL Rating"
+  flow.** User pointed at the Penalties step's stale help text ("Raises a
+  request for an XCL admin to review. It does not turn rating on by itself
+  — only an admin can approve it.") — "dit word algedaan bij basics" (this
+  is already handled at Basics). True: `ChampionshipPolicy::requestRating()`
+  was always the exact same gate as `update()`, so the two-step
+  request-then-approve dance never actually gated anything a league manager
+  couldn't already do themselves in one step — doubly so since the
+  thirteenth-session-earlier follow-up made `approveRating` itself the same
+  `update()` gate too, giving Basics its direct one-click enable/disable.
+  Removed entirely rather than just reworded: the `xcl_rating_requested`
+  schema field (Penalties group), `Championship::requestXclRating()`,
+  `ChampionshipWizardController::requestRating()`, the
+  `POST /request-rating` route, and `ChampionshipPolicy::requestRating()`.
+  `_review.blade.php`'s XCL Rating card had three states (Enabled /
+  Requested-with-Approve-button / Not requested); now just two (Enabled, or
+  a plain "Not enabled — turn it on from Basics" hint for a manager).
+  Touched up two stale comments that still described the old XCL-staff-only
+  approval flow (`ApproveChampionshipRatingRequest`'s docblock,
+  `ChampionshipWizardController::approveRating()`'s). 147 tests passing (one
+  existing test's payload/assertion trimmed of the now-nonexistent settings
+  key, no test coverage lost since `requestRating` had none of its own
+  beyond that incidental smuggling check).
 - **2026-09-11, fourteenth follow-up — Ballast & Restrictor Adjustments
   builder (Penalties step) now picks real targets instead of free text.**
   User: "bij ballast en restrictor mag hij met filters van de carclass de

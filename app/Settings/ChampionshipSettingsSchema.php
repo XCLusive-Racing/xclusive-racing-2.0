@@ -262,8 +262,6 @@ class ChampionshipSettingsSchema
                 'label' => 'Penalties Affect', 'help' => 'What a steward-issued penalty changes. Only used when stewarding is on.', 'rule' => 'required|in:points,rating,both,none'],
             ['group' => 'penalties', 'key' => 'post_race_time_penalties_enabled', 'type' => 'boolean', 'default' => false,
                 'label' => 'Post-Race Time Penalties', 'help' => 'Allow a time penalty to be applied to a result after the race.'],
-            ['group' => 'penalties', 'key' => 'xcl_rating_requested', 'type' => 'boolean', 'default' => false,
-                'label' => 'Request XCL Rating', 'help' => 'Raises a request for an XCL admin to review. It does not turn rating on by itself — only an admin can approve it.'],
 
             // --- Balance (rendered on the Penalties & Balance step) ---
             ['group' => 'balance', 'key' => 'adjustments', 'type' => 'list', 'default' => [],
