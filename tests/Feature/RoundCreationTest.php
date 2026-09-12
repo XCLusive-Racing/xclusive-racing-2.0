@@ -205,14 +205,32 @@ class RoundCreationTest extends TestCase
                 'race_duration' => 30,
                 'rounds' => [
                     ['track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i')],
-                    // Half past the hour — resolveRoundRow() rejects this.
-                    ['track' => 'Spa', 'scheduled_at' => now()->addWeeks(2)->startOfHour()->addMinutes(30)->format('Y-m-d\TH:i')],
+                    // Quarter past the hour — resolveRoundRow() only allows :00/:30.
+                    ['track' => 'Spa', 'scheduled_at' => now()->addWeeks(2)->startOfHour()->addMinutes(15)->format('Y-m-d\TH:i')],
                 ],
             ])
             ->assertRedirect()
             ->assertSessionHasErrors('rounds');
 
         $this->assertSame(0, $championship->rounds()->count());
+    }
+
+    // User-directed 2026-09-12: championship rounds may now start on the hour
+    // OR the half hour (standalone races via RaceController are unaffected --
+    // still hour-only, see FtpServer::isValidSlot()'s $allowHalfHour param).
+    public function test_add_round_accepts_a_half_past_the_hour_start(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+        $manager      = $this->makeManager($league);
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
+                'track' => 'Spa', 'scheduled_at' => now()->addWeek()->startOfHour()->addMinutes(30)->format('Y-m-d\TH:i'),
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('races', ['championship_id' => $championship->id, 'track' => 'Spa']);
     }
 
     public function test_bulk_add_rounds_rejects_two_rows_claiming_the_same_server_slot(): void

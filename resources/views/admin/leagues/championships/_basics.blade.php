@@ -66,34 +66,25 @@
 
 <div class="row g-3 mb-1">
     <div class="col-12">
-        {{-- formaction/formmethod send just this button's click to
-             approve-rating/revoke-rating instead of this step's own Save &
-             Continue action — the same routes the Review step's card already
-             used (open to this championship's own league manager too, not
-             XCL-admin-only any more), just placed as an option here instead
-             of stranded below Save & Continue. Can't be a nested <form>
-             (this is already inside the Basics one), so this is how it
-             stays a real, separately-submitted action while living among
-             the other fields. The enclosing form also carries @method('PUT')
-             as a hidden _method field for its own normal save — that field
-             rides along on every submit regardless of formmethod, so
-             Laravel would otherwise still treat this as a PUT and 405 on
-             these POST-only routes; the onclick blanks it out first. --}}
-        @if($championship->xcl_rating_enabled)
-        <button type="submit" formaction="{{ route('admin.leagues.championships.revoke-rating', [$league, $championship]) }}" formmethod="POST" formnovalidate
+        {{-- A plain button (not formaction/submit) firing a background fetch to
+             approve-rating/revoke-rating — the same routes the Review step's card
+             already used (open to this championship's own league manager too, not
+             XCL-admin-only any more). Deliberately NOT a form submit: this button
+             sits inside the Basics step's own <form>, and submitting that form
+             here would carry along every other field on the page (Name, Slug,
+             Description, ...) into an endpoint that only ever toggles the rating
+             flag — silently discarding anything unsaved elsewhere. A background
+             fetch toggles just the flag and repaints this button in place. --}}
+        <button type="button" id="xcl-rating-toggle-btn"
+                data-enabled="{{ $championship->xcl_rating_enabled ? '1' : '0' }}"
+                data-enable-url="{{ route('admin.leagues.championships.approve-rating', [$league, $championship]) }}"
+                data-disable-url="{{ route('admin.leagues.championships.revoke-rating', [$league, $championship]) }}"
+                data-name="{{ addslashes($championship->name) }}"
                 class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
-                style="cursor:pointer;font-size:.82rem;border:2px solid #7c3aed;background:#7c3aed18;color:#7c3aed"
-                onclick="if(!confirm('Disable XCL Rating for {{ addslashes($championship->name) }}?')) return false; this.form.querySelector('input[name=_method]').value=''; return true;">
-            Enabled — click to disable
+                style="cursor:pointer;font-size:.82rem;{{ $championship->xcl_rating_enabled ? 'border:2px solid #7c3aed;background:#7c3aed18;color:#7c3aed' : 'border:2px solid #e5e7eb;background:#fff;color:#374151' }}">
+            {{ $championship->xcl_rating_enabled ? 'Enabled — click to disable' : 'Disabled — click to enable' }}
         </button>
-        @else
-        <button type="submit" formaction="{{ route('admin.leagues.championships.approve-rating', [$league, $championship]) }}" formmethod="POST" formnovalidate
-                class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
-                style="cursor:pointer;font-size:.82rem;border:2px solid #e5e7eb;background:#fff;color:#374151"
-                onclick="this.form.querySelector('input[name=_method]').value=''; return true;">
-            Disabled — click to enable
-        </button>
-        @endif
+        <div id="xcl-rating-toggle-error" class="text-danger mt-2" style="font-size:.78rem;display:none"></div>
     </div>
 </div>
 @endif
@@ -146,5 +137,44 @@
         recurrence.addEventListener('change', updateDayVisibility);
         updateDayVisibility();
     }
+})();
+
+(function () {
+    var btn = document.getElementById('xcl-rating-toggle-btn');
+    if (!btn) return;
+    var errEl = document.getElementById('xcl-rating-toggle-error');
+
+    function render(enabled) {
+        btn.dataset.enabled = enabled ? '1' : '0';
+        btn.textContent     = enabled ? 'Enabled — click to disable' : 'Disabled — click to enable';
+        btn.style.border     = enabled ? '2px solid #7c3aed' : '2px solid #e5e7eb';
+        btn.style.background = enabled ? '#7c3aed18' : '#fff';
+        btn.style.color      = enabled ? '#7c3aed' : '#374151';
+    }
+
+    btn.addEventListener('click', function () {
+        var enabled = btn.dataset.enabled === '1';
+
+        if (enabled && !confirm('Disable XCL Rating for ' + btn.dataset.name + '?')) return;
+
+        var url = enabled ? btn.dataset.disableUrl : btn.dataset.enableUrl;
+        btn.disabled = true;
+        errEl.style.display = 'none';
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                'Accept': 'application/json',
+            },
+        })
+            .then(function (r) { if (!r.ok) throw new Error('Request failed'); return r.json(); })
+            .then(function () { render(!enabled); })
+            .catch(function () {
+                errEl.textContent   = 'Could not update XCL Rating — try again.';
+                errEl.style.display = '';
+            })
+            .finally(function () { btn.disabled = false; });
+    });
 })();
 </script>
