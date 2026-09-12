@@ -141,12 +141,13 @@ class User extends Authenticatable
     public function isLeagueManager(): bool { return $this->hasRole('league_manager'); }
     public function isLeagueSteward(): bool { return $this->hasRole('league_steward'); }
 
-    // A global role (assigned from the Users admin page, not per-league like
-    // manager/steward below) that acts as the manager of every league at
-    // once — for someone trusted to run the leagues/championships system
-    // platform-wide without needing a League Manager membership row added to
-    // each league individually, and without the rest of canManage()'s reach
-    // (races, users, news, etc., which stay admin/event-manager-only).
+    // Assigned from the Users admin page rather than via a per-league
+    // membership row, but — unlike canManage() — does NOT grant reach across
+    // every league (see TenantScope): it just unlocks the leagues/championships
+    // part of the admin panel, without the rest of canManage()'s reach (races,
+    // users, news, etc., which stay admin/event-manager-only). Someone holding
+    // it still needs an actual League Manager membership row on a given league
+    // to manage it — see managesLeague() below.
     public function isChampionshipManager(): bool { return $this->hasRole('championship_manager'); }
 
     public function canManage(): bool
@@ -214,16 +215,9 @@ class User extends Authenticatable
         return $this->leagueMemberships()->pluck('league_id')->unique()->values();
     }
 
-    // isChampionshipManager() is a global "manager of every league" role, not a
-    // per-league membership row — checked first so every existing call site that
-    // already gates an action on managesLeague($league) (ChampionshipPolicy,
-    // PointsSchemeController, LeagueController's own edit/update, etc.) picks it
-    // up automatically, without each one needing its own extra isChampionshipManager()
-    // check bolted on.
     public function managesLeague(League $league): bool
     {
-        return $this->isChampionshipManager()
-            || $this->leagueMemberships()->where('league_id', $league->id)->where('role', 'manager')->exists();
+        return $this->leagueMemberships()->where('league_id', $league->id)->where('role', 'manager')->exists();
     }
 
     public function stewardsLeague(League $league): bool

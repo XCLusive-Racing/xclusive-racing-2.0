@@ -58,9 +58,9 @@
                     @error('track')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-sm-4">
-                    <label class="form-label">Date &amp; Time <span class="text-danger">*</span> <span class="fw-normal text-secondary" style="text-transform:none">(on the hour, BST)</span></label>
+                    <label class="form-label">Date &amp; Time <span class="text-danger">*</span> <span class="fw-normal text-secondary" style="text-transform:none">(on the hour or half hour, BST)</span></label>
                     <input type="datetime-local" name="scheduled_at"
-                           value="{{ old('scheduled_at', $race->scheduledAtUk()->format('Y-m-d\TH:i')) }}" step="3600"
+                           value="{{ old('scheduled_at', $race->scheduledAtUk()->format('Y-m-d\TH:i')) }}" step="1800"
                            class="form-control @error('scheduled_at') is-invalid @enderror">
                     @error('scheduled_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>

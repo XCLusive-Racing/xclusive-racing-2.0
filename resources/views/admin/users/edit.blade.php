@@ -201,13 +201,15 @@
              (LeagueController::addMember()/removeMember(), same canManage() gate),
              just combined here too so granting someone access doesn't need a
              separate trip to every league's own edit page. Championship Manager
-             (the global role above) already covers "every league at once" --
-             this is for a plain per-league Manager/Steward instead. --}}
+             (the role above) only unlocks the leagues/championships admin area --
+             it grants no access to any specific league on its own any more; a
+             Championship Manager still needs a Manager/Steward row here for
+             whichever league(s) they should actually manage. --}}
         @if(auth()->user()->canManage())
         <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
             <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">League Access</p>
             <p class="text-secondary mb-3" style="font-size:.78rem">
-                Per-league Manager/Steward access -- for every league at once, use the Championship Manager role above instead.
+                Per-league Manager/Steward access -- required even for a Championship Manager to actually manage a specific league.
             </p>
 
             @if($user->id === auth()->id())

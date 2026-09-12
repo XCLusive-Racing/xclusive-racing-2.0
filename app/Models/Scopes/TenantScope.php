@@ -12,10 +12,15 @@ class TenantScope implements Scope
     {
         $user = auth()->user();
 
-        // Owner/Admin/Event Manager act across every league without restriction —
-        // same for a Championship Manager (a global role, not a per-league
-        // membership row, so there's no leagueIds() entry to filter by below).
-        if ($user && ($user->canManage() || $user->isChampionshipManager())) {
+        // Owner/Admin/Event Manager act across every league without restriction.
+        // Championship Manager is deliberately NOT included here any more (was
+        // until 2026-09): it used to bypass every league's scope regardless of
+        // membership, but that meant anyone holding it — even with zero league
+        // memberships — saw every league/championship/server/points-scheme on
+        // the platform. It's scoped by leagueIds() like everyone else now; a
+        // Championship Manager only manages the league(s) they're actually a
+        // member of.
+        if ($user && $user->canManage()) {
             return;
         }
 

@@ -218,7 +218,7 @@ class ChampionshipController extends Controller
         if (!empty($data['ftp_server_id'])) {
             $server = FtpServer::find($data['ftp_server_id']);
 
-            if ($server && !$server->isValidSlot($data['scheduled_at'])) {
+            if ($server && !$server->isValidSlot($data['scheduled_at'], allowHalfHour: true)) {
                 return back()->withInput()->withErrors(['scheduled_at' => RaceController::ERR_SLOT_WRONG_SERVER]);
             }
             if ($server && in_array($data['scheduled_at']->format('Y-m-d H:i'), $server->takenSlots(), true)) {

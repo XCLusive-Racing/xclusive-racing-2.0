@@ -327,14 +327,17 @@ class LeagueAdminAccessTest extends TestCase
         $this->assertSame('brand-new-pass', $server->fresh()->password);
     }
 
-    // --- Championship Manager: user-directed 2026-09 — "er moet een optie bij
-    // de users tabel... waar wij ook rollen kunnen adden daar moet championship
-    // manager komen" — a global role assigned from the Users admin page (not a
-    // per-league membership row like manager/steward above) that acts as the
-    // manager of every league at once, so granting access is a single toggle
-    // rather than also needing a League Manager row added per league. ---
+    // --- Championship Manager: user-directed 2026-09 — originally shipped as a
+    // global "manager of every league at once" role (assigned from the Users
+    // admin page, not a per-league membership row), but that meant anyone
+    // holding it saw and managed every league/championship/server on the
+    // platform regardless of membership -- flagged 2026-09-12 after real users
+    // ended up with the role and zero league memberships, seeing everything.
+    // Reworked so it only unlocks the leagues/championships admin area itself;
+    // actually managing a given league still requires a real League Manager
+    // membership row on it, same as anyone else. ---
 
-    public function test_championship_manager_sees_every_league_with_no_membership_rows_at_all(): void
+    public function test_championship_manager_sees_no_leagues_without_a_membership_row(): void
     {
         $this->makeLeague('nlrl');
         $this->makeLeague('src');
@@ -345,14 +348,42 @@ class LeagueAdminAccessTest extends TestCase
         $this->actingAs($manager)
             ->get(route('admin.leagues.index'))
             ->assertOk()
-            ->assertSee('NLRL')
-            ->assertSee('SRC');
+            ->assertDontSee('NLRL')
+            ->assertDontSee('SRC');
     }
 
-    public function test_championship_manager_can_edit_branding_but_not_identity_or_archive(): void
+    // User-directed 2026-09-12: a Championship Manager creates their own league(s)
+    // self-service rather than an owner/admin doing it for them -- but they must
+    // only ever end up seeing that league, not every other one already on the
+    // platform (they have no membership row until they create one themselves).
+    public function test_championship_manager_can_create_a_league_and_then_only_sees_that_one(): void
+    {
+        $this->makeLeague('other-league');
+        $manager = User::factory()->championshipManager()->create();
+
+        $this->actingAs($manager)->post(route('admin.leagues.store'), [
+            'name' => 'My League', 'slug' => 'my-league',
+            'primary_color' => '#111111', 'accent_color' => '#222222',
+            'status' => 'draft',
+        ])->assertRedirect();
+
+        $league = League::where('slug', 'my-league')->firstOrFail();
+        $this->assertDatabaseHas('league_user', ['user_id' => $manager->id, 'league_id' => $league->id, 'role' => 'manager']);
+
+        $this->actingAs($manager)
+            ->get(route('admin.leagues.index'))
+            ->assertRedirect(route('admin.leagues.edit', $league));
+
+        $this->actingAs($manager)
+            ->get(route('admin.leagues.edit', $league))
+            ->assertOk();
+    }
+
+    public function test_championship_manager_can_edit_branding_but_not_identity_or_archive_for_a_league_they_manage(): void
     {
         $league  = $this->makeLeague('nlrl');
         $manager = User::factory()->championshipManager()->create();
+        $this->attach($manager, $league);
 
         $this->actingAs($manager)->put(route('admin.leagues.update', $league), [
             'primary_color' => '#111111',
@@ -369,10 +400,25 @@ class LeagueAdminAccessTest extends TestCase
         $this->actingAs($manager)->post(route('admin.leagues.archive', $league))->assertForbidden();
     }
 
+    public function test_championship_manager_cannot_manage_a_league_they_are_not_a_member_of(): void
+    {
+        $league  = $this->makeLeague('nlrl');
+        $manager = User::factory()->championshipManager()->create();
+
+        $this->actingAs($manager)
+            ->get(route('admin.leagues.edit', $league))
+            ->assertNotFound();
+
+        $this->actingAs($manager)
+            ->put(route('admin.leagues.update', $league), ['primary_color' => '#111111', 'accent_color' => '#222222'])
+            ->assertNotFound();
+    }
+
     public function test_championship_manager_cannot_assign_league_roles(): void
     {
         $league  = $this->makeLeague('nlrl');
         $manager = User::factory()->championshipManager()->create();
+        $this->attach($manager, $league);
         $recruit = User::factory()->create();
 
         $this->actingAs($manager)->post(route('admin.leagues.members.store', $league), [
@@ -381,10 +427,11 @@ class LeagueAdminAccessTest extends TestCase
         ])->assertForbidden();
     }
 
-    public function test_championship_manager_can_create_and_manage_a_championship_for_any_league(): void
+    public function test_championship_manager_can_create_and_manage_a_championship_for_a_league_they_manage(): void
     {
         $league  = $this->makeLeague('nlrl');
         $manager = User::factory()->championshipManager()->create();
+        $this->attach($manager, $league);
 
         $this->actingAs($manager)
             ->get(route('admin.leagues.championships.index', $league))

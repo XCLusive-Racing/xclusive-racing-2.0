@@ -41,14 +41,15 @@ class LeagueController extends Controller
 
     public function create(Request $request)
     {
-        abort_unless($request->user()->canManage(), 403);
+        abort_unless($request->user()->canManage() || $request->user()->isChampionshipManager(), 403);
 
         return view('admin.leagues.create');
     }
 
     public function store(Request $request)
     {
-        abort_unless($request->user()->canManage(), 403);
+        $user = $request->user();
+        abort_unless($user->canManage() || $user->isChampionshipManager(), 403);
 
         $data = $request->validate([
             'name'                         => 'required|string|max:150',
@@ -70,6 +71,15 @@ class LeagueController extends Controller
         $data['banner'] = $this->resolveUpload($request, 'banner', null);
 
         $league = League::create($data);
+
+        // A Championship Manager creating their own league isn't a member of it yet
+        // (TenantScope only lets them see leagues they're actually attached to) --
+        // without this they'd create a league and immediately lose it from view.
+        // canManage() staff need no such row: they see every league regardless.
+        if (!$user->canManage()) {
+            $league->memberships()->create(['user_id' => $user->id, 'role' => 'manager']);
+            $user->syncLeagueRoleFlags();
+        }
 
         AuditLogger::record($request->user(), $league, 'league.created', $data);
 

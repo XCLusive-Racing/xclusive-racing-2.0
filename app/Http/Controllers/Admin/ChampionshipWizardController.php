@@ -414,10 +414,10 @@ class ChampionshipWizardController extends Controller
         $data['event_tag']       = 'championship';
         $data['scheduled_at']    = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
 
-        // Rounds start on the hour only — the datetime picker already restricts
-        // this client-side, but a raw request could still smuggle in a half hour.
-        if ($data['scheduled_at']->minute !== 0) {
-            return 'Rounds can only start on the hour.';
+        // Rounds start on the hour or half hour only — the datetime picker already
+        // restricts this client-side, but a raw request could still smuggle in something else.
+        if (!in_array($data['scheduled_at']->minute, [0, 30], true)) {
+            return 'Rounds can only start on the hour or half hour.';
         }
 
         if (empty($data['round_number'])) {
@@ -432,7 +432,7 @@ class ChampionshipWizardController extends Controller
             $server   = FtpServer::find($data['ftp_server_id']);
             $slotKey  = $data['scheduled_at']->format('Y-m-d H:i');
 
-            if ($server && !$server->isValidSlot($data['scheduled_at'])) {
+            if ($server && !$server->isValidSlot($data['scheduled_at'], allowHalfHour: true)) {
                 return 'That time is not a valid slot on this server.';
             }
             if ($server && (in_array($slotKey, $server->takenSlots($excludeRaceId), true) || in_array($slotKey, $claimedSlots, true))) {
@@ -566,6 +566,10 @@ class ChampionshipWizardController extends Controller
             'approved_by' => $request->user()->id,
         ]);
 
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'xcl_rating_enabled' => true]);
+        }
+
         return back()->with('success', 'XCL Rating approved for ' . $championship->name . '.');
     }
 
@@ -577,6 +581,10 @@ class ChampionshipWizardController extends Controller
         $championship->revokeXclRating();
 
         AuditLogger::record($request->user(), $championship, 'championship.rating_revoked');
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'xcl_rating_enabled' => false]);
+        }
 
         return back()->with('success', 'XCL Rating revoked for ' . $championship->name . '.');
     }

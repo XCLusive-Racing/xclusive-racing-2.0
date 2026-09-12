@@ -57,7 +57,10 @@ class FtpServer extends Model
             ->toArray();
     }
 
-    public function isValidSlot(\Carbon\Carbon $utcDateTime): bool
+    // $allowHalfHour additionally accepts :30 starts, not just :00 — used by
+    // championship round scheduling only; standalone race scheduling (RaceController)
+    // stays hour-only.
+    public function isValidSlot(\Carbon\Carbon $utcDateTime, bool $allowHalfHour = false): bool
     {
         if ($this->server_type === 'scheduled') {
             return true;
@@ -68,12 +71,16 @@ class FtpServer extends Model
         // for the whole BST period (UTC+1 in summer), since it shifts every hour by one.
         $localDateTime = $utcDateTime->copy()->timezone('Europe/London');
 
-        if ($localDateTime->minute !== 0 || $localDateTime->second !== 0) {
+        $validMinute = $allowHalfHour
+            ? in_array($localDateTime->minute, [0, 30], true)
+            : $localDateTime->minute === 0;
+
+        if (!$validMinute || $localDateTime->second !== 0) {
             return false;
         }
 
         $intervalHours = $this->reset_interval_minutes / 60;
-        $offset        = $localDateTime->hour - (int) $this->reset_start_hour;
+        $offset        = ($localDateTime->hour - (int) $this->reset_start_hour) + ($localDateTime->minute / 60);
 
         return $offset >= 0 && fmod($offset, $intervalHours) === 0.0;
     }
