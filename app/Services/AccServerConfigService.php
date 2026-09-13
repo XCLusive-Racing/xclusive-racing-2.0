@@ -14,7 +14,7 @@ class AccServerConfigService implements ServerConfigGenerator
     public function entryList(Race $race): array
     {
         $registrations = $race->registrations()
-            ->with(['user', 'teamEntry'])
+            ->with(['user.ownedRacingTeams', 'user.racingTeams', 'teamEntry'])
             ->orderBy('team_entry_id')
             ->orderBy('created_at')
             ->get();
@@ -71,7 +71,7 @@ class AccServerConfigService implements ServerConfigGenerator
                     'ballastKg'           => 0,
                     'forcedCarModel'      => -1,
                     'overrideDriverInfo'  => 1,
-                    'teamName'            => $user->team ?? '',
+                    'teamName'            => $this->soloTeamName($user),
                 ];
             }
         }
@@ -83,6 +83,20 @@ class AccServerConfigService implements ServerConfigGenerator
             'configVersion'  => 1,
             'forceEntryList' => 1,
         ];
+    }
+
+    // A solo driver's in-game team name should reflect the RacingTeam they
+    // actually belong to (owned team first, else whichever team they're a
+    // member of) -- most drivers never bother filling in the free-text
+    // "Team / Quote" profile field (a supporter-only perk), so relying on
+    // that alone left the name blank for the vast majority of team members.
+    // The personal quote is kept only as a fallback for drivers with no
+    // RacingTeam at all.
+    private function soloTeamName(\App\Models\User $user): string
+    {
+        $team = $user->allRacingTeams()->first();
+
+        return $team?->name ?? $user->team ?? '';
     }
 
     // ACC's dedicated server rejects an entrylist outright ("The payload is

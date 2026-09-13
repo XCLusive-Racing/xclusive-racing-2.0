@@ -88,7 +88,7 @@ class PracticeServerConfigService
     public function entryList(Race $race): PracticeEntryListResult
     {
         $registrations = $race->registrations()
-            ->with(['user', 'teamEntry.team'])
+            ->with(['user.ownedRacingTeams', 'user.racingTeams', 'teamEntry.team'])
             ->orderBy('team_entry_id')
             ->orderBy('created_at')
             ->get();
@@ -159,7 +159,7 @@ class PracticeServerConfigService
                     'ballastKg'           => 0,
                     'forcedCarModel'      => is_numeric($user->car_model) ? (int) $user->car_model : -1,
                     'overrideDriverInfo'  => 1,
-                    'teamName'            => $user->team ?? '',
+                    'teamName'            => $this->soloTeamName($user),
                 ];
             }
         }
@@ -173,5 +173,17 @@ class PracticeServerConfigService
             entryCount: count($entries),
             skippedCount: $skipped,
         );
+    }
+
+    // Same rule as AccServerConfigService::soloTeamName() -- a solo driver's
+    // in-game team name should reflect the RacingTeam they actually belong
+    // to (owned team first, else a team they're a member of); the free-text
+    // personal "Team / Quote" field is only a fallback for drivers with no
+    // RacingTeam at all.
+    private function soloTeamName(\App\Models\User $user): string
+    {
+        $team = $user->allRacingTeams()->first();
+
+        return $team?->name ?? $user->team ?? '';
     }
 }
