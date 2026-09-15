@@ -45,16 +45,24 @@ $statusStyles = [
                     {{ $s->last_error ? \Illuminate\Support\Str::limit($s->last_error, 80) : '—' }}
                 </td>
                 <td class="pe-4 text-end">
-                    @if(in_array($s->status, ['scheduled', 'failed', 'live'], true))
-                    <form action="{{ route('admin.practice-servers.push', $s) }}" method="POST"
-                          onsubmit="return confirm('Push this practice config now?')">
-                        @csrf
-                        <button type="submit" class="btn btn-sm fw-bold text-uppercase"
-                                style="font-size:.68rem;padding:4px 10px;background:#f3f0ff;color:#7c3aed;border:1px solid #ddd6fe;white-space:nowrap">
-                            Push Now
-                        </button>
-                    </form>
-                    @endif
+                    <div class="d-flex justify-content-end gap-2">
+                        @if($s->race)
+                        <a href="{{ route('admin.practice-servers.preview', $s) }}" class="btn btn-sm fw-bold text-uppercase"
+                           style="font-size:.68rem;padding:4px 10px;background:#f9fafb;color:#374151;border:1px solid #e5e7eb;white-space:nowrap">
+                            Preview
+                        </a>
+                        @endif
+                        @if(in_array($s->status, ['scheduled', 'failed', 'live'], true))
+                        <form action="{{ route('admin.practice-servers.push', $s) }}" method="POST"
+                              onsubmit="return confirm('Push this practice config now?')">
+                            @csrf
+                            <button type="submit" class="btn btn-sm fw-bold text-uppercase"
+                                    style="font-size:.68rem;padding:4px 10px;background:#f3f0ff;color:#7c3aed;border:1px solid #ddd6fe;white-space:nowrap">
+                                Push Now
+                            </button>
+                        </form>
+                        @endif
+                    </div>
                 </td>
             </tr>
             @endforeach

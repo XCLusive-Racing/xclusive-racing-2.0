@@ -9,6 +9,8 @@ use App\Http\Controllers\ChampionshipController;
 use App\Http\Controllers\CoachingController;
 use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
 use App\Http\Controllers\Admin\EventTagController;
+use App\Http\Controllers\Admin\FaqController as AdminFaqController;
+use App\Http\Controllers\FaqController;
 use App\Http\Controllers\Admin\ChampionshipWizardController;
 use App\Http\Controllers\Admin\FtpBrowserController;
 use App\Http\Controllers\Admin\FtpServerController;
@@ -57,6 +59,7 @@ Route::view('/team', 'team.index')->name('team');
 Route::view('/team/join', 'team.join')->name('team.join');
 Route::post('/team/apply', [TeamApplicationController::class, 'store'])->name('team.apply');
 Route::get('/coaching', [CoachingController::class, 'index'])->name('coaching.index');
+Route::get('/faq', [FaqController::class, 'index'])->name('faq');
 Route::view('/privacy', 'privacy')->name('privacy');
 
 // Confidential — not linked from any menu, share the URL directly
@@ -219,6 +222,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/races/{race}/registrations/{registration}', [AdminRaceController::class, 'removeRegistration'])->name('races.registrations.destroy');
     Route::delete('/races/{race}/team-entries/{entry}', [AdminRaceController::class, 'removeTeamEntry'])->name('races.team-entries.destroy');
     Route::get('/practice-servers', [PracticeServerSessionController::class, 'index'])->name('practice-servers.index');
+    Route::get('/practice-servers/{practiceServerSession}/preview', [PracticeServerSessionController::class, 'preview'])->name('practice-servers.preview');
     Route::post('/practice-servers/{practiceServerSession}/push', [PracticeServerSessionController::class, 'push'])->name('practice-servers.push');
     Route::delete('/races/bulk-destroy', [AdminRaceController::class, 'bulkDestroy'])->name('races.bulk-destroy');
     Route::delete('/races/{race}/reset-config', [AdminRaceController::class, 'resetConfig'])->name('races.reset-config');
@@ -321,6 +325,17 @@ Route::middleware(['auth', 'role:owner,moderator,event_manager'])->prefix('admin
     Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
     Route::post('/users/{user}/reset-password', [AdminUserController::class, 'resetPassword'])->name('users.reset-password');
     Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+});
+
+// Everyone who can see the People section (Users: owner/moderator/event_manager, plus
+// Applications: owner/admin) — FAQ management
+Route::middleware(['auth', 'role:owner,admin,moderator,event_manager'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/faqs', [AdminFaqController::class, 'index'])->name('faqs.index');
+    Route::get('/faqs/create', [AdminFaqController::class, 'create'])->name('faqs.create');
+    Route::post('/faqs', [AdminFaqController::class, 'store'])->name('faqs.store');
+    Route::get('/faqs/{faq}/edit', [AdminFaqController::class, 'edit'])->name('faqs.edit');
+    Route::put('/faqs/{faq}', [AdminFaqController::class, 'update'])->name('faqs.update');
+    Route::delete('/faqs/{faq}', [AdminFaqController::class, 'destroy'])->name('faqs.destroy');
 });
 
 // News — broadcaster, admin, owner

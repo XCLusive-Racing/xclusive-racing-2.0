@@ -130,14 +130,24 @@ class FtpServerController extends Controller
             $data[$field] = ($decoded == $builtIn) ? null : $decoded;
         }
 
+        $ftpServer->update($data);
+
+        // Written via a raw query-builder update rather than through this model instance:
+        // Eloquent's dirty-check decrypts the *existing* stored ciphertext to compare it
+        // against the new value (`encrypted` is a primitive cast type), which throws if
+        // that existing value is ever corrupted/unreadable — impossible to ever overwrite
+        // a broken credential otherwise. A query builder update writes the new ciphertext
+        // directly without reading the old one.
+        $credentials = [];
         if ($request->filled('username')) {
-            $data['username'] = $request->input('username');
+            $credentials['username'] = encrypt($request->input('username'));
         }
         if ($request->filled('password')) {
-            $data['password'] = $request->input('password');
+            $credentials['password'] = encrypt($request->input('password'));
         }
-
-        $ftpServer->update($data);
+        if ($credentials) {
+            FtpServer::whereKey($ftpServer->id)->update($credentials);
+        }
 
         AuditLogger::record($request->user(), $ftpServer, 'ftp_server.updated', $request->only(
             'name', 'server_number', 'host', 'port', 'path', 'cfg_path', 'server_type', 'active'

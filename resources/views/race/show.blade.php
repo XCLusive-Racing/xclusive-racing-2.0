@@ -304,6 +304,14 @@
 
                 @php $isEndurance = (bool) $race->is_endurance; @endphp
 
+                {{-- Questions — links to the FAQ page, shown on every event regardless of status --}}
+                <div class="xcl-event-card mb-4">
+                    <h3 class="xcl-event-card__heading">QUESTIONS?</h3>
+                    <a href="{{ route('faq') }}" class="xcl-event-unreg-btn w-100 d-block text-center text-decoration-none">
+                        ASK A QUESTION →
+                    </a>
+                </div>
+
                 {{-- Team Entry (endurance races only) --}}
                 @auth
                 @if($isEndurance && $userTeam)
