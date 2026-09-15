@@ -1,0 +1,155 @@
+{{-- Shared "add a new server" field set -- same markup, sections, defaults and
+     rolling/scheduled JS toggle used by both the main Configuration > Servers >
+     Add Server page (admin/servers/create.blade.php) and the League edit page's
+     own "Add Your Own Server" card, so the two never drift apart again. Create-only
+     (no existing $server to prefill from) -- the main page's Edit Server form has
+     its own extra fields (active flag, config JSON overrides, blank-keeps-current
+     credentials) that don't apply here and aren't included. --}}
+<div class="px-4 pt-4 pb-2">
+    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Server Info</p>
+
+    <div class="row g-3 mb-3">
+        <div class="col-sm-9">
+            <label class="form-label">Server Name</label>
+            <input type="text" name="name" value="{{ old('name') }}"
+                   class="form-control @error('name') is-invalid @enderror">
+            @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        </div>
+        <div class="col-sm-3">
+            <label class="form-label">Server No. <span class="fw-normal text-secondary" style="text-transform:none">(gPortal)</span></label>
+            <input type="number" name="server_number" value="{{ old('server_number') }}"
+                   min="1" max="9" placeholder="1–4"
+                   class="form-control @error('server_number') is-invalid @enderror">
+            @error('server_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-sm-6">
+            <label class="form-label">Game</label>
+            <select name="game" class="form-select @error('game') is-invalid @enderror">
+                <option value="acc" {{ old('game', 'acc') === 'acc' ? 'selected' : '' }}>ACC</option>
+                <option value="lmu" {{ old('game') === 'lmu' ? 'selected' : '' }}>Le Mans Ultimate</option>
+            </select>
+            @error('game') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        </div>
+        <div class="col-sm-6">
+            <label class="form-label">Platform</label>
+            <select name="platform" class="form-select @error('platform') is-invalid @enderror">
+                <option value="console" {{ old('platform', 'console') === 'console' ? 'selected' : '' }}>Console</option>
+                <option value="pc" {{ old('platform') === 'pc' ? 'selected' : '' }}>PC</option>
+                <option value="cross" {{ old('platform') === 'cross' ? 'selected' : '' }}>Crossplay</option>
+            </select>
+            @error('platform') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        </div>
+    </div>
+</div>
+
+<div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Connection</p>
+
+    <div class="row g-3 mb-3">
+        <div class="col-sm-9">
+            <label class="form-label">IP Address</label>
+            <input type="text" name="host" value="{{ old('host') }}"
+                   class="form-control @error('host') is-invalid @enderror"
+                   style="font-family:monospace">
+            @error('host') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        </div>
+        <div class="col-sm-3">
+            <label class="form-label">Port</label>
+            <input type="number" name="port" value="{{ old('port', 21) }}"
+                   class="form-control @error('port') is-invalid @enderror">
+            @error('port') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-sm-6">
+            <label class="form-label">FTP Username</label>
+            <input type="text" name="username" value="{{ old('username') }}"
+                   class="form-control @error('username') is-invalid @enderror"
+                   autocomplete="off">
+            @error('username') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        </div>
+        <div class="col-sm-6">
+            <label class="form-label">FTP Password</label>
+            <input type="password" name="password"
+                   class="form-control @error('password') is-invalid @enderror"
+                   autocomplete="new-password">
+            @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        </div>
+    </div>
+</div>
+
+<div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Configuration</p>
+
+    <div class="mb-3">
+        <label class="form-label">Results Path</label>
+        <input type="text" name="path" value="{{ old('path', '/results') }}"
+               class="form-control @error('path') is-invalid @enderror"
+               style="font-family:monospace">
+        <div class="form-text" style="font-size:.72rem;color:#9ca3af">Directory where JSON result files are saved.</div>
+        @error('path') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    </div>
+    <div class="mb-0">
+        <label class="form-label">Config Path</label>
+        <input type="text" name="cfg_path" value="{{ old('cfg_path', '/cfg') }}"
+               class="form-control @error('cfg_path') is-invalid @enderror"
+               style="font-family:monospace">
+        <div class="form-text" style="font-size:.72rem;color:#9ca3af">Directory where ACC config files are pushed (entrylist.json, event.json, settings.json).</div>
+        @error('cfg_path') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    </div>
+</div>
+
+<div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+    <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Reset Schedule</p>
+
+    <div class="mb-3">
+        <label class="form-label">Server Type</label>
+        <select name="server_type" id="{{ $idPrefix ?? '' }}srv-type" class="form-select @error('server_type') is-invalid @enderror">
+            <option value="rolling" {{ old('server_type','rolling') === 'rolling' ? 'selected' : '' }}>Rolling resets (SERVER 1 / 2 / 3)</option>
+            <option value="scheduled" {{ old('server_type') === 'scheduled' ? 'selected' : '' }}>Manual restart (SERVER 4)</option>
+        </select>
+        @error('server_type') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    </div>
+
+    <div id="{{ $idPrefix ?? '' }}rolling-fields">
+        <div class="row g-3">
+            <div class="col-sm-6">
+                <label class="form-label">First Reset Hour (UTC)</label>
+                <select name="reset_start_hour" class="form-select @error('reset_start_hour') is-invalid @enderror">
+                    @for($h = 0; $h < 24; $h++)
+                        <option value="{{ $h }}" {{ old('reset_start_hour', 0) == $h ? 'selected' : '' }}>
+                            {{ str_pad($h, 2, '0', STR_PAD_LEFT) }}:00
+                        </option>
+                    @endfor
+                </select>
+                <div class="form-text" style="font-size:.72rem;color:#9ca3af">SERVER 1 = 00:00 · SERVER 2/3 = 01:00</div>
+                @error('reset_start_hour') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="col-sm-6">
+                <label class="form-label">Reset Interval (minutes)</label>
+                <input type="number" name="reset_interval_minutes" value="{{ old('reset_interval_minutes', 120) }}"
+                       class="form-control @error('reset_interval_minutes') is-invalid @enderror"
+                       min="30" max="1440">
+                <div class="form-text" style="font-size:.72rem;color:#9ca3af">All servers = 120 min</div>
+                @error('reset_interval_minutes') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+(function () {
+    const typeEl  = document.getElementById('{{ $idPrefix ?? '' }}srv-type');
+    const rolling = document.getElementById('{{ $idPrefix ?? '' }}rolling-fields');
+    if (!typeEl || !rolling) return;
+    function toggle() { rolling.style.display = typeEl.value === 'rolling' ? '' : 'none'; }
+    typeEl.addEventListener('change', toggle);
+    toggle();
+})();
+</script>
+@endpush

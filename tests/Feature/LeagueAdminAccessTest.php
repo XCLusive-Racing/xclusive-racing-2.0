@@ -295,4 +295,331 @@ class LeagueAdminAccessTest extends TestCase
         $this->assertSame('original-user', $server->username);
         $this->assertSame('original-pass', $server->password);
     }
+
+    // Real incident, 2026-09: every FTP server's password had somehow ended up
+    // encrypted under a since-rotated APP_KEY (unrelated data corruption, not
+    // reproduced here) -- undecryptable under the current key. Re-entering a
+    // fresh password through this exact form then threw DecryptException
+    // ("The MAC is invalid") *on save*, before the new value was ever
+    // written: Eloquent's dirty-check for an 'encrypted'-cast attribute
+    // decrypts both the new value and the stored original to compare them,
+    // so a corrupt original poisoned every future save too, with no way to
+    // recover through the UI. Reproduced here with garbage ciphertext
+    // written directly (bypassing the model, so Eloquent never touches it
+    // until the update() call under test does).
+    public function test_ftp_server_update_recovers_from_an_undecryptable_stored_password(): void
+    {
+        $admin  = $this->makeAdmin();
+        $server = FtpServer::create([
+            'name' => 'Server', 'host' => '1.2.3.4', 'port' => 21,
+            'username' => 'original-user', 'password' => 'original-pass',
+            'path' => '/results', 'server_type' => 'scheduled',
+        ]);
+        \Illuminate\Support\Facades\DB::table('ftp_servers')->where('id', $server->id)
+            ->update(['password' => 'not-valid-ciphertext-at-all']);
+
+        $this->actingAs($admin)->put(route('admin.servers.update', $server), [
+            'name' => 'Server', 'host' => '1.2.3.4', 'port' => 21,
+            'path' => '/results', 'server_type' => 'scheduled',
+            'username' => 'original-user', 'password' => 'brand-new-pass',
+        ])->assertRedirect(route('admin.servers.index'));
+
+        $this->assertSame('brand-new-pass', $server->fresh()->password);
+    }
+
+    // --- Championship Manager: user-directed 2026-09 — originally shipped as a
+    // global "manager of every league at once" role (assigned from the Users
+    // admin page, not a per-league membership row), but that meant anyone
+    // holding it saw and managed every league/championship/server on the
+    // platform regardless of membership -- flagged 2026-09-12 after real users
+    // ended up with the role and zero league memberships, seeing everything.
+    // Reworked so it only unlocks the leagues/championships admin area itself;
+    // actually managing a given league still requires a real League Manager
+    // membership row on it, same as anyone else. ---
+
+    public function test_championship_manager_sees_no_leagues_without_a_membership_row(): void
+    {
+        $this->makeLeague('nlrl');
+        $this->makeLeague('src');
+        $manager = User::factory()->championshipManager()->create();
+
+        $this->assertDatabaseMissing('league_user', ['user_id' => $manager->id]);
+
+        $this->actingAs($manager)
+            ->get(route('admin.leagues.index'))
+            ->assertOk()
+            ->assertDontSee('NLRL')
+            ->assertDontSee('SRC');
+    }
+
+    // User-directed 2026-09-12: a Championship Manager creates their own league(s)
+    // self-service rather than an owner/admin doing it for them -- but they must
+    // only ever end up seeing that league, not every other one already on the
+    // platform (they have no membership row until they create one themselves).
+    public function test_championship_manager_can_create_a_league_and_then_only_sees_that_one(): void
+    {
+        $this->makeLeague('other-league');
+        $manager = User::factory()->championshipManager()->create();
+
+        $this->actingAs($manager)->post(route('admin.leagues.store'), [
+            'name' => 'My League', 'slug' => 'my-league',
+            'primary_color' => '#111111', 'accent_color' => '#222222',
+            'status' => 'draft',
+        ])->assertRedirect();
+
+        $league = League::where('slug', 'my-league')->firstOrFail();
+        $this->assertDatabaseHas('league_user', ['user_id' => $manager->id, 'league_id' => $league->id, 'role' => 'manager']);
+
+        $this->actingAs($manager)
+            ->get(route('admin.leagues.index'))
+            ->assertRedirect(route('admin.leagues.edit', $league));
+
+        $this->actingAs($manager)
+            ->get(route('admin.leagues.edit', $league))
+            ->assertOk();
+    }
+
+    public function test_championship_manager_can_edit_branding_but_not_identity_or_archive_for_a_league_they_manage(): void
+    {
+        $league  = $this->makeLeague('nlrl');
+        $manager = User::factory()->championshipManager()->create();
+        $this->attach($manager, $league);
+
+        $this->actingAs($manager)->put(route('admin.leagues.update', $league), [
+            'primary_color' => '#111111',
+            'accent_color'  => '#222222',
+            'status'        => 'active', // attempted, must be ignored -- same as a per-league manager
+            'name'          => 'Renamed', // attempted, must be ignored
+        ])->assertRedirect(route('admin.leagues.edit', $league));
+
+        $league->refresh();
+        $this->assertSame('draft', $league->status);
+        $this->assertSame('NLRL', $league->name);
+        $this->assertSame('#111111', $league->primary_color);
+
+        $this->actingAs($manager)->post(route('admin.leagues.archive', $league))->assertForbidden();
+    }
+
+    public function test_championship_manager_cannot_manage_a_league_they_are_not_a_member_of(): void
+    {
+        $league  = $this->makeLeague('nlrl');
+        $manager = User::factory()->championshipManager()->create();
+
+        $this->actingAs($manager)
+            ->get(route('admin.leagues.edit', $league))
+            ->assertNotFound();
+
+        $this->actingAs($manager)
+            ->put(route('admin.leagues.update', $league), ['primary_color' => '#111111', 'accent_color' => '#222222'])
+            ->assertNotFound();
+    }
+
+    public function test_championship_manager_cannot_assign_league_roles(): void
+    {
+        $league  = $this->makeLeague('nlrl');
+        $manager = User::factory()->championshipManager()->create();
+        $this->attach($manager, $league);
+        $recruit = User::factory()->create();
+
+        $this->actingAs($manager)->post(route('admin.leagues.members.store', $league), [
+            'user_id' => $recruit->id,
+            'role'    => 'manager',
+        ])->assertForbidden();
+    }
+
+    public function test_championship_manager_can_create_and_manage_a_championship_for_a_league_they_manage(): void
+    {
+        $league  = $this->makeLeague('nlrl');
+        $manager = User::factory()->championshipManager()->create();
+        $this->attach($manager, $league);
+
+        $this->actingAs($manager)
+            ->get(route('admin.leagues.championships.index', $league))
+            ->assertOk();
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.store', $league))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('championships', ['league_id' => $league->id, 'name' => 'New Championship']);
+    }
+
+    // User-directed 2026-09: "ervoor zorgen dat we opties die bij championships
+    // die ook bij leagues staan bij voorbeeld die require members discord to
+    // join grayed out" — same locked pill-toggle look on both the league edit
+    // page and the championship wizard's Requirements step (both use the exact
+    // same "Temporarily locked" copy), instead of the league page's older plain
+    // opacity-checkbox style.
+    public function test_leagues_own_discord_toggle_is_locked_the_same_way_as_championships(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $admin  = $this->makeAdmin();
+
+        $this->actingAs($admin)
+            ->get(route('admin.leagues.edit', $league))
+            ->assertOk()
+            ->assertSee('disabled', false)
+            ->assertSee('Temporarily locked — XCL is still finishing the operational Discord bot setup. Coming soon.');
+    }
+
+    // User-directed 2026-09: "de ftp bij leagues sectie van de admin page...
+    // het liefst wil ik hem gwn exact hetzelfde als die van ons" -- the League
+    // edit page's own "Add Your Own Server" form used to be a cramped,
+    // different field set (no Server No., no Reset Schedule section) from
+    // Configuration > Servers > Add Server. Both now render the exact same
+    // shared partial (admin/servers/_add-server-fields.blade.php).
+    public function test_league_edit_pages_add_server_form_matches_the_main_add_server_page(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        // Configuration > Servers is canManage()-only, unlike the league page's
+        // own copy of this form (also reachable by that league's own manager) --
+        // an admin actor here so both pages can actually be fetched for comparison.
+        $admin = $this->makeAdmin();
+
+        $mainPage   = $this->actingAs($admin)->get(route('admin.servers.create'));
+        $leaguePage = $this->actingAs($admin)->get(route('admin.leagues.edit', $league));
+
+        foreach (['Server No.', 'Reset Schedule', 'Rolling resets (SERVER 1 / 2 / 3)', 'Results Path', 'Config Path'] as $needle) {
+            $mainPage->assertSee($needle);
+            $leaguePage->assertSee($needle);
+        }
+    }
+
+    public function test_league_managers_own_server_can_carry_a_server_number(): void
+    {
+        $league  = $this->makeLeague('nlrl');
+        $manager = User::factory()->leagueManager()->create();
+        $this->attach($manager, $league);
+
+        $this->actingAs($manager)->post(route('admin.leagues.servers.create', $league), [
+            'name' => 'League Server 1', 'server_number' => 2,
+            'host' => '1.2.3.4', 'port' => 21, 'username' => 'u', 'password' => 'p',
+            'path' => '/results', 'server_type' => 'rolling',
+            'reset_start_hour' => 1, 'reset_interval_minutes' => 120,
+            'game' => 'acc', 'platform' => 'console',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('ftp_servers', ['league_id' => $league->id, 'name' => 'League Server 1', 'server_number' => 2]);
+    }
+
+    // User-directed 2026-09: "sorry bij create leagues" -- the same option was
+    // still a plain, fully live checkbox on the Create League page (never
+    // updated to match), so a brand new league could actually have it turned
+    // on despite the feature not being operational anywhere else. The lock
+    // itself is UI-only (same as every other "locked" field in this app --
+    // e.g. ChampionshipSettingsSchema's own copy of this option has no
+    // corresponding backend rule either), so this only covers what a real
+    // browser can actually submit through the rendered form -- the hidden
+    // input always sending 0, not a server-side rejection of any other value.
+    public function test_the_create_league_page_also_locks_the_discord_toggle(): void
+    {
+        $admin = $this->makeAdmin();
+
+        $this->actingAs($admin)
+            ->get(route('admin.leagues.create'))
+            ->assertOk()
+            ->assertSee('disabled', false)
+            ->assertSee('Temporarily locked — XCL is still finishing the operational Discord bot setup. Coming soon.');
+
+        $this->actingAs($admin)->post(route('admin.leagues.store'), [
+            'name' => 'EER', 'slug' => 'eer', 'primary_color' => '#111111', 'accent_color' => '#222222',
+            'status' => 'draft', 'requires_discord_membership' => '0',
+        ])->assertRedirect();
+
+        $league = League::withoutTenantScope()->where('slug', 'eer')->firstOrFail();
+        $this->assertFalse($league->requires_discord_membership);
+    }
+
+    // User-directed 2026-09: "Reset Interval (min) (rolling only) die mag weg
+    // want ze hebben hun eigen servers... cfg_path (optional) moet required
+    // zijn" -- both on the admin-only cross-league "All League Servers" Add
+    // Server form (admin/league-servers/index.blade.php,
+    // LeagueFtpServerController).
+    public function test_league_servers_add_form_drops_reset_interval_and_requires_cfg_path(): void
+    {
+        $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
+
+        $this->actingAs($admin)
+            ->get(route('admin.league-servers.index'))
+            ->assertOk()
+            ->assertDontSee('Reset Interval (min)')
+            ->assertSee('Reset Start Hour');
+    }
+
+    // User-directed 2026-09: "bij cfg path mag je standaard /cfg neerzetten,
+    // en bij platform mag je crossplay weghalen."
+    public function test_league_servers_add_form_defaults_cfg_path_and_drops_crossplay(): void
+    {
+        $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
+
+        $this->actingAs($admin)
+            ->get(route('admin.league-servers.index'))
+            ->assertOk()
+            ->assertSee('value="/cfg"', false)
+            ->assertDontSee('Crossplay');
+    }
+
+    // User-directed 2026-09: "username en password mag je leeglaten want hij
+    // pakt nu standaard mn email en password daarvan" -- the browser's own
+    // saved login for this exact domain was autofilling into these unrelated
+    // FTP credential fields, since they carried no autocomplete guard (the
+    // main Add Server page's copy already had one).
+    public function test_league_servers_add_form_guards_credential_fields_against_browser_autofill(): void
+    {
+        $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
+
+        $this->actingAs($admin)
+            ->get(route('admin.league-servers.index'))
+            ->assertOk()
+            ->assertSee('name="username"', false)
+            ->assertSee('autocomplete="off"', false)
+            ->assertSee('autocomplete="new-password"', false);
+    }
+
+    public function test_league_servers_store_no_longer_accepts_crossplay(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $admin  = $this->makeAdmin();
+
+        $this->actingAs($admin)->post(route('admin.league-servers.store'), [
+            'league_id' => $league->id, 'name' => 'League Server', 'host' => '1.2.3.4', 'port' => 21,
+            'username' => 'u', 'password' => 'p', 'path' => '/results', 'cfg_path' => '/cfg',
+            'server_type' => 'scheduled', 'game' => 'acc', 'platform' => 'cross',
+        ])->assertSessionHasErrors('platform');
+
+        $this->assertDatabaseMissing('ftp_servers', ['league_id' => $league->id, 'name' => 'League Server']);
+    }
+
+    public function test_league_servers_store_rejects_a_missing_cfg_path(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $admin  = $this->makeAdmin();
+
+        $this->actingAs($admin)->post(route('admin.league-servers.store'), [
+            'league_id' => $league->id, 'name' => 'League Server', 'host' => '1.2.3.4', 'port' => 21,
+            'username' => 'u', 'password' => 'p', 'path' => '/results',
+            'server_type' => 'scheduled', 'game' => 'acc', 'platform' => 'console',
+        ])->assertSessionHasErrors('cfg_path');
+
+        $this->assertDatabaseMissing('ftp_servers', ['league_id' => $league->id, 'name' => 'League Server']);
+    }
+
+    public function test_league_servers_store_no_longer_needs_a_reset_interval_and_defaults_to_120(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $admin  = $this->makeAdmin();
+
+        $this->actingAs($admin)->post(route('admin.league-servers.store'), [
+            'league_id' => $league->id, 'name' => 'League Server', 'host' => '1.2.3.4', 'port' => 21,
+            'username' => 'u', 'password' => 'p', 'path' => '/results', 'cfg_path' => '/cfg',
+            'server_type' => 'rolling', 'reset_start_hour' => 1,
+            'game' => 'acc', 'platform' => 'console',
+        ])->assertRedirect();
+
+        $server = FtpServer::where('league_id', $league->id)->where('name', 'League Server')->firstOrFail();
+        $this->assertSame(120, $server->reset_interval_minutes);
+    }
 }

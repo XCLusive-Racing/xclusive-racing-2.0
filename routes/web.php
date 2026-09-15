@@ -416,10 +416,10 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/cha
     Route::get('/', [ChampionshipWizardController::class, 'index'])->name('index');
     Route::post('/', [ChampionshipWizardController::class, 'store'])->name('store');
     Route::get('/{championship}/wizard/{step}', [ChampionshipWizardController::class, 'edit'])
-        ->where('step', 'basics|rounds|format|scoring|requirements|penalties|review')
+        ->where('step', 'basics|sessions|rounds|format|scoring|requirements|penalties|review')
         ->name('wizard');
     Route::put('/{championship}/wizard/{step}', [ChampionshipWizardController::class, 'update'])
-        ->where('step', 'basics|format|scoring|requirements|penalties')
+        ->where('step', 'basics|sessions|format|scoring|requirements|penalties')
         ->name('wizard.update');
     Route::get('/{championship}/rounds/create', [ChampionshipWizardController::class, 'roundCreate'])->name('rounds.create');
     Route::post('/{championship}/rounds', [ChampionshipWizardController::class, 'addRound'])->name('rounds.store');
@@ -431,7 +431,8 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/cha
     Route::post('/{championship}/publish', [ChampionshipWizardController::class, 'publish'])->name('publish');
     Route::post('/{championship}/open-registration', [ChampionshipWizardController::class, 'openRegistration'])->name('open-registration');
     Route::post('/{championship}/close-registration', [ChampionshipWizardController::class, 'closeRegistration'])->name('close-registration');
-    Route::post('/{championship}/request-rating', [ChampionshipWizardController::class, 'requestRating'])->name('request-rating');
+    Route::post('/{championship}/hide', [ChampionshipWizardController::class, 'hide'])->name('hide');
+    Route::post('/{championship}/unhide', [ChampionshipWizardController::class, 'unhide'])->name('unhide');
     Route::post('/{championship}/approve-rating', [ChampionshipWizardController::class, 'approveRating'])->name('approve-rating');
     Route::post('/{championship}/revoke-rating', [ChampionshipWizardController::class, 'revokeRating'])->name('revoke-rating');
 });

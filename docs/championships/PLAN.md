@@ -11,6 +11,889 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-11, twenty-sixth follow-up — investigated "league of championship
+  managers kunnen de admin button niet zien," found no code bug.** User then
+  clarified the intended rule: "elke role behalve driver mag admin button
+  zien." Checked every layer: `User::canAccessAdminPanel()` already lists
+  every real role except `driver` (owner/admin/moderator/event_manager/
+  steward/broadcaster/league_manager/league_steward/championship_manager —
+  exactly the rule described), the actual rendered navbar
+  (`components/navbar.blade.php`, the `<x-navbar/>` component
+  `layouts/app.blade.php` actually uses — `layouts/_navbar.blade.php` is a
+  separate, unused file with its own copy of the same check, dead code but
+  not touched here since it's not in the render path) correctly gates the
+  ADMIN button on it in both its mobile and desktop copies, and
+  `adminLandingRoute()` resolves a valid route for both roles. Verified with
+  a full HTTP-rendered page as a real league manager and a real championship
+  manager (`assertSee('ADMIN')`, not just calling the model method in
+  isolation) — both pass. Cross-checked real production data too: every
+  existing league manager/steward LeagueUser row has its matching global
+  role correctly synced, and every existing `championship_manager` user's
+  `canAccessAdminPanel()` already returns true. Whatever the user saw isn't
+  reproducible from the code or the data as they stand — likely a stale
+  deployment/cache on the live site not yet reflecting this session's
+  earlier merges, not something fixable by further code changes. New tests
+  `AdminButtonVisibilityTest.php` (league manager, league steward,
+  championship manager all see it; a plain driver doesn't) lock in the
+  intended rule as a permanent regression check regardless. 187 tests
+  passing.
+- **2026-09-11, twenty-fifth follow-up — race registration could exceed
+  max_drivers under concurrent sign-ups.** User: "we hebben ook een keer de
+  max aantal mensen gehaald voor een baan en de registration stopt niet bij
+  het maximum maar gaat door" — not scoped to championships specifically
+  (`RaceController::register()`/`registerTeam()`, the regular event
+  registration flow), logged here anyway per this session's running
+  incident log. Classic check-then-act race condition: both methods called
+  `$race->isFull()` (solo) / compared `max_drivers` against a plain
+  `count()` (teams) *before* opening the `DB::transaction()` that actually
+  inserts the registration, with no row lock — two people registering for
+  the last spot at the same moment could each see "not full" before
+  either insert committed, letting the race fill past its cap. Same issue
+  for `registerTeam()`'s car-number-uniqueness check. Fixed by moving the
+  authoritative check inside the transaction, against a
+  `Race::lockForUpdate()` (and `RaceClass::lockForUpdate()` for a
+  multiclass race's per-class cap) row lock, which serializes concurrent
+  registration attempts for the same race — whoever gets the lock first
+  sees an accurate count; the next one waits, then sees the first one's
+  insert already counted. The original pre-transaction checks stay in
+  place too (an early, transaction-free rejection for the common,
+  non-racing case). New test file `RaceRegistrationCapacityTest.php` — true
+  concurrency isn't exercisable in single-threaded PHPUnit against SQLite,
+  so these lock in the corrected control flow itself (the authoritative
+  check now lives inside the transaction and correctly rejects once the
+  cap is reached) rather than the race condition directly. 183 tests
+  passing.
+- **2026-09-11, twenty-fourth follow-up — live incident: config push failing
+  with "The payload is invalid."** User reported a live race (#228,
+  "Multiclass", Laguna Seca) not pushing. Two distinct real bugs found:
+  1. **`AccServerConfigService::entryList()`** — a solo driver's race number
+     came from their own profile (`User::car_number`), which many drivers
+     never set; every "not set" entry collapsed to the same placeholder
+     (`0`). ACC's dedicated server rejects an entrylist outright when two
+     entries share a number — race #228 had 34 entries but only 18 unique
+     numbers (16 all `0`). Fixed with a new `assignUniqueRaceNumbers()`
+     pass: a driver/team's own chosen number is kept unless another entry
+     already claimed it, anyone left over (no number, or a clash) gets the
+     lowest free number instead of a shared `0`. Applies to every race
+     going forward, not just this one. 178 tests still passing.
+  2. **The actual reported error, `DecryptException: The payload is
+     invalid.`, turned out to be unrelated** to (1) — a genuine data bug,
+     not a code bug: `FtpServer.username` uses Laravel's `encrypted` cast,
+     and every server in the system (ids 4-8, the whole XCL SERVER 1-5
+     fleet) had its `username` stored as **plain text** while `password`
+     was properly encrypted — Eloquent tried to auto-decrypt plain text on
+     every access and threw exactly that exception, blocking config push
+     for every race on every server, not just #228. Fixed by re-encrypting
+     each server's real (now-known) plaintext username through
+     `Crypt::encryptString()` directly against the database (this is data,
+     not code — no migration, no commit).
+  3. **Found while verifying (2)**: every server's `password` also fails
+     to decrypt, but with a *different* exception (`DecryptException: The
+     MAC is invalid.`, not "the payload is invalid") — the ciphertext is
+     validly *shaped* but doesn't verify under the current `APP_KEY`,
+     meaning it was encrypted under a different key at some point, with no
+     `APP_PREVIOUS_KEYS` configured to fall back to. Unlike (2), there was
+     no known plaintext to silently re-encrypt with — this one genuinely
+     needed the admin to re-enter the real password.
+  4. **Re-entering it hit a second, real code bug**: saving a new password
+     through `/admin/servers/{id}/edit` threw the *exact same*
+     `DecryptException: The MAC is invalid.` — on save, before the new
+     value was ever written. Root cause: `FtpServerController::update()`
+     passed `username`/`password` through `$ftpServer->update($data)`
+     (plain Eloquent), and Eloquent's dirty-check for an `encrypted`-cast
+     attribute (`HasAttributes::originalIsEquivalent()`) decrypts *both*
+     the new value and the stored original to compare them — even though
+     the original is never actually read anywhere else. A corrupt/
+     undecryptable original therefore poisoned every future save attempt
+     too, with **no way to recover a broken credential through the UI at
+     all**. Fixed by writing `username`/`password` through a raw
+     `DB::table('ftp_servers')->update()` call instead (pre-encrypted via
+     `Crypt::encryptString()`), bypassing `$ftpServer`'s dirty-check
+     entirely — it only ever touches the new value now, never the old one.
+     `store()` (a plain INSERT, no original to compare against) was never
+     affected and needed no change. New regression test
+     `test_ftp_server_update_recovers_from_an_undecryptable_stored_password`,
+     reproducing a corrupted original directly (bypassing the model so
+     Eloquent never touches it until the `update()` call under test does).
+     179 tests passing.
+- **2026-09-11, twenty-third follow-up — cfg_path default + dropped
+  Crossplay on the same "All League Servers" Add Server form.** User: "bij
+  cfg path mag je standaard /cfg neerzetten, en bij platform mag je
+  crossplay weghalen." `cfg_path` now defaults to `/cfg` (matching the
+  same default the shared `_add-server-fields.blade.php` partial already
+  uses elsewhere). "Crossplay" removed from the Platform `<select>`, and
+  `LeagueFtpServerController::store()`'s validation tightened from
+  `in:pc,console,cross` to `in:pc,console` to match — not just hidden from
+  the form, actually rejected server-side too if still submitted.
+  Mid-turn, a real bug: "username en password mag je leeglaten want hij
+  pakt nu standaard mn email en password daarvan" — the FTP Username/
+  Password fields on this same form carried no `autocomplete` guard (the
+  main Add Server page's copy already did), so the browser's own saved
+  login for this exact domain was autofilling into them. Added
+  `autocomplete="off"`/`autocomplete="new-password"` to match. New tests
+  `test_league_servers_add_form_defaults_cfg_path_and_drops_crossplay`,
+  `test_league_servers_store_no_longer_accepts_crossplay`,
+  `test_league_servers_add_form_guards_credential_fields_against_browser_autofill`.
+  178 tests passing.
+- **2026-09-11, twenty-second follow-up — trimmed the "All League Servers"
+  Add Server form.** User: "Reset Interval (min) (rolling only) die mag weg
+  want ze hebben hun eigen servers... cfg_path (optional) moet required
+  zijn" — this is the third, admin-only, cross-league server surface
+  (`/admin/league-servers`, `LeagueFtpServerController`) flagged but
+  deliberately left untouched in the previous follow-up; turns out it was
+  the one actually meant.
+  - Dropped the `reset_interval_minutes` field entirely — a league's own
+    server isn't part of XCL's shared rolling-restart pool, so this now
+    always falls through to the `ftp_servers.reset_interval_minutes`
+    column's own DB default (120) rather than being a per-league choice.
+    `LeagueFtpServerController::store()`'s validation rule for it dropped
+    accordingly (simply omitted from `$data`, so `FtpServer::create()`
+    never sets it and the column default applies). Reset Start Hour stays
+    — still a real per-league choice, offsetting where in that fixed
+    120-minute cycle their own server resets.
+  - `cfg_path` changed from `nullable` to `required` (validation rule +
+    the `required` HTML attribute + label's "(optional)" suffix removed).
+  - New tests
+    `test_league_servers_add_form_drops_reset_interval_and_requires_cfg_path`,
+    `test_league_servers_store_rejects_a_missing_cfg_path`,
+    `test_league_servers_store_no_longer_needs_a_reset_interval_and_defaults_to_120`
+    — first test file to touch `LeagueFtpServerController` at all. 175
+    tests passing.
+- **2026-09-11, twenty-first follow-up — combined per-league access onto the
+  Users edit page, and unified the two FTP "Add Server" forms.** User asked
+  what League Manager vs. Championship Manager actually meant (answered in
+  chat, no code change), then: "kunnen we dat combineren en de ftp bij
+  leagues sectie van de admin page wil je daar even opnieuw dingen
+  instellen het liefst wil ik hem gwn exact hetzelfde als die van ons."
+  - **Combined access management**: granting someone plain per-league
+    Manager/Steward access used to only be possible from that specific
+    league's own edit page (Members section). New "League Access" section
+    on the Users edit page (`UserController::edit()`/`update()`) lists
+    every league with a None/Manager/Steward select per league, pre-filled
+    from the user's current `LeagueUser` rows — same underlying action and
+    same `canManage()` gate as `LeagueController::addMember()`/
+    `removeMember()`, just reachable from one more place now, combined with
+    Championship Manager (global, "every league at once") right above it
+    on the same page. Only leagues whose role actually changed get
+    written/audit-logged on save. Discovered mid-implementation:
+    `/admin/users/*` is gated `role:owner,moderator,event_manager` — plain
+    'admin' can't reach it at all, so `canManage()` (owner/admin/
+    event_manager) and "can even load this page" only overlap at
+    owner/event_manager; a moderator sees the page (and the Roles pills
+    above, gated by the narrower `canManageRoles()`) but correctly never
+    sees League Access, matching what `addMember()` already required
+    everywhere else. Tests in new `UserLeagueAccessTest.php`.
+  - **Unified FTP "Add Server" forms**: the League edit page's own copy of
+    this form was a cramped, materially different field set (`form-control-sm`
+    grid, no Server No. field, no Reset Schedule section, no rolling/scheduled
+    JS toggle) from Configuration > Servers > Add Server
+    (`admin/servers/create.blade.php`) — user wants them "exact hetzelfde."
+    Extracted the real create page's fields into a shared partial
+    (`admin/servers/_add-server-fields.blade.php`, parameterized with an
+    `idPrefix` to keep element ids collision-safe if ever both render on one
+    page) and had both pages `@include` it, so they render byte-identical
+    field markup and can't drift apart again. `LeagueController::storeServer()`
+    gained `server_number` validation to match `FtpServerController::store()`'s
+    field set exactly. Left the separate, admin-only `/admin/league-servers`
+    cross-league aggregate page (`LeagueFtpServerController`) untouched — a
+    different, less-frequently-used surface with its own extra League
+    selector field; flagged to the user in case that one was what they
+    actually meant instead. New tests
+    `test_league_edit_pages_add_server_form_matches_the_main_add_server_page`,
+    `test_league_managers_own_server_can_carry_a_server_number`.
+  - 172 tests passing.
+- **2026-09-11, twentieth follow-up — locked boolean toggles now render an
+  actually-grey pill.** User: "de radio button van Require Discord
+  membership to register bij leagues is niet grijs." Root cause: both the
+  League edit page's copy and `_field.blade.php`'s generic
+  boolean-field-locked rendering reused the same purple(on)/white(off) pill
+  colours the *interactive* toggle uses, just wrapped in a 50%-opacity div
+  — for a field whose value happens to be off (white background on a white
+  page), 50% opacity barely changes anything visible, so it never actually
+  read as disabled/locked, only the (unrelated, unlabelled) cursor style
+  differed. Fixed on both pages: a locked pill now always renders the same
+  neutral grey (`#f3f4f6` background, `#9ca3af` text) regardless of on/off,
+  with an explicit "(On)"/"(Off)" suffix carrying the value that colour
+  used to (purple vs white) — colour no longer needs to do double duty as
+  both "locked" and "current value." Fixed on `_field.blade.php` (every
+  championship wizard boolean field, not just Discord) and the League edit
+  page. Mid-turn correction — "sorry bij create leagues" — the actual page
+  the user meant was Create League, not Edit: that page's copy of this
+  toggle turned out to still be a fully live, working checkbox, never
+  updated to match at all (a brand new league really could have this
+  turned on, unlike an existing one). Locked it the same way, hidden input
+  hardcoded to `0` (no existing value to preserve at creation time). New
+  test `test_the_create_league_page_also_locks_the_discord_toggle` —
+  confirms the rendered lock, not a server-side rejection of any other
+  value posted directly (this lock, like every other one in the app, is
+  UI-only; `ChampionshipSettingsSchema`'s own copy of this option has no
+  backend rule for it either — first attempt at asserting a raw smuggled
+  `requires_discord_membership=1` gets silently rejected server-side
+  failed, correctly, since nothing here was ever designed to reject that).
+  163 tests passing.
+- **2026-09-11, nineteenth follow-up — new "Championship Manager" global role
+  + League edit page styling pass.** User: "we moeten bepaalde mensen access
+  geven tot het admin panel om bij leagues en championship te komen," then,
+  after I found the League edit page's existing per-league Members section
+  and asked what they meant: "er moet een optie bij de users tabel en dan
+  users editten waar wij ook rollen kunnen adden daar moet championship
+  manager komen" — a brand new *global* role (`championship_manager`),
+  assigned from the Users admin page's existing role-pills UI
+  (`admin/users/edit.blade.php`), not a per-league `LeagueUser` row.
+  - **Design**: rather than bolting `|| $user->isChampionshipManager()` onto
+    every individual authorization check across `LeagueController`,
+    `ChampionshipPolicy`, `PointsSchemeController`/`PointsSchemePolicy` (many
+    call sites, easy to miss one), `User::managesLeague(League $league)`
+    itself now returns true unconditionally for a Championship Manager
+    before checking the real `LeagueUser` row — every one of those call
+    sites already gates on `managesLeague($league)`, so they all pick this
+    up automatically, for free, for *every* league at once (no membership
+    row needed per league). Only the handful of places that check the bare
+    global `isLeagueManager()`/`isLeagueSteward()` flags directly (no
+    specific League in scope to call `managesLeague($league)` against —
+    `ChampionshipPolicy::viewAny()`, `PointsSchemePolicy::view()`,
+    `PointsSchemeController::browse()`) needed their own explicit
+    `isChampionshipManager()` addition.
+  - Deliberately **not** given `canManage()`-tier admin actions: a league's
+    identity fields (name/slug/status), Discord requirement, Members
+    management (who else gets access — avoids a privilege-escalation loop),
+    archive/restore/permanent-delete, and cross-league FTP server
+    assignment all stay `canManage()`-only, untouched. A Championship
+    Manager gets exactly what a league's own Manager gets (branding,
+    description, links, championships, points schemes, rounds), just for
+    every league simultaneously instead of one at a time.
+  - `TenantScope::apply()` bypasses entirely for a Championship Manager
+    (same as `canManage()`) — necessary since they have no `LeagueUser` row
+    for `leagueIds()` to resolve; without it they'd see zero leagues despite
+    passing every other check.
+  - `LeagueAccess` middleware, the admin sidebar's Leagues/Championships/
+    Points Schemes nav section, and `adminLandingRoute()` all extended so
+    the role is actually reachable and visible, not just authorized.
+  - New migration `2026_09_11_000001_add_championship_manager_role.php`
+    (same insert-if-missing pattern as the original `league_manager`/
+    `league_steward` migration), `UserFactory::championshipManager()`
+    state. New tests in `LeagueAdminAccessTest.php`:
+    `test_championship_manager_sees_every_league_with_no_membership_rows_at_all`,
+    `test_championship_manager_can_edit_branding_but_not_identity_or_archive`,
+    `test_championship_manager_cannot_assign_league_roles`,
+    `test_championship_manager_can_create_and_manage_a_championship_for_any_league`.
+  - **Styling**: "styling updaten en ervoor zorgen dat we opties die bij
+    championships die ook bij leagues staan bij voorbeeld die require
+    members discord to join grayed out" — the League edit page's own
+    "Require Discord membership" toggle (already locked/disabled — XCL's
+    bot setup isn't operational yet, same reason the championship wizard's
+    copy of this exact option was locked in the thirteenth follow-up) used
+    an older plain-Bootstrap-checkbox-at-opacity:.55 look, visually
+    inconsistent with the newer pill-toggle-at-opacity:.5 look
+    `_field.blade.php` uses everywhere in the championship wizard. Restyled
+    to match exactly, so an option that exists at both levels reads as the
+    same kind of thing in both places. New test
+    `test_leagues_own_discord_toggle_is_locked_the_same_way_as_championships`.
+  - 162 tests passing.
+- **2026-09-11, eighteenth follow-up — "Hide from Public" for a published
+  championship.** User: "en nadat hij gepublisht is wil ik ook de optie bij
+  de edit om de championship te hiden," then, mid-turn: "zodat hij niet bij
+  events te zien is" — hiding must also pull the championship's own rounds
+  off the public Events page, not just the championships listing.
+  - Repurposed the already-existing (but previously inert — found during
+    last follow-up's dead-code sweep) `visibility` column
+    (`public`/`unlisted`, set on Basics) instead of inventing a new
+    `status` value: a quick "Hide from Public" / "Make Public Again" toggle
+    button on the Review step's action row (next to Publish/Open/Close
+    Registration, same single-dynamic-button pattern as the XCL Rating
+    toggle), gated on `$championship->status !== 'draft'` — draft is
+    already excluded from every public listing by status alone, so the
+    button only appears once there's actually something to hide. Two new
+    routes/controller actions, `hide`/`unhide`, same `update()` policy gate
+    as every other routine edit — no new policy method needed.
+  - **Centralized the status whitelist that used to live only in
+    `ChampionshipController` as a private const** into
+    `Championship::PUBLIC_STATUSES` + a `scopePubliclyVisible()` query
+    scope (`whereIn('status', PUBLIC_STATUSES)->where('visibility', 'public')`)
+    on the model itself, so both the championships listing
+    (`ChampionshipController::index()`) and the new Events-page filter
+    share one definition of "actually public" instead of each keeping its
+    own copy of the same status list.
+  - **`RaceController::index()` (the public Events page) previously had no
+    notion of a championship's own status/visibility at all** — any Race
+    row not literally `status='finished'` showed up regardless, meaning a
+    still-*draft* championship's rounds were already leaking onto `/events`
+    before this fix, not just a newly-hidden one. Added a
+    `whereNull('championship_id')->orWhereHas('championship', ...
+    ->withoutTenantScope()->publiclyVisible())` filter — `withoutTenantScope()`
+    is required here since `Championship` carries `TenantScope` and an
+    anonymous Events-page visitor has no league membership at all, which
+    would otherwise make `whereHas('championship', ...)` match zero rows
+    for everyone (`TenantScope::apply()`'s empty-league-list case). Verified
+    against real dev data: 4 of 20 non-finished races were rounds of a
+    still-draft championship, silently visible on `/events` before this fix.
+  - "Hidden" badge added next to the status badge in both the wizard's own
+    context strip (every step, not just Review) and the admin championships
+    list, so the state is visible while editing, not just inferable from
+    the toggle button's current label.
+  - New tests: `test_hide_button_only_appears_once_published`,
+    `test_league_manager_can_hide_and_unhide_their_own_published_championship`,
+    `test_hide_route_rejects_a_draft_championship`,
+    `test_a_different_leagues_manager_cannot_hide_another_leagues_championship`
+    (`ChampionshipSettingsTest.php`), plus
+    `test_a_hidden_championships_own_page_is_still_reachable_directly` (same
+    "unlisted YouTube video" semantics — reachable by direct link, just not
+    listed), `test_a_hidden_championship_is_excluded_from_the_leagues_public_listing`,
+    `test_a_hidden_championships_rounds_are_excluded_from_the_public_events_page`
+    (`PublicChampionshipPageTest.php`). 157 tests passing.
+  - Separately, deleted a leftover test race ("test" / Indianapolis /
+    2026-12-31, id 215, zero registrations or results) per the user's own
+    request in the same message — unrelated to the hide feature, just
+    piggybacked onto this turn.
+- **2026-09-11, seventeenth follow-up — dead code sweep before merging to
+  main.** User: "ruim deadcode op en kijk nog even na en dan kun je het naar
+  main pushen." Audited every file this whole session's work touched
+  (routes, controller, policy, model, schema, every wizard partial, both
+  test files) for anything unreachable or unused:
+  - `Championship::ratingApprovedBy()` (a `BelongsTo` to the approving
+    admin) had zero callers left anywhere in the app — it existed only for
+    the "Approved by X on date" text removed from Basics/Review earlier
+    this session (eighth follow-up). Deleted; the raw
+    `xcl_rating_approved_by` column (set/read directly, never through the
+    relation) is untouched.
+  - Confirmed `_review.blade.php`'s route-model-binding-only usages, every
+    `use App\Models\...` import across the touched controller/model, and
+    every `_*.blade.php` partial in the championships directory are still
+    referenced somewhere — no orphaned files, no unused imports.
+  - **Found and fixed a real (pre-existing, unrelated to this session's own
+    changes) bug while reviewing `_basics.blade.php`**: the Schedule
+    section's day-of-week visibility script looked up its wrapper via
+    `document.getElementById('f-schedule-day_of_week')?.closest('.mb-3')` —
+    but `_field.blade.php`'s wrapper div only ever carries a `col-*` class,
+    never `mb-3`, so that lookup always returned `null` and the script
+    silently no-op'd on every page load. "Race Day" was therefore always
+    shown regardless of the Recurrence value, never actually hidden for
+    "none"/"daily"/"monthly" as the field's own help text ("Only used when
+    recurrence is weekly or bi-weekly") implied it would be. Fixed by
+    reading `.parentElement` instead, which — given `_field.blade.php`'s
+    actual markup (the input is a direct child of its column wrapper, not
+    nested another level down) — is exactly that wrapper. Client-side-only
+    visual behavior with no headless browser on this machine to assert
+    against, so left unit-untested; DOM structure double-checked by hand
+    against `_field.blade.php`'s exact template instead.
+  - **`ChampionshipWizardController::pushRoundConfig()` / the
+    `POST rounds/{race}/push-config` route were *not* removed** despite
+    having no UI trigger any more (the Rounds step's manual button was
+    removed in the seventh follow-up) — this isn't the same situation as
+    the Request-XCL-Rating flow removed last follow-up (which had a
+    same-as-`update()` policy gate that genuinely never added anything). The
+    regular event maker keeps an equivalent manual override button of its
+    own (`admin.races.push-config`, still live on `admin/races/show.blade.php`)
+    alongside its own auto-push schedule — a manual force-push isn't
+    inherently redundant with the automatic one, and this action still has
+    its own direct backend test coverage
+    (`ChampionshipRoundPushTest.php`'s three push-route tests). Left as a
+    reachable-by-URL, tested capability without a UI entry point for now,
+    rather than deleting working, tested code on a guess.
+  - Confirmed no other references anywhere to the request-rating flow
+    removed last follow-up (route, policy method, model method, schema
+    field, `championship.rating_requested` audit-log event) — full sweep,
+    all clean.
+  150 tests still passing (no behavior changed by the audit itself, other
+  than the day-of-week fix, which has no server-rendered signal to test
+  against).
+- **2026-09-11, sixteenth follow-up — Review step's cards collapsible +
+  a Back button on every step's footer.** User: "nu als laatste bij review
+  wil ik de cards kunnen inklappen en onderin naast de confirm button moet
+  een back button staan" — then, generalizing before I'd acted on it: "bij
+  elk ding trouwens moet een backbutton staan" (every step, not just
+  Review). Two separate pieces:
+  - **Collapsible cards** — `_review.blade.php`'s cards (Basics, each
+    settings group, Rounds, XCL Rating) reuse the house accordion component
+    already proven elsewhere (`initAccordions`,
+    `resources/js/components/tabs.js` — the same one driving the race
+    results page's class groups and the config-file editors on
+    `admin/races/show.blade.php`), auto-wired globally on
+    `DOMContentLoaded` for any `[data-accordions]` wrapper
+    (`resources/js/app.js`) — no page-specific script needed. Each card is
+    `data-accordion="open"` by default (nothing hidden on first load;
+    collapsing is just for cutting clutter), with a clickable header and a
+    rotating chevron. Rounds' header keeps its "Manage rounds →" link
+    working via `onclick="event.stopPropagation()"`, same trick the
+    config-file editor headers use for their own inline actions.
+  - **Back buttons everywhere** — `wizard.blade.php` now computes
+    `$prevStepKey` once (previous key in `ChampionshipSettingsSchema::STEPS`
+    order, null on Basics) and shares it into every step's partial via
+    Blade's normal `@include` scope sharing. Added to: the generic
+    schema-driven step's footer (next to "Save & Continue →"), `_rounds.blade.php`'s
+    footer (next to "Continue →" — Rounds has no settings form of its own),
+    and `_review.blade.php`'s footer (next to whichever confirm action
+    shows — Publish/Open Registration/Close Registration). Styled
+    `btn btn-outline-secondary fw-black text-uppercase px-4` to sit next to
+    the existing colored primary buttons at the same height (both use the
+    plain `.btn` base class, no `btn-sm`).
+  - **Test-writing gotcha**: `wizard.blade.php`'s `page-actions` slot
+    already renders its own unrelated "← Back" (to the championships index)
+    on literally every step, so a naive `assertSee('← Back')` /
+    `assertDontSee('← Back')` can't distinguish "no per-step Back button"
+    from "the always-there page-level one" — fixed by asserting an exact
+    `substr_count()` of the glyph (1 on Basics, 2 everywhere else) instead.
+    Three new tests: `test_first_step_has_no_back_button_but_a_later_one_does`,
+    `test_rounds_step_has_a_back_button_too`,
+    `test_review_step_cards_are_collapsible_and_has_a_back_button`. 150
+    tests passing.
+- **2026-09-11, fifteenth follow-up — removed the dead "Request XCL Rating"
+  flow.** User pointed at the Penalties step's stale help text ("Raises a
+  request for an XCL admin to review. It does not turn rating on by itself
+  — only an admin can approve it.") — "dit word algedaan bij basics" (this
+  is already handled at Basics). True: `ChampionshipPolicy::requestRating()`
+  was always the exact same gate as `update()`, so the two-step
+  request-then-approve dance never actually gated anything a league manager
+  couldn't already do themselves in one step — doubly so since the
+  thirteenth-session-earlier follow-up made `approveRating` itself the same
+  `update()` gate too, giving Basics its direct one-click enable/disable.
+  Removed entirely rather than just reworded: the `xcl_rating_requested`
+  schema field (Penalties group), `Championship::requestXclRating()`,
+  `ChampionshipWizardController::requestRating()`, the
+  `POST /request-rating` route, and `ChampionshipPolicy::requestRating()`.
+  `_review.blade.php`'s XCL Rating card had three states (Enabled /
+  Requested-with-Approve-button / Not requested); now just two (Enabled, or
+  a plain "Not enabled — turn it on from Basics" hint for a manager).
+  Touched up two stale comments that still described the old XCL-staff-only
+  approval flow (`ApproveChampionshipRatingRequest`'s docblock,
+  `ChampionshipWizardController::approveRating()`'s). 147 tests passing (one
+  existing test's payload/assertion trimmed of the now-nonexistent settings
+  key, no test coverage lost since `requestRating` had none of its own
+  beyond that incidental smuggling check).
+- **2026-09-11, fourteenth follow-up — Ballast & Restrictor Adjustments
+  builder (Penalties step) now picks real targets instead of free text.**
+  User: "bij ballast en restrictor mag hij met filters van de carclass de
+  autos pakken uit de db en bij driver uit de entrylist en driver moet
+  driver/team worden." `_adjustments-builder.blade.php`'s target field was
+  a plain `<input type="text">` ("Car model or driver") — now a
+  `<select data-adj-target>` whose option list depends on the row's own
+  scope, computed server-side for existing rows and swapped live by JS when
+  a row's scope `<select>` changes (both server-rendered rows and rows
+  added via "+ Add Adjustment" wire up the same `change` listener):
+  - **Car** scope: `App\Models\Car` rows filtered to the championship's own
+    `game`, and to its car class(es) — `$championship->classes->pluck('car_class')`
+    when multiclass, else the single `car_class` column. Falls through to
+    every car for the game if neither yields a class (no empty picker).
+  - **Driver** scope, relabeled **Driver/Team** in the option text per the
+    request: the championship's actual entry list
+    (`$championship->registrations()->with(['user','racingTeam'])`),
+    showing a team registration as `racingTeam.name` and an individual as
+    `user->displayName()`, spectators excluded.
+  Both option lists are also embedded once via `@json()` for the
+  add-row/scope-swap JS, HTML-escaped through a throwaway `textContent`
+  round-trip before insertion (`escapeHtml()`) since they're built with
+  `innerHTML` rather than Blade. New tests
+  `test_adjustments_builder_offers_cars_filtered_by_the_championships_class`
+  and `test_adjustments_builder_offers_the_championships_own_entry_list` in
+  `ChampionshipSettingsTest.php` (the latter needed `RacingTeam`'s `tag`
+  column, not previously known to be required by this test file — first
+  failure surfaced it). 147 tests passing.
+- **2026-09-11, thirteenth follow-up — Requirements step's "Discord
+  Membership Required" toggle locked.** Same reason the League edit page's
+  own Discord-requirement toggle was locked earlier this session: the
+  check itself is fully built (`ChampionshipController::discordMembershipFailure()`)
+  but XCL hasn't finished installing its bot into a real league's Discord
+  server yet. `_field.blade.php`'s single field-specific `$xclGated` check
+  generalized into `$locked` — now sourced from either that same dynamic
+  XCL-Rating case, OR a new static `'locked' => true` (+ `'locked_help'`
+  text) on the schema field itself, so a future "not ready yet" field
+  doesn't need another one-off key check hardcoded into the partial.
+  `test_requirements_step_locks_the_discord_toggle`. 145 tests passing.
+- **2026-09-11, twelfth follow-up — Points Scheme picker (Scoring step)
+  reorganized and re-previewed.** User-directed general "make it clearer"
+  pass, not tied to a specific bug. The picker
+  (`_points-scheme-picker.blade.php`) previously mixed a league's own
+  schemes and XCL's read-only templates into one undifferentiated scrollable
+  list, each showing a terse "1:25, 2:18, 3:15" preview. Now split into two
+  labelled groups ("{League}'s Own" / "XCL Templates"), matching the same
+  owned-vs-template separation the standalone points-schemes management
+  index (`admin/leagues/points-schemes/index.blade.php`) already used — and
+  the preview reads "**P1** 25 · **P2** 18 · **P3** 15 · P4 12 …" (labelled,
+  podium positions bolded) on both pages now, not just the picker. FL/Pole
+  points also gained a Lead label to match the management index's column.
+  No backend/data changes — purely a rendering pass, both pages already
+  received the exact same `$pointsSchemes` split by `is_template`. 144
+  tests still passing (no dedicated points-scheme UI test existed before or
+  after this).
+- **2026-09-11, eleventh follow-up — corrected the tenth follow-up's
+  "eligible cars" change.** User: "nee niet de autos, je moet gwn de
+  dropdown weer terug brengen met de classes wanneer je op add class drukt
+  net zoals bij onze event maker" — I'd built a `<select multiple>` of
+  individual in-game *cars*; what was actually wanted was a plain `<select>`
+  of the fixed GT2/GT3/GT4/TCX/GTC *classes*, same as the race wizard's own
+  multiclass picker (`resources/js/components/multiclass.js` CLASS_DEFS) —
+  a class simply *is* one of those five, not a custom name with a
+  hand-picked car list. `_classes-builder.blade.php` reverted to a
+  `{name, max_entries}` shape: "Class name" is now that same fixed 5-option
+  dropdown (was free text before this whole detour started), "Eligible
+  cars" is gone entirely.
+  `ChampionshipWizardController::syncChampionshipClasses()`'s `car_class`
+  now derives from the picked class name directly, falling back to a legacy
+  `eligible_cars` list only if a stored row still has one (existing tests in
+  `ChampionshipRegistrationTest.php` that post `eligible_cars` directly
+  still pass unchanged). New tests:
+  `test_classes_builder_offers_the_fixed_class_dropdown` (checks the
+  JS-embedded `["GT2","GT3","GT4","TCX","GTC"]` array, not a specific saved
+  row's rendering — see the whitespace/`selected`-attribute lesson below)
+  and `test_saving_classes_sets_car_class_from_the_picked_class_name`.
+  144 tests passing.
+  - Another exact-string-`assertSee()` trap hit mid-fix: a test asserting
+    `<option value="GT3">GT3</option>` failed even though the feature
+    genuinely worked (independently re-confirmed via `Tinker` with proper
+    `Auth::login()` context) — the real markup for an already-selected
+    option is `<option value="GT3" selected>GT3</option>`, an extra
+    attribute my hand-written expected string didn't account for. Same
+    underlying lesson as the tenth follow-up's `DOMDocument` note: don't
+    hand-write an expected HTML fragment for anything with conditional
+    attributes: either assert on content that has no such variability
+    (a `@json()`-embedded array, plain visible text) or parse the DOM.
+- **2026-09-11, tenth follow-up — Format step reorganized: Classes builder
+  moved up, Car Class hides under Multiclass, eligible cars are real cars.**
+  Three user-directed pieces:
+  1. The Classes builder ("+ Add Class") was stranded at the very bottom of
+     the Format step, below Driver Swaps — moved to render immediately after
+     the Multiclass toggle field itself in `wizard.blade.php`'s field loop
+     (`_classes-builder.blade.php` already show/hides on that same toggle,
+     unchanged there).
+  2. Car Class (the single, non-multiclass car-class option) now hides once
+     Multiclass is on instead of sitting there looking equally relevant —
+     `_field.blade.php`'s `depends_on` mechanism (added in the ninth
+     follow-up, see below) gained a `!` inversion prefix
+     (`'depends_on' => '!multiclass_enabled'`): shown while the toggle is
+     OFF, hidden once it's ON. `data-shown-if`'s shared script in
+     `wizard.blade.php` gained a matching `data-invert` attribute check.
+  3. "Eligible cars" in the Classes builder was a raw comma-separated text
+     field — now a real `<select multiple>` sourced from `App\Models\Car`
+     scoped to the championship's own game, the same source
+     `race/show.blade.php`'s own car picker already uses. Rows added via
+     "+ Add Class" build the same select from a `@json()`-embedded car list
+     (HTML-escaped per option — car names come from an admin-editable table,
+     not hardcoded, so this isn't purely decorative).
+  - A real DOM-testing lesson from this pass: the first attempt at
+    `test_format_step_hides_car_class_once_multiclass_is_on` used a raw
+    `assertSee()` string match against the rendered `hidden` attribute and
+    kept failing — not because the feature was broken (three separate Tinker
+    checks with proper `Auth::login()` context all confirmed the setting
+    persisted and read back correctly), but because Blade's literal
+    whitespace between adjacent `@if` directives doesn't collapse the way a
+    single hand-written expected string assumes. Rewritten using
+    `DOMDocument`/`DOMXPath` instead, which passed immediately — prefer that
+    over exact-string `assertSee()` for anything checking an HTML *attribute*
+    (not just visible text) from now on in this file.
+  143 tests passing.
+- **2026-09-11, ninth follow-up — no manual "Push Config" button on the
+  Rounds list.** User-directed: `gportal:push-configs`/`gportal:import-results`
+  already run globally on a schedule (`routes/console.php`, every minute),
+  championship rounds included — the same automatic behaviour a regular
+  event already gets (its own manual push button was removed back on
+  2026-08-15 once the auto-push status card landed). The button in
+  `_rounds.blade.php` is gone; the passive status text (config pending/
+  pushed/failed) stays. The `rounds.push-config` route/controller/
+  `PushRoundConfigJob` are untouched — still a working manual retry path,
+  just not linked from this list. `ChampionshipRoundPushTest`'s render test
+  renamed/inverted to confirm the button's absence. 141 tests passing.
+- **2026-09-11, eighth follow-up — XCL Rating approval opened up to a
+  league's own manager, no longer XCL-admin-only.** Real policy reversal,
+  user-directed after confirming: `ChampionshipPolicy::approveRating()` was
+  deliberately `canManage()`-only ("xcl_rating_enabled is never a League
+  Manager's call, because the rating only means something because XCL
+  controls what feeds it") — now the same gate as `update()`
+  (`canManage() || managesLeague($championship->league)`).
+  `ChampionshipWizardController::revokeRating()` switched from its own
+  `canManage()`-only `abort_unless` to `Gate::authorize('approveRating', ...)`
+  so it can't drift from the policy again. The Basics toggle and Review
+  step's card both already read `$canApproveRating`/re-check the policy, so
+  no view change was needed for either to now show a league manager the
+  control too. Tenant isolation is unaffected — a manager of a *different*
+  league still can't reach it (404s at route-model binding, same as every
+  other cross-league test in this file, before the policy is even
+  consulted). Tests replaced: `test_league_manager_cannot_reach_the_approve_rating_route`
+  → `test_league_manager_can_approve_and_revoke_rating_for_their_own_championship`
+  + `test_a_different_leagues_manager_still_cannot_approve_rating`;
+  `test_basics_step_hides_the_rating_toggle_from_a_league_manager` →
+  `test_basics_step_shows_the_rating_toggle_to_the_leagues_own_manager_too`.
+  141 tests passing.
+- **2026-09-11, seventh follow-up — the Basics-step enable/disable button
+  405'd, and needed the wizard's purple styling.** Real bug: the enclosing
+  Basics `<form>` carries `@method('PUT')` as a hidden `_method` field for
+  its own normal save — that field rides along on *every* submit from
+  inside the form regardless of the button's own `formmethod="POST"`, so
+  Laravel's method-spoofing (reads `_method` on any POST body) still
+  resolved it to PUT and 405'd against the POST-only approve-rating/
+  revoke-rating routes. Fixed with an onclick that blanks `input[name=_method]`
+  before the button's own submit proceeds. Also restyled to the same purple
+  (`#7c3aed`) the rest of the wizard's toggles use, was green/neutral.
+  XCL-R Multiplier's minimum also raised to 0.6 (was 0.1) alongside the
+  existing 2.5 max — schema rule, all three round-mutating actions, both
+  round-level HTML `min` attributes.
+  `RoundCreationTest::test_xcl_r_multiplier_outside_0_6_to_2_5_is_rejected`.
+  The `_method` fix itself has no automated coverage — it's a browser-side
+  form-submission behavior PHPUnit's route-level tests don't exercise (they
+  POST directly to the routes, bypassing the button/form entirely). 140
+  tests passing.
+- **2026-09-11, sixth follow-up — XCL-R Multiplier capped at 2.5x** (was
+  10x, matching the unrelated race-wizard Custom Race field's own cap — left
+  that one alone, not part of this ask). Schema rule, all three of
+  `ChampionshipWizardController`'s round-mutating actions, and the HTML
+  `min`/`max` attributes on the two hand-coded round-level inputs
+  (`_round-shared-fields.blade.php`/`round-edit.blade.php`) all updated
+  together. `RoundCreationTest::test_xcl_r_multiplier_above_2_5_is_rejected`.
+  140 tests passing.
+- **2026-09-11, fifth follow-up — XCL Rating enable/disable toggle added to
+  Basics, as an in-form option, not a card below Save & Continue.** First cut
+  put it in its own `<div class="admin-card">` after the closing `</form>` —
+  user feedback: "hij moet als optie ertussen staan, hij staat nu onder
+  save" — moved into `_basics.blade.php` itself, its own subsection between
+  Description and Server, same visual treatment as everything else on the
+  step. Still a separately-submitted action (approve-rating/revoke-rating,
+  not the step's own `wizard.update` save) even though it can't be a nested
+  `<form>` inside the Basics one — done with `formaction`/`formmethod` on the
+  button itself (HTML5 lets one submit button in a form override where *that
+  button's* click submits to, everything else in the form still goes to the
+  form's own action). Same admin-only policy/routes as before, no change to
+  the authorization boundary a league manager still can't cross. Also closes
+  the loop on XCL-R Multiplier's disabled state, which was already reading
+  `$championship->xcl_rating_enabled` live in `_field.blade.php` but had no
+  in-wizard way to flip that switch other than Review.
+  `ChampionshipSettingsTest::test_basics_step_shows_the_rating_toggle_for_an_admin_and_unlocks_the_multiplier`/
+  `test_basics_step_hides_the_rating_toggle_from_a_league_manager`. 139 tests
+  passing.
+- **2026-09-11, fourth follow-up — Fixed Stop Time simplified to a plain
+  on/off button, no number field at all.** User-directed: "off = standaard
+  game, on = 25 seconds" — min_stop_secs is no longer admin-entered anywhere
+  (championship-wide Sessions step or per-round). The schema field is still
+  declared (`'hidden' => true`, new filter in `wizard.blade.php`'s
+  `$visibleFields`) purely so it keeps a tracked default/upgrade path; its
+  value is now always derived from `fixed_stop_time` — 25 when on, null when
+  off — in `applyStepSettings()`'s sessions-step branch and all three of
+  `ChampionshipWizardController`'s round-mutating actions. Help text under
+  the toggle spells out what on/off mean. Round-level number input + its
+  show/hide JS removed from `_round-shared-fields.blade.php` and
+  `round-edit.blade.php`. `RoundCreationTest` updated (25 instead of an
+  admin-supplied value; `min_stop_secs` no longer posted in the dynamic-case
+  test since nothing reads it anymore). 137 tests still passing.
+- **2026-09-11, third follow-up — item 9 generalized from grey-out to real
+  show/hide, applied wherever a field only matters if another boolean is
+  on.** User clarified item 9 further after the punch-list pass below: not
+  just Driver Swaps greyed out, but a real show/hide "button" pattern
+  ("als hij dat niet wil kan hij ze weer uitklikken en dan verdwijnen de
+  velden ook"), and generalized to every such pair in the wizard, not just
+  Format. Replaced `SECTION_DEPENDENCIES` (section-level, grey+disable) with
+  per-field `'depends_on' => '<boolean key, same group>'` on the schema field
+  itself — `_field.blade.php` wraps a dependent field in
+  `data-shown-if="<toggle's id>"` (rendered already-hidden server-side if the
+  dependency is currently off, so there's no flash of it before JS runs);
+  one shared script in `wizard.blade.php` shows/hides it live on the toggle's
+  change event. Hiding does **not** disable the input — its value still
+  submits and round-trips unchanged, so flipping the toggle back on restores
+  whatever was there instead of silently losing it (the one deliberate
+  exception is `min_stop_secs`, which still gets explicitly nulled server-side
+  when Fixed Stop Time is off — a real business rule, not just a display
+  concern). Applied to: `driver_swaps_enabled` → the whole Driver Swaps
+  section, `practice_enabled`/`qualifying_enabled` → their own length
+  fields, `fixed_stop_time` → `min_stop_secs`, `stewarding_enabled` →
+  `affects`. XCL-R Multiplier's XCL-Rating-gating stayed disabled+greyed in
+  place (not this mechanism) since `xcl_rating_enabled` has no in-page toggle
+  to hide/show against. 137 tests still passing, no test changes needed.
+- **2026-09-11, second follow-up — a 9-item punch list from browsing the
+  restyled wizard, all resolved except item 10 (see below, explicitly
+  deferred pending its own plan).** Schema `CURRENT_VERSION` now 7.
+  1. **In-game vs. real-world start time split.** `schedule.time_of_day`
+     ("Real-World Start Time") only ever fed `Championship::scheduledDateTimeForRound()`'s
+     real-world scheduling suggestion; the round's own separate in-game clock
+     field was accidentally defaulting from that same value. New
+     `sessions.ingame_time_of_day` is the correct, independent default now.
+  2. **Formation Lap options fixed**: was `none/formation/rolling_start`
+     (default `formation`) — a setting that was never actually consumed
+     anywhere (`AccServerConfigService` doesn't read it), so purely a wording
+     fix — now `short/full` (default `full`), per explicit user correction.
+  3. **Rain Level is a standalone option again**, not hidden behind
+     Weather=wet/mixed — a league can want a rain chance regardless of the
+     fixed/random weather pick. Round-level `#…-rain-level-wrap` visibility
+     JS removed in both `_round-shared-fields.blade.php` and `round-edit.blade.php`.
+  4. **Pitstop time is now an explicit Fixed Stop Time checkbox**, not
+     inferred from whether Min. Stop Time happens to be filled in.
+     `AccServerConfigService` is unchanged — it still only reads
+     `min_stop_secs` (`isRefuellingTimeFixed = !empty(...)`) — the new
+     `fixed_stop_time` field/checkbox exists purely so "dynamic" genuinely
+     nulls that column instead of leaving a stale prior value
+     (`ChampionshipWizardController`'s three round-mutating actions and
+     `applyStepSettings()`'s 'sessions' step both enforce this).
+  5. **XCL-R Multiplier only usable once XCL Rating is enabled** for the
+     championship (`$championship->xcl_rating_enabled`) — rendered `disabled`
+     + greyed on the Sessions step and in Add/Edit Round otherwise. Backend
+     save path is unchanged (not blocked server-side) — a disabled input
+     simply never submits a value in the normal flow; not treated as a
+     security boundary.
+  6. **Practice Server option removed entirely** — leagues all run their own
+     servers, so XCL's single shared practice server never applied here.
+     Reverted `has_practice_server`/`practice_notes` from the schema, the
+     `PracticeServerSessionManager`/`PracticeWindowNotOverlapping` wiring in
+     `ChampionshipWizardController`, and the round-level UI.
+  7. **Bulk Add Rounds decluttered** — turned out to be the same fix as item
+     8 below, since both single and bulk mode render the same
+     `_round-shared-fields.blade.php` partial.
+  8. **Add/Edit Round no longer shows every session/weather/timing field
+     always-expanded** — those already have a championship-wide default (set
+     once on the Sessions step); showing them again on every single round was
+     the actual "too much" complaint. Now a collapsed `<details>` "Override
+     Session Defaults for This Round" panel (closed by default on Add Round,
+     open by default on Edit Round since there's existing state worth
+     seeing) — one click away, not gone.
+  9. **Format step: fields belonging to an off toggle are now greyed out**,
+     not shown at equal visual weight regardless of state. New
+     `ChampionshipSettingsSchema::SECTION_DEPENDENCIES` (currently just
+     `'Driver Swaps' => 'driver_swaps_enabled'`) — `wizard.blade.php` renders
+     the gating toggle normally and wraps its dependents in a
+     `[data-depends-on]` container a small shared script greys out
+     (`opacity` + `disabled`) and re-enables live on toggle, no reload
+     needed. Classes' own visibility (multiclass_enabled) already worked this
+     way via `_classes-builder.blade.php`'s existing show/hide JS — untouched.
+  - **Explicitly deferred, not attempted this pass — item 10**: "wizard-navigatie
+    zoals event creation" — replacing the current per-step-page-save flow
+    with a single-page, no-per-step-save stepper like the race form. This is
+    a genuine architecture change (consolidating every step's validation and
+    side effects — car-number/class sync, team-entry sync, points-scheme
+    application — into one final submit, or building a very different
+    partial-save model) that deserves its own scoping pass rather than being
+    bolted on at the end of an already-large session. Flagged to the user;
+    pick this up as its own piece of work.
+  - Tests: `RoundCreationTest::test_dynamic_pitstop_time_clears_any_submitted_min_stop_secs`
+    (and the earlier `test_single_round_creation_carries_the_new_event_maker_options`
+    updated for the new `fixed_stop_time` field);
+    `ChampionshipSettingsTest::test_sessions_is_its_own_step_independent_of_basics`
+    updated for `formation_lap_type`'s new options and the new required
+    `ingame_time_of_day`. 137 tests passing.
+- **2026-09-11, follow-up — Sessions split back out into its own wizard step.**
+  User feedback right after the restyle below: "ik wil niet dat 1 kopje heel
+  veel staat en dan bij andere bijna niks" — the event-maker-parity additions
+  had pushed Sessions (now 16 fields: lengths, weather, the new multiplier/
+  pitstop/practice-server fields) to ride along on the already-busy Basics
+  step (~28 fields total with Identity/Branding/Description/Server/Schedule),
+  while Penalties had only 4. `ChampionshipSettingsSchema::STEPS`/
+  `STEP_GROUPS` gained a `sessions` step of its own (order: Basics → Sessions
+  → Rounds → Format → Scoring → Requirements → Penalties → Review — the
+  `rounds`/`{step}` route `where()` constraint needed `sessions` added too,
+  easy to miss since `STEPS`/`STEP_GROUPS` alone don't guard the route).
+  Every `sessions` field also got a `'section'` tag (Session Lengths /
+  Weather / Rating & Pitstops / Practice Server) so the new step itself isn't
+  one more undivided wall of fields.
+  `tests/Feature/ChampionshipSettingsTest.php::test_sessions_is_its_own_step_independent_of_basics`.
+  136 tests passing.
+- **2026-09-11, championship maker restyle + event-maker option parity** (see
+  `C:\Users\PC Olle\.claude\plans\mellow-leaping-bachman.md` for the approved
+  plan this implemented): the championship-level wizard steps (Basics/Format/
+  Requirements/Sessions, rendered by `_field.blade.php` off
+  `ChampionshipSettingsSchema`) restyled with toggle pills for boolean fields
+  (matching `admin/users/edit.blade.php`'s role pills — one shared script in
+  `wizard.blade.php`), kept the existing multi-page-per-step architecture
+  (a JS single-page rebuild like the race form was considered and rejected —
+  bigger risk, no functional gain for a 30+-field settings form).
+  `CURRENT_VERSION` bumped to 6 with real missing options added end-to-end
+  (schema field → round creation → the service that actually reads it):
+  - Basics: `iracing`/`ac` added to the Game select (previously acc/lmu only);
+    `Championship.description` (a real, already-fillable column) exposed in
+    the UI for the first time; the plain file-upload banner swapped for
+    `<x-media-picker>` (same `resolveMedia()` pattern as the legacy native
+    championship forms).
+  - Sessions group: `xcl_r_multiplier`, `pitstop_count`/`min_stop_secs`,
+    `has_practice_server`/`practice_notes` — all previously entirely absent
+    from league championships. **Real rating-fairness bug found and fixed**:
+    without an `xcl_r_multiplier`, `RatingService::processRace()`'s fallback
+    chain (format multiplier → custom multiplier → legacy `duration_key` →
+    1.0) landed every championship round on a flat 1.0 regardless of length,
+    since a round has neither an `EventFormat` nor this field. Still manual
+    (like the race form's own field — no auto-derivation from length exists
+    anywhere in the app to reuse).
+  - Format/Driver Swaps section: `driver_stint_time_mins`/
+    `max_total_driving_time_mins`/`mandatory_driver_swap` added alongside the
+    existing `driver_swaps_enabled`. **Real backend gap found and fixed**:
+    `AccServerConfigService::eventRules()` only ever applied these three
+    values when `$race->is_endurance` was true — a column championship rounds
+    never carry (Custom-Race-only by the Phase 4 scope decision). New
+    `isDriverSwapRace()` broadens the gate to also cover a championship round
+    whose `settings.format.driver_swaps_enabled` is on — same class of fix as
+    `RaceController::show()`'s `$isTeamRace` from the previous session.
+  - Requirements: `max_xcl_rating_tier` added alongside the existing
+    `min_xcl_rating_tier` — threaded through
+    `Championship::requirementThresholds()`'s `'max'` key into
+    `User::requirementFailure()`'s existing (previously always-null for
+    league championships) 4th parameter. Native XCL championships have no
+    max-rating column of their own, so `'max'` is always `null` there — out
+    of scope, not requested.
+  - All of the above also added to Add/Edit Round and Bulk Add Rounds
+    (`_round-shared-fields.blade.php`, `round-edit.blade.php`,
+    `ChampionshipWizardController::resolveRoundRow()`), pre-filled from the
+    championship-wide defaults but overridable per round — same pattern
+    weather/rain/ambient_temp already used. `has_practice_server` also wired
+    to `PracticeServerSessionManager::sync()` (with the race form's
+    `PracticeWindowNotOverlapping` validation on the two single-round paths;
+    **known, accepted gap**: bulk-added rounds don't validate practice-server
+    window overlaps against each other, since one shared flag across many
+    generated dates makes a per-row check disproportionate to how rarely
+    that combination will actually be used).
+  - Tests: `tests/Feature/RoundCreationTest.php` (new field passthrough +
+    the `AccServerConfigService` gate fix), `tests/Feature/
+    ChampionshipRegistrationTest.php` (max-rating-cap blocking),
+    `tests/Feature/ChampionshipSettingsTest.php` (Basics step: new games,
+    description, gallery-picked image). 135 tests passing (was 131).
+  - **Not done, explicitly scoped out**: per-class `max_rating` (only
+    championship-wide); a single-page JS-driven wizard rebuild (rejected,
+    see above); enum fields as pill-buttons instead of `<select>` (only
+    booleans were restyled — enums were judged good enough as-is given the
+    time this would add for comparatively little visual gain; revisit if the
+    user still finds them inconsistent after seeing the boolean pills).
+- **2026-09-11 follow-up work, outside the phase/batch numbering below**
+  (not yet folded into the checklists themselves — noted here so it isn't
+  lost like the archive/delete work was):
+  - League archiving was hardened to a real soft delete (owner-role-only),
+    plus a genuine permanent delete for an already-archived, championship-free
+    league — `Admin\LeagueController`. Leagues list is now a DataTable.
+  - **Whole-championship team registration** (`settings.format.team_registration_scope
+    = 'championship'`) now lets a team opt out of a single round without
+    leaving the championship: the per-round `RaceTeamEntry` auto-created by
+    `ChampionshipTeamEntryService` is a normal, removable entry — the
+    round's own public page (`race/show.blade.php`) now shows the TEAM ENTRY
+    card (with its existing REMOVE button) for a driver-swaps championship
+    round too, not just a Custom-Race `is_endurance` event. See
+    `RaceController::show()`'s `$isTeamRace`/`$isChampionshipTeamRound`, and
+    `tests/Feature/ChampionshipRegistrationTest.php`'s
+    `test_championship_scope_team_can_opt_out_of_a_single_round_*`.
+  - **Discord "Require membership to register" toggle** (League edit,
+    admin-only) is now rendered disabled/greyed-out rather than removed —
+    the code path (Phase 4) is complete, but XCL hasn't finished installing
+    its bot into any real league's Discord server yet, so a league
+    shouldn't be able to turn on enforcement no one's tested end-to-end.
+    Existing values pass through unchanged via a hidden field. Re-enable by
+    dropping the `disabled` attribute once operational setup happens.
+  - **Rating engine: co-driver double-counting fixed** (the Phase 5c gap
+    noted in the Team feature — see the project's `project_team_feature_plan`
+    memory). `XclRating::processRace()` now groups entries by an optional
+    `field_key` (co-drivers sharing one car) for every field-relative number
+    — SoF, finisher count, rFactor scale, the win-% pool — so one car with
+    two rated humans no longer inflates the field or skews SoF for the whole
+    race. Each co-driver still gets their own individually-computed Elo
+    change from their own rating against that (now-correct) SoF — a
+    higher-rated co-driver still earns less / loses more than a lower-rated
+    one for the identical result, same mechanism as any two solo drivers.
+    `RatingService::processRace()` supplies `field_key` from the result's
+    registration `team_entry_id` (falling back to `car_number`, same
+    precedence as `RaceResult::groupedByCar()`). Covered by
+    `tests/Unit/XclRatingTest.php` (previously zero unit coverage on this
+    math at all).
+  - **ACC PC / ACC Console rating decision made — first step of the ACC PC
+    integration**: one shared rating board. Racing on either platform reads
+    and writes the same `elo_acc`/`sr_acc` columns. New `User::ratingGame()`/
+    `eloColumn()`/`srColumn()` are now the single place that decision lives;
+    `requirementFailure()`, `rank()`, `ratingClass()`, `srGrade()`,
+    `RatingService`'s field lookups, `Report::ratingFields()`, and
+    `race/show.blade.php`'s SoF/sort calculations all route through it
+    instead of their own `"elo_{$game}"` string-building (which silently
+    produced nothing for `ac` before this). Practical effect: ACC PC races
+    are now actually rated, entry requirements enforced, and driverCategory
+    banners computed — none of that worked before. Full ACC PC integration
+    (its own branding/assets, actual platform-specific server behaviour) is
+    still open, this was only the rating-model decision.
 - **All seven phases are now built (2026-09-10)**, plus a second refinement
   batch (below) — items 1-4 and 6-9 are all done. Item 5 (Discord
   operational setup) is explicitly deferred by the user; nothing else is

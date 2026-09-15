@@ -53,7 +53,14 @@ class ChampionshipRoundPushTest extends TestCase
         return [$championship, $race];
     }
 
-    public function test_rounds_wizard_step_renders_the_push_config_button(): void
+    // User-directed 2026-09: no manual "Push Config" button on the Rounds list
+    // any more — gportal:push-configs already auto-pushes every race's config
+    // on a schedule (championship rounds included), same as a regular event's
+    // own manual push button was removed back on 2026-08-15 once its auto-push
+    // card landed. The push-config *route* itself stays (tests below), just
+    // not linked from this list — still reachable as a manual retry if needed.
+    // The passive status text ("config pending/pushed/failed") stays visible.
+    public function test_rounds_wizard_step_does_not_render_a_push_config_button(): void
     {
         $league = $this->makeLeague('nlrl');
         $server = FtpServer::create([
@@ -69,7 +76,8 @@ class ChampionshipRoundPushTest extends TestCase
         $this->actingAs($manager)
             ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'rounds']))
             ->assertOk()
-            ->assertSee('Push Config');
+            ->assertDontSee('Push Config')
+            ->assertSee('config pending');
     }
 
     public function test_league_manager_can_queue_a_push_for_their_own_round(): void

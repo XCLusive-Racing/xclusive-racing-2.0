@@ -18,9 +18,22 @@ class RaceController extends Controller
 {
     public function index()
     {
-        $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','event_tag','max_drivers','duration_key','image','icon','description','sr_requirement','min_rating','max_rating','car_class','weather','event_format_id','is_endurance'])
+        $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','event_tag','max_drivers','duration_key','image','icon','description','sr_requirement','min_rating','max_rating','car_class','weather','event_format_id','is_endurance','championship_id'])
             ->with('eventFormat:id,race1_mins,race2_mins')
             ->where('status', '!=', 'finished')
+            // A championship round is only a public event once its own championship
+            // is (Championship::PUBLIC_STATUSES + not hidden) -- a draft
+            // championship's rounds, or a published-but-hidden one's, shouldn't leak
+            // onto the public Events page just because the Race row itself is open.
+            // withoutTenantScope() here because Championship carries TenantScope
+            // (league-owned data) and this page has no league context to filter by
+            // -- an anonymous visitor has none, which would otherwise hide every
+            // championship round from every public visitor (TenantScope::apply()
+            // resolves an empty league list to "matches nothing").
+            ->where(function ($q) {
+                $q->whereNull('championship_id')
+                  ->orWhereHas('championship', fn ($cq) => $cq->withoutTenantScope()->publiclyVisible());
+            })
             ->orderBy('scheduled_at')
             ->get();
         $races->loadCount(['registrations', 'teamEntries']);
@@ -48,6 +61,22 @@ class RaceController extends Controller
         $myTeamEntries   = collect();
         $myRegisteredAt  = null;
 
+        // A driver-swap championship round has no is_endurance flag of its own (that column
+        // is Custom-Race-only, see docs/championships/PLAN.md's Phase 4 scope decision) — a
+        // team is entered here automatically from the championship-level registration
+        // (ChampionshipTeamEntryService), so this round still needs the same TEAM ENTRY card
+        // (and its per-race unregister) that Custom Race endurance events already get.
+        $isTeamRace              = (bool) $race->is_endurance;
+        $isChampionshipTeamRound = false;
+
+        if (!$isTeamRace && $race->championship_id) {
+            $championship = $race->championship()->withoutTenantScope()->first();
+            if ($championship && ($championship->settings->format->driver_swaps_enabled ?? false)) {
+                $isTeamRace              = true;
+                $isChampionshipTeamRound = true;
+            }
+        }
+
         if (auth()->check()) {
             $myRegistration = $race->registrations->firstWhere('user_id', auth()->id());
             $isRegistered   = $myRegistration !== null;
@@ -72,7 +101,10 @@ class RaceController extends Controller
             ->get(['id', 'xuid_psid'])
             ->keyBy('xuid_psid');
 
-        return view('race.show', compact('race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries'));
+        return view('race.show', compact(
+            'race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries',
+            'isTeamRace', 'isChampionshipTeamRound'
+        ));
     }
 
     // Serves a single-event .ics — the universal format every calendar app opens. Linked
@@ -164,8 +196,30 @@ class RaceController extends Controller
         // explicitly rather than relying on the scope to let it through.
         $race->load(['ftpServer' => fn ($q) => $q->withoutTenantScope()]);
 
+        $fullError = null;
+
         try {
-            DB::transaction(function () use ($race, $raceClassId) {
+            DB::transaction(function () use ($race, $raceClassId, &$fullError) {
+                // Re-check capacity against a locked row -- the isFull() check above
+                // ran outside any transaction, so two people registering for the
+                // last spot at the same moment could both pass it before either
+                // insert commits, filling the race past max_drivers. Locking here
+                // serializes concurrent registrations for this race: whoever gets
+                // the lock first sees an accurate count, the next one waits, then
+                // sees this one's insert already counted.
+                Race::where('id', $race->id)->lockForUpdate()->first();
+
+                if ($raceClassId !== null) {
+                    $raceClass = RaceClass::where('id', $raceClassId)->lockForUpdate()->first();
+                    if ($raceClass->isFull()) {
+                        $fullError = 'The selected class is full.';
+                        return;
+                    }
+                } elseif ($race->isFull()) {
+                    $fullError = 'This race is full.';
+                    return;
+                }
+
                 $existing = RaceRegistration::withTrashed()
                     ->where('race_id', $race->id)
                     ->where('user_id', auth()->id())
@@ -197,6 +251,10 @@ class RaceController extends Controller
             });
         } catch (\Throwable $e) {
             return back()->with('error', 'Something went wrong while processing your registration. Please try again.');
+        }
+
+        if ($fullError) {
+            return back()->with('error', $fullError);
         }
 
         return back()->with('success', 'You have been registered for ' . $race->title . '! Server details are in your inbox.');
@@ -264,29 +322,40 @@ class RaceController extends Controller
             }
         }
 
-        $carNumberTaken = RaceTeamEntry::where('race_id', $race->id)
-            ->where('car_number', $validated['car_number'])
-            ->exists();
-
-        if ($carNumberTaken) {
-            return back()->with('error', 'Car number #' . $validated['car_number'] . ' is already taken for this race.');
-        }
-
-        if ($race->max_drivers !== null) {
-            $currentTeams = $race->teamEntries()->count();
-            if ($currentTeams + 1 > $race->max_drivers) {
-                return back()->with('error', 'This race is full. No more team slots available.');
-            }
-        }
-
         // The registering driver must see the server's connection details regardless
         // of their own league membership (most of the time this is XCL's own server,
         // which is a real, tenant-scoped League row since Phase 2.5) — bypass
         // explicitly rather than relying on the scope to let it through.
         $race->load(['ftpServer' => fn ($q) => $q->withoutTenantScope()]);
 
+        $blockError = null;
+
         try {
-            DB::transaction(function () use ($race, $team, $selectedIds, $users, $validated, $startingDriverId) {
+            DB::transaction(function () use ($race, $team, $selectedIds, $users, $validated, $startingDriverId, &$blockError) {
+                // Re-check car number and capacity against a locked row -- the plain
+                // exists()/count() checks above ran outside any transaction, so two
+                // teams registering for the last slot (or the same car number) at
+                // the same moment could both pass before either insert commits.
+                // Locking here serializes concurrent team registrations for this
+                // race, same fix as the solo register() path above.
+                Race::where('id', $race->id)->lockForUpdate()->first();
+
+                $carNumberTaken = RaceTeamEntry::where('race_id', $race->id)
+                    ->where('car_number', $validated['car_number'])
+                    ->exists();
+                if ($carNumberTaken) {
+                    $blockError = 'Car number #' . $validated['car_number'] . ' is already taken for this race.';
+                    return;
+                }
+
+                if ($race->max_drivers !== null) {
+                    $currentTeams = $race->teamEntries()->count();
+                    if ($currentTeams + 1 > $race->max_drivers) {
+                        $blockError = 'This race is full. No more team slots available.';
+                        return;
+                    }
+                }
+
                 $entry = RaceTeamEntry::create([
                     'race_id'            => $race->id,
                     'racing_team_id'     => $team->id,
@@ -330,6 +399,10 @@ class RaceController extends Controller
             });
         } catch (\Throwable $e) {
             return back()->with('error', 'Something went wrong while processing your registration. Please try again.');
+        }
+
+        if ($blockError) {
+            return back()->with('error', $blockError);
         }
 
         return back()->with('success', $team->name . ' has been registered for ' . $race->title . '!');

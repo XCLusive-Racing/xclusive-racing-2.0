@@ -1,14 +1,26 @@
-@php $classes = $championship->settings->format->classes ?? []; @endphp
+@php
+    $classes = $championship->settings->format->classes ?? [];
+    // Same fixed 5-class list the race wizard's own multiclass picker uses
+    // (resources/js/components/multiclass.js CLASS_DEFS, and this schema's own
+    // format.car_class field) — a class here just *is* one of these, matching
+    // the event maker's model instead of a free-typed name with a separately
+    // hand-picked car list.
+    $classOptions = ['GT2', 'GT3', 'GT4', 'TCX', 'GTC'];
+@endphp
 
 <div class="mt-2 mb-3" data-classes-builder style="{{ ($championship->settings->format->multiclass_enabled ?? false) ? '' : 'display:none' }}">
     <label class="form-label">Classes</label>
-    <div class="form-text mb-2" style="font-size:.72rem;color:#9ca3af">Each class has a name and a comma-separated list of eligible cars.</div>
+    <div class="form-text mb-2" style="font-size:.72rem;color:#9ca3af">Pick which classes race in this championship, and an optional entry cap per class.</div>
 
     <div data-class-rows>
         @foreach($classes as $i => $class)
+        @php $selectedClass = $class['name'] ?? ''; @endphp
         <div class="d-flex gap-2 mb-2" data-class-row>
-            <input type="text" placeholder="Class name" value="{{ $class['name'] ?? '' }}" data-class-name class="form-control form-control-sm" style="max-width:180px">
-            <input type="text" placeholder="Eligible cars (comma separated)" value="{{ implode(', ', $class['eligible_cars'] ?? []) }}" data-class-cars class="form-control form-control-sm">
+            <select data-class-name class="form-select form-select-sm" style="max-width:150px">
+                @foreach($classOptions as $option)
+                <option value="{{ $option }}" {{ $selectedClass === $option ? 'selected' : '' }}>{{ $option }}</option>
+                @endforeach
+            </select>
             <input type="number" placeholder="Max" value="{{ $class['max_entries'] ?? '' }}" data-class-max class="form-control form-control-sm" style="max-width:90px">
             <button type="button" class="btn btn-sm btn-outline-secondary" data-remove-class>×</button>
         </div>
@@ -29,18 +41,22 @@
     var rows = builder.querySelector('[data-class-rows]');
     var jsonInput = builder.querySelector('[data-classes-json]');
     var addBtn = builder.querySelector('[data-add-class]');
+    var classOptions = @json($classOptions);
 
-    function addRow(name, cars, max) {
+    function addRow(name, max) {
         var row = document.createElement('div');
         row.className = 'd-flex gap-2 mb-2';
         row.setAttribute('data-class-row', '');
+
+        var optionsHtml = classOptions.map(function (c) {
+            return '<option value="' + c + '">' + c + '</option>';
+        }).join('');
+
         row.innerHTML =
-            '<input type="text" placeholder="Class name" data-class-name class="form-control form-control-sm" style="max-width:180px">' +
-            '<input type="text" placeholder="Eligible cars (comma separated)" data-class-cars class="form-control form-control-sm">' +
+            '<select data-class-name class="form-select form-select-sm" style="max-width:150px">' + optionsHtml + '</select>' +
             '<input type="number" placeholder="Max" data-class-max class="form-control form-control-sm" style="max-width:90px">' +
             '<button type="button" class="btn btn-sm btn-outline-secondary" data-remove-class>×</button>';
-        row.querySelector('[data-class-name]').value = name || '';
-        row.querySelector('[data-class-cars]').value = cars || '';
+        if (name) row.querySelector('[data-class-name]').value = name;
         row.querySelector('[data-class-max]').value = max || '';
         rows.appendChild(row);
     }
@@ -61,12 +77,13 @@
 
     builder.closest('form').addEventListener('submit', function () {
         var classes = [];
+        var seen = {};
         rows.querySelectorAll('[data-class-row]').forEach(function (row) {
-            var name = row.querySelector('[data-class-name]').value.trim();
-            if (!name) return;
-            var cars = row.querySelector('[data-class-cars]').value.split(',').map(function (c) { return c.trim(); }).filter(Boolean);
+            var name = row.querySelector('[data-class-name]').value;
+            if (!name || seen[name]) return; // a class picked twice would collide on name in syncChampionshipClasses()
+            seen[name] = true;
             var max = row.querySelector('[data-class-max]').value;
-            classes.push({ name: name, eligible_cars: cars, max_entries: max ? parseInt(max, 10) : null });
+            classes.push({ name: name, max_entries: max ? parseInt(max, 10) : null });
         });
         jsonInput.value = JSON.stringify(classes);
     });

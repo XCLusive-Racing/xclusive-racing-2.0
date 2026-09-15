@@ -8,7 +8,7 @@
 @endpush
 
 @section('page-actions')
-    @if(auth()->user()->canManage())
+    @if(auth()->user()->canManage() || auth()->user()->isChampionshipManager())
     <a href="{{ route('admin.leagues.create') }}" class="btn btn-sm fw-black text-uppercase text-white px-3"
        style="background:#7c3aed;font-size:.78rem">
         + Add League
@@ -42,11 +42,13 @@
         <div class="text-secondary mt-2 mb-4" style="font-size:.82rem">
             @if(auth()->user()->canManage())
                 Add the first league to give an external organiser their own space.
+            @elseif(auth()->user()->isChampionshipManager())
+                Create your own league to get started.
             @else
                 You have not been added to a league yet.
             @endif
         </div>
-        @if(auth()->user()->canManage())
+        @if(auth()->user()->canManage() || auth()->user()->isChampionshipManager())
         <a href="{{ route('admin.leagues.create') }}" class="btn fw-black text-uppercase text-white px-4"
            style="background:#7c3aed;font-size:.8rem">
             + Add League

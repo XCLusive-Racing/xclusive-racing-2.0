@@ -16,10 +16,11 @@ use Illuminate\Support\Arr;
 // defaults for new keys) once this class gains fields for a new version.
 class ChampionshipSettingsSchema
 {
-    const CURRENT_VERSION = 5;
+    const CURRENT_VERSION = 7;
 
     const STEPS = [
         'basics'       => 'Basics',
+        'sessions'     => 'Sessions',
         'rounds'       => 'Rounds',
         'format'       => 'Format',
         'scoring'      => 'Scoring',
@@ -37,7 +38,11 @@ class ChampionshipSettingsSchema
     // (below) — lets a wizard step split its fields under more than one heading,
     // matching the race wizard's "Event" / "Track & Conditions" grouping
     // (resources/views/admin/races/form.blade.php), instead of one undifferentiated
-    // pile of fields per step.
+    // pile of fields per step. Every 'sessions' field carries its own 'section' tag
+    // (Session Lengths/Weather/Rating & Pitstops/Practice Server) rather than
+    // relying on this default — that step alone has too many fields for one
+    // undivided heading (2026-09, user feedback: "1 kopje heel veel ... andere
+    // bijna niks").
     const GROUP_SECTION_LABELS = [
         'format'       => 'Format',
         'scoring'      => 'Scoring',
@@ -45,12 +50,22 @@ class ChampionshipSettingsSchema
         'penalties'    => 'Stewarding & Penalties',
     ];
 
+    // A field can carry 'depends_on' => '<boolean field key, same group>' (see
+    // fields() below) — _field.blade.php renders it inside a wrapper
+    // wizard.blade.php's shared script actually shows/hides (not just greys)
+    // based on that boolean's live checked state, un-hiding again the moment
+    // it's re-checked, no page reload. 2026-09, user feedback: dependent
+    // fields for an unchecked option should disappear, "en als hij dat niet
+    // wil kan hij ze weer uitklikken en dan verdwijnen de velden ook."
+
     // Maps a wizard step slug to the settings group(s) it edits and validates.
-    // "schedule" and "sessions" both ride on the Basics step — there's no
-    // dedicated Sessions step any more, so a round's session/weather defaults
-    // are set once on Basics and only re-typed in Add Round when overriding.
+    // "sessions" used to ride on the Basics step (a period where there was no
+    // dedicated Sessions step) — split back out once it grew past 15 fields on
+    // its own (event-maker option parity: multiplier/pitstops/practice server),
+    // which had made Basics enormous next to a thin Penalties step.
     const STEP_GROUPS = [
-        'basics'       => ['schedule', 'sessions'],
+        'basics'       => ['schedule'],
+        'sessions'     => ['sessions'],
         'format'       => ['format'],
         'scoring'      => ['scoring'],
         'requirements' => ['requirements'],
@@ -68,8 +83,14 @@ class ChampionshipSettingsSchema
             ['group' => 'schedule', 'key' => 'day_of_week', 'type' => 'enum',
                 'options' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], 'nullable' => true, 'default' => null,
                 'label' => 'Race Day', 'help' => 'Only used when recurrence is weekly or bi-weekly.'],
+            // Real-world clock time only — the separate in-game clock default lives
+            // on the Sessions step (sessions.ingame_time_of_day) since it's a
+            // session/weather-style concern, not a scheduling one. The two used to
+            // be one shared field; split 2026-09 since a league can want a fixed
+            // real-world slot (e.g. always 20:00 UK) with a different in-game time
+            // (e.g. sunset lighting) or vice versa.
             ['group' => 'schedule', 'key' => 'time_of_day', 'type' => 'time', 'default' => '14:00',
-                'label' => 'Start Time', 'help' => 'In-game and real-world start time for every round — always on the hour.',
+                'label' => 'Real-World Start Time', 'help' => 'Suggests each round\'s real-world date & time — always on the hour. Still editable per round in Add Round.',
                 // Array form, not a pipe-delimited string — the regex itself
                 // contains a "|", which a string rule would wrongly split on.
                 'rule' => ['required', 'date_format:H:i', 'regex:/^([01]\d|2[0-3]):00$/']],
@@ -81,42 +102,91 @@ class ChampionshipSettingsSchema
                 'label' => 'Classes', 'help' => 'Each class has a name and a list of eligible cars. Only used when multiclass is on.'],
             ['group' => 'format', 'key' => 'max_entries', 'type' => 'integer', 'nullable' => true, 'default' => null,
                 'label' => 'Maximum Drivers/Teams', 'help' => 'Entry cap for the whole championship. Ignored when multiclass is on — set a cap per class instead.'],
-            ['group' => 'format', 'key' => 'car_class', 'type' => 'enum', 'options' => ['GT2', 'GT3', 'GT4', 'TCX', 'GTC'], 'nullable' => true, 'default' => null,
-                'label' => 'Car Class', 'help' => 'Same for every round of the championship. Ignored when multiclass is on — set a class per class below instead.'],
+            // '!' prefix inverts the dependency — shown while multiclass is OFF,
+            // hidden once it's on (a single car class doesn't mean anything once
+            // there are several per-class ones instead).
+            ['group' => 'format', 'key' => 'car_class', 'type' => 'enum', 'options' => ['GT2', 'GT3', 'GT4', 'TCX', 'GTC'], 'nullable' => true, 'default' => null, 'depends_on' => '!multiclass_enabled',
+                'label' => 'Car Class', 'help' => 'Same for every round of the championship.'],
             ['group' => 'format', 'key' => 'spectator_slots', 'type' => 'integer', 'nullable' => true, 'default' => 0,
                 'label' => 'Spectator Slots', 'help' => 'Extra slots reserved for spectators, on top of the entry cap.'],
             ['group' => 'format', 'key' => 'driver_swaps_enabled', 'type' => 'boolean', 'default' => false, 'section' => 'Driver Swaps',
                 'label' => 'Driver Swaps', 'help' => 'Allow more than one driver to share a car during a round.'],
-            ['group' => 'format', 'key' => 'min_drivers_per_car', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps',
+            ['group' => 'format', 'key' => 'min_drivers_per_car', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',
                 'label' => 'Minimum Drivers per Car', 'help' => 'Only used when driver swaps are on.'],
-            ['group' => 'format', 'key' => 'max_drivers_per_car', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps',
+            ['group' => 'format', 'key' => 'max_drivers_per_car', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',
                 'label' => 'Maximum Drivers per Car', 'help' => 'Only used when driver swaps are on.'],
-            ['group' => 'format', 'key' => 'team_registration_scope', 'type' => 'enum', 'options' => ['per_round', 'championship'], 'default' => 'per_round', 'section' => 'Driver Swaps',
+            ['group' => 'format', 'key' => 'team_registration_scope', 'type' => 'enum', 'options' => ['per_round', 'championship'], 'default' => 'per_round', 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',
                 'label' => 'Team Registration', 'help' => 'Only used when driver swaps are on. "Per round" (today\'s behaviour): a team still signs up separately for every round. "Whole championship": a team\'s car number, model and starting driver are captured once and copied into every round automatically — including rounds added later.'],
+            // Mirror the race wizard's own in-game swap-enforcement fields
+            // (admin/races/form.blade.php, AccServerConfigService::eventRules()) —
+            // default here, still overridable per round in Add/Edit Round.
+            ['group' => 'format', 'key' => 'driver_stint_time_mins', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',
+                'label' => 'Max. Stint Time (minutes)', 'help' => 'Only used when driver swaps are on. Leave blank for no limit.', 'rule' => 'nullable|integer|min:1|max:1440'],
+            ['group' => 'format', 'key' => 'max_total_driving_time_mins', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',
+                'label' => 'Max Driving Time / Driver (minutes)', 'help' => 'Only used when driver swaps are on. Leave blank for no limit.', 'rule' => 'nullable|integer|min:1|max:1440'],
+            ['group' => 'format', 'key' => 'mandatory_driver_swap', 'type' => 'boolean', 'default' => false, 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',
+                'label' => 'Mandatory Pitstop Swap', 'help' => 'Only used when driver swaps are on. Requires a driver change at the mandatory pitstop.'],
 
-            // --- Sessions ---
-            ['group' => 'sessions', 'key' => 'race_length_minutes', 'type' => 'integer', 'default' => 30,
+            // --- Sessions --- (own wizard step, 'section' tags below split it into
+            // Session Lengths / Weather / Rating & Pitstops / Practice Server rather
+            // than one long undivided list)
+            ['group' => 'sessions', 'key' => 'race_length_minutes', 'type' => 'integer', 'default' => 30, 'section' => 'Session Lengths',
                 'label' => 'Race Length (minutes)', 'help' => 'Length of the race session.', 'rule' => 'required|integer|min:1|max:999'],
-            ['group' => 'sessions', 'key' => 'practice_enabled', 'type' => 'boolean', 'default' => true,
+            ['group' => 'sessions', 'key' => 'practice_enabled', 'type' => 'boolean', 'default' => true, 'section' => 'Session Lengths',
                 'label' => 'Practice Session', 'help' => 'Run a practice session before qualifying.'],
-            ['group' => 'sessions', 'key' => 'practice_length_minutes', 'type' => 'integer', 'nullable' => true, 'default' => 15,
+            ['group' => 'sessions', 'key' => 'practice_length_minutes', 'type' => 'integer', 'nullable' => true, 'default' => 15, 'section' => 'Session Lengths', 'depends_on' => 'practice_enabled',
                 'label' => 'Practice Length (minutes)', 'help' => 'Only used when a practice session runs.'],
-            ['group' => 'sessions', 'key' => 'qualifying_enabled', 'type' => 'boolean', 'default' => true,
+            ['group' => 'sessions', 'key' => 'qualifying_enabled', 'type' => 'boolean', 'default' => true, 'section' => 'Session Lengths',
                 'label' => 'Qualifying Session', 'help' => 'Run a qualifying session before the race.'],
-            ['group' => 'sessions', 'key' => 'qualifying_length_minutes', 'type' => 'integer', 'nullable' => true, 'default' => 15,
+            ['group' => 'sessions', 'key' => 'qualifying_length_minutes', 'type' => 'integer', 'nullable' => true, 'default' => 15, 'section' => 'Session Lengths', 'depends_on' => 'qualifying_enabled',
                 'label' => 'Qualifying Length (minutes)', 'help' => 'Only used when a qualifying session runs.'],
-            ['group' => 'sessions', 'key' => 'weather_mode', 'type' => 'enum', 'options' => ['fixed', 'randomised'], 'default' => 'fixed',
+            // Split from schedule.time_of_day (the real-world start time) — see the
+            // comment there. This is what prefills a round's own in-game clock in
+            // Add/Edit Round, independent of the real-world slot.
+            ['group' => 'sessions', 'key' => 'ingame_time_of_day', 'type' => 'time', 'default' => '14:00', 'section' => 'Session Lengths',
+                'label' => 'In-Game Start Time', 'help' => 'The in-game clock time for every round — independent of the real-world start time on Basics.',
+                'rule' => ['required', 'date_format:H:i', 'regex:/^([01]\d|2[0-3]):00$/']],
+            ['group' => 'sessions', 'key' => 'formation_lap_type', 'type' => 'enum', 'options' => ['short', 'full'], 'default' => 'full', 'section' => 'Session Lengths',
+                'label' => 'Formation Lap', 'help' => 'How long the formation lap is.', 'rule' => 'required|in:short,full'],
+            ['group' => 'sessions', 'key' => 'weather_mode', 'type' => 'enum', 'options' => ['fixed', 'randomised'], 'default' => 'fixed', 'section' => 'Weather',
                 'label' => 'Weather', 'help' => 'Fixed weather is set once here; randomised is rolled per round.', 'rule' => 'required|in:fixed,randomised'],
-            ['group' => 'sessions', 'key' => 'ambient_temp', 'type' => 'integer', 'nullable' => true, 'default' => 20,
+            ['group' => 'sessions', 'key' => 'ambient_temp', 'type' => 'integer', 'nullable' => true, 'default' => 20, 'section' => 'Weather',
                 'label' => 'Ambient Temperature (°C)', 'help' => 'Only used when weather is fixed.'],
-            ['group' => 'sessions', 'key' => 'track_temp', 'type' => 'integer', 'nullable' => true, 'default' => 26,
+            ['group' => 'sessions', 'key' => 'track_temp', 'type' => 'integer', 'nullable' => true, 'default' => 26, 'section' => 'Weather',
                 'label' => 'Track Temperature (°C)', 'help' => 'Only used when weather is fixed.'],
-            ['group' => 'sessions', 'key' => 'cloud_level', 'type' => 'float', 'nullable' => true, 'default' => 0.2,
+            ['group' => 'sessions', 'key' => 'cloud_level', 'type' => 'float', 'nullable' => true, 'default' => 0.2, 'section' => 'Weather',
                 'label' => 'Cloud Level (0–1)', 'help' => 'Only used when weather is fixed.'],
-            ['group' => 'sessions', 'key' => 'rain_level', 'type' => 'float', 'nullable' => true, 'default' => 0.0,
+            ['group' => 'sessions', 'key' => 'rain_level', 'type' => 'float', 'nullable' => true, 'default' => 0.0, 'section' => 'Weather',
                 'label' => 'Rain Level (0–1)', 'help' => 'Only used when weather is fixed.'],
-            ['group' => 'sessions', 'key' => 'formation_lap_type', 'type' => 'enum', 'options' => ['none', 'formation', 'rolling_start'], 'default' => 'formation',
-                'label' => 'Formation Lap', 'help' => 'How the field is sent to green.', 'rule' => 'required|in:none,formation,rolling_start'],
+            // Mirrors the race wizard's Custom Race "XCL-R Multiplier" field exactly
+            // (admin/races/form.blade.php — that field is manual-only too, no
+            // auto-derivation from length exists anywhere in the app to reuse).
+            // Without this, a championship round has neither an EventFormat nor an
+            // explicit multiplier, so RatingService::processRace() falls all the way
+            // through to a flat 1.0 — every round rated the same regardless of length.
+            // Only meaningful once XCL Rating is actually enabled for this
+            // championship — rendered disabled otherwise (wizard.blade.php /
+            // _round-shared-fields.blade.php / round-edit.blade.php all check
+            // $championship->xcl_rating_enabled directly, this field has no
+            // xcl_rating_enabled-awareness of its own).
+            ['group' => 'sessions', 'key' => 'xcl_r_multiplier', 'type' => 'float', 'nullable' => true, 'default' => null, 'section' => 'Rating & Pitstops',
+                'label' => 'XCL-R Multiplier', 'help' => 'How much this round\'s races count toward rating changes (0.6–2.5). Leave blank for the default (1.0, same for every length). Only used once XCL Rating is enabled.', 'rule' => 'nullable|numeric|min:0.6|max:2.5'],
+            ['group' => 'sessions', 'key' => 'pitstop_count', 'type' => 'integer', 'nullable' => true, 'default' => 0, 'section' => 'Rating & Pitstops',
+                'label' => 'Mandatory Pitstops', 'help' => 'Number of mandatory pitstops. Leave at 0 for none.', 'rule' => 'nullable|integer|min:0|max:9'],
+            // A plain on/off button, no accompanying number field — user-directed
+            // 2026-09: "off = standaard game, on = 25 seconds". min_stop_secs still
+            // exists as a real Race column (AccServerConfigService reads it,
+            // isRefuellingTimeFixed = !empty(...)) but is now always derived from
+            // this toggle (25 when on, null when off) rather than admin-entered —
+            // see applyStepSettings()/ChampionshipWizardController's round actions.
+            ['group' => 'sessions', 'key' => 'fixed_stop_time', 'type' => 'boolean', 'default' => false, 'section' => 'Rating & Pitstops',
+                'label' => 'Fixed Stop Time', 'help' => 'Off = game default (dynamic). On = a fixed 25 seconds.'],
+            // Not rendered ('hidden') — no longer a user-editable field, purely the
+            // derived value the toggle above sets. Kept in the schema so it still
+            // gets a tracked default/upgrade path and Add/Edit Round's prefill
+            // (session defaults) keeps working the same way every other field here does.
+            ['group' => 'sessions', 'key' => 'min_stop_secs', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Rating & Pitstops', 'hidden' => true,
+                'label' => 'Minimum Stop Time (seconds)', 'help' => 'Derived from Fixed Stop Time — 25 when on, blank when off.', 'rule' => 'nullable|integer|min:1|max:3600'],
 
             // --- Scoring ---
             ['group' => 'scoring', 'key' => 'points_scheme_id', 'type' => 'integer', 'nullable' => true, 'default' => null,
@@ -146,10 +216,19 @@ class ChampionshipSettingsSchema
             ['group' => 'requirements', 'key' => 'min_xcl_rating_tier', 'type' => 'enum',
                 'options' => ['rookie', 'bronze', 'silver', 'gold', 'platinum', 'alien'], 'nullable' => true, 'default' => null,
                 'label' => 'Minimum XCL Rating', 'help' => 'Leave blank for no rating requirement.'],
+            ['group' => 'requirements', 'key' => 'max_xcl_rating_tier', 'type' => 'enum',
+                'options' => ['rookie', 'bronze', 'silver', 'gold', 'platinum', 'alien'], 'nullable' => true, 'default' => null,
+                'label' => 'Maximum XCL Rating', 'help' => 'For a low-rating-only round — leave blank for no upper cap.'],
             ['group' => 'requirements', 'key' => 'min_safety_rating', 'type' => 'float', 'nullable' => true, 'default' => null,
                 'label' => 'Minimum Safety Rating', 'help' => 'On the 0–10 scale. Leave blank for no requirement.', 'rule' => 'nullable|numeric|between:0,10'],
-            ['group' => 'requirements', 'key' => 'discord_membership_required', 'type' => 'boolean', 'default' => false,
-                'label' => 'Discord Membership Required', 'help' => 'Entrants must be a member of this league\'s Discord to register.'],
+            // Locked (disabled + greyed) same as the League edit page's own Discord
+            // toggle — the check itself is fully built (ChampionshipController::
+            // discordMembershipFailure()), but XCL hasn't finished installing its
+            // bot into a real league's Discord server yet, so nobody should be able
+            // to switch enforcement on before that's actually operational.
+            ['group' => 'requirements', 'key' => 'discord_membership_required', 'type' => 'boolean', 'default' => false, 'locked' => true,
+                'label' => 'Discord Membership Required', 'help' => 'Entrants must be a member of this league\'s Discord to register.',
+                'locked_help' => 'Temporarily locked — XCL is still finishing the operational Discord bot setup. Coming soon.'],
             ['group' => 'requirements', 'key' => 'manual_approval_required', 'type' => 'boolean', 'default' => false,
                 'label' => 'Manual Approval of Entries', 'help' => 'Entries wait for league staff to approve before they count.'],
             // Shown publicly on the championship page (Phase 7) as "Rules" — this is
@@ -179,12 +258,10 @@ class ChampionshipSettingsSchema
             // --- Penalties & Rating ---
             ['group' => 'penalties', 'key' => 'stewarding_enabled', 'type' => 'boolean', 'default' => false,
                 'label' => 'Use XCL Stewarding', 'help' => 'Let this championship use XCL\'s report and steward workflow.'],
-            ['group' => 'penalties', 'key' => 'affects', 'type' => 'enum', 'options' => ['points', 'rating', 'both', 'none'], 'default' => 'none',
+            ['group' => 'penalties', 'key' => 'affects', 'type' => 'enum', 'options' => ['points', 'rating', 'both', 'none'], 'default' => 'none', 'depends_on' => 'stewarding_enabled',
                 'label' => 'Penalties Affect', 'help' => 'What a steward-issued penalty changes. Only used when stewarding is on.', 'rule' => 'required|in:points,rating,both,none'],
             ['group' => 'penalties', 'key' => 'post_race_time_penalties_enabled', 'type' => 'boolean', 'default' => false,
                 'label' => 'Post-Race Time Penalties', 'help' => 'Allow a time penalty to be applied to a result after the race.'],
-            ['group' => 'penalties', 'key' => 'xcl_rating_requested', 'type' => 'boolean', 'default' => false,
-                'label' => 'Request XCL Rating', 'help' => 'Raises a request for an XCL admin to review. It does not turn rating on by itself — only an admin can approve it.'],
 
             // --- Balance (rendered on the Penalties & Balance step) ---
             ['group' => 'balance', 'key' => 'adjustments', 'type' => 'list', 'default' => [],

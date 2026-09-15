@@ -190,13 +190,12 @@ class Report extends Model
     public function ratingFields(): ?array
     {
         $game = $this->race?->game;
+        if (!$game) {
+            return null;
+        }
 
-        return match ($game) {
-            'acc'     => ['elo' => 'elo_acc', 'sr' => 'sr_acc'],
-            'lmu'     => ['elo' => 'elo_lmu', 'sr' => 'sr_lmu'],
-            'iracing' => ['elo' => 'elo_iracing', 'sr' => 'sr_iracing'],
-            default   => null,
-        };
+        $elo = User::eloColumn($game);
+        return $elo ? ['elo' => $elo, 'sr' => User::srColumn($game)] : null;
     }
 
     /**

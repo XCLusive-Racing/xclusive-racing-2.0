@@ -12,7 +12,7 @@ class DriverController extends Controller
     public function index(Request $request)
     {
         $games = [
-            'acc'     => ['label' => 'ACC Console',      'col' => 'elo_acc',     'sr' => 'sr_acc',     'color' => '#7c3aed'],
+            'acc'     => ['label' => 'ACC',              'col' => 'elo_acc',     'sr' => 'sr_acc',     'color' => '#7c3aed'],
             'lmu'     => ['label' => 'Le Mans Ultimate', 'col' => 'elo_lmu',     'sr' => 'sr_lmu',     'color' => '#db2877'],
             'iracing' => ['label' => 'iRacing',          'col' => 'elo_iracing', 'sr' => 'sr_iracing', 'color' => '#2563eb'],
         ];

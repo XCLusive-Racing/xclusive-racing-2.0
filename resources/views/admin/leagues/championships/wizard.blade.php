@@ -18,6 +18,9 @@
         <span class="fw-black text-uppercase fst-italic text-dark" style="font-size:.8rem">{{ $league->name }}</span>
         <span class="text-secondary" style="font-size:.75rem">·</span>
         <span class="text-secondary text-uppercase" style="font-size:.72rem;letter-spacing:.05em">{{ ucfirst($championship->status) }}</span>
+        @if($championship->visibility === 'unlisted')
+        <span class="badge" style="background:#fef3c7;color:#92400e;font-size:.68rem;padding:3px 8px;border-radius:5px;font-weight:700">Hidden</span>
+        @endif
     </div>
 </div>
 
@@ -48,6 +51,15 @@
         @endforeach
     </div>
 </div>
+
+@php
+    // Every step's footer gets a Back button to the previous one in STEPS
+    // order (user-directed 2026-09: "bij elk ding moet een backbutton
+    // staan") — null on the very first step (Basics), where there's nothing
+    // to go back to inside the wizard.
+    $stepIndex   = array_search($step, $stepKeys, true);
+    $prevStepKey = $stepIndex > 0 ? $stepKeys[$stepIndex - 1] : null;
+@endphp
 
 <div class="row g-4">
     <div class="col-12 col-lg-8">
@@ -81,7 +93,7 @@
                                 // points_scheme_id gets its own picker below, with an inline table
                                 // preview a plain integer input can't show — skip the generic one.
                                 $visibleFields = collect($sectionFields)->filter(fn ($f) =>
-                                    $f['type'] !== 'list' && !($step === 'scoring' && $f['key'] === 'points_scheme_id')
+                                    $f['type'] !== 'list' && !($f['hidden'] ?? false) && !($step === 'scoring' && $f['key'] === 'points_scheme_id')
                                 )->values();
                             @endphp
                             @continue($visibleFields->isEmpty())
@@ -89,18 +101,23 @@
                             <div class="{{ $sectionIndex > 1 ? 'mt-4 pt-4' : '' }}" @if($sectionIndex > 1) style="border-top:1px solid #f3f4f6" @endif>
                                 <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">{{ $sectionLabel }}</p>
                                 <div class="row g-3">
+                                    {{-- A field can carry 'depends_on' => another boolean field's key
+                                         (same group) — _field.blade.php wraps it so the shared script
+                                         below shows/hides it live against that toggle, instead of every
+                                         field appearing equally relevant regardless of the toggle's state. --}}
                                     @foreach($visibleFields as $field)
                                         @include('admin.leagues.championships._field', ['field' => $field])
+                                        {{-- Right under Multiclass itself, not stranded at the bottom of
+                                             the whole step — it already shows/hides on that same toggle. --}}
+                                        @if($step === 'format' && $field['key'] === 'multiclass_enabled')
+                                        <div class="col-12">
+                                            @include('admin.leagues.championships._classes-builder')
+                                        </div>
+                                        @endif
                                     @endforeach
                                 </div>
                             </div>
                         @endforeach
-
-                        @if($step === 'format')
-                        <div class="mt-4 pt-4" style="border-top:1px solid #f3f4f6">
-                            @include('admin.leagues.championships._classes-builder')
-                        </div>
-                        @endif
 
                         @if($step === 'scoring')
                         <div class="mt-4 pt-4" style="border-top:1px solid #f3f4f6">
@@ -118,13 +135,57 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">
-                Save &amp; Continue →
-            </button>
+            <div class="d-flex align-items-center gap-2">
+                @if($prevStepKey)
+                <a href="{{ route('admin.leagues.championships.wizard', [$league, $championship, $prevStepKey]) }}"
+                   class="btn btn-outline-secondary fw-black text-uppercase px-4">
+                    ← Back
+                </a>
+                @endif
+                <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">
+                    Save &amp; Continue →
+                </button>
+            </div>
         </form>
         @endif
 
     </div>
 </div>
+
+<script>
+(function () {
+    document.querySelectorAll('[data-bool-pill]').forEach(label => {
+        const cb = label.querySelector('input[type=checkbox]');
+        if (!cb) return;
+
+        function applyStyle() {
+            if (cb.checked) {
+                label.style.border     = '2px solid #7c3aed';
+                label.style.background = '#7c3aed18';
+                label.style.color      = '#7c3aed';
+            } else {
+                label.style.border     = '2px solid #e5e7eb';
+                label.style.background = '#fff';
+                label.style.color      = '#374151';
+            }
+        }
+
+        cb.addEventListener('change', applyStyle);
+    });
+
+    document.querySelectorAll('[data-shown-if]').forEach(field => {
+        const toggle = document.getElementById(field.dataset.shownIf);
+        if (!toggle) return;
+        const invert = field.hasAttribute('data-invert');
+
+        function apply() {
+            field.hidden = invert ? toggle.checked : !toggle.checked;
+        }
+
+        toggle.addEventListener('change', apply);
+        apply();
+    });
+})();
+</script>
 
 @endsection

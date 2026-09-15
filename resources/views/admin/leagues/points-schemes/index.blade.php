@@ -12,9 +12,16 @@
 @section('content')
 
 @php
+    // P1/P2/P3 bolded and labelled instead of a bare "1:25, 2:18, 3:15" —
+    // those are what people actually scan for on a list like this.
     $psPreview = function ($scheme, $count = 6) {
-        $table = collect($scheme->points_table ?? [])->sortKeys();
-        return $table->take($count)->map(fn ($pts, $pos) => $pos . ':' . rtrim(rtrim((string) $pts, '0'), '.'))->implode(', ');
+        $table = collect($scheme->points_table ?? [])->sortKeys()->take($count);
+        return $table->map(function ($pts, $pos) {
+            $pts = rtrim(rtrim((string) $pts, '0'), '.');
+            return $pos <= 3
+                ? '<strong style="color:#374151">P' . $pos . ' ' . $pts . '</strong>'
+                : 'P' . $pos . ' ' . $pts;
+        })->implode(' · ');
     };
 @endphp
 
@@ -52,7 +59,7 @@
                         @endif
                     </td>
                     <td class="text-secondary text-capitalize">{{ $scheme->type }}</td>
-                    <td><span class="text-secondary" style="font-size:.78rem">{{ $psPreview($scheme) }}{{ count($scheme->points_table ?? []) > 6 ? '…' : '' }}</span></td>
+                    <td><span class="text-secondary" style="font-size:.78rem">{!! $psPreview($scheme) !!}{{ count($scheme->points_table ?? []) > 6 ? '…' : '' }}</span></td>
                     <td class="text-center d-none d-md-table-cell text-secondary">{{ $scheme->fastest_lap_points }} / {{ $scheme->pole_points }} / {{ $scheme->leading_lap_points }}</td>
                     <td class="text-end pe-4">
                         <div class="d-flex gap-2 justify-content-end">
@@ -100,7 +107,7 @@
                         <div class="text-secondary" style="font-size:.75rem">{{ $scheme->description }}</div>
                         @endif
                     </td>
-                    <td><span class="text-secondary" style="font-size:.78rem">{{ $psPreview($scheme) }}{{ count($scheme->points_table ?? []) > 6 ? '…' : '' }}</span></td>
+                    <td><span class="text-secondary" style="font-size:.78rem">{!! $psPreview($scheme) !!}{{ count($scheme->points_table ?? []) > 6 ? '…' : '' }}</span></td>
                     <td class="text-end pe-4">
                         <form action="{{ route('admin.leagues.points-schemes.copy', [$league, $scheme]) }}" method="POST" class="d-flex gap-1 justify-content-end">
                             @csrf

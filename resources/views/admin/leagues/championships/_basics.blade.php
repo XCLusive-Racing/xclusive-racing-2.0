@@ -18,7 +18,9 @@
         <label class="form-label">Game</label>
         <select name="game" class="form-select @error('game') is-invalid @enderror">
             <option value="acc" {{ old('game', $championship->game) === 'acc' ? 'selected' : '' }}>Assetto Corsa Competizione</option>
+            <option value="ac" {{ old('game', $championship->game) === 'ac' ? 'selected' : '' }}>ACC PC</option>
             <option value="lmu" {{ old('game', $championship->game) === 'lmu' ? 'selected' : '' }}>Le Mans Ultimate</option>
+            <option value="iracing" {{ old('game', $championship->game) === 'iracing' ? 'selected' : '' }}>iRacing</option>
         </select>
         @error('game') <div class="invalid-feedback">{{ $message }}</div> @enderror
     </div>
@@ -43,21 +45,49 @@
 
 <div class="row g-3 mt-1">
     <div class="col-sm-8">
-        <label class="form-label">Banner</label>
-        @if($championship->image_url)
-        <div class="mb-2">
-            <img src="{{ $championship->image_url }}" alt="" style="max-height:80px;border-radius:8px">
-        </div>
-        <div class="form-check mb-2">
-            <input type="checkbox" name="image_remove" value="1" class="form-check-input" id="image_remove">
-            <label class="form-check-label" for="image_remove" style="font-size:.82rem">Remove current banner</label>
-        </div>
-        @endif
-        <input type="file" name="image" accept="image/*" class="form-control @error('image') is-invalid @enderror">
-        <div class="form-text" style="font-size:.72rem;color:#9ca3af">Shown as the hero image on the public championship page.</div>
-        @error('image') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        <x-media-picker name="image" label="Banner" :current="$championship->image" />
+        <div class="form-text mt-n2" style="font-size:.72rem;color:#9ca3af">Shown as the hero image on the public championship page.</div>
     </div>
 </div>
+
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <label class="form-label">Description <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
+        <textarea name="description" rows="3" class="form-control rich-editor @error('description') is-invalid @enderror"
+                  placeholder="Shown as intro copy on the public championship page…">{{ old('description', $championship->description) }}</textarea>
+        @error('description') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    </div>
+</div>
+
+@if($canApproveRating)
+<hr class="my-4">
+<p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">XCL Rating</p>
+<p class="text-secondary mb-3" style="font-size:.8rem">Unlocks XCL-R Multiplier on the Sessions step.</p>
+
+<div class="row g-3 mb-1">
+    <div class="col-12">
+        {{-- A plain button (not formaction/submit) firing a background fetch to
+             approve-rating/revoke-rating — the same routes the Review step's card
+             already used (open to this championship's own league manager too, not
+             XCL-admin-only any more). Deliberately NOT a form submit: this button
+             sits inside the Basics step's own <form>, and submitting that form
+             here would carry along every other field on the page (Name, Slug,
+             Description, ...) into an endpoint that only ever toggles the rating
+             flag — silently discarding anything unsaved elsewhere. A background
+             fetch toggles just the flag and repaints this button in place. --}}
+        <button type="button" id="xcl-rating-toggle-btn"
+                data-enabled="{{ $championship->xcl_rating_enabled ? '1' : '0' }}"
+                data-enable-url="{{ route('admin.leagues.championships.approve-rating', [$league, $championship]) }}"
+                data-disable-url="{{ route('admin.leagues.championships.revoke-rating', [$league, $championship]) }}"
+                data-name="{{ addslashes($championship->name) }}"
+                class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-bold"
+                style="cursor:pointer;font-size:.82rem;{{ $championship->xcl_rating_enabled ? 'border:2px solid #7c3aed;background:#7c3aed18;color:#7c3aed' : 'border:2px solid #e5e7eb;background:#fff;color:#374151' }}">
+            {{ $championship->xcl_rating_enabled ? 'Enabled — click to disable' : 'Disabled — click to enable' }}
+        </button>
+        <div id="xcl-rating-toggle-error" class="text-danger mt-2" style="font-size:.78rem;display:none"></div>
+    </div>
+</div>
+@endif
 
 <hr class="my-4">
 <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Server <span class="fw-normal" style="text-transform:none">(optional)</span></p>
@@ -94,22 +124,10 @@
 @endforeach
 </div>
 
-<hr class="my-4">
-<p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Session Defaults</p>
-<p class="text-secondary mb-3" style="font-size:.8rem">
-    Standard practice/qualifying/race lengths and conditions — each round can still override these when it needs to differ.
-</p>
-
-<div class="row g-3">
-@foreach(\App\Settings\ChampionshipSettingsSchema::fieldsForGroup('sessions') as $field)
-    @include('admin.leagues.championships._field', ['field' => $field])
-@endforeach
-</div>
-
 <script>
 (function () {
     var recurrence = document.getElementById('f-schedule-recurrence');
-    var dayWrap    = document.getElementById('f-schedule-day_of_week')?.closest('.mb-3');
+    var dayWrap    = document.getElementById('f-schedule-day_of_week')?.parentElement;
 
     function updateDayVisibility() {
         if (!recurrence || !dayWrap) return;
@@ -119,5 +137,44 @@
         recurrence.addEventListener('change', updateDayVisibility);
         updateDayVisibility();
     }
+})();
+
+(function () {
+    var btn = document.getElementById('xcl-rating-toggle-btn');
+    if (!btn) return;
+    var errEl = document.getElementById('xcl-rating-toggle-error');
+
+    function render(enabled) {
+        btn.dataset.enabled = enabled ? '1' : '0';
+        btn.textContent     = enabled ? 'Enabled — click to disable' : 'Disabled — click to enable';
+        btn.style.border     = enabled ? '2px solid #7c3aed' : '2px solid #e5e7eb';
+        btn.style.background = enabled ? '#7c3aed18' : '#fff';
+        btn.style.color      = enabled ? '#7c3aed' : '#374151';
+    }
+
+    btn.addEventListener('click', function () {
+        var enabled = btn.dataset.enabled === '1';
+
+        if (enabled && !confirm('Disable XCL Rating for ' + btn.dataset.name + '?')) return;
+
+        var url = enabled ? btn.dataset.disableUrl : btn.dataset.enableUrl;
+        btn.disabled = true;
+        errEl.style.display = 'none';
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                'Accept': 'application/json',
+            },
+        })
+            .then(function (r) { if (!r.ok) throw new Error('Request failed'); return r.json(); })
+            .then(function () { render(!enabled); })
+            .catch(function () {
+                errEl.textContent   = 'Could not update XCL Rating — try again.';
+                errEl.style.display = '';
+            })
+            .finally(function () { btn.disabled = false; });
+    });
 })();
 </script>

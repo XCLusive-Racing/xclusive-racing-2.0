@@ -8,6 +8,8 @@ use App\Services\AuditLogger;
 use App\Services\Contracts\ServerConfigGenerator;
 use App\Services\FtpService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 
 class FtpServerController extends Controller
 {
@@ -132,21 +134,24 @@ class FtpServerController extends Controller
 
         $ftpServer->update($data);
 
-        // Written via a raw query-builder update rather than through this model instance:
-        // Eloquent's dirty-check decrypts the *existing* stored ciphertext to compare it
-        // against the new value (`encrypted` is a primitive cast type), which throws if
-        // that existing value is ever corrupted/unreadable — impossible to ever overwrite
-        // a broken credential otherwise. A query builder update writes the new ciphertext
-        // directly without reading the old one.
+        // Written directly, bypassing $ftpServer->update() -- Eloquent's dirty-check
+        // for an 'encrypted'-cast attribute decrypts *both* the new value and the
+        // stored original to compare them, even when the original is never read
+        // back anywhere else. If a server's stored ciphertext is ever corrupt or
+        // encrypted under a since-rotated key (exactly what happened here), that
+        // comparison throws DecryptException before the new credential is ever
+        // saved -- there would be no way to fix it back up through this same form.
+        // A raw update sidesteps the comparison entirely: it only ever encrypts
+        // the new value, never touches the old one.
         $credentials = [];
         if ($request->filled('username')) {
-            $credentials['username'] = encrypt($request->input('username'));
+            $credentials['username'] = Crypt::encryptString($request->input('username'));
         }
         if ($request->filled('password')) {
-            $credentials['password'] = encrypt($request->input('password'));
+            $credentials['password'] = Crypt::encryptString($request->input('password'));
         }
         if ($credentials) {
-            FtpServer::whereKey($ftpServer->id)->update($credentials);
+            DB::table('ftp_servers')->where('id', $ftpServer->id)->update($credentials);
         }
 
         AuditLogger::record($request->user(), $ftpServer, 'ftp_server.updated', $request->only(

@@ -14,7 +14,7 @@ class AccServerConfigService implements ServerConfigGenerator
     public function entryList(Race $race): array
     {
         $registrations = $race->registrations()
-            ->with(['user', 'teamEntry'])
+            ->with(['user.ownedRacingTeams', 'user.racingTeams', 'teamEntry'])
             ->orderBy('team_entry_id')
             ->orderBy('created_at')
             ->get();
@@ -44,7 +44,7 @@ class AccServerConfigService implements ServerConfigGenerator
 
                 $entries[] = [
                     'drivers'             => $drivers,
-                    'raceNumber'          => is_numeric($carNumber) ? (int) $carNumber : 0,
+                    'raceNumber'          => is_numeric($carNumber) ? (int) $carNumber : null,
                     'defaultGridPosition' => -1,
                     'ballastKg'           => 0,
                     'forcedCarModel'      => -1,
@@ -66,21 +66,73 @@ class AccServerConfigService implements ServerConfigGenerator
                             'driverCategory' => $user->ratingClass($race->game),
                         ],
                     ],
-                    'raceNumber'          => is_numeric($user->car_number) ? (int) $user->car_number : 0,
+                    'raceNumber'          => is_numeric($user->car_number) ? (int) $user->car_number : null,
                     'defaultGridPosition' => -1,
                     'ballastKg'           => 0,
                     'forcedCarModel'      => -1,
                     'overrideDriverInfo'  => 1,
-                    'teamName'            => $user->team ?? '',
+                    'teamName'            => $this->soloTeamName($user),
                 ];
             }
         }
+
+        $this->assignUniqueRaceNumbers($entries);
 
         return [
             'entries'        => $entries,
             'configVersion'  => 1,
             'forceEntryList' => 1,
         ];
+    }
+
+    // A solo driver's in-game team name should reflect the RacingTeam they
+    // actually belong to (owned team first, else whichever team they're a
+    // member of) -- most drivers never bother filling in the free-text
+    // "Team / Quote" profile field (a supporter-only perk), so relying on
+    // that alone left the name blank for the vast majority of team members.
+    // The personal quote is kept only as a fallback for drivers with no
+    // RacingTeam at all.
+    private function soloTeamName(\App\Models\User $user): string
+    {
+        $team = $user->allRacingTeams()->first();
+
+        return $team?->name ?? $user->team ?? '';
+    }
+
+    // ACC's dedicated server rejects an entrylist outright ("The payload is
+    // invalid") when two entries share a race number. A solo driver's number
+    // comes from their own profile (User::car_number), which many drivers
+    // never set -- every "not set" entry used to collapse to the same
+    // placeholder (0), so any race with two or more such drivers produced an
+    // invalid payload the server refused to load. Every entry now gets a
+    // genuinely unique number instead: whatever a driver/team actually chose
+    // is kept unless another entry already claimed it (first one in wins),
+    // and anyone with no number (or a clash) gets the lowest free number.
+    private function assignUniqueRaceNumbers(array &$entries): void
+    {
+        $claimed = [];
+
+        foreach ($entries as &$entry) {
+            $number = $entry['raceNumber'];
+            if ($number !== null && $number > 0 && !isset($claimed[$number])) {
+                $claimed[$number] = true;
+            } else {
+                $entry['raceNumber'] = null;
+            }
+        }
+        unset($entry);
+
+        $next = 1;
+        foreach ($entries as &$entry) {
+            if ($entry['raceNumber'] !== null) {
+                continue;
+            }
+            while (isset($claimed[$next])) {
+                $next++;
+            }
+            $entry['raceNumber'] = $next;
+            $claimed[$next] = true;
+        }
     }
 
     public function configuration(Race $race, ?FtpServer $server = null): array
@@ -189,7 +241,7 @@ class AccServerConfigService implements ServerConfigGenerator
     {
         $base = $server?->eventrules_defaults ?? $this->defaultEventRules();
 
-        if ($race && $race->is_endurance) {
+        if ($race && $this->isDriverSwapRace($race)) {
             $base = array_merge($base, [
                 'driverStintTimeSec'                   => $race->driver_stint_time_mins ? $race->driver_stint_time_mins * 60 : -1,
                 'maxTotalDrivingTime'                  => $race->max_total_driving_time_mins ? $race->max_total_driving_time_mins * 60 : -1,
@@ -337,6 +389,27 @@ class AccServerConfigService implements ServerConfigGenerator
             'entries'       => $mapped,
             'configVersion' => 1,
         ];
+    }
+
+    // is_endurance is Custom-Race-only (Phase 4 scope decision,
+    // docs/championships/PLAN.md) — a championship round never carries it, even
+    // when its championship has driver swaps on. Without this, driver_stint_time_mins/
+    // max_total_driving_time_mins/mandatory_driver_swap would be silently ignored for
+    // every league championship round, same class of gap already fixed this session
+    // in RaceController::show()'s $isTeamRace.
+    private function isDriverSwapRace(Race $race): bool
+    {
+        if ($race->is_endurance) {
+            return true;
+        }
+
+        if (!$race->championship_id) {
+            return false;
+        }
+
+        $championship = Championship::withoutTenantScope()->find($race->championship_id);
+
+        return (bool) ($championship?->settings->format->driver_swaps_enabled ?? false);
     }
 
     // Bypasses the tenant scope deliberately — this runs from console commands

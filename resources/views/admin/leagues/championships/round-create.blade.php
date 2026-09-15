@@ -12,6 +12,32 @@
     ];
     $sessionDefaults = $championship->settings->sessions;
     $suggestedRoundNumber = old('round_number', $nextRoundNumber);
+
+    // Resolved starting values for _round-shared-fields -- a brand new round has
+    // nothing of its own yet, so every field falls back to the championship's
+    // Sessions-step defaults (round-edit.blade.php builds the same shape from
+    // the round's own saved values instead).
+    $defaults = [
+        'ftp_server_id'               => $championship->ftp_server_id,
+        'description'                 => null,
+        'practice_duration'           => $sessionDefaults->practice_enabled ? $sessionDefaults->practice_length_minutes : '',
+        'qualifying_duration'         => $sessionDefaults->qualifying_enabled ? $sessionDefaults->qualifying_length_minutes : '',
+        'race_duration'               => $sessionDefaults->race_length_minutes,
+        'time_of_day'                 => $sessionDefaults->ingame_time_of_day ?? '14:00',
+        'ambient_temp'                => $sessionDefaults->ambient_temp,
+        // "Randomised" maps cleanly onto the round's own "Random" option; "fixed"
+        // doesn't map onto a single dry/wet/mixed value, so it's left unset here
+        // — the round falls through to the server's own event_defaults instead.
+        'weather'                     => $sessionDefaults->weather_mode === 'randomised' ? 'random' : '',
+        'weather_randomness'          => null,
+        'rain_level'                  => $sessionDefaults->rain_level ?? 0.0,
+        'xcl_r_multiplier'            => $sessionDefaults->xcl_r_multiplier,
+        'pitstop_count'               => $sessionDefaults->pitstop_count,
+        'fixed_stop_time'             => $sessionDefaults->min_stop_secs !== null,
+        'driver_stint_time_mins'      => $championship->settings->format->driver_stint_time_mins ?? null,
+        'max_total_driving_time_mins' => $championship->settings->format->max_total_driving_time_mins ?? null,
+        'mandatory_driver_swap'       => $championship->settings->format->mandatory_driver_swap ?? false,
+    ];
 @endphp
 
 @section('title', 'Add Round — ' . $championship->name)
@@ -83,9 +109,9 @@
                     @error('track')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-sm-4">
-                    <label class="form-label">Date &amp; Time <span class="text-danger">*</span> <span class="fw-normal text-secondary" style="text-transform:none">(on the hour, BST)</span></label>
+                    <label class="form-label">Date &amp; Time <span class="text-danger">*</span> <span class="fw-normal text-secondary" style="text-transform:none">(on the hour or half hour, BST)</span></label>
                     <input type="datetime-local" name="scheduled_at"
-                           value="{{ old('scheduled_at', optional($suggestedScheduledAt)->format('Y-m-d\TH:i')) }}" step="3600"
+                           value="{{ old('scheduled_at', optional($suggestedScheduledAt)->format('Y-m-d\TH:i')) }}" step="1800"
                            class="form-control @error('scheduled_at') is-invalid @enderror">
                     @if($suggestedScheduledAt && !old('scheduled_at'))
                     <div class="form-text" style="font-size:.72rem;color:#9ca3af">Suggested from the championship's schedule — change it just for this round if needed.</div>
@@ -95,7 +121,7 @@
             </div>
         </div>
 
-        @include('admin.leagues.championships._round-shared-fields', ['idPrefix' => 'rc'])
+        @include('admin.leagues.championships._round-shared-fields', ['idPrefix' => 'rc', 'defaults' => $defaults])
     </div>
 
     <div class="d-flex gap-2">
@@ -153,7 +179,7 @@
             </div>
         </div>
 
-        @include('admin.leagues.championships._round-shared-fields', ['idPrefix' => 'rcb'])
+        @include('admin.leagues.championships._round-shared-fields', ['idPrefix' => 'rcb', 'defaults' => $defaults])
     </div>
 
     <div class="d-flex gap-2" id="rcb-submit-wrap" style="display:none">
@@ -214,7 +240,7 @@
             tr.innerHTML =
                 '<td class="ps-4 fw-bold text-secondary">' + (startRoundNum + i) + '</td>' +
                 '<td data-track-cell></td>' +
-                '<td><input type="datetime-local" name="rounds[' + i + '][scheduled_at]" value="' + (row.scheduled_at || '') + '" step="3600" class="form-control form-control-sm" required></td>' +
+                '<td><input type="datetime-local" name="rounds[' + i + '][scheduled_at]" value="' + (row.scheduled_at || '') + '" step="1800" class="form-control form-control-sm" required></td>' +
                 '<td class="pe-4">' +
                     '<button type="button" data-rcb-remove class="btn btn-sm d-flex align-items-center justify-content-center" ' +
                     'style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;width:28px;height:28px;padding:0;font-size:.85rem">✕</button>' +

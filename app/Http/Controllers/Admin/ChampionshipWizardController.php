@@ -108,20 +108,13 @@ class ChampionshipWizardController extends Controller
 
         if ($step === 'basics') {
             $data = $request->validated();
+            $data['image'] = $this->resolveMedia($request);
+            unset($data['image_path']);
 
-            if ($request->hasFile('image')) {
-                $data['image'] = $request->file('image')->storeAs('images/championships', Str::uuid() . '.' . $request->file('image')->getClientOriginalExtension(), 'media');
-            } elseif ($request->boolean('image_remove')) {
-                $data['image'] = null;
-            } else {
-                unset($data['image']);
-            }
-
-            // Nested settings.{schedule,sessions}.* come along in validated() too
-            // (they ride on this same step) — applyStepSettings() below is what
-            // actually merges those into the settings blob; passing the raw
-            // partial array straight to update() would blow away every other
-            // settings group instead of just schedule/sessions.
+            // Nested settings.schedule.* comes along in validated() too (it rides
+            // on this same step) — applyStepSettings() below is what actually
+            // merges that into the settings blob; passing the raw partial array
+            // straight to update() would blow away every other settings group.
             unset($data['settings']);
 
             if (!empty($data['ftp_server_id']) && !$league->ftpServers()->where('id', $data['ftp_server_id'])->exists()) {
@@ -186,10 +179,22 @@ class ChampionshipWizardController extends Controller
             'time_of_day'         => 'nullable|date_format:H:i',
             'ambient_temp'        => 'nullable|integer|min:-30|max:50',
             'description'         => 'nullable|string',
+            'xcl_r_multiplier'    => 'nullable|numeric|min:0.6|max:2.5',
+            'pitstop_count'       => 'nullable|integer|min:0|max:9',
+            'fixed_stop_time'     => 'nullable|boolean',
+            'driver_stint_time_mins'      => 'nullable|integer|min:1|max:1440',
+            'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
+            'mandatory_driver_swap'       => 'nullable|boolean',
             // Restricted to this league's own servers — never any $id a manager
             // could otherwise guess, which is why this isn't just "exists:ftp_servers,id".
             'ftp_server_id'       => 'nullable|exists:ftp_servers,id',
         ]);
+
+        $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
+        // Plain on/off, no admin-entered number — 25s fixed when on, dynamic
+        // (null) when off. Same values applyStepSettings() derives for the
+        // championship-wide Sessions-step default.
+        $data['min_stop_secs'] = $request->boolean('fixed_stop_time') ? 25 : null;
 
         $claimedSlots = [];
         $result = $this->resolveRoundRow($data, $championship, $league, $claimedSlots);
@@ -240,8 +245,20 @@ class ChampionshipWizardController extends Controller
             'time_of_day'         => 'nullable|date_format:H:i',
             'ambient_temp'        => 'nullable|integer|min:-30|max:50',
             'description'         => 'nullable|string',
+            'xcl_r_multiplier'    => 'nullable|numeric|min:0.6|max:2.5',
+            'pitstop_count'       => 'nullable|integer|min:0|max:9',
+            'fixed_stop_time'     => 'nullable|boolean',
+            'driver_stint_time_mins'      => 'nullable|integer|min:1|max:1440',
+            'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
+            'mandatory_driver_swap'       => 'nullable|boolean',
             'ftp_server_id'       => 'nullable|exists:ftp_servers,id',
         ]);
+
+        $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
+        // Plain on/off, no admin-entered number — 25s fixed when on, dynamic
+        // (null) when off. Same values applyStepSettings() derives for the
+        // championship-wide Sessions-step default.
+        $data['min_stop_secs'] = $request->boolean('fixed_stop_time') ? 25 : null;
 
         $claimedSlots = [];
         $result = $this->resolveRoundRow($data, $championship, $league, $claimedSlots, $race->id);
@@ -291,12 +308,24 @@ class ChampionshipWizardController extends Controller
             'time_of_day'            => 'nullable|date_format:H:i',
             'ambient_temp'           => 'nullable|integer|min:-30|max:50',
             'description'            => 'nullable|string',
+            'xcl_r_multiplier'       => 'nullable|numeric|min:0.6|max:2.5',
+            'pitstop_count'          => 'nullable|integer|min:0|max:9',
+            'fixed_stop_time'        => 'nullable|boolean',
+            'driver_stint_time_mins'      => 'nullable|integer|min:1|max:1440',
+            'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
+            'mandatory_driver_swap'       => 'nullable|boolean',
             'ftp_server_id'          => 'nullable|exists:ftp_servers,id',
             'rounds'                 => 'required|array|min:1',
             'rounds.*.track'         => 'required|string|max:255',
             'rounds.*.scheduled_at'  => 'required|date',
             'rounds.*.round_number'  => 'nullable|integer|min:1',
         ]);
+
+        $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
+        // Plain on/off, no admin-entered number — 25s fixed when on, dynamic
+        // (null) when off. Same values applyStepSettings() derives for the
+        // championship-wide Sessions-step default.
+        $data['min_stop_secs'] = $request->boolean('fixed_stop_time') ? 25 : null;
 
         $shared = collect($data)->except('rounds')->all();
         $rows   = [];
@@ -385,10 +414,10 @@ class ChampionshipWizardController extends Controller
         $data['event_tag']       = 'championship';
         $data['scheduled_at']    = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
 
-        // Rounds start on the hour only — the datetime picker already restricts
-        // this client-side, but a raw request could still smuggle in a half hour.
-        if ($data['scheduled_at']->minute !== 0) {
-            return 'Rounds can only start on the hour.';
+        // Rounds start on the hour or half hour only — the datetime picker already
+        // restricts this client-side, but a raw request could still smuggle in something else.
+        if (!in_array($data['scheduled_at']->minute, [0, 30], true)) {
+            return 'Rounds can only start on the hour or half hour.';
         }
 
         if (empty($data['round_number'])) {
@@ -403,7 +432,7 @@ class ChampionshipWizardController extends Controller
             $server   = FtpServer::find($data['ftp_server_id']);
             $slotKey  = $data['scheduled_at']->format('Y-m-d H:i');
 
-            if ($server && !$server->isValidSlot($data['scheduled_at'])) {
+            if ($server && !$server->isValidSlot($data['scheduled_at'], allowHalfHour: true)) {
                 return 'That time is not a valid slot on this server.';
             }
             if ($server && (in_array($slotKey, $server->takenSlots($excludeRaceId), true) || in_array($slotKey, $claimedSlots, true))) {
@@ -492,21 +521,41 @@ class ChampionshipWizardController extends Controller
         return back()->with('success', 'Registration is now closed for ' . $championship->name . '.');
     }
 
-    public function requestRating(Request $request, League $league, Championship $championship)
+    // User-directed 2026-09: pulls an already-published championship out of
+    // the public championships listing and public Events page
+    // (Championship::scopePubliclyVisible(), used by both) without touching
+    // its status -- registrations, rounds and standings all stay exactly as
+    // they are, unlike reverting to draft. Only makes sense once published:
+    // a draft championship is already excluded from both by its status alone.
+    public function hide(Request $request, League $league, Championship $championship)
     {
         $this->assertLeagueOfInterest($request, $league, $championship);
-        Gate::authorize('requestRating', $championship);
+        Gate::authorize('update', $championship);
+        abort_unless($championship->status !== 'draft', 404);
 
-        $championship->requestXclRating();
+        $championship->update(['visibility' => 'unlisted']);
 
-        AuditLogger::record($request->user(), $championship, 'championship.rating_requested');
+        AuditLogger::record($request->user(), $championship, 'championship.hidden');
 
-        return back()->with('success', 'XCL Rating requested. An XCL admin will review it.');
+        return back()->with('success', $championship->name . ' is now hidden from public listings.');
+    }
+
+    public function unhide(Request $request, League $league, Championship $championship)
+    {
+        $this->assertLeagueOfInterest($request, $league, $championship);
+        Gate::authorize('update', $championship);
+
+        $championship->update(['visibility' => 'public']);
+
+        AuditLogger::record($request->user(), $championship, 'championship.unhidden');
+
+        return back()->with('success', $championship->name . ' is public again.');
     }
 
     // The only route that can ever turn xcl_rating_enabled on. Authorization is
-    // enforced by ApproveChampionshipRatingRequest itself (policy-gated), not
-    // just by this controller — a league manager can never reach this action.
+    // enforced by ApproveChampionshipRatingRequest itself (policy-gated, same
+    // gate as update() — a league manager can reach this for their own
+    // championship, from the Basics step's own toggle), not just here.
     public function approveRating(ApproveChampionshipRatingRequest $request, League $league, Championship $championship)
     {
         $this->assertLeagueOfInterest($request, $league, $championship);
@@ -517,17 +566,25 @@ class ChampionshipWizardController extends Controller
             'approved_by' => $request->user()->id,
         ]);
 
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'xcl_rating_enabled' => true]);
+        }
+
         return back()->with('success', 'XCL Rating approved for ' . $championship->name . '.');
     }
 
     public function revokeRating(Request $request, League $league, Championship $championship)
     {
         $this->assertLeagueOfInterest($request, $league, $championship);
-        abort_unless($request->user()->canManage(), 403);
+        Gate::authorize('approveRating', $championship);
 
         $championship->revokeXclRating();
 
         AuditLogger::record($request->user(), $championship, 'championship.rating_revoked');
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'xcl_rating_enabled' => false]);
+        }
 
         return back()->with('success', 'XCL Rating revoked for ' . $championship->name . '.');
     }
@@ -564,6 +621,14 @@ class ChampionshipWizardController extends Controller
                     $settings[$group][$field['key']] = $request->boolean("settings.{$group}.{$field['key']}");
                 }
             }
+        }
+
+        // Fixed Stop Time is a plain on/off button, no admin-entered number
+        // (user-directed) — min_stop_secs is always derived from it: 25 when
+        // on, dynamic (null) when off. Same derivation Add/Edit Round applies
+        // to the per-round override.
+        if ($step === 'sessions') {
+            $settings['sessions']['min_stop_secs'] = ($settings['sessions']['fixed_stop_time'] ?? false) ? 25 : null;
         }
 
         // Repeatable list fields ride in as pre-built JSON, the same pattern the
@@ -620,7 +685,12 @@ class ChampionshipWizardController extends Controller
             $keepNames[] = $name;
 
             $attrs = [
-                'car_class'   => !empty($classData['eligible_cars']) ? implode(', ', (array) $classData['eligible_cars']) : null,
+                // A class picked from the fixed GT2/GT3/GT4/TCX/GTC dropdown (same
+                // list the race wizard's own multiclass picker uses) *is* its car
+                // class — the name and car_class are the same value. Falls back to
+                // a legacy eligible_cars list if a stored row still has one, from
+                // before the dropdown replaced free-typed names + a car picker.
+                'car_class'   => !empty($classData['eligible_cars']) ? implode(', ', (array) $classData['eligible_cars']) : $name,
                 'max_drivers' => $classData['max_entries'] ?? null,
                 'sort_order'  => $i,
             ];
@@ -633,6 +703,20 @@ class ChampionshipWizardController extends Controller
         }
 
         $championship->classes()->whereNotIn('name', $keepNames)->delete();
+    }
+
+    // Same resolveMedia() pattern as the legacy native-championship form
+    // (Admin\ChampionshipController) — an uploaded file wins, otherwise use
+    // whatever <x-media-picker> left in image_path (a gallery pick, the kept
+    // current value, or empty if the picker was explicitly cleared).
+    private function resolveMedia(Request $request): ?string
+    {
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            return $file->storeAs('images/championships', Str::uuid() . '.' . $file->getClientOriginalExtension(), 'media');
+        }
+
+        return $request->filled('image_path') ? $request->image_path : null;
     }
 
     private function decodeList(?string $json, array $allowedKeys): array

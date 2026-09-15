@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Championship;
 use App\Models\League;
+use App\Models\Race;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -144,5 +145,58 @@ class PublicChampionshipPageTest extends TestCase
             ->assertOk()
             ->assertSee('Overall Standings')
             ->assertDontSee('Championship Standings');
+    }
+
+    // --- "Hide from Public" (visibility = unlisted) ---
+
+    // Same "unlisted" semantics as an unlisted YouTube video: reachable by
+    // direct link, just not in any listing -- so the page itself stays up.
+    public function test_a_hidden_championships_own_page_is_still_reachable_directly(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league, ['visibility' => 'unlisted']);
+
+        $this->get(route('championships.show', $championship->id))
+            ->assertOk()
+            ->assertSee('Test Cup');
+    }
+
+    public function test_a_hidden_championship_is_excluded_from_the_leagues_public_listing(): void
+    {
+        $league  = $this->makeLeague('nlrl');
+        $hidden  = $this->makeChampionship($league, ['visibility' => 'unlisted', 'name' => 'Hidden Cup']);
+        $visible = $this->makeChampionship($league, ['name' => 'Visible Cup']);
+
+        $this->get(route('championships.index', ['league' => 'nlrl']))
+            ->assertOk()
+            ->assertSee('Visible Cup')
+            ->assertDontSee('Hidden Cup');
+    }
+
+    // User-directed 2026-09: "zodat hij niet bij events te zien is" — hiding a
+    // championship must also pull its rounds off the public Events page, not
+    // just the championships listing. RaceController::index() previously had
+    // no notion of a championship's own status/visibility at all — any Race
+    // row not literally status=finished showed up regardless, so a draft (or
+    // now hidden) championship's rounds were leaking onto /events already.
+    public function test_a_hidden_championships_rounds_are_excluded_from_the_public_events_page(): void
+    {
+        $league  = $this->makeLeague('nlrl');
+        $hidden  = $this->makeChampionship($league, ['visibility' => 'unlisted']);
+        $visible = $this->makeChampionship($league, ['name' => 'Visible Cup']);
+
+        Race::create([
+            'championship_id' => $hidden->id, 'round_number' => 1, 'title' => 'Hidden Round',
+            'track' => 'Monza', 'game' => 'acc', 'status' => 'open', 'scheduled_at' => now()->addWeek(),
+        ]);
+        Race::create([
+            'championship_id' => $visible->id, 'round_number' => 1, 'title' => 'Visible Round',
+            'track' => 'Spa', 'game' => 'acc', 'status' => 'open', 'scheduled_at' => now()->addWeek(),
+        ]);
+
+        $this->get(route('events.index'))
+            ->assertOk()
+            ->assertSee('Visible Round')
+            ->assertDontSee('Hidden Round');
     }
 }

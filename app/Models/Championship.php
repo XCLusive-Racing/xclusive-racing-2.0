@@ -47,6 +47,24 @@ class Championship extends Model
         ];
     }
 
+    // A league championship's own lifecycle (set by the setup wizard) is
+    // draft/published/registration_open/registration_closed/running/completed/
+    // cancelled — distinct from the flat XCL championship's draft/active/finished.
+    // Anything from "published" onward is publicly visible; draft and cancelled
+    // are not. Shared between ChampionshipController (the public listing) and
+    // RaceController (the public Events page, for a championship's own rounds)
+    // rather than each keeping its own copy.
+    public const PUBLIC_STATUSES = ['published', 'registration_open', 'registration_closed', 'running', 'completed'];
+
+    // A publicly-listed status alone isn't enough once "Hide from Public"
+    // exists (visibility = unlisted) — a manager can pull an already-published
+    // championship out of public listings without reverting its status (and
+    // losing registrations/rounds/standings in the process).
+    public function scopePubliclyVisible($query)
+    {
+        return $query->whereIn('status', self::PUBLIC_STATUSES)->where('visibility', 'public');
+    }
+
     public function league(): BelongsTo
     {
         return $this->belongsTo(League::class);
@@ -102,11 +120,6 @@ class Championship extends Model
         return $date->setTime($hour, $minute);
     }
 
-    public function ratingApprovedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'xcl_rating_approved_by');
-    }
-
     // Bypasses the tenant scope deliberately — standings must resolve
     // correctly for an unauthenticated public visitor (no league membership
     // at all) reading this championship's public page, and a points scheme
@@ -118,17 +131,7 @@ class Championship extends Model
         return $id ? PointsScheme::withoutTenantScope()->find($id) : null;
     }
 
-    // League manager side: raises the request. Does not enable rating.
-    public function requestXclRating(): void
-    {
-        $settings = $this->settings;
-        $penalties = $settings->penalties->toArray();
-        $penalties['xcl_rating_requested'] = true;
-        $this->settings = array_replace($settings->toArray(), ['penalties' => $penalties]);
-        $this->save();
-    }
-
-    // XCL admin side: the only place xcl_rating_enabled is ever set to true.
+    // The only place xcl_rating_enabled is ever set to true.
     // Callers must check ChampionshipPolicy::approveRating before calling this.
     // These three columns are deliberately absent from $fillable — set only here,
     // by direct attribute assignment, never through mass assignment — so no
@@ -235,12 +238,16 @@ class Championship extends Model
             return [
                 'sr'  => $this->settings->requirements->min_safety_rating ?? null,
                 'min' => $this->settings->requirements->min_xcl_rating_tier ?? null,
+                'max' => $this->settings->requirements->max_xcl_rating_tier ?? null,
             ];
         }
 
+        // Native championships have no upper-rating-cap column — only the wizard-driven
+        // settings schema (above) supports it.
         return [
             'sr'  => $this->sr_requirement,
             'min' => $this->min_rating,
+            'max' => null,
         ];
     }
 

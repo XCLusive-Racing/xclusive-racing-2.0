@@ -1709,8 +1709,8 @@ $mcExisting = $isEdit
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function canAdvance() {
-        if (current === 1) {
+    function canAdvance(step) {
+        if (step === 1) {
             const game = document.getElementById('ce-game');
             const fmt  = document.getElementById('ce-format');
             const mode = document.getElementById('ce-mode-input')?.value;
@@ -1721,7 +1721,7 @@ $mcExisting = $isEdit
             }
             return game?.value && (fmt?.value || window.__ceAllowNoFormat);
         }
-        if (current === 2) {
+        if (step === 2) {
             const mode = document.getElementById('ce-mode-input')?.value;
             if (mode === 'bulk') {
                 // Need at least 1 generated event
@@ -1734,14 +1734,17 @@ $mcExisting = $isEdit
         return true; // steps 3+ always can advance
     }
 
+    function highlightMissing(step) {
+        const panel = document.querySelector(`[data-step-panel="${step}"]`);
+        panel?.querySelectorAll(':required:invalid').forEach(el => {
+            el.style.outline = '2px solid #dc2626';
+            setTimeout(() => el.style.outline = '', 2000);
+        });
+    }
+
     nextBtn?.addEventListener('click', () => {
-        if (!canAdvance()) {
-            // Highlight missing fields briefly
-            const panel = document.querySelector(`[data-step-panel="${current}"]`);
-            panel?.querySelectorAll(':required:invalid').forEach(el => {
-                el.style.outline = '2px solid #dc2626';
-                setTimeout(() => el.style.outline = '', 2000);
-            });
+        if (!canAdvance(current)) {
+            highlightMissing(current);
             return;
         }
         showStep(current + 1);
@@ -1753,7 +1756,20 @@ $mcExisting = $isEdit
         ni.style.cursor = 'pointer';
         ni.addEventListener('click', () => {
             const step = parseInt(ni.dataset.stepNav);
-            if (step < current) showStep(step); // can go back freely
+            if (step === current) return;
+            if (step < current) { showStep(step); return; } // can go back freely
+
+            // Jumping ahead: every step in between must still pass its own
+            // validation (same rules the Next button enforces), otherwise a
+            // header click could skip required fields on an earlier step.
+            for (let s = current; s < step; s++) {
+                if (!canAdvance(s)) {
+                    showStep(s);
+                    highlightMissing(s);
+                    return;
+                }
+            }
+            showStep(step);
         });
     });
 
