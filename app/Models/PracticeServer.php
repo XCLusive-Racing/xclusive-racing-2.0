@@ -30,11 +30,4 @@ class PracticeServer extends Model
     {
         return $this->hasMany(PracticeServerSession::class);
     }
-
-    // Entries beyond this gap can never actually join once max_car_slots is full and
-    // spectator/connection headroom runs out — used to warn admins at config-build time.
-    public function admissionGap(): int
-    {
-        return max(0, $this->max_connections - $this->max_car_slots);
-    }
 }

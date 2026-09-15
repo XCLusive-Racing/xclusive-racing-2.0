@@ -45,25 +45,21 @@ class PushPracticeServerConfigJob implements ShouldQueue
         $practiceServer = $session->practiceServer;
         $ftpServer      = $practiceServer->ftpServer;
 
-        $entryListResult = $configService->entryList($race);
+        [$files, $entryListResult] = $configService->buildFiles($race, $session, $practiceServer);
 
-        $gap = $practiceServer->admissionGap();
-        if ($entryListResult->entryCount > $gap) {
+        // Only entries beyond maxCarSlots draw on the connection headroom (the gap) — compare
+        // that overflow, not the raw entry count, or this fires on almost every full session.
+        $gap      = $configService->admissionGap($race, $practiceServer);
+        $overflow = max(0, $entryListResult->entryCount - $practiceServer->max_car_slots);
+        if ($overflow > $gap) {
             Log::warning('Practice server entry count exceeds admission gap', [
                 'session_id'   => $session->id,
                 'race_id'      => $race->id,
                 'entry_count'  => $entryListResult->entryCount,
+                'overflow'     => $overflow,
                 'gap'          => $gap,
             ]);
         }
-
-        $files = [
-            'event.json'       => json_encode($configService->configuration($race, $session), JSON_PRETTY_PRINT),
-            'settings.json'    => json_encode($configService->settings($race, $practiceServer), JSON_PRETTY_PRINT),
-            'eventrules.json'  => json_encode($configService->eventRules($race), JSON_PRETTY_PRINT),
-            'assistrules.json' => json_encode($configService->assistRules($race), JSON_PRETTY_PRINT),
-            'entrylist.json'   => json_encode($entryListResult->config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-        ];
 
         $ftp = new FtpService();
 
@@ -78,13 +74,14 @@ class PushPracticeServerConfigJob implements ShouldQueue
             $tempName = $filename . '.' . Str::random(8) . '.tmp';
 
             if (!$ftp->uploadFile("{$cfgPath}/{$tempName}", $content)) {
-                $failed[] = $filename;
+                $failed[] = "{$filename} ({$ftp->getLastError()})";
                 continue;
             }
 
             if (!$ftp->renameFile("{$cfgPath}/{$tempName}", "{$cfgPath}/{$filename}")) {
+                $renameError = $ftp->getLastError();
                 $ftp->deleteFile("{$cfgPath}/{$tempName}");
-                $failed[] = $filename;
+                $failed[] = "{$filename} (rename: {$renameError})";
             }
         }
 

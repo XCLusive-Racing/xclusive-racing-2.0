@@ -40,20 +40,33 @@ class PracticeServerConfigService
     }
 
     // settings.json — practice server's own capacity and an open, ungated session.
+    // serverName is left untouched (whatever the FTP server's own settings_defaults or the
+    // built-in default already has) — practice pushes shouldn't rename the server per race.
+    // maxConnections is likewise left at the base/default (always the platform maximum,
+    // same as a normal race server) rather than the server's own max_connections column —
+    // connections are never meant to be the limiting factor, only maxCarSlots is.
     public function settings(Race $race, PracticeServer $server): array
     {
-        $base = $this->raceConfig->defaultSettings();
+        $base = $server->ftpServer?->settings_defaults ?? $this->raceConfig->defaultSettings();
 
         return array_merge($base, [
-            'serverName'                 => $race->title . ' - Practice',
             'password'                   => $server->join_password ?? '',
             'maxCarSlots'                => $server->max_car_slots,
-            'maxConnections'             => $server->max_connections,
             'carGroup'                   => $this->raceConfig->carGroup($race->car_class),
             'safetyRatingRequirement'    => -1,
             'racecraftRatingRequirement' => -1,
             'trackMedalsRequirement'     => 0,
         ]);
+    }
+
+    // How many entries beyond maxCarSlots could still connect (as spectators/queued) before
+    // hitting maxConnections — computed from the settings this push actually sends, not the
+    // server's stored max_connections column, since that's no longer what gets pushed.
+    public function admissionGap(Race $race, PracticeServer $server): int
+    {
+        $settings = $this->settings($race, $server);
+
+        return max(0, ($settings['maxConnections'] ?? 0) - ($settings['maxCarSlots'] ?? 0));
     }
 
     // eventrules.json — same car-behaviour rules as the race (pit windows aside), with
@@ -79,6 +92,23 @@ class PracticeServerConfigService
     public function assistRules(Race $race): array
     {
         return $this->raceConfig->assistRules($race->ftpServer);
+    }
+
+    // Builds every file the FTP push sends (as pretty-printed JSON, exactly as written to
+    // disk) plus the entry-list result, so the push job and the admin preview always agree.
+    public function buildFiles(Race $race, PracticeServerSession $session, PracticeServer $server): array
+    {
+        $entryListResult = $this->entryList($race);
+
+        $files = [
+            'event.json'       => json_encode($this->configuration($race, $session), JSON_PRETTY_PRINT),
+            'settings.json'    => json_encode($this->settings($race, $server), JSON_PRETTY_PRINT),
+            'eventrules.json'  => json_encode($this->eventRules($race), JSON_PRETTY_PRINT),
+            'assistrules.json' => json_encode($this->assistRules($race), JSON_PRETTY_PRINT),
+            'entrylist.json'   => json_encode($entryListResult->config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+        ];
+
+        return [$files, $entryListResult];
     }
 
     // entrylist.json — a snapshot of confirmed signups at the moment of the push, not a

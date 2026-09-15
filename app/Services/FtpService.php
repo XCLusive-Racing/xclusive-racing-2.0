@@ -7,6 +7,12 @@ use App\Models\FtpServer;
 class FtpService
 {
     private ?FtpServer $server = null;
+    private ?string $lastError = null;
+
+    public function getLastError(): ?string
+    {
+        return $this->lastError;
+    }
 
     public function connect(FtpServer $server): bool
     {
@@ -201,7 +207,10 @@ class FtpService
 
     public function uploadFile(string $remotePath, string $content): bool
     {
+        $this->lastError = null;
+
         if (!$this->server) {
+            $this->lastError = 'Not connected';
             return false;
         }
 
@@ -224,6 +233,9 @@ class FtpService
 
         curl_exec($ch);
         $error = curl_errno($ch);
+        if ($error !== 0) {
+            $this->lastError = curl_error($ch);
+        }
         curl_close($ch);
         fclose($fp);
 
@@ -293,7 +305,10 @@ class FtpService
 
     private function runFtpCommands(array $commands): bool
     {
+        $this->lastError = null;
+
         if (!$this->server) {
+            $this->lastError = 'Not connected';
             return false;
         }
 
@@ -309,6 +324,9 @@ class FtpService
         curl_setopt($ch, CURLOPT_TIMEOUT, 15);
         curl_exec($ch);
         $error = curl_errno($ch);
+        if ($error !== 0) {
+            $this->lastError = curl_error($ch);
+        }
         curl_close($ch);
 
         return $error === 0;
