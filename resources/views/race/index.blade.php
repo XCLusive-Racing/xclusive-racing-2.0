@@ -85,13 +85,25 @@
             {{-- Filters: event type (left) + timezone (right), then requirements below --}}
             <div class="mb-4">
                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
-                    {{-- Event type filter --}}
+                    {{-- Event type filter — a fixed, short-to-long list of real event formats
+                         (not every EventTag row that happens to exist), each colored the same
+                         as its format's own image so it reads at a glance. --}}
                     <div class="d-flex gap-2 flex-wrap">
                         <button data-event-filter="all"
-                                class="xcl-filter-btn fw-bold text-uppercase xcl-filter-btn--active">All</button>
-                        @foreach($eventTags as $tag)
-                        <button data-event-filter="{{ $tag->slug }}"
-                                class="xcl-filter-btn fw-bold text-uppercase">{{ $tag->name }}</button>
+                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase xcl-filter-btn--active">All</button>
+                        @foreach([
+                            ['supersprint',  'Super Sprint',  '#dc2626'],
+                            ['sprint',       'Sprint',        '#f97316'],
+                            ['daily',        'Daily',         '#eab308'],
+                            ['intermediate', 'Intermediate',  '#16a34a'],
+                            ['fullrace',     'Full Race',     '#0d9488'],
+                            ['longrace',     'Long Race',     '#4338ca'],
+                            ['mini-enduro',  'Mini Enduro',   '#7c3aed'],
+                            ['endurance',    'Endurance',     '#9d174d'],
+                        ] as [$slug, $label, $color])
+                        <button data-event-filter="{{ $slug }}" data-color="{{ $color }}"
+                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase"
+                                style="border-color:{{ $color }}66;color:{{ $color }}">{{ $label }}</button>
                         @endforeach
                     </div>
 

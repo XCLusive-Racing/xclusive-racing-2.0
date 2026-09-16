@@ -40,7 +40,10 @@ class UserController extends Controller
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('team', 'like', "%{$search}%")
-                    ->orWhere('platform_id', 'like', "%{$search}%");
+                    ->orWhere('platform_id', 'like', "%{$search}%")
+                    ->orWhereHas('connectedAccounts', fn ($cq) => $cq
+                        ->where('provider', 'discord')
+                        ->where('username', 'like', "%{$search}%"));
             });
             $recordsFiltered = (clone $query)->count();
         }
@@ -80,11 +83,28 @@ class UserController extends Controller
             ? '<div class="d-flex align-items-center gap-1"><span class="badge fw-bold" style="background:#f3f4f6;color:#6b7280;font-size:.65rem;padding:2px 6px">' . e(strtoupper($user->platform ?? '?')) . '</span><code style="font-size:.75rem;color:#374151">' . e($user->platform_id) . '</code></div>'
             : '<span class="text-secondary">—</span>';
 
-        $connected = $user->connectedAccounts->isEmpty()
-            ? '<span class="text-secondary">—</span>'
-            : '<div class="d-flex gap-2 align-items-center">' . $user->connectedAccounts->map(
+        $discordAccount = $user->connectedAccounts->firstWhere('provider', 'discord');
+        $otherAccounts  = $user->connectedAccounts->reject(fn ($a) => $a->provider === 'discord');
+
+        // Discord's username is shown as plain text, not just an icon+tooltip, so admins/event
+        // managers can actually read and copy it straight from the table to tag someone on Discord —
+        // the whole point of surfacing it here.
+        $discordHtml = $discordAccount
+            ? '<div class="d-flex align-items-center gap-1" title="Discord">'
+                . '<span style="color:' . e($discordAccount->providerColor()) . ';font-size:1rem">' . $discordAccount->providerIcon() . '</span>'
+                . '<span style="font-size:.78rem;color:#374151">' . e($discordAccount->username) . '</span>'
+                . '</div>'
+            : '';
+
+        $otherIconsHtml = $otherAccounts->isEmpty()
+            ? ''
+            : '<div class="d-flex gap-2 align-items-center">' . $otherAccounts->map(
                 fn ($a) => '<span title="' . e($a->providerLabel()) . '" style="color:' . e($a->providerColor()) . ';font-size:1rem">' . $a->providerIcon() . '</span>'
             )->implode('') . '</div>';
+
+        $connected = ($discordHtml === '' && $otherIconsHtml === '')
+            ? '<span class="text-secondary">—</span>'
+            : '<div class="d-flex gap-2 align-items-center">' . $discordHtml . $otherIconsHtml . '</div>';
 
         $status = $user->is_suspended
             ? '<span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:4px;background:#fee2e2;color:#dc2626">Suspended</span>'

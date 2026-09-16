@@ -187,6 +187,7 @@
                     <div class="d-flex flex-column gap-2">
                         <a href="{{ route('news.index') }}" class="footer-link">News</a>
                         <a href="{{ route('coaching.index') }}" class="footer-link">Coaching</a>
+                        <a href="{{ route('faq') }}" class="footer-link">FAQ</a>
                         <a href="{{ route('team.join') }}" class="footer-link">Join The Team</a>
                         <a href="https://raven.gg/stores/xclusive-esports/" target="_blank" class="footer-link">Merchandise</a>
                         <a href="{{ config('xcl.discord_url') }}" target="_blank" class="footer-link">Discord</a>

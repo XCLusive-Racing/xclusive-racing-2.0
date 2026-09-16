@@ -20,22 +20,61 @@
 </div>
 
 <div class="px-4 py-3 border-bottom">
+    @php
+        $currentCategory = old('category', $faq?->category ?? 'General');
+        $isNewCategory   = $currentCategory !== '' && !in_array($currentCategory, $categories, true);
+    @endphp
+
     <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">
         Category
-        <span class="fw-normal text-secondary ms-1" style="font-size:.75rem">— used to filter FAQs, pick an existing one or type a new one</span>
+        <span class="fw-normal text-secondary ms-1" style="font-size:.75rem">— used to filter FAQs, pick an existing one or add a new one</span>
     </label>
-    <input type="text" name="category" list="faq-categories"
-           value="{{ old('category', $faq?->category ?? 'General') }}"
-           class="form-control @error('category') is-invalid @enderror"
-           style="font-size:.85rem;max-width:280px"
-           placeholder="e.g. Registration">
-    <datalist id="faq-categories">
+
+    <select id="faq-category-select"
+            @if(!$isNewCategory) name="category" @endif
+            class="form-select @error('category') is-invalid @enderror"
+            style="font-size:.85rem;max-width:280px">
         @foreach($categories as $cat)
-        <option value="{{ $cat }}">
+        <option value="{{ $cat }}" {{ !$isNewCategory && $currentCategory === $cat ? 'selected' : '' }}>{{ $cat }}</option>
         @endforeach
-    </datalist>
-    @error('category')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        @if(!in_array('General', $categories, true))
+        <option value="General" {{ !$isNewCategory && $currentCategory === 'General' ? 'selected' : '' }}>General</option>
+        @endif
+        <option value="__new__" {{ $isNewCategory ? 'selected' : '' }}>+ Add new category</option>
+    </select>
+
+    <input type="text" id="faq-category-new"
+           @if($isNewCategory) name="category" @endif
+           value="{{ $isNewCategory ? $currentCategory : '' }}"
+           class="form-control mt-2 @error('category') is-invalid @enderror"
+           style="font-size:.85rem;max-width:280px;{{ $isNewCategory ? '' : 'display:none' }}"
+           placeholder="New category name">
+
+    @error('category')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
 </div>
+
+<script>
+(function () {
+    const select   = document.getElementById('faq-category-select');
+    const newInput = document.getElementById('faq-category-new');
+    if (!select || !newInput) return;
+
+    select.addEventListener('change', function () {
+        const isNew = select.value === '__new__';
+
+        newInput.style.display = isNew ? '' : 'none';
+
+        if (isNew) {
+            newInput.setAttribute('name', 'category');
+            select.removeAttribute('name');
+            newInput.focus();
+        } else {
+            select.setAttribute('name', 'category');
+            newInput.removeAttribute('name');
+        }
+    });
+})();
+</script>
 
 <div class="px-4 pt-3 pb-4">
     <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">
