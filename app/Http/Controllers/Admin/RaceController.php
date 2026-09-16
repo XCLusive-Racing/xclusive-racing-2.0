@@ -7,6 +7,7 @@ use App\Models\EventFormat;
 use App\Models\EventTag;
 use App\Models\FtpImportedFile;
 use App\Models\FtpServer;
+use App\Models\League;
 use App\Models\Media;
 use App\Models\PracticeServer;
 use App\Models\Race;
@@ -199,7 +200,10 @@ class RaceController extends Controller
     public function customCreate()
     {
         $tags    = EventTag::orderBy('name')->get();
-        $servers = FtpServer::where('active', true)->orderBy('name')->get();
+        // Standalone XCL events only ever use XCL's own servers — a league's dedicated
+        // partner server (league_id pointing at that league) must stay visible only on
+        // that league's own championship wizard, never leak into this general list.
+        $servers = FtpServer::where('active', true)->where('league_id', League::system()->id)->orderBy('name')->get();
         $accTracks = array_keys(self::TRACK_IMAGE_MAP);
 
         $trackFilenames   = array_values(self::TRACK_IMAGE_MAP);
@@ -358,7 +362,10 @@ class RaceController extends Controller
     public function importExport()
     {
         $tags    = EventTag::orderBy('name')->get();
-        $servers = FtpServer::where('active', true)->orderBy('name')->get();
+        // Standalone XCL events only ever use XCL's own servers — a league's dedicated
+        // partner server (league_id pointing at that league) must stay visible only on
+        // that league's own championship wizard, never leak into this general list.
+        $servers = FtpServer::where('active', true)->where('league_id', League::system()->id)->orderBy('name')->get();
         $formats = EventFormat::orderBy('game')->orderBy('sort_order')->get();
 
         return view('admin.races.import-export', compact('tags', 'servers', 'formats'));
@@ -405,7 +412,7 @@ class RaceController extends Controller
         $formatsByKey = EventFormat::when($request->filled('game'), fn($q) => $q->where('game', $request->game))
             ->get()->keyBy(fn($f) => strtolower($f->name))->map->id->all();
         $serversByKey = [];
-        foreach (FtpServer::where('active', true)->get() as $s) {
+        foreach (FtpServer::where('active', true)->where('league_id', League::system()->id)->get() as $s) {
             $serversByKey[strtolower($s->name)] = $s->id;
             if ($s->server_number) {
                 $serversByKey[(string) $s->server_number] = $s->id;
@@ -570,7 +577,10 @@ class RaceController extends Controller
         $tags    = EventTag::orderBy('name')->get();
         $race    = null;
 
-        $servers = FtpServer::where('active', true)->orderBy('name')->get();
+        // Standalone XCL events only ever use XCL's own servers — a league's dedicated
+        // partner server (league_id pointing at that league) must stay visible only on
+        // that league's own championship wizard, never leak into this general list.
+        $servers = FtpServer::where('active', true)->where('league_id', League::system()->id)->orderBy('name')->get();
 
         return view('admin.races.form', array_merge(
             compact('race', 'prefillDate', 'tags', 'servers'),
@@ -797,7 +807,10 @@ class RaceController extends Controller
         $tags        = EventTag::orderBy('name')->get();
         $prefillDate = null;
 
-        $servers = FtpServer::where('active', true)->orderBy('name')->get();
+        // Standalone XCL events only ever use XCL's own servers — a league's dedicated
+        // partner server (league_id pointing at that league) must stay visible only on
+        // that league's own championship wizard, never leak into this general list.
+        $servers = FtpServer::where('active', true)->where('league_id', League::system()->id)->orderBy('name')->get();
 
         return view('admin.races.form', array_merge(
             compact('race', 'prefillDate', 'tags', 'servers'),

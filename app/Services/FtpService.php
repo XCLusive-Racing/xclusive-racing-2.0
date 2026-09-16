@@ -298,6 +298,13 @@ class FtpService
     public function renameFile(string $from, string $to): bool
     {
         return $this->runFtpCommands([
+            // Many FTP servers refuse RNTO onto a filename that already exists
+            // (550) instead of silently overwriting it — which is every push
+            // after the first, since event.json etc. are always already there.
+            // Delete the destination first; the leading '*' tells libcurl to
+            // ignore this command failing (nothing to delete on the very first
+            // push), then the rename lands on a guaranteed-clear path.
+            '*DELE ' . $this->absPath($to),
             'RNFR ' . $this->absPath($from),
             'RNTO ' . $this->absPath($to),
         ]);

@@ -52,7 +52,18 @@ export function initEventsFilter() {
         });
 
         filterBtns.forEach(btn => {
-            btn.classList.toggle('xcl-filter-btn--active', btn.dataset.eventFilter === eventFilter);
+            const active = btn.dataset.eventFilter === eventFilter;
+            btn.classList.toggle('xcl-filter-btn--active', active);
+
+            // Each event-type button carries its own color (matching its format's image) —
+            // solid fill when selected, tinted outline otherwise — the plain 'All' button
+            // has no data-color and keeps the shared default/active look instead.
+            const color = btn.dataset.color;
+            if (color) {
+                btn.style.borderColor = color;
+                btn.style.background  = active ? color : `${color}22`;
+                btn.style.color       = active ? '#fff' : color;
+            }
         });
         regionBtns.forEach(btn => {
             btn.classList.toggle('xcl-filter-btn--active', btn.dataset.regionFilter === regionFilter);
