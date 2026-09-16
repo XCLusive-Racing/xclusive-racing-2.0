@@ -19,7 +19,17 @@ class ChampionshipController extends Controller
     public function index(Request $request)
     {
         if ($slug = $request->query('league')) {
-            $league = League::withoutTenantScope()->where('slug', $slug)->where('status', 'active')->firstOrFail();
+            $league = League::withoutTenantScope()->where('slug', $slug)->firstOrFail();
+
+            // A draft league isn't public yet — hidden from anonymous/ordinary visitors same as
+            // an active league's own draft championships already are, but staff (canManage()) and
+            // that league's own members can still open it here as a live preview before it goes
+            // live, e.g. via the "Preview League" button on the league edit page.
+            $user        = auth()->user();
+            $canPreview  = $user && ($user->canManage() || $user->leagueIds()->contains($league->id));
+            if ($league->status !== 'active' && !$canPreview) {
+                abort(404);
+            }
 
             $championships = Championship::withoutTenantScope()
                 ->withCount(['rounds', 'registrations'])

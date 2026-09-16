@@ -4,6 +4,10 @@
 @section('page-title', 'League — ' . $league->name)
 
 @section('page-actions')
+    <a href="{{ route('championships.index', ['league' => $league->slug]) }}" target="_blank" rel="noopener"
+       class="btn btn-sm fw-black text-uppercase text-white px-3" style="background:#7c3aed;font-size:.78rem">
+        Preview League →
+    </a>
     <a href="{{ route('admin.leagues.championships.index', $league) }}" class="btn btn-sm fw-black text-uppercase text-white px-3"
        style="background:#7c3aed;font-size:.78rem">
         Championships
