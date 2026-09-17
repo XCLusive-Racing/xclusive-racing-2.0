@@ -92,12 +92,13 @@
                         <button data-event-filter="all"
                                 class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase xcl-filter-btn--active">All</button>
                         @foreach([
-                            ['supersprint',  'Super Sprint',  '#dc2626'],
+                            ['supersprint',  'Super',         '#dc2626'],
                             ['sprint',       'Sprint',        '#f97316'],
                             ['daily',        'Daily',         '#eab308'],
                             ['intermediate', 'Intermediate',  '#16a34a'],
-                            ['fullrace',     'Full Race',     '#0d9488'],
-                            ['longrace',     'Long Race',     '#4338ca'],
+                            ['fullrace',     'Full',          '#0d9488'],
+                            ['multiclass',   'Multiclass',    '#0ea5e9'],
+                            ['longrace',     'Long',          '#4338ca'],
                             ['mini-enduro',  'Mini Enduro',   '#7c3aed'],
                             ['endurance',    'Endurance',     '#9d174d'],
                         ] as [$slug, $label, $color])

@@ -42,16 +42,12 @@ export function initImportExport(wrap) {
         return (window.__ieFormats || []).find(f => f.value === String(id || ''));
     }
 
-    // Auto-fills a row's Event Tag / Server from its own Format's server_group /
-    // default_event_tag — but only for fields the row hasn't already got a value for
-    // (an explicit CSV column or a manual pick always wins over auto-detection).
+    // Auto-fills a row's Server from its own Format's server_group — only when the row
+    // hasn't already got one (a manual pick always wins). Event Tag isn't handled here
+    // any more at all — it's never picked, the backend derives it 1:1 from the format.
     function autoFillRow(ev) {
         const fmt = formatById(ev.event_format_id);
         if (!fmt) return;
-
-        if (!ev.event_tag && fmt.default_event_tag) {
-            ev.event_tag = fmt.default_event_tag;
-        }
 
         if (!ev.ftp_server_id && fmt.server_group && ev.scheduled_at) {
             const d = new Date(ev.scheduled_at);
@@ -61,11 +57,6 @@ export function initImportExport(wrap) {
                 if (srv) ev.ftp_server_id = srv.value;
             }
         }
-    }
-
-    function tagOptions(selected) {
-        const opts = [['', '— Use shared —'], ...(window.__ieTags || []).map(t => [t.value, t.label])];
-        return opts.map(([v, label]) => `<option value="${v}" ${selected === v ? 'selected' : ''}>${esc(label)}</option>`).join('');
     }
 
     function formatOptions(selected) {
@@ -124,11 +115,6 @@ export function initImportExport(wrap) {
                        class="form-control form-control-sm" data-field="scheduled_at" required>
             </td>
             <td>
-                <select name="events[${i}][event_tag]" class="form-select form-select-sm" data-field="event_tag">
-                    ${tagOptions(ev.event_tag || '')}
-                </select>
-            </td>
-            <td>
                 <select name="events[${i}][event_format_id]" class="form-select form-select-sm" data-field="event_format_id">
                     ${formatOptions(ev.event_format_id || '')}
                 </select>
@@ -182,11 +168,19 @@ export function initImportExport(wrap) {
             lastCell.appendChild(hidden);
         });
 
+        // Multiclass (2-3 car classes, e.g. from car_class_2/car_class_3 in a CSV) — same
+        // shape RaceController::syncRaceClasses() expects, carried as one JSON blob since
+        // it's a list, not a scalar field.
+        const classesHidden = document.createElement('input');
+        classesHidden.type  = 'hidden';
+        classesHidden.name  = `events[${i}][classes_json]`;
+        classesHidden.value = JSON.stringify(ev.classes || []);
+        lastCell.appendChild(classesHidden);
+
         const titleHidden      = tr.querySelector('[data-field="title"]');
         const maxDriversHidden = tr.querySelector('[data-field="max_drivers"]');
         const trackInput       = tr.querySelector('[data-field="track"]');
         const dateInput        = tr.querySelector('[data-field="scheduled_at"]');
-        const tagInput         = tr.querySelector('[data-field="event_tag"]');
         const formatInput      = tr.querySelector('[data-field="event_format_id"]');
         const serverInput      = tr.querySelector('[data-field="ftp_server_id"]');
         const weatherInput     = tr.querySelector('[data-field="weather"]');
@@ -207,7 +201,6 @@ export function initImportExport(wrap) {
             autoFillRow(events[i]);
             render();
         });
-        tagInput.addEventListener('change', () => { events[i].event_tag = tagInput.value; });
         formatInput.addEventListener('change', () => {
             events[i].event_format_id = formatInput.value;
             autoFillRow(events[i]);
@@ -240,11 +233,11 @@ export function initImportExport(wrap) {
     function addRow() {
         events.push({
             title: '', track: '', scheduled_at: '',
-            event_tag: '', event_format_id: '', ftp_server_id: '',
+            event_format_id: '', ftp_server_id: '',
             weather: '', time_of_day: '', ambient_temp: '',
             practice_time_multiplier: '1', qualifying_time_multiplier: '1', race_time_multiplier: '1',
             weather_randomness: '', has_practice_server: '', sr_requirement: '',
-            min_rating: '', max_rating: '', car_class: '', description: '',
+            min_rating: '', max_rating: '', car_class: '', description: '', classes: [],
         });
         render();
     }
@@ -267,7 +260,7 @@ export function initImportExport(wrap) {
             'format', 'track', 'weather', 'date', 'time', 'time_of_day',
             'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier', 'race_time_multiplier',
             'weather_randomness', 'has_practice_server', 'server',
-            'sr_requirement', 'min_rating', 'max_rating', 'car_class', 'event_tag', 'description',
+            'sr_requirement', 'min_rating', 'max_rating', 'car_class', 'car_class_2', 'car_class_3', 'description',
         ];
         const lines = [header.join(',')];
 
@@ -275,13 +268,16 @@ export function initImportExport(wrap) {
             const [date, time] = (ev.scheduled_at || '').split('T');
             const format = (window.__ieFormats || []).find(f => f.value === String(ev.event_format_id || ''));
             const server = (window.__ieServers || []).find(s => s.value === String(ev.ftp_server_id || ''));
+            const classes = ev.classes || [];
 
             lines.push([
                 format?.label || '', ev.track || '', ev.weather || '', date || '', time || '', ev.time_of_day || '',
                 ev.ambient_temp ?? '', ev.practice_time_multiplier || '1', ev.qualifying_time_multiplier || '1', ev.race_time_multiplier || '1',
                 ev.weather_randomness || '', ev.has_practice_server === '1' ? 'on' : (ev.has_practice_server === '0' ? 'off' : ''),
                 server ? (server.number ?? server.label) : '',
-                ev.sr_requirement || '', ev.min_rating || '', ev.max_rating || '', ev.car_class || '', ev.event_tag || '', ev.description || '',
+                ev.sr_requirement || '', ev.min_rating || '', ev.max_rating || '',
+                classes[0]?.car_class || ev.car_class || '', classes[1]?.car_class || '', classes[2]?.car_class || '',
+                ev.description || '',
             ].map(csvCell).join(','));
         });
 
