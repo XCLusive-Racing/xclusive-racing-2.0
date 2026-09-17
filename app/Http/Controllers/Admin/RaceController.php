@@ -849,6 +849,15 @@ class RaceController extends Controller
                 : null;
         }
 
+        // A formatless (Custom) row, or a format with no default_event_tag of its own,
+        // leaves event_tag unresolved. Race::create() would otherwise insert that as an
+        // explicit NULL and trip the column's NOT NULL constraint — unset it instead so
+        // the insert omits the column and the DB's own 'daily' default applies, same as
+        // a single Custom Event created via store().
+        if (empty($data['event_tag'])) {
+            unset($data['event_tag']);
+        }
+
         return $data;
     }
 
