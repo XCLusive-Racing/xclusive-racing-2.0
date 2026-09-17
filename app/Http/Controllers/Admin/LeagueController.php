@@ -104,10 +104,10 @@ class LeagueController extends Controller
         $members = $isAdmin ? $league->memberships()->with('user')->get() : collect();
         $users   = $isAdmin ? User::orderBy('name')->get(['id', 'name']) : collect();
 
-        // A league's own server list is visible to whoever can edit the league (admin
-        // or its manager) — but the cross-league picker of XCL's other unassigned
-        // servers, and every other league's own list, stays admin-only.
-        $servers           = $canEdit ? $league->ftpServers()->orderBy('name')->get() : collect();
+        // FTP servers/credentials are XCL-staff-only now — a league manager no longer
+        // sees this league's own server list (or the cross-league unassigned picker,
+        // already admin-only below), even for their own league.
+        $servers           = $isAdmin ? $league->ftpServers()->orderBy('name')->get() : collect();
         $unassignedServers = $isAdmin ? FtpServer::withoutTenantScope()->where('league_id', League::system()->id)->orderBy('name')->get() : collect();
 
         // null = "couldn't check" (no bot token configured, or Discord unreachable),
@@ -137,16 +137,22 @@ class LeagueController extends Controller
             'banner'              => 'nullable|image|max:8192',
         ];
 
-        // A League Manager edits branding, description and links only — never the
-        // league's name/slug/status or its Discord requirement, even if the field
-        // is present in the request body. Only the rules an admin passes are ever
-        // read out of the request below.
+        // A league's own manager can now publish it themselves (draft <-> active) —
+        // user-directed 2026-09, was admin/owner-only, leaving a manager stuck on
+        // draft with no way to go live without asking XCL to flip it by hand.
+        // "archived" is deliberately excluded here for both roles — that's only
+        // reachable through archive(), which does a real soft delete.
+        if ($isAdmin || $isManager) {
+            $rules['status'] = 'required|in:draft,active';
+        }
+
+        // A League Manager otherwise edits branding, description and links only —
+        // never the league's name/slug or its Discord requirement, even if the
+        // field is present in the request body. Only the rules an admin passes are
+        // ever read out of the request below.
         if ($isAdmin) {
             $rules['name']                        = 'required|string|max:150';
             $rules['slug']                        = 'required|alpha_dash|max:150|unique:leagues,slug,' . $league->id;
-            // "archived" is deliberately excluded here — that's now only reachable
-            // through archive(), which is owner-only and does a real soft delete.
-            $rules['status']                      = 'required|in:draft,active';
             $rules['requires_discord_membership'] = 'nullable|boolean';
             $rules['discord_guild_id']            = 'nullable|string|max:32';
         }
@@ -171,14 +177,15 @@ class LeagueController extends Controller
     public function archive(Request $request, League $league)
     {
         // Archiving is a league's "delete" — the only staff action that takes a
-        // league out of use — so it's restricted to the owner role specifically,
-        // unlike everything else here which any canManage() staff can do. It's a
-        // real (Eloquent) soft delete, not just a status flag: League already had
-        // the softDeletes() column and SoftDeletes trait sitting unused. Deleting
-        // for real means every plain League:: query across the app now excludes
-        // an archived league automatically, instead of relying on every one of
-        // those call sites to remember to filter status != 'archived' itself.
-        abort_unless($request->user()->isOwner(), 403);
+        // league out of use — so it's restricted to Owner/Admin specifically,
+        // unlike everything else here which any canManage() staff (which also
+        // includes event_manager) can do. It's a real (Eloquent) soft delete, not
+        // just a status flag: League already had the softDeletes() column and
+        // SoftDeletes trait sitting unused. Deleting for real means every plain
+        // League:: query across the app now excludes an archived league
+        // automatically, instead of relying on every one of those call sites to
+        // remember to filter status != 'archived' itself.
+        abort_unless($request->user()->isOwner() || $request->user()->isAdmin(), 403);
         abort_if($league->is_system, 403, 'The XCL league cannot be archived.');
 
         $league->update(['status' => 'archived']);
@@ -210,7 +217,7 @@ class LeagueController extends Controller
     // avoids ever creating that state.
     public function destroy(Request $request, League $league)
     {
-        abort_unless($request->user()->isOwner(), 403);
+        abort_unless($request->user()->isOwner() || $request->user()->isAdmin(), 403);
         abort_if($league->is_system, 403, 'The XCL league cannot be deleted.');
         abort_unless($league->trashed(), 422, 'Archive the league before deleting it permanently.');
 
@@ -277,7 +284,7 @@ class LeagueController extends Controller
     public function unassignServer(Request $request, League $league, FtpServer $server)
     {
         $user = $request->user();
-        abort_unless($user->canManage() || $user->managesLeague($league), 403);
+        abort_unless($user->canManage(), 403);
         abort_unless($server->league_id === $league->id, 404);
 
         $server->update(['league_id' => League::system()->id]);
@@ -289,11 +296,12 @@ class LeagueController extends Controller
 
     // A league brings its own server (its own credentials, its own box) — unlike
     // assignServer above, this creates a brand new FtpServer row rather than
-    // reassigning one of XCL's existing ones, so a league manager can do it too.
+    // reassigning one of XCL's existing ones. XCL-staff-only, like every other server
+    // action — a league manager no longer sees or manages servers/credentials at all.
     public function storeServer(Request $request, League $league)
     {
         $user = $request->user();
-        abort_unless($user->canManage() || $user->managesLeague($league), 403);
+        abort_unless($user->canManage(), 403);
 
         $data = $request->validate([
             'name'                   => 'required|string|max:150',

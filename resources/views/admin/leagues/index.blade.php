@@ -122,7 +122,7 @@
                                             Restore to Draft
                                         </button>
                                     </form>
-                                    @if(auth()->user()->isOwner())
+                                    @if(auth()->user()->isOwner() || auth()->user()->isAdmin())
                                     <form action="{{ route('admin.leagues.destroy', $league) }}" method="POST" onsubmit="return false">
                                         @csrf @method('DELETE')
                                         <button type="button" class="dropdown-item fw-bold" style="color:#dc2626"
@@ -131,7 +131,7 @@
                                         </button>
                                     </form>
                                     @endif
-                                    @elseif(auth()->user()->isOwner())
+                                    @elseif(auth()->user()->isOwner() || auth()->user()->isAdmin())
                                     <form action="{{ route('admin.leagues.archive', $league) }}" method="POST" onsubmit="return false">
                                         @csrf
                                         <button type="button" class="dropdown-item fw-bold" style="color:#dc2626"

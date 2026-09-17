@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', 'League FTP Servers')
-@section('page-title', 'League FTP Servers')
+@section('title', 'League Servers')
+@section('page-title', 'League Servers')
 
 @section('content')
 

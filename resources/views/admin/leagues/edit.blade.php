@@ -79,27 +79,29 @@
                             @error('slug') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                     </div>
-
-                    <div class="mb-0">
-                        <label class="form-label">Status</label>
-                        <select name="status" class="form-select @error('status') is-invalid @enderror">
-                            <option value="draft" {{ old('status', $league->status) === 'draft' ? 'selected' : '' }}>Draft — not visible publicly</option>
-                            <option value="active" {{ old('status', $league->status) === 'active' ? 'selected' : '' }}>Active</option>
-                        </select>
-                        <div class="form-text" style="font-size:.72rem">
-                            Archiving is a separate, owner-only action from the Leagues list — not a status you set here.
-                        </div>
-                        @error('status') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
                 </div>
                 @else
                 <div class="px-4 pt-4 pb-2">
                     <p class="fw-black text-uppercase fst-italic mb-2" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Identity</p>
                     <p class="text-secondary mb-0" style="font-size:.78rem">
-                        Name, slug and status are set by XCL. You can edit branding, description and links below.
+                        Name and slug are set by XCL. You can publish your league below, and edit branding, description and links further down.
                     </p>
                 </div>
                 @endif
+
+                {{-- A league's own manager can publish it themselves now — same field,
+                     same rule, just no longer admin-only (LeagueController::update()). --}}
+                <div class="px-4 {{ $isAdmin ? 'pb-4' : 'pt-3 pb-4' }}" style="{{ $isAdmin ? '' : 'border-top:1px solid #f3f4f6' }}">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select @error('status') is-invalid @enderror">
+                        <option value="draft" {{ old('status', $league->status) === 'draft' ? 'selected' : '' }}>Draft — not visible publicly</option>
+                        <option value="active" {{ old('status', $league->status) === 'active' ? 'selected' : '' }}>Active</option>
+                    </select>
+                    <div class="form-text" style="font-size:.72rem">
+                        Archiving is a separate, {{ $isAdmin ? 'owner-only' : 'XCL-only' }} action from the Leagues list — not a status you set here.
+                    </div>
+                    @error('status') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
 
                 <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Branding</p>
@@ -336,9 +338,12 @@
         </div>
         @endif
 
+        {{-- FTP servers/credentials are XCL-staff-only — a league manager never sees this
+             card, even for their own league (see LeagueController::edit()). --}}
+        @if($isAdmin)
         <div class="admin-card mb-4">
             <div class="admin-card-header">
-                <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.9rem">FTP Servers</div>
+                <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.9rem">League Servers</div>
             </div>
             <div class="px-4 py-3">
                 <p class="text-secondary mb-3" style="font-size:.78rem">Championship rounds pushed for this league will race on one of these servers.</p>
@@ -376,7 +381,7 @@
                 </form>
             </div>
 
-            @if($isAdmin && $unassignedServers->isNotEmpty())
+            @if($unassignedServers->isNotEmpty())
             <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
                 <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Assign Server</p>
                 <form action="{{ route('admin.leagues.servers.store', $league) }}" method="POST">
@@ -397,6 +402,7 @@
             </div>
             @endif
         </div>
+        @endif
     </div>
     @endif
 </div>

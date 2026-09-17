@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\FtpServer;
+use App\Models\League;
 use App\Services\AuditLogger;
 use App\Services\Contracts\ServerConfigGenerator;
 use App\Services\FtpService;
@@ -13,9 +14,12 @@ use Illuminate\Support\Facades\DB;
 
 class FtpServerController extends Controller
 {
+    // Configuration > FTP Servers is XCL's own core server fleet (the "XCL SERVER"
+    // rolling pool) — a league's own dedicated server belongs on its own League page
+    // (League Servers) and the cross-league League Servers aggregate, not here.
     public function index()
     {
-        $servers = FtpServer::orderBy('name')->get();
+        $servers = FtpServer::where('league_id', League::system()->id)->orderBy('name')->get();
 
         return view('admin.servers.index', compact('servers'));
     }
@@ -54,10 +58,10 @@ class FtpServerController extends Controller
             'platform'                => 'required|in:pc,console,cross',
         ]);
 
-        $server = FtpServer::create($request->only(
+        $server = FtpServer::create(array_merge($request->only(
             'name', 'server_number', 'host', 'port', 'username', 'password', 'path', 'cfg_path',
             'server_type', 'reset_start_hour', 'reset_interval_minutes', 'game', 'platform'
-        ));
+        ), ['league_id' => League::system()->id]));
 
         AuditLogger::record($request->user(), $server, 'ftp_server.created', $request->only(
             'name', 'server_number', 'host', 'port', 'path', 'cfg_path', 'server_type'
