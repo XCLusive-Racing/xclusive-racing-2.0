@@ -226,6 +226,23 @@
                 </div>
                 @endif
 
+                {{-- Questions — links to the FAQ page, shown on every event regardless of status.
+                     Full width, same as Session Schedule above it, instead of squeezed into the
+                     sidebar — Registration/Practice Server shift up a slot as a result. --}}
+                <div class="xcl-event-card mb-4">
+                    <h2 class="xcl-event-card__heading">QUESTIONS?</h2>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ route('faq') }}" class="xcl-event-unreg-btn flex-fill text-center text-decoration-none">
+                            ASK A QUESTION →
+                        </a>
+                        <a href="{{ config('xcl.discord_url') }}" target="_blank" rel="noopener"
+                           class="xcl-event-unreg-btn flex-fill text-center text-decoration-none"
+                           style="border-color:rgba(88,101,242,.45);background:rgba(88,101,242,.08);color:#5865F2">
+                            JOIN OUR DISCORD →
+                        </a>
+                    </div>
+                </div>
+
                 {{-- Race Results --}}
                 @if($race->status === 'finished' && $race->raceResults->isNotEmpty())
                 @php
@@ -301,14 +318,6 @@
 
             {{-- Right: sidebar --}}
             <div class="col-12 col-lg-4">
-
-                {{-- Questions — links to the FAQ page, shown on every event regardless of status --}}
-                <div class="xcl-event-card mb-4">
-                    <h3 class="xcl-event-card__heading">QUESTIONS?</h3>
-                    <a href="{{ route('faq') }}" class="xcl-event-unreg-btn w-100 d-block text-center text-decoration-none">
-                        ASK A QUESTION →
-                    </a>
-                </div>
 
                 {{-- Team Entry (endurance races and driver-swap championship rounds) --}}
                 @auth
@@ -680,9 +689,17 @@
                         A practice server runs with the exact race conditions ahead of the event, so you can
                         learn the track and set-up before it counts.
                     </p>
+                    @php
+                        // upload_at is always a minute or two before the practice window opens
+                        // (e.g. 20:59 for a 21:00 window) — shown rounded up to the next whole
+                        // hour so it reads as a clean "before 5 PM" rather than "before 4:59 PM".
+                        // Registering exactly on that rounded hour is still comfortably before
+                        // the real (earlier) cutoff, so rounding up never actually misleads anyone.
+                        $uploadDisplay = $ps->upload_at->copy()->ceil('hour');
+                    @endphp
                     <p class="xcl-event-card__text mb-3" style="font-weight:700;color:#f472b6">
                         Register before
-                        <span data-local-time="{{ $ps->upload_at->toIso8601String() }}">{{ $ps->upload_at->timezone('Europe/London')->format('D d M, H:i T') }}</span>
+                        <span data-local-time="{{ $uploadDisplay->toIso8601String() }}">{{ $uploadDisplay->timezone('Europe/London')->format('D d M, H:i T') }}</span>
                         to get practice access. You can still register and race after that moment, you just won't be
                         able to join the practice server.
                     </p>
@@ -870,9 +887,12 @@
 document.querySelectorAll('[data-local-time]').forEach(el => {
     const date = new Date(el.dataset.localTime);
     if (isNaN(date.getTime())) return;
+    // Minutes are always :00 here (times are rounded up to the hour server-side before
+    // reaching this attribute), so they're left out of the format rather than showing
+    // a redundant "5:00 PM" everywhere.
     el.textContent = date.toLocaleString(undefined, {
         weekday: 'short', day: '2-digit', month: 'short',
-        hour: '2-digit', minute: '2-digit',
+        hour: '2-digit',
     });
 });
 </script>

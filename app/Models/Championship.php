@@ -15,7 +15,7 @@ class Championship extends Model
     use Tenantable, SoftDeletes;
 
     protected $fillable = [
-        'name', 'game', 'season', 'status', 'description', 'image', 'icon',
+        'name', 'tagline', 'game', 'season', 'status', 'description', 'image', 'icon',
         'max_drivers', 'is_multiclass', 'points_system', 'bonus_fastest_lap',
         'bonus_pole', 'drop_rounds', 'max_missed_rounds', 'missed_rounds_action',
         'missed_rounds_penalty_points', 'registration_open', 'registration_deadline',

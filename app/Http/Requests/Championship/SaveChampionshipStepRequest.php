@@ -24,6 +24,7 @@ class SaveChampionshipStepRequest extends FormRequest
 
             return array_merge([
                 'name'          => 'required|string|max:150',
+                'tagline'       => 'nullable|string|max:100',
                 'slug'          => 'required|alpha_dash|max:150|unique:championships,slug,' . $championship->id,
                 'game'          => 'required|in:acc,lmu,iracing,ac',
                 'platform'      => 'required|in:pc,console,cross',

@@ -56,10 +56,6 @@
                     <h1 class="fw-black text-white mb-0" style="font-size:clamp(1.5rem,4vw,2.5rem);line-height:1.1">{{ $championship->name }}</h1>
                 </div>
             </div>
-
-            @if($championship->description)
-            <p style="color:#9ca3af;max-width:600px;font-size:.9rem">{{ $championship->description }}</p>
-            @endif
         </div>
     </div>
 
@@ -68,6 +64,27 @@
 
             {{-- Left: standings + rounds --}}
             <div class="col-12 col-lg-8">
+
+                {{-- About — tagline + rich-text description, moved out of the hero so the
+                     banner stays clean, and shown here instead (same small-box treatment as
+                     an event's own "About This Event" card). --}}
+                @if($championship->tagline || $championship->description)
+                <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
+                    <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
+                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">About This Championship</h2>
+                    </div>
+                    <div class="px-4 py-3">
+                        @if($championship->tagline)
+                        <p class="fw-bold text-white mb-2" style="font-size:1rem">{{ $championship->tagline }}</p>
+                        @endif
+                        @if($championship->description)
+                        <div style="color:#9ca3af;font-size:.9rem;line-height:1.7">
+                            {!! Illuminate\Support\Str::markdown($championship->description, ['renderer' => ['soft_break' => "<br />\n"]]) !!}
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
 
                 {{-- Standings --}}
                 @php
