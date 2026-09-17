@@ -87,6 +87,7 @@
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li class="d-xcl-none"><a class="xcl-dropdown-item" href="{{ url('/#about') }}">OVERVIEW</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ url('/#partners') }}">PARTNERS</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('faq') }}">FAQ</a></li>
                     </ul>
                 </li>
 
@@ -165,7 +166,7 @@
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li><a class="xcl-dropdown-item" href="{{ route('drivers.index') }}">LEADERBOARD</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('results.index') }}">RESULTS</a></li>
-                        <li><a class="xcl-dropdown-item" href="{{ route('bop.index') }}">BOPs</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('bop.index') }}">BOP</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('reports.index') }}">REPORTS</a></li>
                         @auth
                         <li><a class="xcl-dropdown-item" href="{{ route('racing-teams.index') }}">MY TEAM</a></li>
