@@ -18,6 +18,12 @@ export function initImportExport(wrap) {
         ['', '— Not set —'], ['dry', 'Dry'], ['wet', 'Wet'], ['mixed', 'Mixed'], ['random', 'Random'],
     ];
 
+    const RATING_OPTIONS = [
+        ['', '—'], ['all', 'All'], ['rookie', 'Rookie'], ['bronze', 'Bronze'],
+        ['silver', 'Silver'], ['gold', 'Gold'], ['platinum', 'Platinum'], ['alien', 'Alien'],
+    ];
+    const SR_OPTIONS = [['', '—'], ['3', '3'], ['4', '4'], ['5', '5'], ['6', '6'], ['7', '7'], ['8', '8'], ['9', '9']];
+
     let events = [];
 
     function esc(str) {
@@ -100,6 +106,20 @@ export function initImportExport(wrap) {
         const weatherOptions = WEATHER_OPTIONS.map(([v, label]) =>
             `<option value="${v}" ${ev.weather === v ? 'selected' : ''}>${label}</option>`).join('');
 
+        const [datePart, timePart] = (ev.scheduled_at || '').split('T');
+        const classes = ev.classes || [];
+        // Read-only preview only — GT3 (+1) for a 2-class multiclass row, etc. The real
+        // submitted value is the hidden car_class field below; this span never has a
+        // `name`, so it can't itself corrupt what actually gets sent.
+        const carClassDisplay = ev.car_class
+            ? esc(ev.car_class) + (classes.length > 1 ? ` <span style="color:#9ca3af">+${classes.length - 1}</span>` : '')
+            : '<span style="color:#9ca3af">—</span>';
+
+        const ratingOptions = (selected) => RATING_OPTIONS
+            .map(([v, label]) => `<option value="${v}" ${selected === v ? 'selected' : ''}>${label}</option>`).join('');
+        const srOptions = (selected) => SR_OPTIONS
+            .map(([v, label]) => `<option value="${v}" ${selected === v ? 'selected' : ''}>${label}</option>`).join('');
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td class="ps-4 text-secondary fw-bold" style="font-size:.8rem">${i + 1}</td>
@@ -110,9 +130,15 @@ export function initImportExport(wrap) {
                        class="form-control form-control-sm" data-field="track" required>
             </td>
             <td>
-                <input type="text" name="events[${i}][scheduled_at]" value="${esc(ev.scheduled_at)}"
-                       data-flatpickr data-min-today="true"
-                       class="form-control form-control-sm" data-field="scheduled_at" required>
+                <input type="hidden" name="events[${i}][scheduled_at]" data-field="scheduled_at" value="${esc(ev.scheduled_at)}">
+                <input type="text" value="${esc(datePart || '')}"
+                       data-flatpickr="date" data-min-today="true"
+                       class="form-control form-control-sm" data-field="date_part" required>
+            </td>
+            <td>
+                <input type="text" value="${esc(timePart || '')}"
+                       data-flatpickr="time"
+                       class="form-control form-control-sm" data-field="time_part" required>
             </td>
             <td>
                 <select name="events[${i}][event_format_id]" class="form-select form-select-sm" data-field="event_format_id">
@@ -146,6 +172,25 @@ export function initImportExport(wrap) {
             <td>
                 ${timeMultiplierSelect(i, 'race_time_multiplier', ev.race_time_multiplier)}
             </td>
+            <td>
+                <select name="events[${i}][min_rating]" class="form-select form-select-sm" data-field="min_rating" style="font-size:.72rem;padding:.25rem .3rem">
+                    ${ratingOptions(ev.min_rating || '')}
+                </select>
+            </td>
+            <td>
+                <select name="events[${i}][sr_requirement]" class="form-select form-select-sm" data-field="sr_requirement" style="font-size:.72rem;padding:.25rem .3rem">
+                    ${srOptions(ev.sr_requirement || '')}
+                </select>
+            </td>
+            <td>
+                <select name="events[${i}][max_rating]" class="form-select form-select-sm" data-field="max_rating" style="font-size:.72rem;padding:.25rem .3rem">
+                    ${ratingOptions(ev.max_rating || '')}
+                </select>
+            </td>
+            <td>
+                <input type="hidden" name="events[${i}][car_class]" data-field="car_class" value="${esc(ev.car_class || '')}">
+                <span style="font-size:.72rem;white-space:nowrap">${carClassDisplay}</span>
+            </td>
             <td class="pe-4">
                 <button type="button" data-remove
                         class="btn btn-sm d-flex align-items-center justify-content-center"
@@ -160,7 +205,7 @@ export function initImportExport(wrap) {
         // inputs in the last cell, preserved on submit exactly as imported. Edit them
         // by fixing the CSV and re-uploading, not in this preview.
         const lastCell = tr.querySelector('td:last-child');
-        ['weather_randomness', 'has_practice_server', 'sr_requirement', 'min_rating', 'max_rating', 'car_class', 'description'].forEach(field => {
+        ['weather_randomness', 'has_practice_server', 'description'].forEach(field => {
             const hidden = document.createElement('input');
             hidden.type  = 'hidden';
             hidden.name  = `events[${i}][${field}]`;
@@ -174,13 +219,15 @@ export function initImportExport(wrap) {
         const classesHidden = document.createElement('input');
         classesHidden.type  = 'hidden';
         classesHidden.name  = `events[${i}][classes_json]`;
-        classesHidden.value = JSON.stringify(ev.classes || []);
+        classesHidden.value = JSON.stringify(classes);
         lastCell.appendChild(classesHidden);
 
         const titleHidden      = tr.querySelector('[data-field="title"]');
         const maxDriversHidden = tr.querySelector('[data-field="max_drivers"]');
         const trackInput       = tr.querySelector('[data-field="track"]');
-        const dateInput        = tr.querySelector('[data-field="scheduled_at"]');
+        const scheduledHidden  = tr.querySelector('[data-field="scheduled_at"]');
+        const dateInput        = tr.querySelector('[data-field="date_part"]');
+        const timeInput2       = tr.querySelector('[data-field="time_part"]');
         const formatInput      = tr.querySelector('[data-field="event_format_id"]');
         const serverInput      = tr.querySelector('[data-field="ftp_server_id"]');
         const weatherInput     = tr.querySelector('[data-field="weather"]');
@@ -189,6 +236,9 @@ export function initImportExport(wrap) {
         const practiceMultInput   = tr.querySelector('[data-field="practice_time_multiplier"]');
         const qualifyingMultInput = tr.querySelector('[data-field="qualifying_time_multiplier"]');
         const raceMultInput       = tr.querySelector('[data-field="race_time_multiplier"]');
+        const minRatingInput      = tr.querySelector('[data-field="min_rating"]');
+        const srRequirementInput  = tr.querySelector('[data-field="sr_requirement"]');
+        const maxRatingInput      = tr.querySelector('[data-field="max_rating"]');
 
         trackInput.addEventListener('input', () => {
             events[i].track = trackInput.value;
@@ -196,8 +246,17 @@ export function initImportExport(wrap) {
             titleHidden.value = trackInput.value;
             maxDriversHidden.value = maxDriversForTrack(trackInput.value);
         });
+        function recombineDateTime() {
+            events[i].scheduled_at = dateInput.value && timeInput2.value ? `${dateInput.value}T${timeInput2.value}` : '';
+            scheduledHidden.value = events[i].scheduled_at;
+        }
         dateInput.addEventListener('change', () => {
-            events[i].scheduled_at = dateInput.value;
+            recombineDateTime();
+            autoFillRow(events[i]);
+            render();
+        });
+        timeInput2.addEventListener('change', () => {
+            recombineDateTime();
             autoFillRow(events[i]);
             render();
         });
@@ -213,6 +272,9 @@ export function initImportExport(wrap) {
         practiceMultInput.addEventListener('change', () => { events[i].practice_time_multiplier = practiceMultInput.value; });
         qualifyingMultInput.addEventListener('change', () => { events[i].qualifying_time_multiplier = qualifyingMultInput.value; });
         raceMultInput.addEventListener('change', () => { events[i].race_time_multiplier = raceMultInput.value; });
+        minRatingInput.addEventListener('change', () => { events[i].min_rating = minRatingInput.value; });
+        srRequirementInput.addEventListener('change', () => { events[i].sr_requirement = srRequirementInput.value; });
+        maxRatingInput.addEventListener('change', () => { events[i].max_rating = maxRatingInput.value; });
 
         tr.querySelector('[data-remove]').addEventListener('click', () => {
             events.splice(i, 1);
