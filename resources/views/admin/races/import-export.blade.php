@@ -54,7 +54,7 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
 <div class="row g-4 align-items-start">
 
     {{-- ── Export ─────────────────────────────────────────────────────────── --}}
-    <div class="col-12 col-lg-5">
+    <div class="col-12 col-lg-4">
         <div class="admin-card mb-4">
             <div class="px-4 pt-4 pb-2">
                 <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Blank Template</p>
@@ -164,7 +164,7 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
     </div>
 
     {{-- ── Import ─────────────────────────────────────────────────────────── --}}
-    <div class="col-12 col-lg-7">
+    <div class="col-12 col-lg-8">
         <div data-import-export-wrap data-ie-import-url="{{ route('admin.races.bulk-import-csv') }}">
 
             <div class="admin-card mb-4">
@@ -227,16 +227,21 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
                                 <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
                                     <tr>
                                         <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:36px">#</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Track</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:190px">Date &amp; Time (BST/GMT)</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:220px">Track</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:120px">Date (BST/GMT)</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:80px">Time</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:150px">Format</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:150px">Server</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:120px">Weather</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:120px">In-game Time</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:100px">Amb. Temp</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:80px">Prac. ×</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:80px">Qual. ×</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:80px">Race ×</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:110px">In-game Time</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Amb. Temp</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:75px">Prac. ×</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:75px">Qual. ×</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:75px">Race ×</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Min Rating</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:70px">SR</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Max Rating</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:80px">Car Class</th>
                                         <th class="pe-4" style="width:40px"></th>
                                     </tr>
                                 </thead>
