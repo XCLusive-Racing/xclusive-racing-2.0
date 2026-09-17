@@ -103,7 +103,7 @@ class ChampionshipWizardController extends Controller
         abort_unless(array_key_exists($step, ChampionshipSettingsSchema::STEPS) && $step !== 'review', 404);
 
         $before = $step === 'basics'
-            ? $championship->only(['name', 'slug', 'game', 'platform', 'visibility'])
+            ? $championship->only(['name', 'tagline', 'slug', 'game', 'platform', 'visibility'])
             : $championship->settings->toArray();
 
         if ($step === 'basics') {

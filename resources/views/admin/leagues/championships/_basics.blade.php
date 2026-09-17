@@ -14,6 +14,17 @@
 </div>
 
 <div class="row g-3 mb-3">
+    <div class="col-12">
+        <label class="form-label">Tagline <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
+        <input type="text" name="tagline" value="{{ old('tagline', $championship->tagline) }}" maxlength="100"
+               class="form-control @error('tagline') is-invalid @enderror"
+               placeholder="A short line shown under the name, e.g. \"The premier GT3 series on console\"">
+        <div class="form-text" style="font-size:.72rem;color:#9ca3af">Plain text, max 100 characters — shown right under the championship name.</div>
+        @error('tagline') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
     <div class="col-sm-4">
         <label class="form-label">Game</label>
         <select name="game" class="form-select @error('game') is-invalid @enderror">
