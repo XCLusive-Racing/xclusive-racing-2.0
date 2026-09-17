@@ -69,6 +69,15 @@
                         <a href="{{ route('admin.leagues.championships.wizard', [$league, $c, 'basics']) }}" class="fw-bold" style="color:#7c3aed;font-size:.8rem">
                             Edit
                         </a>
+                        @can('delete', $c)
+                        <form action="{{ route('admin.leagues.championships.destroy', [$league, $c]) }}" method="POST" class="d-inline" onsubmit="return false">
+                            @csrf @method('DELETE')
+                            <button type="button" class="btn btn-link fw-bold p-0 ms-3" style="color:#dc2626;font-size:.8rem"
+                                    onclick="xcDeleteSubmit(this.closest('form'), 'Remove {{ addslashes($c->name) }}? Its rounds, registrations and results are kept but the championship itself will no longer be listed.')">
+                                Remove
+                            </button>
+                        </form>
+                        @endcan
                     </td>
                 </tr>
                 @endforeach

@@ -72,6 +72,26 @@ class ChampionshipWizardController extends Controller
         return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'basics']);
     }
 
+    // User-directed 2026-09: "add the option to be able to remove your own
+    // championships in the admin panel championships overview" -- there was
+    // previously no way to remove one at all, even though ChampionshipPolicy
+    // already had a delete() gate (canManage() or the league's own manager)
+    // sitting unused. A soft delete, like League's own archive() -- reversible,
+    // and rounds/registrations/results stay intact and simply hang off a
+    // trashed parent rather than being destroyed outright.
+    public function destroy(Request $request, League $league, Championship $championship)
+    {
+        $this->assertLeagueOfInterest($request, $league, $championship);
+        Gate::authorize('delete', $championship);
+
+        $name = $championship->name;
+        $championship->delete();
+
+        AuditLogger::record($request->user(), $championship, 'championship.deleted', null, $league->id);
+
+        return redirect()->route('admin.leagues.championships.index', $league)->with('success', $name . ' has been removed.');
+    }
+
     public function edit(Request $request, League $league, Championship $championship, string $step)
     {
         $this->assertLeagueOfInterest($request, $league, $championship);
