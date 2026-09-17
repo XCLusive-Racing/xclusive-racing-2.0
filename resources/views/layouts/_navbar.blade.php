@@ -74,6 +74,7 @@
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav mx-auto gap-md-5">
                 <li class="nav-item"><a class="nav-link" href="{{ url('/#about') }}">ABOUT</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ route('faq') }}">FAQ</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ route('team') }}">TEAM</a></li>
                 <li class="nav-item position-relative" data-dropdown>
                     <div class="d-flex align-items-center">

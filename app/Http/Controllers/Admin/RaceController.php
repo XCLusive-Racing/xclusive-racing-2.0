@@ -35,11 +35,14 @@ class RaceController extends Controller
     // and re-import cleanly. `game` isn't here — a batch's game is the page's own shared
     // selector, same as today, not a per-row column (every other column already has a
     // per-row/shared-default split; game doesn't need a third way to set it).
+    // event_tag isn't here — it's never picked by hand, it always auto-follows whichever
+    // format the row resolves to (see deriveFormatFields()), so there's nothing for a
+    // column to set.
     public const CSV_COLUMNS = [
         'format', 'track', 'weather', 'date', 'time', 'time_of_day',
         'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier', 'race_time_multiplier',
         'weather_randomness', 'has_practice_server', 'server',
-        'sr_requirement', 'min_rating', 'max_rating', 'car_class', 'event_tag', 'description',
+        'sr_requirement', 'min_rating', 'max_rating', 'car_class', 'car_class_2', 'car_class_3', 'description',
     ];
 
     public function index()
@@ -278,6 +281,7 @@ class RaceController extends Controller
             'events.*.max_rating'      => 'nullable|string|in:all,rookie,bronze,silver,gold,platinum,alien',
             'events.*.description'     => 'nullable|string',
             'events.*.has_practice_server' => 'nullable|boolean',
+            'events.*.classes_json'    => 'nullable|string',
         ]);
 
         $shared = [
@@ -312,13 +316,22 @@ class RaceController extends Controller
         // fields (the day/week generator, which has no per-row concept of these).
         $eventData     = [];
         $rowServerIds  = [];
+        $rowClasses    = [];
         foreach ($request->events as $i => $event) {
+            // No longer required up front — deriveFormatFields() below fills it in from
+            // the row's own resolved format once that's known, or it stays null for a
+            // formatless row (a CSV row's own value, if it somehow still has one, is only
+            // a last-resort fallback).
             $eventTag = ($event['event_tag'] ?? null) ?: $shared['event_tag'];
-            if (!$eventTag) {
-                return back()->withInput()->withErrors(['events.' . $i . '.event_tag' => 'Row ' . ($i + 1) . ': no Event Tag set (neither per-row nor shared).']);
-            }
 
             $rowServerIds[$i] = ($event['ftp_server_id'] ?? null) ?: $request->ftp_server_id;
+
+            // A row's own classes_json (2+ car classes → multiclass) always wins over the
+            // shared/page-level one below — a CSV import can mix multiclass and single-class
+            // rows in one file, unlike the day/week generator, which only ever has one
+            // shared multiclass setup for the whole batch.
+            $classes = json_decode($event['classes_json'] ?? '', true);
+            $rowClasses[$i] = is_array($classes) ? $classes : [];
 
             $eventData[] = $this->deriveFormatFields($this->normalizeRainLevel(array_merge($shared, [
                 'title'            => $event['title'],
@@ -339,6 +352,7 @@ class RaceController extends Controller
                 'min_rating'       => ($event['min_rating'] ?? null) ?: $shared['min_rating'],
                 'max_rating'       => ($event['max_rating'] ?? null) ?: $shared['max_rating'],
                 'description'      => ($event['description'] ?? null) ?: $shared['description'],
+                'is_multiclass'    => count($rowClasses[$i]) > 1 || $request->boolean('is_multiclass'),
                 // '0' is a meaningful explicit "off" here, not "unset" — unlike the
                 // ?: fallback used above, so it isn't silently swallowed back to the
                 // shared checkbox the way a falsy string would be everywhere else.
@@ -379,10 +393,16 @@ class RaceController extends Controller
             $races[] = Race::create($data);
         }
 
-        if ($request->boolean('is_multiclass')) {
-            $classesJson = json_decode($request->input('classes_json', '[]'), true) ?: [];
-            foreach ($races as $race) {
-                $this->syncRaceClasses($request, $race);
+        // Each row's own classes (e.g. from car_class_2/car_class_3 in a CSV) win over the
+        // shared/page-level multiclass setup for that race; a row with none falls back to
+        // the shared one when the page-level multiclass toggle is on.
+        $sharedClasses = $request->boolean('is_multiclass')
+            ? (json_decode($request->input('classes_json', '[]'), true) ?: [])
+            : [];
+        foreach ($races as $i => $race) {
+            $classes = $rowClasses[$i] ?: $sharedClasses;
+            if ($classes) {
+                $this->syncRaceClasses($classes, $race);
             }
         }
 
@@ -450,10 +470,6 @@ class RaceController extends Controller
         }
 
         // Lookup maps for the optional per-row overrides, keyed lowercase for case-insensitive matching.
-        $tagsByKey = EventTag::all()->flatMap(fn($t) => [
-            strtolower($t->slug) => $t->slug,
-            strtolower($t->name) => $t->slug,
-        ])->all();
         $formatsByKey = EventFormat::when($request->filled('game'), fn($q) => $q->where('game', $request->game))
             ->get()->keyBy(fn($f) => strtolower($f->name))->map->id->all();
         $serversByKey = [];
@@ -513,19 +529,16 @@ class RaceController extends Controller
             $qualifyingTimeMultiplier = $this->parseTimeMultiplierColumn($line, $colIndex, 'qualifying_time_multiplier', $lineNum, $errors);
             $raceTimeMultiplier       = $this->parseTimeMultiplierColumn($line, $colIndex, 'race_time_multiplier', $lineNum, $errors);
 
-            $eventTagSlug = '';
-            $rawTag = isset($colIndex['event_tag']) ? trim($line[$colIndex['event_tag']] ?? '') : '';
-            if ($rawTag !== '') {
-                $eventTagSlug = $tagsByKey[strtolower($rawTag)] ?? '';
-                if ($eventTagSlug === '') {
-                    $errors[] = "Row {$lineNum}: unknown event_tag \"{$rawTag}\" — using the shared default.";
-                }
-            }
-
             $formatId = '';
             $rawFormat = isset($colIndex['format']) ? trim($line[$colIndex['format']] ?? '') : '';
             if ($rawFormat !== '') {
                 $formatId = $formatsByKey[strtolower($rawFormat)] ?? '';
+                // "Multiclass Race" for the format named just "Multiclass", "Endurance Race"
+                // for "Endurance", etc. — a trailing " race" is dropped and retried once
+                // before giving up, rather than requiring the exact name only.
+                if ($formatId === '') {
+                    $formatId = $formatsByKey[preg_replace('/\s+race$/i', '', strtolower($rawFormat))] ?? '';
+                }
                 if ($formatId === '') {
                     $errors[] = "Row {$lineNum}: unknown format \"{$rawFormat}\" — using the shared default.";
                 }
@@ -535,6 +548,12 @@ class RaceController extends Controller
             $rawServer = isset($colIndex['server']) ? trim($line[$colIndex['server']] ?? '') : '';
             if ($rawServer !== '') {
                 $serverId = $serversByKey[strtolower($rawServer)] ?? '';
+                // A server's full display name ("XCL SERVER 1 - Playstation 5 & Xbox Series
+                // S/X") is easy to mistype/abbreviate — fall back to just the leading server
+                // number ("XCL SERVER 1", "Server 1", "1") before giving up on it entirely.
+                if ($serverId === '' && preg_match('/(\d+)/', $rawServer, $m)) {
+                    $serverId = $serversByKey[$m[1]] ?? '';
+                }
                 if ($serverId === '') {
                     $errors[] = "Row {$lineNum}: unknown server \"{$rawServer}\" — using the shared default.";
                 }
@@ -558,10 +577,20 @@ class RaceController extends Controller
                 }
             }
 
+            // Accepts "5", "5.00" or the European "5,00" alike, and 0 (or blank) means "no
+            // requirement" rather than an error — matching how the field reads elsewhere
+            // ("Standard is just open"). Anything else numeric is rounded to the nearest
+            // whole tier and clamped into 3-9, rather than rejected outright.
             $srRequirement = isset($colIndex['sr_requirement']) ? trim($line[$colIndex['sr_requirement']] ?? '') : '';
-            if ($srRequirement !== '' && !in_array($srRequirement, ['3','4','5','6','7','8','9'], true)) {
-                $errors[] = "Row {$lineNum}: invalid sr_requirement \"{$srRequirement}\" (expected a whole number 3-9) — ignored.";
-                $srRequirement = '';
+            if ($srRequirement !== '') {
+                $normalized = str_replace(',', '.', $srRequirement);
+                if (!is_numeric($normalized)) {
+                    $errors[] = "Row {$lineNum}: invalid sr_requirement \"{$srRequirement}\" — ignored.";
+                    $srRequirement = '';
+                } else {
+                    $num = (float) $normalized;
+                    $srRequirement = $num <= 0 ? '' : (string) max(3, min(9, (int) round($num)));
+                }
             }
 
             $ratingValues = ['all', 'rookie', 'bronze', 'silver', 'gold', 'platinum', 'alien'];
@@ -579,11 +608,32 @@ class RaceController extends Controller
             $carClass    = isset($colIndex['car_class']) ? trim($line[$colIndex['car_class']] ?? '') : '';
             $description = isset($colIndex['description']) ? trim($line[$colIndex['description']] ?? '') : '';
 
+            // Multiclass: car_class_2 (and optionally car_class_3) turns this row into a
+            // multiclass race with one RaceClass per column. Restrictions aren't asked for
+            // per class in the CSV yet — Class 1 defaults to a Bronze+ minimum rating, every
+            // other class is left fully open, and an event manager can tighten either by
+            // hand afterwards from the race's own edit page.
+            $carClass2 = isset($colIndex['car_class_2']) ? trim($line[$colIndex['car_class_2']] ?? '') : '';
+            $carClass3 = isset($colIndex['car_class_3']) ? trim($line[$colIndex['car_class_3']] ?? '') : '';
+            $classes   = [];
+            if ($carClass !== '' && $carClass2 !== '') {
+                $classColors = ['GT3' => '#7c3aed', 'GT4' => '#2563eb', 'GT2' => '#db2777', 'TCX' => '#16a34a', 'GTC' => '#ea580c'];
+                foreach (array_values(array_filter([$carClass, $carClass2, $carClass3], fn ($c) => $c !== '')) as $idx => $cls) {
+                    $classes[] = [
+                        'name'           => $cls,
+                        'car_class'      => $cls,
+                        'color'          => $classColors[strtoupper($cls)] ?? '#6b7280',
+                        'min_rating'     => $idx === 0 ? 'bronze' : null,
+                        'sr_requirement' => null,
+                        'max_drivers'    => null,
+                    ];
+                }
+            }
+
             $rows[] = [
                 'title'            => $track,
                 'track'            => $track,
                 'scheduled_at'     => $dt->format('Y-m-d\TH:i'),
-                'event_tag'        => $eventTagSlug,
                 'event_format_id'  => $formatId,
                 'ftp_server_id'    => $serverId,
                 'weather'          => $weather,
@@ -599,6 +649,7 @@ class RaceController extends Controller
                 'max_rating'           => $maxRating,
                 'car_class'            => $carClass,
                 'description'          => $description,
+                'classes'              => $classes,
             ];
         }
         fclose($handle);
@@ -615,12 +666,15 @@ class RaceController extends Controller
     private function parseTimeMultiplierColumn(array $line, array $colIndex, string $column, int $lineNum, array &$errors): string
     {
         $value = isset($colIndex[$column]) ? trim($line[$colIndex[$column]] ?? '') : '';
-        if ($value !== '' && (!ctype_digit($value) || (int) $value < 1 || (int) $value > 24)) {
+        // "1x" / "2×" (how the multiplier reads everywhere else on the site, e.g. the
+        // Create Race form's own "×" dropdown) is just as valid as the bare number.
+        $stripped = preg_replace('/\s*[x×]\s*$/iu', '', $value);
+        if ($value !== '' && (!ctype_digit($stripped) || (int) $stripped < 1 || (int) $stripped > 24)) {
             $errors[] = "Row {$lineNum}: invalid {$column} \"{$value}\" — ignored.";
-            $value = '';
+            return '';
         }
 
-        return $value;
+        return $stripped;
     }
 
     // Exports races in a date range (optionally filtered to one game) back out in the
@@ -636,7 +690,7 @@ class RaceController extends Controller
             ->where('is_endurance', false)
             ->whereNotNull('event_format_id')
             ->where('scheduled_at', '>=', now())
-            ->with(['eventFormat', 'ftpServer'])
+            ->with(['eventFormat', 'ftpServer', 'raceClasses'])
             ->orderBy('scheduled_at')
             ->get();
 
@@ -674,6 +728,10 @@ class RaceController extends Controller
         $local  = $race->scheduledAtUk();
         $format = $race->eventFormat;
         $server = $race->ftpServer;
+        // Multiclass races carry their classes on race_classes, in grid order, instead of
+        // the single car_class column — export those back out as car_class/_2/_3 so the
+        // row round-trips through bulkImportCsv() as the same multiclass event.
+        $classCars = $race->is_multiclass ? $race->raceClasses->pluck('car_class')->values() : collect();
 
         return [
             'format'                      => $format?->name,
@@ -692,8 +750,9 @@ class RaceController extends Controller
             'sr_requirement'              => $race->sr_requirement,
             'min_rating'                  => $race->min_rating,
             'max_rating'                  => $race->max_rating,
-            'car_class'                   => $race->car_class,
-            'event_tag'                   => $race->event_tag,
+            'car_class'                   => $classCars->get(0) ?? $race->car_class,
+            'car_class_2'                 => $classCars->get(1),
+            'car_class_3'                 => $classCars->get(2),
             'description'                 => $race->description,
         ];
     }
@@ -768,6 +827,13 @@ class RaceController extends Controller
                 $data['practice_duration']   = $fmt->practice_mins ?: null;
                 $data['qualifying_duration'] = $fmt->quali_mins ?: null;
                 $data['race_duration']       = $fmt->race1_mins ?: null;
+                // event_tag is never picked by hand any more — it always follows the
+                // chosen format 1:1 (matching the Events page filter list exactly), so
+                // this is the single source of truth for it, overriding anything a form
+                // field or CSV column might still have carried in.
+                if ($fmt->default_event_tag) {
+                    $data['event_tag'] = $fmt->default_event_tag;
+                }
 
                 $formatSlug     = Str::slug($fmt->name, '_');
                 $formatImageKey = self::FORMAT_IMAGE_OVERRIDES[$formatSlug] ?? $formatSlug;
@@ -829,7 +895,10 @@ class RaceController extends Controller
                 'required', 'date',
                 $request->boolean('has_practice_server') ? new PracticeWindowNotOverlapping() : null,
             ]),
-            'event_tag'            => 'required|exists:event_tags,slug',
+            // Auto-derived from the format's own default_event_tag in deriveFormatFields()
+            // below — never picked by hand. Stays nullable for a Custom Event, which has
+            // no format to derive one from.
+            'event_tag'            => 'nullable|exists:event_tags,slug',
             'event_format_id'      => 'nullable|exists:event_formats,id',
             'title'                => 'required_without:event_format_id|string|max:255',
             'duration_key'         => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
@@ -913,7 +982,7 @@ class RaceController extends Controller
 
         $race = Race::create($data);
 
-        $this->syncRaceClasses($request, $race);
+        $this->syncRaceClasses(json_decode($request->input('classes_json') ?: '[]', true) ?: [], $race);
 
         $practiceWarning = (new PracticeServerSessionManager())
             ->sync($race, $data['has_practice_server']);
@@ -960,7 +1029,10 @@ class RaceController extends Controller
                 $request->boolean('has_practice_server') ? new PracticeWindowNotOverlapping($race->id) : null,
             ]),
             'status'               => 'required|in:open,closed,finished',
-            'event_tag'            => 'required|exists:event_tags,slug',
+            // Auto-derived from the format's own default_event_tag in deriveFormatFields()
+            // below — never picked by hand. Stays nullable for a Custom Event, which has
+            // no format to derive one from.
+            'event_tag'            => 'nullable|exists:event_tags,slug',
             'event_format_id'      => 'nullable|exists:event_formats,id',
             'title'                => 'required_without:event_format_id|string|max:255',
             'duration_key'         => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
@@ -1051,7 +1123,7 @@ class RaceController extends Controller
 
         $race->update($data);
 
-        $this->syncRaceClasses($request, $race);
+        $this->syncRaceClasses(json_decode($request->input('classes_json') ?: '[]', true) ?: [], $race);
 
         $practiceWarning = (new PracticeServerSessionManager())
             ->sync($race, $data['has_practice_server']);
@@ -1242,15 +1314,9 @@ class RaceController extends Controller
         return back()->with('config_success', '"' . $request->input('file') . '" reset to auto-generated.');
     }
 
-    private function syncRaceClasses(Request $request, Race $race): void
+    private function syncRaceClasses(array $classes, Race $race): void
     {
-        $classesJson = $request->input('classes_json');
-        if (!$classesJson) {
-            return;
-        }
-
-        $classes = json_decode($classesJson, true);
-        if (!is_array($classes)) {
+        if (!$classes) {
             return;
         }
 

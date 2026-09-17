@@ -44,7 +44,6 @@ $gameLabels = ['acc' => 'ACC Console', 'lmu' => 'Le Mans Ultimate', 'iracing' =>
 // Built here (not inline in @json() below) since Blade's @json() directive splits its
 // argument on every top-level comma — an array literal with more than 2 keys silently
 // gets truncated. A bare variable reference has zero commas, so it's always safe.
-$ieTagsForJs = $tags->map(fn($t) => ['value' => $t->slug, 'label' => $t->name]);
 $ieFormatsForJs = $formats->map(fn($f) => [
     'value' => (string) $f->id, 'label' => $f->name, 'game' => $f->game,
     'server_group' => $f->server_group, 'default_event_tag' => $f->default_event_tag,
@@ -99,6 +98,7 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
                 <p class="text-secondary mb-0" style="font-size:.78rem">
                     First row must be a header row with these column names (any order — extra columns are ignored).
                     <strong>game</strong> isn't a column — it's the shared Game selector on this page, same for every row in one file.
+                    <strong>event_tag</strong> isn't a column either — it's never picked by hand, it always auto-follows the row's <strong>format</strong> one-to-one.
                 </p>
             </div>
             <div class="table-responsive">
@@ -116,21 +116,22 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
                             ['track', true, 'Exact track name — see the list below', 'Silverstone'],
                             ['date', true, 'YYYY-MM-DD', '2026-09-01'],
                             ['time', true, 'HH:MM, 24h, BST/GMT (real-world scheduled time)', '20:00'],
-                            ['format', false, 'Exact format name — also auto-fills event_tag/server below when they\'re left blank', 'Daily Race'],
+                            ['format', false, 'Exact format name (a trailing " Race", e.g. "Multiclass Race", is also accepted) — also auto-fills server below when it\'s left blank, and always sets the event tag', 'Daily Race'],
                             ['weather', false, 'dry / wet / mixed / random', 'dry'],
                             ['time_of_day', false, 'HH:MM, 24h — in-game start time', '21:00'],
                             ['ambient_temp', false, 'Whole number, °C', '20'],
-                            ['practice_time_multiplier', false, '1-24, defaults to 1×', '2'],
-                            ['qualifying_time_multiplier', false, '1-24, defaults to 1×', '2'],
-                            ['race_time_multiplier', false, '1-24, defaults to 1×', '1'],
+                            ['practice_time_multiplier', false, '1-24, "x"/"×" suffix optional, defaults to 1×', '2x'],
+                            ['qualifying_time_multiplier', false, '1-24, "x"/"×" suffix optional, defaults to 1×', '2x'],
+                            ['race_time_multiplier', false, '1-24, "x"/"×" suffix optional, defaults to 1×', '1x'],
                             ['weather_randomness', false, '0-7, or "random"', 'random'],
                             ['has_practice_server', false, 'on / off', 'on'],
-                            ['server', false, 'Server name or number — leave blank to use the server the format auto-fills', '2'],
-                            ['sr_requirement', false, 'Whole number 3-9 (minimum Safety Rating) — leave blank for none', '5'],
+                            ['server', false, 'Server name or number — a leading number like "Server 1" also matches — leave blank to use the server the format auto-fills', '2'],
+                            ['sr_requirement', false, 'Whole number 3-9 (minimum Safety Rating), comma or dot decimals accepted — 0 or blank means none', '5'],
                             ['min_rating', false, 'rookie / bronze / silver / gold / platinum / alien / all', 'rookie'],
                             ['max_rating', false, 'rookie / bronze / silver / gold / platinum / alien / all — e.g. rookie for a Rookies Only event', 'all'],
                             ['car_class', false, 'open / GT3 / GT4 / GT2 / TCX / GTC', 'open'],
-                            ['event_tag', false, 'Tag name or slug — leave blank to use the tag the format auto-fills', 'Daily'],
+                            ['car_class_2', false, 'Same values as car_class — fill this in to make the row multiclass (2 classes)', 'GT4'],
+                            ['car_class_3', false, 'Same values as car_class — a 3rd class, only used when car_class_2 is also set', ''],
                             ['description', false, 'Free text, shown on the event page', ''],
                         ] as [$col, $required, $format, $example])
                         <tr>
@@ -153,6 +154,12 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
                 <p class="fw-bold text-uppercase mb-2" style="font-size:.65rem;letter-spacing:.06em;color:#9ca3af">Valid track names</p>
                 <p class="text-secondary mb-0" style="font-size:.78rem">{{ implode(' · ', array_keys($accTracks)) }}</p>
             </div>
+            <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+                <p class="fw-bold text-uppercase mb-2" style="font-size:.65rem;letter-spacing:.06em;color:#9ca3af">Multiclass defaults</p>
+                <p class="text-secondary mb-0" style="font-size:.78rem">
+                    Filling in car_class_2 turns the row multiclass. Class 1 (car_class) gets a Bronze+ minimum rating by default; every other class is left fully open. Adjust either from the race's own edit page afterwards.
+                </p>
+            </div>
         </div>
     </div>
 
@@ -174,7 +181,7 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
                     <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
                         <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Game</p>
                         <p class="text-secondary mb-3" style="font-size:.75rem">
-                            Event Tag, Format and Server are set per row (CSV column, auto-detected from the row's Format, or edited directly in the table below) — see the "CSV Format" card.
+                            Format and Server are set per row (CSV column, or edited directly in the table below) — see the "CSV Format" card. Event Tag isn't picked at all — it always follows the row's Format automatically.
                         </p>
                         <select name="game" data-ie-game required class="form-select @error('game') is-invalid @enderror" style="max-width:280px">
                             @foreach($gameLabels as $slug => $label)
@@ -222,7 +229,6 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
                                         <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:36px">#</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Track</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:190px">Date &amp; Time (BST/GMT)</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:130px">Event Tag</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:150px">Format</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:150px">Server</th>
                                         <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:120px">Weather</th>
@@ -253,7 +259,6 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
 
 <script>
     window.__ceTracks  = @json($accTracks);
-    window.__ieTags    = @json($ieTagsForJs);
     window.__ieFormats = @json($ieFormatsForJs);
     window.__ieServers = @json($ieServersForJs);
 </script>

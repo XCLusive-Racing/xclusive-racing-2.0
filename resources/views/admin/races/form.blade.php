@@ -45,13 +45,6 @@ $accTracks = [
     'Zolder'          => ['min' => 30, 'max' => 35],
 ];
 
-$tagsConfig = json_encode([
-    'tags'        => $tags->map(fn($t) => ['slug' => $t->slug, 'name' => $t->name, 'color' => $t->color]),
-    'storeUrl'    => route('admin.event-tags.store'),
-    'csrfToken'   => csrf_token(),
-    'selectedTag' => old('event_tag', $isEdit ? $race->event_tag : ''),
-]);
-
 // Attach derived slug to each format so JS can detect endurance
 $formatsWithSlug = $formats->groupBy('game')->map(
     fn($g) => $g->map(fn($f) => array_merge($f->toArray(), [
@@ -825,41 +818,10 @@ $mcExisting = $isEdit
                     <div class="px-4 pt-4 pb-3">
                         <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Additional</p>
 
-                        <div class="row g-3 mb-3">
-                            <div class="col-sm-6">
-                                <div data-tags-wrap data-config='{{ $tagsConfig }}'>
-                                    <div class="d-flex align-items-center justify-content-between mb-1">
-                                        <label class="form-label mb-0">Event Tag <span class="text-danger">*</span></label>
-                                        <button type="button" data-tags-toggle
-                                                class="btn btn-sm fw-bold text-uppercase"
-                                                style="font-size:.68rem;padding:2px 8px;background:rgba(124,58,237,.1);color:#7c3aed;border:1px solid rgba(124,58,237,.3);border-radius:6px">
-                                            + New
-                                        </button>
-                                    </div>
-                                    <select name="event_tag" class="form-select @error('event_tag') is-invalid @enderror" data-tags-select>
-                                        <option value="">Select tag…</option>
-                                    </select>
-                                    @error('event_tag')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    <div data-tags-add-panel style="display:none">
-                                        <div class="mt-2 p-3 rounded-2" style="background:#f8f5ff;border:1px solid rgba(124,58,237,.2)">
-                                            <div data-tags-error class="alert alert-danger py-1 px-2 mb-2" style="font-size:.8rem;display:none"></div>
-                                            <div class="d-flex gap-2 align-items-end">
-                                                <div class="flex-grow-1">
-                                                    <label class="form-label" style="font-size:.78rem">Name</label>
-                                                    <input type="text" data-tags-name placeholder="e.g. Endurance" class="form-control form-control-sm">
-                                                </div>
-                                                <div>
-                                                    <label class="form-label" style="font-size:.78rem">Color</label>
-                                                    <input type="color" data-tags-color class="form-control form-control-sm form-control-color" style="width:46px;padding:2px" value="#7B2FBE">
-                                                </div>
-                                                <button type="button" data-tags-save class="btn btn-sm fw-bold text-white" style="background:#7c3aed;white-space:nowrap">Add</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
+                        {{-- Event Tag is no longer picked here — it always auto-follows the
+                             chosen format 1:1 (RaceController::deriveFormatFields()), matching
+                             the Events page filter list exactly. A Custom Event (no format)
+                             simply has none, and only shows under "All" on that page. --}}
                         <div>
                             <label class="form-label">Description <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
                             <textarea name="description" rows="3" class="form-control rich-editor" placeholder="Additional event info…">{{ old('description', $isEdit ? $race->description : '') }}</textarea>
@@ -1213,16 +1175,17 @@ $mcExisting = $isEdit
     window.__ceTracks        = tracks;
 })();
 
-// ── Auto-select gPortal server + event tag (driven by the chosen format) ────
-// Suggests a server/tag whenever the format or the scheduled time changes;
-// both stay normal <select>s so an admin can still override them manually.
+// ── Auto-select gPortal server (driven by the chosen format) ────────────────
+// Suggests a server whenever the format or the scheduled time changes; it
+// stays a normal <select> so an admin can still override it manually. Event
+// Tag isn't handled here any more — it's never picked on this form at all,
+// the backend derives it 1:1 from the format (RaceController::deriveFormatFields()).
 (function () {
     const formats  = @json($formatsWithSlug);
     const gameEl   = document.getElementById('ce-game');
     const fmtEl    = document.getElementById('ce-format');
     const serverEl = document.getElementById('gp-server');
-    const tagEl    = document.querySelector('[data-tags-select]');
-    if (!fmtEl || (!serverEl && !tagEl)) return;
+    if (!fmtEl || !serverEl) return;
 
     const schedEl     = document.querySelector('[name="scheduled_at"]');
     const bulkDateEl  = document.querySelector('[data-bulk-start-date]');
@@ -1271,18 +1234,6 @@ $mcExisting = $isEdit
         serverEl.dispatchEvent(new Event('change'));
     }
 
-    function recomputeTag() {
-        if (!tagEl) return;
-        const fmt = currentFormat();
-        if (!fmt || !fmt.default_event_tag || tagEl.value === fmt.default_event_tag) return;
-
-        const opt = Array.from(tagEl.options).find(o => o.value === fmt.default_event_tag);
-        if (!opt) return;
-
-        tagEl.value = fmt.default_event_tag;
-        tagEl.dispatchEvent(new Event('change'));
-    }
-
     function pad(n) { return String(n).padStart(2, '0'); }
     function formatForFlatpickr(d) {
         return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
@@ -1324,7 +1275,6 @@ $mcExisting = $isEdit
     function recompute() {
         recomputeServer();
         enforceScheduleParity();
-        recomputeTag();
     }
 
     fmtEl.addEventListener('change', recompute);
