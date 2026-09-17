@@ -61,7 +61,12 @@ class LeagueAdminAccessTest extends TestCase
         $this->assertDatabaseMissing('leagues', ['slug' => 'newleague']);
     }
 
-    public function test_league_manager_cannot_change_their_own_leagues_status(): void
+    // User-directed 2026-09: "give league managers themselves, permission to
+    // publish or set active their league" -- status used to be admin/owner-only
+    // (see the reverted test name below); a league's own manager can now flip
+    // draft <-> active themselves, same as every other branding field, but
+    // still never name/slug -- those stay XCL's call.
+    public function test_league_manager_can_publish_their_own_league_but_not_rename_it(): void
     {
         $league  = $this->makeLeague('nlrl');
         $manager = User::factory()->leagueManager()->create();
@@ -70,14 +75,29 @@ class LeagueAdminAccessTest extends TestCase
         $this->actingAs($manager)->put(route('admin.leagues.update', $league), [
             'primary_color' => '#111111',
             'accent_color'  => '#222222',
-            'status'        => 'active', // attempted, must be ignored
+            'status'        => 'active',
             'name'          => 'Renamed', // attempted, must be ignored
         ])->assertRedirect(route('admin.leagues.edit', $league));
 
         $league->refresh();
-        $this->assertSame('draft', $league->status);
+        $this->assertSame('active', $league->status);
         $this->assertSame('NLRL', $league->name);
         $this->assertSame('#111111', $league->primary_color);
+    }
+
+    public function test_league_manager_cannot_archive_their_league_via_the_status_field(): void
+    {
+        $league  = $this->makeLeague('nlrl');
+        $manager = User::factory()->leagueManager()->create();
+        $this->attach($manager, $league);
+
+        $this->actingAs($manager)->put(route('admin.leagues.update', $league), [
+            'primary_color' => '#111111',
+            'accent_color'  => '#222222',
+            'status'        => 'archived',
+        ])->assertSessionHasErrors('status');
+
+        $this->assertSame('draft', $league->fresh()->status);
     }
 
     public function test_league_manager_cannot_archive_their_own_league(): void
@@ -106,7 +126,7 @@ class LeagueAdminAccessTest extends TestCase
         $this->assertDatabaseMissing('league_user', ['league_id' => $league->id, 'user_id' => $recruit->id]);
     }
 
-    public function test_admin_can_create_edit_a_league_and_assign_members_but_not_archive_it(): void
+    public function test_admin_can_create_edit_a_league_and_assign_members(): void
     {
         $admin = $this->makeAdmin();
 
@@ -123,11 +143,6 @@ class LeagueAdminAccessTest extends TestCase
 
         $this->assertSame('active', $league->fresh()->status);
 
-        // Archiving is a league's "delete" — restricted to the owner role only,
-        // even though an admin can otherwise fully manage a league.
-        $this->actingAs($admin)->post(route('admin.leagues.archive', $league))->assertForbidden();
-        $this->assertSame('active', $league->fresh()->status);
-
         $recruit = User::factory()->create();
         $this->actingAs($admin)->post(route('admin.leagues.members.store', $league), [
             'user_id' => $recruit->id, 'role' => 'manager',
@@ -137,12 +152,20 @@ class LeagueAdminAccessTest extends TestCase
         $this->assertTrue($recruit->fresh()->isLeagueManager());
     }
 
-    public function test_only_the_owner_role_can_archive_a_league(): void
+    // User-directed 2026-09: "give admin and owner the option to remove a
+    // league" -- archiving/deleting a league was owner-only; admin now has
+    // the same ability (a league manager/steward/championship manager still
+    // cannot, per test_league_manager_cannot_archive_their_own_league above).
+    public function test_owner_or_admin_can_archive_a_league(): void
     {
-        $league = $this->makeLeague('nlrl');
-        $owner  = $this->makeOwner();
+        $owner = $this->makeOwner();
+        $this->actingAs($owner)
+            ->post(route('admin.leagues.archive', $this->makeLeague('nlrl')))
+            ->assertRedirect();
 
-        $this->actingAs($owner)->post(route('admin.leagues.archive', $league))->assertRedirect();
+        $admin = $this->makeAdmin();
+        $league = $this->makeLeague('src');
+        $this->actingAs($admin)->post(route('admin.leagues.archive', $league))->assertRedirect();
         $this->assertSame('archived', $league->fresh()->status);
     }
 
@@ -207,16 +230,16 @@ class LeagueAdminAccessTest extends TestCase
         $this->assertDatabaseHas('leagues', ['id' => $league->id]);
     }
 
-    public function test_an_admin_cannot_permanently_delete_a_league_even_when_archived(): void
+    public function test_an_admin_can_permanently_delete_an_archived_empty_league(): void
     {
         $league = $this->makeLeague('nlrl');
         $owner  = $this->makeOwner();
         $admin  = $this->makeAdmin();
 
         $this->actingAs($owner)->post(route('admin.leagues.archive', $league))->assertRedirect();
-        $this->actingAs($admin)->delete(route('admin.leagues.destroy', $league))->assertForbidden();
+        $this->actingAs($admin)->delete(route('admin.leagues.destroy', $league))->assertRedirect();
 
-        $this->assertSoftDeleted('leagues', ['id' => $league->id]);
+        $this->assertDatabaseMissing('leagues', ['id' => $league->id]);
     }
 
     public function test_a_league_with_championships_cannot_be_permanently_deleted(): void
@@ -379,7 +402,7 @@ class LeagueAdminAccessTest extends TestCase
             ->assertOk();
     }
 
-    public function test_championship_manager_can_edit_branding_but_not_identity_or_archive_for_a_league_they_manage(): void
+    public function test_championship_manager_can_edit_branding_and_publish_but_not_identity_or_archive_for_a_league_they_manage(): void
     {
         $league  = $this->makeLeague('nlrl');
         $manager = User::factory()->championshipManager()->create();
@@ -388,12 +411,12 @@ class LeagueAdminAccessTest extends TestCase
         $this->actingAs($manager)->put(route('admin.leagues.update', $league), [
             'primary_color' => '#111111',
             'accent_color'  => '#222222',
-            'status'        => 'active', // attempted, must be ignored -- same as a per-league manager
+            'status'        => 'active', // now honored -- same as a per-league manager
             'name'          => 'Renamed', // attempted, must be ignored
         ])->assertRedirect(route('admin.leagues.edit', $league));
 
         $league->refresh();
-        $this->assertSame('draft', $league->status);
+        $this->assertSame('active', $league->status);
         $this->assertSame('NLRL', $league->name);
         $this->assertSame('#111111', $league->primary_color);
 
@@ -485,13 +508,66 @@ class LeagueAdminAccessTest extends TestCase
         }
     }
 
-    public function test_league_managers_own_server_can_carry_a_server_number(): void
+    // User-directed 2026-09: "de ftp servers sectie mag weg bij leagues, een
+    // league manager mag geen ftp servers en credentials kunnen zien, alleen
+    // xcl staff" -- reverses the earlier "a league manager can do it too"
+    // self-service server feature below. FTP servers/credentials are
+    // XCL-staff-only now, even for a manager's own league.
+    public function test_league_manager_does_not_see_the_league_servers_card(): void
     {
         $league  = $this->makeLeague('nlrl');
         $manager = User::factory()->leagueManager()->create();
         $this->attach($manager, $league);
+        FtpServer::create([
+            'name' => 'NLRL Server', 'host' => '1.2.3.4', 'port' => 21,
+            'username' => 'u', 'password' => 'p', 'path' => '/results',
+            'server_type' => 'scheduled', 'league_id' => $league->id,
+        ]);
+
+        $this->actingAs($manager)->get(route('admin.leagues.edit', $league))
+            ->assertOk()
+            ->assertDontSee('League Servers')
+            ->assertDontSee('NLRL Server')
+            ->assertDontSee('Add Your Own Server');
+    }
+
+    public function test_league_manager_can_no_longer_add_or_remove_their_leagues_servers(): void
+    {
+        $league  = $this->makeLeague('nlrl');
+        $manager = User::factory()->leagueManager()->create();
+        $this->attach($manager, $league);
+        $server = FtpServer::create([
+            'name' => 'NLRL Server', 'host' => '1.2.3.4', 'port' => 21,
+            'username' => 'u', 'password' => 'p', 'path' => '/results',
+            'server_type' => 'scheduled', 'league_id' => $league->id,
+        ]);
 
         $this->actingAs($manager)->post(route('admin.leagues.servers.create', $league), [
+            'name' => 'League Server 1', 'server_number' => 2,
+            'host' => '1.2.3.4', 'port' => 21, 'username' => 'u', 'password' => 'p',
+            'path' => '/results', 'server_type' => 'rolling',
+            'reset_start_hour' => 1, 'reset_interval_minutes' => 120,
+            'game' => 'acc', 'platform' => 'console',
+        ])->assertForbidden();
+        $this->assertDatabaseMissing('ftp_servers', ['name' => 'League Server 1']);
+
+        $this->actingAs($manager)
+            ->delete(route('admin.leagues.servers.destroy', [$league, $server]))
+            ->assertForbidden();
+        $this->assertDatabaseHas('ftp_servers', ['id' => $server->id, 'league_id' => $league->id]);
+    }
+
+    public function test_admin_still_sees_and_manages_the_league_servers_card(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $admin  = $this->makeAdmin();
+
+        $this->actingAs($admin)->get(route('admin.leagues.edit', $league))
+            ->assertOk()
+            ->assertSee('League Servers')
+            ->assertSee('Add Your Own Server');
+
+        $this->actingAs($admin)->post(route('admin.leagues.servers.create', $league), [
             'name' => 'League Server 1', 'server_number' => 2,
             'host' => '1.2.3.4', 'port' => 21, 'username' => 'u', 'password' => 'p',
             'path' => '/results', 'server_type' => 'rolling',
@@ -500,6 +576,45 @@ class LeagueAdminAccessTest extends TestCase
         ])->assertRedirect();
 
         $this->assertDatabaseHas('ftp_servers', ['league_id' => $league->id, 'name' => 'League Server 1', 'server_number' => 2]);
+    }
+
+    // User-directed 2026-09: "Configuration -> FTP Servers should just be our
+    // own servers, which are XCL SERVER" -- FtpServerController::index() had
+    // no league_id filter at all, so any league's own dedicated server (e.g.
+    // NLRL's) leaked into XCL's core-fleet Configuration page.
+    public function test_configuration_ftp_servers_page_only_shows_xcls_own_servers(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $admin  = $this->makeAdmin();
+        FtpServer::create([
+            'name' => 'NLRL Server', 'host' => '1.2.3.4', 'port' => 21,
+            'username' => 'u', 'password' => 'p', 'path' => '/results',
+            'server_type' => 'scheduled', 'league_id' => $league->id,
+        ]);
+        FtpServer::create([
+            'name' => 'XCL SERVER 1', 'host' => '5.6.7.8', 'port' => 21,
+            'username' => 'u', 'password' => 'p', 'path' => '/results',
+            'server_type' => 'scheduled', 'league_id' => League::system()->id,
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.servers.index'))
+            ->assertOk()
+            ->assertSee('XCL SERVER 1')
+            ->assertDontSee('NLRL Server');
+    }
+
+    public function test_a_server_added_from_configuration_is_tagged_as_xcls_own(): void
+    {
+        $admin = $this->makeAdmin();
+
+        $this->actingAs($admin)->post(route('admin.servers.store'), [
+            'name' => 'XCL SERVER 6', 'host' => '1.2.3.4', 'port' => 21,
+            'username' => 'u', 'password' => 'p', 'path' => '/results',
+            'server_type' => 'rolling', 'reset_start_hour' => 0, 'reset_interval_minutes' => 120,
+            'game' => 'acc', 'platform' => 'console',
+        ])->assertRedirect(route('admin.servers.index'));
+
+        $this->assertDatabaseHas('ftp_servers', ['name' => 'XCL SERVER 6', 'league_id' => League::system()->id]);
     }
 
     // User-directed 2026-09: "sorry bij create leagues" -- the same option was

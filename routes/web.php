@@ -436,6 +436,7 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/cha
     Route::post('/{championship}/unhide', [ChampionshipWizardController::class, 'unhide'])->name('unhide');
     Route::post('/{championship}/approve-rating', [ChampionshipWizardController::class, 'approveRating'])->name('approve-rating');
     Route::post('/{championship}/revoke-rating', [ChampionshipWizardController::class, 'revokeRating'])->name('revoke-rating');
+    Route::delete('/{championship}', [ChampionshipWizardController::class, 'destroy'])->name('destroy');
 });
 
 // Points Schemes — templates (league_id null) plus each league's own copies.
