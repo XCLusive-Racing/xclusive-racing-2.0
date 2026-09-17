@@ -65,14 +65,23 @@ export function initImportExport(wrap) {
         }
     }
 
+    // `selected` comes from a parsed CSV row's event_format_id/ftp_server_id, which is a
+    // JSON *number* (an Eloquent id) — option values are always strings (see __ieFormats/
+    // __ieServers, built server-side with `(string) $id`). Without normalizing both sides
+    // to string, `1 === "1"` is false, no <option> ever gets `selected`, and the <select>
+    // silently falls back to its first option ("— Use shared —" / blank) — which is then
+    // exactly what gets submitted, since Create Events is a plain form submit with nothing
+    // reading the JS `events` array back out of it.
     function formatOptions(selected) {
+        const sel = String(selected ?? '');
         const opts = [['', '— Use shared —'], ...(window.__ieFormats || []).map(f => [f.value, f.label])];
-        return opts.map(([v, label]) => `<option value="${v}" ${selected === v ? 'selected' : ''}>${esc(label)}</option>`).join('');
+        return opts.map(([v, label]) => `<option value="${v}" ${sel === v ? 'selected' : ''}>${esc(label)}</option>`).join('');
     }
 
     function serverOptions(selected) {
+        const sel = String(selected ?? '');
         const opts = [['', '— Use shared —'], ...(window.__ieServers || []).map(s => [s.value, s.label])];
-        return opts.map(([v, label]) => `<option value="${v}" ${selected === v ? 'selected' : ''}>${esc(label)}</option>`).join('');
+        return opts.map(([v, label]) => `<option value="${v}" ${sel === v ? 'selected' : ''}>${esc(label)}</option>`).join('');
     }
 
     function timeMultiplierSelect(i, field, selected) {
