@@ -169,6 +169,19 @@ export function initImportExport(wrap) {
             </td>
         `;
 
+        // These fields (imported from a CSV column, or blank) have no editable cell of
+        // their own in this table — it's already wide — so they ride along as hidden
+        // inputs in the last cell, preserved on submit exactly as imported. Edit them
+        // by fixing the CSV and re-uploading, not in this preview.
+        const lastCell = tr.querySelector('td:last-child');
+        ['weather_randomness', 'has_practice_server', 'sr_requirement', 'min_rating', 'max_rating', 'car_class', 'description'].forEach(field => {
+            const hidden = document.createElement('input');
+            hidden.type  = 'hidden';
+            hidden.name  = `events[${i}][${field}]`;
+            hidden.value = ev[field] ?? '';
+            lastCell.appendChild(hidden);
+        });
+
         const titleHidden      = tr.querySelector('[data-field="title"]');
         const maxDriversHidden = tr.querySelector('[data-field="max_drivers"]');
         const trackInput       = tr.querySelector('[data-field="track"]');
@@ -230,6 +243,8 @@ export function initImportExport(wrap) {
             event_tag: '', event_format_id: '', ftp_server_id: '',
             weather: '', time_of_day: '', ambient_temp: '',
             practice_time_multiplier: '1', qualifying_time_multiplier: '1', race_time_multiplier: '1',
+            weather_randomness: '', has_practice_server: '', sr_requirement: '',
+            min_rating: '', max_rating: '', car_class: '', description: '',
         });
         render();
     }
@@ -242,10 +257,18 @@ export function initImportExport(wrap) {
     // Exports the current (possibly hand-edited) preview table back out as a CSV in the
     // same format bulkImportCsv() accepts — so a batch can be tweaked here and re-used,
     // or handed off, without re-typing it from scratch.
+    // Same column order as RaceController::CSV_COLUMNS (game excluded — that's the
+    // page's shared selector, not a per-row column) — so a downloaded-then-re-uploaded
+    // batch round-trips losslessly.
     function downloadCsv() {
         if (!events.length) return;
 
-        const header = ['track', 'date', 'time', 'format', 'event_tag', 'server', 'weather', 'time_of_day', 'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier', 'race_time_multiplier'];
+        const header = [
+            'format', 'track', 'weather', 'date', 'time', 'time_of_day',
+            'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier', 'race_time_multiplier',
+            'weather_randomness', 'has_practice_server', 'server',
+            'sr_requirement', 'min_rating', 'max_rating', 'car_class', 'event_tag', 'description',
+        ];
         const lines = [header.join(',')];
 
         events.forEach(ev => {
@@ -254,10 +277,11 @@ export function initImportExport(wrap) {
             const server = (window.__ieServers || []).find(s => s.value === String(ev.ftp_server_id || ''));
 
             lines.push([
-                ev.track || '', date || '', time || '',
-                format?.label || '', ev.event_tag || '', server ? (server.number ?? server.label) : '',
-                ev.weather || '', ev.time_of_day || '', ev.ambient_temp ?? '',
-                ev.practice_time_multiplier || '1', ev.qualifying_time_multiplier || '1', ev.race_time_multiplier || '1',
+                format?.label || '', ev.track || '', ev.weather || '', date || '', time || '', ev.time_of_day || '',
+                ev.ambient_temp ?? '', ev.practice_time_multiplier || '1', ev.qualifying_time_multiplier || '1', ev.race_time_multiplier || '1',
+                ev.weather_randomness || '', ev.has_practice_server === '1' ? 'on' : (ev.has_practice_server === '0' ? 'off' : ''),
+                server ? (server.number ?? server.label) : '',
+                ev.sr_requirement || '', ev.min_rating || '', ev.max_rating || '', ev.car_class || '', ev.event_tag || '', ev.description || '',
             ].map(csvCell).join(','));
         });
 

@@ -58,6 +58,20 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
     <div class="col-12 col-lg-5">
         <div class="admin-card mb-4">
             <div class="px-4 pt-4 pb-2">
+                <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Blank Template</p>
+                <p class="text-secondary mb-3" style="font-size:.78rem">
+                    A blank CSV with every column, in order, ready to fill in by hand — for a 4-week schedule, say — instead of starting from an existing week's export.
+                </p>
+            </div>
+            <div class="px-4 pb-4">
+                <a href="{{ route('admin.races.download-template') }}" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed;font-size:.78rem">
+                    Download Template
+                </a>
+            </div>
+        </div>
+
+        <div class="admin-card mb-4">
+            <div class="px-4 pt-4 pb-2">
                 <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Export Races to CSV</p>
                 <p class="text-secondary mb-3" style="font-size:.78rem">
                     Exports all upcoming races for the selected game (custom races excluded) so you can re-import them below to duplicate the schedule onto a future week.
@@ -84,6 +98,7 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
                 <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">CSV Format</p>
                 <p class="text-secondary mb-0" style="font-size:.78rem">
                     First row must be a header row with these column names (any order — extra columns are ignored).
+                    <strong>game</strong> isn't a column — it's the shared Game selector on this page, same for every row in one file.
                 </p>
             </div>
             <div class="table-responsive">
@@ -98,15 +113,25 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
                     </thead>
                     <tbody>
                         @foreach([
-                            ['track', true, 'Exact track name', 'Silverstone'],
+                            ['track', true, 'Exact track name — see the list below', 'Silverstone'],
                             ['date', true, 'YYYY-MM-DD', '2026-09-01'],
-                            ['time', true, 'HH:MM, 24h', '20:00'],
+                            ['time', true, 'HH:MM, 24h, BST/GMT (real-world scheduled time)', '20:00'],
                             ['format', false, 'Exact format name — also auto-fills event_tag/server below when they\'re left blank', 'Daily Race'],
-                            ['event_tag', false, 'Tag name or slug — leave blank to use the tag the format auto-fills', 'Daily'],
-                            ['server', false, 'Server name or number — leave blank to use the server the format auto-fills', '2'],
                             ['weather', false, 'dry / wet / mixed / random', 'dry'],
                             ['time_of_day', false, 'HH:MM, 24h — in-game start time', '21:00'],
                             ['ambient_temp', false, 'Whole number, °C', '20'],
+                            ['practice_time_multiplier', false, '1-24, defaults to 1×', '2'],
+                            ['qualifying_time_multiplier', false, '1-24, defaults to 1×', '2'],
+                            ['race_time_multiplier', false, '1-24, defaults to 1×', '1'],
+                            ['weather_randomness', false, '0-7, or "random"', 'random'],
+                            ['has_practice_server', false, 'on / off', 'on'],
+                            ['server', false, 'Server name or number — leave blank to use the server the format auto-fills', '2'],
+                            ['sr_requirement', false, 'Whole number 3-9 (minimum Safety Rating) — leave blank for none', '5'],
+                            ['min_rating', false, 'rookie / bronze / silver / gold / platinum / alien / all', 'rookie'],
+                            ['max_rating', false, 'rookie / bronze / silver / gold / platinum / alien / all — e.g. rookie for a Rookies Only event', 'all'],
+                            ['car_class', false, 'open / GT3 / GT4 / GT2 / TCX / GTC', 'open'],
+                            ['event_tag', false, 'Tag name or slug — leave blank to use the tag the format auto-fills', 'Daily'],
+                            ['description', false, 'Free text, shown on the event page', ''],
                         ] as [$col, $required, $format, $example])
                         <tr>
                             <td class="ps-4"><code>{{ $col }}</code></td>
@@ -123,6 +148,10 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
                         @endforeach
                     </tbody>
                 </table>
+            </div>
+            <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+                <p class="fw-bold text-uppercase mb-2" style="font-size:.65rem;letter-spacing:.06em;color:#9ca3af">Valid track names</p>
+                <p class="text-secondary mb-0" style="font-size:.78rem">{{ implode(' · ', array_keys($accTracks)) }}</p>
             </div>
         </div>
     </div>
