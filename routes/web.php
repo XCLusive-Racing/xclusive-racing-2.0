@@ -201,6 +201,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/races/import-export', [AdminRaceController::class, 'importExport'])->name('races.import-export');
     Route::post('/races/bulk-import-csv', [AdminRaceController::class, 'bulkImportCsv'])->name('races.bulk-import-csv');
     Route::get('/races/export-csv', [AdminRaceController::class, 'exportCsv'])->name('races.export-csv');
+    Route::get('/races/download-template', [AdminRaceController::class, 'downloadTemplate'])->name('races.download-template');
     Route::get('/races/custom-create', [AdminRaceController::class, 'customCreate'])->name('races.custom-create');
     Route::get('/races/practice-window-preview', [AdminRaceController::class, 'practiceWindowPreview'])->name('races.practice-window-preview');
     Route::post('/races', [AdminRaceController::class, 'store'])->name('races.store');

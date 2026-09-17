@@ -29,6 +29,19 @@ class RaceController extends Controller
     public const ERR_SLOT_WRONG_SERVER = 'This time doesn\'t match a restart slot on the selected server — pick a different server or adjust the time.';
     public const ERR_SLOT_TAKEN        = 'This time slot is already taken on the selected server.';
 
+    // Column order for the bulk-import CSV — the blank "Download Template", the "export
+    // upcoming races" CSV, and the live-edit table's own CSV export all use this exact
+    // order, so a filled-in template and a re-exported edited batch always look the same
+    // and re-import cleanly. `game` isn't here — a batch's game is the page's own shared
+    // selector, same as today, not a per-row column (every other column already has a
+    // per-row/shared-default split; game doesn't need a third way to set it).
+    public const CSV_COLUMNS = [
+        'format', 'track', 'weather', 'date', 'time', 'time_of_day',
+        'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier', 'race_time_multiplier',
+        'weather_randomness', 'has_practice_server', 'server',
+        'sr_requirement', 'min_rating', 'max_rating', 'car_class', 'event_tag', 'description',
+    ];
+
     public function index()
     {
         // Auto-close races whose start time has passed but are still open
@@ -236,10 +249,11 @@ class RaceController extends Controller
             'qualifying_time_multiplier' => 'nullable|integer|min:1|max:24',
             'race_time_multiplier'       => 'nullable|integer|min:1|max:24',
             'sr_requirement'       => 'nullable|numeric|in:3,4,5,6,7,8,9',
-            'min_rating'           => 'nullable|string|in:rookie,bronze,silver,gold,platinum,alien',
-            'max_rating'           => 'nullable|string|in:rookie,bronze,silver,gold,platinum,alien',
+            'min_rating'           => 'nullable|string|in:all,rookie,bronze,silver,gold,platinum,alien',
+            'max_rating'           => 'nullable|string|in:all,rookie,bronze,silver,gold,platinum,alien',
             'max_drivers'          => 'nullable|integer|min:1',
             'description'          => 'nullable|string',
+            'has_practice_server'  => 'nullable|boolean',
             'is_multiclass'        => 'nullable|boolean',
             'classes_json'         => 'nullable|string',
             'ftp_server_id'        => 'nullable|exists:ftp_servers,id',
@@ -251,6 +265,7 @@ class RaceController extends Controller
             'events.*.event_format_id' => 'nullable|exists:event_formats,id',
             'events.*.ftp_server_id'   => 'nullable|exists:ftp_servers,id',
             'events.*.weather'         => 'nullable|in:dry,wet,mixed,random',
+            'events.*.weather_randomness' => 'nullable|in:0,1,2,3,4,5,6,7,random',
             'events.*.time_of_day'     => 'nullable|date_format:H:i',
             'events.*.ambient_temp'    => 'nullable|integer|min:-30|max:50',
             'events.*.practice_time_multiplier'   => 'nullable|integer|min:1|max:24',
@@ -258,6 +273,11 @@ class RaceController extends Controller
             'events.*.race_time_multiplier'       => 'nullable|integer|min:1|max:24',
             'events.*.max_drivers'     => 'nullable|integer|min:1',
             'events.*.car_class'       => 'nullable|string|max:50',
+            'events.*.sr_requirement'  => 'nullable|numeric|in:3,4,5,6,7,8,9',
+            'events.*.min_rating'      => 'nullable|string|in:all,rookie,bronze,silver,gold,platinum,alien',
+            'events.*.max_rating'      => 'nullable|string|in:all,rookie,bronze,silver,gold,platinum,alien',
+            'events.*.description'     => 'nullable|string',
+            'events.*.has_practice_server' => 'nullable|boolean',
         ]);
 
         $shared = [
@@ -282,6 +302,7 @@ class RaceController extends Controller
             'max_rating'           => $request->max_rating ?: null,
             'max_drivers'          => $request->max_drivers ?: null,
             'description'          => $request->description ?: null,
+            'has_practice_server'  => $request->boolean('has_practice_server'),
             'status'               => 'open',
         ];
 
@@ -306,6 +327,7 @@ class RaceController extends Controller
                 'event_tag'        => $eventTag,
                 'event_format_id'  => ($event['event_format_id'] ?? null) ?: $shared['event_format_id'],
                 'weather'          => $event['weather'] ?: $shared['weather'],
+                'weather_randomness' => ($event['weather_randomness'] ?? null) ?: $shared['weather_randomness'],
                 'time_of_day'      => $event['time_of_day'] ?: $shared['time_of_day'],
                 'ambient_temp'     => $event['ambient_temp'] ?? $shared['ambient_temp'],
                 'practice_time_multiplier'   => $event['practice_time_multiplier'] ?? $shared['practice_time_multiplier'],
@@ -313,6 +335,16 @@ class RaceController extends Controller
                 'race_time_multiplier'       => $event['race_time_multiplier'] ?? $shared['race_time_multiplier'],
                 'max_drivers'      => $event['max_drivers'] ?: $shared['max_drivers'],
                 'car_class'        => ($event['car_class'] ?? null) ?: $shared['car_class'],
+                'sr_requirement'   => ($event['sr_requirement'] ?? null) ?: $shared['sr_requirement'],
+                'min_rating'       => ($event['min_rating'] ?? null) ?: $shared['min_rating'],
+                'max_rating'       => ($event['max_rating'] ?? null) ?: $shared['max_rating'],
+                'description'      => ($event['description'] ?? null) ?: $shared['description'],
+                // '0' is a meaningful explicit "off" here, not "unset" — unlike the
+                // ?: fallback used above, so it isn't silently swallowed back to the
+                // shared checkbox the way a falsy string would be everywhere else.
+                'has_practice_server' => isset($event['has_practice_server']) && $event['has_practice_server'] !== ''
+                    ? (bool) $event['has_practice_server']
+                    : $shared['has_practice_server'],
             ])));
         }
 
@@ -354,9 +386,22 @@ class RaceController extends Controller
             }
         }
 
-        $count = count($request->events);
-        return redirect()->route('admin.races.index')
+        $practiceWarnings = [];
+        $sessionManager    = new PracticeServerSessionManager();
+        foreach ($races as $race) {
+            if ($race->has_practice_server) {
+                $warning = $sessionManager->sync($race, true);
+                if ($warning) {
+                    $practiceWarnings[] = $race->title . ': ' . $warning;
+                }
+            }
+        }
+
+        $count    = count($request->events);
+        $redirect = redirect()->route('admin.races.index')
             ->with('success', $count . ' ' . ($count === 1 ? 'race' : 'races') . ' created successfully!');
+
+        return $practiceWarnings ? $redirect->with('practice_warning', implode(' ', $practiceWarnings)) : $redirect;
     }
 
     public function importExport()
@@ -371,13 +416,13 @@ class RaceController extends Controller
         return view('admin.races.import-export', compact('tags', 'servers', 'formats'));
     }
 
-    // CSV columns (header row, case-insensitive, any order): track, date, time —
-    // required. weather / time_of_day / ambient_temp / event_tag / format / server —
-    // all optional, and event_tag/format/server (when given) override the page's
+    // CSV columns (header row, case-insensitive, any order, see CSV_COLUMNS/the CSV
+    // Format card): track, date, time — required. Everything else — including
+    // event_tag/format/server — is optional and, when given, overrides the page's
     // shared defaults for that one row, so a single import can mix formats/tags/
-    // servers across a whole week. Parses to the same row shape the Bulk Schedule
-    // table already uses, so the page's JS can render an editable preview and submit
-    // it straight to bulkStore() — no new creation path.
+    // servers/requirements across a whole week. Parses to the same row shape the
+    // Bulk Schedule table already uses, so the page's JS can render an editable
+    // preview and submit it straight to bulkStore() — no new creation path.
     public function bulkImportCsv(Request $request)
     {
         $request->validate([
@@ -400,7 +445,7 @@ class RaceController extends Controller
         foreach (['track', 'date', 'time'] as $col) {
             if (!isset($colIndex[$col])) {
                 fclose($handle);
-                return response()->json(['errors' => ["Missing required column \"{$col}\". Expected headers: track, date, time, weather, time_of_day, ambient_temp."]], 422);
+                return response()->json(['errors' => ["Missing required column \"{$col}\". See the CSV Format card for every expected column."]], 422);
             }
         }
 
@@ -495,6 +540,45 @@ class RaceController extends Controller
                 }
             }
 
+            $weatherRandomness = isset($colIndex['weather_randomness']) ? strtolower(trim($line[$colIndex['weather_randomness']] ?? '')) : '';
+            if ($weatherRandomness !== '' && !in_array($weatherRandomness, ['0','1','2','3','4','5','6','7','random'], true)) {
+                $errors[] = "Row {$lineNum}: invalid weather_randomness \"{$weatherRandomness}\" (expected 0-7 or \"random\") — ignored.";
+                $weatherRandomness = '';
+            }
+
+            $hasPracticeServer = '';
+            if (isset($colIndex['has_practice_server'])) {
+                $raw = strtolower(trim($line[$colIndex['has_practice_server']] ?? ''));
+                if (in_array($raw, ['on', 'yes', 'true', '1'], true)) {
+                    $hasPracticeServer = '1';
+                } elseif (in_array($raw, ['off', 'no', 'false', '0', ''], true)) {
+                    $hasPracticeServer = '0';
+                } else {
+                    $errors[] = "Row {$lineNum}: unknown has_practice_server \"{$raw}\" (expected on/off) — ignored.";
+                }
+            }
+
+            $srRequirement = isset($colIndex['sr_requirement']) ? trim($line[$colIndex['sr_requirement']] ?? '') : '';
+            if ($srRequirement !== '' && !in_array($srRequirement, ['3','4','5','6','7','8','9'], true)) {
+                $errors[] = "Row {$lineNum}: invalid sr_requirement \"{$srRequirement}\" (expected a whole number 3-9) — ignored.";
+                $srRequirement = '';
+            }
+
+            $ratingValues = ['all', 'rookie', 'bronze', 'silver', 'gold', 'platinum', 'alien'];
+            $minRating = isset($colIndex['min_rating']) ? strtolower(trim($line[$colIndex['min_rating']] ?? '')) : '';
+            if ($minRating !== '' && !in_array($minRating, $ratingValues, true)) {
+                $errors[] = "Row {$lineNum}: unknown min_rating \"{$minRating}\" — ignored.";
+                $minRating = '';
+            }
+            $maxRating = isset($colIndex['max_rating']) ? strtolower(trim($line[$colIndex['max_rating']] ?? '')) : '';
+            if ($maxRating !== '' && !in_array($maxRating, $ratingValues, true)) {
+                $errors[] = "Row {$lineNum}: unknown max_rating \"{$maxRating}\" — ignored.";
+                $maxRating = '';
+            }
+
+            $carClass    = isset($colIndex['car_class']) ? trim($line[$colIndex['car_class']] ?? '') : '';
+            $description = isset($colIndex['description']) ? trim($line[$colIndex['description']] ?? '') : '';
+
             $rows[] = [
                 'title'            => $track,
                 'track'            => $track,
@@ -508,6 +592,13 @@ class RaceController extends Controller
                 'practice_time_multiplier'   => $practiceTimeMultiplier,
                 'qualifying_time_multiplier' => $qualifyingTimeMultiplier,
                 'race_time_multiplier'       => $raceTimeMultiplier,
+                'weather_randomness'   => $weatherRandomness,
+                'has_practice_server'  => $hasPracticeServer,
+                'sr_requirement'       => $srRequirement,
+                'min_rating'           => $minRating,
+                'max_rating'           => $maxRating,
+                'car_class'            => $carClass,
+                'description'          => $description,
             ];
         }
         fclose($handle);
@@ -545,6 +636,7 @@ class RaceController extends Controller
             ->where('is_endurance', false)
             ->whereNotNull('event_format_id')
             ->where('scheduled_at', '>=', now())
+            ->with(['eventFormat', 'ftpServer'])
             ->orderBy('scheduled_at')
             ->get();
 
@@ -552,23 +644,58 @@ class RaceController extends Controller
 
         return response()->streamDownload(function () use ($races) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['track', 'date', 'time', 'weather', 'time_of_day', 'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier', 'race_time_multiplier'], ',', '"', '\\');
+            fputcsv($out, self::CSV_COLUMNS, ',', '"', '\\');
             foreach ($races as $race) {
-                $local = $race->scheduledAtUk();
-                fputcsv($out, [
-                    $race->track,
-                    $local->format('Y-m-d'),
-                    $local->format('H:i'),
-                    $race->weather,
-                    $race->time_of_day,
-                    $race->ambient_temp,
-                    $race->practice_time_multiplier,
-                    $race->qualifying_time_multiplier,
-                    $race->race_time_multiplier,
-                ], ',', '"', '\\');
+                fputcsv($out, $this->raceToCsvRow($race), ',', '"', '\\');
             }
             fclose($out);
         }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    // A blank copy of the same CSV shape exportCsv()/bulkImportCsv() use — headers only,
+    // ready to fill in (e.g. a 4-week schedule) rather than requiring an existing race to
+    // export from first.
+    public function downloadTemplate()
+    {
+        $filename = 'xcl-races-template.csv';
+
+        return response()->streamDownload(function () {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, self::CSV_COLUMNS, ',', '"', '\\');
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    // Maps a Race to one CSV row in CSV_COLUMNS order — shared by exportCsv() so a
+    // re-exported week round-trips through bulkImportCsv() without losing any of the
+    // fields the template documents.
+    private function raceToCsvRow(Race $race): array
+    {
+        $local  = $race->scheduledAtUk();
+        $format = $race->eventFormat;
+        $server = $race->ftpServer;
+
+        return [
+            'format'                      => $format?->name,
+            'track'                       => $race->track,
+            'weather'                     => $race->weather,
+            'date'                        => $local->format('Y-m-d'),
+            'time'                        => $local->format('H:i'),
+            'time_of_day'                 => $race->time_of_day,
+            'ambient_temp'                => $race->ambient_temp,
+            'practice_time_multiplier'    => $race->practice_time_multiplier,
+            'qualifying_time_multiplier'  => $race->qualifying_time_multiplier,
+            'race_time_multiplier'        => $race->race_time_multiplier,
+            'weather_randomness'          => $race->weather_randomness,
+            'has_practice_server'         => $race->has_practice_server ? 'on' : 'off',
+            'server'                      => $server?->name,
+            'sr_requirement'              => $race->sr_requirement,
+            'min_rating'                  => $race->min_rating,
+            'max_rating'                  => $race->max_rating,
+            'car_class'                   => $race->car_class,
+            'event_tag'                   => $race->event_tag,
+            'description'                 => $race->description,
+        ];
     }
 
     public function create(Request $request)
