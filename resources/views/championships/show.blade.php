@@ -53,40 +53,65 @@
                         </span>
                         @endif
                     </div>
-                    <h1 class="fw-black text-white mb-0" style="font-size:clamp(1.5rem,4vw,2.5rem);line-height:1.1">{{ $championship->name }}</h1>
+                    <h1 class="fw-black text-uppercase text-white mb-0" style="font-size:clamp(1.5rem,4vw,2.5rem);line-height:1.1">{{ $championship->name }}</h1>
+                    @if($championship->tagline)
+                    <p class="mb-0 mt-1" style="color:#9ca3af;font-size:1rem">{{ $championship->tagline }}</p>
+                    @endif
+                    @if($championship->slogan)
+                    <p class="mb-0 mt-1" style="color:#6b7280;font-size:.8rem;font-style:italic">{{ $championship->slogan }}</p>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="container-xl px-3 mt-4">
+    <div class="container-xl px-3 mt-4" data-tabs data-default-tab="about">
+
+        {{-- Section nav — jumps between the tab panels below, same tabs.js component
+             the pro driver profile's year-switcher already uses. --}}
+        <div class="mb-4 d-flex gap-4" style="border-bottom:1px solid #1f2937;overflow-x:auto">
+            @foreach([
+                'about'     => 'About',
+                'standings' => 'Standings',
+                'rounds'    => 'Rounds',
+                'rules'     => 'Rules',
+                'drivers'   => 'Drivers',
+            ] as $tabKey => $tabLabel)
+            <button data-tab-btn="{{ $tabKey }}" data-tab-color="{{ $accent }}"
+                    class="fw-black text-uppercase bg-transparent pb-2 flex-shrink-0"
+                    style="font-size:.8rem;letter-spacing:.05em;white-space:nowrap;border:none;border-bottom:2px solid transparent;cursor:pointer">
+                {{ $tabLabel }}
+            </button>
+            @endforeach
+        </div>
+
         <div class="row g-4">
 
-            {{-- Left: standings + rounds --}}
+            {{-- Left: tab panels --}}
             <div class="col-12 col-lg-8">
 
-                {{-- About — tagline + rich-text description, moved out of the hero so the
-                     banner stays clean, and shown here instead (same small-box treatment as
-                     an event's own "About This Event" card). --}}
-                @if($championship->tagline || $championship->description)
-                <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
-                    <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
-                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">About This Championship</h2>
-                    </div>
-                    <div class="px-4 py-3">
-                        @if($championship->tagline)
-                        <p class="fw-bold text-white mb-2" style="font-size:1rem">{{ $championship->tagline }}</p>
-                        @endif
-                        @if($championship->description)
-                        <div style="color:#9ca3af;font-size:.9rem;line-height:1.7">
-                            {!! Illuminate\Support\Str::markdown($championship->description, ['renderer' => ['soft_break' => "<br />\n"]]) !!}
+                {{-- About --}}
+                <div data-tab-panel="about" style="display:none">
+                    @if($championship->description)
+                    <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
+                        <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
+                            <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">About This Championship</h2>
                         </div>
-                        @endif
+                        <div class="px-4 py-3">
+                            <div style="color:#9ca3af;font-size:.9rem;line-height:1.7">
+                                {!! Illuminate\Support\Str::markdown($championship->description, ['renderer' => ['soft_break' => "<br />\n"]]) !!}
+                            </div>
+                        </div>
                     </div>
+                    @else
+                    <div style="background:#111827;border-radius:12px;overflow:hidden">
+                        <div class="px-4 py-4 text-center" style="color:#6b7280;font-size:.875rem">Nothing added here yet.</div>
+                    </div>
+                    @endif
                 </div>
-                @endif
 
                 {{-- Standings --}}
+                <div data-tab-panel="standings" style="display:none">
                 @php
                     $standingsGroups = $championship->is_multiclass && collect($classStandings)->isNotEmpty()
                         ? collect($classStandings)->values()
@@ -196,7 +221,10 @@
                 </div>
                 @endif
 
+                </div>{{-- /standings panel --}}
+
                 {{-- Rounds --}}
+                <div data-tab-panel="rounds" style="display:none">
                 <div style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
                         <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Rounds</h2>
@@ -225,9 +253,13 @@
                     @endforeach
                     @endif
                 </div>
+                </div>{{-- /rounds panel --}}
 
+                {{-- Rules — the league's own free-text Rules/Prizes notes. Entry Requirements
+                     lives in the sidebar next to Registration instead (not duplicated here). --}}
+                <div data-tab-panel="rules" style="display:none">
                 @if($isLeagueOwned && ($req->notes || $req->prizes_text))
-                <div class="mt-4 row g-4">
+                <div class="row g-4">
                     @if($req->notes)
                     <div class="col-12 col-md-{{ $req->prizes_text ? '6' : '12' }}">
                         <div style="background:#111827;border-radius:12px;overflow:hidden;height:100%">
@@ -249,54 +281,55 @@
                     </div>
                     @endif
                 </div>
+                @elseif(!$isLeagueOwned)
+                <div style="background:#111827;border-radius:12px;overflow:hidden">
+                    <div class="px-4 py-4 text-center" style="color:#6b7280;font-size:.875rem">No rules published for this championship.</div>
+                </div>
                 @endif
+                </div>{{-- /rules panel --}}
 
-            </div>
-
-            {{-- Right: registration + drivers --}}
-            <div class="col-12 col-lg-4">
-
-                @if($isLeagueOwned)
-                {{-- Entry requirements + stewarding summary (Phase 7) --}}
-                <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
+                {{-- Drivers — full list, not capped, now that it has a full-width tab of its own. --}}
+                <div data-tab-panel="drivers" style="display:none">
+                <div style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
-                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Entry Requirements</h2>
+                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">
+                            Drivers
+                            <span style="color:#6b7280;font-weight:400">({{ $championship->registrations->count() }}{{ $championship->max_drivers ? '/' . $championship->max_drivers : '' }})</span>
+                            @if($championship->waitlistCount() > 0)
+                            <span style="color:#f59e0b;font-weight:400">· {{ $championship->waitlistCount() }} waiting</span>
+                            @endif
+                        </h2>
                     </div>
-                    <div class="px-4 py-3" style="font-size:.82rem">
-                        <div class="d-flex justify-content-between py-1" style="border-bottom:1px solid #1f2937">
-                            <span style="color:#6b7280">Minimum XCL Rating</span>
-                            <span class="fw-bold text-white">{{ $req->min_xcl_rating_tier ? ucfirst($req->min_xcl_rating_tier) : 'None' }}</span>
+
+                    @if($championship->registrations->isEmpty())
+                    <div class="px-4 py-4 text-center" style="color:#6b7280;font-size:.875rem">No drivers registered yet.</div>
+                    @else
+                    <div class="px-4 py-2">
+                        @foreach($championship->registrations as $reg)
+                        <div class="d-flex align-items-center gap-2 py-2" style="border-bottom:1px solid #1f2937">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center fw-black text-white flex-shrink-0"
+                                 style="width:28px;height:28px;font-size:.65rem;background:linear-gradient(135deg,#374151,#6b7280)">
+                                {{ strtoupper(substr($reg->user?->name ?? '?', 0, 1)) }}
+                            </div>
+                            <div class="flex-grow-1">
+                                <span class="text-white fw-bold" style="font-size:.82rem">{{ $reg->user?->name }}</span>
+                                @if($championship->is_multiclass && $reg->championshipClass)
+                                <span class="badge ms-1 fw-bold" style="font-size:.6rem;background:{{ $reg->championshipClass->color }}22;color:{{ $reg->championshipClass->color }}">
+                                    {{ $reg->championshipClass->name }}
+                                </span>
+                                @endif
+                            </div>
                         </div>
-                        <div class="d-flex justify-content-between py-1" style="border-bottom:1px solid #1f2937">
-                            <span style="color:#6b7280">Minimum Safety Rating</span>
-                            <span class="fw-bold text-white">{{ $req->min_safety_rating ?? 'None' }}</span>
-                        </div>
-                        <div class="d-flex justify-content-between py-1" style="border-bottom:1px solid #1f2937">
-                            <span style="color:#6b7280">Discord Membership</span>
-                            <span class="fw-bold" style="color:{{ $discordRequiredHere ? '#818cf8' : '#fff' }}">{{ $discordRequiredHere ? 'Required' : 'Not required' }}</span>
-                        </div>
-                        <div class="d-flex justify-content-between py-1">
-                            <span style="color:#6b7280">Entry Approval</span>
-                            <span class="fw-bold text-white">{{ ($req->manual_approval_required ?? false) ? 'Manually reviewed' : 'Automatic' }}</span>
-                        </div>
-                        {{-- The free-text notes field has its own dedicated "Rules" card below,
-                             not repeated here too. --}}
-                    </div>
-                    @if($pen->stewarding_enabled ?? false)
-                    <div class="px-4 py-3" style="border-top:1px solid #1f2937;font-size:.82rem">
-                        <div class="fw-bold text-uppercase mb-2" style="color:#6b7280;font-size:.68rem;letter-spacing:.06em">Stewarding &amp; Penalties</div>
-                        <div class="d-flex justify-content-between py-1">
-                            <span style="color:#6b7280">Penalties affect</span>
-                            <span class="fw-bold text-white">{{ ucfirst($pen->affects ?? 'none') }}</span>
-                        </div>
-                        <div class="d-flex justify-content-between py-1">
-                            <span style="color:#6b7280">Post-race time penalties</span>
-                            <span class="fw-bold text-white">{{ ($pen->post_race_time_penalties_enabled ?? false) ? 'Allowed' : 'Not used' }}</span>
-                        </div>
+                        @endforeach
                     </div>
                     @endif
                 </div>
-                @endif
+                </div>{{-- /drivers panel --}}
+
+            </div>{{-- /col-lg-8 --}}
+
+            {{-- Right: registration --}}
+            <div class="col-12 col-lg-4">
 
                 {{-- Registration card --}}
                 @auth
@@ -460,45 +493,86 @@
                 </div>
                 @endauth
 
-                {{-- Drivers card --}}
-                <div style="background:#111827;border-radius:12px;overflow:hidden">
+                {{-- Entry Requirements — back as its own box under Registration (its original
+                     spot), not tucked away inside the Rules tab. --}}
+                @if($isLeagueOwned)
+                <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
-                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">
-                            Drivers
-                            <span style="color:#6b7280;font-weight:400">({{ $championship->registrations->count() }}{{ $championship->max_drivers ? '/' . $championship->max_drivers : '' }})</span>
-                            @if($championship->waitlistCount() > 0)
-                            <span style="color:#f59e0b;font-weight:400">· {{ $championship->waitlistCount() }} waiting</span>
-                            @endif
-                        </h2>
+                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Entry Requirements</h2>
                     </div>
-
-                    @if($championship->registrations->isEmpty())
-                    <div class="px-4 py-4 text-center" style="color:#6b7280;font-size:.875rem">No drivers registered yet.</div>
-                    @else
-                    <div class="px-4 py-2">
-                        @foreach($championship->registrations->take(20) as $reg)
-                        <div class="d-flex align-items-center gap-2 py-2" style="border-bottom:1px solid #1f2937">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center fw-black text-white flex-shrink-0"
-                                 style="width:28px;height:28px;font-size:.65rem;background:linear-gradient(135deg,#374151,#6b7280)">
-                                {{ strtoupper(substr($reg->user?->name ?? '?', 0, 1)) }}
-                            </div>
-                            <div class="flex-grow-1">
-                                <span class="text-white fw-bold" style="font-size:.82rem">{{ $reg->user?->name }}</span>
-                                @if($championship->is_multiclass && $reg->championshipClass)
-                                <span class="badge ms-1 fw-bold" style="font-size:.6rem;background:{{ $reg->championshipClass->color }}22;color:{{ $reg->championshipClass->color }}">
-                                    {{ $reg->championshipClass->name }}
-                                </span>
-                                @endif
-                            </div>
+                    <div class="px-4 py-3" style="font-size:.82rem">
+                        <div class="d-flex justify-content-between py-1" style="border-bottom:1px solid #1f2937">
+                            <span style="color:#6b7280">Minimum XCL Rating</span>
+                            <span class="fw-bold text-white">{{ $req->min_xcl_rating_tier ? ucfirst($req->min_xcl_rating_tier) : 'None' }}</span>
                         </div>
-                        @endforeach
-                        @if($championship->registrations->count() > 20)
-                        <div class="py-2 text-center" style="color:#6b7280;font-size:.75rem">
-                            + {{ $championship->registrations->count() - 20 }} more
+                        <div class="d-flex justify-content-between py-1" style="border-bottom:1px solid #1f2937">
+                            <span style="color:#6b7280">Minimum Safety Rating</span>
+                            <span class="fw-bold text-white">{{ $req->min_safety_rating ?? 'None' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1" style="border-bottom:1px solid #1f2937">
+                            <span style="color:#6b7280">Discord Membership</span>
+                            <span class="fw-bold" style="color:{{ $discordRequiredHere ? '#818cf8' : '#fff' }}">{{ $discordRequiredHere ? 'Required' : 'Not required' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span style="color:#6b7280">Entry Approval</span>
+                            <span class="fw-bold text-white">{{ ($req->manual_approval_required ?? false) ? 'Manually reviewed' : 'Automatic' }}</span>
+                        </div>
+                    </div>
+                    @if($pen->stewarding_enabled ?? false)
+                    <div class="px-4 py-3" style="border-top:1px solid #1f2937;font-size:.82rem">
+                        <div class="fw-bold text-uppercase mb-2" style="color:#6b7280;font-size:.68rem;letter-spacing:.06em">Stewarding &amp; Penalties</div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span style="color:#6b7280">Penalties affect</span>
+                            <span class="fw-bold text-white">{{ ucfirst($pen->affects ?? 'none') }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span style="color:#6b7280">Post-race time penalties</span>
+                            <span class="fw-bold text-white">{{ ($pen->post_race_time_penalties_enabled ?? false) ? 'Allowed' : 'Not used' }}</span>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+                @endif
+
+                {{-- Drivers summary — count + strength of field at a glance (same SoF
+                     calculation as an event page's Drivers card), the full entry list stays
+                     under the Drivers tab so this stays a small block, not a repeat of it. --}}
+                @php
+                    $eloCol = \App\Models\User::eloColumn($championship->game);
+                    $sofRatings = $eloCol
+                        ? $championship->registrations->pluck('user')->filter()
+                            ->map(fn($u) => (int) ($u->{$eloCol} ?? 0))
+                            ->filter(fn($r) => $r > 0)
+                        : collect();
+                    $sof = $sofRatings->isNotEmpty() ? $sofRatings->avg() : null;
+                @endphp
+                <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
+                    <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
+                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Drivers</h2>
+                    </div>
+                    <div class="px-4 py-3" style="font-size:.82rem">
+                        <div class="d-flex justify-content-between py-1" style="border-bottom:1px solid #1f2937">
+                            <span style="color:#6b7280">Registered</span>
+                            <span class="fw-bold text-white">{{ $championship->registrations->count() }}{{ $championship->max_drivers ? '/' . $championship->max_drivers : '' }}</span>
+                        </div>
+                        @if($championship->waitlistCount() > 0)
+                        <div class="d-flex justify-content-between py-1" style="border-bottom:1px solid #1f2937">
+                            <span style="color:#6b7280">Waiting list</span>
+                            <span class="fw-bold" style="color:#f59e0b">{{ $championship->waitlistCount() }}</span>
+                        </div>
+                        @endif
+                        @if($sof !== null)
+                        <div class="d-flex justify-content-between py-1">
+                            <span style="color:#6b7280">Strength of Field</span>
+                            <span class="fw-bold" style="color:#c084fc">{{ number_format($sof, 0) }}</span>
                         </div>
                         @endif
                     </div>
-                    @endif
+                    <button type="button" data-activate-tab="drivers"
+                            class="w-100 text-center fw-bold text-uppercase bg-transparent"
+                            style="padding:.6rem 1rem;color:{{ $accent }};font-size:.72rem;letter-spacing:.05em;border:none;border-top:1px solid #1f2937;cursor:pointer">
+                        View Full Entry List →
+                    </button>
                 </div>
 
             </div>

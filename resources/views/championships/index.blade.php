@@ -84,7 +84,7 @@
 
                         <div class="p-3">
                             <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
-                                <h3 class="fw-black mb-0 text-white" style="font-size:.95rem;line-height:1.3">{{ $c->name }}</h3>
+                                <h3 class="fw-black text-uppercase mb-0 text-white" style="font-size:.95rem;line-height:1.3">{{ $c->name }}</h3>
                                 <span class="badge text-white fw-bold flex-shrink-0"
                                       style="background:{{ $c->gameColor() }};font-size:.62rem;padding:3px 8px;border-radius:5px">
                                     {{ $c->gameLabel() }}

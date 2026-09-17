@@ -26,7 +26,7 @@
                 @if(auth()->user()->canManage())
                     Every league running on XCLusive, across every organiser.
                 @else
-                    Leagues you manage or steward.
+                    Every league running on XCLusive — you can only act on the ones you manage or steward.
                 @endif
             </div>
         </div>
@@ -91,6 +91,14 @@
                         </span>
                     </td>
                     <td class="text-end pe-4">
+                        @php
+                            $canAccessLeague = auth()->user()->canManage()
+                                || auth()->user()->managesLeague($league)
+                                || auth()->user()->stewardsLeague($league);
+                        @endphp
+                        @unless($canAccessLeague)
+                        <span class="text-secondary" style="font-size:.78rem">No access</span>
+                        @else
                         <div class="dropdown">
                             <button class="btn btn-sm fw-bold" type="button"
                                     data-bs-toggle="dropdown" aria-expanded="false"
@@ -136,6 +144,7 @@
                                 @endif
                             </ul>
                         </div>
+                        @endunless
                     </td>
                 </tr>
                 @endforeach

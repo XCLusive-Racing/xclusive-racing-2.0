@@ -15,12 +15,23 @@
 
 <div class="row g-3 mb-3">
     <div class="col-12">
-        <label class="form-label">Tagline <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
+        <label class="form-label">Subtitle <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
         <input type="text" name="tagline" value="{{ old('tagline', $championship->tagline) }}" maxlength="100"
                class="form-control @error('tagline') is-invalid @enderror"
-               placeholder="A short line shown under the name, e.g. \"The premier GT3 series on console\"">
-        <div class="form-text" style="font-size:.72rem;color:#9ca3af">Plain text, max 100 characters — shown right under the championship name.</div>
+               placeholder="e.g. &quot;Season 1&quot;">
+        <div class="form-text" style="font-size:.72rem;color:#9ca3af">Plain text, max 100 characters — shown right under the championship name (which always displays in caps).</div>
         @error('tagline') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-12">
+        <label class="form-label">Tagline <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
+        <input type="text" name="slogan" value="{{ old('slogan', $championship->slogan) }}" maxlength="150"
+               class="form-control @error('slogan') is-invalid @enderror"
+               placeholder="e.g. &quot;Where real drivers are born&quot;">
+        <div class="form-text" style="font-size:.72rem;color:#9ca3af">A short slogan shown under the subtitle — the smallest of the three lines.</div>
+        @error('slogan') <div class="invalid-feedback">{{ $message }}</div> @enderror
     </div>
 </div>
 

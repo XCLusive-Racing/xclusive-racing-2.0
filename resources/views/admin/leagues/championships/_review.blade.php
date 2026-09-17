@@ -28,7 +28,8 @@
     <div class="px-4 py-3" data-accordion-body>
         <div class="row g-2" style="font-size:.85rem">
             <div class="col-sm-6"><span class="text-secondary">Name:</span> {{ $championship->name }}</div>
-            <div class="col-sm-6"><span class="text-secondary">Tagline:</span> {{ $championship->tagline ?: 'Not set' }}</div>
+            <div class="col-sm-6"><span class="text-secondary">Subtitle:</span> {{ $championship->tagline ?: 'Not set' }}</div>
+            <div class="col-sm-6"><span class="text-secondary">Tagline:</span> {{ $championship->slogan ?: 'Not set' }}</div>
             <div class="col-sm-6"><span class="text-secondary">Slug:</span> {{ $championship->slug ?: 'Not set' }}</div>
             <div class="col-sm-6"><span class="text-secondary">Game:</span> {{ strtoupper($championship->game) }}</div>
             <div class="col-sm-6"><span class="text-secondary">Platform:</span> {{ $championship->platform ? ucfirst($championship->platform) : 'Not set' }}</div>
