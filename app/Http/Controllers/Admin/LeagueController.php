@@ -19,21 +19,26 @@ class LeagueController extends Controller
     {
         $user = $request->user();
 
-        if ($user->canManage()) {
-            // withTrashed(): an archived league is now a real soft delete (see
-            // archive()) — without this it would vanish from the one screen that
-            // still needs to show it, with no way left to restore it.
-            $leagues = League::withoutTenantScope()->withTrashed()->withCount('members')->orderBy('name')->get();
-            return view('admin.leagues.index', compact('leagues'));
-        }
+        // withTrashed(): an archived league is now a real soft delete (see
+        // archive()) — without this it would vanish from the one screen that
+        // still needs to show it, with no way left to restore it.
+        //
+        // Every role sees every league here — an admin/owner and a league
+        // manager/steward alike get the full roster, so a manager can see what
+        // else is running on the platform. Only the row's own Actions column
+        // (rendered in the view via managesLeague()/stewardsLeague()) still
+        // limits what they can actually click into; edit()/update() etc. remain
+        // the real enforcement, this list is just visibility.
+        $leagues = League::withoutTenantScope()->withTrashed()->withCount('members')->orderBy('name')->get();
 
-        // A league manager/steward attached to exactly one league lands straight on
-        // it, rather than an index of one — they should never have to guess which
-        // league they're acting in.
-        $leagues = League::withTrashed()->orderBy('name')->get();
-
-        if ($leagues->count() === 1) {
-            return redirect()->route('admin.leagues.edit', $leagues->first());
+        if (!$user->canManage()) {
+            // A league manager/steward attached to exactly one league lands straight
+            // on it, rather than an index full of leagues that aren't theirs — this
+            // is about how many THEY belong to, not how many exist on the platform.
+            $myLeagueIds = $user->leagueIds();
+            if ($myLeagueIds->count() === 1) {
+                return redirect()->route('admin.leagues.edit', $myLeagueIds->first());
+            }
         }
 
         return view('admin.leagues.index', compact('leagues'));
