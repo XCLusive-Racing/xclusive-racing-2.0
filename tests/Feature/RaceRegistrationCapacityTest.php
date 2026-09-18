@@ -121,11 +121,43 @@ class RaceRegistrationCapacityTest extends TestCase
         $this->assertFalse($race->isRegistrationWaitlisted($gt4FirstReg));
     }
 
+    // User-directed: the event page must show a per-class threshold (not the race's raw
+    // total) and split sign-ups into one box per class. A 10-driver race with 2 classes
+    // and no per-class caps set should split into 5/5, not leave both classes uncapped.
+    public function test_race_wide_cap_splits_evenly_across_classes_with_no_cap_of_their_own(): void
+    {
+        $race = $this->makeRace(['is_multiclass' => true, 'max_drivers' => 10]);
+        $gt3 = RaceClass::create(['race_id' => $race->id, 'name' => 'GT3', 'max_drivers' => null, 'sort_order' => 1]);
+        $gt4 = RaceClass::create(['race_id' => $race->id, 'name' => 'GT4', 'max_drivers' => null, 'sort_order' => 2]);
+
+        $this->assertSame(5, $gt3->effectiveCap());
+        $this->assertSame(5, $gt4->effectiveCap());
+
+        foreach (range(1, 5) as $i) {
+            $this->actingAs(User::factory()->create())->post(route('events.register', $race), ['race_class_id' => $gt3->id]);
+        }
+        $sixthGt3 = User::factory()->create();
+        $this->actingAs($sixthGt3)->post(route('events.register', $race), ['race_class_id' => $gt3->id]);
+
+        $firstGt4 = User::factory()->create();
+        $this->actingAs($firstGt4)->post(route('events.register', $race), ['race_class_id' => $gt4->id]);
+
+        $sixthGt3Reg = RaceRegistration::where('user_id', $sixthGt3->id)->first();
+        $firstGt4Reg = RaceRegistration::where('user_id', $firstGt4->id)->first();
+
+        $this->assertTrue($gt3->isFull());
+        $this->assertTrue($race->isRegistrationWaitlisted($sixthGt3Reg), 'GT3 hit its derived 5-driver split, so the 6th entrant waitlists.');
+        $this->assertFalse($race->isRegistrationWaitlisted($firstGt4Reg), 'GT4 is still empty, well under its own 5-driver split.');
+    }
+
     // Regression test for the real "Multiclass / Spa" race in production: a multiclass
     // race with a race-wide max_drivers set, but its classes have no cap of their own
     // (max_drivers null, unlimited per class). Picking an uncapped class must NOT bypass
     // the race-wide cap -- previously it did, because isRegistrationWaitlisted()
-    // delegated entirely to the class and an uncapped class is never "full" on its own.
+    // delegated entirely to the class and an uncapped class was never "full" on its own.
+    // Follow-up: RaceClass::effectiveCap() now derives a real per-class cap (an even
+    // split of the race's max_drivers across its classes) when the class has none of its
+    // own, so a single-class race's class inherits the race's whole cap directly.
     public function test_uncapped_class_still_respects_the_race_wide_cap_in_a_multiclass_race(): void
     {
         $race = $this->makeRace(['is_multiclass' => true, 'max_drivers' => 2]);
@@ -141,8 +173,9 @@ class RaceRegistrationCapacityTest extends TestCase
 
         $thirdReg = RaceRegistration::where('user_id', $third->id)->first();
 
-        $this->assertFalse($gt3->isFull(), 'The class itself has no cap, so it never reports full on its own.');
-        $this->assertTrue($race->isRegistrationWaitlisted($thirdReg), 'The race-wide cap must still apply even though the class is uncapped.');
+        $this->assertSame(2, $gt3->effectiveCap(), 'With only one class, its effective cap is the whole race cap.');
+        $this->assertTrue($gt3->isFull(), 'The class inherits the race-wide cap as its own effective cap.');
+        $this->assertTrue($race->isRegistrationWaitlisted($thirdReg), 'The race-wide cap must still apply even though the class has no cap of its own.');
         $this->assertSame(1, $race->waitlistPosition($thirdReg));
 
         // Unregistering the first entrant frees the race-wide slot and promotes the
@@ -198,5 +231,57 @@ class RaceRegistrationCapacityTest extends TestCase
         ])->assertRedirect();
 
         $this->assertSame(1, RaceTeamEntry::where('race_id', $race->id)->where('car_number', 7)->count());
+    }
+
+    // User-directed: the event page must show a per-class threshold and split sign-ups
+    // into a box per class, plus a separate waiting list box, instead of one combined
+    // "DRIVERS n/50" box that ignored per-class capacity entirely.
+    public function test_event_page_shows_a_box_per_class_and_a_waiting_list_box(): void
+    {
+        $race = $this->makeRace(['is_multiclass' => true, 'max_drivers' => 2]);
+        $gt3 = RaceClass::create(['race_id' => $race->id, 'name' => 'GT3', 'max_drivers' => null, 'sort_order' => 1]);
+        $gt4 = RaceClass::create(['race_id' => $race->id, 'name' => 'GT4', 'max_drivers' => null, 'sort_order' => 2]);
+
+        $gt3First = User::factory()->create(['name' => 'GT3 First']);
+        $gt3Second = User::factory()->create(['name' => 'GT3 Second']);
+        $gt4First = User::factory()->create(['name' => 'GT4 First']);
+
+        $this->actingAs($gt3First)->post(route('events.register', $race), ['race_class_id' => $gt3->id]);
+        $this->actingAs($gt3Second)->post(route('events.register', $race), ['race_class_id' => $gt3->id]);
+        $this->actingAs($gt4First)->post(route('events.register', $race), ['race_class_id' => $gt4->id]);
+
+        $response = $this->actingAs($gt4First)->get(route('events.show', $race));
+
+        $response->assertOk();
+        $response->assertSee('GT3');
+        $response->assertSee('GT4');
+        $response->assertSee('WAITING LIST');
+        // GT3 is full at its 1-driver effective cap (race max_drivers 2 split across 2
+        // classes), so its 2nd entrant is on the waiting list, not in the GT3 box.
+        $response->assertSeeInOrder(['GT3 First', 'WAITING LIST', 'GT3 Second']);
+        $response->assertDontSeeText('DRIVERS');
+    }
+
+    // Regression test: a registration's race_class_id can go null in a multiclass race
+    // even though it's not waitlisted -- e.g. its class was deleted and a new one
+    // created with a different id (race_class_id is nullOnDelete). Those registrations
+    // must still show up somewhere on the page, not silently vanish because they don't
+    // match any current class's id.
+    public function test_unassigned_registrations_still_show_on_the_event_page(): void
+    {
+        $race = $this->makeRace(['is_multiclass' => true, 'max_drivers' => 10]);
+        RaceClass::create(['race_id' => $race->id, 'name' => 'GT3', 'max_drivers' => null, 'sort_order' => 1]);
+        RaceClass::create(['race_id' => $race->id, 'name' => 'GT4', 'max_drivers' => null, 'sort_order' => 2]);
+
+        $orphan = User::factory()->create(['name' => 'Orphaned Driver']);
+        // Registered with no class at all (race_class_id null), simulating a
+        // registration whose original class was since deleted and re-created.
+        RaceRegistration::create(['race_id' => $race->id, 'user_id' => $orphan->id]);
+
+        $response = $this->actingAs($orphan)->get(route('events.show', $race));
+
+        $response->assertOk();
+        $response->assertSee('UNASSIGNED');
+        $response->assertSee('Orphaned Driver');
     }
 }

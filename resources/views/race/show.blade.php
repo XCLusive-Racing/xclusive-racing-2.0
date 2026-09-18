@@ -816,38 +816,17 @@
                 </div>
                 @endif
 
-                {{-- Drivers --}}
+                {{-- Teams (unchanged: still one combined box) --}}
+                @if($isTeamRace)
                 <div class="xcl-event-card">
-                    @php
-                        $eloCol = \App\Models\User::eloColumn($race->game);
-                        $sofRatings = $eloCol
-                            ? $race->registrations->pluck('user')->filter()
-                                ->map(fn($u) => (int) ($u->{$eloCol} ?? 0))
-                                ->filter(fn($r) => $r > 0)
-                            : collect();
-                        $sof = $sofRatings->isNotEmpty() ? $sofRatings->avg() : null;
-                    @endphp
                     <h3 class="xcl-event-card__heading">
-                        {{ $isTeamRace ? 'TEAMS' : 'DRIVERS' }}
+                        TEAMS
                         <span class="xcl-event-card__heading-sub">
-                            @if($isTeamRace)
-                                {{ $race->teamEntries->count() }}{{ $race->max_drivers ? '/' . $race->max_drivers : '' }}
-                            @else
-                                {{ $race->registrations->count() }}{{ $race->max_drivers ? '/' . $race->max_drivers : '' }}
-                            @endif
+                            {{ $race->teamEntries->count() }}{{ $race->max_drivers ? '/' . $race->max_drivers : '' }}
                         </span>
-                        @if(!$isTeamRace && $race->waitlistCount() > 0)
-                        <span class="xcl-event-card__heading-sub" style="color:#fbbf24">
-                            · {{ $race->waitlistCount() }} waiting
-                        </span>
-                        @endif
-                        @if($sof !== null)
-                        <span class="xcl-event-card__heading-sub" style="margin-left:auto;margin-right:14px;color:#c084fc;font-weight:800">
-                            <i class="fa-solid fa-chart-line" style="margin-right:4px"></i>SoF {{ number_format($sof, 0) }}
-                        </span>
-                        @endif
                     </h3>
 
+                    @php $eloCol = \App\Models\User::eloColumn($race->game); @endphp
                     @if($race->registrations->isEmpty())
                         <p class="xcl-event-card__text mb-0">No drivers registered yet. Be the first!</p>
                     @else
@@ -861,50 +840,126 @@
                         <div class="xcl-drivers-grid-wrap {{ $driverCount <= 8 ? 'no-overflow' : '' }}">
                             <div class="xcl-drivers-grid">
                                 @foreach($sortedRegs as $reg)
-                                @php
-                                    $driverRecord = $driverMap->get($reg->user->platform_id ?? '');
-                                    $rankColor = $reg->user->rank($race->game)['color'];
-                                    $regWaitlisted = !$reg->teamEntry && $race->isRegistrationWaitlisted($reg);
-                                @endphp
-                                @if($driverRecord)
-                                <a href="{{ route('drivers.show', $driverRecord) }}" class="xcl-drivers-grid__item text-decoration-none">
-                                @else
-                                <div class="xcl-drivers-grid__item">
-                                @endif
-                                    <div class="xcl-drivers-grid__avatar" style="{{ !$reg->user->avatarUrl() ? 'background:' . $race->gameColor() : '' }}">
-                                        @if($reg->user->avatarUrl())
-                                            <img src="{{ $reg->user->avatarUrl() }}" alt="{{ $reg->user->name }}">
-                                        @else
-                                            {{ strtoupper(substr($reg->user->name, 0, 1)) }}
-                                        @endif
-                                    </div>
-                                    <div class="xcl-drivers-grid__info">
-                                        <span class="xcl-drivers-grid__name" style="color:{{ $rankColor }}">{{ $reg->user->displayName() }}</span>
-                                        @if($reg->teamEntry)
-                                        <span class="xcl-drivers-grid__class-badge" style="background:#374151;color:#9ca3af;border:1px solid #4b5563">
-                                            {{ $reg->teamEntry->team->name }}
-                                        </span>
-                                        @elseif($race->is_multiclass && $reg->raceClass)
-                                        <span class="xcl-drivers-grid__class-badge" style="background:{{ $reg->raceClass->color }}22;color:{{ $reg->raceClass->color }};border:1px solid {{ $reg->raceClass->color }}44">
-                                            {{ $reg->raceClass->name }}
-                                        </span>
-                                        @endif
-                                        @if($regWaitlisted)
-                                        <span class="xcl-drivers-grid__class-badge" style="background:#f59e0b22;color:#fbbf24;border:1px solid #f59e0b44">
-                                            Waiting #{{ $race->waitlistPosition($reg) }}
-                                        </span>
-                                        @endif
-                                    </div>
-                                @if($driverRecord)
-                                </a>
-                                @else
-                                </div>
-                                @endif
+                                @include('race.partials.driver-grid-item', ['reg' => $reg, 'race' => $race, 'driverMap' => $driverMap])
                                 @endforeach
                             </div>
                         </div>
                     @endif
                 </div>
+                @else
+                {{-- Drivers -- one box per class in a multiclass race (each with its own
+                     count/cap), or a single box otherwise. Waitlisted entries are excluded
+                     from these boxes -- they get their own WAITING LIST box below. --}}
+                @php
+                    $eloCol = \App\Models\User::eloColumn($race->game);
+                    $classSections = ($race->is_multiclass && $race->raceClasses->isNotEmpty())
+                        ? $race->raceClasses
+                        : collect([null]);
+                @endphp
+
+                @foreach($classSections as $cls)
+                @php
+                    // A registration can end up with no race_class_id even in a
+                    // multiclass race -- e.g. its class was deleted and re-created
+                    // (race_class_id nullOnDelete). Those must not silently disappear:
+                    // they're grouped into their own "unassigned" box below instead.
+                    $sectionRegs = $cls
+                        ? $race->registrations->where('race_class_id', $cls->id)
+                        : $race->registrations;
+                    $activeRegs = $sectionRegs
+                        ->filter(fn ($r) => $r->user && ! $race->isRegistrationWaitlisted($r))
+                        ->sortByDesc(fn ($r) => $eloCol ? ($r->user->{$eloCol} ?? 0) : 0)
+                        ->values();
+                    $cap = $cls ? $cls->effectiveCap() : $race->max_drivers;
+                    $sofRatings = $eloCol
+                        ? $activeRegs->pluck('user')->map(fn ($u) => (int) ($u->{$eloCol} ?? 0))->filter(fn ($r) => $r > 0)
+                        : collect();
+                    $sof = $sofRatings->isNotEmpty() ? $sofRatings->avg() : null;
+                @endphp
+                <div class="xcl-event-card mb-4">
+                    <h3 class="xcl-event-card__heading">
+                        {{ $cls ? strtoupper($cls->name) : 'DRIVERS' }}
+                        <span class="xcl-event-card__heading-sub" @if($cls) style="color:{{ $cls->color }}" @endif>
+                            {{ $activeRegs->count() }}{{ $cap ? '/' . $cap : '' }}
+                        </span>
+                        @if($sof !== null)
+                        <span class="xcl-event-card__heading-sub" style="margin-left:auto;margin-right:14px;color:#c084fc;font-weight:800">
+                            <i class="fa-solid fa-chart-line" style="margin-right:4px"></i>SoF {{ number_format($sof, 0) }}
+                        </span>
+                        @endif
+                    </h3>
+
+                    @if($activeRegs->isEmpty())
+                        <p class="xcl-event-card__text mb-0">No drivers registered yet. Be the first!</p>
+                    @else
+                        <div class="xcl-drivers-grid-wrap {{ $activeRegs->count() <= 8 ? 'no-overflow' : '' }}">
+                            <div class="xcl-drivers-grid">
+                                @foreach($activeRegs as $reg)
+                                @include('race.partials.driver-grid-item', ['reg' => $reg, 'race' => $race, 'driverMap' => $driverMap])
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                </div>
+                @endforeach
+
+                {{-- Unassigned -- registered drivers with no race_class_id in a
+                     multiclass race (e.g. their class was deleted and re-created since
+                     they signed up). Shown so they're never silently hidden. --}}
+                @php
+                    $unassignedRegs = ($race->is_multiclass && $race->raceClasses->isNotEmpty())
+                        ? $race->registrations
+                            ->whereNull('race_class_id')
+                            ->filter(fn ($r) => $r->user && ! $r->team_entry_id && ! $race->isRegistrationWaitlisted($r))
+                            ->sortByDesc(fn ($r) => $eloCol ? ($r->user->{$eloCol} ?? 0) : 0)
+                            ->values()
+                        : collect();
+                @endphp
+                @if($unassignedRegs->isNotEmpty())
+                <div class="xcl-event-card mb-4">
+                    <h3 class="xcl-event-card__heading">
+                        UNASSIGNED
+                        <span class="xcl-event-card__heading-sub">{{ $unassignedRegs->count() }}</span>
+                    </h3>
+                    <p class="xcl-event-card__text" style="font-size:.78rem;opacity:.8">
+                        Registered before a class was picked for them, or their class was later removed.
+                    </p>
+                    <div class="xcl-drivers-grid-wrap {{ $unassignedRegs->count() <= 8 ? 'no-overflow' : '' }}">
+                        <div class="xcl-drivers-grid">
+                            @foreach($unassignedRegs as $reg)
+                            @include('race.partials.driver-grid-item', ['reg' => $reg, 'race' => $race, 'driverMap' => $driverMap])
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                {{-- Waiting list -- everyone beyond capacity, across every class, FIFO. --}}
+                @php
+                    $waitlistRegs = $race->registrations
+                        ->filter(fn ($r) => $r->user && $race->isRegistrationWaitlisted($r))
+                        ->sortBy(fn ($r) => $race->waitlistPosition($r))
+                        ->values();
+                @endphp
+                @if($waitlistRegs->isNotEmpty())
+                <div class="xcl-event-card mb-4" style="border-left:3px solid #f59e0b">
+                    <h3 class="xcl-event-card__heading">
+                        WAITING LIST
+                        <span class="xcl-event-card__heading-sub" style="color:#fbbf24">{{ $waitlistRegs->count() }}</span>
+                    </h3>
+                    <div class="xcl-drivers-grid-wrap {{ $waitlistRegs->count() <= 8 ? 'no-overflow' : '' }}">
+                        <div class="xcl-drivers-grid">
+                            @foreach($waitlistRegs as $reg)
+                            @include('race.partials.driver-grid-item', [
+                                'reg' => $reg, 'race' => $race, 'driverMap' => $driverMap,
+                                'waitlistPosition' => $race->waitlistPosition($reg),
+                            ])
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                @endif
+                @endif
 
             </div>
         </div>
