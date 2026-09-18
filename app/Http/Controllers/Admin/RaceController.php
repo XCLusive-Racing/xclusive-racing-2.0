@@ -507,7 +507,12 @@ class RaceController extends Controller
             }
 
             try {
-                $dt = Carbon::createFromFormat('Y-m-d H:i', $date.' '.substr($time, 0, 5));
+                // Accepts "2026-09-21" (the app's own export/template format) and
+                // "2026/09/21" (what a spreadsheet's date column commonly renders as)
+                // interchangeably -- the year always comes first in both, so swapping
+                // '/' for '-' can't silently reinterpret a day-first/month-first date,
+                // it just fails the same as before if the value isn't one of these two.
+                $dt = Carbon::createFromFormat('Y-m-d H:i', str_replace('/', '-', $date).' '.substr($time, 0, 5));
                 if (! $dt) {
                     throw new \Exception;
                 }
@@ -604,12 +609,12 @@ class RaceController extends Controller
             }
 
             $ratingValues = ['all', 'rookie', 'bronze', 'silver', 'gold', 'platinum', 'alien'];
-            $minRating = isset($colIndex['min_rating']) ? strtolower(trim($line[$colIndex['min_rating']] ?? '')) : '';
+            $minRating = isset($colIndex['min_rating']) ? $this->normalizeRatingTier($line[$colIndex['min_rating']] ?? '') : '';
             if ($minRating !== '' && ! in_array($minRating, $ratingValues, true)) {
                 $errors[] = "Row {$lineNum}: unknown min_rating \"{$minRating}\" — ignored.";
                 $minRating = '';
             }
-            $maxRating = isset($colIndex['max_rating']) ? strtolower(trim($line[$colIndex['max_rating']] ?? '')) : '';
+            $maxRating = isset($colIndex['max_rating']) ? $this->normalizeRatingTier($line[$colIndex['max_rating']] ?? '') : '';
             if ($maxRating !== '' && ! in_array($maxRating, $ratingValues, true)) {
                 $errors[] = "Row {$lineNum}: unknown max_rating \"{$maxRating}\" — ignored.";
                 $maxRating = '';
@@ -669,6 +674,17 @@ class RaceController extends Controller
         }
 
         return response()->json(['rows' => $rows, 'errors' => $errors]);
+    }
+
+    // A min_rating/max_rating CSV cell often carries a human qualifier the column
+    // header already implies -- "bronze+" in a min_rating column, "rookie max" in a
+    // max_rating one -- rather than the bare tier name the app stores. Strips that
+    // qualifier so both read the same as plain "bronze"/"rookie" would.
+    private function normalizeRatingTier(string $value): string
+    {
+        $value = strtolower(trim($value));
+
+        return trim(preg_replace('/\s*(\+|min(imum)?|max(imum)?|only|and up|or (higher|above|lower|below))\s*$/', '', $value));
     }
 
     // Parses one of the three optional time-multiplier CSV columns (1-24) for a single row,

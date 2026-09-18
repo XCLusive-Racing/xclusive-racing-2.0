@@ -708,17 +708,9 @@
                         A practice server runs with the exact race conditions ahead of the event, so you can
                         learn the track and set-up before it counts.
                     </p>
-                    @php
-                        // upload_at is always a minute or two before the practice window opens
-                        // (e.g. 20:59 for a 21:00 window) — shown rounded up to the next whole
-                        // hour so it reads as a clean "before 5 PM" rather than "before 4:59 PM".
-                        // Registering exactly on that rounded hour is still comfortably before
-                        // the real (earlier) cutoff, so rounding up never actually misleads anyone.
-                        $uploadDisplay = $ps->upload_at->copy()->ceil('hour');
-                    @endphp
                     <p class="xcl-event-card__text mb-3" style="font-weight:700;color:#f472b6">
                         Register before
-                        <span data-local-time="{{ $uploadDisplay->toIso8601String() }}">{{ $uploadDisplay->timezone('Europe/London')->format('D d M, H:i T') }}</span>
+                        <span data-local-time="{{ $ps->upload_at->toIso8601String() }}">{{ $ps->upload_at->timezone('Europe/London')->format('D d M, H:i T') }}</span>
                         to get practice access. You can still register and race after that moment, you just won't be
                         able to join the practice server.
                     </p>

@@ -82,7 +82,7 @@ class RaceController extends Controller
             $myRegistration = $race->registrations->firstWhere('user_id', auth()->id());
             $isRegistered = $myRegistration !== null;
             $myRegisteredAt = $myRegistration?->created_at;
-            $userTeam = auth()->user()->ownedRacingTeams()->with('members')->first();
+            $userTeam = auth()->user()->manageableRacingTeam();
             if ($userTeam) {
                 $myTeamEntries = RaceTeamEntry::where('race_id', $race->id)
                     ->where('racing_team_id', $userTeam->id)
@@ -349,9 +349,9 @@ class RaceController extends Controller
             return back()->with('error', 'Registration is closed for this race.');
         }
 
-        $team = auth()->user()->ownedRacingTeams()->with('members')->first();
+        $team = auth()->user()->manageableRacingTeam();
         if (! $team) {
-            return back()->with('error', 'You do not own a racing team.');
+            return back()->with('error', 'You do not own or manage a racing team.');
         }
 
         $validated = $request->validate([
@@ -482,9 +482,9 @@ class RaceController extends Controller
             return back()->with('error', 'You cannot unregister from a closed race.');
         }
 
-        $team = auth()->user()->ownedRacingTeams()->first();
+        $team = auth()->user()->manageableRacingTeam();
         if (! $team) {
-            return back()->with('error', 'You do not own a racing team.');
+            return back()->with('error', 'You do not own or manage a racing team.');
         }
 
         if ($entry->race_id !== $race->id || $entry->racing_team_id !== $team->id) {

@@ -25,9 +25,9 @@ class ChampionshipController extends Controller
             // an active league's own draft championships already are, but staff (canManage()) and
             // that league's own members can still open it here as a live preview before it goes
             // live, e.g. via the "Preview League" button on the league edit page.
-            $user        = auth()->user();
-            $canPreview  = $user && ($user->canManage() || $user->leagueIds()->contains($league->id));
-            if ($league->status !== 'active' && !$canPreview) {
+            $user = auth()->user();
+            $canPreview = $user && ($user->canManage() || $user->leagueIds()->contains($league->id));
+            if ($league->status !== 'active' && ! $canPreview) {
                 abort(404);
             }
 
@@ -74,10 +74,10 @@ class ChampionshipController extends Controller
             'league' => fn ($q) => $q->withoutTenantScope(),
             'classes', 'registrations.user', 'registrations.championshipClass',
         ]);
-        $rounds         = $championship->rounds()->where('status', '!=', 'draft')->orderBy('round_number')->get();
-        $standings      = $championship->computeStandings();
+        $rounds = $championship->rounds()->where('status', '!=', 'draft')->orderBy('round_number')->get();
+        $standings = $championship->computeStandings();
         $classStandings = $championship->computeClassStandings();
-        $teamStandings  = $championship->computeTeamStandings();
+        $teamStandings = $championship->computeTeamStandings();
 
         // Native championships (league_id = XCL's own system league, Phase 2.5) don't
         // use the settings schema for requirements/penalties at all — they'd show as
@@ -98,11 +98,11 @@ class ChampionshipController extends Controller
             return back()->with('error', 'Your account has been suspended. Please contact an administrator.');
         }
 
-        if (!in_array($championship->status, ['active', 'registration_open'], true) || !$championship->registration_open) {
+        if (! in_array($championship->status, ['active', 'registration_open'], true) || ! $championship->registration_open) {
             return back()->with('error', 'Registration is not open.');
         }
 
-        if (!$championship->registrationIsOpen()) {
+        if (! $championship->registrationIsOpen()) {
             return back()->with('error', 'Registration is not open right now.');
         }
 
@@ -124,8 +124,8 @@ class ChampionshipController extends Controller
 
             ChampionshipRegistration::create([
                 'championship_id' => $championship->id,
-                'user_id'         => $user->id,
-                'is_spectator'    => true,
+                'user_id' => $user->id,
+                'is_spectator' => true,
             ]);
 
             return back()->with('success', 'You have been registered as a spectator!');
@@ -140,9 +140,8 @@ class ChampionshipController extends Controller
         $teamRegistrationScope = $championship->settings->format->team_registration_scope ?? 'per_round';
         if ($championship->settings->format->driver_swaps_enabled ?? false) {
             if ($request->filled('racing_team_id')) {
-                $team = RacingTeam::where('id', $request->integer('racing_team_id'))
-                    ->where('owner_id', $user->id)
-                    ->firstOrFail();
+                $team = RacingTeam::with('members')->findOrFail($request->integer('racing_team_id'));
+                abort_unless($team->canManage($user), 403);
 
                 if ($championship->registrations()->where('racing_team_id', $team->id)->exists()) {
                     return back()->with('error', 'Your team is already registered for this championship.');
@@ -154,26 +153,26 @@ class ChampionshipController extends Controller
                 // ChampionshipTeamEntryService.
                 if ($teamRegistrationScope === 'championship') {
                     $validated = $request->validate([
-                        'car_number'         => 'required|integer|min:0|max:999',
-                        'car_model'          => 'nullable|string|max:255',
+                        'car_number' => 'required|integer|min:0|max:999',
+                        'car_model' => 'nullable|string|max:255',
                         'starting_driver_id' => 'required|integer',
                     ]);
 
                     $eligibleIds = $team->members->pluck('id')->push($team->owner_id)->unique();
-                    if (!$eligibleIds->contains((int) $validated['starting_driver_id'])) {
+                    if (! $eligibleIds->contains((int) $validated['starting_driver_id'])) {
                         return back()->with('error', 'The starting driver must be a member of your team.');
                     }
 
                     $teamEntryFields = [
-                        'car_number'         => $validated['car_number'],
-                        'car_model'          => $validated['car_model'] ?? null,
+                        'car_number' => $validated['car_number'],
+                        'car_model' => $validated['car_model'] ?? null,
                         'starting_driver_id' => $validated['starting_driver_id'],
                     ];
                 }
             }
         }
 
-        if ($championship->isFull() && !$championship->waitlistEnabled()) {
+        if ($championship->isFull() && ! $championship->waitlistEnabled()) {
             return back()->with('error', 'Championship is full.');
         }
 
@@ -201,10 +200,10 @@ class ChampionshipController extends Controller
         }
 
         $registration = ChampionshipRegistration::create(array_merge([
-            'championship_id'       => $championship->id,
-            'user_id'               => $user->id,
+            'championship_id' => $championship->id,
+            'user_id' => $user->id,
             'championship_class_id' => $classId,
-            'racing_team_id'        => $team?->id,
+            'racing_team_id' => $team?->id,
         ], $teamEntryFields));
 
         if ($team && $teamRegistrationScope === 'championship') {
@@ -242,20 +241,21 @@ class ChampionshipController extends Controller
         $required = ($league && $league->requires_discord_membership)
             || ($championship->settings->requirements->discord_membership_required ?? false);
 
-        if (!$league || !$required) {
+        if (! $league || ! $required) {
             return null;
         }
 
-        if (!$league->discord_guild_id) {
+        if (! $league->discord_guild_id) {
             // League opted in but nobody configured the guild — an XCL/league setup
             // gap, not something to block a driver's registration over.
             Log::warning('League requires Discord membership but has no discord_guild_id set', ['league_id' => $league->id]);
+
             return null;
         }
 
         $discord = $user->connectedAccount('discord');
-        if (!$discord) {
-            return 'Connect your Discord account on your profile before registering — ' . $league->name . ' requires Discord membership.';
+        if (! $discord) {
+            return 'Connect your Discord account on your profile before registering — '.$league->name.' requires Discord membership.';
         }
 
         $cacheKey = "discord-membership:{$league->discord_guild_id}:{$discord->provider_id}";
@@ -268,12 +268,13 @@ class ChampionshipController extends Controller
 
         if ($isMember === true) {
             Cache::put($cacheKey, true, now()->addMinutes(10));
+
             return null;
         }
 
         if ($isMember === false) {
-            return 'You must join ' . $league->name . "'s Discord server before registering."
-                . ($league->discord_invite_url ? ' Join here: ' . $league->discord_invite_url : '');
+            return 'You must join '.$league->name."'s Discord server before registering."
+                .($league->discord_invite_url ? ' Join here: '.$league->discord_invite_url : '');
         }
 
         return "Couldn't verify your Discord membership right now — please try again in a moment.";
@@ -284,8 +285,18 @@ class ChampionshipController extends Controller
         $championship = $this->findChampionship($championship);
         $user = request()->user();
 
+        // A team's registration row belongs to whoever submitted it (the owner, at the
+        // time) -- a manager unregistering the team has no row of their own to match
+        // on user_id, so this also matches by their manageable team's racing_team_id.
+        $team = $user->manageableRacingTeam();
+
         $championship->registrations()
-            ->where('user_id', $user->id)
+            ->where(function ($query) use ($user, $team) {
+                $query->where('user_id', $user->id);
+                if ($team) {
+                    $query->orWhere('racing_team_id', $team->id);
+                }
+            })
             ->delete();
 
         return back()->with('success', 'You have been unregistered from the championship.');

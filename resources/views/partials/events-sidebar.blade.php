@@ -118,7 +118,7 @@ $sbLeaderboards = [
                 <span class="xcl-trigger-pill__icon"><i class="fa-brands fa-twitch"></i></span>
                 <span class="xcl-trigger-pill__label">Twitch</span>
             </a>
-            <a href="https://www.instagram.com/xclusive_esport/" class="xcl-trigger-pill xcl-trigger-pill--instagram" target="_blank" rel="noopener">
+            <a href="https://www.instagram.com/xclusiveracing/" class="xcl-trigger-pill xcl-trigger-pill--instagram" target="_blank" rel="noopener">
                 <span class="xcl-trigger-pill__icon"><i class="fa-brands fa-instagram"></i></span>
                 <span class="xcl-trigger-pill__label">Instagram</span>
             </a>

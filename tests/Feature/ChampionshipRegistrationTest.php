@@ -9,7 +9,6 @@ use App\Models\ConnectedAccount;
 use App\Models\League;
 use App\Models\LeagueUser;
 use App\Models\Race;
-use App\Models\RaceRegistration;
 use App\Models\RaceTeamEntry;
 use App\Models\RacingTeam;
 use App\Models\User;
@@ -136,7 +135,7 @@ class ChampionshipRegistrationTest extends TestCase
 
         ChampionshipRegistration::create([
             'championship_id' => $championship->id,
-            'user_id'         => User::factory()->create()->id,
+            'user_id' => User::factory()->create()->id,
         ]);
         $this->assertTrue($championship->fresh()->isFull());
 
@@ -185,9 +184,9 @@ class ChampionshipRegistrationTest extends TestCase
         ]);
         $championship->save();
 
-        $owner  = User::factory()->create();
+        $owner = User::factory()->create();
         $member = User::factory()->create();
-        $team   = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+        $team = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
         $team->members()->attach($member->id);
 
         $this->actingAs($owner)
@@ -210,13 +209,13 @@ class ChampionshipRegistrationTest extends TestCase
         ]);
         $championship->save();
 
-        $owner   = User::factory()->create();
+        $owner = User::factory()->create();
         $intruder = User::factory()->create();
-        $team    = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+        $team = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
 
         $this->actingAs($intruder)
             ->post(route('championships.register', $championship), ['racing_team_id' => $team->id])
-            ->assertNotFound();
+            ->assertForbidden();
     }
 
     // --- Discord membership as an entry requirement ---
@@ -361,7 +360,7 @@ class ChampionshipRegistrationTest extends TestCase
         $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league, ['status' => 'draft', 'registration_open' => false, 'is_multiclass' => true]);
         $pro = ChampionshipClass::create(['championship_id' => $championship->id, 'name' => 'Pro', 'max_drivers' => 20, 'sort_order' => 0]);
-        $am  = ChampionshipClass::create(['championship_id' => $championship->id, 'name' => 'Am', 'max_drivers' => 10, 'sort_order' => 1]);
+        $am = ChampionshipClass::create(['championship_id' => $championship->id, 'name' => 'Am', 'max_drivers' => 10, 'sort_order' => 1]);
 
         ChampionshipRegistration::create([
             'championship_id' => $championship->id, 'user_id' => User::factory()->create()->id, 'championship_class_id' => $pro->id,
@@ -392,7 +391,7 @@ class ChampionshipRegistrationTest extends TestCase
     {
         return Race::create([
             'championship_id' => $championship->id, 'round_number' => $roundNumber,
-            'title' => 'Round ' . $roundNumber, 'track' => 'Monza', 'game' => 'acc',
+            'title' => 'Round '.$roundNumber, 'track' => 'Monza', 'game' => 'acc',
             'status' => 'scheduled', 'scheduled_at' => now()->addWeek($roundNumber),
         ]);
     }
@@ -406,9 +405,9 @@ class ChampionshipRegistrationTest extends TestCase
         ]);
         $championship->save();
 
-        $owner  = User::factory()->create();
+        $owner = User::factory()->create();
         $member = User::factory()->create();
-        $team   = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+        $team = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
         $team->members()->attach($member->id);
 
         $r1 = $this->makeRound($championship, 1);
@@ -416,9 +415,9 @@ class ChampionshipRegistrationTest extends TestCase
 
         $this->actingAs($owner)
             ->post(route('championships.register', $championship), [
-                'racing_team_id'     => $team->id,
-                'car_number'         => 42,
-                'car_model'          => 'Ferrari 296 GT3',
+                'racing_team_id' => $team->id,
+                'car_number' => 42,
+                'car_model' => 'Ferrari 296 GT3',
                 'starting_driver_id' => $member->id,
             ])
             ->assertRedirect();
@@ -443,7 +442,7 @@ class ChampionshipRegistrationTest extends TestCase
         $championship->save();
 
         $owner = User::factory()->create();
-        $team  = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+        $team = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
 
         $this->actingAs($owner)
             ->post(route('championships.register', $championship), ['racing_team_id' => $team->id])
@@ -462,7 +461,7 @@ class ChampionshipRegistrationTest extends TestCase
         $championship->save();
 
         $owner = User::factory()->create();
-        $team  = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+        $team = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
 
         $this->actingAs($owner)
             ->post(route('championships.register', $championship), [
@@ -493,7 +492,7 @@ class ChampionshipRegistrationTest extends TestCase
         $championship->save();
 
         $owner = User::factory()->create();
-        $team  = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+        $team = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
 
         // 'open' (not makeRound()'s default 'scheduled') — unregisterTeam() and the
         // REMOVE button both require an open race, same as the solo-registration path.
@@ -546,8 +545,8 @@ class ChampionshipRegistrationTest extends TestCase
         $championship->save();
 
         $owner = User::factory()->create();
-        $team  = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
-        $race  = $this->makeRound($championship, 1);
+        $team = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+        $race = $this->makeRound($championship, 1);
 
         $this->actingAs($owner)
             ->post(route('championships.register', $championship), ['racing_team_id' => $team->id])
