@@ -10,13 +10,13 @@ class ProDriverController extends Controller
     {
         return [
             'dirk-schouten' => [
-                'name'             => 'Dirk Schouten',
-                'flag'             => 'netherlands',
-                'nationality'      => 'Dutch',
-                'portrait'         => '/images/drivers/D.Schouten.png',
-                'hero_category'    => 'Porsche_Super_Cup_Banner',
+                'name' => 'Dirk Schouten',
+                'flag' => 'netherlands',
+                'nationality' => 'Dutch',
+                'portrait' => '/images/drivers/D.Schouten.png',
+                'hero_category' => 'Porsche_Super_Cup_Banner',
                 'profile_category' => 'dirk-profile-page',
-                'bio'         => 'Dirk Schouten is a Dutch professional racing driver representing XCLusive Racing on the international motorsport stage. Competing in some of Europe\'s most prestigious single-make championships, Dirk has proven his racecraft with consistent podium finishes and a maiden class victory at Monaco. Known for his commitment to improvement and engaging presence both on and off track, he is a cornerstone of the XCLusive Racing professional programme.',
+                'bio' => 'Dirk Schouten is a Dutch professional racing driver representing XCLusive Racing on the international motorsport stage. Competing in some of Europe\'s most prestigious single-make championships, Dirk has proven his racecraft with consistent podium finishes and a maiden class victory at Monaco. Known for his commitment to improvement and engaging presence both on and off track, he is a cornerstone of the XCLusive Racing professional programme.',
                 'socials' => [
                     ['type' => 'instagram', 'href' => 'https://www.instagram.com/dirk_schouten_/'],
                     ['type' => 'tiktok',    'href' => 'https://www.tiktok.com/@dirkschouten34'],
@@ -139,11 +139,11 @@ class ProDriverController extends Controller
             ],
 
             'mats-van-rooijen' => [
-                'name'        => 'Mats van Rooijen',
-                'flag'        => 'netherlands',
+                'name' => 'Mats van Rooijen',
+                'flag' => 'netherlands',
                 'nationality' => 'Dutch',
-                'portrait'    => '/images/drivers/M.vanRooijen.png',
-                'bio'         => 'Placeholder bio — to be delivered by the driver.',
+                'portrait' => '/images/drivers/M.vanRooijen.png',
+                'bio' => 'Placeholder bio — to be delivered by the driver.',
                 'socials' => [
                     ['type' => 'website',   'href' => 'https://matsvrooijen.vercel.app/'],
                     ['type' => 'instagram', 'href' => 'https://www.instagram.com/matsvanrooijen_official/'],
@@ -154,91 +154,13 @@ class ProDriverController extends Controller
                     2026 => [],
                 ],
             ],
-
-            'jesse-aalbregt' => [
-                'name'        => 'Jesse Aalbregt',
-                'flag'        => 'netherlands',
-                'nationality' => 'Dutch',
-                'portrait'    => '/images/drivers/J.Aalbregt.png',
-                'bio'         => 'Placeholder bio — to be delivered by the driver.',
-                'socials' => [
-                    ['type' => 'instagram', 'href' => 'https://www.instagram.com/teamjesse81/'],
-                    ['type' => 'youtube',   'href' => 'https://www.youtube.com/@teamjesse81'],
-                    ['type' => 'tiktok',    'href' => 'https://www.tiktok.com/@teamjesse81'],
-                    ['type' => 'twitch',    'href' => 'https://www.twitch.tv/teamjesse81'],
-                ],
-                'results' => [
-                    2026 => [],
-                    2025 => [],
-                    2024 => [
-                        [
-                            'championship' => 'Karting',
-                            'standing'     => '',
-                            'races' => [
-                                ['track' => 'Coppa delle Industrie', 'positions' => ['P8']],
-                                ['track' => 'Circuit Franciacorta',  'positions' => ['P8']],
-                                ['track' => 'Circuit Lonato',        'positions' => ['P2']],
-                            ],
-                        ],
-                    ],
-                    2023 => [
-                        [
-                            'championship' => 'Rotax Minimax',
-                            'standing'     => 'Vice Champion',
-                            'races' => [
-                                ['track' => 'Venray',      'positions' => ['P1']],
-                                ['track' => 'Emmen',       'positions' => ['P2']],
-                                ['track' => 'Emmen',       'positions' => ['P1']],
-                                ['track' => 'Vledderveen', 'positions' => ['P2']],
-                                ['track' => 'Venray',      'positions' => ['P1']],
-                                ['track' => 'Assen',       'positions' => ['P3']],
-                            ],
-                        ],
-                        [
-                            'championship' => 'DKM',
-                            'standing'     => '',
-                            'races' => [
-                                ['track' => 'Vledderveen', 'positions' => ['P1']],
-                                ['track' => 'Assen',       'positions' => ['P3']],
-                                ['track' => 'Vledderveen', 'positions' => ['P2']],
-                            ],
-                        ],
-                        [
-                            'championship' => 'NK Karting',
-                            'standing'     => '',
-                            'races' => [
-                                ['track' => 'Kerpen',  'positions' => ['P5 Overall', 'P4 Rookie']],
-                                ['track' => 'Assen',   'positions' => ['P7 Overall', 'P3 Rookie']],
-                                ['track' => 'Dankern', 'positions' => ['P2 Overall', 'P2 Rookie']],
-                                ['track' => 'Genk',    'positions' => ['P9 Overall', 'P5 Rookie']],
-                            ],
-                        ],
-                        [
-                            'championship' => 'Rotax Eurotropy',
-                            'standing'     => 'P12',
-                            'races'        => [],
-                        ],
-                    ],
-                    2022 => [
-                        [
-                            'championship' => 'Dutch Open Parolin Rocky',
-                            'standing'     => '',
-                            'races' => [
-                                ['track' => 'Meppel',          'positions' => ['P2 Overall', 'P1 Rookie']],
-                                ['track' => 'Emmen (R2 & R3)', 'positions' => ['P2 Overall', 'P1 Rookie']],
-                                ['track' => 'Vledderveen',     'positions' => ['P4 Overall', 'P2 Rookie']],
-                                ['track' => 'Spa',             'positions' => ['P5 Overall', 'P3 Rookie']],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
         ];
     }
 
     public function index()
     {
         $drivers = self::allDrivers();
+
         return view('teams.pro.index', compact('drivers'));
     }
 
@@ -247,7 +169,7 @@ class ProDriverController extends Controller
         $all = self::allDrivers();
         abort_unless(isset($all[$slug]), 404);
 
-        $driver         = $all[$slug];
+        $driver = $all[$slug];
         $driver['slug'] = $slug;
 
         // Hero/banner image, tried in order:
@@ -258,11 +180,11 @@ class ProDriverController extends Controller
         //  3. the legacy driver-<slug> category, kept for backwards compatibility
         $driver['hero'] = $this->findHeroByCategory($driver['hero_category'] ?? null)
             ?? $this->findHeroByDriverName($driver['name'])
-            ?? $this->findHeroByCategory('driver-' . $slug);
+            ?? $this->findHeroByCategory('driver-'.$slug);
 
         // Profile photo (shown beside upcoming races)
         $driver['profile_image'] = null;
-        if (!empty($driver['profile_category'])) {
+        if (! empty($driver['profile_category'])) {
             $profile = Media::where('category', $driver['profile_category'])
                 ->where('type', 'image')
                 ->latest()
@@ -275,7 +197,7 @@ class ProDriverController extends Controller
 
     private function findHeroByCategory(?string $category): ?string
     {
-        if (!$category) {
+        if (! $category) {
             return null;
         }
 
@@ -290,12 +212,12 @@ class ProDriverController extends Controller
     // sides — so "Dirk Schouten Banner.png", "dirk_schouten-banner" etc. all match.
     private function findHeroByDriverName(string $name): ?string
     {
-        $needle = self::normalizeForMatch($name) . 'banner';
+        $needle = self::normalizeForMatch($name).'banner';
 
         $candidates = Media::where('type', 'image')
             ->where(function ($q) {
                 $q->where('title', 'like', '%banner%')
-                  ->orWhere('original_name', 'like', '%banner%');
+                    ->orWhere('original_name', 'like', '%banner%');
             })
             ->latest()
             ->get(['id', 'title', 'original_name', 'path', 'type', 'youtube_id']);
@@ -313,6 +235,7 @@ class ProDriverController extends Controller
     private static function normalizeForMatch(string $value): string
     {
         $value = preg_replace('/\.[a-z0-9]{2,5}$/i', '', $value); // strip file extension
+
         return strtolower(preg_replace('/[^a-z0-9]/i', '', $value));
     }
 }

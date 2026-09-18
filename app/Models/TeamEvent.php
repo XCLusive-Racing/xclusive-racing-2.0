@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Storage;
 
 class TeamEvent extends Model
 {
@@ -30,12 +31,12 @@ class TeamEvent extends Model
     public static function durationOptions(): array
     {
         return [
-            30   => '30 min',
-            60   => '1 hour',
-            120  => '2 hours',
-            180  => '3 hours',
-            360  => '6 hours',
-            720  => '12 hours',
+            30 => '30 min',
+            60 => '1 hour',
+            120 => '2 hours',
+            180 => '3 hours',
+            360 => '6 hours',
+            720 => '12 hours',
             1440 => '24 hours',
         ];
     }
@@ -44,14 +45,19 @@ class TeamEvent extends Model
     {
         $mins = (int) $this->duration_minutes;
 
-        return $mins % 60 === 0 ? ($mins / 60) . 'H RACE' : $mins . 'M RACE';
+        return $mins % 60 === 0 ? ($mins / 60).'H RACE' : $mins.'M RACE';
     }
 
     public function getImageUrlAttribute(): ?string
     {
-        if (! $this->image) return null;
-        if (str_starts_with($this->image, 'http')) return $this->image;
-        return \Illuminate\Support\Facades\Storage::disk('media')->url($this->image);
+        if (! $this->image) {
+            return null;
+        }
+        if (str_starts_with($this->image, 'http')) {
+            return $this->image;
+        }
+
+        return Storage::disk('media')->url($this->image);
     }
 
     public function scopeForSubject($query, string $subject)
@@ -62,12 +68,11 @@ class TeamEvent extends Model
     public static function subjects(): array
     {
         return [
-            'dirk-schouten'    => 'Dirk Schouten',
+            'dirk-schouten' => 'Dirk Schouten',
             'mats-van-rooijen' => 'Mats van Rooijen',
-            'jesse-aalbregt'   => 'Jesse Aalbregt',
-            'acc-team'         => 'ACC Team',
-            'lmu-team'         => 'LMU Team',
-            'iracing-team'     => 'iRacing Team',
+            'acc-team' => 'ACC Team',
+            'lmu-team' => 'LMU Team',
+            'iracing-team' => 'iRacing Team',
         ];
     }
 
@@ -75,8 +80,8 @@ class TeamEvent extends Model
     public static function teamSubjectGames(): array
     {
         return [
-            'acc-team'     => 'acc',
-            'lmu-team'     => 'lmu',
+            'acc-team' => 'acc',
+            'lmu-team' => 'lmu',
             'iracing-team' => 'iracing',
         ];
     }

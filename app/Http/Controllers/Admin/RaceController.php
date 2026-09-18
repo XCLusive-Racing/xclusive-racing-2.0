@@ -264,7 +264,7 @@ class RaceController extends Controller
             'is_multiclass' => 'nullable|boolean',
             'classes_json' => 'nullable|string',
             'ftp_server_id' => 'nullable|exists:ftp_servers,id',
-            'events' => 'required|array|min:1|max:20',
+            'events' => 'required|array|min:1|max:200',
             'events.*.title' => 'required|string|max:255',
             'events.*.track' => 'required|string|max:255',
             'events.*.scheduled_at' => 'required|date',

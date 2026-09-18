@@ -5,13 +5,17 @@ export function initEventsFilter() {
     let platform          = null;
     let eventFilter       = 'all';
     let regionFilter      = 'all';
+    let classFilter       = 'all';
     let requirementFilter = 'all';
 
     const platformSelector = wrap.querySelector('[data-platform-selector]');
     const eventsList       = wrap.querySelector('[data-events-list]');
     const backBtn          = wrap.querySelector('[data-back-btn]');
+    const heading          = wrap.querySelector('[data-events-heading]');
+    const defaultHeading   = heading?.textContent ?? '';
     const filterBtns       = wrap.querySelectorAll('[data-event-filter]');
     const regionBtns       = wrap.querySelectorAll('[data-region-filter]');
+    const classBtns        = wrap.querySelectorAll('[data-class-filter]');
     const requirementBtns  = wrap.querySelectorAll('[data-requirement-filter]');
 
     function matchesEventFilter(tag, dateStr) {
@@ -27,6 +31,10 @@ export function initEventsFilter() {
         return regions.includes(regionFilter);
     }
 
+    function matchesClass(classAttr) {
+        return classFilter === 'all' || classAttr === classFilter;
+    }
+
     function matchesRequirement(card) {
         switch (requirementFilter) {
             case 'sr':          return card.dataset.sr === '1';
@@ -40,6 +48,7 @@ export function initEventsFilter() {
     function resetFilters() {
         eventFilter       = 'all';
         regionFilter      = 'all';
+        classFilter       = 'all';
         requirementFilter = 'all';
     }
 
@@ -68,6 +77,21 @@ export function initEventsFilter() {
         regionBtns.forEach(btn => {
             btn.classList.toggle('xcl-filter-btn--active', btn.dataset.regionFilter === regionFilter);
         });
+        classBtns.forEach(btn => {
+            const active = btn.dataset.classFilter === classFilter;
+            btn.classList.toggle('xcl-filter-btn--active', active);
+
+            // Same [bg, text] pair as the class badge on the event card itself
+            // (Race::carClassStyle()), always solid — TCX's white badge has no
+            // hue, so a translucent tint would read the same as this row's own
+            // default white button text and effectively disappear. Selection is
+            // shown via a highlighted border + full opacity instead of a fill change.
+            const bg = btn.dataset.bg;
+            if (bg) {
+                btn.style.borderColor = active ? '#a855f7' : btn.dataset.border;
+                btn.style.opacity     = active ? '1' : '.65';
+            }
+        });
         requirementBtns.forEach(btn => {
             btn.classList.toggle('xcl-filter-btn--active', btn.dataset.requirementFilter === requirementFilter);
         });
@@ -75,6 +99,7 @@ export function initEventsFilter() {
         wrap.querySelectorAll('[data-event-card]').forEach(card => {
             const visible = matchesEventFilter(card.dataset.tag, card.dataset.date)
                 && matchesRegion(card.dataset.regions)
+                && matchesClass(card.dataset.class)
                 && matchesRequirement(card);
             card.style.display = visible ? '' : 'none';
         });
@@ -88,6 +113,7 @@ export function initEventsFilter() {
         if (game) {
             card.addEventListener('click', () => {
                 platform = game;
+                if (heading) heading.textContent = `${card.dataset.platformLabel} Events`;
                 resetFilters();
                 apply();
             });
@@ -109,6 +135,7 @@ export function initEventsFilter() {
 
     backBtn?.addEventListener('click', () => {
         platform = null;
+        if (heading) heading.textContent = defaultHeading;
         resetFilters();
         apply();
     });
@@ -123,6 +150,13 @@ export function initEventsFilter() {
     regionBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             regionFilter = btn.dataset.regionFilter;
+            apply();
+        });
+    });
+
+    classBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            classFilter = btn.dataset.classFilter;
             apply();
         });
     });
