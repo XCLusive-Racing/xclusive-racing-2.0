@@ -4,6 +4,7 @@
 
 @php
 $classMeta = [
+    'legend'   => ['label' => 'Legend',   'color' => '#000000'],
     'alien'    => ['label' => 'Alien',    'color' => '#10b981'],
     'platinum' => ['label' => 'Platinum', 'color' => '#7c3aed'],
     'gold'     => ['label' => 'Gold',     'color' => '#f59e0b'],

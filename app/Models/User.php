@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 
 #[Fillable(['name', 'email', 'password', 'must_set_password', 'display_name_preference', 'is_supporter', 'is_suspended', 'suspension_reason', 'suspended_until', 'privacy_accepted_at', 'country', 'platform', 'platform_id', 'car_number', 'car_model', 'banner', 'game', 'team', 'role', 'flag', 'elo_acc', 'elo_lmu', 'elo_iracing', 'sr_acc', 'sr_lmu', 'sr_iracing', 'legacy_races', 'legacy_wins', 'legacy_podiums', 'last_seen_at'])]
 #[Hidden(['password', 'remember_token'])]
@@ -28,14 +29,14 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at'    => 'datetime',
-            'password'             => 'hashed',
-            'must_set_password'    => 'boolean',
-            'is_supporter'         => 'boolean',
-            'is_suspended'         => 'boolean',
-            'suspended_until'      => 'datetime',
-            'privacy_accepted_at'  => 'datetime',
-            'last_seen_at'         => 'datetime',
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'must_set_password' => 'boolean',
+            'is_supporter' => 'boolean',
+            'is_suspended' => 'boolean',
+            'suspended_until' => 'datetime',
+            'privacy_accepted_at' => 'datetime',
+            'last_seen_at' => 'datetime',
         ];
     }
 
@@ -48,21 +49,23 @@ class User extends Authenticatable
     {
         return match ($game) {
             'acc', 'ac' => 'acc',
-            'lmu'       => 'lmu',
-            'iracing'   => 'iracing',
-            default     => null,
+            'lmu' => 'lmu',
+            'iracing' => 'iracing',
+            default => null,
         };
     }
 
     public static function eloColumn(string $game): ?string
     {
         $ratingGame = self::ratingGame($game);
+
         return $ratingGame ? "elo_{$ratingGame}" : null;
     }
 
     public static function srColumn(string $game): ?string
     {
         $ratingGame = self::ratingGame($game);
+
         return $ratingGame ? "sr_{$ratingGame}" : null;
     }
 
@@ -73,34 +76,34 @@ class User extends Authenticatable
     public function requirementFailure(string $game, ?string $srRequirement, ?string $minRating, ?string $maxRating = null): ?string
     {
         $eloColumn = self::eloColumn($game);
-        if (!$eloColumn) {
+        if (! $eloColumn) {
             return null;
         }
 
         if ($srRequirement) {
             $userSr = (float) ($this->{self::srColumn($game)} ?? 0);
             if ($userSr < (float) $srRequirement) {
-                return 'You need at least SR ' . number_format((float) $srRequirement, 1)
-                    . ' to register (yours: ' . number_format($userSr, 1) . ').';
+                return 'You need at least SR '.number_format((float) $srRequirement, 1)
+                    .' to register (yours: '.number_format($userSr, 1).').';
             }
         }
 
         $userElo = (int) ($this->{$eloColumn} ?? 0);
-        $ranks   = collect(self::ranks());
+        $ranks = collect(self::ranks());
 
         if ($minRating && $minRating !== 'all') {
             $threshold = $ranks->firstWhere('slug', $minRating)['min'] ?? 0;
             if ($userElo < $threshold) {
-                return 'You need at least ' . ucfirst($minRating) . ' rank to register for this class.';
+                return 'You need at least '.ucfirst($minRating).' rank to register for this class.';
             }
         }
 
         if ($maxRating && $maxRating !== 'all') {
-            $maxIndex = $ranks->search(fn($r) => $r['slug'] === $maxRating);
+            $maxIndex = $ranks->search(fn ($r) => $r['slug'] === $maxRating);
             if ($maxIndex !== false && $maxIndex > 0) {
                 $nextHigherMin = $ranks[$maxIndex - 1]['min'];
                 if ($userElo >= $nextHigherMin) {
-                    return 'This race is for ' . ucfirst($maxRating) . ' drivers only. Your rank is too high.';
+                    return 'This race is for '.ucfirst($maxRating).' drivers only. Your rank is too high.';
                 }
             }
         }
@@ -110,8 +113,13 @@ class User extends Authenticatable
 
     public function isSuspended(): bool
     {
-        if (!$this->is_suspended) return false;
-        if (!$this->suspended_until) return true;
+        if (! $this->is_suspended) {
+            return false;
+        }
+        if (! $this->suspended_until) {
+            return true;
+        }
+
         return now()->lt($this->suspended_until);
     }
 
@@ -127,19 +135,58 @@ class User extends Authenticatable
 
     public function hasAnyRole(array $roles): bool
     {
-        return $this->roles->contains(fn($r) => in_array($r->slug, $roles));
+        return $this->roles->contains(fn ($r) => in_array($r->slug, $roles));
     }
 
-    public function isOwner(): bool        { return $this->hasRole('owner'); }
-    public function isAdmin(): bool        { return $this->hasRole('admin'); }
-    public function isModerator(): bool    { return $this->hasRole('moderator'); }
-    public function isEventManager(): bool { return $this->hasRole('event_manager'); }
-    public function isSteward(): bool      { return $this->hasRole('steward'); }
-    public function isDriver(): bool       { return $this->hasRole('driver'); }
-    public function isSuperAdmin(): bool   { return $this->isOwner(); }
-    public function isBroadcaster(): bool  { return $this->hasRole('broadcaster'); }
-    public function isLeagueManager(): bool { return $this->hasRole('league_manager'); }
-    public function isLeagueSteward(): bool { return $this->hasRole('league_steward'); }
+    public function isOwner(): bool
+    {
+        return $this->hasRole('owner');
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
+    public function isModerator(): bool
+    {
+        return $this->hasRole('moderator');
+    }
+
+    public function isEventManager(): bool
+    {
+        return $this->hasRole('event_manager');
+    }
+
+    public function isSteward(): bool
+    {
+        return $this->hasRole('steward');
+    }
+
+    public function isDriver(): bool
+    {
+        return $this->hasRole('driver');
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->isOwner();
+    }
+
+    public function isBroadcaster(): bool
+    {
+        return $this->hasRole('broadcaster');
+    }
+
+    public function isLeagueManager(): bool
+    {
+        return $this->hasRole('league_manager');
+    }
+
+    public function isLeagueSteward(): bool
+    {
+        return $this->hasRole('league_steward');
+    }
 
     // Assigned from the Users admin page rather than via a per-league
     // membership row, but — unlike canManage() — does NOT grant reach across
@@ -148,7 +195,10 @@ class User extends Authenticatable
     // users, news, etc., which stay admin/event-manager-only). Someone holding
     // it still needs an actual League Manager membership row on a given league
     // to manage it — see managesLeague() below.
-    public function isChampionshipManager(): bool { return $this->hasRole('championship_manager'); }
+    public function isChampionshipManager(): bool
+    {
+        return $this->hasRole('championship_manager');
+    }
 
     public function canManage(): bool
     {
@@ -188,13 +238,13 @@ class User extends Authenticatable
     public function adminLandingRoute(): string
     {
         return match (true) {
-            $this->canManage()      => 'admin.races.index',
-            $this->canSeeUsers()    => 'admin.users.index',
-            $this->isSteward()      => 'admin.reports.index',
-            $this->canBroadcast()   => 'admin.news.index',
+            $this->canManage() => 'admin.races.index',
+            $this->canSeeUsers() => 'admin.users.index',
+            $this->isSteward() => 'admin.reports.index',
+            $this->canBroadcast() => 'admin.news.index',
             $this->isLeagueManager() || $this->isChampionshipManager() => 'admin.leagues.index',
             $this->isLeagueSteward() => 'admin.reports.index',
-            default                 => 'home',
+            default => 'home',
         };
     }
 
@@ -210,7 +260,7 @@ class User extends Authenticatable
         return $this->belongsToMany(League::class, 'league_user')->withPivot('role')->withTimestamps();
     }
 
-    public function leagueIds(): \Illuminate\Support\Collection
+    public function leagueIds(): Collection
     {
         return $this->leagueMemberships()->pluck('league_id')->unique()->values();
     }
@@ -237,7 +287,7 @@ class User extends Authenticatable
         }
 
         $championship = $report->race?->championship()->withoutTenantScope()->first();
-        if (!$championship || !$championship->league_id) {
+        if (! $championship || ! $championship->league_id) {
             return false;
         }
 
@@ -256,7 +306,7 @@ class User extends Authenticatable
 
         foreach (['league_manager' => $hasManager, 'league_steward' => $hasSteward] as $slug => $shouldHave) {
             $role = Role::where('slug', $slug)->first();
-            if (!$role) {
+            if (! $role) {
                 continue;
             }
 
@@ -282,8 +332,13 @@ class User extends Authenticatable
 
     public function avatarUrl(): ?string
     {
-        if (!$this->banner) return null;
-        if (str_starts_with($this->banner, 'http')) return $this->banner;
+        if (! $this->banner) {
+            return null;
+        }
+        if (str_starts_with($this->banner, 'http')) {
+            return $this->banner;
+        }
+
         return asset($this->banner);
     }
 
@@ -307,7 +362,7 @@ class User extends Authenticatable
         return $this->belongsToMany(RacingTeam::class, 'racing_team_members');
     }
 
-    public function allRacingTeams(): \Illuminate\Support\Collection
+    public function allRacingTeams(): Collection
     {
         return $this->ownedRacingTeams->merge($this->racingTeams);
     }
@@ -324,24 +379,24 @@ class User extends Authenticatable
      */
     public function raceStats(): array
     {
-        $results    = $this->raceResults()->where('session_type', 'race')->get(['position', 'fastest_lap', 'dns', 'dsq']);
-        $started    = $results->where('dns', false);
+        $results = $this->raceResults()->where('session_type', 'race')->get(['position', 'fastest_lap', 'dns', 'dsq']);
+        $started = $results->where('dns', false);
         $classified = $started->where('dsq', false);
 
         // Legacy stats are a manually-set aggregate carried over from the old website
         // (no per-race detail available), added on top of live results.
         $totalRaces = $started->count() + $this->legacy_races;
-        $wins       = $classified->where('position', 1)->count() + $this->legacy_wins;
-        $podiums    = $classified->where('position', '<=', 3)->count() + $this->legacy_podiums;
+        $wins = $classified->where('position', 1)->count() + $this->legacy_wins;
+        $podiums = $classified->where('position', '<=', 3)->count() + $this->legacy_podiums;
 
         return [
-            'total_races'       => $totalRaces,
-            'wins'              => $wins,
-            'podiums'           => $podiums,
-            'top5s'             => $classified->where('position', '<=', 5)->count(),
-            'top10s'            => $classified->where('position', '<=', 10)->count(),
+            'total_races' => $totalRaces,
+            'wins' => $wins,
+            'podiums' => $podiums,
+            'top5s' => $classified->where('position', '<=', 5)->count(),
+            'top10s' => $classified->where('position', '<=', 10)->count(),
             'fastest_race_laps' => $started->where('fastest_lap', true)->count(),
-            'win_rate'          => $totalRaces > 0 ? round(($wins / $totalRaces) * 100) : 0,
+            'win_rate' => $totalRaces > 0 ? round(($wins / $totalRaces) * 100) : 0,
         ];
     }
 
@@ -365,7 +420,7 @@ class User extends Authenticatable
         return $this->belongsToMany(Announcement::class, 'announcement_reads')->withPivot('created_at', 'dismissed_at');
     }
 
-    public function dismissedAnnouncementIds(): \Illuminate\Support\Collection
+    public function dismissedAnnouncementIds(): Collection
     {
         return $this->readAnnouncements()->wherePivotNotNull('dismissed_at')->pluck('announcements.id');
     }
@@ -380,7 +435,7 @@ class User extends Authenticatable
     public function totalUnreadCount(): int
     {
         $unreadMessages = $this->messages()->whereNull('read_at')->count();
-        $unreadAnnouncements = Announcement::whereDoesntHave('readers', fn($q) => $q->where('user_id', $this->id))->count();
+        $unreadAnnouncements = Announcement::whereDoesntHave('readers', fn ($q) => $q->where('user_id', $this->id))->count();
 
         return $unreadMessages + $unreadAnnouncements;
     }
@@ -394,7 +449,7 @@ class User extends Authenticatable
     {
         return $this->carAssignments()
             ->whereNull('championship_id')
-            ->whereHas('car', fn($q) => $q->where('game', $game))
+            ->whereHas('car', fn ($q) => $q->where('game', $game))
             ->latest()
             ->first()
             ?->car;
@@ -405,12 +460,13 @@ class User extends Authenticatable
     public static function ranks(): array
     {
         return [
-            ['name' => 'Alien',    'slug' => 'alien',    'min' => 8000, 'color' => '#10b981'],
-            ['name' => 'Platinum', 'slug' => 'platinum', 'min' => 6500, 'color' => '#7c3aed'],
-            ['name' => 'Gold',     'slug' => 'gold',     'min' => 5000, 'color' => '#f59e0b'],
-            ['name' => 'Silver',   'slug' => 'silver',   'min' => 3500, 'color' => '#9ca3af'],
-            ['name' => 'Bronze',   'slug' => 'bronze',   'min' => 2000, 'color' => '#cd7f32'],
-            ['name' => 'Rookie',   'slug' => 'rookie',   'min' => 0,    'color' => '#ef4444'],
+            ['name' => 'Legend',   'slug' => 'legend',   'min' => 10000, 'color' => '#000000'],
+            ['name' => 'Alien',    'slug' => 'alien',    'min' => 8000,  'color' => '#10b981'],
+            ['name' => 'Platinum', 'slug' => 'platinum', 'min' => 6500,  'color' => '#7c3aed'],
+            ['name' => 'Gold',     'slug' => 'gold',     'min' => 5000,  'color' => '#f59e0b'],
+            ['name' => 'Silver',   'slug' => 'silver',   'min' => 3500,  'color' => '#9ca3af'],
+            ['name' => 'Bronze',   'slug' => 'bronze',   'min' => 2000,  'color' => '#cd7f32'],
+            ['name' => 'Rookie',   'slug' => 'rookie',   'min' => 0,     'color' => '#ef4444'],
         ];
     }
 
@@ -418,8 +474,11 @@ class User extends Authenticatable
     {
         $elo = (int) ($this->{self::eloColumn($game) ?? 'elo_acc'} ?? 0);
         foreach (self::ranks() as $rank) {
-            if ($elo >= $rank['min']) return $rank;
+            if ($elo >= $rank['min']) {
+                return $rank;
+            }
         }
+
         return end(self::ranks());
     }
 
@@ -430,8 +489,11 @@ class User extends Authenticatable
     {
         $elo = max((int) $this->elo_acc, (int) $this->elo_lmu, (int) $this->elo_iracing);
         foreach (self::ranks() as $rank) {
-            if ($elo >= $rank['min']) return $rank;
+            if ($elo >= $rank['min']) {
+                return $rank;
+            }
         }
+
         return end(self::ranks());
     }
 
@@ -444,13 +506,14 @@ class User extends Authenticatable
         foreach (self::ranks() as $rank) {
             if ($elo >= $rank['min']) {
                 return match ($rank['slug']) {
-                    'rookie'                       => 0,
-                    'bronze', 'silver'              => 1,
-                    'gold', 'platinum', 'alien'     => 2,
-                    default                          => 0,
+                    'rookie' => 0,
+                    'bronze', 'silver' => 1,
+                    'gold', 'platinum', 'alien', 'legend' => 2,
+                    default => 0,
                 };
             }
         }
+
         return 0;
     }
 
@@ -471,7 +534,7 @@ class User extends Authenticatable
 
     public function srGrade(string $game = 'acc'): array
     {
-        $sr     = (float) ($this->{self::srColumn($game) ?? 'sr_acc'} ?? 0);
+        $sr = (float) ($this->{self::srColumn($game) ?? 'sr_acc'} ?? 0);
         $grades = self::srGrades();
 
         foreach ($grades as $grade) {

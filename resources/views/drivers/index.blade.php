@@ -4,12 +4,13 @@
 
 @php
 $classMeta = [
-    'alien'    => ['label' => 'Alien',    'color' => '#10b981'],
-    'platinum' => ['label' => 'Platinum', 'color' => '#7c3aed'],
-    'gold'     => ['label' => 'Gold',     'color' => '#f59e0b'],
-    'silver'   => ['label' => 'Silver',   'color' => '#9ca3af'],
-    'bronze'   => ['label' => 'Bronze',   'color' => '#cd7f32'],
-    'rookie'   => ['label' => 'Rookie',   'color' => '#ef4444'],
+    'rookie'   => ['label' => 'Rookie',   'color' => '#ef4444', 'range' => '0 – 1 999'],
+    'bronze'   => ['label' => 'Bronze',   'color' => '#cd7f32', 'range' => '2 000 – 3 499'],
+    'silver'   => ['label' => 'Silver',   'color' => '#9ca3af', 'range' => '3 500 – 4 999'],
+    'gold'     => ['label' => 'Gold',     'color' => '#f59e0b', 'range' => '5 000 – 6 499'],
+    'platinum' => ['label' => 'Platinum', 'color' => '#7c3aed', 'range' => '6 500 – 7 999'],
+    'alien'    => ['label' => 'Alien',    'color' => '#10b981', 'range' => '8 000 – 9 999'],
+    'legend'   => ['label' => 'Legend',   'color' => '#000000', 'range' => '10 000+'],
 ];
 @endphp
 
@@ -47,6 +48,17 @@ $classMeta = [
                    : 'background:#fff;color:#374151;border:2px solid #e5e7eb' }}">
                 {{ $info['label'] }}
             </a>
+            @endforeach
+        </div>
+
+        {{-- Rank legend --}}
+        <div class="d-flex rounded-3 overflow-hidden mb-4" style="border:1px solid #e5e7eb">
+            @foreach($classMeta as $meta)
+            <div class="flex-fill text-center text-white text-truncate px-1 py-1"
+                 style="background:{{ $meta['color'] }};font-size:.62rem;line-height:1.35">
+                <div class="fw-black text-uppercase" style="letter-spacing:.03em">{{ $meta['label'] }}</div>
+                <div style="opacity:.85">{{ $meta['range'] }}</div>
+            </div>
             @endforeach
         </div>
 

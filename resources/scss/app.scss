@@ -4799,6 +4799,7 @@ body.admin-body {
 .rank-ring-gold     { @include shimmer-ring(linear-gradient(135deg, #92400e, #f59e0b, #fde68a, #f59e0b, #92400e), 2s); box-shadow: 0 0 10px rgba(245,158,11,.5); }
 .rank-ring-platinum { @include shimmer-ring(linear-gradient(135deg, #4c1d95, #7c3aed, #a78bfa, #7c3aed, #4c1d95), 1.8s); box-shadow: 0 0 14px rgba(124,58,237,.65); }
 .rank-ring-alien    { background: conic-gradient(#10b981, #34d399, #6ee7b7, #10b981, #059669, #10b981); animation: xcl-spin 2.5s linear infinite; box-shadow: 0 0 18px rgba(16,185,129,.8); }
+.rank-ring-legend   { background: conic-gradient(#000000, #374151, #6b7280, #000000, #111827, #000000); animation: xcl-spin 2s linear infinite; box-shadow: 0 0 20px rgba(0,0,0,.75); }
 
 @keyframes xcl-ring-shimmer {
     0%   { transform: translateX(-200%) skewX(-20deg); }
