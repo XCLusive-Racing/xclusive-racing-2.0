@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\RaceTeamEntry;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Storage;
 
 class Race extends Model
@@ -15,18 +16,18 @@ class Race extends Model
     protected function casts(): array
     {
         return [
-            'scheduled_at'           => 'datetime',
-            'config_overrides'       => 'array',
-            'is_multiclass'          => 'boolean',
-            'is_endurance'           => 'boolean',
-            'mandatory_driver_swap'  => 'boolean',
-            'slot_time'              => 'datetime',
-            'config_pushed_at'       => 'datetime',
-            'has_practice_server'    => 'boolean',
+            'scheduled_at' => 'datetime',
+            'config_overrides' => 'array',
+            'is_multiclass' => 'boolean',
+            'is_endurance' => 'boolean',
+            'mandatory_driver_swap' => 'boolean',
+            'slot_time' => 'datetime',
+            'config_pushed_at' => 'datetime',
+            'has_practice_server' => 'boolean',
         ];
     }
 
-    public function practiceServerSession(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function practiceServerSession(): HasOne
     {
         return $this->hasOne(PracticeServerSession::class);
     }
@@ -48,12 +49,12 @@ class Race extends Model
 
     public function eventFormat(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\EventFormat::class);
+        return $this->belongsTo(EventFormat::class);
     }
 
     public function ftpServer(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\FtpServer::class, 'ftp_server_id');
+        return $this->belongsTo(FtpServer::class, 'ftp_server_id');
     }
 
     public function championship(): BelongsTo
@@ -113,7 +114,14 @@ class Race extends Model
     public function isFull(): bool
     {
         if ($this->is_multiclass && $this->raceClasses->isNotEmpty()) {
-            return $this->raceClasses->every(fn($cls) => $cls->isFull());
+            if ($this->raceClasses->every(fn ($cls) => $cls->isFull())) {
+                return true;
+            }
+
+            // A class with no cap of its own (max_drivers null) never reports full on
+            // its own -- but the race-wide max_drivers, when set, is still a combined
+            // ceiling across every class's registrations, not just a display number.
+            return $this->max_drivers !== null && $this->registrations()->count() >= $this->max_drivers;
         }
 
         if ($this->max_drivers === null) {
@@ -127,18 +135,85 @@ class Race extends Model
         return $this->registrations()->count() >= $this->max_drivers;
     }
 
+    // Whether $registration is beyond capacity -- a live FIFO rank, not a stored flag.
+    // Two independent caps can both apply to a multiclass entry: its own class's cap
+    // (if the class has one) AND the race-wide max_drivers, which spans every class
+    // combined -- a class with no cap of its own doesn't exempt it from the race's
+    // overall ceiling. Either one being exceeded is enough to waitlist it.
+    // Team/endurance entries have no waiting list (unchanged, hard-capped elsewhere).
+    public function isRegistrationWaitlisted(RaceRegistration $registration): bool
+    {
+        if ($registration->race_class_id) {
+            $raceClass = $registration->raceClass ?: $this->raceClasses->firstWhere('id', $registration->race_class_id);
+            if ($raceClass && $raceClass->isRegistrationWaitlisted($registration)) {
+                return true;
+            }
+        }
+
+        if ($this->max_drivers === null) {
+            return false;
+        }
+
+        return $this->registrationRank($registration) >= $this->max_drivers;
+    }
+
+    /** FIFO rank across every registration in the race, regardless of class. */
+    public function registrationRank(RaceRegistration $registration): int
+    {
+        return $this->registrations()
+            ->where(function ($q) use ($registration) {
+                $q->where('created_at', '<', $registration->created_at)
+                    ->orWhere(function ($q2) use ($registration) {
+                        $q2->where('created_at', $registration->created_at)
+                            ->where('id', '<', $registration->id);
+                    });
+            })
+            ->count();
+    }
+
+    /** 1-indexed position on the waiting list (only meaningful when isRegistrationWaitlisted() is true). */
+    public function waitlistPosition(RaceRegistration $registration): int
+    {
+        if ($registration->race_class_id) {
+            $raceClass = $registration->raceClass ?: $this->raceClasses->firstWhere('id', $registration->race_class_id);
+            if ($raceClass && $raceClass->isRegistrationWaitlisted($registration)) {
+                return $raceClass->waitlistPosition($registration);
+            }
+        }
+
+        if ($this->max_drivers === null) {
+            return 0;
+        }
+
+        return $this->registrationRank($registration) - $this->max_drivers + 1;
+    }
+
+    // Total waiting across the race. Computed per-registration (not derived from the
+    // two caps' counts added together) so a driver waitlisted by both their class's
+    // cap and the race-wide cap at once is still only counted once.
+    public function waitlistCount(): int
+    {
+        if ($this->is_endurance) {
+            return 0;
+        }
+
+        return $this->registrations
+            ->filter(fn ($r) => ! $r->team_entry_id && $this->isRegistrationWaitlisted($r))
+            ->count();
+    }
+
     public function gameLabel(): string
     {
         return match ($this->game) {
-            'acc'     => 'ACC Console',
-            'lmu'     => 'Le Mans Ultimate',
+            'acc' => 'ACC Console',
+            'lmu' => 'Le Mans Ultimate',
             'iracing' => 'iRacing',
-            'ac'      => 'ACC PC',
-            default   => strtoupper($this->game),
+            'ac' => 'ACC PC',
+            default => strtoupper($this->game),
         };
     }
 
-    public function scheduledAtUk(): \Carbon\Carbon
+    public function scheduledAtUk(): Carbon
     {
         return $this->scheduled_at->timezone('Europe/London');
     }
@@ -153,9 +228,9 @@ class Race extends Model
     public function eveningRegions(): array
     {
         $regions = [
-            'europe'    => 'Europe/London',
+            'europe' => 'Europe/London',
             'australia' => 'Australia/Sydney',
-            'us'        => 'America/New_York',
+            'us' => 'America/New_York',
         ];
 
         $matches = [];
@@ -174,9 +249,9 @@ class Race extends Model
     // 30-minute floor for races that have no duration data at all (e.g. a bare stub).
     public function calendarWindow(): array
     {
-        $start   = $this->scheduled_at->copy()->utc();
+        $start = $this->scheduled_at->copy()->utc();
         $minutes = (int) $this->practice_duration + (int) $this->qualifying_duration + (int) $this->race_duration;
-        $end     = $start->copy()->addMinutes(max($minutes, 30));
+        $end = $start->copy()->addMinutes(max($minutes, 30));
 
         return [$start, $end];
     }
@@ -185,12 +260,12 @@ class Race extends Model
     {
         [$start, $end] = $this->calendarWindow();
 
-        return 'https://calendar.google.com/calendar/render?' . http_build_query([
-            'action'   => 'TEMPLATE',
-            'text'     => $this->title . ' — ' . $this->track,
-            'dates'    => $start->format('Ymd\THis\Z') . '/' . $end->format('Ymd\THis\Z'),
-            'location' => $this->track . ' (' . $this->gameLabel() . ')',
-            'details'  => route('events.show', $this),
+        return 'https://calendar.google.com/calendar/render?'.http_build_query([
+            'action' => 'TEMPLATE',
+            'text' => $this->title.' — '.$this->track,
+            'dates' => $start->format('Ymd\THis\Z').'/'.$end->format('Ymd\THis\Z'),
+            'location' => $this->track.' ('.$this->gameLabel().')',
+            'details' => route('events.show', $this),
         ]);
     }
 
@@ -198,14 +273,14 @@ class Race extends Model
     {
         [$start, $end] = $this->calendarWindow();
 
-        return 'https://outlook.live.com/calendar/0/deeplink/compose?' . http_build_query([
-            'path'     => '/calendar/action/compose',
-            'rru'      => 'addevent',
-            'subject'  => $this->title . ' — ' . $this->track,
-            'startdt'  => $start->toIso8601String(),
-            'enddt'    => $end->toIso8601String(),
-            'location' => $this->track . ' (' . $this->gameLabel() . ')',
-            'body'     => route('events.show', $this),
+        return 'https://outlook.live.com/calendar/0/deeplink/compose?'.http_build_query([
+            'path' => '/calendar/action/compose',
+            'rru' => 'addevent',
+            'subject' => $this->title.' — '.$this->track,
+            'startdt' => $start->toIso8601String(),
+            'enddt' => $end->toIso8601String(),
+            'location' => $this->track.' ('.$this->gameLabel().')',
+            'body' => route('events.show', $this),
         ]);
     }
 
@@ -218,6 +293,7 @@ class Race extends Model
         if (! $this->eventFormat) {
             return null;
         }
+
         return $this->eventFormat->race1_mins + ($this->eventFormat->race2_mins ?? 0);
     }
 
@@ -225,11 +301,14 @@ class Race extends Model
     public function durationLabel(): ?string
     {
         $mins = $this->raceDurationMinutes();
-        if ($mins === null) return null;
-        if ($this->is_endurance && $mins % 60 === 0) {
-            return ($mins / 60) . 'H';
+        if ($mins === null) {
+            return null;
         }
-        return $mins . ' MIN';
+        if ($this->is_endurance && $mins % 60 === 0) {
+            return ($mins / 60).'H';
+        }
+
+        return $mins.' MIN';
     }
 
     public function getImageUrlAttribute(): ?string
@@ -248,6 +327,7 @@ class Race extends Model
     // admin-chosen one they'd show the plain text badge instead of a logo. Fall back
     // to the shared "special event" logo in that case.
     private static ?string $specialEventIconPath = null;
+
     private static bool $specialEventIconResolved = false;
 
     private function defaultCustomIconPath(): ?string
@@ -256,7 +336,7 @@ class Race extends Model
             return null;
         }
 
-        if (!self::$specialEventIconResolved) {
+        if (! self::$specialEventIconResolved) {
             self::$specialEventIconResolved = true;
             self::$specialEventIconPath = Media::where('title', 'special_event')
                 ->orWhere('original_name', 'like', 'special_event%')
@@ -269,24 +349,37 @@ class Race extends Model
     public function gameColor(): string
     {
         return match ($this->game) {
-            'acc'     => '#7c3aed',
-            'lmu'     => '#db2877',
+            'acc' => '#7c3aed',
+            'lmu' => '#db2877',
             'iracing' => '#2563eb',
-            'ac'      => '#16a34a',
-            default   => '#6b7280',
+            'ac' => '#16a34a',
+            default => '#6b7280',
         };
     }
 
     /** Returns [letter, hex-color] for the SR tier badge. */
     public function srTier(): array
     {
-        if (!$this->sr_requirement) return ['', '#9ca3af'];
+        if (! $this->sr_requirement) {
+            return ['', '#9ca3af'];
+        }
         $val = (float) $this->sr_requirement;
-        if ($val >= 9.0) return ['Z', '#7c3aed'];
-        if ($val >= 8.0) return ['Y', '#eab308'];
-        if ($val >= 7.0) return ['X', '#2563eb'];
-        if ($val >= 5.0) return ['A', '#16a34a'];
-        if ($val >= 3.0) return ['B', '#dc2626'];
+        if ($val >= 9.0) {
+            return ['Z', '#7c3aed'];
+        }
+        if ($val >= 8.0) {
+            return ['Y', '#eab308'];
+        }
+        if ($val >= 7.0) {
+            return ['X', '#2563eb'];
+        }
+        if ($val >= 5.0) {
+            return ['A', '#16a34a'];
+        }
+        if ($val >= 3.0) {
+            return ['B', '#dc2626'];
+        }
+
         return ['D', '#6b7280'];
     }
 
@@ -294,11 +387,11 @@ class Race extends Model
     public function carClassStyle(): array
     {
         return match (strtoupper((string) $this->car_class)) {
-            'GT3'  => ['#DC2626', '#FFFFFF'],
-            'GT4'  => ['#2563EB', '#FFFFFF'],
-            'GT2'  => ['#16A34A', '#FFFFFF'],
-            'GTC'  => ['#F97316', '#FFFFFF'],
-            'TCX'  => ['#FFFFFF', '#0D0D0D'],
+            'GT3' => ['#DC2626', '#FFFFFF'],
+            'GT4' => ['#2563EB', '#FFFFFF'],
+            'GT2' => ['#16A34A', '#FFFFFF'],
+            'GTC' => ['#F97316', '#FFFFFF'],
+            'TCX' => ['#FFFFFF', '#0D0D0D'],
             default => ['#374151', '#FFFFFF'],
         };
     }
@@ -307,13 +400,13 @@ class Race extends Model
     public static function ratingTierInfo(?string $tier): array
     {
         return match ($tier) {
-            'rookie'   => ['Rookie',   '#ef4444'],
-            'bronze'   => ['Bronze',   '#cd7f32'],
-            'silver'   => ['Silver',   '#9ca3af'],
-            'gold'     => ['Gold',     '#f59e0b'],
+            'rookie' => ['Rookie',   '#ef4444'],
+            'bronze' => ['Bronze',   '#cd7f32'],
+            'silver' => ['Silver',   '#9ca3af'],
+            'gold' => ['Gold',     '#f59e0b'],
             'platinum' => ['Platinum', '#7c3aed'],
-            'alien'    => ['Alien',    '#10b981'],
-            default    => ['',         '#6b7280'],
+            'alien' => ['Alien',    '#10b981'],
+            default => ['',         '#6b7280'],
         };
     }
 
