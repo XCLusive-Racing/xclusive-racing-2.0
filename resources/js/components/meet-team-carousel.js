@@ -24,16 +24,6 @@ const drivers = [
             { type: 'linkedin',  href: 'https://www.linkedin.com/in/mats-van-rooijen-540354314/' },
         ],
     },
-    {
-        name: 'Jesse Aalbregt', cat: 'pro', platform: 'hybrid', platformLabel: 'Hybrid',
-        photo: '/images/drivers/J.Aalbregt.png', flag: 'netherlands', role: 'racing',
-        socials: [
-            { type: 'instagram', href: 'https://www.instagram.com/teamjesse81/' },
-            { type: 'youtube',   href: 'https://www.youtube.com/@teamjesse81' },
-            { type: 'tiktok',    href: 'https://www.tiktok.com/@teamjesse81' },
-            { type: 'twitch',    href: 'https://www.twitch.tv/teamjesse81' },
-        ],
-    },
 
     // ── ESPORTS (LMU / ACC / iRacing mixed, sorted by last name) ──
     { name: 'Nat Benett',       cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/Bennett.png', flag: 'united%20kingdom', role: 'esports', socials: [] },
