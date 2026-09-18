@@ -263,7 +263,7 @@ $tagsConfig = json_encode([
                         <div class="row g-3">
                             <div class="col-sm-4">
                                 <label class="form-label">Max Drivers/Teams</label>
-                                <input type="number" name="max_drivers" value="{{ old('max_drivers') }}"
+                                <input type="number" name="max_drivers" id="cr-max-drivers" value="{{ old('max_drivers') }}"
                                        class="form-control @error('max_drivers') is-invalid @enderror"
                                        min="1">
                                 @error('max_drivers')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -334,8 +334,11 @@ $tagsConfig = json_encode([
                     </div>
 
                     {{-- Multiclass --}}
-                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6" data-multiclass-wrap>
+                    <div class="px-4 py-3" style="border-top:1px solid #f3f4f6" data-multiclass-wrap data-mc-total-input="cr-max-drivers">
                         <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Multiclass <span class="fw-normal" style="text-transform:none">(optional)</span></p>
+                        <p class="text-secondary mb-3" style="font-size:.78rem">
+                            Classes split the Max Drivers/Teams total above evenly by default — edit a class's own number to set a different limit for it.
+                        </p>
 
                         <input type="hidden" name="is_multiclass" data-multiclass-flag value="{{ old('is_multiclass', '0') }}">
                         <input type="hidden" name="classes_json" data-multiclass-json value="{{ old('classes_json', '[]') }}">

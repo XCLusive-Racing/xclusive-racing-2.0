@@ -140,9 +140,18 @@ class Race extends Model
     // (if the class has one) AND the race-wide max_drivers, which spans every class
     // combined -- a class with no cap of its own doesn't exempt it from the race's
     // overall ceiling. Either one being exceeded is enough to waitlist it.
-    // Team/endurance entries have no waiting list (unchanged, hard-capped elsewhere).
+    // Team/endurance entries have no waiting list (unchanged, hard-capped elsewhere) --
+    // guarded here rather than trusting every caller to check team_entry_id first,
+    // since a team registration's raw rank across ALL registrations (one row per
+    // driver on the car) has nothing to do with the team-count cap registerTeam()
+    // actually enforces, and would otherwise produce nonsense once enough team
+    // drivers pushed the raw registration count past max_drivers.
     public function isRegistrationWaitlisted(RaceRegistration $registration): bool
     {
+        if ($registration->team_entry_id) {
+            return false;
+        }
+
         if ($registration->race_class_id) {
             $raceClass = $registration->raceClass ?: $this->raceClasses->firstWhere('id', $registration->race_class_id);
             if ($raceClass && $raceClass->isRegistrationWaitlisted($registration)) {
@@ -174,6 +183,10 @@ class Race extends Model
     /** 1-indexed position on the waiting list (only meaningful when isRegistrationWaitlisted() is true). */
     public function waitlistPosition(RaceRegistration $registration): int
     {
+        if ($registration->team_entry_id) {
+            return 0;
+        }
+
         if ($registration->race_class_id) {
             $raceClass = $registration->raceClass ?: $this->raceClasses->firstWhere('id', $registration->race_class_id);
             if ($raceClass && $raceClass->isRegistrationWaitlisted($registration)) {

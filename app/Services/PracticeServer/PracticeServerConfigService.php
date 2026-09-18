@@ -5,6 +5,7 @@ namespace App\Services\PracticeServer;
 use App\Models\PracticeServer;
 use App\Models\PracticeServerSession;
 use App\Models\Race;
+use App\Models\User;
 use App\Services\AccServerConfigService;
 
 // Builds the four ACC config files for a practice session, reusing AccServerConfigService
@@ -12,9 +13,7 @@ use App\Services\AccServerConfigService;
 // rules, event rules) rather than re-deriving that logic separately.
 class PracticeServerConfigService
 {
-    public function __construct(private readonly AccServerConfigService $raceConfig = new AccServerConfigService())
-    {
-    }
+    public function __construct(private readonly AccServerConfigService $raceConfig = new AccServerConfigService) {}
 
     // event.json — track/ambientTemp/trackTemp/cloudLevel/rain come from whatever the
     // race's own config would derive (same weather/time-of-day/track fields), the
@@ -27,10 +26,10 @@ class PracticeServerConfigService
         $durationMinutes = max(1, $session->window_start->diffInMinutes($session->window_end));
 
         $base['sessions'] = [[
-            'hourOfDay'              => $this->raceConfig->startHour($race->time_of_day),
-            'dayOfWeekend'           => 2,
-            'timeMultiplier'         => (int) ($race->practice_time_multiplier ?: 1),
-            'sessionType'            => 'P',
+            'hourOfDay' => $this->raceConfig->startHour($race->time_of_day),
+            'dayOfWeekend' => 2,
+            'timeMultiplier' => (int) ($race->practice_time_multiplier ?: 1),
+            'sessionType' => 'P',
             'sessionDurationMinutes' => $durationMinutes,
         ]];
 
@@ -50,12 +49,12 @@ class PracticeServerConfigService
         $base = $server->ftpServer?->settings_defaults ?? $this->raceConfig->defaultSettings();
 
         return array_merge($base, [
-            'password'                   => $server->join_password ?? '',
-            'maxCarSlots'                => $server->max_car_slots,
-            'carGroup'                   => $this->raceConfig->carGroup($race->car_class),
-            'safetyRatingRequirement'    => -1,
+            'password' => $server->join_password ?? '',
+            'maxCarSlots' => $server->max_car_slots,
+            'carGroup' => $this->raceConfig->carGroup($race->car_class),
+            'safetyRatingRequirement' => -1,
             'racecraftRatingRequirement' => -1,
-            'trackMedalsRequirement'     => 0,
+            'trackMedalsRequirement' => 0,
         ]);
     }
 
@@ -77,14 +76,14 @@ class PracticeServerConfigService
         $base = $this->raceConfig->eventRules($race, $race->ftpServer);
 
         return array_merge($base, [
-            'mandatoryPitstopCount'                => 0,
-            'isRefuellingAllowedInRace'             => false,
-            'isRefuellingTimeFixed'                 => false,
-            'isMandatoryPitstopRefuellingRequired'  => false,
-            'isMandatoryPitstopTyreChangeRequired'  => false,
-            'isMandatoryPitstopSwapDriverRequired'  => false,
-            'driverStintTimeSec'                    => -1,
-            'maxTotalDrivingTime'                   => -1,
+            'mandatoryPitstopCount' => 0,
+            'isRefuellingAllowedInRace' => false,
+            'isRefuellingTimeFixed' => false,
+            'isMandatoryPitstopRefuellingRequired' => false,
+            'isMandatoryPitstopTyreChangeRequired' => false,
+            'isMandatoryPitstopSwapDriverRequired' => false,
+            'driverStintTimeSec' => -1,
+            'maxTotalDrivingTime' => -1,
         ]);
     }
 
@@ -101,11 +100,11 @@ class PracticeServerConfigService
         $entryListResult = $this->entryList($race);
 
         $files = [
-            'event.json'       => json_encode($this->configuration($race, $session), JSON_PRETTY_PRINT),
-            'settings.json'    => json_encode($this->settings($race, $server), JSON_PRETTY_PRINT),
-            'eventrules.json'  => json_encode($this->eventRules($race), JSON_PRETTY_PRINT),
+            'event.json' => json_encode($this->configuration($race, $session), JSON_PRETTY_PRINT),
+            'settings.json' => json_encode($this->settings($race, $server), JSON_PRETTY_PRINT),
+            'eventrules.json' => json_encode($this->eventRules($race), JSON_PRETTY_PRINT),
             'assistrules.json' => json_encode($this->assistRules($race), JSON_PRETTY_PRINT),
-            'entrylist.json'   => json_encode($entryListResult->config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            'entrylist.json' => json_encode($entryListResult->config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
         ];
 
         return [$files, $entryListResult];
@@ -115,6 +114,11 @@ class PracticeServerConfigService
     // live query re-run later. forceEntryList is always 1, so only listed drivers can
     // occupy the limited practice slots. Signups without a valid platform_id are skipped
     // and counted rather than silently sent with a blank playerID.
+    //
+    // Deliberately includes waitlisted registrations, unlike
+    // AccServerConfigService::entryList() (the real race server) -- someone waiting for
+    // a seat should still be able to practice the track/setup in the meantime, they
+    // just don't get to actually start the race until a spot opens up for them.
     public function entryList(Race $race): PracticeEntryListResult
     {
         $registrations = $race->registrations()
@@ -123,8 +127,8 @@ class PracticeServerConfigService
             ->orderBy('created_at')
             ->get();
 
-        $entries          = [];
-        $skipped          = 0;
+        $entries = [];
+        $skipped = 0;
         $processedTeamIds = [];
 
         foreach ($registrations as $reg) {
@@ -134,7 +138,7 @@ class PracticeServerConfigService
                 }
                 $processedTeamIds[$reg->team_entry_id] = true;
 
-                $teamRegs  = $registrations->where('team_entry_id', $reg->team_entry_id);
+                $teamRegs = $registrations->where('team_entry_id', $reg->team_entry_id);
                 $teamEntry = $reg->teamEntry;
 
                 $drivers = [];
@@ -142,13 +146,14 @@ class PracticeServerConfigService
                     $user = $teamReg->user;
                     if (empty($user?->platform_id)) {
                         $skipped++;
+
                         continue;
                     }
                     $drivers[] = [
-                        'firstName'      => '',
-                        'lastName'       => $user->name ?? '',
-                        'shortName'      => mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3)),
-                        'playerID'       => $user->platform_id,
+                        'firstName' => '',
+                        'lastName' => $user->name ?? '',
+                        'shortName' => mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3)),
+                        'playerID' => $user->platform_id,
                         'driverCategory' => $user->ratingClass($race->game),
                     ];
                 }
@@ -160,44 +165,45 @@ class PracticeServerConfigService
                 $carNumber = $teamEntry?->car_number ?? 0;
 
                 $entries[] = [
-                    'drivers'             => $drivers,
-                    'raceNumber'          => is_numeric($carNumber) ? (int) $carNumber : 0,
+                    'drivers' => $drivers,
+                    'raceNumber' => is_numeric($carNumber) ? (int) $carNumber : 0,
                     'defaultGridPosition' => -1,
-                    'ballastKg'           => 0,
-                    'forcedCarModel'      => $teamEntry?->car_model ?? -1,
-                    'overrideDriverInfo'  => 1,
-                    'teamName'            => $teamEntry?->team?->name ?? '',
+                    'ballastKg' => 0,
+                    'forcedCarModel' => $teamEntry?->car_model ?? -1,
+                    'overrideDriverInfo' => 1,
+                    'teamName' => $teamEntry?->team?->name ?? '',
                 ];
             } else {
                 $user = $reg->user;
 
                 if (empty($user?->platform_id)) {
                     $skipped++;
+
                     continue;
                 }
 
                 $entries[] = [
                     'drivers' => [[
-                        'firstName'      => '',
-                        'lastName'       => $user->name ?? '',
-                        'shortName'      => mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3)),
-                        'playerID'       => $user->platform_id,
+                        'firstName' => '',
+                        'lastName' => $user->name ?? '',
+                        'shortName' => mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3)),
+                        'playerID' => $user->platform_id,
                         'driverCategory' => $user->ratingClass($race->game),
                     ]],
-                    'raceNumber'          => is_numeric($user->car_number) ? (int) $user->car_number : 0,
+                    'raceNumber' => is_numeric($user->car_number) ? (int) $user->car_number : 0,
                     'defaultGridPosition' => -1,
-                    'ballastKg'           => 0,
-                    'forcedCarModel'      => is_numeric($user->car_model) ? (int) $user->car_model : -1,
-                    'overrideDriverInfo'  => 1,
-                    'teamName'            => $this->soloTeamName($user),
+                    'ballastKg' => 0,
+                    'forcedCarModel' => is_numeric($user->car_model) ? (int) $user->car_model : -1,
+                    'overrideDriverInfo' => 1,
+                    'teamName' => $this->soloTeamName($user),
                 ];
             }
         }
 
         return new PracticeEntryListResult(
             config: [
-                'entries'        => $entries,
-                'configVersion'  => 1,
+                'entries' => $entries,
+                'configVersion' => 1,
                 'forceEntryList' => 1,
             ],
             entryCount: count($entries),
@@ -210,7 +216,7 @@ class PracticeServerConfigService
     // to (owned team first, else a team they're a member of); the free-text
     // personal "Team / Quote" field is only a fallback for drivers with no
     // RacingTeam at all.
-    private function soloTeamName(\App\Models\User $user): string
+    private function soloTeamName(User $user): string
     {
         $team = $user->allRacingTeams()->first();
 

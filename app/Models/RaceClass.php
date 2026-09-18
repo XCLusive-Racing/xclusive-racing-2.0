@@ -23,13 +23,35 @@ class RaceClass extends Model
         return $this->hasMany(RaceRegistration::class);
     }
 
+    // This class's effective driver cap: its own max_drivers if the admin set one,
+    // otherwise an even split of the race's overall max_drivers across all of its
+    // classes -- e.g. a 50-driver race with 2 classes and no per-class caps set splits
+    // into 25 each, rather than leaving each class silently uncapped. Null (uncapped)
+    // if neither the class nor the race sets a limit.
+    public function effectiveCap(): ?int
+    {
+        if ($this->max_drivers !== null) {
+            return $this->max_drivers;
+        }
+
+        $race = $this->race;
+        if (! $race || $race->max_drivers === null) {
+            return null;
+        }
+
+        $classCount = $race->raceClasses->count();
+
+        return $classCount > 0 ? (int) ceil($race->max_drivers / $classCount) : null;
+    }
+
     public function isFull(): bool
     {
-        if ($this->max_drivers === null) {
+        $cap = $this->effectiveCap();
+        if ($cap === null) {
             return false;
         }
 
-        return $this->registrations()->count() >= $this->max_drivers;
+        return $this->registrations()->count() >= $cap;
     }
 
     // How many still-active registrations were created before this one -- a driver's
@@ -52,26 +74,28 @@ class RaceClass extends Model
 
     public function isRegistrationWaitlisted(RaceRegistration $registration): bool
     {
-        if ($this->max_drivers === null) {
+        $cap = $this->effectiveCap();
+        if ($cap === null) {
             return false;
         }
 
-        return $this->registrationRank($registration) >= $this->max_drivers;
+        return $this->registrationRank($registration) >= $cap;
     }
 
     /** 1-indexed position on the waiting list (only meaningful when isRegistrationWaitlisted() is true). */
     public function waitlistPosition(RaceRegistration $registration): int
     {
-        return $this->registrationRank($registration) - $this->max_drivers + 1;
+        return $this->registrationRank($registration) - $this->effectiveCap() + 1;
     }
 
     public function waitlistCount(): int
     {
-        if ($this->max_drivers === null) {
+        $cap = $this->effectiveCap();
+        if ($cap === null) {
             return 0;
         }
 
-        return max(0, $this->registrations()->count() - $this->max_drivers);
+        return max(0, $this->registrations()->count() - $cap);
     }
 
     /** Returns [grade-letter, hex-color] for the Min. SR badge. */
