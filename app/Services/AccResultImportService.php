@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Race;
 use App\Models\RaceResult;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 
 class AccResultImportService
 {
@@ -27,7 +28,7 @@ class AccResultImportService
         $content = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $content);
 
         if (json_decode($content, true) === null) {
-            return ['', $name . ': ' . json_last_error_msg()];
+            return ['', $name.': '.json_last_error_msg()];
         }
 
         return [$content, null];
@@ -40,7 +41,7 @@ class AccResultImportService
      */
     public function processSessions(string $content, Race $race, string $name): array
     {
-        $data   = json_decode($content, true);
+        $data = json_decode($content, true);
         $counts = ['race' => 0, 'quali' => 0];
         $errors = [];
 
@@ -53,20 +54,38 @@ class AccResultImportService
         }
 
         foreach ($sessions as $session) {
-            if (!in_array($session['sessionType'] ?? null, ['Q', 'R'], true)) {
+            if (! in_array($session['sessionType'] ?? null, ['Q', 'R'], true)) {
                 continue;
             }
 
-            $type          = $session['sessionType'] === 'Q' ? 'quali' : 'race';
+            $type = $session['sessionType'] === 'Q' ? 'quali' : 'race';
             $counts[$type] += $this->parseSession($session, $race, $type);
         }
 
         if ($counts['race'] > 0) {
+            $this->storeResultsJson($race, $content);
             $race->update(['status' => 'finished']);
-            (new RatingService(new XclRating()))->processRace($race);
+            (new RatingService(new XclRating))->processRace($race);
         }
 
         return [$counts, $errors];
+    }
+
+    // Keeps the full decoded race-session JSON (laps, sectors, penalties) around so the
+    // public results page can build its detailed stats tabs — the aggregate RaceResult
+    // rows alone don't carry that per-lap detail.
+    //
+    // Lives here, inside processSessions()'s own race-rows branch, rather than at each
+    // call site: it used to be a private method on RaceResultController, so only the two
+    // *manual* import paths (upload + the admin's FTP import button) ever saved it.
+    // ImportGportalResults — the scheduled every-minute importer that brings in
+    // practically every real race — calls processSessions() directly and never knew to,
+    // so those races silently got no stats panel at all.
+    private function storeResultsJson(Race $race, string $content): void
+    {
+        $path = 'race-results/'.$race->id.'.json';
+        Storage::disk('local')->put($path, $content);
+        $race->update(['results_json_path' => $path]);
     }
 
     // A driver who parks in the pits (or never gets going) still shows up in ACC's
@@ -79,7 +98,7 @@ class AccResultImportService
 
     private function parseSession(array $session, Race $race, string $sessionType): int
     {
-        $lines     = $session['sessionResult']['leaderBoardLines'] ?? [];
+        $lines = $session['sessionResult']['leaderBoardLines'] ?? [];
         $bestLapMs = ($session['sessionResult']['bestlap'] ?? -1) > 0
             ? (int) $session['sessionResult']['bestlap']
             : null;
@@ -98,7 +117,7 @@ class AccResultImportService
 
         // Collect all driver IDs across all cars (team entries have multiple drivers per car)
         $playerIds = collect($lines)
-            ->flatMap(fn($l) => collect($l['car']['drivers'] ?? [])->pluck('playerId'))
+            ->flatMap(fn ($l) => collect($l['car']['drivers'] ?? [])->pluck('playerId'))
             ->filter()
             ->unique()
             ->values()
@@ -111,27 +130,27 @@ class AccResultImportService
         $saved = 0;
 
         foreach ($lines as $index => $line) {
-            $drivers   = $line['car']['drivers'] ?? [];
+            $drivers = $line['car']['drivers'] ?? [];
             $carNumber = $line['car']['raceNumber'] ?? null;
-            $carModel  = $line['car']['carModel'] ?? null;
-            $timing    = $line['timing'] ?? [];
+            $carModel = $line['car']['carModel'] ?? null;
+            $timing = $line['timing'] ?? [];
 
             $rawBestLap = (int) ($timing['bestLap'] ?? -1);
-            $bestLap    = ($rawBestLap > 0 && $rawBestLap < 2147483647) ? $rawBestLap : null;
-            $lapCount   = isset($timing['lapCount']) ? (int) $timing['lapCount']  : null;
-            $rawTotal   = (int) ($timing['totalTime'] ?? -1);
-            $totalTime  = ($rawTotal > 0 && $rawTotal < 2147483647) ? $rawTotal : null;
-            $lapsLed    = isset($line['lapsLed'])    ? (int) $line['lapsLed']     : null;
+            $bestLap = ($rawBestLap > 0 && $rawBestLap < 2147483647) ? $rawBestLap : null;
+            $lapCount = isset($timing['lapCount']) ? (int) $timing['lapCount'] : null;
+            $rawTotal = (int) ($timing['totalTime'] ?? -1);
+            $totalTime = ($rawTotal > 0 && $rawTotal < 2147483647) ? $rawTotal : null;
+            $lapsLed = isset($line['lapsLed']) ? (int) $line['lapsLed'] : null;
 
             $consistency = null;
             if ($bestLap && $lapCount > 0 && $totalTime) {
-                $avgLap      = $totalTime / $lapCount;
-                $raw         = ($bestLap / $avgLap) * 100;
+                $avgLap = $totalTime / $lapCount;
+                $raw = ($bestLap / $avgLap) * 100;
                 $consistency = ($raw >= 0 && $raw <= 999.99) ? round($raw, 2) : null;
             }
 
-            $dns        = $sessionType === 'race' && $totalTime === null;
-            $dnf        = $sessionType === 'race' && ! $dns && $leaderLaps > 0
+            $dns = $sessionType === 'race' && $totalTime === null;
+            $dnf = $sessionType === 'race' && ! $dns && $leaderLaps > 0
                 && ($lapCount ?? 0) < $leaderLaps * self::DNF_LAP_THRESHOLD;
             $fastestLap = $bestLapMs !== null && $bestLap !== null && $bestLap === $bestLapMs;
 
@@ -139,38 +158,38 @@ class AccResultImportService
             // driver gets their own RaceResult row so the rating system credits them all.
             foreach ($drivers as $driver) {
                 $playerId = $driver['playerId'] ?? null;
-                if (!$playerId || !isset($registeredIds[$playerId])) {
+                if (! $playerId || ! isset($registeredIds[$playerId])) {
                     continue;
                 }
 
                 $driverName = trim($driver['lastName'] ?? '');
-                $user       = $usersByPlatformId->get($playerId);
+                $user = $usersByPlatformId->get($playerId);
 
                 RaceResult::updateOrCreate(
                     [
-                        'race_id'      => $race->id,
+                        'race_id' => $race->id,
                         'session_type' => $sessionType,
-                        'player_id'    => $playerId,
+                        'player_id' => $playerId,
                     ],
                     [
-                        'race_title'        => $race->title,
-                        'race_track'        => $race->track,
-                        'race_game'         => $race->game,
+                        'race_title' => $race->title,
+                        'race_track' => $race->track,
+                        'race_game' => $race->game,
                         'race_scheduled_at' => $race->scheduled_at,
-                        'user_id'           => $user?->id,
-                        'driver_name'       => $driverName ?: null,
-                        'car_number'        => $carNumber,
-                        'vehicle'           => RaceResult::accCarName($carModel),
-                        'car_class'         => RaceResult::accCarClass($carModel),
-                        'position'          => $index + 1,
-                        'best_lap'          => $bestLap,
-                        'lap_count'         => $lapCount,
-                        'laps_led'          => $lapsLed,
-                        'total_time'        => $totalTime,
-                        'consistency'       => $consistency,
-                        'fastest_lap'       => $fastestLap,
-                        'dnf'               => $dnf,
-                        'dns'               => $dns,
+                        'user_id' => $user?->id,
+                        'driver_name' => $driverName ?: null,
+                        'car_number' => $carNumber,
+                        'vehicle' => RaceResult::accCarName($carModel),
+                        'car_class' => RaceResult::accCarClass($carModel),
+                        'position' => $index + 1,
+                        'best_lap' => $bestLap,
+                        'lap_count' => $lapCount,
+                        'laps_led' => $lapsLed,
+                        'total_time' => $totalTime,
+                        'consistency' => $consistency,
+                        'fastest_lap' => $fastestLap,
+                        'dnf' => $dnf,
+                        'dns' => $dns,
                     ]
                 );
 
