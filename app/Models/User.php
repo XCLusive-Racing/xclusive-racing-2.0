@@ -359,12 +359,22 @@ class User extends Authenticatable
 
     public function racingTeams(): BelongsToMany
     {
-        return $this->belongsToMany(RacingTeam::class, 'racing_team_members');
+        return $this->belongsToMany(RacingTeam::class, 'racing_team_members')->withPivot('role');
     }
 
     public function allRacingTeams(): Collection
     {
         return $this->ownedRacingTeams->merge($this->racingTeams);
+    }
+
+    // The team this user is trusted to register/enter for an event or championship on
+    // behalf of: the team they own, or otherwise the first team they've been promoted
+    // to manager of. A plain member (no manager role, no owned team) gets null here,
+    // same as before managers existed.
+    public function manageableRacingTeam(): ?RacingTeam
+    {
+        return $this->ownedRacingTeams()->with('members')->first()
+            ?? $this->racingTeams()->wherePivot('role', 'manager')->with('members', 'owner')->first();
     }
 
     public function raceResults(): HasMany

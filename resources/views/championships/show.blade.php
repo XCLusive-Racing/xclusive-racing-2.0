@@ -342,7 +342,17 @@
                         <p style="color:#6b7280;font-size:.875rem">Registration is not open yet.</p>
 
                         @elseif($championship->isRegistered(auth()->user()))
-                        @php $ownRegistration = $championship->registrations()->where('user_id', auth()->id())->first(); @endphp
+                        @php
+                            $myManageableTeam = auth()->user()->manageableRacingTeam();
+                            $ownRegistration = $championship->registrations()
+                                ->where(function ($q) use ($myManageableTeam) {
+                                    $q->where('user_id', auth()->id());
+                                    if ($myManageableTeam) {
+                                        $q->orWhere('racing_team_id', $myManageableTeam->id);
+                                    }
+                                })
+                                ->first();
+                        @endphp
                         @if($championship->isRegistrationWaitlisted(auth()->user()))
                         <p class="fw-bold mb-3" style="color:#f59e0b;font-size:.875rem">You are on the waiting list for this championship.</p>
                         @else
@@ -362,7 +372,7 @@
                             </button>
                         </form>
                         @else
-                        <p style="color:#6b7280;font-size:.78rem" class="mb-0">Your team's owner registered you — only they can unregister the team.</p>
+                        <p style="color:#6b7280;font-size:.78rem" class="mb-0">Your team's owner or a manager registered you — only they can unregister the team.</p>
                         @endif
 
                         @elseif(!$championship->registration_open || !$championship->registrationIsOpen())
@@ -373,7 +383,7 @@
                             $driverSwaps    = $championship->settings->format->driver_swaps_enabled ?? false;
                             $driverFull     = $championship->isFull() && !$championship->waitlistEnabled();
                             $spectatorOpen  = $championship->spectatorSlots() > 0 && !$championship->isSpectatorFull();
-                            $ownedTeam      = $driverSwaps ? auth()->user()->ownedRacingTeams()->first() : null;
+                            $ownedTeam      = $driverSwaps ? auth()->user()->manageableRacingTeam() : null;
                             $teamScope      = $championship->settings->format->team_registration_scope ?? 'per_round';
                         @endphp
 

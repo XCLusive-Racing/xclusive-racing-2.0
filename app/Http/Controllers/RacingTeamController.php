@@ -20,12 +20,13 @@ class RacingTeamController extends Controller
             'racingTeams.members',
             'racingTeamInvitations.team.owner',
         ]);
+
         return view('racing-teams.index', compact('user'));
     }
 
     public function searchUsers(Request $request)
     {
-        $q    = $request->string('q')->trim()->value();
+        $q = $request->string('q')->trim()->value();
         $team = RacingTeam::with(['members', 'invitations'])->findOrFail($request->integer('team_id'));
 
         abort_unless(Auth::id() === $team->owner_id, 403);
@@ -38,14 +39,14 @@ class RacingTeamController extends Controller
             ->merge($team->invitations->pluck('user_id'))
             ->push($team->owner_id);
 
-        $users = User::where('name', 'like', '%' . $q . '%')
+        $users = User::where('name', 'like', '%'.$q.'%')
             ->whereNull('deleted_at')
             ->whereNotIn('id', $existingIds)
             ->select('id', 'name')
             ->orderBy('name')
             ->limit(8)
             ->get()
-            ->map(fn($u) => ['id' => $u->id, 'name' => $u->displayName()]);
+            ->map(fn ($u) => ['id' => $u->id, 'name' => $u->displayName()]);
 
         return response()->json($users);
     }
@@ -58,16 +59,16 @@ class RacingTeamController extends Controller
 
         $data = $request->validate([
             'name' => 'required|string|max:40',
-            'tag'  => 'required|string|max:6',
+            'tag' => 'required|string|max:6',
         ]);
 
         $team = RacingTeam::create([
-            'name'     => $data['name'],
-            'tag'      => strtoupper($data['tag']),
+            'name' => $data['name'],
+            'tag' => strtoupper($data['tag']),
             'owner_id' => Auth::id(),
         ]);
 
-        return back()->with('team_success', 'Team "' . $team->name . '" created.');
+        return back()->with('team_success', 'Team "'.$team->name.'" created.');
     }
 
     public function addMember(Request $request, RacingTeam $team)
@@ -85,24 +86,24 @@ class RacingTeamController extends Controller
         }
 
         if ($team->members->contains($user->id)) {
-            return back()->withErrors(['team' => $user->displayName() . ' is already a member.']);
+            return back()->withErrors(['team' => $user->displayName().' is already a member.']);
         }
 
         $invitation = RacingTeamInvitation::firstOrCreate([
             'racing_team_id' => $team->id,
-            'user_id'        => $user->id,
+            'user_id' => $user->id,
         ]);
 
         if ($invitation->wasRecentlyCreated) {
             Message::create([
                 'user_id' => $user->id,
-                'title'   => 'Team Invitation: ' . $team->name,
-                'body'    => Auth::user()->displayName() . ' has invited you to join their racing team ' . $team->name . '. Go to My Team to accept or decline.',
-                'type'    => 'team_invitation',
+                'title' => 'Team Invitation: '.$team->name,
+                'body' => Auth::user()->displayName().' has invited you to join their racing team '.$team->name.'. Go to My Team to accept or decline.',
+                'type' => 'team_invitation',
             ]);
         }
 
-        return back()->with('team_success', 'Invite sent to ' . $user->displayName() . '.');
+        return back()->with('team_success', 'Invite sent to '.$user->displayName().'.');
     }
 
     public function acceptInvite(RacingTeamInvitation $invitation)
@@ -112,7 +113,7 @@ class RacingTeamController extends Controller
         $invitation->team->members()->syncWithoutDetaching([$invitation->user_id]);
         $invitation->delete();
 
-        return back()->with('team_success', 'You joined ' . $invitation->team->name . '!');
+        return back()->with('team_success', 'You joined '.$invitation->team->name.'!');
     }
 
     public function declineInvite(RacingTeamInvitation $invitation)
@@ -131,7 +132,27 @@ class RacingTeamController extends Controller
 
         $team->members()->detach($user->id);
 
-        return back()->with('team_success', $user->name . ' removed from the team.');
+        return back()->with('team_success', $user->name.' removed from the team.');
+    }
+
+    // Promotes/demotes a member to/from manager -- a manager is trusted the same as
+    // the owner for registering/entering the team into an event or championship
+    // (RacingTeam::canManage()), but everything else here (roster, logo, delete team)
+    // stays owner-only.
+    public function updateMemberRole(Request $request, RacingTeam $team, User $user)
+    {
+        abort_unless(Auth::id() === $team->owner_id, 403);
+        abort_if($user->id === $team->owner_id, 422);
+
+        $data = $request->validate([
+            'role' => 'required|in:member,manager',
+        ]);
+
+        abort_unless($team->members->contains($user->id), 404);
+
+        $team->members()->updateExistingPivot($user->id, ['role' => $data['role']]);
+
+        return back()->with('team_success', $user->displayName().' is now '.($data['role'] === 'manager' ? 'a manager.' : 'a member.'));
     }
 
     public function destroy(RacingTeam $team)
@@ -155,7 +176,9 @@ class RacingTeamController extends Controller
             if (str_starts_with($team->logo, 'http')) {
                 $diskUrl = rtrim(\Storage::disk('media')->url(''), '/');
                 $oldPath = ltrim(str_replace($diskUrl, '', $team->logo), '/');
-                if ($oldPath) \Storage::disk('media')->delete($oldPath);
+                if ($oldPath) {
+                    \Storage::disk('media')->delete($oldPath);
+                }
             } else {
                 \Storage::disk('media')->delete($team->logo);
             }

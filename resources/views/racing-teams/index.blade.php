@@ -69,7 +69,10 @@
                 </div>
 
                 {{-- Members --}}
-                <h3 class="fw-black text-uppercase fst-italic text-dark mb-3" style="font-size:.85rem;letter-spacing:.05em">Members</h3>
+                <h3 class="fw-black text-uppercase fst-italic text-dark mb-1" style="font-size:.85rem;letter-spacing:.05em">Members</h3>
+                <p class="text-secondary mb-3" style="font-size:.78rem">
+                    A manager can sign up and enter the team for events and championships, same as you.
+                </p>
 
                 @if($myTeam->members->isEmpty() && $myTeam->invitations->isEmpty())
                 <p class="text-secondary mb-3" style="font-size:.82rem">No members yet. Invite your co-driver below.</p>
@@ -77,6 +80,7 @@
                 <div class="d-flex flex-column gap-1 mb-3">
                     {{-- Accepted members --}}
                     @foreach($myTeam->members as $member)
+                    @php $isManager = $member->pivot->role === 'manager'; @endphp
                     <div class="d-flex align-items-center justify-content-between py-2 px-3 rounded-2"
                          style="background:#f9fafb;border:1px solid #f3f4f6">
                         <div class="d-flex align-items-center gap-2">
@@ -89,14 +93,27 @@
                             </div>
                             @endif
                             <span style="font-size:.88rem;font-weight:600">{{ $member->displayName() }}</span>
+                            @if($isManager)
+                            <span class="badge fw-bold" style="background:#7c3aed22;color:#7c3aed;font-size:.65rem">MANAGER</span>
+                            @endif
                         </div>
-                        <form action="{{ route('racing-teams.members.remove', [$myTeam, $member]) }}" method="POST">
-                            @csrf @method('DELETE')
-                            <button class="btn btn-sm fw-bold text-uppercase"
-                                    style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.68rem;padding:2px 8px">
-                                Remove
-                            </button>
-                        </form>
+                        <div class="d-flex gap-2">
+                            <form action="{{ route('racing-teams.members.role', [$myTeam, $member]) }}" method="POST">
+                                @csrf @method('PUT')
+                                <input type="hidden" name="role" value="{{ $isManager ? 'member' : 'manager' }}">
+                                <button class="btn btn-sm fw-bold text-uppercase"
+                                        style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;font-size:.68rem;padding:2px 8px">
+                                    {{ $isManager ? 'Remove manager' : 'Make manager' }}
+                                </button>
+                            </form>
+                            <form action="{{ route('racing-teams.members.remove', [$myTeam, $member]) }}" method="POST">
+                                @csrf @method('DELETE')
+                                <button class="btn btn-sm fw-bold text-uppercase"
+                                        style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.68rem;padding:2px 8px">
+                                    Remove
+                                </button>
+                            </form>
+                        </div>
                     </div>
                     @endforeach
 
@@ -201,13 +218,17 @@
                     </span>
                     @foreach($team->members as $m)
                     <span class="badge rounded-pill fw-bold" style="background:#f3f4f6;color:#374151;font-size:.72rem">
-                        {{ $m->displayName() }}
+                        {{ $m->displayName() }}{{ $m->pivot->role === 'manager' ? ' (manager)' : '' }}
                     </span>
                     @endforeach
                 </div>
                 <p class="mb-0" style="font-size:.78rem;color:#9ca3af">
                     <i class="fa-solid fa-circle-info me-1"></i>
-                    Only the Team Captain can enter the team for an event.
+                    @if($team->isManager($user))
+                        You're a manager — you can sign up and enter this team for events and championships.
+                    @else
+                        Only the owner or a manager can enter the team for an event.
+                    @endif
                 </p>
             </div>
             @endforeach

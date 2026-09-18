@@ -114,7 +114,7 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
                     <tbody>
                         @foreach([
                             ['track', true, 'Exact track name — see the list below', 'Silverstone'],
-                            ['date', true, 'YYYY-MM-DD', '2026-09-01'],
+                            ['date', true, 'YYYY-MM-DD (YYYY/MM/DD also accepted)', '2026-09-01'],
                             ['time', true, 'HH:MM, 24h, BST/GMT (real-world scheduled time)', '20:00'],
                             ['format', false, 'Exact format name (a trailing " Race", e.g. "Multiclass Race", is also accepted) — also auto-fills server below when it\'s left blank, and always sets the event tag', 'Daily Race'],
                             ['weather', false, 'dry / wet / mixed / random', 'dry'],
@@ -127,8 +127,8 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
                             ['has_practice_server', false, 'on / off', 'on'],
                             ['server', false, 'Server name or number — a leading number like "Server 1" also matches — leave blank to use the server the format auto-fills', '2'],
                             ['sr_requirement', false, 'Whole number 3-9 (minimum Safety Rating), comma or dot decimals accepted — 0 or blank means none', '5'],
-                            ['min_rating', false, 'rookie / bronze / silver / gold / platinum / alien / all', 'rookie'],
-                            ['max_rating', false, 'rookie / bronze / silver / gold / platinum / alien / all — e.g. rookie for a Rookies Only event', 'all'],
+                            ['min_rating', false, 'rookie / bronze / silver / gold / platinum / alien / all — a trailing "+" (e.g. "bronze+") is also accepted', 'rookie'],
+                            ['max_rating', false, 'rookie / bronze / silver / gold / platinum / alien / all — e.g. rookie for a Rookies Only event; "rookie max" is also accepted', 'all'],
                             ['car_class', false, 'open / GT3 / GT4 / GT2 / TCX / GTC', 'open'],
                             ['car_class_2', false, 'Same values as car_class — fill this in to make the row multiclass (2 classes)', 'GT4'],
                             ['car_class_3', false, 'Same values as car_class — a 3rd class, only used when car_class_2 is also set', ''],

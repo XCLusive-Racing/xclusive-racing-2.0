@@ -15,8 +15,8 @@ return new class extends Migration
 
             // Computed once from the restart cadence and persisted, not recalculated on
             // every read — see PracticeWindowCalculator. window_start is the "go live"
-            // restart boundary, upload_at is one minute before it (also the registration
-            // cutoff shown to drivers), window_end is the event's own start time.
+            // restart boundary, upload_at is UPLOAD_LEAD_MINUTES before it (also the
+            // registration cutoff shown to drivers), window_end is the event's own start time.
             $table->timestamp('window_start');
             $table->timestamp('upload_at');
             $table->timestamp('window_end');

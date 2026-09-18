@@ -145,8 +145,8 @@
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li class="d-xcl-none"><a class="xcl-dropdown-item" href="{{ route('events.index') }}">OVERVIEW</a></li>
-                        <li><a class="xcl-dropdown-item" href="{{ url('/events?type=time-trial') }}">TIME TRIALS</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('championships.index') }}">CHAMPIONSHIPS</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ url('/events?type=time-trial') }}">TIME TRIALS</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('calendar') }}">CALENDAR</a></li>
                     </ul>
                 </li>
@@ -166,8 +166,8 @@
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li><a class="xcl-dropdown-item" href="{{ route('drivers.index') }}">LEADERBOARD</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('results.index') }}">RESULTS</a></li>
-                        <li><a class="xcl-dropdown-item" href="{{ route('bop.index') }}">BOP</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('reports.index') }}">REPORTS</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('bop.index') }}">BOP</a></li>
                         @auth
                         <li><a class="xcl-dropdown-item" href="{{ route('racing-teams.index') }}">MY TEAM</a></li>
                         @endauth
