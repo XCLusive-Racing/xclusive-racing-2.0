@@ -728,8 +728,11 @@ $mcExisting = $isEdit
 
                     {{-- ── Multiclass (both single and bulk) ───────────────── --}}
                     <div class="px-4 py-3" style="border-top:1px solid #f3f4f6;display:none" id="ce-multiclass-wrap" data-multiclass-wrap
-                         data-mc-existing="{{ json_encode($mcExisting) }}">
+                         data-mc-existing="{{ json_encode($mcExisting) }}" data-mc-total-input="ce-max-drivers">
                         <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Multiclass <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></p>
+                        <p class="text-secondary mb-3" style="font-size:.78rem">
+                            Classes split the Max Drivers total above evenly by default — edit a class's own number to set a different limit for it.
+                        </p>
 
                         <input type="hidden" name="is_multiclass" data-multiclass-flag value="{{ old('is_multiclass', $isEdit ? ($race->is_multiclass ? '1' : '0') : '0') }}">
                         <input type="hidden" name="classes_json" data-multiclass-json value="{{ old('classes_json', '[]') }}">
@@ -1146,6 +1149,10 @@ $mcExisting = $isEdit
         driversDisplay.value    = t.max + ' drivers (max for ' + track + ')';
         driversInput.value      = t.max;
         driversWrap.style.display = '';
+        // Setting .value directly doesn't fire input/change on its own -- the
+        // multiclass component listens for this to (re)split its classes' caps
+        // whenever the track (and so the overall driver total) changes.
+        driversInput.dispatchEvent(new Event('change'));
     }
 
     gameEl.addEventListener('change', () => {

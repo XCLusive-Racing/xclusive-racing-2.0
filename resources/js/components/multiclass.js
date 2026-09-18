@@ -5,6 +5,43 @@ export function initMulticlass(wrap) {
     const driversWrap  = wrap.querySelector('[data-mc-drivers-wrap]');
     const hint         = wrap.querySelector('[data-mc-hint]');
 
+    // The race's own overall driver cap (a plain input on a Custom Race, or a hidden
+    // field auto-filled from the selected track on a format-based one) -- when set,
+    // newly-selected classes default to an even split of it instead of being left
+    // blank/uncapped. A class the event manager has actually typed a number into is
+    // left alone; only untouched ones get overwritten when the total or the set of
+    // selected classes changes.
+    const totalInput = wrap.dataset.mcTotalInput
+        ? document.getElementById(wrap.dataset.mcTotalInput)
+        : null;
+    const touched = new Set();
+
+    function evenSplit(total, count) {
+        const base = Math.floor(total / count);
+        const remainder = total % count;
+        // Front-load the remainder (e.g. 50 across 3 classes -> 17/17/16) so the
+        // shares always sum exactly back to the race's own total.
+        return Array.from({ length: count }, (_, i) => base + (i < remainder ? 1 : 0));
+    }
+
+    function autoSplitDrivers() {
+        const total = parseInt(totalInput?.value, 10);
+        if (!totalInput || !Number.isFinite(total) || total <= 0) return;
+
+        const checked = Array.from(wrap.querySelectorAll('[data-mc-class]:checked'));
+        if (!checked.length) return;
+
+        const shares = evenSplit(total, checked.length);
+
+        checked.forEach((cb, i) => {
+            const key = cb.dataset.mcClass;
+            if (touched.has(key)) return;
+
+            const maxEl = driversWrap?.querySelector(`[data-mc-drivers="${key}"]`);
+            if (maxEl) maxEl.value = shares[i];
+        });
+    }
+
     const CLASS_DEFS = {
         GT3: { name: 'GT3', color: '#7c3aed', car_class: 'GT3' },
         GT4: { name: 'GT4', color: '#2563eb', car_class: 'GT4' },
@@ -59,6 +96,10 @@ export function initMulticlass(wrap) {
 
                 if (driversWrap && !driversWrap.querySelector(`[data-mc-panel="${key}"]`)) {
                     const ex = existing[key] || {};
+                    // A class re-selected in an edit form with a real saved cap keeps
+                    // it -- only a genuinely blank one is left to auto-split.
+                    if (ex.max_drivers) touched.add(key);
+
                     const srOptions  = SR_OPTIONS.map(v => `<option value="${v}" ${String(ex.sr_requirement) === v ? 'selected' : ''}>${v}.0+</option>`).join('');
                     const ratOptions = RATING_OPTIONS.map(v => `<option value="${v}" ${ex.min_rating === v ? 'selected' : ''}>${v.charAt(0).toUpperCase() + v.slice(1)}+</option>`).join('');
 
@@ -90,7 +131,11 @@ export function initMulticlass(wrap) {
                             </div>
                         </div>
                     `;
-                    panel.querySelectorAll('input, select').forEach(el => el.addEventListener('input', sync));
+                    panel.querySelector(`[data-mc-drivers="${key}"]`).addEventListener('input', () => {
+                        touched.add(key);
+                        sync();
+                    });
+                    panel.querySelectorAll('[data-mc-sr], [data-mc-rating]').forEach(el => el.addEventListener('input', sync));
                     driversWrap.appendChild(panel);
                 }
             } else {
@@ -98,12 +143,28 @@ export function initMulticlass(wrap) {
                 label.style.background  = '#fff';
                 label.style.color       = '#374151';
                 driversWrap?.querySelector(`[data-mc-panel="${key}"]`)?.remove();
+                // Unchecking resets this class back to "untouched" -- if it's picked
+                // again later, it starts from a fresh auto-split rather than whatever
+                // number happened to be sitting in the removed panel.
+                touched.delete(key);
             }
         }
 
-        cb.addEventListener('change', () => { applyStyle(); sync(); });
+        cb.addEventListener('change', () => {
+            applyStyle();
+            autoSplitDrivers();
+            sync();
+        });
         if (cb.checked) applyStyle(); // restore on page reload
     });
 
+    if (totalInput) {
+        totalInput.addEventListener('input', () => { autoSplitDrivers(); sync(); });
+        totalInput.addEventListener('change', () => { autoSplitDrivers(); sync(); });
+    }
+
+    // Fills in any class left blank by the loop above (e.g. every class on a fresh
+    // multiclass race, or one whose saved cap was lost) before the first sync().
+    autoSplitDrivers();
     sync();
 }
