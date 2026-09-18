@@ -971,7 +971,8 @@ span.flatpickr-weekday {
     flex-direction: column;
     gap: .6rem;
     padding: .875rem 1.25rem;
-    background: #4A1A7A;
+    background: #0B0B1A; // matches .xcl-sidebar's own panel background — was a
+                          // mismatched #4A1A7A purple, standing out as its own bar
     flex-shrink: 0;
     border-bottom: 1px solid rgba(200,255,0,.2);
 }
@@ -1161,6 +1162,13 @@ span.flatpickr-weekday {
 
     span:first-child { color: #C8FF00; }
     span:last-child  { color: #FFFFFF; }
+
+    &--with-search {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .6rem;
+    }
 }
 
 // ── Column 1: Next Event ──────────────────────────────────────────────────────
@@ -1435,6 +1443,41 @@ span.flatpickr-weekday {
 
 // ── Column 3: Weekly Leaderboard ─────────────────────────────────────────────
 
+.xcl-sb-lb-period {
+    display: flex;
+    gap: .4rem;
+    margin-bottom: .85rem;
+
+    &__btn {
+        flex: 1;
+        text-align: center;
+        background: transparent;
+        border: 1px solid #2D3748;
+        border-radius: 6px;
+        padding: .35rem .3rem;
+        color: rgba(255,255,255,.45);
+        font-family: 'Poppins', sans-serif;
+        font-weight: 800;
+        font-size: .62rem;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        text-decoration: none;
+        cursor: pointer;
+        transition: color .15s, border-color .15s, background .15s;
+
+        &.active {
+            color: #0d0d0d;
+            background: #C8FF00;
+            border-color: #C8FF00;
+        }
+
+        &:hover:not(.active) {
+            color: #C8FF00;
+            border-color: rgba(200,255,0,.4);
+        }
+    }
+}
+
 .xcl-sb-search {
     position: relative;
     margin-bottom: 1rem;
@@ -1463,6 +1506,23 @@ span.flatpickr-weekday {
         &:focus {
             border-color: #7B2FBE;
             box-shadow: 0 0 0 2px rgba(123,47,190,.25);
+        }
+    }
+
+    // Sits inline next to the LEADERBOARD title instead of on its own row, so the
+    // column doesn't carry a whole extra row's height just for the search field.
+    &--inline {
+        margin-bottom: 0;
+        width: 200px;
+        flex-shrink: 0;
+
+        .xcl-sb-search__icon {
+            left: .5rem;
+        }
+
+        .xcl-sb-search__input {
+            font-size: .68rem;
+            padding: .3rem .5rem .3rem 1.65rem;
         }
     }
 }
@@ -2793,6 +2853,7 @@ span.flatpickr-weekday {
 
     &--registered { background: rgba(22,163,74,.15); color: #4ade80; border: 1px solid rgba(22,163,74,.3); }
     &--full       { background: rgba(239,68,68,.1);  color: #f87171; border: 1px solid rgba(239,68,68,.25); }
+    &--waitlisted { background: rgba(245,158,11,.12); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
 }
 
 .xcl-event-cal {
@@ -4739,6 +4800,7 @@ body.admin-body {
 .rank-ring-gold     { @include shimmer-ring(linear-gradient(135deg, #92400e, #f59e0b, #fde68a, #f59e0b, #92400e), 2s); box-shadow: 0 0 10px rgba(245,158,11,.5); }
 .rank-ring-platinum { @include shimmer-ring(linear-gradient(135deg, #4c1d95, #7c3aed, #a78bfa, #7c3aed, #4c1d95), 1.8s); box-shadow: 0 0 14px rgba(124,58,237,.65); }
 .rank-ring-alien    { background: conic-gradient(#10b981, #34d399, #6ee7b7, #10b981, #059669, #10b981); animation: xcl-spin 2.5s linear infinite; box-shadow: 0 0 18px rgba(16,185,129,.8); }
+.rank-ring-legend   { background: conic-gradient(#000000, #374151, #6b7280, #000000, #111827, #000000); animation: xcl-spin 2s linear infinite; box-shadow: 0 0 20px rgba(0,0,0,.75); }
 
 @keyframes xcl-ring-shimmer {
     0%   { transform: translateX(-200%) skewX(-20deg); }

@@ -12,12 +12,17 @@ export function initEventsSidebar() {
     const searchInput = wrap.querySelector('[data-sb-search]');
     const lbBody      = wrap.querySelector('[data-sb-lb-body]');
     const pagination  = wrap.querySelector('[data-sb-pagination]');
+    const periodBtns  = wrap.querySelectorAll('[data-sb-period]');
 
-    const leaderboards = window.__xclLeaderboards || {};
+    // ALL TIME isn't a period this data has — it's a plain link out to the real
+    // leaderboard page (route('drivers.index')), so it's excluded from periodBtns
+    // (no data-sb-period attribute) and never touches this state.
+    const leaderboards = window.__xclLeaderboards || { weekly: {}, monthly: {} };
 
     let open        = false;
     let navbarOpen  = false;
     let gameFilter  = 'all';
+    let period      = 'weekly';
     let activeTab   = 'daily';
     let searchQuery = '';
     let currentPage = 1;
@@ -120,6 +125,18 @@ export function initEventsSidebar() {
 
     gameBtns.forEach(btn => btn.addEventListener('click', () => setGameFilter(btn.dataset.sbGame)));
 
+    // ── Leaderboard period (WEEKLY / MONTHLY) ───────────────────────────────────
+    function setPeriod(p) {
+        period = p;
+        periodBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.sbPeriod === p));
+        searchQuery = '';
+        if (searchInput) searchInput.value = '';
+        currentPage = 1;
+        renderLeaderboard();
+    }
+
+    periodBtns.forEach(btn => btn.addEventListener('click', () => setPeriod(btn.dataset.sbPeriod)));
+
     // ── Tabs ──────────────────────────────────────────────────────────────────
     function setTab(tab) {
         activeTab = tab;
@@ -135,7 +152,7 @@ export function initEventsSidebar() {
     // ── Leaderboard ───────────────────────────────────────────────────────────
     function activeLeaderboard() {
         const g = ['acc', 'lmu', 'iracing'].includes(gameFilter) ? gameFilter : 'acc';
-        return leaderboards[g] || [];
+        return (leaderboards[period] || {})[g] || [];
     }
 
     function filteredLeaderboard() {

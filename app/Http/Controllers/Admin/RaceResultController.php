@@ -14,43 +14,41 @@ use App\Services\FtpService;
 use App\Services\RatingService;
 use App\Services\ResultPenaltyService;
 use App\Services\XclRating;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class RaceResultController extends Controller
 {
-    public function __construct(private AccResultImportService $importService)
-    {
-    }
+    public function __construct(private AccResultImportService $importService) {}
 
     public function create(Race $race)
     {
         $race->loadMissing(['raceClasses', 'teamEntries']);
 
-        $raceResults  = $race->results()->where('session_type', 'race')->with('user')->get();
+        $raceResults = $race->results()->where('session_type', 'race')->with('user')->get();
         $qualiResults = $race->results()->where('session_type', 'quali')->with('user')->get();
 
-        $ftpServers     = FtpServer::where('active', true)->orderBy('name')->get();
+        $ftpServers = FtpServer::where('active', true)->orderBy('name')->get();
         $selectedServer = null;
-        $ftpFiles       = [];
-        $ftpAllFiles    = [];
-        $ftpError       = null;
-        $importedFiles  = [];
+        $ftpFiles = [];
+        $ftpAllFiles = [];
+        $ftpError = null;
+        $importedFiles = [];
 
         if ($serverId = request('server')) {
             $selectedServer = $ftpServers->firstWhere('id', $serverId);
 
             if ($selectedServer) {
-                $ftp = new FtpService();
+                $ftp = new FtpService;
 
                 if ($ftp->connect($selectedServer)) {
-                    $result      = $ftp->listFiles($selectedServer->path);
-                    $ftpFiles    = $result['json'];
+                    $result = $ftp->listFiles($selectedServer->path);
+                    $ftpFiles = $result['json'];
                     $ftpAllFiles = $result['all'];
                     $ftp->disconnect();
                 } else {
-                    $ftpError = 'Could not connect to ' . $selectedServer->host . '. Check credentials in server settings.';
+                    $ftpError = 'Could not connect to '.$selectedServer->host.'. Check credentials in server settings.';
                 }
 
                 $importedFiles = FtpImportedFile::where('race_id', $race->id)
@@ -59,11 +57,11 @@ class RaceResultController extends Controller
             }
         }
 
-        $resultUserIds   = $raceResults->pluck('user_id')->filter()->toArray();
+        $resultUserIds = $raceResults->pluck('user_id')->filter()->toArray();
         $resultPlayerIds = $raceResults->pluck('player_id')->filter()->toArray();
 
         $dnsCandidates = $race->registrations()->with('user')->get()
-            ->filter(fn($r) => !in_array($r->user_id, $resultUserIds))
+            ->filter(fn ($r) => ! in_array($r->user_id, $resultUserIds))
             ->values();
 
         // Entrylist-based DNS candidates (drivers in uploaded entrylist but not in results)
@@ -74,33 +72,41 @@ class RaceResultController extends Controller
             $registrationUserIds = $dnsCandidates->pluck('user_id')->filter()->toArray();
 
             $playerIds = collect($parsed['entries'] ?? [])
-                ->map(fn($e) => $e['drivers'][0]['playerID'] ?? null)
+                ->map(fn ($e) => $e['drivers'][0]['playerID'] ?? null)
                 ->filter()->values()->all();
             $usersByPlatformId = User::whereIn('platform_id', $playerIds)->get()->keyBy('platform_id');
 
             foreach ($parsed['entries'] ?? [] as $entry) {
-                $driver   = $entry['drivers'][0] ?? null;
+                $driver = $entry['drivers'][0] ?? null;
                 $playerId = $driver['playerID'] ?? null;
-                if (!$playerId) continue;
-                if (in_array($playerId, $resultPlayerIds)) continue;
+                if (! $playerId) {
+                    continue;
+                }
+                if (in_array($playerId, $resultPlayerIds)) {
+                    continue;
+                }
 
                 $user = $usersByPlatformId->get($playerId);
                 // Skip if already covered by registrations-based DNS candidates
-                if ($user && in_array($user->id, $registrationUserIds)) continue;
-                if ($user && in_array($user->id, $resultUserIds)) continue;
+                if ($user && in_array($user->id, $registrationUserIds)) {
+                    continue;
+                }
+                if ($user && in_array($user->id, $resultUserIds)) {
+                    continue;
+                }
 
-                $name = trim(($driver['firstName'] ?? '') . ' ' . ($driver['lastName'] ?? ''));
+                $name = trim(($driver['firstName'] ?? '').' '.($driver['lastName'] ?? ''));
                 $entrylistDnsCandidates->push([
-                    'player_id'  => $playerId,
-                    'name'       => $name ?: 'Unknown',
+                    'player_id' => $playerId,
+                    'name' => $name ?: 'Unknown',
                     'car_number' => $entry['raceNumber'] ?? null,
-                    'user'       => $user,
+                    'user' => $user,
                 ]);
             }
         }
 
-        $linkedDrivers    = $raceResults->whereNotNull('user_id')->count();
-        $minRatingDrivers = (new XclRating())->MIN_DRIVERS;
+        $linkedDrivers = $raceResults->whereNotNull('user_id')->count();
+        $minRatingDrivers = (new XclRating)->MIN_DRIVERS;
 
         return view('admin.races.results', compact(
             'race', 'raceResults', 'qualiResults',
@@ -112,7 +118,7 @@ class RaceResultController extends Controller
     public function store(Request $request, Race $race)
     {
         $request->validate([
-            'result_json'   => 'required|array|min:1',
+            'result_json' => 'required|array|min:1',
             'result_json.*' => 'file|max:10240',
         ]);
 
@@ -125,60 +131,49 @@ class RaceResultController extends Controller
 
             if ($error) {
                 $errors[] = $error;
+
                 continue;
             }
 
             [$sessionCounts, $sessionErrors] = $this->importService->processSessions($content, $race, $file->getClientOriginalName());
-            $counts['race']  += $sessionCounts['race'];
+            $counts['race'] += $sessionCounts['race'];
             $counts['quali'] += $sessionCounts['quali'];
             $errors = array_merge($errors, $sessionErrors);
-
-            if ($sessionCounts['race'] > 0) {
-                $this->storeResultsJson($race, $content);
-            }
         }
 
         return $this->redirectWithCounts($counts, $errors);
-    }
-
-    // Keeps the full decoded race-session JSON (laps, sectors, penalties) around so the
-    // public results page can build detailed stats — the aggregate RaceResult rows alone
-    // don't carry that per-lap detail.
-    private function storeResultsJson(Race $race, string $content): void
-    {
-        $path = 'race-results/' . $race->id . '.json';
-        Storage::disk('local')->put($path, $content);
-        $race->update(['results_json_path' => $path]);
     }
 
     public function ftpImport(Request $request, Race $race)
     {
         $request->validate([
             'server_id' => 'required|exists:ftp_servers,id',
-            'filename'  => 'required|string|max:255',
+            'filename' => 'required|string|max:255',
         ]);
 
-        $server   = FtpServer::findOrFail($request->server_id);
+        $server = FtpServer::findOrFail($request->server_id);
         $filename = basename($request->filename);
 
         \Log::info('FTP import started', ['race_id' => $race->id, 'file' => $filename, 'server' => $server->host]);
 
-        $ftp = new FtpService();
+        $ftp = new FtpService;
 
-        if (!$ftp->connect($server)) {
+        if (! $ftp->connect($server)) {
             \Log::error('FTP connect failed', ['host' => $server->host]);
-            return back()->with('error', 'Could not connect to ' . $server->host . '.');
+
+            return back()->with('error', 'Could not connect to '.$server->host.'.');
         }
 
-        $fullPath = rtrim($server->path, '/') . '/' . $filename;
+        $fullPath = rtrim($server->path, '/').'/'.$filename;
         \Log::info('FTP downloading', ['path' => $fullPath]);
 
-        $content  = $ftp->getFileContent($fullPath);
+        $content = $ftp->getFileContent($fullPath);
         $ftp->disconnect();
 
         if ($content === false) {
             \Log::error('FTP download failed', ['path' => $fullPath]);
-            return back()->with('error', 'Could not download: ' . $filename);
+
+            return back()->with('error', 'Could not download: '.$filename);
         }
 
         \Log::info('FTP file downloaded', ['bytes' => strlen($content)]);
@@ -187,6 +182,7 @@ class RaceResultController extends Controller
 
         if ($error) {
             \Log::error('FTP decode failed', ['file' => $filename, 'error' => $error]);
+
             return back()->with('error', $error);
         }
 
@@ -195,21 +191,18 @@ class RaceResultController extends Controller
 
         try {
             [$sessionCounts, $sessionErrors] = $this->importService->processSessions($content, $race, $filename);
-            $counts['race']  += $sessionCounts['race'];
+            $counts['race'] += $sessionCounts['race'];
             $counts['quali'] += $sessionCounts['quali'];
             $errors = array_merge($errors, $sessionErrors);
-
-            if ($sessionCounts['race'] > 0) {
-                $this->storeResultsJson($race, $content);
-            }
         } catch (\Throwable $e) {
             \Log::error('FTP import exception', [
-                'file'    => $filename,
+                'file' => $filename,
                 'race_id' => $race->id,
-                'error'   => $e->getMessage(),
-                'trace'   => $e->getTraceAsString(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            return back()->with('error', 'Import failed: ' . $e->getMessage());
+
+            return back()->with('error', 'Import failed: '.$e->getMessage());
         }
 
         \Log::info('FTP import done', ['race' => $counts['race'], 'quali' => $counts['quali'], 'errors' => $errors]);
@@ -232,8 +225,8 @@ class RaceResultController extends Controller
         $imported = FtpImportedFile::where('race_id', $race->id)->where('filename', $filename)->firstOrFail();
 
         // Determine session type from filename (Q = quali, R = race)
-        $parts       = explode('_', pathinfo($filename, PATHINFO_FILENAME));
-        $typeChar    = strtoupper($parts[2] ?? '');
+        $parts = explode('_', pathinfo($filename, PATHINFO_FILENAME));
+        $typeChar = strtoupper($parts[2] ?? '');
         $sessionType = $typeChar === 'Q' ? 'quali' : 'race';
 
         $deleted = RaceResult::where('race_id', $race->id)->where('session_type', $sessionType)->delete();
@@ -245,63 +238,69 @@ class RaceResultController extends Controller
     public function addDns(Request $request, Race $race)
     {
         $request->validate([
-            'user_ids'        => 'nullable|array',
-            'user_ids.*'      => 'integer|exists:users,id',
-            'player_entries'  => 'nullable|array',
-            'player_entries.*'=> 'string|max:100',
+            'user_ids' => 'nullable|array',
+            'user_ids.*' => 'integer|exists:users,id',
+            'player_entries' => 'nullable|array',
+            'player_entries.*' => 'string|max:100',
         ]);
 
-        $existingUserIds   = RaceResult::where('race_id', $race->id)->where('session_type', 'race')->whereNotNull('user_id')->pluck('user_id')->toArray();
+        $existingUserIds = RaceResult::where('race_id', $race->id)->where('session_type', 'race')->whereNotNull('user_id')->pluck('user_id')->toArray();
         $existingPlayerIds = RaceResult::where('race_id', $race->id)->where('session_type', 'race')->pluck('player_id')->toArray();
-        $maxPos            = RaceResult::where('race_id', $race->id)->where('session_type', 'race')->max('position') ?? 0;
-        $added             = 0;
+        $maxPos = RaceResult::where('race_id', $race->id)->where('session_type', 'race')->max('position') ?? 0;
+        $added = 0;
 
         foreach ($request->user_ids ?? [] as $userId) {
-            if (in_array($userId, $existingUserIds)) continue;
+            if (in_array($userId, $existingUserIds)) {
+                continue;
+            }
             $user = User::find($userId);
-            if (!$user) continue;
+            if (! $user) {
+                continue;
+            }
             RaceResult::create([
-                'race_id'           => $race->id,
-                'session_type'      => 'race',
-                'user_id'           => $user->id,
-                'player_id'         => $user->platform_id ?? 'DNS_' . $user->id,
-                'driver_name'       => $user->name,
-                'race_title'        => $race->title,
-                'race_track'        => $race->track,
-                'race_game'         => $race->game,
+                'race_id' => $race->id,
+                'session_type' => 'race',
+                'user_id' => $user->id,
+                'player_id' => $user->platform_id ?? 'DNS_'.$user->id,
+                'driver_name' => $user->name,
+                'race_title' => $race->title,
+                'race_track' => $race->track,
+                'race_game' => $race->game,
                 'race_scheduled_at' => $race->scheduled_at,
-                'position'          => ++$maxPos,
-                'dns'               => true,
-                'dnf'               => false,
-                'fastest_lap'       => false,
+                'position' => ++$maxPos,
+                'dns' => true,
+                'dnf' => false,
+                'fastest_lap' => false,
             ]);
             $added++;
         }
 
         foreach ($request->player_entries ?? [] as $encoded) {
-            $data     = json_decode(base64_decode($encoded), true);
+            $data = json_decode(base64_decode($encoded), true);
             $playerId = $data['player_id'] ?? null;
-            $name     = $data['name'] ?? 'Unknown';
-            if (!$playerId || in_array($playerId, $existingPlayerIds)) continue;
+            $name = $data['name'] ?? 'Unknown';
+            if (! $playerId || in_array($playerId, $existingPlayerIds)) {
+                continue;
+            }
             RaceResult::create([
-                'race_id'           => $race->id,
-                'session_type'      => 'race',
-                'user_id'           => null,
-                'player_id'         => $playerId,
-                'driver_name'       => $name,
-                'race_title'        => $race->title,
-                'race_track'        => $race->track,
-                'race_game'         => $race->game,
+                'race_id' => $race->id,
+                'session_type' => 'race',
+                'user_id' => null,
+                'player_id' => $playerId,
+                'driver_name' => $name,
+                'race_title' => $race->title,
+                'race_track' => $race->track,
+                'race_game' => $race->game,
                 'race_scheduled_at' => $race->scheduled_at,
-                'position'          => ++$maxPos,
-                'dns'               => true,
-                'dnf'               => false,
-                'fastest_lap'       => false,
+                'position' => ++$maxPos,
+                'dns' => true,
+                'dnf' => false,
+                'fastest_lap' => false,
             ]);
             $added++;
         }
 
-        return back()->with('success', $added . ' DNS ' . Str::plural('entry', $added) . ' added.');
+        return back()->with('success', $added.' DNS '.Str::plural('entry', $added).' added.');
     }
 
     public function recalculate(Race $race)
@@ -311,22 +310,24 @@ class RaceResultController extends Controller
             ->whereNotNull('user_id')
             ->get();
 
-        $linked    = $results->count();
-        $minNeeded = (new \App\Services\XclRating())->MIN_DRIVERS;
+        $linked = $results->count();
+        $minNeeded = (new XclRating)->MIN_DRIVERS;
 
         if ($linked < $minNeeded) {
             return back()->with('error',
-                "Cannot calculate ratings: need {$minNeeded} linked drivers, have {$linked}. " .
-                "Make sure drivers have accounts and are matched to their platform ID."
+                "Cannot calculate ratings: need {$minNeeded} linked drivers, have {$linked}. ".
+                'Make sure drivers have accounts and are matched to their platform ID.'
             );
         }
 
         try {
-            (new RatingService(new XclRating()))->processRace($race);
+            (new RatingService(new XclRating))->processRace($race);
+
             return back()->with('success', "Ratings recalculated for {$linked} linked drivers.");
         } catch (\Throwable $e) {
             \Log::error('Recalculate ratings failed', ['race_id' => $race->id, 'error' => $e->getMessage()]);
-            return back()->with('error', 'Rating calculation failed: ' . $e->getMessage());
+
+            return back()->with('error', 'Rating calculation failed: '.$e->getMessage());
         }
     }
 
@@ -336,15 +337,15 @@ class RaceResultController extends Controller
 
         $request->validate([
             'dsq' => 'required|boolean',
-            'dc'  => 'required|boolean',
+            'dc' => 'required|boolean',
         ]);
 
         $result->update([
             'dsq' => $request->boolean('dsq'),
-            'dc'  => $request->boolean('dc'),
+            'dc' => $request->boolean('dc'),
         ]);
 
-        return back()->with('success', $result->displayName() . ' status updated. Click "Recalculate Ratings" to apply it.');
+        return back()->with('success', $result->displayName().' status updated. Click "Recalculate Ratings" to apply it.');
     }
 
     // Phase 6 (docs/championships/PLAN.md): applies a time penalty and re-ranks the
@@ -357,7 +358,7 @@ class RaceResultController extends Controller
 
         $data = $request->validate([
             'penalty_seconds' => 'required|integer|min:1|max:3600',
-            'reason'          => 'nullable|string|max:500',
+            'reason' => 'nullable|string|max:500',
         ]);
 
         if ($result->dsq || $result->dns) {
@@ -372,7 +373,7 @@ class RaceResultController extends Controller
 
         AuditLogger::record(auth()->user(), $result, 'race_result.time_penalty_applied', [
             'penalty_seconds' => $data['penalty_seconds'],
-            'reason'          => $data['reason'] ?? null,
+            'reason' => $data['reason'] ?? null,
         ]);
 
         return back()->with('success',
@@ -380,17 +381,21 @@ class RaceResultController extends Controller
         );
     }
 
-    private function redirectWithCounts(array $counts, array $errors): \Illuminate\Http\RedirectResponse
+    private function redirectWithCounts(array $counts, array $errors): RedirectResponse
     {
         if ($errors) {
-            return back()->with('error', 'Failed to parse: ' . implode('; ', $errors));
+            return back()->with('error', 'Failed to parse: '.implode('; ', $errors));
         }
 
         $parts = [];
-        if ($counts['race'] > 0)  $parts[] = $counts['race']  . ' race entries imported';
-        if ($counts['quali'] > 0) $parts[] = $counts['quali'] . ' qualifying entries imported';
+        if ($counts['race'] > 0) {
+            $parts[] = $counts['race'].' race entries imported';
+        }
+        if ($counts['quali'] > 0) {
+            $parts[] = $counts['quali'].' qualifying entries imported';
+        }
 
-        $message = $parts ? implode(', ', $parts) . '.' : 'No results found in file.';
+        $message = $parts ? implode(', ', $parts).'.' : 'No results found in file.';
 
         return back()->with('success', $message);
     }

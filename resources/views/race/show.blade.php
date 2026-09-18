@@ -606,8 +606,17 @@
 
                     @auth
                         @if($isRegistered)
-                            <div class="xcl-event-reg-status xcl-event-reg-status--registered mb-3">
-                                You are registered for this race!
+                            @php
+                                $myWaitlisted = $myRegistration && !$myRegistration->teamEntry
+                                    && $race->isRegistrationWaitlisted($myRegistration);
+                            @endphp
+                            <div class="xcl-event-reg-status mb-3 {{ $myWaitlisted ? 'xcl-event-reg-status--waitlisted' : 'xcl-event-reg-status--registered' }}">
+                                @if($myWaitlisted)
+                                    You're #{{ $race->waitlistPosition($myRegistration) }} on the waiting list for this race.
+                                    You'll be moved onto the entry list automatically if a spot opens up.
+                                @else
+                                    You are registered for this race!
+                                @endif
                                 @if($myRegistration?->teamEntry)
                                 <span class="d-block mt-1" style="font-size:.78rem;opacity:.8">
                                     Team: {{ $myRegistration->teamEntry->team->name }}
@@ -630,9 +639,12 @@
                             </form>
                             @endif
                         @elseif($race->registrationOpen())
-                            @if($race->isFull())
-                                <div class="xcl-event-reg-status xcl-event-reg-status--full">This race is full.</div>
-                            @else
+                                @if($race->isFull())
+                                <div class="xcl-event-reg-status xcl-event-reg-status--waitlisted mb-3">
+                                    This race is full — new registrations join the waiting list and are added
+                                    automatically if a spot opens up.
+                                </div>
+                                @endif
                                 <form action="{{ route('events.register', $race) }}" method="POST">
                                     @csrf
                                     @if($race->is_multiclass && $race->raceClasses->isNotEmpty())
@@ -641,15 +653,23 @@
                                         <select name="race_class_id" class="form-select form-select-sm" required
                                                 style="background:#1f2937;border-color:#374151;color:#e5e7eb">
                                             <option value="">Choose your class...</option>
+                                            @php $raceAtOverallCap = $race->max_drivers !== null && $race->registrations->count() >= $race->max_drivers; @endphp
                                             @foreach($race->raceClasses as $cls)
                                             @php
                                                 $clsReqs = array_filter([
                                                     $cls->sr_requirement ? 'SR ' . $cls->sr_requirement . '.0+' : null,
                                                     $cls->min_rating ? ($cls->xclTierInfo()[0] ?: $cls->min_rating) . '+' : null,
                                                 ]);
+                                                // A class with no cap of its own can still waitlist a new entrant if
+                                                // the race's combined max_drivers is already reached (see
+                                                // Race::isRegistrationWaitlisted()) -- shown here without a class-
+                                                // specific count, since that queue spans every class, not just this one.
+                                                $clsWaitSuffix = $cls->isFull()
+                                                    ? ' — Waiting list (' . $cls->waitlistCount() . ')'
+                                                    : ($raceAtOverallCap ? ' — Waiting list' : '');
                                             @endphp
-                                            <option value="{{ $cls->id }}" {{ $cls->isFull() ? 'disabled' : '' }}>
-                                                {{ $cls->name }}{{ $cls->car_class ? ' (' . $cls->car_class . ')' : '' }}{{ $clsReqs ? ' — ' . implode(' · ', $clsReqs) : '' }}{{ $cls->isFull() ? ' — Full' : '' }}
+                                            <option value="{{ $cls->id }}">
+                                                {{ $cls->name }}{{ $cls->car_class ? ' (' . $cls->car_class . ')' : '' }}{{ $clsReqs ? ' — ' . implode(' · ', $clsReqs) : '' }}{{ $clsWaitSuffix }}
                                             </option>
                                             @endforeach
                                         </select>
@@ -657,13 +677,12 @@
                                     @endif
                                     <button type="submit" class="xcl-event-reg-btn w-100"
                                             style="background:{{ $race->gameColor() }}">
-                                        REGISTER NOW →
+                                        {{ $race->isFull() ? 'JOIN WAITING LIST →' : 'REGISTER NOW →' }}
                                     </button>
                                 </form>
                                 <p class="xcl-event-card__text mt-2 mb-0" style="font-size:.72rem;opacity:.7">
                                     Registration closes 5 minutes before the start.
                                 </p>
-                            @endif
                         @else
                             <p class="xcl-event-card__text mb-0">Registration is closed.</p>
                         @endif
@@ -817,6 +836,11 @@
                                 {{ $race->registrations->count() }}{{ $race->max_drivers ? '/' . $race->max_drivers : '' }}
                             @endif
                         </span>
+                        @if(!$isTeamRace && $race->waitlistCount() > 0)
+                        <span class="xcl-event-card__heading-sub" style="color:#fbbf24">
+                            · {{ $race->waitlistCount() }} waiting
+                        </span>
+                        @endif
                         @if($sof !== null)
                         <span class="xcl-event-card__heading-sub" style="margin-left:auto;margin-right:14px;color:#c084fc;font-weight:800">
                             <i class="fa-solid fa-chart-line" style="margin-right:4px"></i>SoF {{ number_format($sof, 0) }}
@@ -840,6 +864,7 @@
                                 @php
                                     $driverRecord = $driverMap->get($reg->user->platform_id ?? '');
                                     $rankColor = $reg->user->rank($race->game)['color'];
+                                    $regWaitlisted = !$reg->teamEntry && $race->isRegistrationWaitlisted($reg);
                                 @endphp
                                 @if($driverRecord)
                                 <a href="{{ route('drivers.show', $driverRecord) }}" class="xcl-drivers-grid__item text-decoration-none">
@@ -862,6 +887,11 @@
                                         @elseif($race->is_multiclass && $reg->raceClass)
                                         <span class="xcl-drivers-grid__class-badge" style="background:{{ $reg->raceClass->color }}22;color:{{ $reg->raceClass->color }};border:1px solid {{ $reg->raceClass->color }}44">
                                             {{ $reg->raceClass->name }}
+                                        </span>
+                                        @endif
+                                        @if($regWaitlisted)
+                                        <span class="xcl-drivers-grid__class-badge" style="background:#f59e0b22;color:#fbbf24;border:1px solid #f59e0b44">
+                                            Waiting #{{ $race->waitlistPosition($reg) }}
                                         </span>
                                         @endif
                                     </div>

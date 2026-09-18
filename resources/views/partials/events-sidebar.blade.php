@@ -1,6 +1,7 @@
 @php
 use App\Models\NewsArticle;
 use App\Models\Race;
+use App\Models\RaceResult;
 use App\Models\TeamEvent;
 use App\Models\User;
 
@@ -28,22 +29,59 @@ $sbUpcoming->loadCount('registrations');
 
 $sbTeamEvents = TeamEvent::upcoming()->with('participatingDrivers')->limit(2)->get();
 
-$sbGames = ['acc' => 'elo_acc', 'lmu' => 'elo_lmu', 'iracing' => 'elo_iracing'];
-$sbLeaderboards = [];
-foreach ($sbGames as $game => $col) {
-    $sbLeaderboards[$game] = User::where($col, '>', 0)
-        ->orderByDesc($col)
-        ->limit(40)
-        ->get()
-        ->values()
-        ->map(fn($u, $i) => [
-            'pos'       => $i + 1,
-            'name'      => $u->displayName(),
-            'country'   => strtoupper($u->country ?? 'XX'),
-            'gain'      => (int)($u->$col ?? 0),
-            'supporter' => (bool)$u->is_supporter,
-        ]);
-}
+// Sidebar leaderboard — who gained the most XCL-R rating this period, not who simply
+// has the highest total rating (that was the old, always-static behaviour here).
+// Summed straight off race_results.elo_change, the same signed per-race delta
+// RatingService writes for every classified 'race' session — a negative net period is
+// excluded rather than shown as a negative "gain". WEEKLY/MONTHLY are togglable here
+// in the sidebar (data-sb-period); ALL TIME instead links out to the real leaderboard
+// page (route('drivers.index')), which already ranks by total rating.
+//
+// Split per game to match the sidebar's own game filter (data-sb-game: all/acc/lmu/
+// iracing/ac — see events-sidebar.js's activeLeaderboard(), which already falls back
+// to 'acc' for "all"/"ac"). ACC is the only game with real rated races right now;
+// lmu/iracing simply come up empty until ratings are actually used there — no
+// separate ACC-only gate needed, this already only surfaces real activity.
+$sbBuildGainBoard = function (\Carbon\Carbon $start, \Carbon\Carbon $end): array {
+    $board = [];
+    foreach (['acc', 'lmu', 'iracing'] as $game) {
+        $gains = RaceResult::where('session_type', 'race')
+            ->where('race_game', $game)
+            ->whereBetween('race_scheduled_at', [$start, $end])
+            ->whereNotNull('user_id')
+            ->selectRaw('user_id, SUM(elo_change) as period_gain')
+            ->groupBy('user_id')
+            ->havingRaw('SUM(elo_change) > 0')
+            ->orderByDesc('period_gain')
+            ->limit(40)
+            ->get();
+
+        $gainUsers = User::whereIn('id', $gains->pluck('user_id'))->get()->keyBy('id');
+
+        $board[$game] = $gains->values()
+            ->filter(fn($row) => $gainUsers->has($row->user_id))
+            ->values()
+            ->map(fn($row, $i) => [
+                'pos'       => $i + 1,
+                'name'      => $gainUsers[$row->user_id]->displayName(),
+                'country'   => strtoupper($gainUsers[$row->user_id]->country ?? 'XX'),
+                'gain'      => (int) round($row->period_gain),
+                'supporter' => (bool) $gainUsers[$row->user_id]->is_supporter,
+            ]);
+    }
+    return $board;
+};
+
+$sbLeaderboards = [
+    'weekly'  => $sbBuildGainBoard(
+        now('Europe/London')->startOfWeek(\Carbon\Carbon::MONDAY),
+        now('Europe/London')->endOfWeek(\Carbon\Carbon::SUNDAY)
+    ),
+    'monthly' => $sbBuildGainBoard(
+        now('Europe/London')->startOfMonth(),
+        now('Europe/London')->endOfMonth()
+    ),
+];
 @endphp
 
 <script>window.__xclLeaderboards = @json($sbLeaderboards);</script>
@@ -392,22 +430,27 @@ foreach ($sbGames as $game => $col) {
                     </div>
                     {{-- end col 2 --}}
 
-                    {{-- ─ COLUMN 3: WEEKLY LEADERBOARD ─────────────────────── --}}
+                    {{-- ─ COLUMN 3: LEADERBOARD ────────────────────────────── --}}
                     <div class="xcl-sb-col">
-                        <div class="xcl-sb-title">
-                            <span>WEEKLY </span><span>LEADERBOARD</span>
+                        <div class="xcl-sb-title xcl-sb-title--with-search">
+                            <span><span>LEADER</span><span>BOARD</span></span>
+                            <div class="xcl-sb-search xcl-sb-search--inline">
+                                <svg class="xcl-sb-search__icon" width="11" height="11" fill="none"
+                                     stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                                </svg>
+                                <input class="xcl-sb-search__input"
+                                       data-sb-search
+                                       type="text"
+                                       placeholder="Search driver…"
+                                       autocomplete="off">
+                            </div>
                         </div>
 
-                        <div class="xcl-sb-search">
-                            <svg class="xcl-sb-search__icon" width="14" height="14" fill="none"
-                                 stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                            </svg>
-                            <input class="xcl-sb-search__input"
-                                   data-sb-search
-                                   type="text"
-                                   placeholder="Search driver…"
-                                   autocomplete="off">
+                        <div class="xcl-sb-lb-period" role="tablist">
+                            <button type="button" class="xcl-sb-lb-period__btn active" data-sb-period="weekly" role="tab">WEEKLY</button>
+                            <button type="button" class="xcl-sb-lb-period__btn" data-sb-period="monthly" role="tab">MONTHLY</button>
+                            <a href="{{ route('drivers.index') }}" class="xcl-sb-lb-period__btn">ALL TIME</a>
                         </div>
 
                         <div class="xcl-sb-lb-scroll">
@@ -431,9 +474,9 @@ foreach ($sbGames as $game => $col) {
                 </div>
 
                 {{-- ── Separator + Full-width Real-World Racing ────────────── --}}
-                <div style="border-top:1px solid rgba(255,255,255,0.08);margin-top:1.5rem;margin-left:1.5rem;margin-right:1.5rem;padding:0 .25rem">
+                <div style="border-top:1px solid rgba(255,255,255,0.08);margin-left:1.5rem;margin-right:1.5rem;padding:0 .25rem">
                     <div style="display:flex;align-items:center;gap:.75rem;padding:.9rem 0 .75rem">
-                        <div class="xcl-sb-title" style="margin:0;white-space:nowrap">
+                        <div class="xcl-sb-title" style="margin:0;padding-bottom:0;border-bottom:none;white-space:nowrap">
                             <span>XCLUSIVE TEAM </span><span>EVENTS</span>
                         </div>
                         <div style="flex:1;height:1px;background:rgba(255,255,255,0.07)"></div>

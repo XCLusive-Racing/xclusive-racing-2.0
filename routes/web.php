@@ -3,30 +3,26 @@
 use App\Http\Controllers\Admin\ApplicationController as AdminApplicationController;
 use App\Http\Controllers\Admin\BopController as AdminBopController;
 use App\Http\Controllers\Admin\BroadcastController;
-use App\Http\Controllers\Admin\ChampionshipController as AdminChampionshipController;
-use App\Http\Controllers\Admin\PracticeServerSessionController;
-use App\Http\Controllers\ChampionshipController;
-use App\Http\Controllers\CoachingController;
 use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
+use App\Http\Controllers\Admin\ChampionshipController as AdminChampionshipController;
+use App\Http\Controllers\Admin\ChampionshipWizardController;
+use App\Http\Controllers\Admin\EventFormatController;
 use App\Http\Controllers\Admin\EventTagController;
 use App\Http\Controllers\Admin\FaqController as AdminFaqController;
-use App\Http\Controllers\FaqController;
-use App\Http\Controllers\Admin\ChampionshipWizardController;
 use App\Http\Controllers\Admin\FtpBrowserController;
 use App\Http\Controllers\Admin\FtpServerController;
 use App\Http\Controllers\Admin\LeagueController;
 use App\Http\Controllers\Admin\LeagueFtpServerController;
-use App\Http\Controllers\Admin\PointsSchemeController;
-use App\Http\Controllers\Admin\EventFormatController;
-use App\Http\Controllers\Admin\RatingConfigController;
 use App\Http\Controllers\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Admin\NewsArticleController;
 use App\Http\Controllers\Admin\NewsTagController;
-use App\Http\Controllers\LiveController;
-use App\Http\Controllers\NewsController;
+use App\Http\Controllers\Admin\PointsSchemeController;
+use App\Http\Controllers\Admin\PracticeServerSessionController;
 use App\Http\Controllers\Admin\RaceController as AdminRaceController;
 use App\Http\Controllers\Admin\RaceResultController;
+use App\Http\Controllers\Admin\RatingConfigController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Admin\TeamEventController as AdminTeamEventController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\DiscordController;
 use App\Http\Controllers\Auth\LoginController;
@@ -35,23 +31,27 @@ use App\Http\Controllers\Auth\PasswordSetupController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SteamController;
 use App\Http\Controllers\Auth\XboxController;
-use App\Http\Controllers\ConnectedAccountController;
 use App\Http\Controllers\BopController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\ChampionshipController;
+use App\Http\Controllers\CoachingController;
+use App\Http\Controllers\ConnectedAccountController;
 use App\Http\Controllers\DriverController;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\Admin\TeamEventController as AdminTeamEventController;
 use App\Http\Controllers\EsportsController;
-use App\Http\Controllers\ProDriverController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\FaqController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HotlapController;
+use App\Http\Controllers\LiveController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\NewsController;
+use App\Http\Controllers\ProDriverController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RaceController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\MessageController;
 use App\Http\Controllers\RacingTeamController;
-use App\Http\Controllers\TeamApplicationController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ResultsController;
+use App\Http\Controllers\TeamApplicationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -72,8 +72,8 @@ Route::get('/emil-frey-proposal', function () {
 })->name('emil-frey-proposal');
 
 // PRO driver profiles
-Route::get('/teams/pro',          [ProDriverController::class, 'index'])->name('teams.pro.index');
-Route::get('/teams/pro/{slug}',   [ProDriverController::class, 'show'])->name('teams.pro.show');
+Route::get('/teams/pro', [ProDriverController::class, 'index'])->name('teams.pro.index');
+Route::get('/teams/pro/{slug}', [ProDriverController::class, 'show'])->name('teams.pro.show');
 
 // Esports roster
 Route::get('/teams/esports', [EsportsController::class, 'index'])->name('teams.esports.index');
@@ -87,8 +87,8 @@ Route::post('/championships/{championship}/register', [ChampionshipController::c
 Route::delete('/championships/{championship}/unregister', [ChampionshipController::class, 'unregister'])->name('championships.unregister')->middleware('auth');
 
 // News - public
-Route::get('/news',         [NewsController::class, 'index'])->name('news.index');
-Route::get('/news/{slug}',  [NewsController::class, 'show'])->name('news.show');
+Route::get('/news', [NewsController::class, 'index'])->name('news.index');
+Route::get('/news/{slug}', [NewsController::class, 'show'])->name('news.show');
 Route::post('/news/{slug}/like', [NewsController::class, 'toggleLike'])->name('news.like')->middleware('auth');
 
 // Live broadcasts
@@ -103,7 +103,7 @@ Route::get('/events/{race}/calendar.ics', [RaceController::class, 'calendar'])->
 Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
 
 // Drivers & Hotlaps - public
-Route::get('/drivers', [DriverController::class, 'index'])->name('drivers.index');
+Route::get('/leaderboard', [DriverController::class, 'index'])->name('drivers.index');
 Route::get('/drivers/{driver}', [DriverController::class, 'show'])->name('drivers.show');
 Route::get('/hotlaps', [HotlapController::class, 'index'])->name('hotlaps.index');
 
@@ -164,16 +164,16 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile/connected-accounts/{connectedAccount}', [ConnectedAccountController::class, 'destroy'])->name('connected-accounts.destroy');
 
     // Racing teams
-    Route::get('/my-team',                                           [RacingTeamController::class, 'index'])->name('racing-teams.index');
-    Route::get('/racing-teams/search',                               [RacingTeamController::class, 'searchUsers'])->name('racing-teams.search');
-    Route::post('/racing-teams',                                     [RacingTeamController::class, 'store'])->name('racing-teams.store');
-    Route::delete('/racing-teams/{team}',                            [RacingTeamController::class, 'destroy'])->name('racing-teams.destroy');
-    Route::post('/racing-teams/{team}/members',                      [RacingTeamController::class, 'addMember'])->name('racing-teams.members.add');
-    Route::delete('/racing-teams/{team}/members/{user}',             [RacingTeamController::class, 'removeMember'])->name('racing-teams.members.remove');
-    Route::post('/racing-teams/{team}/logo',                         [RacingTeamController::class, 'updateLogo'])->name('racing-teams.logo');
-    Route::post('/racing-teams/{team}/leave',                        [RacingTeamController::class, 'leave'])->name('racing-teams.leave');
-    Route::post('/racing-team-invitations/{invitation}/accept',      [RacingTeamController::class, 'acceptInvite'])->name('racing-teams.invite.accept');
-    Route::post('/racing-team-invitations/{invitation}/decline',     [RacingTeamController::class, 'declineInvite'])->name('racing-teams.invite.decline');
+    Route::get('/my-team', [RacingTeamController::class, 'index'])->name('racing-teams.index');
+    Route::get('/racing-teams/search', [RacingTeamController::class, 'searchUsers'])->name('racing-teams.search');
+    Route::post('/racing-teams', [RacingTeamController::class, 'store'])->name('racing-teams.store');
+    Route::delete('/racing-teams/{team}', [RacingTeamController::class, 'destroy'])->name('racing-teams.destroy');
+    Route::post('/racing-teams/{team}/members', [RacingTeamController::class, 'addMember'])->name('racing-teams.members.add');
+    Route::delete('/racing-teams/{team}/members/{user}', [RacingTeamController::class, 'removeMember'])->name('racing-teams.members.remove');
+    Route::post('/racing-teams/{team}/logo', [RacingTeamController::class, 'updateLogo'])->name('racing-teams.logo');
+    Route::post('/racing-teams/{team}/leave', [RacingTeamController::class, 'leave'])->name('racing-teams.leave');
+    Route::post('/racing-team-invitations/{invitation}/accept', [RacingTeamController::class, 'acceptInvite'])->name('racing-teams.invite.accept');
+    Route::post('/racing-team-invitations/{invitation}/decline', [RacingTeamController::class, 'declineInvite'])->name('racing-teams.invite.decline');
 
     // Event registration
     Route::post('/events/{race}/register', [RaceController::class, 'register'])->name('events.register');
@@ -242,11 +242,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/event-tags/{eventTag}', [EventTagController::class, 'destroy'])->name('event-tags.destroy');
 
     // Team Events (real-world racing)
-    Route::get('/team-events',                        [AdminTeamEventController::class, 'index'])->name('team-events.index');
-    Route::post('/team-events',                       [AdminTeamEventController::class, 'store'])->name('team-events.store');
-    Route::get('/team-events/{teamEvent}/edit',       [AdminTeamEventController::class, 'edit'])->name('team-events.edit');
-    Route::put('/team-events/{teamEvent}',            [AdminTeamEventController::class, 'update'])->name('team-events.update');
-    Route::delete('/team-events/{teamEvent}',         [AdminTeamEventController::class, 'destroy'])->name('team-events.destroy');
+    Route::get('/team-events', [AdminTeamEventController::class, 'index'])->name('team-events.index');
+    Route::post('/team-events', [AdminTeamEventController::class, 'store'])->name('team-events.store');
+    Route::get('/team-events/{teamEvent}/edit', [AdminTeamEventController::class, 'edit'])->name('team-events.edit');
+    Route::put('/team-events/{teamEvent}', [AdminTeamEventController::class, 'update'])->name('team-events.update');
+    Route::delete('/team-events/{teamEvent}', [AdminTeamEventController::class, 'destroy'])->name('team-events.destroy');
 
     // Media Library
     Route::get('/media', [AdminMediaController::class, 'index'])->name('media.index');
@@ -341,22 +341,22 @@ Route::middleware(['auth', 'role:owner,admin,moderator,event_manager'])->prefix(
 
 // News — broadcaster, admin, owner
 Route::middleware(['auth', 'role:owner,admin,broadcaster'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/news',                       [NewsArticleController::class, 'index'])->name('news.index');
-    Route::get('/news/create',                [NewsArticleController::class, 'create'])->name('news.create');
-    Route::post('/news',                      [NewsArticleController::class, 'store'])->name('news.store');
-    Route::get('/news/{newsArticle}/edit',    [NewsArticleController::class, 'edit'])->name('news.edit');
-    Route::put('/news/{newsArticle}',         [NewsArticleController::class, 'update'])->name('news.update');
-    Route::delete('/news/{newsArticle}',      [NewsArticleController::class, 'destroy'])->name('news.destroy');
+    Route::get('/news', [NewsArticleController::class, 'index'])->name('news.index');
+    Route::get('/news/create', [NewsArticleController::class, 'create'])->name('news.create');
+    Route::post('/news', [NewsArticleController::class, 'store'])->name('news.store');
+    Route::get('/news/{newsArticle}/edit', [NewsArticleController::class, 'edit'])->name('news.edit');
+    Route::put('/news/{newsArticle}', [NewsArticleController::class, 'update'])->name('news.update');
+    Route::delete('/news/{newsArticle}', [NewsArticleController::class, 'destroy'])->name('news.destroy');
 
-    Route::get('/news/tags',                  [NewsTagController::class, 'index'])->name('news.tags.index');
-    Route::post('/news/tags',                 [NewsTagController::class, 'store'])->name('news.tags.store');
-    Route::delete('/news/tags/{newsTag}',     [NewsTagController::class, 'destroy'])->name('news.tags.destroy');
+    Route::get('/news/tags', [NewsTagController::class, 'index'])->name('news.tags.index');
+    Route::post('/news/tags', [NewsTagController::class, 'store'])->name('news.tags.store');
+    Route::delete('/news/tags/{newsTag}', [NewsTagController::class, 'destroy'])->name('news.tags.destroy');
 
-    Route::get('/broadcasts',                 [BroadcastController::class, 'index'])->name('broadcasts.index');
-    Route::post('/broadcasts',                [BroadcastController::class, 'store'])->name('broadcasts.store');
+    Route::get('/broadcasts', [BroadcastController::class, 'index'])->name('broadcasts.index');
+    Route::post('/broadcasts', [BroadcastController::class, 'store'])->name('broadcasts.store');
     Route::get('/broadcasts/{broadcast}/edit', [BroadcastController::class, 'edit'])->name('broadcasts.edit');
-    Route::put('/broadcasts/{broadcast}',     [BroadcastController::class, 'update'])->name('broadcasts.update');
-    Route::delete('/broadcasts/{broadcast}',  [BroadcastController::class, 'destroy'])->name('broadcasts.destroy');
+    Route::put('/broadcasts/{broadcast}', [BroadcastController::class, 'update'])->name('broadcasts.update');
+    Route::delete('/broadcasts/{broadcast}', [BroadcastController::class, 'destroy'])->name('broadcasts.destroy');
 });
 
 // Team Applications — admin, owner only
@@ -457,4 +457,3 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/poi
 Route::middleware(['auth', 'league.access'])->prefix('admin/points-schemes')->name('admin.points-schemes.')->group(function () {
     Route::get('/', [PointsSchemeController::class, 'browse'])->name('index');
 });
-

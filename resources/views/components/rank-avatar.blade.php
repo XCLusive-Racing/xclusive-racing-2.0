@@ -7,8 +7,8 @@
 @endphp
 
 <div class="text-center d-inline-block">
-    {{-- Spinner wrapper needed for alien conic rotation --}}
-    @if($slug === 'alien')
+    {{-- Spinner wrapper needed for alien/legend conic rotation --}}
+    @if($slug === 'alien' || $slug === 'legend')
     <div style="position:relative;width:{{ $size + 10 }}px;height:{{ $size + 10 }}px;display:inline-block">
         <div class="rank-ring-{{ $slug }}" style="position:absolute;inset:0;border-radius:50%"></div>
         <div style="position:absolute;inset:3px;background:white;border-radius:50%;padding:2px">
