@@ -26,22 +26,22 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'              => fake()->userName(),
-            'email'             => fake()->unique()->safeEmail(),
+            'name' => fake()->userName(),
+            'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password'          => static::$password ??= Hash::make('password'),
-            'country'           => fake()->country(),
-            'platform'          => fake()->randomElement(['steam', 'ps5', 'xbox']),
-            'platform_id'       => fake()->userName(),
-            'team'              => fake()->optional(0.4)->company(),
-            'role'              => 'driver',
-            'elo_acc'           => fake()->numberBetween(900, 9999),
-            'elo_lmu'           => fake()->numberBetween(900, 9999),
-            'elo_iracing'       => fake()->numberBetween(900, 9999),
-            'sr_acc'            => fake()->randomFloat(2, 1, 9.99),
-            'sr_lmu'            => fake()->randomFloat(2, 1, 9.99),
-            'sr_iracing'        => fake()->randomFloat(2, 1, 9.99),
-            'remember_token'    => Str::random(10),
+            'password' => static::$password ??= Hash::make('password'),
+            'country' => fake()->country(),
+            'platform' => fake()->randomElement(['steam', 'ps5', 'xbox']),
+            'platform_id' => fake()->userName(),
+            'team' => fake()->optional(0.4)->company(),
+            'role' => 'driver',
+            'elo_acc' => fake()->numberBetween(900, 9999),
+            'elo_lmu' => fake()->numberBetween(900, 9999),
+            'elo_iracing' => fake()->numberBetween(900, 9999),
+            'sr_acc' => fake()->randomFloat(2, 1, 9.99),
+            'sr_lmu' => fake()->randomFloat(2, 1, 9.99),
+            'sr_iracing' => fake()->randomFloat(2, 1, 9.99),
+            'remember_token' => Str::random(10),
         ];
     }
 
@@ -102,6 +102,15 @@ class UserFactory extends Factory
         return $this->afterCreating(function (User $user) {
             $user->roles()->syncWithoutDetaching(
                 Role::where('slug', 'championship_manager')->pluck('id')
+            );
+        });
+    }
+
+    public function esportsManager(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            $user->roles()->syncWithoutDetaching(
+                Role::where('slug', 'esports_manager')->pluck('id')
             );
         });
     }

@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\RaceController as AdminRaceController;
 use App\Http\Controllers\Admin\RaceResultController;
 use App\Http\Controllers\Admin\RatingConfigController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Admin\ResultController as AdminResultController;
 use App\Http\Controllers\Admin\TeamEventController as AdminTeamEventController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\DiscordController;
@@ -242,13 +243,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/event-tags', [EventTagController::class, 'store'])->name('event-tags.store');
     Route::delete('/event-tags/{eventTag}', [EventTagController::class, 'destroy'])->name('event-tags.destroy');
 
-    // Team Events (real-world racing)
-    Route::get('/team-events', [AdminTeamEventController::class, 'index'])->name('team-events.index');
-    Route::post('/team-events', [AdminTeamEventController::class, 'store'])->name('team-events.store');
-    Route::get('/team-events/{teamEvent}/edit', [AdminTeamEventController::class, 'edit'])->name('team-events.edit');
-    Route::put('/team-events/{teamEvent}', [AdminTeamEventController::class, 'update'])->name('team-events.update');
-    Route::delete('/team-events/{teamEvent}', [AdminTeamEventController::class, 'destroy'])->name('team-events.destroy');
-
     // Media Library
     Route::get('/media', [AdminMediaController::class, 'index'])->name('media.index');
     Route::get('/media/list', [AdminMediaController::class, 'list'])->name('media.list');
@@ -295,6 +289,25 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/servers/{ftpServer}/browse/delete', [FtpBrowserController::class, 'delete'])->name('servers.browse.delete');
     Route::post('/servers/{ftpServer}/browse/rename', [FtpBrowserController::class, 'rename'])->name('servers.browse.rename');
     Route::post('/servers/{ftpServer}/browse/save', [FtpBrowserController::class, 'save'])->name('servers.browse.save');
+});
+
+// Esports admin — owner + esports_manager only (deliberately narrower than
+// canManageEvents()/the broad admin group above — a plain admin/event_manager
+// should NOT see this section).
+Route::middleware(['auth', 'role:owner,esports_manager'])->prefix('admin')->name('admin.')->group(function () {
+    // Team Events (moved out of the broad admin/canManageEvents() group)
+    Route::get('/team-events', [AdminTeamEventController::class, 'index'])->name('team-events.index');
+    Route::post('/team-events', [AdminTeamEventController::class, 'store'])->name('team-events.store');
+    Route::get('/team-events/{teamEvent}/edit', [AdminTeamEventController::class, 'edit'])->name('team-events.edit');
+    Route::put('/team-events/{teamEvent}', [AdminTeamEventController::class, 'update'])->name('team-events.update');
+    Route::delete('/team-events/{teamEvent}', [AdminTeamEventController::class, 'destroy'])->name('team-events.destroy');
+
+    // Results
+    Route::get('/results', [AdminResultController::class, 'index'])->name('results.index');
+    Route::post('/results', [AdminResultController::class, 'store'])->name('results.store');
+    Route::get('/results/{result}/edit', [AdminResultController::class, 'edit'])->name('results.edit');
+    Route::put('/results/{result}', [AdminResultController::class, 'update'])->name('results.update');
+    Route::delete('/results/{result}', [AdminResultController::class, 'destroy'])->name('results.destroy');
 });
 
 // Reports — owner, admin, event_manager, steward, league_steward (a league's

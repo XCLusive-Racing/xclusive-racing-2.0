@@ -455,6 +455,11 @@ $sbLeaderboards = [
 
                         <div class="xcl-sb-lb-scroll">
                             <table class="xcl-sb-lb-table">
+                                <colgroup>
+                                    <col style="width:28px">
+                                    <col>
+                                    <col style="width:60px">
+                                </colgroup>
                                 <thead>
                                     <tr>
                                         <th>#</th>
@@ -498,19 +503,17 @@ $sbLeaderboards = [
                                 <div class="xcl-sb-up-card__img-gradient"></div>
 
                                 @if($te->participatingDrivers->isNotEmpty())
-                                <div class="xcl-sb-drivers-row xcl-sb-drivers-row--overlay" title="{{ $te->participatingDrivers->pluck('name')->join(', ') }}">
-                                    @foreach($te->participatingDrivers->take(4) as $pd)
-                                    <span class="xcl-sb-drivers-row__avatar">
+                                <div class="xcl-sb-drivers-row xcl-sb-drivers-row--overlay">
+                                    @foreach($te->participatingDrivers as $pd)
+                                    <a href="{{ route('teams.esports.show', $pd) }}"
+                                       class="xcl-sb-drivers-row__avatar" title="{{ $pd->name }}">
                                         @if($pd->photo_url)
                                         <img src="{{ $pd->photo_url }}" alt="{{ $pd->name }}">
                                         @else
                                         {{ $pd->initials() }}
                                         @endif
-                                    </span>
+                                    </a>
                                     @endforeach
-                                    @if($te->participatingDrivers->count() > 4)
-                                    <span class="xcl-sb-drivers-row__more">+{{ $te->participatingDrivers->count() - 4 }} more</span>
-                                    @endif
                                 </div>
                                 @endif
 

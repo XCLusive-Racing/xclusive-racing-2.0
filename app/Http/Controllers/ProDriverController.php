@@ -3,12 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Media;
+use App\Models\Result;
 
 class ProDriverController extends Controller
 {
     public static function allDrivers(): array
     {
-        return [
+        $drivers = [
             'dirk-schouten' => [
                 'name' => 'Dirk Schouten',
                 'flag' => 'netherlands',
@@ -32,110 +33,6 @@ class ProDriverController extends Controller
                         ['type' => 'youtube',   'count' => '425.000+', 'label' => 'YouTube subscribers'],
                     ],
                 ],
-                'results' => [
-                    2026 => [],
-                    2025 => [
-                        [
-                            'championship' => 'Porsche Mobil 1 Supercup',
-                            'races' => [
-                                ['track' => 'Imola',             'class' => 'Rookie', 'positions' => ['P4']],
-                                ['track' => 'Monaco',            'class' => 'Rookie', 'positions' => ['P1']],
-                                ['track' => 'Barcelona',         'class' => 'Rookie', 'positions' => ['P3']],
-                                ['track' => 'Red Bull Ring',     'class' => 'Rookie', 'positions' => ['P3']],
-                                ['track' => 'Hungaroring',       'class' => 'Rookie', 'positions' => ['P2']],
-                                ['track' => 'Spa-Francorchamps', 'class' => 'Rookie', 'positions' => ['P3']],
-                                ['track' => 'Zandvoort',         'class' => 'Rookie', 'positions' => ['P3']],
-                                ['track' => 'Monza',             'class' => 'Rookie', 'positions' => ['P3']],
-                            ],
-                            'standing' => 'P3 Rookie · P15 Overall',
-                        ],
-                        [
-                            'championship' => 'Porsche Carrera Cup Italia',
-                            'races' => [
-                                ['track' => 'Misano',     'positions' => ['P15', 'P9']],
-                                ['track' => 'Vallelunga', 'positions' => ['P6',  'P6']],
-                                ['track' => 'Mugello',    'positions' => ['P11', 'P15']],
-                                ['track' => 'Imola',      'positions' => ['P8',  'P25']],
-                                ['track' => 'Misano',     'positions' => ['P9',  'P13']],
-                                ['track' => 'Monza',      'positions' => ['P3',  'P3']],
-                            ],
-                            'standing' => 'P7 Overall Championship',
-                        ],
-                    ],
-                    2024 => [
-                        [
-                            'championship' => 'Porsche Carrera Cup Benelux',
-                            'races' => [
-                                ['track' => 'Spa-Francorchamps', 'positions' => ['P10', 'P1']],
-                                ['track' => 'Zandvoort',         'positions' => ['P1',  'P2']],
-                                ['track' => 'Imola',             'positions' => ['P18', 'P5']],
-                                ['track' => 'TT Assen',          'positions' => ['P2',  'P1']],
-                                ['track' => 'Red Bull Ring',     'positions' => ['P4',  'P2']],
-                                ['track' => 'Circuit Zolder',    'positions' => ['P5',  'P3']],
-                            ],
-                            'standing' => 'Champion',
-                        ],
-                        [
-                            'championship' => 'Belcar',
-                            'races' => [
-                                ['track' => 'Zolder', 'positions' => ['P1']],
-                            ],
-                            'standing' => '',
-                        ],
-                    ],
-                    2023 => [
-                        [
-                            'championship' => 'Porsche Carrera Cup Benelux',
-                            'races' => [
-                                ['track' => 'Spa-Francorchamps', 'positions' => ['P8',  'P10']],
-                                ['track' => 'Hockenheim',        'positions' => ['P5',  'P7']],
-                                ['track' => 'Zandvoort',         'positions' => ['P4',  'P6']],
-                                ['track' => 'TT Assen',          'positions' => ['P8',  'P19']],
-                                ['track' => 'Zolder',            'positions' => ['P2',  'P5']],
-                                ['track' => 'Red Bull Ring',     'positions' => ['P6',  'P10']],
-                            ],
-                            'standing' => 'P2 Rookie · P4 Overall',
-                        ],
-                    ],
-                    2022 => [
-                        [
-                            'championship' => 'GT Cup Open',
-                            'races' => [
-                                ['track' => 'Paul Ricard',  'positions' => ['P2', 'P3']],
-                                ['track' => 'Spa',          'positions' => ['P2', 'P3']],
-                                ['track' => 'Hungaroring',  'positions' => ['P2', 'P2']],
-                                ['track' => 'Monza',        'positions' => ['P2']],
-                                ['track' => 'Barcelona',    'positions' => ['P3']],
-                            ],
-                            'standing' => 'Vice-Champion · 4/5 Pole Positions',
-                        ],
-                    ],
-                    2021 => [
-                        [
-                            'championship' => 'GT Cup Open',
-                            'races' => [
-                                ['track' => 'Spa',       'positions' => ['P2', 'P3']],
-                                ['track' => 'Monza',     'positions' => ['P1', 'P3']],
-                                ['track' => 'Barcelona', 'positions' => ['P2', 'P3']],
-                            ],
-                            'standing' => 'P3 Overall',
-                        ],
-                        [
-                            'championship' => 'Supercarchallenge',
-                            'races' => [
-                                ['track' => 'Spa', 'positions' => ['P1', 'P1']],
-                            ],
-                            'standing' => '',
-                        ],
-                        [
-                            'championship' => 'Belcar',
-                            'races' => [
-                                ['track' => 'Hockenheim', 'positions' => ['P3']],
-                            ],
-                            'standing' => '',
-                        ],
-                    ],
-                ],
             ],
 
             'mats-van-rooijen' => [
@@ -149,12 +46,10 @@ class ProDriverController extends Controller
                     ['type' => 'instagram', 'href' => 'https://www.instagram.com/matsvanrooijen_official/'],
                     ['type' => 'linkedin',  'href' => 'https://www.linkedin.com/in/mats-van-rooijen-540354314/'],
                 ],
-                'results' => [
-                    2025 => [],
-                    2026 => [],
-                ],
             ],
         ];
+
+        return $drivers;
     }
 
     public function index()
@@ -171,6 +66,12 @@ class ProDriverController extends Controller
 
         $driver = $all[$slug];
         $driver['slug'] = $slug;
+
+        // Results live in the database, reshaped back into the exact array shape
+        // teams/pro/show.blade.php expects. Only looked up here (not in allDrivers())
+        // so the homepage/index, which only need bio data or a count, never touch
+        // the results table.
+        $driver['results'] = Result::legacyProArrayForSubject($slug);
 
         // Hero/banner image, tried in order:
         //  1. an explicit hero_category override (e.g. a sponsor-branded banner)
