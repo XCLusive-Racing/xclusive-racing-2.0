@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class EsportsDriver extends Model
 {
@@ -16,6 +18,11 @@ class EsportsDriver extends Model
         return $this->belongsToMany(TeamEvent::class, 'team_event_drivers');
     }
 
+    public function resultRacePositions(): HasMany
+    {
+        return $this->hasMany(ResultRacePosition::class, 'esports_driver_id');
+    }
+
     public function scopeByGame($query, string $game)
     {
         return $query->where('game', $game);
@@ -23,25 +30,31 @@ class EsportsDriver extends Model
 
     public function getPhotoUrlAttribute(): ?string
     {
-        if (! $this->photo) return null;
-        if (str_starts_with($this->photo, 'http') || str_starts_with($this->photo, '/')) return $this->photo;
-        return \Illuminate\Support\Facades\Storage::disk('media')->url($this->photo);
+        if (! $this->photo) {
+            return null;
+        }
+        if (str_starts_with($this->photo, 'http') || str_starts_with($this->photo, '/')) {
+            return $this->photo;
+        }
+
+        return Storage::disk('media')->url($this->photo);
     }
 
     public function initials(): string
     {
         $parts = preg_split('/\s+/', trim($this->name));
-        $letters = array_map(fn($p) => mb_strtoupper(mb_substr($p, 0, 1)), array_filter($parts));
+        $letters = array_map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)), array_filter($parts));
+
         return implode('', array_slice($letters, 0, 2));
     }
 
     public static function gameLabel(string $game): string
     {
         return match ($game) {
-            'acc'     => 'ACC',
-            'lmu'     => 'LMU',
+            'acc' => 'ACC',
+            'lmu' => 'LMU',
             'iracing' => 'iRacing',
-            default   => strtoupper($game),
+            default => strtoupper($game),
         };
     }
 }

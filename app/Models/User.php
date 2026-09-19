@@ -200,6 +200,18 @@ class User extends Authenticatable
         return $this->hasRole('championship_manager');
     }
 
+    public function isEsportsManager(): bool
+    {
+        return $this->hasRole('esports_manager');
+    }
+
+    // Deliberately narrower than canManage() — the Esports admin section (Team
+    // Event + Results) is owner + esports_manager ONLY, not admin/event_manager.
+    public function canManageEsports(): bool
+    {
+        return $this->hasAnyRole(['owner', 'esports_manager']);
+    }
+
     public function canManage(): bool
     {
         return $this->hasAnyRole(['owner', 'admin', 'event_manager']);
@@ -232,7 +244,7 @@ class User extends Authenticatable
 
     public function canAccessAdminPanel(): bool
     {
-        return $this->hasAnyRole(['owner', 'admin', 'moderator', 'event_manager', 'steward', 'broadcaster', 'league_manager', 'league_steward', 'championship_manager']);
+        return $this->hasAnyRole(['owner', 'admin', 'moderator', 'event_manager', 'steward', 'broadcaster', 'league_manager', 'league_steward', 'championship_manager', 'esports_manager']);
     }
 
     public function adminLandingRoute(): string
@@ -244,6 +256,7 @@ class User extends Authenticatable
             $this->canBroadcast() => 'admin.news.index',
             $this->isLeagueManager() || $this->isChampionshipManager() => 'admin.leagues.index',
             $this->isLeagueSteward() => 'admin.reports.index',
+            $this->isEsportsManager() => 'admin.results.index',
             default => 'home',
         };
     }

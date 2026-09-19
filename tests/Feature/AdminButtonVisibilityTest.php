@@ -25,7 +25,7 @@ class AdminButtonVisibilityTest extends TestCase
 
     public function test_league_manager_sees_the_admin_button(): void
     {
-        $league  = League::create(['name' => 'NLRL', 'slug' => 'nlrl', 'primary_color' => '#7c3aed', 'accent_color' => '#db2777', 'status' => 'active']);
+        $league = League::create(['name' => 'NLRL', 'slug' => 'nlrl', 'primary_color' => '#7c3aed', 'accent_color' => '#db2777', 'status' => 'active']);
         $manager = User::factory()->leagueManager()->create();
         LeagueUser::create(['league_id' => $league->id, 'user_id' => $manager->id, 'role' => 'manager']);
         $manager->syncLeagueRoleFlags();
@@ -36,7 +36,7 @@ class AdminButtonVisibilityTest extends TestCase
 
     public function test_league_steward_sees_the_admin_button(): void
     {
-        $league  = League::create(['name' => 'NLRL', 'slug' => 'nlrl', 'primary_color' => '#7c3aed', 'accent_color' => '#db2777', 'status' => 'active']);
+        $league = League::create(['name' => 'NLRL', 'slug' => 'nlrl', 'primary_color' => '#7c3aed', 'accent_color' => '#db2777', 'status' => 'active']);
         $steward = User::factory()->leagueSteward()->create();
         LeagueUser::create(['league_id' => $league->id, 'user_id' => $steward->id, 'role' => 'steward']);
         $steward->syncLeagueRoleFlags();
@@ -50,6 +50,13 @@ class AdminButtonVisibilityTest extends TestCase
         $cm = User::factory()->championshipManager()->create();
 
         $this->actingAs($cm)->get('/')->assertOk()->assertSee('ADMIN');
+    }
+
+    public function test_esports_manager_sees_the_admin_button(): void
+    {
+        $em = User::factory()->esportsManager()->create();
+
+        $this->actingAs($em)->get('/')->assertOk()->assertSee('ADMIN');
     }
 
     public function test_a_driver_with_no_staff_role_does_not_see_the_admin_button(): void

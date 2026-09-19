@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\EsportsDriver;
+use App\Models\Result;
 use App\Models\TeamEvent;
 
 class EsportsController extends Controller
@@ -34,6 +35,16 @@ class EsportsController extends Controller
     {
         $upcomingEvents = $driver->teamEvents()->upcoming()->limit(3)->get();
 
-        return view('teams.esports.show', compact('driver', 'upcomingEvents'));
+        $resultsByYear = Result::category('esports')
+            ->forDriver($driver->id)
+            ->with(['races' => fn ($q) => $q->with(['positions' => fn ($q) => $q->with('driver')])])
+            ->orderByDesc('year')
+            ->orderByDesc('id')
+            ->get()
+            ->groupBy('year');
+
+        $latestResultYear = $resultsByYear->keys()->max();
+
+        return view('teams.esports.show', compact('driver', 'upcomingEvents', 'resultsByYear', 'latestResultYear'));
     }
 }

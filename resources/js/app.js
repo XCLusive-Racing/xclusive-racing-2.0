@@ -61,6 +61,9 @@ import { initDriverSearch } from './components/driver-search.js';
 import { initDateTimePickers } from './components/datetime-picker.js';
 import { initGportalSlotPicker } from './components/gportal-slot-picker.js';
 import { initTeamEventDriverPicker } from './components/team-event-driver-picker.js';
+import { initResultSubjectToggle } from './components/result-subject-toggle.js';
+import { initResultDriverPositions } from './components/result-driver-positions.js';
+import { initResultRaceRepeater } from './components/result-race-repeater.js';
 
 window.bootstrap      = bootstrap;
 window.Swal           = Swal;
@@ -118,6 +121,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initDateTimePickers();
     initGportalSlotPicker();
     initTeamEventDriverPicker();
+    initResultSubjectToggle();
+    initResultDriverPositions();
+    initResultRaceRepeater();
 
     // EasyMDE rich text editor
     const richEl = document.querySelector('.rich-editor');

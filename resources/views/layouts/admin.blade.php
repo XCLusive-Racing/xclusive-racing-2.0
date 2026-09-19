@@ -110,6 +110,28 @@
                 </svg>
                 <span>Import/Export</span>
             </a>
+            <a href="{{ route('admin.races.custom-create') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.races.custom-create') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                <span>Custom Event</span>
+            </a>
+        </div>
+        @endif
+
+        {{-- Esports — owner + esports_manager only (deliberately narrower than
+             canManageEvents(), unlike every other section here) --}}
+        @if(auth()->user()->canManageEsports())
+        <div class="admin-nav-section-header" data-section="esports">
+            <span>Esports</span>
+            <svg data-section-arrow width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="transition:transform .2s">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </div>
+        <div class="admin-nav-section-divider" style="display:none"></div>
+
+        <div data-section-content="esports">
             <a href="{{ route('admin.team-events.index') }}"
                class="admin-nav-link {{ request()->routeIs('admin.team-events.*') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -117,12 +139,12 @@
                 </svg>
                 <span>Team Event</span>
             </a>
-            <a href="{{ route('admin.races.custom-create') }}"
-               class="admin-nav-link {{ request()->routeIs('admin.races.custom-create') ? 'active' : '' }}">
+            <a href="{{ route('admin.results.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.results.*') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h2a2 2 0 012 2m0 12a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m0 0v14m0-14a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2"/>
                 </svg>
-                <span>Custom Event</span>
+                <span>Results</span>
             </a>
         </div>
         @endif

@@ -15,6 +15,14 @@ $socialIcons = [
     'twitch'    => 'fa-brands fa-twitch',
     'website'   => 'fa-solid fa-globe',
 ];
+
+$posStyle = fn(string $pos): string => match(true) {
+    (int) ltrim($pos, 'P') === 1  => 'color:#fbbf24',
+    (int) ltrim($pos, 'P') === 2  => 'color:#9ca3af',
+    (int) ltrim($pos, 'P') === 3  => 'color:#cd7f32',
+    (int) ltrim($pos, 'P') <= 10  => 'color:#d4ee6a',
+    default                        => 'color:#6b7280',
+};
 @endphp
 
 <main class="pro-driver-page">
@@ -107,6 +115,79 @@ $socialIcons = [
             <p style="color:#6b7280;font-size:.85rem;margin-top:.75rem">No upcoming events scheduled.</p>
             @endif
         </section>
+
+        {{-- Results --}}
+        @if($resultsByYear->isNotEmpty())
+        <section class="pro-driver-results" data-tabs data-default-tab="{{ $latestResultYear }}">
+
+            <div class="pro-driver-results__header">
+                <div class="pro-section-label">RESULTS</div>
+
+                <div class="pro-year-tabs">
+                    @foreach($resultsByYear->keys()->sortDesc() as $y)
+                    <button class="pro-year-tab" data-tab-btn="{{ $y }}" data-tab-active-class="pro-year-tab--active">
+                        {{ $y }}
+                    </button>
+                    @endforeach
+                </div>
+            </div>
+
+            @foreach($resultsByYear as $year => $yearResults)
+            <div data-tab-panel="{{ $year }}" style="display:none">
+                @foreach($yearResults as $result)
+                <div class="pro-championship-block">
+
+                    @php
+                        $firstRace = $result->races->first();
+                        // The track only doubles as the header when there's no separate
+                        // title — otherwise it (and the date) show as a subtitle instead,
+                        // so the track is never silently dropped from the page.
+                        $subtitleParts = $result->title
+                            ? array_filter([$firstRace?->track, $firstRace?->race_date?->format('d M Y')])
+                            : array_filter([$firstRace?->race_date?->format('d M Y')]);
+                    @endphp
+                    <div class="pro-championship-header">
+                        <span class="pro-championship-name">
+                            {{ $result->title ?: ($firstRace?->track ?? 'Event Result') }}
+                        </span>
+                        @if(!empty($subtitleParts))
+                        <span class="pro-championship-standing">
+                            {{ implode(' · ', $subtitleParts) }}
+                        </span>
+                        @endif
+                    </div>
+
+                    @foreach($result->races as $race)
+                    <div class="pro-race-table">
+                        <div class="pro-race-table__head">
+                            <span>DRIVER</span>
+                            @if($race->car_class)
+                            <span>CLASS</span>
+                            @endif
+                            <span>RESULT</span>
+                        </div>
+
+                        @foreach($race->positions as $pos)
+                        <div class="pro-race-row">
+                            <span class="pro-race-track">{{ $pos->driver->name ?? '—' }}</span>
+                            @if($race->car_class)
+                            <span class="pro-race-class">{{ $race->car_class }}</span>
+                            @endif
+                            <span class="pro-race-positions">
+                                <span class="pro-pos-badge" style="{{ $posStyle($pos->position) }}">{{ $pos->position }}</span>
+                            </span>
+                        </div>
+                        @endforeach
+                    </div>
+                    @endforeach
+
+                </div>
+                @endforeach
+            </div>
+            @endforeach
+
+        </section>
+        @endif
 
     </div>
 
