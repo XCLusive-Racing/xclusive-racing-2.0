@@ -1127,6 +1127,13 @@ span.flatpickr-weekday {
     flex-direction: column;
     border-right: 1px solid #1F2937;
     padding: 1.25rem;
+    // Grid items default to min-width:auto, which stops them from shrinking
+    // below their content's natural width — one long/wide child (e.g. the
+    // leaderboard table) then stretches this whole column, and everything to
+    // the right of the viewport silently gets clipped by
+    // .xcl-sidebar__content's overflow-x:hidden. min-width:0 lets it actually
+    // shrink to the column's real width instead.
+    min-width: 0;
 
     &:last-child { border-right: none; }
 
@@ -1134,6 +1141,7 @@ span.flatpickr-weekday {
         border-right: none;
         border-bottom: 1px solid #1F2937;
         &:last-child { border-bottom: none; }
+        padding: .9rem 1rem;
     }
 }
 
@@ -1529,6 +1537,13 @@ span.flatpickr-weekday {
 
 .xcl-sb-lb-table {
     width: 100%;
+    // table-layout:auto (the default) lets the browser grow columns to fit
+    // content, so the driver-name column could stretch the whole table
+    // past its container — and with .xcl-sb-lb-scroll's overflow:hidden,
+    // the GAIN column at the far right just silently disappears off the
+    // edge. Fixed layout + the <colgroup> widths in the blade keep every
+    // column within the table's own 100% width.
+    table-layout: fixed;
     border-collapse: collapse;
     font-size: .8rem;
 
@@ -5490,6 +5505,53 @@ table.dataTable thead th {
     &:active { transform: scale(.98); }
 }
 
+// Dashboard sidebar (NEXT EVENT / UPCOMING EVENTS / team events) reads too
+// large on a phone — tighten fonts/padding so nothing sits right at the
+// column's edge and everything reads as a compact card instead.
+@media (max-width: 767px) {
+    .xcl-sb-next__join-btn {
+        padding: .85rem .75rem;
+        font-size: .85rem;
+        letter-spacing: .08em;
+    }
+
+    .xcl-sb-up-card__join {
+        font-size: .68rem;
+        padding: .25rem .5rem;
+    }
+
+    .xcl-sb-badge {
+        font-size: .62rem;
+        padding: .12rem .4rem;
+    }
+
+    .xcl-sb-lobby {
+        font-size: .7rem;
+        padding: .15rem .4rem;
+    }
+
+    .xcl-sb-next__hero-platform-icon {
+        font-size: .55rem;
+        padding: 1px 5px;
+
+        i { font-size: .6rem; }
+    }
+
+    .xcl-sb-countdown--hero {
+        .xcl-sb-countdown__label { font-size: .52rem; }
+        .xcl-sb-countdown__time  { font-size: .78rem; }
+    }
+
+    .xcl-sb-next__detail-label { font-size: .65rem; }
+    .xcl-sb-next__detail-value { font-size: .78rem; }
+    .xcl-sb-next__next-time    { font-size: .68rem; }
+
+    .xcl-sb-next__icon-overlay img { width: 100px; height: 100px; }
+    .xcl-sb-up-card__icon-overlay img { width: 80px; height: 80px; }
+
+    .xcl-sb-up-card__title { font-size: .85rem; }
+}
+
 .xcl-sb-up-list {
     display: flex;
     flex-direction: column;
@@ -5584,10 +5646,15 @@ table.dataTable thead th {
         justify-content: space-between;
     }
 
+    // Grid rather than flex + space-between: the left cell (badges) always
+    // gets exactly the leftover width and the right cell (the join/watch
+    // button) is sized to its own content and pinned to the far column —
+    // there's no width combination where the two can end up centered
+    // instead of pushed to opposite edges.
     &__footer {
-        display: flex;
+        display: grid;
+        grid-template-columns: 1fr auto;
         align-items: center;
-        justify-content: space-between;
         padding: .4rem .55rem;
         gap: .35rem;
         background: rgba(0,0,0,.2);
@@ -5629,10 +5696,14 @@ table.dataTable thead th {
 .xcl-sb-drivers-row {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    row-gap: 4px;
 
+    // An <a>, not a <span> — every driver is shown (no "+N more" cap) and
+    // links straight to their roster profile.
     &__avatar {
-        width: 22px;
-        height: 22px;
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
         overflow: hidden;
         background: #7B2FBE;
@@ -5640,43 +5711,37 @@ table.dataTable thead th {
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: .55rem;
+        font-size: .65rem;
         font-weight: 800;
         border: 2px solid #111827;
-        margin-left: -6px;
+        margin-left: -8px;
+        text-decoration: none;
+        cursor: pointer;
+        transition: transform .12s, z-index 0s;
 
         &:first-child { margin-left: 0; }
+        &:hover { transform: translateY(-2px); z-index: 1; }
 
         img { width: 100%; height: 100%; object-fit: cover; }
     }
 
-    &__more {
-        margin-left: .5rem;
-        font-size: .65rem;
-        font-weight: 700;
-        color: #9ca3af;
-    }
-
     // Overlaid on top of an event image (dashboard card) instead of sitting
-    // in a footer bar — positioned top-left, avatars sized up a touch.
+    // in a footer bar — positioned top-left, avatars sized up further still.
     &--overlay {
         position: absolute;
         top: .6rem;
         left: .6rem;
+        right: .6rem;
         z-index: 2;
 
         .xcl-sb-drivers-row__avatar {
-            width: 30px;
-            height: 30px;
-            font-size: .62rem;
+            width: 38px;
+            height: 38px;
+            font-size: .7rem;
             border-width: 2px;
-            margin-left: -8px;
+            margin-left: -10px;
 
             &:first-child { margin-left: 0; }
-        }
-
-        .xcl-sb-drivers-row__more {
-            text-shadow: 0 1px 4px rgba(0,0,0,.85);
         }
     }
 }
