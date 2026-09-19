@@ -2405,6 +2405,69 @@ span.flatpickr-weekday {
     overflow: hidden;
 }
 
+// Event filters — one layout on every screen size (phone through full
+// desktop): the four groups (event/requirements/timezone/class) collapse
+// behind a single row of category buttons, and only the tapped group's
+// buttons show, below that row — see events-filter.js for the toggle logic.
+.xcl-filters {
+    // Same accent purple + weight/letter-spacing as .xcl-load-btn — the site's
+    // established look for a small uppercase label.
+    &__categories-label {
+        font-size: .7rem;
+        font-weight: 900;
+        letter-spacing: .06em;
+        color: #a855f7;
+    }
+
+    &__groups {
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+    }
+
+    // !important needed: the groups also carry Bootstrap's .d-flex utility,
+    // which sets display:flex !important and would otherwise always win.
+    [data-filter-group] { display: none !important; }
+    [data-filter-group].xcl-filter-group--open { display: flex !important; }
+
+    // Category row — all four always in one line, so each button shrinks to
+    // an even share of the width (flex:1) with smaller text/padding than the
+    // regular filter buttons, instead of wrapping to a second row.
+    &__categories {
+        .xcl-filter-btn {
+            flex: 1 1 0;
+            min-width: 0;
+            padding: 6px 4px;
+            font-size: .7rem;
+            letter-spacing: 0;
+            line-height: 1.1;
+            text-align: center;
+            justify-content: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+}
+
+// The heading swaps to "<Platform> Events" once a platform is picked (e.g.
+// "ACC Console Events" / "Le Mans Ultimate Events") — noticeably longer than
+// the default "XCL EVENTS", so it needs its own smaller mobile size to stay
+// on one line instead of inheriting .about-section__heading's shared clamp.
+[data-events-heading] {
+    @media (max-width: 767px) { font-size: 1.4rem; }
+    @media (max-width: 380px) { font-size: 1.2rem; }
+}
+
+// Tighten the gap under the heading's divider line before BACK TO PLATFORMS /
+// the platform grid — bootstrap's shared .mb-5 utility is margin-bottom:3rem
+// !important, so overriding it needs !important too, on every breakpoint.
+.xcl-events-header {
+    margin-bottom: 1.5rem !important;
+
+    @media (max-width: 767px) { margin-bottom: .6rem !important; }
+}
+
 // Team category card grid (3-column variant)
 .team-category-grid {
     display: grid;

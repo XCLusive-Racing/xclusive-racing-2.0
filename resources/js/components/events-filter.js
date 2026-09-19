@@ -17,6 +17,8 @@ export function initEventsFilter() {
     const regionBtns       = wrap.querySelectorAll('[data-region-filter]');
     const classBtns        = wrap.querySelectorAll('[data-class-filter]');
     const requirementBtns  = wrap.querySelectorAll('[data-requirement-filter]');
+    const categoryBtns     = wrap.querySelectorAll('[data-filter-category]');
+    const filterGroups     = wrap.querySelectorAll('[data-filter-group]');
 
     function matchesEventFilter(tag, dateStr) {
         const now = new Date();
@@ -37,6 +39,7 @@ export function initEventsFilter() {
 
     function matchesRequirement(card) {
         switch (requirementFilter) {
+            case 'open':        return card.dataset.sr === '0' && !card.dataset.minRating && !card.dataset.maxRating;
             case 'sr':          return card.dataset.sr === '1';
             case 'rookie-only': return card.dataset.maxRating === 'rookie';
             case 'bronze-only': return card.dataset.minRating === 'bronze' && card.dataset.maxRating === 'bronze';
@@ -50,6 +53,16 @@ export function initEventsFilter() {
         regionFilter      = 'all';
         classFilter       = 'all';
         requirementFilter = 'all';
+        closeFilterCategories();
+    }
+
+    // Phone-only: the four filter groups (event/requirements/timezone/class) are
+    // collapsed behind a single row of category buttons, and only the tapped
+    // group's buttons are shown, below that row. No-op on desktop, where all
+    // groups are always visible via CSS regardless of this state.
+    function closeFilterCategories() {
+        filterGroups.forEach(g => g.classList.remove('xcl-filter-group--open'));
+        categoryBtns.forEach(b => b.classList.remove('xcl-filter-btn--active'));
     }
 
     function apply() {
@@ -93,7 +106,29 @@ export function initEventsFilter() {
             }
         });
         requirementBtns.forEach(btn => {
-            btn.classList.toggle('xcl-filter-btn--active', btn.dataset.requirementFilter === requirementFilter);
+            const active = btn.dataset.requirementFilter === requirementFilter;
+            btn.classList.toggle('xcl-filter-btn--active', active);
+
+            // Same solid-fill-when-selected / tinted-outline-otherwise treatment as
+            // the event-type row — each button carries its own tier/status color.
+            const color = btn.dataset.color;
+            if (color) {
+                btn.style.borderColor = color;
+                btn.style.background  = active ? color : `${color}22`;
+                btn.style.color       = active ? '#fff' : color;
+            }
+        });
+        categoryBtns.forEach(btn => {
+            // Open/closed state lives on the button's own active class (toggled by
+            // the click handler below), not a tracked filter variable — this just
+            // repaints the color to match whichever state is already set.
+            const active = btn.classList.contains('xcl-filter-btn--active');
+            const color  = btn.dataset.color;
+            if (color) {
+                btn.style.borderColor = color;
+                btn.style.background  = active ? color : `${color}22`;
+                btn.style.color       = active ? '#fff' : color;
+            }
         });
 
         wrap.querySelectorAll('[data-event-card]').forEach(card => {
@@ -164,6 +199,19 @@ export function initEventsFilter() {
     requirementBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             requirementFilter = btn.dataset.requirementFilter;
+            apply();
+        });
+    });
+
+    categoryBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const name    = btn.dataset.filterCategory;
+            const wasOpen = btn.classList.contains('xcl-filter-btn--active');
+            closeFilterCategories();
+            if (!wasOpen) {
+                btn.classList.add('xcl-filter-btn--active');
+                wrap.querySelector(`[data-filter-group="${name}"]`)?.classList.add('xcl-filter-group--open');
+            }
             apply();
         });
     });
