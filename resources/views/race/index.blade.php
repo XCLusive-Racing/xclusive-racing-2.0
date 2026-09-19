@@ -9,7 +9,7 @@
     <div class="container-xl" style="position:relative;z-index:1">
 
         {{-- ── Page header ─────────────────────────────────────────────────────── --}}
-        <div class="pt-4 mb-5">
+        <div class="pt-4 mb-5 xcl-events-header">
             <h1 data-events-heading class="display-4 fw-black text-uppercase fst-italic about-section__heading mb-3">XCL EVENTS</h1>
             <div class="section-divider" style="margin-left:0"></div>
         </div>
@@ -83,90 +83,113 @@
                 BACK TO PLATFORMS
             </button>
 
-            {{-- Filters: event type + requirements (left column), timezone + car class
-                 (right column) — two rows each, so requirements sits directly under
-                 event type and car class sits directly under timezone. --}}
-            <div class="mb-4">
-                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
-                    {{-- Left column --}}
-                    <div class="d-flex flex-column gap-2">
-                        {{-- Event type filter — a fixed, short-to-long list of real event formats
-                             (not every EventTag row that happens to exist), each colored the same
-                             as its format's own image so it reads at a glance. --}}
-                        <div class="d-flex gap-2 flex-wrap">
-                            <button data-event-filter="all"
-                                    class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase xcl-filter-btn--active">All</button>
-                            @foreach([
-                                ['supersprint',  'Super',         '#dc2626'],
-                                ['sprint',       'Sprint',        '#f97316'],
-                                ['daily',        'Daily',         '#eab308'],
-                                ['intermediate', 'Intermediate',  '#16a34a'],
-                                ['fullrace',     'Full',          '#0d9488'],
-                                ['multiclass',   'Multiclass',    '#0ea5e9'],
-                                ['longrace',     'Long',          '#4338ca'],
-                                ['mini-enduro',  'Mini Enduro',   '#7c3aed'],
-                                ['endurance',    'Endurance',     '#9d174d'],
-                            ] as [$slug, $label, $color])
-                            <button data-event-filter="{{ $slug }}" data-color="{{ $color }}"
-                                    class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase"
-                                    style="border-color:{{ $color }}66;color:{{ $color }}">{{ $label }}</button>
-                            @endforeach
-                        </div>
+            {{-- Filters: one row of category buttons (Formats / Specs / Timezone /
+                 Class) — tap one to open that group's options directly below it.
+                 Same behavior on every screen size (phone through full desktop) so
+                 there's a single layout to reason about instead of a separate
+                 always-expanded desktop version — see events-filter.js and the
+                 .xcl-filters rules in app.scss. --}}
+            <div class="mb-4 xcl-filters">
 
-                        {{-- Requirements filter --}}
-                        <div class="d-flex gap-2 flex-wrap">
-                            <button data-requirement-filter="all"
-                                    class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase xcl-filter-btn--active">All Requirements</button>
-                            <button data-requirement-filter="sr"
-                                    class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">SR Requirement</button>
-                            <button data-requirement-filter="rookie-only"
-                                    class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">Rookie Only</button>
-                            <button data-requirement-filter="bronze-only"
-                                    class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">Bronze Only</button>
-                            <button data-requirement-filter="bronze-plus"
-                                    class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">Bronze+</button>
-                        </div>
+                {{-- Category row — each button reuses one of the platform-card accent
+                     colors so the row reads as color instead of the plain dark
+                     default button. --}}
+                <div class="mb-2">
+                    <div class="xcl-filters__categories-label fw-bold text-uppercase mb-1">Event Filter</div>
+                    <div class="d-flex gap-2 xcl-filters__categories">
+                        @foreach([
+                            ['event',        'Formats',   '#7c3aed'],
+                            ['requirements', 'Specs',     '#f97316'],
+                            ['timezone',     'Timezone',  '#2563eb'],
+                            ['class',        'Class',     '#16a34a'],
+                        ] as [$category, $label, $color])
+                        <button data-filter-category="{{ $category }}" data-color="{{ $color }}"
+                                class="xcl-filter-btn fw-bold text-uppercase"
+                                style="border-color:{{ $color }}66;color:{{ $color }}">{{ $label }}</button>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="xcl-filters__groups">
+                    {{-- Event type filter — a fixed, short-to-long list of real event formats
+                         (not every EventTag row that happens to exist), each colored the same
+                         as its format's own image so it reads at a glance. --}}
+                    <div class="d-flex gap-2 flex-wrap" data-filter-group="event">
+                        <button data-event-filter="all"
+                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase xcl-filter-btn--active">All</button>
+                        @foreach([
+                            ['supersprint',  'Super',         '#dc2626'],
+                            ['sprint',       'Sprint',        '#f97316'],
+                            ['daily',        'Daily',         '#eab308'],
+                            ['intermediate', 'Intermediate',  '#16a34a'],
+                            ['fullrace',     'Full',          '#0d9488'],
+                            ['multiclass',   'Multiclass',    '#0ea5e9'],
+                            ['longrace',     'Long',          '#4338ca'],
+                            ['mini-enduro',  'Mini Enduro',   '#7c3aed'],
+                            ['endurance',    'Endurance',     '#9d174d'],
+                        ] as [$slug, $label, $color])
+                        <button data-event-filter="{{ $slug }}" data-color="{{ $color }}"
+                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase"
+                                style="border-color:{{ $color }}66;color:{{ $color }}">{{ $label }}</button>
+                        @endforeach
                     </div>
 
-                    {{-- Right column --}}
-                    <div class="d-flex flex-column gap-2 align-items-end">
-                        {{-- Timezone filter — which region's evening slot to show --}}
-                        <div class="d-flex gap-2 flex-wrap">
-                            <button data-region-filter="all"
-                                    class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase xcl-filter-btn--active">All Times</button>
-                            <button data-region-filter="europe"
-                                    class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">Europe</button>
-                            <button data-region-filter="australia"
-                                    class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">Australia</button>
-                            <button data-region-filter="us"
-                                    class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">US</button>
-                        </div>
+                    {{-- Requirements filter — each button colored like the tier/status it
+                         represents (Open = green, SR+ = orange, Rookie = the site's rookie
+                         red, Bronze Only = bronze, Bronze+ = silver — same tier colors as
+                         Race::xclTierInfo()), so it reads at a glance like the event-type row. --}}
+                    <div class="d-flex gap-2 flex-wrap" data-filter-group="requirements">
+                        <button data-requirement-filter="all"
+                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase xcl-filter-btn--active">All Requirements</button>
+                        @foreach([
+                            ['open',        'Open',        '#22c55e'],
+                            ['sr',          'SR+',         '#f97316'],
+                            ['rookie-only', 'Rookie Only', '#ef4444'],
+                            ['bronze-only', 'Bronze Only', '#cd7f32'],
+                            ['bronze-plus', 'Bronze+',     '#9ca3af'],
+                        ] as [$slug, $label, $color])
+                        <button data-requirement-filter="{{ $slug }}" data-color="{{ $color }}"
+                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase"
+                                style="border-color:{{ $color }}66;color:{{ $color }}">{{ $label }}</button>
+                        @endforeach
+                    </div>
 
-                        {{-- Car class filter — colored the same as each class's badge on the
-                             event card itself (Race::carClassStyle()), so it reads at a
-                             glance. Always shown solid (not just a tinted border like the
-                             other rows) — TCX's white badge has no hue, so a translucent
-                             tint reads the same as this row's own default white button
-                             text and effectively disappears. --}}
-                        <div class="d-flex gap-2 flex-wrap">
-                            <button data-class-filter="all"
-                                    class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase xcl-filter-btn--active">All Classes</button>
-                            @foreach([
-                                ['GT3', '#DC2626', '#FFFFFF', '#DC2626'],
-                                ['GT4', '#2563EB', '#FFFFFF', '#2563EB'],
-                                ['GT2', '#16A34A', '#FFFFFF', '#16A34A'],
-                                ['GTC', '#F97316', '#FFFFFF', '#F97316'],
-                                // TCX's white fill has no hue of its own to define an edge
-                                // against a dark page background, unlike the others (whose
-                                // border just matches their fill) — a neutral gray outline
-                                // instead so the chip still reads as its own bounded shape.
-                                ['TCX', '#FFFFFF', '#0D0D0D', '#9CA3AF'],
-                            ] as [$class, $bg, $text, $border])
-                            <button data-class-filter="{{ $class }}" data-bg="{{ $bg }}" data-text="{{ $text }}" data-border="{{ $border }}"
-                                    class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase"
-                                    style="background:{{ $bg }};color:{{ $text }};border-color:{{ $border }};opacity:.65">{{ $class }}</button>
-                            @endforeach
-                        </div>
+                    {{-- Timezone filter — which region's evening slot to show --}}
+                    <div class="d-flex gap-2 flex-wrap" data-filter-group="timezone">
+                        <button data-region-filter="all"
+                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase xcl-filter-btn--active">All Times</button>
+                        <button data-region-filter="europe"
+                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">Europe</button>
+                        <button data-region-filter="australia"
+                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">Australia</button>
+                        <button data-region-filter="us"
+                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">US</button>
+                    </div>
+
+                    {{-- Car class filter — colored the same as each class's badge on the
+                         event card itself (Race::carClassStyle()), so it reads at a
+                         glance. Always shown solid (not just a tinted border like the
+                         other rows) — TCX's white badge has no hue, so a translucent
+                         tint reads the same as this row's own default white button
+                         text and effectively disappears. --}}
+                    <div class="d-flex gap-2 flex-wrap" data-filter-group="class">
+                        <button data-class-filter="all"
+                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase xcl-filter-btn--active">All Classes</button>
+                        @foreach([
+                            ['GT3', '#DC2626', '#FFFFFF', '#DC2626'],
+                            ['GT4', '#2563EB', '#FFFFFF', '#2563EB'],
+                            ['GT2', '#16A34A', '#FFFFFF', '#16A34A'],
+                            ['GTC', '#F97316', '#FFFFFF', '#F97316'],
+                            // TCX's white fill has no hue of its own to define an edge
+                            // against a dark page background, unlike the others (whose
+                            // border just matches their fill) — a neutral gray outline
+                            // instead so the chip still reads as its own bounded shape.
+                            ['TCX', '#FFFFFF', '#0D0D0D', '#9CA3AF'],
+                        ] as [$class, $bg, $text, $border])
+                        <button data-class-filter="{{ $class }}" data-bg="{{ $bg }}" data-text="{{ $text }}" data-border="{{ $border }}"
+                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase"
+                                style="background:{{ $bg }};color:{{ $text }};border-color:{{ $border }};opacity:.65">{{ $class }}</button>
+                        @endforeach
                     </div>
                 </div>
             </div>
