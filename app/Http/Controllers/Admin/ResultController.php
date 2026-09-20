@@ -73,6 +73,7 @@ class ResultController extends Controller
 
         $isPro = in_array($data['subject'], self::PRO_SUBJECTS, true);
         $driverPositions = [];
+        $driverPoints = [];
 
         if ($isPro) {
             $validated = $request->validate([
@@ -85,13 +86,22 @@ class ResultController extends Controller
                 'races.*.positions' => ['required', 'string', 'max:200'],
             ]);
         } else {
+            $type = $request->input('type', 'race');
+            $isRace = $type === 'race';
+
             $validated = $request->validate([
+                'type' => ['required', Rule::in(array_keys(Result::TYPES))],
                 'event_date' => ['required', 'date'],
-                'title' => ['nullable', 'string', 'max:200'],
-                'track' => ['required', 'string', 'max:150'],
+                // Standings/final results are named after the championship, so a title is required.
+                'title' => [$isRace ? 'nullable' : 'required', 'string', 'max:200'],
+                'round_label' => ['nullable', 'string', 'max:100'],
+                'track' => [$isRace ? 'required' : 'nullable', 'string', 'max:150'],
                 'car_class' => ['nullable', 'string', 'max:100'],
                 'notes' => ['nullable', 'string', 'max:2000'],
                 'driver_positions' => ['required', 'array'],
+                'driver_points' => ['nullable', 'array'],
+            ], [
+                'driver_positions.required' => 'Select at least one driver and enter their position.',
             ]);
 
             $driverPositions = array_filter(
@@ -101,21 +111,24 @@ class ResultController extends Controller
 
             if (empty($driverPositions)) {
                 throw ValidationException::withMessages([
-                    'driver_positions' => 'Enter a finishing position for at least one driver.',
+                    'driver_positions' => 'Select at least one driver and enter their position.',
                 ]);
             }
 
             $validDriverIds = EsportsDriver::whereIn('id', array_keys($driverPositions))->pluck('id')->all();
             $driverPositions = array_intersect_key($driverPositions, array_flip($validDriverIds));
+            $driverPoints = $validated['driver_points'] ?? [];
         }
 
-        DB::transaction(function () use ($data, $isPro, $validated, $existing, $driverPositions) {
+        DB::transaction(function () use ($data, $isPro, $validated, $existing, $driverPositions, $driverPoints) {
             if ($isPro) {
                 $header = [
                     'subject' => $data['subject'],
                     'category' => 'pro',
+                    'type' => 'race',
                     'year' => $validated['year'],
                     'title' => $validated['title'],
+                    'round_label' => null,
                     'standing' => ($validated['standing'] ?? '') ?: null,
                     'notes' => null,
                 ];
@@ -123,8 +136,10 @@ class ResultController extends Controller
                 $header = [
                     'subject' => $data['subject'],
                     'category' => 'esports',
+                    'type' => $validated['type'],
                     'year' => (int) Carbon::parse($validated['event_date'])->format('Y'),
                     'title' => ($validated['title'] ?? '') ?: null,
+                    'round_label' => $validated['type'] === 'standings' ? (($validated['round_label'] ?? '') ?: null) : null,
                     'notes' => ($validated['notes'] ?? '') ?: null,
                     'standing' => null,
                 ];
@@ -160,8 +175,10 @@ class ResultController extends Controller
                     }
                 }
             } else {
+                $isRace = $validated['type'] === 'race';
+
                 $resultRace = $result->races()->create([
-                    'track' => $validated['track'],
+                    'track' => $isRace ? $validated['track'] : null,
                     'car_class' => ($validated['car_class'] ?? '') ?: null,
                     'race_date' => $validated['event_date'],
                     'sort_order' => 0,
@@ -169,9 +186,12 @@ class ResultController extends Controller
 
                 $posIndex = 0;
                 foreach ($driverPositions as $driverId => $position) {
+                    $points = $isRace ? '' : trim((string) ($driverPoints[$driverId] ?? ''));
+
                     $resultRace->positions()->create([
                         'esports_driver_id' => $driverId,
                         'position' => trim((string) $position),
+                        'points' => $points !== '' ? $points : null,
                         'sort_order' => $posIndex++,
                     ]);
                 }

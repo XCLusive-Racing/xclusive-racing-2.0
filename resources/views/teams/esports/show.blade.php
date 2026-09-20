@@ -139,12 +139,17 @@ $posStyle = fn(string $pos): string => match(true) {
 
                     @php
                         $firstRace = $result->races->first();
-                        // The track only doubles as the header when there's no separate
-                        // title — otherwise it (and the date) show as a subtitle instead,
+                        $isRace = $result->type === 'race';
+                        // A race result's track only doubles as the header when there's no
+                        // separate title — otherwise it (and the date) show as a subtitle,
                         // so the track is never silently dropped from the page.
-                        $subtitleParts = $result->title
-                            ? array_filter([$firstRace?->track, $firstRace?->race_date?->format('d M Y')])
-                            : array_filter([$firstRace?->race_date?->format('d M Y')]);
+                        $subtitleParts = match ($result->type) {
+                            'standings' => array_filter(['LIVE STANDINGS', $result->round_label, $firstRace?->race_date?->format('d M Y')]),
+                            'final' => array_filter(['FINAL RESULT', $firstRace?->race_date?->format('d M Y')]),
+                            default => $result->title
+                                ? array_filter([$firstRace?->track, $firstRace?->race_date?->format('d M Y')])
+                                : array_filter([$firstRace?->race_date?->format('d M Y')]),
+                        };
                     @endphp
                     <div class="pro-championship-header">
                         <span class="pro-championship-name">
@@ -158,20 +163,27 @@ $posStyle = fn(string $pos): string => match(true) {
                     </div>
 
                     @foreach($result->races as $race)
+                    @php
+                        $positions = $isRace
+                            ? $race->positions
+                            : $race->positions->sortBy(fn ($p) => (int) ltrim($p->position, 'P'))->values();
+                        $hasPoints = $positions->contains(fn ($p) => filled($p->points));
+                        $midLabel = $hasPoints ? 'POINTS' : ($race->car_class ? 'CLASS' : null);
+                    @endphp
                     <div class="pro-race-table">
                         <div class="pro-race-table__head">
                             <span>DRIVER</span>
-                            @if($race->car_class)
-                            <span>CLASS</span>
+                            @if($midLabel)
+                            <span>{{ $midLabel }}</span>
                             @endif
-                            <span>RESULT</span>
+                            <span>{{ $isRace ? 'RESULT' : 'POSITION' }}</span>
                         </div>
 
-                        @foreach($race->positions as $pos)
+                        @foreach($positions as $pos)
                         <div class="pro-race-row">
                             <span class="pro-race-track">{{ $pos->driver->name ?? '—' }}</span>
-                            @if($race->car_class)
-                            <span class="pro-race-class">{{ $race->car_class }}</span>
+                            @if($midLabel)
+                            <span class="pro-race-class">{{ $hasPoints ? ($pos->points ?? '—') : $race->car_class }}</span>
                             @endif
                             <span class="pro-race-positions">
                                 <span class="pro-pos-badge" style="{{ $posStyle($pos->position) }}">{{ $pos->position }}</span>

@@ -30,6 +30,11 @@
                             @if($result->standing) · {{ $result->standing }} @endif
                         </span>
                     @else
+                        @if($result->type !== 'race')
+                        <span class="badge fw-bold text-uppercase" style="background:#fef3c7;color:#b45309;font-size:.6rem">
+                            {{ $result->type === 'standings' ? 'Live standings' : 'Final result' }}
+                        </span>
+                        @endif
                         <span style="font-size:.78rem;color:#6b7280">
                             {{ $firstRace?->track }}
                             @if($firstRace?->race_date) · {{ $firstRace->race_date->format('d M Y') }} @endif

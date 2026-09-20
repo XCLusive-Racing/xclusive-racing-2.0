@@ -8,7 +8,10 @@
 @php
     $isPro = in_array($result->subject, ['dirk-schouten', 'mats-van-rooijen'], true);
     $firstRace = $result->races->first();
-    $existingPositions = $isPro ? [] : ($firstRace?->positions->pluck('position', 'esports_driver_id')->all() ?? []);
+    $existing = $isPro ? [] : ($firstRace?->positions
+        ->filter(fn ($p) => $p->esports_driver_id)
+        ->mapWithKeys(fn ($p) => [$p->esports_driver_id => ['position' => $p->position, 'points' => $p->points]])
+        ->all() ?? []);
 @endphp
 
 <div class="row g-4 justify-content-center">
@@ -29,6 +32,13 @@
             <form data-result-form action="{{ route('admin.results.update', $result) }}" method="POST">
                 @csrf
                 @method('PUT')
+
+                @if($errors->any())
+                <div class="alert alert-danger py-2" style="font-size:.82rem">
+                    <strong>Couldn't save:</strong>
+                    <ul class="mb-0 ps-3">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
+                </div>
+                @endif
 
                 {{-- Subject --}}
                 <div class="mb-3">
@@ -111,52 +121,7 @@
                 </div>
 
                 {{-- Esports fields --}}
-                <div data-result-fields="esports" style="display:none">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold" style="font-size:.82rem">Event Date <span class="text-danger">*</span></label>
-                        <input type="date" name="event_date" value="{{ old('event_date', $firstRace?->race_date?->format('Y-m-d')) }}"
-                               class="form-control @error('event_date') is-invalid @enderror">
-                        @error('event_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold" style="font-size:.82rem">
-                            Event / Series Name
-                            <span class="text-secondary fw-normal" style="text-transform:none">(optional)</span>
-                        </label>
-                        <input type="text" name="title" value="{{ old('title', $result->title) }}"
-                               class="form-control @error('title') is-invalid @enderror">
-                        @error('title') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold" style="font-size:.82rem">Track <span class="text-danger">*</span></label>
-                        <input type="text" name="track" value="{{ old('track', $firstRace?->track) }}"
-                               class="form-control @error('track') is-invalid @enderror">
-                        @error('track') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold" style="font-size:.82rem">
-                            Car Class
-                            <span class="text-secondary fw-normal" style="text-transform:none">(optional)</span>
-                        </label>
-                        <input type="text" name="car_class" value="{{ old('car_class', $firstRace?->car_class) }}"
-                               class="form-control @error('car_class') is-invalid @enderror">
-                        @error('car_class') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
-
-                    @include('admin.results._driver-positions', ['esportsDriversByGame' => $esportsDriversByGame, 'existingPositions' => $existingPositions])
-
-                    <div class="mb-4">
-                        <label class="form-label fw-bold" style="font-size:.82rem">
-                            Notes
-                            <span class="text-secondary fw-normal" style="text-transform:none">(optional)</span>
-                        </label>
-                        <textarea name="notes" rows="2" class="form-control @error('notes') is-invalid @enderror">{{ old('notes', $result->notes) }}</textarea>
-                        @error('notes') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
-                </div>
+                @include('admin.results._esports-fields', ['esportsDriversByGame' => $esportsDriversByGame, 'result' => $result, 'existing' => $existing])
 
                 <div class="d-flex gap-2">
                     <button type="submit"

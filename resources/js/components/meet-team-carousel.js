@@ -56,7 +56,6 @@ const drivers = [
     { name: 'James Farish',     cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/J.Farish.png', flag: 'united%20kingdom', role: 'esports', socials: [] },
     { name: 'Will Friedmann',   cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/friedmann.png', flag: 'france',         role: 'esports', socials: [] },
     { name: 'José García',      cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/Garcia.png', flag: null,              role: 'esports', socials: [] },
-    { name: 'Mario García',     cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Mare.png', flag: null,                role: 'esports', socials: [] },
     { name: 'Wilson Gigé',      cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/W.Gige.png', flag: 'france',           role: 'esports', socials: [
         { type: 'twitch',    href: 'https://www.twitch.tv/rxspectpapy' },
         { type: 'instagram', href: 'https://www.instagram.com/rxspect_papy?igsh=Y21hMGYzOWRtemEy' },
@@ -67,7 +66,6 @@ const drivers = [
         { type: 'youtube',   href: 'https://www.youtube.com/' },
         { type: 'instagram', href: 'https://www.instagram.com/goenni98?igsh=Mzk3OW5oamxpbnR2' },
     ] },
-    { name: 'Sergio Hernández', cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/Hernández.png', flag: null,             role: 'esports', socials: [] },
     { name: 'Kyan Heyninck',    cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/heyninck.png', flag: 'belgium',        role: 'esports', socials: [
         { type: 'youtube',   href: 'https://www.youtube.com/@kyanheyninck' },
         { type: 'instagram', href: 'https://www.instagram.com/kyan.heyninck/?hl=nl' },
