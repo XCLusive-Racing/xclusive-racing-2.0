@@ -7,7 +7,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Result extends Model
 {
-    protected $fillable = ['subject', 'category', 'year', 'title', 'standing', 'notes', 'sort_order'];
+    public const TYPES = [
+        'race' => 'Race result',
+        'standings' => 'Championship live standings',
+        'final' => 'Championship final result',
+    ];
+
+    protected $fillable = ['subject', 'category', 'type', 'year', 'title', 'round_label', 'standing', 'notes', 'sort_order'];
 
     protected $casts = ['year' => 'integer'];
 

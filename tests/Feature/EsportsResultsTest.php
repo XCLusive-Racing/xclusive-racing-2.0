@@ -81,6 +81,7 @@ class EsportsResultsTest extends TestCase
 
         $response = $this->actingAs($manager)->post(route('admin.results.store'), [
             'subject' => 'acc-team',
+            'type' => 'race',
             'event_date' => '2026-05-10',
             'title' => 'XCL Endurance Round 1',
             'track' => 'Spa-Francorchamps',
@@ -107,6 +108,58 @@ class EsportsResultsTest extends TestCase
         }
     }
 
+    public function test_championship_standings_and_final_results_show_points_on_the_drivers_page(): void
+    {
+        $manager = $this->esportsManager();
+        $one = EsportsDriver::create(['name' => 'Alex Rider', 'slug' => 'alex-rider', 'game' => 'acc', 'sort_order' => 1]);
+        $two = EsportsDriver::create(['name' => 'Sam Speed', 'slug' => 'sam-speed', 'game' => 'acc', 'sort_order' => 2]);
+
+        $this->actingAs($manager)->post(route('admin.results.store'), [
+            'subject' => 'acc-team',
+            'type' => 'standings',
+            'event_date' => '2026-06-01',
+            'title' => 'XCL Sprint Series',
+            'round_label' => 'After round 4 of 8',
+            'driver_positions' => [$one->id => 'P2', $two->id => 'P1'],
+            'driver_points' => [$one->id => '88', $two->id => '95'],
+        ])->assertRedirect(route('admin.results.index'));
+
+        $this->actingAs($manager)->post(route('admin.results.store'), [
+            'subject' => 'acc-team',
+            'type' => 'final',
+            'event_date' => '2026-12-01',
+            'title' => 'XCL Sprint Series',
+            'driver_positions' => [$one->id => 'P1'],
+            'driver_points' => [$one->id => '210'],
+        ])->assertRedirect(route('admin.results.index'));
+
+        $this->assertDatabaseHas('results', ['type' => 'standings', 'round_label' => 'After round 4 of 8']);
+        $this->assertDatabaseHas('results', ['type' => 'final']);
+
+        $this->get(route('teams.esports.show', $one))
+            ->assertOk()
+            ->assertSee('LIVE STANDINGS')
+            ->assertSee('After round 4 of 8')
+            ->assertSee('FINAL RESULT')
+            ->assertSee('88')
+            ->assertSee('210');
+    }
+
+    public function test_a_standings_result_requires_a_championship_name_but_no_track(): void
+    {
+        $manager = $this->esportsManager();
+        $driver = EsportsDriver::create(['name' => 'Alex Rider', 'slug' => 'alex-rider', 'game' => 'acc', 'sort_order' => 1]);
+
+        $this->actingAs($manager)->post(route('admin.results.store'), [
+            'subject' => 'acc-team',
+            'type' => 'standings',
+            'event_date' => '2026-06-01',
+            'driver_positions' => [$driver->id => 'P1'],
+        ])->assertSessionHasErrors('title');
+
+        $this->assertSame(0, Result::where('category', 'esports')->count());
+    }
+
     public function test_updating_a_result_replaces_its_races_and_positions(): void
     {
         $manager = $this->esportsManager();
@@ -114,6 +167,7 @@ class EsportsResultsTest extends TestCase
 
         $this->actingAs($manager)->post(route('admin.results.store'), [
             'subject' => 'lmu-team',
+            'type' => 'race',
             'event_date' => '2026-03-01',
             'track' => 'Le Mans',
             'driver_positions' => [$driver->id => 'P5'],
@@ -123,6 +177,7 @@ class EsportsResultsTest extends TestCase
 
         $this->actingAs($manager)->put(route('admin.results.update', $result), [
             'subject' => 'lmu-team',
+            'type' => 'race',
             'event_date' => '2026-03-01',
             'track' => 'Sebring',
             'driver_positions' => [$driver->id => 'P1'],
@@ -141,6 +196,7 @@ class EsportsResultsTest extends TestCase
 
         $this->actingAs($manager)->post(route('admin.results.store'), [
             'subject' => 'iracing-team',
+            'type' => 'race',
             'event_date' => '2026-01-15',
             'track' => 'Daytona',
             'driver_positions' => [$driver->id => 'P3'],

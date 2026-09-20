@@ -15,6 +15,13 @@
             <form data-result-form action="{{ route('admin.results.store') }}" method="POST">
                 @csrf
 
+                @if($errors->any())
+                <div class="alert alert-danger py-2" style="font-size:.82rem">
+                    <strong>Couldn't save:</strong>
+                    <ul class="mb-0 ps-3">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
+                </div>
+                @endif
+
                 {{-- Subject --}}
                 <div class="mb-3">
                     <label class="form-label fw-bold" style="font-size:.82rem">Driver / Team <span class="text-danger">*</span></label>
@@ -89,55 +96,7 @@
                 </div>
 
                 {{-- Esports fields --}}
-                <div data-result-fields="esports" style="display:none">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold" style="font-size:.82rem">Event Date <span class="text-danger">*</span></label>
-                        <input type="date" name="event_date" value="{{ old('event_date') }}"
-                               class="form-control @error('event_date') is-invalid @enderror">
-                        @error('event_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold" style="font-size:.82rem">
-                            Event / Series Name
-                            <span class="text-secondary fw-normal" style="text-transform:none">(optional)</span>
-                        </label>
-                        <input type="text" name="title" value="{{ old('title') }}"
-                               class="form-control @error('title') is-invalid @enderror"
-                               placeholder="e.g. XCL Endurance Series Round 3">
-                        @error('title') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold" style="font-size:.82rem">Track <span class="text-danger">*</span></label>
-                        <input type="text" name="track" value="{{ old('track') }}"
-                               class="form-control @error('track') is-invalid @enderror"
-                               placeholder="e.g. Spa-Francorchamps">
-                        @error('track') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold" style="font-size:.82rem">
-                            Car Class
-                            <span class="text-secondary fw-normal" style="text-transform:none">(optional)</span>
-                        </label>
-                        <input type="text" name="car_class" value="{{ old('car_class') }}"
-                               class="form-control @error('car_class') is-invalid @enderror"
-                               placeholder="e.g. GT3">
-                        @error('car_class') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
-
-                    @include('admin.results._driver-positions', ['esportsDriversByGame' => $esportsDriversByGame])
-
-                    <div class="mb-4">
-                        <label class="form-label fw-bold" style="font-size:.82rem">
-                            Notes
-                            <span class="text-secondary fw-normal" style="text-transform:none">(optional)</span>
-                        </label>
-                        <textarea name="notes" rows="2" class="form-control @error('notes') is-invalid @enderror">{{ old('notes') }}</textarea>
-                        @error('notes') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
-                </div>
+                @include('admin.results._esports-fields', ['esportsDriversByGame' => $esportsDriversByGame])
 
                 <button type="submit"
                         class="btn fw-black text-uppercase text-white px-4"
