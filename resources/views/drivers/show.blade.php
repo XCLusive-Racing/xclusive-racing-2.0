@@ -5,12 +5,12 @@
 @php
 $classMeta = [
     'legend'   => ['label' => 'Legend',   'color' => '#000000'],
-    'alien'    => ['label' => 'Alien',    'color' => '#10b981'],
-    'platinum' => ['label' => 'Platinum', 'color' => '#7c3aed'],
-    'gold'     => ['label' => 'Gold',     'color' => '#f59e0b'],
-    'silver'   => ['label' => 'Silver',   'color' => '#9ca3af'],
-    'bronze'   => ['label' => 'Bronze',   'color' => '#cd7f32'],
-    'rookie'   => ['label' => 'Rookie',   'color' => '#ef4444'],
+    'alien'    => ['label' => 'Alien',    'color' => '#28dd6b'],
+    'platinum' => ['label' => 'Platinum', 'color' => '#905de0'],
+    'gold'     => ['label' => 'Gold',     'color' => '#fddc15'],
+    'silver'   => ['label' => 'Silver',   'color' => '#caccca'],
+    'bronze'   => ['label' => 'Bronze',   'color' => '#966804'],
+    'rookie'   => ['label' => 'Rookie',   'color' => '#fb0e00'],
 ];
 $class = $classSlug;
 $meta  = $classMeta[$class] ?? $classMeta['rookie'];
@@ -59,7 +59,9 @@ $stats = $displayStats;
                               style="background:{{ $meta['color'] }}20;color:{{ $meta['color'] }};border:1px solid {{ $meta['color'] }}40">
                             {{ $meta['label'] }}
                         </span>
-                        <span class="fw-black" style="color:{{ $srClass['color'] }}">SR {{ $srClass['grade'] }}</span>
+                        <span class="d-inline-flex align-items-center gap-1 fw-black" style="color:{{ $srClass['text_color'] }}">
+                            SR <x-sr-badge :grade="$srClass['grade']" size="sm" />
+                        </span>
                         @if($driver->country_code)
                         <img src="{{ \App\Services\CountryFlagService::imgUrl($driver->country_code) }}"
                              title="{{ $driver->country_code }}" alt="{{ $driver->country_code }}"
@@ -85,7 +87,7 @@ $stats = $displayStats;
                     </div>
                     <div class="text-secondary fw-bold text-uppercase" style="font-size:.7rem;letter-spacing:.08em">XCL Rating</div>
                     <div class="mt-1">
-                        <span style="color:{{ $srClass['color'] }};font-weight:900">{{ number_format($safetyRating, 2) }}</span>
+                        <span style="color:{{ $srClass['text_color'] }};font-weight:900">{{ number_format($safetyRating, 2) }}</span>
                         <span class="text-secondary" style="font-size:.75rem"> SR</span>
                     </div>
                 </div>

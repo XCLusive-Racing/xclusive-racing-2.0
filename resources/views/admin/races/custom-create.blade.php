@@ -489,8 +489,7 @@ $tagsConfig = json_encode([
                             <span id="crp-game-badge"
                                   style="display:none;font-size:.65rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:4px;color:#fff"></span>
                             <span id="crp-sr-badge" style="display:none;align-items:center;gap:4px">
-                                <span id="crp-sr-circle"
-                                      style="width:20px;height:20px;border-radius:50%;background:#1a1a2e;border:2px solid #dc2626;display:inline-flex;align-items:center;justify-content:center;color:#dc2626;font-size:.58rem;font-weight:900;flex-shrink:0">B</span>
+                                <x-sr-badge :grade="\App\Enums\SafetyRatingGrade::B" size="sm" id="crp-sr-circle" />
                                 <span id="crp-sr-text"
                                       style="font-size:.65rem;font-weight:900;color:#e5e7eb;white-space:nowrap">SR 5.0+</span>
                             </span>
@@ -637,11 +636,7 @@ $tagsConfig = json_encode([
         iracing: [{ icon: 'fa-brands fa-windows', label: 'PC' }],
         ac:      [{ icon: 'fa-brands fa-windows', label: 'PC' }],
     };
-    const srTierMap = {
-        '3': ['B','#dc2626'], '4': ['B','#dc2626'],
-        '5': ['A','#16a34a'], '6': ['A','#16a34a'],
-        '7': ['X','#2563eb'], '8': ['Y','#eab308'], '9': ['Z','#7c3aed'],
-    };
+    const srTierMap = @json(\App\Enums\SafetyRatingGrade::requirementMap());
     const xclColors = {
         rookie: '#ef4444', bronze: '#cd7f32', silver: '#9ca3af',
         gold: '#f59e0b', platinum: '#7c3aed', alien: '#10b981',
@@ -747,7 +742,7 @@ $tagsConfig = json_encode([
         if (prev.srBadge) {
             if (srOn && srVal && srTierMap[srVal]) {
                 const [letter, color] = srTierMap[srVal];
-                if (prev.srCircle) { prev.srCircle.textContent = letter; prev.srCircle.style.borderColor = color; prev.srCircle.style.color = color; }
+                if (prev.srCircle) { prev.srCircle.dataset.grade = letter; prev.srCircle.style.setProperty('--sr-color', color); prev.srCircle.querySelector('.xcl-sr-badge__letter').textContent = letter; }
                 if (prev.srText)   prev.srText.textContent = 'SR ' + srVal + '.0+';
                 prev.srBadge.style.display = 'inline-flex';
             } else {

@@ -98,26 +98,63 @@ class ResultController extends Controller
                 'track' => [$isRace ? 'required' : 'nullable', 'string', 'max:150'],
                 'car_class' => ['nullable', 'string', 'max:100'],
                 'notes' => ['nullable', 'string', 'max:2000'],
-                'driver_positions' => ['required', 'array'],
+                'selected_drivers' => ['required', 'array', 'min:1'],
+                'selected_drivers.*' => ['integer'],
+                'driver_positions' => ['nullable', 'array'],
                 'driver_points' => ['nullable', 'array'],
             ], [
-                'driver_positions.required' => 'Select at least one driver and enter their position.',
+                'selected_drivers.required' => 'Select at least one driver who competed.',
+                'selected_drivers.min' => 'Select at least one driver who competed.',
             ]);
 
-            $driverPositions = array_filter(
-                $validated['driver_positions'],
-                fn ($pos) => trim((string) $pos) !== ''
-            );
+            // The checkboxes are the source of truth for who competed. Hidden position
+            // inputs are still submitted by the browser, so anything sent for an
+            // unselected driver is discarded here.
+            $selectedIds = array_values(array_unique(array_map('intval', $validated['selected_drivers'])));
+            $names = EsportsDriver::whereIn('id', $selectedIds)->pluck('name', 'id');
+            $selectedIds = array_values(array_filter($selectedIds, fn ($id) => $names->has($id)));
 
-            if (empty($driverPositions)) {
+            if (empty($selectedIds)) {
                 throw ValidationException::withMessages([
-                    'driver_positions' => 'Select at least one driver and enter their position.',
+                    'selected_drivers' => 'Select at least one driver who competed.',
                 ]);
             }
 
-            $validDriverIds = EsportsDriver::whereIn('id', array_keys($driverPositions))->pluck('id')->all();
-            $driverPositions = array_intersect_key($driverPositions, array_flip($validDriverIds));
-            $driverPoints = $validated['driver_points'] ?? [];
+            $rawPositions = $validated['driver_positions'] ?? [];
+            $missing = [];
+            foreach ($selectedIds as $id) {
+                $position = trim((string) ($rawPositions[$id] ?? ''));
+                if ($position === '') {
+                    $missing[] = $names[$id];
+                } else {
+                    $driverPositions[$id] = $position;
+                }
+            }
+
+            if ($missing) {
+                throw ValidationException::withMessages([
+                    'driver_positions' => 'Enter a position for '.implode(', ', $missing).'.',
+                ]);
+            }
+
+            // Two drivers cannot share a classified position. Unclassified results
+            // (DNF, DNS and so on) can legitimately repeat, so they are exempt.
+            $unclassified = ['DNF', 'DNS', 'DSQ', 'DNQ', 'NC'];
+            $seen = [];
+            foreach ($driverPositions as $id => $position) {
+                $key = strtoupper($position);
+                if (in_array($key, $unclassified, true)) {
+                    continue;
+                }
+                if (isset($seen[$key])) {
+                    throw ValidationException::withMessages([
+                        'driver_positions' => $names[$seen[$key]].' and '.$names[$id]." cannot both have position {$position}.",
+                    ]);
+                }
+                $seen[$key] = $id;
+            }
+
+            $driverPoints = array_intersect_key($validated['driver_points'] ?? [], array_flip($selectedIds));
         }
 
         DB::transaction(function () use ($data, $isPro, $validated, $existing, $driverPositions, $driverPoints) {

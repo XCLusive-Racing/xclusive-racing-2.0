@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\SafetyRatingGrade;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -542,30 +543,10 @@ class User extends Authenticatable
 
     // --- SR grade (D–Z) with hex color ---
 
-    public static function srGrades(): array
-    {
-        return [
-            ['grade' => 'D', 'color' => '#000000', 'min' => 0.01, 'max' => 3.00],
-            ['grade' => 'C', 'color' => '#ff8000', 'min' => 3.00, 'max' => 5.00],
-            ['grade' => 'B', 'color' => '#cc0000', 'min' => 5.00, 'max' => 6.00],
-            ['grade' => 'A', 'color' => '#47b417', 'min' => 6.00, 'max' => 7.00],
-            ['grade' => 'X', 'color' => '#3c81f3', 'min' => 7.00, 'max' => 8.00],
-            ['grade' => 'Y', 'color' => '#ffc71d', 'min' => 8.00, 'max' => 9.00],
-            ['grade' => 'Z', 'color' => '#a928ff', 'min' => 9.00, 'max' => 10.00],
-        ];
-    }
-
     public function srGrade(string $game = 'acc'): array
     {
         $sr = (float) ($this->{self::srColumn($game) ?? 'sr_acc'} ?? 0);
-        $grades = self::srGrades();
 
-        foreach ($grades as $grade) {
-            if ($sr >= $grade['min'] && $sr < $grade['max']) {
-                return $grade;
-            }
-        }
-
-        return $sr >= 9.00 ? end($grades) : reset($grades);
+        return SafetyRatingGrade::fromRating($sr)->toArray();
     }
 }

@@ -2831,6 +2831,213 @@ span.flatpickr-weekday {
     }
 }
 
+// XCL Safety Rating grade badge (components/sr-badge.blade.php): a glossy gel button
+// built in pure CSS. Each grade supplies ONE colour (--sr-color); every other shade
+// is derived from it with color-mix. Everything scales from --sr-size.
+.xcl-sr-badge {
+    --sr-size: 20px;
+    --sr-color: #9ca3af;
+    --sr-hi: color-mix(in srgb, var(--sr-color) 60%, white);
+    --sr-lo: color-mix(in srgb, var(--sr-color) 70%, black);
+    --sr-rim: color-mix(in srgb, var(--sr-color) 55%, black);
+    --sr-letter: color-mix(in srgb, var(--sr-color) 40%, white);
+    --sr-letter-shadow: color-mix(in srgb, var(--sr-color) 45%, black);
+
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: var(--sr-size);
+    height: var(--sr-size);
+    border-radius: 50%;
+    overflow: hidden;
+    vertical-align: middle;
+    // Domed body, darker rim, soft darker inner shadow along the bottom.
+    background: radial-gradient(circle at 50% 22%, var(--sr-hi) 0%, var(--sr-color) 52%, var(--sr-lo) 100%);
+    box-shadow:
+        inset 0 0 0 calc(var(--sr-size) * .05) var(--sr-rim),
+        inset 0 calc(var(--sr-size) * -.14) calc(var(--sr-size) * .2) color-mix(in srgb, var(--sr-color) 55%, black),
+        0 calc(var(--sr-size) * .05) calc(var(--sr-size) * .12) rgba(0, 0, 0, .28);
+    // Poppins 900 is the heaviest weight loaded for the site's heading/body font
+    // (@fontsource/poppins/900.css in app.js); Barlow Condensed has no 900.
+    font-family: 'Poppins', sans-serif;
+    font-weight: 900;
+    line-height: 1;
+
+    // Glossy highlight: oval, white to transparent, across the upper part.
+    &::before {
+        content: '';
+        position: absolute;
+        top: 5%;
+        left: 50%;
+        width: 70%;
+        height: 44%;
+        transform: translateX(-50%);
+        border-radius: 50%;
+        background: linear-gradient(to bottom, rgba(255, 255, 255, .78), rgba(255, 255, 255, 0));
+        pointer-events: none;
+    }
+
+    &__letter {
+        position: relative;
+        z-index: 1;
+        font-size: calc(var(--sr-size) * .52);
+        color: var(--sr-letter);
+        text-shadow: 0 calc(var(--sr-size) * .04) calc(var(--sr-size) * .06) var(--sr-letter-shadow);
+    }
+
+    &--lg { --sr-size: 46px; }
+    &--sm { --sr-size: 20px; }
+
+    // Smaller badges: a slightly lighter tint and a stronger drop shadow (an extra
+    // tight outline layer) keep the letter legible. Both derive from the base colour.
+    &--sm {
+        --sr-letter: color-mix(in srgb, var(--sr-color) 28%, white);
+        --sr-letter-shadow: color-mix(in srgb, var(--sr-color) 35%, black);
+
+        .xcl-sr-badge__letter {
+            text-shadow:
+                0 .05em .07em var(--sr-letter-shadow),
+                0 0 .12em var(--sr-letter-shadow),
+                0 0 .04em var(--sr-letter-shadow);
+        }
+    }
+
+    // Y is a light yellow letter on a yellow badge, the lowest contrast pairing, so it
+    // gets a much darker shadow ring than the other grades.
+    &[data-grade="Y"] {
+        --sr-letter-shadow: color-mix(in srgb, var(--sr-color) 25%, black);
+
+        .xcl-sr-badge__letter {
+            text-shadow:
+                0 .05em .06em var(--sr-letter-shadow),
+                0 0 .1em var(--sr-letter-shadow),
+                0 0 .1em var(--sr-letter-shadow);
+        }
+    }
+
+    // D is near white, so its letter is dark grey at every size instead of a tint.
+    &[data-grade="D"] {
+        --sr-letter: #374151;
+        --sr-letter-shadow: rgba(255, 255, 255, .85);
+    }
+}
+
+// XCL Safety Rating explainer (components/sr-scale.blade.php). Seven badges in one
+// row. Below the small breakpoint (575px) they shrink to fill their column so all
+// seven stay on ONE row, and the full range labels swap for short thresholds.
+.xcl-sr-scale {
+    &__heading {
+        font-size: 1rem;
+        font-weight: 900;
+        font-style: italic;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        margin: 0 0 .5rem;
+    }
+
+    &__text {
+        font-size: .85rem;
+        line-height: 1.6;
+        margin-bottom: .5rem;
+        opacity: .8;
+    }
+
+    &__more {
+        display: inline-block;
+        margin-bottom: .9rem;
+        font-size: .8rem;
+        font-weight: 700;
+        color: #7c3aed;
+    }
+
+    &__row {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: .9rem .5rem;
+    }
+
+    &__item {
+        // Lets the badge size itself from its own column width on phones.
+        container-type: inline-size;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: .35rem;
+    }
+
+    &__range {
+        font-size: .7rem;
+        font-weight: 700;
+        white-space: nowrap;
+        opacity: .75;
+
+        &--short { display: none; }
+    }
+
+    @media (max-width: 575px) {
+        &__row { gap: .5rem .25rem; }
+
+        &__item .xcl-sr-badge {
+            --sr-size: min(100cqw, 40px);
+            // Same legibility boost as the small badges, since these are small now.
+            --sr-letter: color-mix(in srgb, var(--sr-color) 28%, white);
+            --sr-letter-shadow: color-mix(in srgb, var(--sr-color) 35%, black);
+        }
+
+        &__item .xcl-sr-badge__letter {
+            text-shadow:
+                0 .05em .07em var(--sr-letter-shadow),
+                0 0 .12em var(--sr-letter-shadow),
+                0 0 .04em var(--sr-letter-shadow);
+        }
+
+        &__item .xcl-sr-badge[data-grade="D"] {
+            --sr-letter: #374151;
+            --sr-letter-shadow: rgba(255, 255, 255, .85);
+        }
+
+        &__item .xcl-sr-badge[data-grade="Y"] {
+            --sr-letter-shadow: color-mix(in srgb, var(--sr-color) 25%, black);
+        }
+
+        &__range {
+            font-size: .68rem;
+
+            &--full { display: none; }
+            &--short { display: block; }
+        }
+    }
+}
+
+// Collapsible "More Info" toggle (native <details>, no JS) inside an event card
+.xcl-practice-more {
+    summary {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        cursor: pointer;
+        list-style: none;
+        padding: .3rem .8rem;
+        border: 1.5px solid rgba(219,39,119,.45);
+        border-radius: 8px;
+        background: rgba(219,39,119,.1);
+        color: #f9a8d4;
+        font-size: .72rem;
+        font-weight: 800;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        user-select: none;
+
+        &::-webkit-details-marker { display: none; }
+        &::after { content: '▾'; transition: transform .15s; }
+        &:hover { background: rgba(219,39,119,.2); }
+    }
+
+    &[open] summary::after { transform: rotate(180deg); }
+}
+
 .xcl-event-card {
     background: #1e0c16;
     border: 1.5px solid rgba(219,39,119,.22);
@@ -3132,23 +3339,51 @@ span.flatpickr-weekday {
     }
 }
 
+// Event page, below the lg breakpoint: the two columns collapse into ONE ordered list
+// (columns become display:contents so their cards are direct flex items of the row)
+// in this order: requirements, session schedule, registration, about, race results,
+// practice server, registered drivers, questions. Desktop keeps its two columns.
+@media (max-width: 991.98px) {
+    .xcl-event-layout {
+        // The cards carry their own bottom margin, so drop the row's gutters.
+        --bs-gutter-x: 0;
+        --bs-gutter-y: 0;
+
+        > [class*="col-lg-"] { display: contents; }
+        // display:contents drops Bootstrap's `.row > * { width:100% }` for the cards, so
+        // without this each card shrinks to its own content width.
+        > [class*="col-lg-"] > * { order: 9; width: 100%; max-width: 100%; }
+
+        .xcl-ev-requirements { order: 1; }
+        .xcl-ev-schedule     { order: 2; }
+        .xcl-ev-teamentry,
+        .xcl-ev-registration { order: 3; }
+        .xcl-ev-about        { order: 4; }
+        .xcl-ev-results      { order: 5; }
+        .xcl-ev-practice     { order: 6; }
+        .xcl-ev-roster       { order: 7; }
+        .xcl-ev-questions    { order: 8; }
+    }
+}
+
 .xcl-session-schedule {
     display: flex;
     gap: 0;
     align-items: stretch;
 
-    @media (max-width: 575px) {
-        flex-direction: column;
-        gap: .75rem;
-    }
-
     &__step {
         flex: 1;
+        // Lets the sessions shrink instead of stacking on a narrow screen.
+        min-width: 0;
         display: flex;
         flex-direction: column;
         align-items: center;
         position: relative;
         padding: .75rem .5rem;
+
+        @media (max-width: 575px) {
+            padding: .6rem .2rem;
+        }
 
         &:not(:last-child)::after {
             content: '';
@@ -3159,10 +3394,6 @@ span.flatpickr-weekday {
             height: 40%;
             transform: translateY(-50%);
             background: rgba(219,39,119,.2);
-
-            @media (max-width: 575px) {
-                display: none;
-            }
         }
     }
 
@@ -3195,9 +3426,19 @@ span.flatpickr-weekday {
         text-transform: uppercase;
         letter-spacing: .08em;
         color: rgba(255,255,255,.45);
+        text-align: center;
 
         &--race {
             font-size: .75rem;
+        }
+
+        // Smaller and tighter on phones so all sessions stay side by side; a longer
+        // label like "QUALIFYING 1" may wrap onto two lines rather than overflow.
+        @media (max-width: 575px) {
+            font-size: .6rem;
+            letter-spacing: .03em;
+
+            &--race { font-size: .64rem; }
         }
     }
 
@@ -3208,9 +3449,16 @@ span.flatpickr-weekday {
         font-size: 1.35rem;
         color: #fff;
         line-height: 1;
+        white-space: nowrap;
 
         &--race {
             font-size: 1.55rem;
+        }
+
+        @media (max-width: 575px) {
+            font-size: 1.05rem;
+
+            &--race { font-size: 1.2rem; }
         }
     }
 }
@@ -3852,11 +4100,19 @@ body.admin-body {
 
     &:hover { border-color: rgba(124,58,237,.3); }
 
-    &.is-selected {
+    &.is-selected,
+    &:has(input[type="checkbox"]:checked) {
         border-color: #7c3aed;
         background: rgba(124,58,237,.1);
 
         .xcl-driver-card__check { display: flex; }
+    }
+
+    // Results form: the card is a <label> around a real checkbox; hide the box itself.
+    > input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
     }
 
     &__check {
@@ -6995,5 +7251,58 @@ table.dataTable thead th {
     &.active {
         background: #f3e8ff;
         color: #7c3aed;
+    }
+}
+
+// Event page rating label: "XCL Rating" normally, "XCL-R" on very small phones.
+.xcl-rating-label--short { display: none; }
+@media (max-width: 400px) {
+    .xcl-rating-label--long { display: none; }
+    .xcl-rating-label--short { display: inline; }
+}
+
+// Requirements card on mobile: compact rows sitting next to each other, and the SR
+// badge alone (its colour is enough; registration reports a missing SR anyway).
+@media (max-width: 991.98px) {
+    .xcl-event-reqs {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: .4rem;
+    }
+    .xcl-event-req-row {
+        flex: 1 1 auto;
+        justify-content: center;
+        gap: .5rem;
+        padding: .3rem .5rem;
+    }
+    .xcl-event-req-sr-text { display: none; }
+}
+
+// Session schedule: XCL-R multiplier sits top-right in the header bar on mobile,
+// and in the footer row (with Pit Stops) on desktop.
+.xcl-sched-rating-head { display: none; }
+@media (max-width: 991.98px) {
+    .xcl-sched-rating-head {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        margin-left: auto;
+        font-size: .8rem;
+        letter-spacing: .03em;
+        color: #c084fc;
+        i { font-size: .72rem; }
+    }
+    .xcl-sched-rating-foot { display: none !important; }
+
+    // Multiclass: Min. SR + each class as equal blocks in one row (label above value).
+    .xcl-event-reqs--multi {
+        flex-wrap: nowrap;
+        .xcl-event-req-row {
+            flex: 1 1 0;
+            min-width: 0;
+            flex-direction: column;
+            gap: .3rem;
+            text-align: center;
+        }
     }
 }

@@ -19,19 +19,19 @@ class ReportController extends Controller
 {
     // Maps the ?sort= query param to the actual column/relation it orders by.
     private const SORTABLE_COLUMNS = [
-        'reporter'  => 'users.name',
-        'reported'  => 'reports.reported_driver_name',
-        'race'      => 'races.title',
-        'status'    => 'reports.status',
-        'penalty'   => 'reports.final_penalty',
+        'reporter' => 'users.name',
+        'reported' => 'reports.reported_driver_name',
+        'race' => 'races.title',
+        'status' => 'reports.status',
+        'penalty' => 'reports.final_penalty',
         'processed' => 'reports.processed_at',
         'submitted' => 'reports.created_at',
     ];
 
     public function index(Request $request)
     {
-        $sort   = $request->get('sort');
-        $dir    = $request->get('dir') === 'desc' ? 'desc' : 'asc';
+        $sort = $request->get('sort');
+        $dir = $request->get('dir') === 'desc' ? 'desc' : 'asc';
         $status = $request->get('status');
 
         if ($status !== null && ! array_key_exists($status, Report::statuses())) {
@@ -50,7 +50,7 @@ class ReportController extends Controller
         // User::canModerateReport()) only ever sees reports on races that
         // belong to a championship owned by a league they steward. XCL's
         // global steward pool keeps seeing everything, unscoped, as before.
-        if (!$user->canManageEvents() && !$user->isSteward()) {
+        if (! $user->canManageEvents() && ! $user->isSteward()) {
             $leagueIds = $user->leagueMemberships()->where('role', 'steward')->pluck('league_id');
             $query->whereHas('race.championship', fn ($q) => $q->withoutTenantScope()->whereIn('league_id', $leagueIds));
         }
@@ -68,7 +68,7 @@ class ReportController extends Controller
             $query->orderBy(self::SORTABLE_COLUMNS[$sort], $dir);
         } else {
             $sort = null;
-            $query->orderByRaw("FIELD(reports.status, 'pending', 'investigating', 'resolved', 'dismissed')")
+            $query->orderByRaw("FIELD(reports.status, 'pending', 'investigating', 'resolved', 'dismissed', 'retracted')")
                 ->orderBy('reports.created_at', 'desc');
         }
 
@@ -97,28 +97,28 @@ class ReportController extends Controller
         abort_unless($request->user()->canModerateReport($report), 403);
 
         $request->validate([
-            'status'      => 'required|in:pending,investigating,resolved,dismissed',
+            'status' => 'required|in:pending,investigating,resolved,dismissed',
             'admin_notes' => 'nullable|string|max:2000',
         ]);
 
         $previousStatus = $report->status;
 
         $report->update([
-            'status'      => $request->status,
+            'status' => $request->status,
             'admin_notes' => $request->admin_notes,
             'reviewed_by' => auth()->id(),
         ]);
 
         if (in_array($request->status, ['resolved', 'dismissed']) && $previousStatus !== $request->status) {
-            $label  = $request->status === 'resolved' ? 'Resolved' : 'Dismissed';
-            $notes  = $request->admin_notes ? "\n\nSteward verdict:\n{$request->admin_notes}" : '';
+            $label = $request->status === 'resolved' ? 'Resolved' : 'Dismissed';
+            $notes = $request->admin_notes ? "\n\nSteward verdict:\n{$request->admin_notes}" : '';
 
             Message::create([
-                'user_id'      => $report->user_id,
-                'title'        => "Report {$label}: {$report->reported_driver_name}",
-                'body'         => "Your incident report against {$report->reported_driver_name} has been {$report->status}.{$notes}",
-                'type'         => 'report_resolved',
-                'related_id'   => $report->id,
+                'user_id' => $report->user_id,
+                'title' => "Report {$label}: {$report->reported_driver_name}",
+                'body' => "Your incident report against {$report->reported_driver_name} has been {$report->status}.{$notes}",
+                'type' => 'report_resolved',
+                'related_id' => $report->id,
                 'related_type' => Report::class,
             ]);
         }
@@ -132,7 +132,7 @@ class ReportController extends Controller
         $user = auth()->user();
         abort_unless($user->canModerateReport($report), 403);
 
-        if (in_array($report->status, ['resolved', 'dismissed'])) {
+        if ($report->isClosed()) {
             return back()->with('error', 'This report has already been closed.');
         }
 
@@ -140,6 +140,7 @@ class ReportController extends Controller
             if ($report->status === 'pending') {
                 $report->update(['status' => 'investigating']);
             }
+
             return back()->with('success', 'You are already assigned to this report.');
         }
 
@@ -150,8 +151,8 @@ class ReportController extends Controller
         $slot = $report->steward_1_id ? 2 : 1;
 
         $report->update([
-            'status'                => 'investigating',
-            "steward_{$slot}_id"    => $user->id,
+            'status' => 'investigating',
+            "steward_{$slot}_id" => $user->id,
         ]);
 
         return back()->with('success', "You are now assigned as Steward {$slot}.");
@@ -161,15 +162,15 @@ class ReportController extends Controller
     {
         abort_unless($request->user()->canModerateReport($report), 403);
 
-        if (in_array($report->status, ['resolved', 'dismissed'])) {
+        if ($report->isClosed()) {
             return back()->with('error', 'This report has already been closed.');
         }
 
         $data = $request->validate([
-            'penalty'    => ['required', Rule::in(array_keys(PenaltyCalculator::codes()))],
+            'penalty' => ['required', Rule::in(array_keys(PenaltyCalculator::codes()))],
             'multiplier' => 'required|numeric|in:1,2,3',
-            'red_flag'   => 'nullable|boolean',
-            'notes'      => 'nullable|string|max:2000',
+            'red_flag' => 'nullable|boolean',
+            'notes' => 'nullable|string|max:2000',
         ]);
 
         $user = auth()->user();
@@ -179,10 +180,10 @@ class ReportController extends Controller
             ReportVerdict::updateOrCreate(
                 ['report_id' => $report->id, 'steward_id' => $user->id],
                 [
-                    'penalty'    => $data['penalty'],
+                    'penalty' => $data['penalty'],
                     'multiplier' => $data['multiplier'],
-                    'red_flag'   => $redFlag,
-                    'notes'      => $data['notes'] ?? null,
+                    'red_flag' => $redFlag,
+                    'notes' => $data['notes'] ?? null,
                 ]
             );
 
@@ -206,17 +207,17 @@ class ReportController extends Controller
             }
 
             if ($slot) {
-                $updates["steward_{$slot}_verdict"]    = $data['penalty'];
-                $updates["steward_{$slot}_penalty"]    = $data['penalty'];
+                $updates["steward_{$slot}_verdict"] = $data['penalty'];
+                $updates["steward_{$slot}_penalty"] = $data['penalty'];
                 $updates["steward_{$slot}_multiplier"] = $data['multiplier'];
-                $updates["steward_{$slot}_notes"]      = $data['notes'] ?? null;
-                $updates["steward_{$slot}_red_flag"]   = $redFlag;
+                $updates["steward_{$slot}_notes"] = $data['notes'] ?? null;
+                $updates["steward_{$slot}_red_flag"] = $redFlag;
             }
 
             // Any new/changed verdict before processing invalidates a prior "ready" state.
             if (! $report->processed_at) {
                 $updates['ready_to_process'] = false;
-                $updates['final_penalty']    = null;
+                $updates['final_penalty'] = null;
                 $updates['final_multiplier'] = null;
             }
 
@@ -232,7 +233,7 @@ class ReportController extends Controller
 
         $report->load('verdicts');
 
-        if (in_array($report->status, ['resolved', 'dismissed'])) {
+        if ($report->isClosed()) {
             return back()->with('error', 'This report has already been closed.');
         }
 
@@ -248,19 +249,19 @@ class ReportController extends Controller
 
         [$a] = $pair;
 
-        $reportedUser   = $report->reportedUser();
-        $ratingFields   = $report->ratingFields();
+        $reportedUser = $report->reportedUser();
+        $ratingFields = $report->ratingFields();
         $reportedRating = $ratingFields && $reportedUser ? (float) ($reportedUser->{$ratingFields['elo']} ?? 0) : 0.0;
 
         $calc = PenaltyCalculator::calculate($a->penalty, $a->multiplier, $report->session_type, $reportedRating);
 
         $report->update([
-            'ready_to_process'     => true,
-            'final_penalty'        => $a->penalty,
-            'final_multiplier'     => $a->multiplier,
+            'ready_to_process' => true,
+            'final_penalty' => $a->penalty,
+            'final_multiplier' => $a->multiplier,
             'xcl_rating_deduction' => $calc['rating_deduction'],
-            'xcl_rating_return'    => $calc['rating_return'],
-            'sr_deduction'         => $calc['sr_deduction'],
+            'xcl_rating_return' => $calc['rating_return'],
+            'sr_deduction' => $calc['sr_deduction'],
         ]);
 
         return back()->with('success', 'Marked ready to process.');
@@ -270,7 +271,7 @@ class ReportController extends Controller
     {
         abort_unless($request->user()->canModerateReport($report), 403);
 
-        if (in_array($report->status, ['resolved', 'dismissed'])) {
+        if ($report->isClosed()) {
             return back()->with('error', 'This report has already been closed.');
         }
 
@@ -279,18 +280,18 @@ class ReportController extends Controller
         ]);
 
         $report->update([
-            'status'            => 'dismissed',
-            'dismissal_reason'  => $data['dismissal_reason'],
-            'reviewed_by'       => auth()->id(),
-            'ready_to_process'  => false,
+            'status' => 'dismissed',
+            'dismissal_reason' => $data['dismissal_reason'],
+            'reviewed_by' => auth()->id(),
+            'ready_to_process' => false,
         ]);
 
         Message::create([
-            'user_id'      => $report->user_id,
-            'title'        => "Report dismissed: {$report->reported_driver_name}",
-            'body'         => "Your incident report against {$report->reported_driver_name} has been dismissed.\n\nReason:\n{$data['dismissal_reason']}",
-            'type'         => 'report_resolved',
-            'related_id'   => $report->id,
+            'user_id' => $report->user_id,
+            'title' => "Report dismissed: {$report->reported_driver_name}",
+            'body' => "Your incident report against {$report->reported_driver_name} has been dismissed.\n\nReason:\n{$data['dismissal_reason']}",
+            'type' => 'report_resolved',
+            'related_id' => $report->id,
             'related_type' => Report::class,
         ]);
 
@@ -304,7 +305,7 @@ class ReportController extends Controller
         }
 
         DB::transaction(function () use ($report) {
-            $noPenalty    = PenaltyCalculator::isNoPenalty($report->final_penalty);
+            $noPenalty = PenaltyCalculator::isNoPenalty($report->final_penalty);
             $reportedUser = $report->reportedUser();
             $ratingFields = $report->ratingFields();
 
@@ -316,15 +317,15 @@ class ReportController extends Controller
             // own native championships, and any report on a race with no
             // championship at all, behave exactly as before this phase — rating
             // always applies, no points side-effect.
-            $championship  = $report->race?->championship;
+            $championship = $report->race?->championship;
             $isLeagueOwned = $championship && $championship->league_id !== null
                 && $championship->league_id !== League::system()->id;
 
-            $affects      = $isLeagueOwned ? ($championship->settings->penalties->affects ?? 'none') : 'both';
-            $applyRating  = $isLeagueOwned
+            $affects = $isLeagueOwned ? ($championship->settings->penalties->affects ?? 'none') : 'both';
+            $applyRating = $isLeagueOwned
                 ? (in_array($affects, ['rating', 'both'], true) && $championship->xcl_rating_enabled)
                 : true;
-            $applyPoints  = $isLeagueOwned && in_array($affects, ['points', 'both'], true);
+            $applyPoints = $isLeagueOwned && in_array($affects, ['points', 'both'], true);
 
             if (! $noPenalty && $reportedUser && $ratingFields && $applyRating) {
                 $ratingService = app(RatingService::class);
@@ -354,10 +355,10 @@ class ReportController extends Controller
                 if ($points > 0) {
                     ChampionshipPenalty::create([
                         'championship_id' => $championship->id,
-                        'user_id'         => $reportedUser->id,
-                        'race_id'         => $report->race_id,
-                        'points'          => $points,
-                        'reason'          => 'Steward penalty: ' . $report->final_penalty . ' (report #' . $report->id . ')',
+                        'user_id' => $reportedUser->id,
+                        'race_id' => $report->race_id,
+                        'points' => $points,
+                        'reason' => 'Steward penalty: '.$report->final_penalty.' (report #'.$report->id.')',
                     ]);
                 }
             }
@@ -365,28 +366,28 @@ class ReportController extends Controller
             $banReview = ! $noPenalty && $report->final_penalty === 'CAIC';
 
             $report->update([
-                'status'             => $noPenalty ? 'dismissed' : 'resolved',
-                'processed_at'       => now(),
-                'processed_by'       => auth()->id(),
+                'status' => $noPenalty ? 'dismissed' : 'resolved',
+                'processed_at' => now(),
+                'processed_by' => auth()->id(),
                 'ban_review_flagged' => $banReview,
             ]);
 
             if ($banReview && $reportedUser) {
                 $reportedUser->update([
                     'ban_review_flagged_at' => now(),
-                    'ban_review_reason'     => "CAIC penalty processed on report #{$report->id} against {$report->reported_driver_name} — intentional collision, needs manual ban review.",
-                    'ban_review_report_id'  => $report->id,
+                    'ban_review_reason' => "CAIC penalty processed on report #{$report->id} against {$report->reported_driver_name} — intentional collision, needs manual ban review.",
+                    'ban_review_report_id' => $report->id,
                 ]);
 
                 $admins = User::whereHas('roles', fn ($q) => $q->whereIn('slug', ['owner', 'admin']))->get();
 
                 foreach ($admins as $admin) {
                     Message::create([
-                        'user_id'      => $admin->id,
-                        'title'        => 'Ban review required',
-                        'body'         => "Report #{$report->id} against {$report->reported_driver_name} was processed with a CAIC penalty and needs manual ban review.",
-                        'type'         => 'report_resolved',
-                        'related_id'   => $report->id,
+                        'user_id' => $admin->id,
+                        'title' => 'Ban review required',
+                        'body' => "Report #{$report->id} against {$report->reported_driver_name} was processed with a CAIC penalty and needs manual ban review.",
+                        'type' => 'report_resolved',
+                        'related_id' => $report->id,
                         'related_type' => Report::class,
                     ]);
                 }
@@ -394,25 +395,25 @@ class ReportController extends Controller
 
             if ($reportedUser) {
                 Message::create([
-                    'user_id'      => $reportedUser->id,
-                    'title'        => $noPenalty ? 'Report against you dismissed' : "Penalty applied: {$report->final_penalty}",
-                    'body'         => $noPenalty
+                    'user_id' => $reportedUser->id,
+                    'title' => $noPenalty ? 'Report against you dismissed' : "Penalty applied: {$report->final_penalty}",
+                    'body' => $noPenalty
                         ? 'An incident report against you has been reviewed and dismissed.'
                         : "An incident report against you has been processed.\n\nPenalty: {$report->final_penalty}\nXCL Rating deduction: -{$report->xcl_rating_deduction}\nSR deduction: -{$report->sr_deduction}",
-                    'type'         => 'report_resolved',
-                    'related_id'   => $report->id,
+                    'type' => 'report_resolved',
+                    'related_id' => $report->id,
                     'related_type' => Report::class,
                 ]);
             }
 
             if ($report->user) {
                 Message::create([
-                    'user_id'      => $report->user_id,
-                    'title'        => 'Report processed: ' . $report->reported_driver_name,
-                    'body'         => "Your incident report against {$report->reported_driver_name} has been processed.\n\nFinal penalty: {$report->final_penalty}"
-                        . ($report->session_type === 'R' && ! $noPenalty ? "\nRating returned to you: +{$report->xcl_rating_return}" : ''),
-                    'type'         => 'report_resolved',
-                    'related_id'   => $report->id,
+                    'user_id' => $report->user_id,
+                    'title' => 'Report processed: '.$report->reported_driver_name,
+                    'body' => "Your incident report against {$report->reported_driver_name} has been processed.\n\nFinal penalty: {$report->final_penalty}"
+                        .($report->session_type === 'R' && ! $noPenalty ? "\nRating returned to you: +{$report->xcl_rating_return}" : ''),
+                    'type' => 'report_resolved',
+                    'related_id' => $report->id,
                     'related_type' => Report::class,
                 ]);
             }

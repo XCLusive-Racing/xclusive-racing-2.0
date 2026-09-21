@@ -99,14 +99,14 @@
             </div>
         </div>
 
-        <div class="row g-4">
+        <div class="row g-4 xcl-event-layout">
 
             {{-- Left: about + schedule + results --}}
             <div class="col-12 col-lg-8">
 
                 {{-- Description --}}
                 @if($race->description)
-                <div class="xcl-event-card mb-4">
+                <div class="xcl-ev-about xcl-event-card mb-4">
                     <h2 class="xcl-event-card__heading">ABOUT THIS EVENT</h2>
                     <div class="xcl-event-card__text">{!! Illuminate\Support\Str::markdown($race->description, ['renderer' => ['soft_break' => "<br />\n"]]) !!}</div>
                 </div>
@@ -140,8 +140,19 @@
                             : $pitstopCount . 'x, fuel only');
                 @endphp
                 @if($pracMins || $qualiMins || $race1Mins || $fmt)
-                <div class="xcl-event-card mb-4">
-                    <h2 class="xcl-event-card__heading">SESSION SCHEDULE</h2>
+                <div class="xcl-ev-schedule xcl-event-card mb-4">
+                    @php
+                        $customMultiplier = $race->xcl_r_multiplier
+                            ?? ($race->duration_key ? (['15'=>0.6,'20'=>0.8,'30'=>1.0,'30+'=>1.2,'30++'=>1.3,'45'=>1.5,'45+'=>1.6,'60'=>2.0,'60+'=>2.1,'90'=>2.5,'90+'=>2.6][$race->duration_key] ?? null) : null);
+                    @endphp
+                    @php $xclRHeader = $fmt ? $fmt->xclRLabel() : ($customMultiplier ? "×".number_format($customMultiplier, 1) : null); @endphp
+                    <h2 class="xcl-event-card__heading">
+                        SESSION SCHEDULE
+                        @if($xclRHeader)
+                        {{-- Mobile only: the rating moves up from the footer row into the header bar. --}}
+                        <span class="xcl-sched-rating-head"><i class="fa-solid fa-gauge-high"></i>XCL-R {{ $xclRHeader }}</span>
+                        @endif
+                    </h2>
                     <div class="xcl-session-schedule">
                         @if($pracMins)
                         <div class="xcl-session-schedule__step">
@@ -195,10 +206,6 @@
                         </div>
                         @endif
                     </div>
-                    @php
-                        $customMultiplier = $race->xcl_r_multiplier
-                            ?? ($race->duration_key ? (['15'=>0.6,'20'=>0.8,'30'=>1.0,'30+'=>1.2,'30++'=>1.3,'45'=>1.5,'45+'=>1.6,'60'=>2.0,'60+'=>2.1,'90'=>2.5,'90+'=>2.6][$race->duration_key] ?? null) : null);
-                    @endphp
                     @if($fmt || $hasPitstop || $customMultiplier)
                     <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap">
                         @if($fmt || $hasPitstop)
@@ -207,18 +214,18 @@
                             <span style="font-weight:700;color:{{ $hasPitstop ? '#f59e0b' : '#6b7280' }};text-transform:none;letter-spacing:normal;margin-left:6px">{{ $pitstopLabel }}</span>
                         </span>
                         @if($fmt || $customMultiplier)
-                        <span style="width:1px;height:18px;background:rgba(219,39,119,.4);flex-shrink:0"></span>
+                        <span class="xcl-sched-rating-foot" style="width:1px;height:18px;background:rgba(219,39,119,.4);flex-shrink:0"></span>
                         @endif
                         @endif
                         @if($fmt)
-                        <span style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">
-                            <i class="fa-solid fa-gauge-high" style="color:#c084fc;margin-right:6px"></i>XCL Rating
+                        <span class="xcl-sched-rating-foot" style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">
+                            <i class="fa-solid fa-gauge-high" style="color:#c084fc;margin-right:6px"></i><span class="xcl-rating-label--long">XCL Rating</span><span class="xcl-rating-label--short">XCL-R</span>
                             <span style="font-weight:700;color:#c084fc;text-transform:none;letter-spacing:normal;margin-left:6px">{{ $fmt->xclRLabel() }}</span>
                         </span>
                         @elseif($customMultiplier)
-                        <span style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">
-                            <i class="fa-solid fa-gauge-high" style="color:#c084fc;margin-right:6px"></i>XCL Rating
-                            <span style="font-weight:700;color:#c084fc;text-transform:none;letter-spacing:normal;margin-left:6px">×{{ number_format($customMultiplier, 1) }} XCL-R</span>
+                        <span class="xcl-sched-rating-foot" style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">
+                            <i class="fa-solid fa-gauge-high" style="color:#c084fc;margin-right:6px"></i><span class="xcl-rating-label--long">XCL Rating</span><span class="xcl-rating-label--short">XCL-R</span>
+                            <span style="font-weight:700;color:#c084fc;text-transform:none;letter-spacing:normal;margin-left:6px">×{{ number_format($customMultiplier, 1) }}<span class="xcl-rating-label--long"> XCL-R</span></span>
                         </span>
                         @endif
                     </div>
@@ -229,7 +236,7 @@
                 {{-- Questions — links to the FAQ page, shown on every event regardless of status.
                      Full width, same as Session Schedule above it, instead of squeezed into the
                      sidebar — Registration/Practice Server shift up a slot as a result. --}}
-                <div class="xcl-event-card mb-4">
+                <div class="xcl-ev-questions xcl-event-card mb-4">
                     <h2 class="xcl-event-card__heading">QUESTIONS?</h2>
                     <div class="d-flex flex-wrap gap-2">
                         <a href="{{ route('faq') }}" class="xcl-event-unreg-btn flex-fill text-center text-decoration-none">
@@ -250,7 +257,7 @@
                     $classGroups        = \App\Models\RaceResult::classGroups($groupedRaceResults, $race);
                 @endphp
                 @foreach($classGroups as $group)
-                <div class="xcl-event-card">
+                <div class="xcl-ev-results xcl-event-card">
                     <h2 class="xcl-event-card__heading">
                         RACE RESULTS{{ $group->label ? ' — ' . strtoupper($group->label) : '' }}
                     </h2>
@@ -319,10 +326,88 @@
             {{-- Right: sidebar --}}
             <div class="col-12 col-lg-4">
 
+                {{-- Requirements --}}
+                @php
+                    // Multiclass events list every class with its own requirement ("Open" when it
+                    // has none), so the event-level car class / SR / XCL rows are dropped there.
+                    $isMulti = $race->is_multiclass && $race->raceClasses->isNotEmpty();
+                @endphp
+                @if($isMulti || $race->car_class || $race->sr_requirement || $race->min_rating)
+                <div class="xcl-ev-requirements xcl-event-card mb-4">
+                    <h3 class="xcl-event-card__heading">REQUIREMENTS</h3>
+                    <div class="xcl-event-reqs{{ $isMulti ? ' xcl-event-reqs--multi' : '' }}">
+                        @if($isMulti)
+                        @if($race->sr_requirement)
+                        <div class="xcl-event-req-row">
+                            <span class="xcl-event-req-label">Min. SR</span>
+                            <span class="xcl-event-req-value">
+                                <span style="display:inline-flex;align-items:center;gap:5px">
+                                    <x-sr-badge :grade="\App\Enums\SafetyRatingGrade::fromRating((float) $race->sr_requirement)" size="sm" />
+                                    <span class="xcl-event-req-sr-text" style="font-weight:700;color:#e5e7eb">SR {{ $race->sr_requirement }}.0+</span>
+                                </span>
+                            </span>
+                        </div>
+                        @endif
+                        @foreach($race->raceClasses as $cls)
+                        @php [$clsXclName, $clsXclColor] = $cls->xclTierInfo(); @endphp
+                        <div class="xcl-event-req-row">
+                            <span class="xcl-event-req-label" style="color:{{ $cls->color }}">{{ $cls->name }}</span>
+                            <span class="xcl-event-req-value d-flex gap-2 align-items-center">
+                                @if($cls->sr_requirement)
+                                <span style="display:inline-flex;align-items:center;gap:4px">
+                                    <x-sr-badge :grade="\App\Enums\SafetyRatingGrade::fromRating((float) $cls->sr_requirement)" size="sm" />
+                                    <span class="xcl-event-req-sr-text" style="font-size:.75rem;font-weight:700;color:#e5e7eb">SR {{ $cls->sr_requirement }}.0+</span>
+                                </span>
+                                @endif
+                                @if($cls->min_rating)
+                                <span style="font-size:.68rem;font-weight:900;text-transform:capitalize;padding:1px 8px;border-radius:4px;border:1px solid {{ $clsXclColor }}66;background:{{ $clsXclColor }}22;color:{{ $clsXclColor }}">{{ $clsXclName ?: $cls->min_rating }}+</span>
+                                @endif
+                                @unless($cls->sr_requirement || $cls->min_rating)
+                                <span style="font-size:.72rem;font-weight:900;color:#4ade80;letter-spacing:.05em">OPEN</span>
+                                @endunless
+                            </span>
+                        </div>
+                        @endforeach
+                        @else
+                        @if($race->car_class)
+                        <div class="xcl-event-req-row">
+                            <span class="xcl-event-req-label">Car Class</span>
+                            <span class="xcl-event-req-value">{{ $race->car_class }}</span>
+                        </div>
+                        @endif
+                        @if($race->sr_requirement)
+                        <div class="xcl-event-req-row">
+                            <span class="xcl-event-req-label">Min. SR</span>
+                            <span class="xcl-event-req-value">
+                                <span style="display:inline-flex;align-items:center;gap:5px">
+                                    <x-sr-badge :grade="\App\Enums\SafetyRatingGrade::fromRating((float) $race->sr_requirement)" size="sm" />
+                                    <span class="xcl-event-req-sr-text" style="font-weight:700;color:#e5e7eb">SR {{ $race->sr_requirement }}.0+</span>
+                                </span>
+                            </span>
+                        </div>
+                        @endif
+                        @if($race->min_rating)
+                        @php [$xclName, $xclColor] = $race->xclTierInfo(); @endphp
+                        <div class="xcl-event-req-row">
+                            <span class="xcl-event-req-label">Min. XCL Rating</span>
+                            <span class="xcl-event-req-value">
+                                @if($xclName)
+                                <span style="font-size:.75rem;font-weight:900;text-transform:capitalize;padding:2px 10px;border-radius:4px;border:1px solid {{ $xclColor }}66;background:{{ $xclColor }}22;color:{{ $xclColor }}">{{ $xclName }}+</span>
+                                @else
+                                {{ $race->min_rating }}
+                                @endif
+                            </span>
+                        </div>
+                        @endif
+                        @endif
+                    </div>
+                </div>
+                @endif
+
                 {{-- Team Entry (endurance races and driver-swap championship rounds) --}}
                 @auth
                 @if($isTeamRace && $userTeam)
-                <div class="xcl-event-card mb-4">
+                <div class="xcl-ev-teamentry xcl-event-card mb-4">
                     <h3 class="xcl-event-card__heading">TEAM ENTRY</h3>
 
                     @if($myTeamEntries->isNotEmpty())
@@ -601,7 +686,7 @@
 
                 {{-- Registration (solo — hidden for team races) --}}
                 @if($race->status !== 'finished' && !$isTeamRace)
-                <div class="xcl-event-card mb-4">
+                <div class="xcl-ev-registration xcl-event-card mb-4">
                     <h3 class="xcl-event-card__heading">REGISTRATION</h3>
 
                     @auth
@@ -702,17 +787,10 @@
                 {{-- Practice Server --}}
                 @if($race->has_practice_server && $race->practiceServerSession)
                 @php $ps = $race->practiceServerSession; @endphp
-                <div class="xcl-event-card mb-4" style="border-left:3px solid #7c3aed">
+                <div class="xcl-ev-practice xcl-event-card mb-4" style="border-left:3px solid #7c3aed">
                     <h3 class="xcl-event-card__heading">PRACTICE SERVER</h3>
-                    <p class="xcl-event-card__text mb-2">
-                        A practice server runs with the exact race conditions ahead of the event, so you can
-                        learn the track and set-up before it counts.
-                    </p>
                     <p class="xcl-event-card__text mb-3" style="font-weight:700;color:#f472b6">
-                        Register before
-                        <span data-local-time="{{ $ps->upload_at->toIso8601String() }}">{{ $ps->upload_at->timezone('Europe/London')->format('D d M, H:i T') }}</span>
-                        to get practice access. You can still register and race after that moment, you just won't be
-                        able to join the practice server.
+                        Register at least one hour before practice to get practice access.
                     </p>
 
                     @if($isRegistered && $myRegisteredAt)
@@ -727,90 +805,36 @@
                         @endif
                     @endif
 
-                    @if($ps->isPushed())
-                    <div class="p-2 rounded-2" style="background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.3)">
-                        <div class="fw-bold mb-1" style="color:#c4b5fd;font-size:.85rem">
-                            {{ $ps->practiceServer->ftpServer->name ?? 'Practice server' }} is live
-                        </div>
-                        @if($race->practice_notes)
-                        <div class="xcl-event-card__text" style="font-size:.82rem;white-space:pre-line">{{ $race->practice_notes }}</div>
-                        @endif
-                    </div>
-                    @endif
-                </div>
-                @endif
+                    <details class="xcl-practice-more">
+                        <summary>More Info</summary>
+                        <div class="pt-2">
+                            <p class="xcl-event-card__text mb-2" style="font-size:.85rem">
+                                A practice server runs with the exact race conditions ahead of the event, so you can
+                                learn the track and set-up before it counts.
+                            </p>
+                            <p class="xcl-event-card__text mb-2" style="font-size:.85rem">
+                                You can still register and race after that moment, you just won't be able to join the
+                                practice server.
+                            </p>
 
-                {{-- Requirements --}}
-                @php
-                    $classesWithReqs = $race->is_multiclass
-                        ? $race->raceClasses->filter(fn($c) => $c->sr_requirement || $c->min_rating)
-                        : collect();
-                @endphp
-                @if($race->car_class || $race->sr_requirement || $race->min_rating || $classesWithReqs->isNotEmpty())
-                <div class="xcl-event-card mb-4">
-                    <h3 class="xcl-event-card__heading">REQUIREMENTS</h3>
-                    <div class="xcl-event-reqs">
-                        @if($race->car_class)
-                        <div class="xcl-event-req-row">
-                            <span class="xcl-event-req-label">Car Class</span>
-                            <span class="xcl-event-req-value">{{ $race->car_class }}</span>
-                        </div>
-                        @endif
-                        @if($race->sr_requirement)
-                        @php [$srLetter, $srColor] = $race->srTier(); @endphp
-                        <div class="xcl-event-req-row">
-                            <span class="xcl-event-req-label">Min. SR</span>
-                            <span class="xcl-event-req-value">
-                                <span style="display:inline-flex;align-items:center;gap:5px">
-                                    <span style="width:20px;height:20px;border-radius:50%;background:#0f0f1a;border:2px solid {{ $srColor }};display:inline-flex;align-items:center;justify-content:center;color:{{ $srColor }};font-size:.58rem;font-weight:900;flex-shrink:0">{{ $srLetter }}</span>
-                                    <span style="font-weight:700;color:#e5e7eb">SR {{ $race->sr_requirement }}.0+</span>
-                                </span>
-                            </span>
-                        </div>
-                        @endif
-                        @if($race->min_rating)
-                        @php [$xclName, $xclColor] = $race->xclTierInfo(); @endphp
-                        <div class="xcl-event-req-row">
-                            <span class="xcl-event-req-label">Min. XCL Rating</span>
-                            <span class="xcl-event-req-value">
-                                @if($xclName)
-                                <span style="font-size:.75rem;font-weight:900;text-transform:capitalize;padding:2px 10px;border-radius:4px;border:1px solid {{ $xclColor }}66;background:{{ $xclColor }}22;color:{{ $xclColor }}">{{ $xclName }}+</span>
-                                @else
-                                {{ $race->min_rating }}
+                            @if($ps->isPushed())
+                            <div class="p-2 rounded-2" style="background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.3)">
+                                <div class="fw-bold mb-1" style="color:#c4b5fd;font-size:.85rem">
+                                    {{ $ps->practiceServer->ftpServer->name ?? 'Practice server' }} is live
+                                </div>
+                                @if($race->practice_notes)
+                                <div class="xcl-event-card__text" style="font-size:.82rem;white-space:pre-line">{{ $race->practice_notes }}</div>
                                 @endif
-                            </span>
-                        </div>
-                        @endif
-
-                        @if($classesWithReqs->isNotEmpty())
-                        <div class="mt-2 pt-2" style="border-top:1px solid rgba(255,255,255,.08)">
-                            <span class="xcl-event-req-label d-block mb-2">Per Class</span>
-                            @foreach($classesWithReqs as $cls)
-                            @php [$clsSrLetter, $clsSrColor] = $cls->srTier(); [$clsXclName, $clsXclColor] = $cls->xclTierInfo(); @endphp
-                            <div class="xcl-event-req-row">
-                                <span class="xcl-event-req-label" style="color:{{ $cls->color }}">{{ $cls->name }}</span>
-                                <span class="xcl-event-req-value d-flex gap-2 align-items-center">
-                                    @if($cls->sr_requirement)
-                                    <span style="display:inline-flex;align-items:center;gap:4px">
-                                        <span style="width:16px;height:16px;border-radius:50%;background:#0f0f1a;border:2px solid {{ $clsSrColor }};display:inline-flex;align-items:center;justify-content:center;color:{{ $clsSrColor }};font-size:.5rem;font-weight:900;flex-shrink:0">{{ $clsSrLetter }}</span>
-                                        <span style="font-size:.75rem;font-weight:700;color:#e5e7eb">SR {{ $cls->sr_requirement }}.0+</span>
-                                    </span>
-                                    @endif
-                                    @if($cls->min_rating)
-                                    <span style="font-size:.68rem;font-weight:900;text-transform:capitalize;padding:1px 8px;border-radius:4px;border:1px solid {{ $clsXclColor }}66;background:{{ $clsXclColor }}22;color:{{ $clsXclColor }}">{{ $clsXclName ?: $cls->min_rating }}+</span>
-                                    @endif
-                                </span>
                             </div>
-                            @endforeach
+                            @endif
                         </div>
-                        @endif
-                    </div>
+                    </details>
                 </div>
                 @endif
 
                 {{-- Teams (unchanged: still one combined box) --}}
                 @if($isTeamRace)
-                <div class="xcl-event-card">
+                <div class="xcl-ev-roster xcl-event-card">
                     <h3 class="xcl-event-card__heading">
                         TEAMS
                         <span class="xcl-event-card__heading-sub">
@@ -868,7 +892,7 @@
                         : collect();
                     $sof = $sofRatings->isNotEmpty() ? $sofRatings->avg() : null;
                 @endphp
-                <div class="xcl-event-card mb-4">
+                <div class="xcl-ev-roster xcl-event-card mb-4">
                     <h3 class="xcl-event-card__heading">
                         {{ $cls ? strtoupper($cls->name) : 'DRIVERS' }}
                         <span class="xcl-event-card__heading-sub" @if($cls) style="color:{{ $cls->color }}" @endif>
@@ -908,7 +932,7 @@
                         : collect();
                 @endphp
                 @if($unassignedRegs->isNotEmpty())
-                <div class="xcl-event-card mb-4">
+                <div class="xcl-ev-roster xcl-event-card mb-4">
                     <h3 class="xcl-event-card__heading">
                         UNASSIGNED
                         <span class="xcl-event-card__heading-sub">{{ $unassignedRegs->count() }}</span>
@@ -934,7 +958,7 @@
                         ->values();
                 @endphp
                 @if($waitlistRegs->isNotEmpty())
-                <div class="xcl-event-card mb-4" style="border-left:3px solid #f59e0b">
+                <div class="xcl-ev-roster xcl-event-card mb-4" style="border-left:3px solid #f59e0b">
                     <h3 class="xcl-event-card__heading">
                         WAITING LIST
                         <span class="xcl-event-card__heading-sub" style="color:#fbbf24">{{ $waitlistRegs->count() }}</span>

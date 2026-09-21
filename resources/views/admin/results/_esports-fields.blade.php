@@ -3,6 +3,8 @@
     $firstRace = $result?->races->first();
     $existing = $existing ?? [];
     $currentType = old('type', $result->type ?? 'race');
+    // A driver is checked when saved on this result, or was checked before a validation error.
+    $isAdded = fn ($id) => in_array((string) $id, array_map('strval', old('selected_drivers', array_keys($existing))), true);
 @endphp
 
 <div data-result-fields="esports" style="display:none">
@@ -71,19 +73,22 @@
         @error('car_class') <div class="invalid-feedback">{{ $message }}</div> @enderror
     </div>
 
-    {{-- Driver picker — click the drivers who competed (same pattern as Team Event) --}}
+    {{-- Driver picker: a checkbox per driver (inside its card). The rows underneath are
+         shown by the CSS block below, purely from the checkbox state. --}}
+    @php $cssRules = []; @endphp
     <div class="mb-4">
         <label class="form-label fw-bold" style="font-size:.82rem">Drivers who competed <span class="text-danger">*</span></label>
 
         @foreach(\App\Models\TeamEvent::teamSubjectGames() as $subject => $game)
+        @php $gameDrivers = $esportsDriversByGame[$game] ?? collect(); @endphp
         <div data-driver-group="{{ $subject }}" style="display:none">
             <div class="participating-drivers-panel">
                 <p style="font-size:.78rem;color:#6b7280;margin-bottom:12px">Select every driver who took part</p>
                 <div class="xcl-driver-picker__grid">
-                    @forelse(($esportsDriversByGame[$game] ?? collect()) as $driver)
-                    <div class="xcl-driver-card {{ isset($existing[$driver->id]) ? 'is-selected' : '' }}"
-                         data-driver-card
-                         data-driver-id="{{ $driver->id }}">
+                    @forelse($gameDrivers as $driver)
+                    <label class="xcl-driver-card" for="driver-cb-{{ $driver->id }}" data-driver-card>
+                        <input type="checkbox" id="driver-cb-{{ $driver->id }}" name="selected_drivers[]"
+                               value="{{ $driver->id }}" {{ $isAdded($driver->id) ? 'checked' : '' }}>
                         <span class="xcl-driver-card__check"><i class="fa-solid fa-check"></i></span>
                         <span class="xcl-driver-card__avatar">
                             @if($driver->photo_url)
@@ -96,19 +101,18 @@
                             <span class="xcl-driver-card__name">{{ $driver->name }}</span>
                             <span class="xcl-driver-card__badge">{{ \App\Models\EsportsDriver::gameLabel($driver->game) }}</span>
                         </span>
-                    </div>
+                    </label>
                     @empty
                     <p class="text-secondary" style="font-size:.8rem;grid-column:1/-1;margin:0">No drivers found for this game yet.</p>
                     @endforelse
                 </div>
             </div>
 
-            {{-- One result row per selected driver --}}
+            {{-- Result rows: hidden by default, one CSS rule per driver reveals its row --}}
             <div class="mt-3">
-                @foreach(($esportsDriversByGame[$game] ?? collect()) as $driver)
-                <div data-result-row data-driver-id="{{ $driver->id }}"
-                     class="d-flex align-items-center gap-2 mb-2"
-                     style="{{ isset($existing[$driver->id]) ? '' : 'display:none' }}">
+                <p data-result-empty="{{ $subject }}" style="font-size:.8rem;color:#9ca3af;margin:0">Select drivers above to enter their results</p>
+                @foreach($gameDrivers as $driver)
+                <div data-result-row="{{ $driver->id }}" class="mb-2" style="align-items:center;gap:.5rem">
                     <span style="flex:1;font-size:.85rem;font-weight:700">{{ $driver->name }}</span>
                     <input type="text" name="driver_positions[{{ $driver->id }}]"
                            value="{{ old('driver_positions.'.$driver->id, $existing[$driver->id]['position'] ?? '') }}"
@@ -119,15 +123,29 @@
                            class="form-control form-control-sm" style="max-width:100px"
                            placeholder="Points">
                 </div>
+                @php
+                    $cssRules[] = 'form:has(#driver-cb-'.$driver->id.':checked) [data-result-row="'.$driver->id.'"]{display:flex}';
+                @endphp
                 @endforeach
             </div>
         </div>
+        @php
+            $cssRules[] = 'form:has([data-driver-group="'.$subject.'"] input[name="selected_drivers[]"]:checked) [data-result-empty="'.$subject.'"]{display:none}';
+        @endphp
         @endforeach
 
+        @error('selected_drivers')
+        <div class="text-danger" style="font-size:.78rem">{{ $message }}</div>
+        @enderror
         @error('driver_positions')
         <div class="text-danger" style="font-size:.78rem">{{ $message }}</div>
         @enderror
     </div>
+
+    <style>
+        [data-result-row]{display:none}
+        {!! implode("\n        ", $cssRules) !!}
+    </style>
 
     <div class="mb-4">
         <label class="form-label fw-bold" style="font-size:.82rem">

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SafetyRatingGrade;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -53,19 +54,6 @@ class Driver extends Model
         ];
     }
 
-    public static function srGrades(): array
-    {
-        return [
-            ['grade' => 'Z', 'color' => '#a928ff', 'min' => 9.00, 'max' => 10.00],
-            ['grade' => 'Y', 'color' => '#ffc71d', 'min' => 8.00, 'max' => 9.00],
-            ['grade' => 'X', 'color' => '#3c81f3', 'min' => 7.00, 'max' => 8.00],
-            ['grade' => 'A', 'color' => '#47b417', 'min' => 6.00, 'max' => 7.00],
-            ['grade' => 'B', 'color' => '#cc0000', 'min' => 5.00, 'max' => 6.00],
-            ['grade' => 'C', 'color' => '#ff8000', 'min' => 3.00, 'max' => 5.00],
-            ['grade' => 'D', 'color' => '#000000', 'min' => 0.00, 'max' => 3.00],
-        ];
-    }
-
     // --- Computed accessors (NOT stored in DB) ---
 
     public function getClassAttribute(): string
@@ -99,14 +87,7 @@ class Driver extends Model
 
     public function getSrClassAttribute(): array
     {
-        $sr = (float) $this->safety_rating;
-        foreach (self::srGrades() as $grade) {
-            if ($sr >= $grade['min'] && $sr < $grade['max']) {
-                return $grade;
-            }
-        }
-
-        return ['grade' => 'D', 'color' => '#000000'];
+        return SafetyRatingGrade::fromRating((float) $this->safety_rating)->toArray();
     }
 
     // Compares current rating class vs stored status — full discord integration comes later

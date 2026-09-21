@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SafetyRatingGrade;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -104,24 +105,9 @@ class RaceClass extends Model
         if (! $this->sr_requirement) {
             return ['', '#9ca3af'];
         }
-        $val = (float) $this->sr_requirement;
-        if ($val >= 9.0) {
-            return ['Z', '#7c3aed'];
-        }
-        if ($val >= 8.0) {
-            return ['Y', '#eab308'];
-        }
-        if ($val >= 7.0) {
-            return ['X', '#2563eb'];
-        }
-        if ($val >= 5.0) {
-            return ['A', '#16a34a'];
-        }
-        if ($val >= 3.0) {
-            return ['B', '#dc2626'];
-        }
+        $grade = SafetyRatingGrade::fromRating((float) $this->sr_requirement);
 
-        return ['D', '#6b7280'];
+        return [$grade->value, $grade->color()];
     }
 
     /** Returns [display-name, hex-color] for the XCL Rating tier badge. */

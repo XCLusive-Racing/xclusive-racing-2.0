@@ -26,29 +26,47 @@ class Report extends Model
     protected function casts(): array
     {
         return [
-            'hide_reporter_name'   => 'boolean',
+            'hide_reporter_name' => 'boolean',
             'steward_1_multiplier' => 'decimal:1',
-            'steward_1_red_flag'   => 'boolean',
+            'steward_1_red_flag' => 'boolean',
             'steward_2_multiplier' => 'decimal:1',
-            'steward_2_red_flag'   => 'boolean',
-            'final_multiplier'     => 'decimal:1',
-            'ready_to_process'     => 'boolean',
-            'processed_at'         => 'datetime',
+            'steward_2_red_flag' => 'boolean',
+            'final_multiplier' => 'decimal:1',
+            'ready_to_process' => 'boolean',
+            'processed_at' => 'datetime',
             'xcl_rating_deduction' => 'decimal:4',
-            'xcl_rating_return'    => 'decimal:4',
-            'sr_deduction'         => 'decimal:2',
-            'ban_review_flagged'   => 'boolean',
+            'xcl_rating_return' => 'decimal:4',
+            'sr_deduction' => 'decimal:2',
+            'ban_review_flagged' => 'boolean',
         ];
     }
+
+    /** Statuses after which nobody, steward or reporter, can act on the report any more. */
+    public const CLOSED_STATUSES = ['resolved', 'dismissed', 'retracted'];
 
     public static function statuses(): array
     {
         return [
-            'pending'       => ['label' => 'Pending',       'color' => '#9ca3af'],
+            'pending' => ['label' => 'Pending',       'color' => '#9ca3af'],
             'investigating' => ['label' => 'Investigating',  'color' => '#f59e0b'],
-            'resolved'      => ['label' => 'Resolved',       'color' => '#16a34a'],
-            'dismissed'     => ['label' => 'Dismissed',      'color' => '#6b7280'],
+            'resolved' => ['label' => 'Resolved',       'color' => '#16a34a'],
+            'dismissed' => ['label' => 'Dismissed',      'color' => '#6b7280'],
+            'retracted' => ['label' => 'Retracted',      'color' => '#94a3b8'],
         ];
+    }
+
+    public function isClosed(): bool
+    {
+        return in_array($this->status, self::CLOSED_STATUSES, true);
+    }
+
+    /**
+     * The reporter may amend or retract their report only while it is still pending and
+     * no steward has picked it up (status moves to 'investigating' as soon as one does).
+     */
+    public function isChangeableByReporter(): bool
+    {
+        return $this->status === 'pending' && ! $this->steward_1_id && ! $this->steward_2_id;
     }
 
     public static function sessionTypes(): array
@@ -133,8 +151,13 @@ class Report extends Model
     /** Which slot (1 or 2) this user holds, or null if they're an unassigned / additional steward. */
     public function slotFor(User $user): ?int
     {
-        if ($this->steward_1_id === $user->id) return 1;
-        if ($this->steward_2_id === $user->id) return 2;
+        if ($this->steward_1_id === $user->id) {
+            return 1;
+        }
+        if ($this->steward_2_id === $user->id) {
+            return 2;
+        }
+
         return null;
     }
 
@@ -190,11 +213,12 @@ class Report extends Model
     public function ratingFields(): ?array
     {
         $game = $this->race?->game;
-        if (!$game) {
+        if (! $game) {
             return null;
         }
 
         $elo = User::eloColumn($game);
+
         return $elo ? ['elo' => $elo, 'sr' => User::srColumn($game)] : null;
     }
 
@@ -243,8 +267,8 @@ class Report extends Model
     public function previewCalculation(string $penaltyCode, float|int $multiplier): array
     {
         $reportedUser = $this->reportedUser();
-        $fields       = $this->ratingFields();
-        $rating       = $fields && $reportedUser ? (float) ($reportedUser->{$fields['elo']} ?? 0) : 0.0;
+        $fields = $this->ratingFields();
+        $rating = $fields && $reportedUser ? (float) ($reportedUser->{$fields['elo']} ?? 0) : 0.0;
 
         return PenaltyCalculator::calculate($penaltyCode, $multiplier, $this->session_type, $rating);
     }

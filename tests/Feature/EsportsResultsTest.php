@@ -86,6 +86,7 @@ class EsportsResultsTest extends TestCase
             'title' => 'XCL Endurance Round 1',
             'track' => 'Spa-Francorchamps',
             'car_class' => 'GT3',
+            'selected_drivers' => [$driverOne->id, $driverTwo->id],
             'driver_positions' => [
                 $driverOne->id => 'P2',
                 $driverTwo->id => 'DNF',
@@ -120,6 +121,7 @@ class EsportsResultsTest extends TestCase
             'event_date' => '2026-06-01',
             'title' => 'XCL Sprint Series',
             'round_label' => 'After round 4 of 8',
+            'selected_drivers' => [$one->id, $two->id],
             'driver_positions' => [$one->id => 'P2', $two->id => 'P1'],
             'driver_points' => [$one->id => '88', $two->id => '95'],
         ])->assertRedirect(route('admin.results.index'));
@@ -129,6 +131,7 @@ class EsportsResultsTest extends TestCase
             'type' => 'final',
             'event_date' => '2026-12-01',
             'title' => 'XCL Sprint Series',
+            'selected_drivers' => [$one->id],
             'driver_positions' => [$one->id => 'P1'],
             'driver_points' => [$one->id => '210'],
         ])->assertRedirect(route('admin.results.index'));
@@ -154,10 +157,97 @@ class EsportsResultsTest extends TestCase
             'subject' => 'acc-team',
             'type' => 'standings',
             'event_date' => '2026-06-01',
+            'selected_drivers' => [$driver->id],
             'driver_positions' => [$driver->id => 'P1'],
         ])->assertSessionHasErrors('title');
 
         $this->assertSame(0, Result::where('category', 'esports')->count());
+    }
+
+    private function twoAccDrivers(): array
+    {
+        return [
+            EsportsDriver::create(['name' => 'Alex Rider', 'slug' => 'alex-rider', 'game' => 'acc', 'sort_order' => 1]),
+            EsportsDriver::create(['name' => 'Sam Speed', 'slug' => 'sam-speed', 'game' => 'acc', 'sort_order' => 2]),
+        ];
+    }
+
+    private function racePayload(array $overrides): array
+    {
+        return array_merge([
+            'subject' => 'acc-team',
+            'type' => 'race',
+            'event_date' => '2026-05-10',
+            'track' => 'Monza',
+        ], $overrides);
+    }
+
+    public function test_positions_sent_for_unselected_drivers_are_discarded(): void
+    {
+        [$one, $two] = $this->twoAccDrivers();
+
+        $this->actingAs($this->esportsManager())->post(route('admin.results.store'), $this->racePayload([
+            'selected_drivers' => [$one->id],
+            'driver_positions' => [$one->id => 'P1', $two->id => 'P2'],
+        ]))->assertRedirect(route('admin.results.index'));
+
+        $positions = Result::where('subject', 'acc-team')->firstOrFail()->races->first()->positions;
+        $this->assertCount(1, $positions);
+        $this->assertSame($one->id, $positions->first()->esports_driver_id);
+    }
+
+    public function test_every_selected_driver_needs_a_position(): void
+    {
+        [$one, $two] = $this->twoAccDrivers();
+
+        $this->actingAs($this->esportsManager())->post(route('admin.results.store'), $this->racePayload([
+            'selected_drivers' => [$one->id, $two->id],
+            'driver_positions' => [$one->id => 'P1', $two->id => ''],
+        ]))->assertSessionHasErrors(['driver_positions' => 'Enter a position for Sam Speed.']);
+
+        $this->assertSame(0, Result::where('category', 'esports')->count());
+    }
+
+    public function test_at_least_one_driver_must_be_selected(): void
+    {
+        [$one] = $this->twoAccDrivers();
+
+        $this->actingAs($this->esportsManager())->post(route('admin.results.store'), $this->racePayload([
+            'driver_positions' => [$one->id => 'P1'],
+        ]))->assertSessionHasErrors('selected_drivers');
+    }
+
+    public function test_two_selected_drivers_cannot_share_a_position(): void
+    {
+        [$one, $two] = $this->twoAccDrivers();
+
+        $this->actingAs($this->esportsManager())->post(route('admin.results.store'), $this->racePayload([
+            'selected_drivers' => [$one->id, $two->id],
+            'driver_positions' => [$one->id => 'P3', $two->id => 'p3'],
+        ]))->assertSessionHasErrors(['driver_positions' => 'Alex Rider and Sam Speed cannot both have position p3.']);
+
+        $this->assertSame(0, Result::where('category', 'esports')->count());
+    }
+
+    public function test_unclassified_results_such_as_dnf_can_be_shared(): void
+    {
+        [$one, $two] = $this->twoAccDrivers();
+
+        $this->actingAs($this->esportsManager())->post(route('admin.results.store'), $this->racePayload([
+            'selected_drivers' => [$one->id, $two->id],
+            'driver_positions' => [$one->id => 'DNF', $two->id => 'DNF'],
+        ]))->assertRedirect(route('admin.results.index'));
+    }
+
+    public function test_driver_rows_are_revealed_by_a_css_rule_per_driver(): void
+    {
+        [$one] = $this->twoAccDrivers();
+
+        $html = $this->actingAs($this->esportsManager())->get(route('admin.results.index'))->getContent();
+
+        $this->assertStringContainsString("form:has(#driver-cb-{$one->id}:checked) [data-result-row=\"{$one->id}\"]{display:flex}", $html);
+        $this->assertStringContainsString('[data-result-row]{display:none}', $html);
+        $this->assertStringContainsString('Select drivers above to enter their results', $html);
     }
 
     public function test_updating_a_result_replaces_its_races_and_positions(): void
@@ -170,6 +260,7 @@ class EsportsResultsTest extends TestCase
             'type' => 'race',
             'event_date' => '2026-03-01',
             'track' => 'Le Mans',
+            'selected_drivers' => [$driver->id],
             'driver_positions' => [$driver->id => 'P5'],
         ]);
 
@@ -180,6 +271,7 @@ class EsportsResultsTest extends TestCase
             'type' => 'race',
             'event_date' => '2026-03-01',
             'track' => 'Sebring',
+            'selected_drivers' => [$driver->id],
             'driver_positions' => [$driver->id => 'P1'],
         ])->assertRedirect(route('admin.results.index'));
 
@@ -199,6 +291,7 @@ class EsportsResultsTest extends TestCase
             'type' => 'race',
             'event_date' => '2026-01-15',
             'track' => 'Daytona',
+            'selected_drivers' => [$driver->id],
             'driver_positions' => [$driver->id => 'P3'],
         ]);
 
