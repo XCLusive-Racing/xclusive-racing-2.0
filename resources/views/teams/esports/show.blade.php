@@ -181,7 +181,12 @@ $posStyle = fn(string $pos): string => match(true) {
 
                         @foreach($positions as $pos)
                         <div class="pro-race-row">
-                            <span class="pro-race-track">{{ $pos->driver->name ?? '—' }}</span>
+                            <span class="pro-race-track">
+                                {{ $pos->driver->name ?? '—' }}
+                                @if($pos->car || $pos->car_number)
+                                <small class="d-block" style="opacity:.6;font-weight:600">{{ trim(($pos->car_number ? '#'.$pos->car_number.' ' : '').$pos->car) }}</small>
+                                @endif
+                            </span>
                             @if($midLabel)
                             <span class="pro-race-class">{{ $hasPoints ? ($pos->points ?? '—') : $race->car_class }}</span>
                             @endif

@@ -224,7 +224,37 @@ class EsportsResultsTest extends TestCase
         $this->actingAs($this->esportsManager())->post(route('admin.results.store'), $this->racePayload([
             'selected_drivers' => [$one->id, $two->id],
             'driver_positions' => [$one->id => 'P3', $two->id => 'p3'],
-        ]))->assertSessionHasErrors(['driver_positions' => 'Alex Rider and Sam Speed cannot both have position p3.']);
+        ]))->assertSessionHasErrors(['driver_positions' => 'Alex Rider and Sam Speed cannot both have position p3 unless they share the same car number.']);
+
+        $this->assertSame(0, Result::where('category', 'esports')->count());
+    }
+
+    public function test_drivers_in_the_same_car_can_share_a_position(): void
+    {
+        [$one, $two] = $this->twoAccDrivers();
+
+        $this->actingAs($this->esportsManager())->post(route('admin.results.store'), $this->racePayload([
+            'selected_drivers' => [$one->id, $two->id],
+            'driver_positions' => [$one->id => 'P3', $two->id => 'P3'],
+            'driver_cars' => [$one->id => 'Ferrari 296 GT3', $two->id => 'Ferrari 296 GT3'],
+            'driver_car_numbers' => [$one->id => '787', $two->id => '787'],
+        ]))->assertRedirect(route('admin.results.index'));
+
+        $positions = Result::where('category', 'esports')->firstOrFail()->races->first()->positions;
+        $this->assertCount(2, $positions);
+        $this->assertSame(['787', '787'], $positions->pluck('car_number')->all());
+        $this->assertSame('Ferrari 296 GT3', $positions->first()->car);
+    }
+
+    public function test_different_car_numbers_still_cannot_share_a_position(): void
+    {
+        [$one, $two] = $this->twoAccDrivers();
+
+        $this->actingAs($this->esportsManager())->post(route('admin.results.store'), $this->racePayload([
+            'selected_drivers' => [$one->id, $two->id],
+            'driver_positions' => [$one->id => 'P3', $two->id => 'P3'],
+            'driver_car_numbers' => [$one->id => '787', $two->id => '788'],
+        ]))->assertSessionHasErrors('driver_positions');
 
         $this->assertSame(0, Result::where('category', 'esports')->count());
     }

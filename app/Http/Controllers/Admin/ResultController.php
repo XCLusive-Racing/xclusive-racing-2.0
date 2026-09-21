@@ -74,6 +74,8 @@ class ResultController extends Controller
         $isPro = in_array($data['subject'], self::PRO_SUBJECTS, true);
         $driverPositions = [];
         $driverPoints = [];
+        $driverCars = [];
+        $driverCarNumbers = [];
 
         if ($isPro) {
             $validated = $request->validate([
@@ -102,6 +104,10 @@ class ResultController extends Controller
                 'selected_drivers.*' => ['integer'],
                 'driver_positions' => ['nullable', 'array'],
                 'driver_points' => ['nullable', 'array'],
+                'driver_cars' => ['nullable', 'array'],
+                'driver_cars.*' => ['nullable', 'string', 'max:150'],
+                'driver_car_numbers' => ['nullable', 'array'],
+                'driver_car_numbers.*' => ['nullable', 'string', 'max:20'],
             ], [
                 'selected_drivers.required' => 'Select at least one driver who competed.',
                 'selected_drivers.min' => 'Select at least one driver who competed.',
@@ -137,8 +143,20 @@ class ResultController extends Controller
                 ]);
             }
 
-            // Two drivers cannot share a classified position. Unclassified results
-            // (DNF, DNS and so on) can legitimately repeat, so they are exempt.
+            // Car and car number only apply to a single race, not to standings/final tables.
+            if ($isRace) {
+                foreach ($selectedIds as $id) {
+                    $car = trim((string) ($validated['driver_cars'][$id] ?? ''));
+                    $number = trim((string) ($validated['driver_car_numbers'][$id] ?? ''));
+                    $driverCars[$id] = $car !== '' ? $car : null;
+                    $driverCarNumbers[$id] = $number !== '' ? $number : null;
+                }
+            }
+
+            // Two drivers cannot share a classified position, unless they drove the same
+            // car (same car number — insurance / driver swap), which shares the result.
+            // Unclassified results (DNF, DNS and so on) can legitimately repeat, so they
+            // are exempt.
             $unclassified = ['DNF', 'DNS', 'DSQ', 'DNQ', 'NC'];
             $seen = [];
             foreach ($driverPositions as $id => $position) {
@@ -147,9 +165,18 @@ class ResultController extends Controller
                     continue;
                 }
                 if (isset($seen[$key])) {
-                    throw ValidationException::withMessages([
-                        'driver_positions' => $names[$seen[$key]].' and '.$names[$id]." cannot both have position {$position}.",
-                    ]);
+                    $first = $seen[$key];
+                    $sameCar = $isRace
+                        && ($driverCarNumbers[$id] ?? null) !== null
+                        && strcasecmp($driverCarNumbers[$id], (string) ($driverCarNumbers[$first] ?? '')) === 0;
+
+                    if (! $sameCar) {
+                        throw ValidationException::withMessages([
+                            'driver_positions' => $names[$first].' and '.$names[$id]." cannot both have position {$position} unless they share the same car number.",
+                        ]);
+                    }
+
+                    continue;
                 }
                 $seen[$key] = $id;
             }
@@ -157,7 +184,7 @@ class ResultController extends Controller
             $driverPoints = array_intersect_key($validated['driver_points'] ?? [], array_flip($selectedIds));
         }
 
-        DB::transaction(function () use ($data, $isPro, $validated, $existing, $driverPositions, $driverPoints) {
+        DB::transaction(function () use ($data, $isPro, $validated, $existing, $driverPositions, $driverPoints, $driverCars, $driverCarNumbers) {
             if ($isPro) {
                 $header = [
                     'subject' => $data['subject'],
@@ -229,6 +256,8 @@ class ResultController extends Controller
                         'esports_driver_id' => $driverId,
                         'position' => trim((string) $position),
                         'points' => $points !== '' ? $points : null,
+                        'car' => $driverCars[$driverId] ?? null,
+                        'car_number' => $driverCarNumbers[$driverId] ?? null,
                         'sort_order' => $posIndex++,
                     ]);
                 }
