@@ -74,7 +74,7 @@
                     <div class="elo-value">{{ $user->elo_acc }}</div>
                     <p class="text-secondary small mb-1">Current Rating</p>
                     <div>
-                        <span class="fw-black" style="color:{{ $srAcc['color'] }}">{{ number_format($user->sr_acc, 2) }}</span>
+                        <span class="fw-black" style="color:{{ $srAcc['text_color'] }}">{{ number_format($user->sr_acc, 2) }}</span>
                         <span class="text-secondary" style="font-size:.75rem"> SR</span>
                     </div>
                 </div>
@@ -85,7 +85,7 @@
                     <div class="elo-value">{{ $user->elo_lmu }}</div>
                     <p class="text-secondary small mb-1">Current Rating</p>
                     <div>
-                        <span class="fw-black" style="color:{{ $srLmu['color'] }}">{{ number_format($user->sr_lmu, 2) }}</span>
+                        <span class="fw-black" style="color:{{ $srLmu['text_color'] }}">{{ number_format($user->sr_lmu, 2) }}</span>
                         <span class="text-secondary" style="font-size:.75rem"> SR</span>
                     </div>
                 </div>
@@ -96,7 +96,7 @@
                     <div class="elo-value">{{ $user->elo_iracing }}</div>
                     <p class="text-secondary small mb-1">Current Rating</p>
                     <div>
-                        <span class="fw-black" style="color:{{ $srIracing['color'] }}">{{ number_format($user->sr_iracing, 2) }}</span>
+                        <span class="fw-black" style="color:{{ $srIracing['text_color'] }}">{{ number_format($user->sr_iracing, 2) }}</span>
                         <span class="text-secondary" style="font-size:.75rem"> SR</span>
                     </div>
                 </div>

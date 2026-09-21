@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\SafetyRatingGrade;
 use App\Models\Driver;
 use App\Models\RaceResult;
 use App\Models\User;
@@ -12,18 +13,18 @@ class DriverController extends Controller
     public function index(Request $request)
     {
         $games = [
-            'acc'     => ['label' => 'ACC',              'col' => 'elo_acc',     'sr' => 'sr_acc',     'color' => '#7c3aed'],
-            'lmu'     => ['label' => 'Le Mans Ultimate', 'col' => 'elo_lmu',     'sr' => 'sr_lmu',     'color' => '#db2877'],
+            'acc' => ['label' => 'ACC',              'col' => 'elo_acc',     'sr' => 'sr_acc',     'color' => '#7c3aed'],
+            'lmu' => ['label' => 'Le Mans Ultimate', 'col' => 'elo_lmu',     'sr' => 'sr_lmu',     'color' => '#db2877'],
             'iracing' => ['label' => 'iRacing',          'col' => 'elo_iracing', 'sr' => 'sr_iracing', 'color' => '#2563eb'],
         ];
 
         $game = $request->input('game', 'acc');
-        if (!array_key_exists($game, $games)) {
+        if (! array_key_exists($game, $games)) {
             $game = 'acc';
         }
         $gameInfo = $games[$game];
-        $eloCol   = $gameInfo['col'];
-        $srCol    = $gameInfo['sr'];
+        $eloCol = $gameInfo['col'];
+        $srCol = $gameInfo['sr'];
 
         $query = User::where($eloCol, '>', 0)->orderByDesc($eloCol);
 
@@ -40,10 +41,10 @@ class DriverController extends Controller
         // True overall leaderboard position, independent of the search filter above —
         // otherwise a searched-down result set would rank its rows starting from 1.
         $rankedIds = User::where($eloCol, '>', 0)->orderByDesc($eloCol)->pluck('id');
-        $rankMap   = array_flip($rankedIds->all());
+        $rankMap = array_flip($rankedIds->all());
 
         $platformIds = $drivers->pluck('platform_id')->filter()->values()->all();
-        $driverMap   = Driver::whereIn('xuid_psid', $platformIds)
+        $driverMap = Driver::whereIn('xuid_psid', $platformIds)
             ->get(['id', 'xuid_psid'])
             ->keyBy('xuid_psid');
 
@@ -56,7 +57,7 @@ class DriverController extends Controller
 
         $trackTimes = $driver->trackTimes->sortBy('track')->values();
 
-        $linkedUser  = User::where('platform_id', $driver->xuid_psid)->first();
+        $linkedUser = User::where('platform_id', $driver->xuid_psid)->first();
         $isSupporter = $linkedUser->is_supporter ?? false;
 
         $avgRating = RaceResult::where('player_id', $driver->xuid_psid)
@@ -65,13 +66,13 @@ class DriverController extends Controller
             ->avg('rating_after');
 
         if ($linkedUser) {
-            $xclRating    = (int) $linkedUser->elo_acc;
+            $xclRating = (int) $linkedUser->elo_acc;
             $safetyRating = (float) $linkedUser->sr_acc;
 
             // Same source of truth as the user's own profile page, so the two never disagree.
             $displayStats = (object) $linkedUser->raceStats();
         } else {
-            $xclRating    = (float) $driver->xcl_rating;
+            $xclRating = (float) $driver->xcl_rating;
             $safetyRating = (float) $driver->safety_rating;
             $displayStats = $driver->stats;
         }
@@ -84,13 +85,7 @@ class DriverController extends Controller
             }
         }
 
-        $srClass = ['grade' => 'D', 'color' => '#000000'];
-        foreach (Driver::srGrades() as $grade) {
-            if ($safetyRating >= $grade['min'] && $safetyRating < $grade['max']) {
-                $srClass = $grade;
-                break;
-            }
-        }
+        $srClass = SafetyRatingGrade::fromRating((float) $safetyRating)->toArray();
 
         return view('drivers.show', compact(
             'driver', 'trackTimes', 'avgRating', 'isSupporter', 'linkedUser',

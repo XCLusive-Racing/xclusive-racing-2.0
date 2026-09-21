@@ -114,6 +114,9 @@ Route::get('/bop', [BopController::class, 'index'])->name('bop.index');
 Route::middleware('auth')->group(function () {
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
+    Route::get('/reports/{report}/edit', [ReportController::class, 'edit'])->name('reports.edit');
+    Route::put('/reports/{report}', [ReportController::class, 'update'])->name('reports.update');
+    Route::post('/reports/{report}/retract', [ReportController::class, 'retract'])->name('reports.retract');
     Route::get('/api/race/{race}/participants', [ReportController::class, 'raceParticipants'])->name('api.race.participants');
 });
 

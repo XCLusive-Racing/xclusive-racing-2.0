@@ -318,7 +318,7 @@
 </div>
 @endif
 
-@if($canVerdict && ! in_array($report->status, ['resolved', 'dismissed']))
+@if($canVerdict && ! $report->isClosed())
 {{-- Dismiss --}}
 <div class="admin-card mb-4 p-4 p-lg-5">
     <button type="button" class="btn btn-sm btn-outline-danger fw-bold" id="dismiss-toggle" style="font-size:.78rem">Dismiss Report</button>

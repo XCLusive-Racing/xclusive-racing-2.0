@@ -4,12 +4,12 @@
 
 @php
 $classMeta = [
-    'rookie'   => ['label' => 'Rookie',   'color' => '#ef4444', 'range' => '0 – 1 999'],
-    'bronze'   => ['label' => 'Bronze',   'color' => '#cd7f32', 'range' => '2 000 – 3 499'],
-    'silver'   => ['label' => 'Silver',   'color' => '#9ca3af', 'range' => '3 500 – 4 999'],
-    'gold'     => ['label' => 'Gold',     'color' => '#f59e0b', 'range' => '5 000 – 6 499'],
-    'platinum' => ['label' => 'Platinum', 'color' => '#7c3aed', 'range' => '6 500 – 7 999'],
-    'alien'    => ['label' => 'Alien',    'color' => '#10b981', 'range' => '8 000 – 9 999'],
+    'rookie'   => ['label' => 'Rookie',   'color' => '#fb0e00', 'range' => '0 – 1 999'],
+    'bronze'   => ['label' => 'Bronze',   'color' => '#966804', 'range' => '2 000 – 3 499'],
+    'silver'   => ['label' => 'Silver',   'color' => '#caccca', 'text' => '#111', 'range' => '3 500 – 4 999'],
+    'gold'     => ['label' => 'Gold',     'color' => '#fddc15', 'text' => '#111', 'range' => '5 000 – 6 499'],
+    'platinum' => ['label' => 'Platinum', 'color' => '#905de0', 'range' => '6 500 – 7 999'],
+    'alien'    => ['label' => 'Alien',    'color' => '#28dd6b', 'text' => '#111', 'range' => '8 000 – 9 999'],
     'legend'   => ['label' => 'Legend',   'color' => '#000000', 'range' => '10 000+'],
 ];
 @endphp
@@ -54,8 +54,8 @@ $classMeta = [
         {{-- Rank legend --}}
         <div class="d-flex rounded-3 overflow-hidden mb-4" style="border:1px solid #e5e7eb">
             @foreach($classMeta as $meta)
-            <div class="flex-fill text-center text-white text-truncate px-1 py-1"
-                 style="background:{{ $meta['color'] }};font-size:.62rem;line-height:1.35">
+            <div class="flex-fill text-center text-truncate px-1 py-1"
+                 style="background:{{ $meta['color'] }};color:{{ $meta['text'] ?? '#fff' }};font-size:.62rem;line-height:1.35">
                 <div class="fw-black text-uppercase" style="letter-spacing:.03em">{{ $meta['label'] }}</div>
                 <div style="opacity:.85">{{ $meta['range'] }}</div>
             </div>
@@ -127,9 +127,7 @@ $classMeta = [
                                 {{ number_format($elo) }}
                             </td>
                             <td class="text-center">
-                                <span class="fw-black" style="color:{{ $srInfo['color'] }};font-size:.9rem">
-                                    {{ $srInfo['grade'] }}
-                                </span>
+                                <x-sr-badge :grade="$srInfo['grade']" size="sm" />
                                 <span class="text-secondary ms-1" style="font-size:.75rem">{{ number_format($sr, 2) }}</span>
                             </td>
                             <td class="text-secondary d-none d-md-table-cell" style="font-size:.82rem;max-width:160px">

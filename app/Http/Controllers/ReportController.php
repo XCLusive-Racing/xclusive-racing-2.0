@@ -10,12 +10,14 @@ use App\Models\Report;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
     public function index()
     {
-        $user   = auth()->user();
+        $user = auth()->user();
         $userId = $user->id;
 
         $races = Race::whereHas('registrations', fn ($q) => $q->where('user_id', $userId))
@@ -33,10 +35,14 @@ class ReportController extends Controller
         // too so nothing filed against this driver pre-dates the account-linked dropdown.
         $myNames = $this->myDriverNames($user);
 
-        $reportsAgainst = Report::where('reported_user_id', $userId)
-            ->when($myNames->isNotEmpty(), fn ($q) => $q->orWhere(
-                fn ($q2) => $q2->whereNull('reported_user_id')->whereIn('reported_driver_name', $myNames)
-            ))
+        // A retracted report was withdrawn by its reporter, so the reported driver never sees it.
+        $reportsAgainst = Report::where(function ($q) use ($userId, $myNames) {
+            $q->where('reported_user_id', $userId)
+                ->when($myNames->isNotEmpty(), fn ($q) => $q->orWhere(
+                    fn ($q2) => $q2->whereNull('reported_user_id')->whereIn('reported_driver_name', $myNames)
+                ));
+        })
+            ->where('status', '!=', 'retracted')
             ->with(['race.eventFormat', 'user'])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -55,8 +61,8 @@ class ReportController extends Controller
             ->reject(fn (User $u) => $u->id === auth()->id())
             ->unique('id')
             ->map(fn (User $u) => [
-                'id'         => $u->id,
-                'name'       => $u->displayName(),
+                'id' => $u->id,
+                'name' => $u->displayName(),
                 'avatar_url' => $u->avatarUrl(),
             ])
             ->values();
@@ -67,17 +73,17 @@ class ReportController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'race_id'               => 'required|exists:races,id',
-            'reported_user_id'      => 'required|exists:users,id',
-            'session_type'          => 'required|in:R,Q,P',
-            'lap_number'            => 'nullable|integer|min:1|max:999',
-            'incident_corner'       => 'nullable|string|max:50',
-            'description'           => 'required|string|min:20|max:2000',
-            'video_url'             => 'required|url|max:500',
-            'clip_good_driver_url'  => 'nullable|url|max:500',
-            'clip_bad_driver_url'   => 'nullable|url|max:500',
-            'clip_heli_url'         => 'nullable|url|max:500',
-            'hide_reporter_name'    => 'nullable|boolean',
+            'race_id' => 'required|exists:races,id',
+            'reported_user_id' => 'required|exists:users,id',
+            'session_type' => 'required|in:R,Q,P',
+            'lap_number' => 'nullable|integer|min:1|max:999',
+            'incident_corner' => 'nullable|string|max:50',
+            'description' => 'required|string|min:20|max:2000',
+            'video_url' => 'required|url|max:500',
+            'clip_good_driver_url' => 'nullable|url|max:500',
+            'clip_bad_driver_url' => 'nullable|url|max:500',
+            'clip_heli_url' => 'nullable|url|max:500',
+            'hide_reporter_name' => 'nullable|boolean',
         ]);
 
         $data['hide_reporter_name'] = $request->boolean('hide_reporter_name');
@@ -104,18 +110,18 @@ class ReportController extends Controller
 
         $reportedUser = User::findOrFail($data['reported_user_id']);
 
-        $data['user_id']              = auth()->id();
+        $data['user_id'] = auth()->id();
         $data['reported_driver_name'] = $reportedUser->displayName();
         $data['reporter_driver_name'] = $this->myGamertag(auth()->user());
 
         $report = Report::create($data);
 
         Message::create([
-            'user_id'      => auth()->id(),
-            'title'        => 'Report submitted',
-            'body'         => "Your incident report has been received and is pending review by the stewards.\n\nReported driver: {$report->reported_driver_name}\n\nYou will receive a message when a verdict has been reached.",
-            'type'         => 'report_confirmation',
-            'related_id'   => $report->id,
+            'user_id' => auth()->id(),
+            'title' => 'Report submitted',
+            'body' => "Your incident report has been received and is pending review by the stewards.\n\nReported driver: {$report->reported_driver_name}\n\nYou will receive a message when a verdict has been reached.",
+            'type' => 'report_confirmation',
+            'related_id' => $report->id,
             'related_type' => Report::class,
         ]);
 
@@ -123,10 +129,81 @@ class ReportController extends Controller
             ->with('success', 'Your report has been submitted and is pending review.');
     }
 
+    public function edit(Report $report)
+    {
+        abort_unless($report->user_id === auth()->id(), 403);
+
+        if (! $report->isChangeableByReporter()) {
+            return redirect()->route('reports.index')->with('error', $this->lockedMessage());
+        }
+
+        return view('reports.edit', compact('report'));
+    }
+
+    public function update(Request $request, Report $report)
+    {
+        abort_unless($report->user_id === auth()->id(), 403);
+
+        // Race and reported driver stay as filed. To change those, retract and file a new report.
+        $data = $request->validate([
+            'session_type' => 'required|in:R,Q,P',
+            'lap_number' => 'nullable|integer|min:1|max:999',
+            'incident_corner' => 'nullable|string|max:50',
+            'description' => 'required|string|min:20|max:2000',
+            'video_url' => 'required|url|max:500',
+            'clip_bad_driver_url' => 'nullable|url|max:500',
+            'clip_heli_url' => 'nullable|url|max:500',
+        ]);
+        $data['hide_reporter_name'] = $request->boolean('hide_reporter_name');
+
+        $saved = DB::transaction(function () use ($report, $data) {
+            // Re-check under a row lock: a steward may have picked it up since the form loaded.
+            $fresh = Report::lockForUpdate()->find($report->id);
+            if (! $fresh->isChangeableByReporter()) {
+                return false;
+            }
+            $fresh->update($data);
+
+            return true;
+        });
+
+        if (! $saved) {
+            return redirect()->route('reports.index')->with('error', $this->lockedMessage());
+        }
+
+        return redirect()->route('reports.index')->with('success', 'Your report has been updated.');
+    }
+
+    public function retract(Report $report)
+    {
+        abort_unless($report->user_id === auth()->id(), 403);
+
+        $retracted = DB::transaction(function () use ($report) {
+            $fresh = Report::lockForUpdate()->find($report->id);
+            if (! $fresh->isChangeableByReporter()) {
+                return false;
+            }
+            $fresh->update(['status' => 'retracted']);
+
+            return true;
+        });
+
+        if (! $retracted) {
+            return redirect()->route('reports.index')->with('error', $this->lockedMessage());
+        }
+
+        return redirect()->route('reports.index')->with('success', 'Your report has been retracted.');
+    }
+
+    private function lockedMessage(): string
+    {
+        return 'This report is already under investigation (or closed), so it can no longer be edited or retracted.';
+    }
+
     private function myGamertag(User $user): string
     {
         $driver = Driver::where('xuid_psid', $user->platform_id)
-            ->orWhere('xuid_psid', 'T_' . strtolower($user->name))
+            ->orWhere('xuid_psid', 'T_'.strtolower($user->name))
             ->orWhere('gamertag', $user->name)
             ->first();
 
@@ -134,10 +211,10 @@ class ReportController extends Controller
     }
 
     /** Every name this user could plausibly have been reported under before reported_user_id existed. */
-    private function myDriverNames(User $user): \Illuminate\Support\Collection
+    private function myDriverNames(User $user): Collection
     {
         $gamertags = Driver::where('xuid_psid', $user->platform_id)
-            ->orWhere('xuid_psid', 'T_' . strtolower($user->name))
+            ->orWhere('xuid_psid', 'T_'.strtolower($user->name))
             ->orWhere('gamertag', $user->name)
             ->pluck('gamertag');
 
