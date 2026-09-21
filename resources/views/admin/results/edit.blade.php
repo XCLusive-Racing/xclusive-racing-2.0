@@ -10,7 +10,7 @@
     $firstRace = $result->races->first();
     $existing = $isPro ? [] : ($firstRace?->positions
         ->filter(fn ($p) => $p->esports_driver_id)
-        ->mapWithKeys(fn ($p) => [$p->esports_driver_id => ['position' => $p->position, 'points' => $p->points]])
+        ->mapWithKeys(fn ($p) => [$p->esports_driver_id => ['position' => $p->position, 'points' => $p->points, 'car' => $p->car, 'car_number' => $p->car_number]])
         ->all() ?? []);
 @endphp
 

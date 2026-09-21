@@ -112,8 +112,8 @@
             <div class="mt-3">
                 <p data-result-empty="{{ $subject }}" style="font-size:.8rem;color:#9ca3af;margin:0">Select drivers above to enter their results</p>
                 @foreach($gameDrivers as $driver)
-                <div data-result-row="{{ $driver->id }}" class="mb-2" style="align-items:center;gap:.5rem">
-                    <span style="flex:1;font-size:.85rem;font-weight:700">{{ $driver->name }}</span>
+                <div data-result-row="{{ $driver->id }}" class="mb-2" style="align-items:center;gap:.5rem;flex-wrap:wrap">
+                    <span style="flex:1 1 100%;font-size:.85rem;font-weight:700">{{ $driver->name }}</span>
                     <input type="text" name="driver_positions[{{ $driver->id }}]"
                            value="{{ old('driver_positions.'.$driver->id, $existing[$driver->id]['position'] ?? '') }}"
                            class="form-control form-control-sm" style="max-width:110px"
@@ -122,6 +122,15 @@
                            value="{{ old('driver_points.'.$driver->id, $existing[$driver->id]['points'] ?? '') }}"
                            class="form-control form-control-sm" style="max-width:100px"
                            placeholder="Points">
+                    {{-- Car + number: drivers sharing a car (insurance / driver swap) enter the same number and may then share a position. --}}
+                    <input type="text" name="driver_cars[{{ $driver->id }}]" data-type-fields="race"
+                           value="{{ old('driver_cars.'.$driver->id, $existing[$driver->id]['car'] ?? '') }}"
+                           class="form-control form-control-sm" style="flex:1 1 140px;min-width:120px"
+                           placeholder="Car, e.g. Ferrari 296 GT3">
+                    <input type="text" name="driver_car_numbers[{{ $driver->id }}]" data-type-fields="race"
+                           value="{{ old('driver_car_numbers.'.$driver->id, $existing[$driver->id]['car_number'] ?? '') }}"
+                           class="form-control form-control-sm" style="max-width:100px"
+                           placeholder="Car #, e.g. 787">
                 </div>
                 @php
                     $cssRules[] = 'form:has(#driver-cb-'.$driver->id.':checked) [data-result-row="'.$driver->id.'"]{display:flex}';
