@@ -1,45 +1,11 @@
 const drivers = [
-    // ── PRO ──────────────────────────────────────────────────────
-    {
-        name: 'Dirk Schouten',
-        cat: 'pro', platform: 'hybrid', platformLabel: 'Hybrid',
-        photo: '/images/drivers/D.Schouten.png',
-        flag: 'netherlands', role: 'racing',
-        socials: [
-            { type: 'instagram', href: 'https://www.instagram.com/dirk_schouten_/' },
-            { type: 'tiktok',    href: 'https://www.tiktok.com/@dirkschouten34' },
-            { type: 'youtube',   href: 'https://www.youtube.com/channel/UC6PwvyoGGVmql0a2Ch5RJ9w' },
-            { type: 'linkedin',  href: 'https://www.linkedin.com/in/dirk-schouten-690221167/' },
-            { type: 'facebook',  href: 'https://www.facebook.com/p/Dirk-Schouten-100007931509430/' },
-        ],
-    },
-    {
-        name: 'Mats van Rooijen',
-        cat: 'pro', platform: 'hybrid', platformLabel: 'Hybrid',
-        photo: '/images/drivers/M.vanRooijen.png',
-        flag: 'netherlands', role: 'racing',
-        socials: [
-            { type: 'website',   href: 'https://matsvrooijen.vercel.app/' },
-            { type: 'instagram', href: 'https://www.instagram.com/matsvanrooijen_official/' },
-            { type: 'linkedin',  href: 'https://www.linkedin.com/in/mats-van-rooijen-540354314/' },
-        ],
-    },
+    // Professional drivers (Dirk Schouten, Mats van Rooijen) are hidden for now.
 
     // ── ESPORTS (LMU / ACC / iRacing mixed, sorted by last name) ──
     { name: 'Nat Benett',       cat: 'acc',     platform: 'console', platformLabel: 'Console', photo: '/images/drivers/Bennett.png', flag: 'united%20kingdom', role: 'esports', socials: [] },
     { name: 'Lucas Britton',    cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Britton.png', flag: 'united%20kingdom', role: 'esports', socials: [
         { type: 'instagram', href: 'https://www.instagram.com/lucas_baaaaada/' },
     ] },
-    {
-        name: 'Thomas Cauberghe',
-        cat: 'lmu', platform: 'pc', platformLabel: 'PC',
-        photo: '/images/drivers/Cauberghe.png',
-        flag: 'belgium', role: 'esports',
-        socials: [
-            { type: 'tiktok', href: 'https://www.tiktok.com/@thomascauberghe?_r=1&_t=ZG-98h5kheJfzl' },
-            { type: 'twitch', href: 'http://twitch.tv/thomascauberghee' },
-        ],
-    },
     { name: 'James Curtin',     cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Curtin.png', flag: 'usa',              role: 'esports', socials: [] },
     { name: 'André Damrat',     cat: 'iracing', platform: 'pc',      platformLabel: 'PC',      photo: null, flag: 'germany',          role: 'esports', socials: [] },
     { name: 'Giuseppe Dinoia',  cat: 'lmu',     platform: 'pc',      platformLabel: 'PC',      photo: '/images/drivers/Dinoia.png', flag: 'italy',            role: 'esports', socials: [
@@ -116,6 +82,16 @@ const drivers = [
     ] },
     { name: 'Gianluca Zambione', cat: 'acc',    platform: 'console', platformLabel: 'Console', photo: '/images/drivers/Gianluca.png', flag: 'italy',           role: 'esports', socials: [] },
     { name: 'Federico Zamblera', cat: 'acc',    platform: 'console', platformLabel: 'Console', photo: '/images/drivers/Zamby.png', flag: 'italy',             role: 'esports', socials: [] },
+    {
+        name: 'Thomas Cauberghe',
+        cat: 'lmu', platform: 'pc', platformLabel: 'PC',
+        photo: '/images/drivers/Cauberghe.png',
+        flag: 'belgium', role: 'esports',
+        socials: [
+            { type: 'tiktok', href: 'https://www.tiktok.com/@thomascauberghe?_r=1&_t=ZG-98h5kheJfzl' },
+            { type: 'twitch', href: 'http://twitch.tv/thomascauberghee' },
+        ],
+    },
 
     // ── Coaches (DriveLab) ───────────────────────────────────────
     { name: 'Nikodem Wisniewski', cat: 'coach', platform: 'pc',      platformLabel: 'PC',      photo: '/images/coaches/nikodem.avif', flag: null, role: 'coach', socials: [] },

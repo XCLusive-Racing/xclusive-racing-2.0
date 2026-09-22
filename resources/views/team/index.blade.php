@@ -21,7 +21,7 @@
             @foreach([
                 [
                     'slug'     => 'pro',
-                    'href'     => route('teams.pro.index'),
+                    'href'     => '#',
                     'color'    => '#d4ee6a',
                     'title'    => 'Professional Drivers',
                     'desc'     => 'Our real-world racing drivers competing at the highest level of motorsport, proudly flying the XCLusive flag.',
