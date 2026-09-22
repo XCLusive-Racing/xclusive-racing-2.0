@@ -73,8 +73,9 @@ Route::get('/emil-frey-proposal', function () {
 })->name('emil-frey-proposal');
 
 // PRO driver profiles
-Route::get('/teams/pro', [ProDriverController::class, 'index'])->name('teams.pro.index');
-Route::get('/teams/pro/{slug}', [ProDriverController::class, 'show'])->name('teams.pro.show');
+// Professional driver pages are switched off for now; send visitors to the team overview.
+Route::redirect('/teams/pro', '/team')->name('teams.pro.index');
+Route::redirect('/teams/pro/{slug}', '/team')->name('teams.pro.show');
 
 // Esports roster
 Route::get('/teams/esports', [EsportsController::class, 'index'])->name('teams.esports.index');

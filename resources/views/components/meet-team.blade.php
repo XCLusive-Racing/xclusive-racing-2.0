@@ -68,9 +68,6 @@
             <span class="mt-legend-item" data-legend="esports">
                 <span class="mt-legend-dot" style="background:rgba(192,132,252,0.85);"></span>ESPORTS DRIVERS
             </span>
-            <span class="mt-legend-item" data-legend="pro">
-                <span class="mt-legend-dot" style="background:#d4ee6a;"></span>PROFESSIONAL DRIVERS
-            </span>
             <span class="mt-legend-item" data-legend="staff">
                 <span class="mt-legend-dot" style="background:#3b82f6;"></span>STAFF
             </span>

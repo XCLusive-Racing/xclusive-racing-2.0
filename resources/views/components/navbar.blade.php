@@ -123,7 +123,6 @@
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li class="d-xcl-none"><a class="xcl-dropdown-item" href="{{ route('team') }}">OVERVIEW</a></li>
-                        <li><a class="xcl-dropdown-item" href="{{ route('teams.pro.index') }}">PROFESSIONAL</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('teams.esports.index') }}">ESPORTS</a></li>
                         <li><a class="xcl-dropdown-item" href="#">STAFF</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('coaching.index') }}">COACHING</a></li>
