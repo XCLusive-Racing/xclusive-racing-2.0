@@ -44,7 +44,7 @@ class PsnLookupService
                 }
 
                 $lastException = new RuntimeException(
-                    "PSN lookup returned HTTP {$response->status()} for '{$username}'."
+                    "PSN lookup returned HTTP {$response->status()} for '{$username}': {$response->body()}"
                 );
             } catch (ConnectionException $e) {
                 $lastException = new RuntimeException("PSN lookup connection failed: {$e->getMessage()}");
