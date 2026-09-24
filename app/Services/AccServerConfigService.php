@@ -44,7 +44,7 @@ class AccServerConfigService implements ServerConfigGenerator
 
                 $drivers = $teamRegs->map(fn ($tr) => [
                     'firstName' => '',
-                    'lastName' => $tr->user->name ?? '',
+                    'lastName' => self::entryLastName($tr->user, $teamEntry?->team?->name ?? ''),
                     'shortName' => mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $tr->user->name ?? ''), 0, 3)),
                     'playerID' => $tr->user?->playerIdFor($race->game) ?? '',
                     'driverCategory' => $tr->user->ratingClass($race->game),
@@ -91,16 +91,18 @@ class AccServerConfigService implements ServerConfigGenerator
         ];
     }
 
-    // A solo driver's in-game name tag: their name, and their "Team / Quote" profile
-    // field on a second line under it. ACC renders the newline inside lastName as two
-    // lines -- this is the only way to get that second line; teamName is not an ACC
-    // entrylist field (not in the server handbook) and the server ignores it.
-    public static function entryLastName(User $user): string
+    // A driver's in-game name tag: their name, with a second line under it -- for a
+    // team entry (driver swap / endurance) the team they're racing for, for a solo
+    // driver their own "Team / Quote" profile field ($tag null). Long team names are
+    // deliberately not shortened. ACC renders the newline inside lastName as two lines;
+    // this is the only way to get that second line -- teamName is not an ACC entrylist
+    // field (not in the server handbook) and the server ignores it.
+    public static function entryLastName(User $user, ?string $tag = null): string
     {
         $name = $user->name ?? '';
-        $quote = trim((string) $user->team);
+        $tag = trim((string) ($tag ?? $user->team));
 
-        return $quote !== '' ? $name."\n".$quote : $name;
+        return $tag !== '' ? $name."\n".$tag : $name;
     }
 
     // Reverse of entryLastName() for a driver read back from an entrylist or results

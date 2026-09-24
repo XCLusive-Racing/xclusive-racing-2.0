@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Race;
 use App\Models\RaceRegistration;
 use App\Models\RaceResult;
+use App\Models\RaceTeamEntry;
+use App\Models\RacingTeam;
 use App\Models\User;
 use App\Services\AccResultImportService;
 use App\Services\AccServerConfigService;
@@ -72,5 +74,27 @@ class ProfileTeamQuoteTest extends TestCase
         app(AccResultImportService::class)->processSessions($content, $race, 'test.json');
 
         $this->assertSame('DeEchteOlle', RaceResult::where('race_id', $race->id)->sole()->driver_name);
+    }
+
+    // A team entry (driver swap / endurance) shows the team the car races for under every
+    // driver's name instead of their personal quote -- long team names are not shortened.
+    public function test_team_entry_drivers_get_their_team_name_under_their_name(): void
+    {
+        $race = Race::create([
+            'title' => 'Endurance', 'track' => 'Spa', 'game' => 'acc', 'is_endurance' => true,
+            'status' => 'open', 'scheduled_at' => now()->addWeek(),
+        ]);
+        $owner = User::factory()->create();
+        $team = RacingTeam::create(['name' => 'Very Long Endurance Team Name Racing', 'tag' => 'VLE', 'owner_id' => $owner->id]);
+        $entry = RaceTeamEntry::create([
+            'race_id' => $race->id, 'racing_team_id' => $team->id,
+            'car_number' => 1, 'starting_driver_id' => $owner->id,
+        ]);
+        $driver = User::factory()->create(['name' => 'DeEchteOlle', 'team' => 'XCLusive Developer', 'platform_id' => 'X-1']);
+        RaceRegistration::create(['race_id' => $race->id, 'user_id' => $driver->id, 'team_entry_id' => $entry->id]);
+
+        $lastName = app(AccServerConfigService::class)->entryList($race)['entries'][0]['drivers'][0]['lastName'];
+
+        $this->assertSame("DeEchteOlle\nVery Long Endurance Team Name Racing", $lastName);
     }
 }

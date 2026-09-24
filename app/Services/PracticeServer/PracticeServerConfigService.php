@@ -154,7 +154,7 @@ class PracticeServerConfigService
                     }
                     $drivers[] = [
                         'firstName' => '',
-                        'lastName' => $user->name ?? '',
+                        'lastName' => AccServerConfigService::entryLastName($user, $teamEntry?->team?->name ?? ''),
                         'shortName' => mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3)),
                         'playerID' => $playerId,
                         'driverCategory' => $user->ratingClass($race->game),
