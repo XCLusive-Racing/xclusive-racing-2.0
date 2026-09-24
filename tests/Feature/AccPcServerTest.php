@@ -119,6 +119,14 @@ class AccPcServerTest extends TestCase
             ->assertSessionHas('error', FtpServer::ERR_NOT_FOR_RACE);
     }
 
+    public function test_pc_server_is_never_a_crossplay_server(): void
+    {
+        $config = app(AccServerConfigService::class);
+
+        $this->assertSame(0, $config->settings($this->makeRace('ac'), $this->makeServer('pc'))['isCrossplayServer']);
+        $this->assertSame(1, $config->settings($this->makeRace('acc'), $this->makeServer('console'))['isCrossplayServer']);
+    }
+
     public function test_server_name_shows_the_platform(): void
     {
         $config = app(AccServerConfigService::class);

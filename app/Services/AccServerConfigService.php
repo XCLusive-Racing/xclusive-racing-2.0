@@ -244,6 +244,7 @@ class AccServerConfigService implements ServerConfigGenerator
             'maxCarSlots' => $race->max_drivers ?? ($base['maxCarSlots'] ?? 30),
             'carGroup' => $this->carGroup($race->car_class),
             'shortFormationLap' => $this->shortFormationLap($race, $base),
+            'isCrossplayServer' => $this->crossplayFlag($race, $server, $base),
         ]);
     }
 
@@ -252,9 +253,20 @@ class AccServerConfigService implements ServerConfigGenerator
     // (PS5 + Xbox) is still console.
     private function platformLabel(Race $race, ?FtpServer $server): string
     {
-        $platform = $server?->platform ?? ($race->game === 'ac' ? 'pc' : 'console');
+        return $this->isPcServer($race, $server) ? 'PC' : 'Playstation 5 & Xbox Series S/X';
+    }
 
-        return $platform === 'pc' ? 'PC' : 'Playstation 5 & Xbox Series S/X';
+    private function isPcServer(Race $race, ?FtpServer $server): bool
+    {
+        return ($server?->platform ?? ($race->game === 'ac' ? 'pc' : 'console')) === 'pc';
+    }
+
+    // isCrossplayServer is ACC's PS5/Xbox crossplay switch -- there is no crossplay with
+    // PC, so a PC server always gets 0 (the shared defaults carry the console value 1).
+    // Console servers keep whatever their defaults say.
+    public function crossplayFlag(Race $race, ?FtpServer $server, array $base): int
+    {
+        return $this->isPcServer($race, $server) ? 0 : (int) ($base['isCrossplayServer'] ?? 1);
     }
 
     public function eventRules(?Race $race = null, ?FtpServer $server = null): array

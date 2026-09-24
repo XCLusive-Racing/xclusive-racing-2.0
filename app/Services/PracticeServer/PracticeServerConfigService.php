@@ -55,6 +55,7 @@ class PracticeServerConfigService
             'safetyRatingRequirement' => -1,
             'racecraftRatingRequirement' => -1,
             'trackMedalsRequirement' => 0,
+            'isCrossplayServer' => $this->raceConfig->crossplayFlag($race, $server->ftpServer, $base),
         ]);
     }
 
