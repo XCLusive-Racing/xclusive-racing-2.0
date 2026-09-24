@@ -167,4 +167,21 @@ document.addEventListener('DOMContentLoaded', () => {
         input.addEventListener('input', updateBallast);
         updateBallast();
     });
+
+    // Car model suggestions follow the selected game (bops form) — ACC console and
+    // ACC PC each have their own car list, other games have none (free text).
+    document.querySelectorAll('[data-bop-car-input]').forEach(input => {
+        const gameSelect = input.form?.querySelector('select[name="game"]');
+        if (!gameSelect) return;
+        function updateCarList() {
+            const list = document.getElementById('bop-cars-' + gameSelect.value);
+            if (list) {
+                input.setAttribute('list', list.id);
+            } else {
+                input.removeAttribute('list');
+            }
+        }
+        gameSelect.addEventListener('change', updateCarList);
+        updateCarList();
+    });
 });

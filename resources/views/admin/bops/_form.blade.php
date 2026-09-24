@@ -19,7 +19,16 @@
                    value="{{ old('car_model', $bop?->car_model) }}"
                    class="form-control @error('car_model') is-invalid @enderror"
                    style="font-size:.85rem"
-                   placeholder="e.g. Ferrari 296 GT3">
+                   autocomplete="off"
+                   data-bop-car-input
+                   placeholder="e.g. Ferrari 296 GT3 (2023)">
+            @foreach($carCatalog ?? [] as $catalogGame => $carNames)
+            <datalist id="bop-cars-{{ $catalogGame }}">
+                @foreach($carNames as $carName)
+                <option value="{{ $carName }}">
+                @endforeach
+            </datalist>
+            @endforeach
             @error('car_model')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
     </div>

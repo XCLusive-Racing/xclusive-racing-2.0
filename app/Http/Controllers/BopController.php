@@ -3,21 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bop;
+use App\Services\AccCarCatalog;
 
 class BopController extends Controller
 {
     public function index()
     {
-        $games      = Bop::games();
+        $games = Bop::games();
         $categories = Bop::categories();
 
         $activeGame = request('game', 'acc');
-        if (!array_key_exists($activeGame, $games)) {
+        if (! array_key_exists($activeGame, $games)) {
             $activeGame = 'acc';
         }
 
         $activeCategory = request('category');
-        if ($activeCategory && !array_key_exists($activeCategory, $categories)) {
+        if ($activeCategory && ! array_key_exists($activeCategory, $categories)) {
             $activeCategory = null;
         }
 
@@ -28,14 +29,14 @@ class BopController extends Controller
             ->pluck('track');
 
         $activeTrack = request('track');
-        if ($activeTrack && !$tracks->contains($activeTrack)) {
+        if ($activeTrack && ! $tracks->contains($activeTrack)) {
             $activeTrack = null;
         }
 
         $query = Bop::where('game', $activeGame);
 
         if ($activeCategory) {
-            $query->whereIn('car_model', Bop::carNamesByCategory($activeCategory));
+            $query->whereIn('car_model', AccCarCatalog::namesInCategory($activeCategory, $activeGame));
         }
 
         if ($activeTrack) {

@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\DB;
 
 // ACC PC ('ac') is identical to ACC console ('acc') for event-format purposes
 // (same session/pitstop rules) — only BOP car model IDs differ between the
-// two builds, which is a separate concern (Bop::carModels()). Duplicate every
+// two builds, which is a separate concern (AccCarCatalog). Duplicate every
 // console format under the 'ac' game key so the "ACC PC" bucket on
 // admin/event-formats isn't empty.
 return new class extends Migration

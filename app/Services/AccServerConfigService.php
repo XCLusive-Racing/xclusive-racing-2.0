@@ -380,7 +380,7 @@ class AccServerConfigService implements ServerConfigGenerator
 
         $mapped = [];
         foreach ($entries as $bop) {
-            $carId = Bop::carModelId($bop->car_model);
+            $carId = AccCarCatalog::id($bop->car_model, $game);
             if ($carId === null) {
                 continue;
             }

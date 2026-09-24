@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Collection;
 
 class RaceResult extends Model
 {
@@ -16,111 +17,19 @@ class RaceResult extends Model
         'rating_before', 'rating_after', 'elo_change', 'sof', 'sr_change',
     ];
 
-    private const ACC_CARS = [
-        0  => 'Porsche 991 GT3 R (2018)',
-        1  => 'Mercedes-AMG GT3 (2015)',
-        2  => 'Ferrari 488 GT3 (2018)',
-        3  => 'Audi R8 LMS (2015)',
-        4  => 'Lamborghini Huracan GT3 (2015)',
-        5  => 'McLaren 650S GT3 (2015)',
-        6  => 'Nissan GT-R Nismo GT3 (2018)',
-        7  => 'BMW M6 GT3 (2017)',
-        8  => 'Bentley Continental GT3 (2018)',
-        9  => 'Porsche 991 II GT3 Cup (2017)',
-        10 => 'Nissan GT-R Nismo GT3 (2015)',
-        11 => 'Bentley Continental GT3 (2015)',
-        12 => 'AMR V12 Vantage GT3 (2013)',
-        13 => 'Reiter Engineering R-EX GT3 (2017)',
-        14 => 'Emil Frey Jaguar G3 (2012)',
-        15 => 'Lexus RC F GT3 (2016)',
-        16 => 'Lamborghini Huracan GT3 Evo (2019)',
-        17 => 'Honda NSX GT3 (2017)',
-        18 => 'Lamborghini Huracán SuperTrofeo (2015)',
-        19 => 'Audi R8 LMS Evo (2019)',
-        20 => 'AMR V8 Vantage (2019)',
-        21 => 'Honda NSX GT3 Evo (2019)',
-        22 => 'McLaren 720S GT3 (2019)',
-        23 => 'Porsche 911 II GT3 R (2019)',
-        24 => 'Ferrari 488 GT3 Evo (2020)',
-        25 => 'Mercedes-AMG GT3 (2020)',
-        26 => 'BMW M4 GT3 (2022)',
-        27 => 'Ferrari 488 Challenge Evo (2022)',
-        28 => 'BMW M2 Club Sport Racing (2022)',
-        29 => 'Porsche 992 GT3 Cup (2022)',
-        30 => 'Lamborghini Huracán SuperTrofeo EVO2 (2022)',
-        31 => 'Audi R8 LMS GT3 Evo 2 (2022)',
-        32 => 'Ferrari 296 GT3 (2023)',
-        33 => 'Lamborghini Huracan GT3 Evo 2 (2023)',
-        34 => 'Porsche 992 GT3 R (2023)',
-        35 => 'McLaren 720S GT3 Evo (2023)',
-        36 => 'Ford Mustang GT3 (2024)',
-        50 => 'Alpine A110 GT4 (2018)',
-        51 => 'Aston Martin Vantage GT4 (2018)',
-        52 => 'Audi R8 LMS GT4 (2018)',
-        53 => 'BMW M4 GT4 (2018)',
-        55 => 'Chevrolet Camaro GT4 (2017)',
-        56 => 'Ginetta G55 GT4 (2012)',
-        57 => 'KTM X-Bow GT4 (2016)',
-        58 => 'Maserati MC GT4 (2016)',
-        59 => 'McLaren 570S GT4 (2016)',
-        60 => 'Mercedes AMG GT4 (2016)',
-        61 => 'Porsche 718 Cayman GT4 Clubsport (2019)',
-        80 => 'Audi R8 LMS GT2 (2021)',
-        82 => 'KTM Xbow GT2 (2021)',
-        83 => 'Maserati GT2 (2023)',
-        84 => 'Mercedes AMG GT2 (2023)',
-        85 => 'Porsche 991 II GT2 RS CS EVO (2023)',
-        86 => 'Porsche 935 (2019)',
-    ];
-
-    // ACC's fixed homologation class per car model id (same ids as ACC_CARS above) — not
-    // derivable from the car name string alone, since Cup/Challenge/SuperTrofeo cars often
-    // contain "GT3" in their name despite racing in their own class, not the GT3 pro class.
-    private const ACC_CAR_CLASSES = [
-        0 => 'GT3', 1 => 'GT3', 2 => 'GT3', 3 => 'GT3', 4 => 'GT3', 5 => 'GT3', 6 => 'GT3',
-        7 => 'GT3', 8 => 'GT3', 9 => 'GTC', 10 => 'GT3', 11 => 'GT3', 12 => 'GT3', 13 => 'GT3',
-        14 => 'GT3', 15 => 'GT3', 16 => 'GT3', 17 => 'GT3', 18 => 'GTC', 19 => 'GT3',
-        20 => 'GT3', 21 => 'GT3', 22 => 'GT3', 23 => 'GT3', 24 => 'GT3', 25 => 'GT3',
-        26 => 'GT3', 27 => 'GTC', 28 => 'TCX', 29 => 'GTC', 30 => 'GTC', 31 => 'GT3',
-        32 => 'GT3', 33 => 'GT3', 34 => 'GT3', 35 => 'GT3', 36 => 'GT3',
-        50 => 'GT4', 51 => 'GT4', 52 => 'GT4', 53 => 'GT4', 55 => 'GT4', 56 => 'GT4',
-        57 => 'GT4', 58 => 'GT4', 59 => 'GT4', 60 => 'GT4', 61 => 'GT4',
-        80 => 'GT2', 82 => 'GT2', 83 => 'GT2', 84 => 'GT2', 85 => 'GT2', 86 => 'GT2',
-    ];
-
-    public static function accCarName(?int $modelId): ?string
-    {
-        if ($modelId === null) return null;
-        return self::ACC_CARS[$modelId] ?? 'Car #' . $modelId;
-    }
-
-    public static function accCarClass(?int $modelId): ?string
-    {
-        if ($modelId === null) return null;
-        return self::ACC_CAR_CLASSES[$modelId] ?? null;
-    }
-
-    /** Reverse lookup used to backfill car_class on rows imported before that column existed. */
-    public static function accCarClassFromName(?string $vehicle): ?string
-    {
-        if ($vehicle === null) return null;
-        $modelId = array_search($vehicle, self::ACC_CARS, true);
-        return $modelId === false ? null : self::accCarClass($modelId);
-    }
-
     protected function casts(): array
     {
         return [
-            'fastest_lap'   => 'boolean',
-            'dnf'           => 'boolean',
-            'dns'           => 'boolean',
-            'dsq'           => 'boolean',
-            'dc'            => 'boolean',
+            'fastest_lap' => 'boolean',
+            'dnf' => 'boolean',
+            'dns' => 'boolean',
+            'dsq' => 'boolean',
+            'dc' => 'boolean',
             'rating_before' => 'decimal:4',
-            'rating_after'  => 'decimal:4',
-            'elo_change'    => 'decimal:4',
-            'sof'           => 'decimal:2',
-            'sr_change'     => 'decimal:4',
+            'rating_after' => 'decimal:4',
+            'elo_change' => 'decimal:4',
+            'sof' => 'decimal:2',
+            'sr_change' => 'decimal:4',
         ];
     }
 
@@ -144,16 +53,16 @@ class RaceResult extends Model
      * races (import creates a row per driver, but they share identical car-level stats).
      * Non-endurance races pass through unchanged. Preserves the input's existing order.
      *
-     * @param  \Illuminate\Support\Collection<int, self>  $results
-     * @return \Illuminate\Support\Collection<int, object{result: self, label: string, sub: ?string}>
+     * @param  Collection<int, self>  $results
+     * @return Collection<int, object{result: self, label: string, sub: ?string}>
      */
-    public static function groupedByCar(\Illuminate\Support\Collection $results, Race $race): \Illuminate\Support\Collection
+    public static function groupedByCar(Collection $results, Race $race): Collection
     {
-        if (!$race->is_endurance) {
+        if (! $race->is_endurance) {
             return $results->map(fn (self $r) => (object) [
                 'result' => $r,
-                'label'  => $r->displayName(),
-                'sub'    => null,
+                'label' => $r->displayName(),
+                'sub' => null,
             ]);
         }
 
@@ -162,20 +71,20 @@ class RaceResult extends Model
         // livery slot, renumbered mid-event), which used to make team names appear to show
         // up "randomly". The registration's team_entry_id is authoritative regardless.
         $teamEntryIdByUserId = $race->registrations->whereNotNull('team_entry_id')->pluck('team_entry_id', 'user_id');
-        $teamEntriesById     = $race->teamEntries->keyBy('id');
-        $teamByCarNumber     = $race->teamEntries->keyBy('car_number');
+        $teamEntriesById = $race->teamEntries->keyBy('id');
+        $teamByCarNumber = $race->teamEntries->keyBy('car_number');
 
         return $results->groupBy('car_number')->map(function ($group) use ($teamEntryIdByUserId, $teamEntriesById, $teamByCarNumber) {
             $primary = $group->first();
-            $names   = $group->map->displayName()->implode(' / ');
+            $names = $group->map->displayName()->implode(' / ');
 
             $teamEntryId = $group->map(fn ($r) => $teamEntryIdByUserId->get($r->user_id))->filter()->first();
-            $team        = $teamEntryId ? $teamEntriesById->get($teamEntryId) : $teamByCarNumber->get($primary->car_number);
+            $team = $teamEntryId ? $teamEntriesById->get($teamEntryId) : $teamByCarNumber->get($primary->car_number);
 
             return (object) [
                 'result' => $primary,
-                'label'  => $team?->team?->name ?? $names,
-                'sub'    => $team ? $names : null,
+                'label' => $team?->team?->name ?? $names,
+                'sub' => $team ? $names : null,
             ];
         })->values();
     }
@@ -187,10 +96,10 @@ class RaceResult extends Model
      * DNF keeps its imported position since it still counts toward classification (see
      * User::raceStats()).
      *
-     * @param  \Illuminate\Support\Collection<int, self>  $results
-     * @return \Illuminate\Support\Collection<int, int>
+     * @param  Collection<int, self>  $results
+     * @return Collection<int, int>
      */
-    public static function classifiedPositions(\Illuminate\Support\Collection $results): \Illuminate\Support\Collection
+    public static function classifiedPositions(Collection $results): Collection
     {
         return $results->where('dns', false)->where('dsq', false)
             ->sortBy('position')
@@ -209,36 +118,38 @@ class RaceResult extends Model
      * Rows are cloned per group (not mutated in place) — the same result appears in both the
      * "Overall" group and its own class group, each needing a different ->pos.
      *
-     * @param  \Illuminate\Support\Collection<int, object{result: self, label: string, sub: ?string}>  $groupedRows
-     * @return \Illuminate\Support\Collection<int, object{label: ?string, color: ?string, rows: \Illuminate\Support\Collection}>
+     * @param  Collection<int, object{result: self, label: string, sub: ?string}>  $groupedRows
+     * @return Collection<int, object{label: ?string, color: ?string, rows: Collection}>
      */
-    public static function classGroups(\Illuminate\Support\Collection $groupedRows, Race $race): \Illuminate\Support\Collection
+    public static function classGroups(Collection $groupedRows, Race $race): Collection
     {
         $applyPositions = function ($rows) {
             $positions = self::classifiedPositions($rows->pluck('result'));
+
             return $rows->map(function ($row) use ($positions) {
-                $clone      = clone $row;
+                $clone = clone $row;
                 $clone->pos = $positions->get($row->result->id);
+
                 return $clone;
             })->values();
         };
 
-        if (!$race->is_multiclass || $race->raceClasses->isEmpty()) {
+        if (! $race->is_multiclass || $race->raceClasses->isEmpty()) {
             return collect([(object) [
                 'label' => null,
                 'color' => null,
-                'rows'  => $applyPositions($groupedRows),
+                'rows' => $applyPositions($groupedRows),
             ]]);
         }
 
         $overall = (object) [
             'label' => 'Overall',
             'color' => null,
-            'rows'  => $applyPositions($groupedRows),
+            'rows' => $applyPositions($groupedRows),
         ];
 
         $classes = $race->raceClasses->sortBy('sort_order')->values();
-        $groups  = $classes->map(function (RaceClass $class) use ($groupedRows, $applyPositions) {
+        $groups = $classes->map(function (RaceClass $class) use ($groupedRows, $applyPositions) {
             $rows = $groupedRows->filter(
                 fn ($row) => $row->result->car_class && $class->car_class
                     && strtoupper($row->result->car_class) === strtoupper($class->car_class)
@@ -247,18 +158,18 @@ class RaceResult extends Model
             return (object) [
                 'label' => $class->name,
                 'color' => $class->color,
-                'rows'  => $applyPositions($rows),
+                'rows' => $applyPositions($rows),
             ];
         });
 
         $matchedIds = $groups->flatMap(fn ($g) => $g->rows->pluck('result.id'));
-        $leftover   = $groupedRows->reject(fn ($row) => $matchedIds->contains($row->result->id))->values();
+        $leftover = $groupedRows->reject(fn ($row) => $matchedIds->contains($row->result->id))->values();
 
         if ($leftover->isNotEmpty()) {
             $groups->push((object) [
                 'label' => 'Other',
                 'color' => null,
-                'rows'  => $applyPositions($leftover),
+                'rows' => $applyPositions($leftover),
             ]);
         }
 
@@ -272,7 +183,7 @@ class RaceResult extends Model
         }
         $minutes = intdiv($ms, 60000);
         $seconds = intdiv($ms % 60000, 1000);
-        $millis  = $ms % 1000;
+        $millis = $ms % 1000;
 
         return $minutes > 0
             ? sprintf('%d:%02d.%03d', $minutes, $seconds, $millis)

@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\RaceResult;
-
 // Turns a raw ACC session-result JSON export into the detailed per-lap/per-sector
 // stats the aggregate `race_results` rows don't carry (used by the race results
 // page's stats tabs — best laps, sectors, consistency, lap-by-lap, penalties).
@@ -13,12 +11,13 @@ class AccResultsParser
 
     public function __construct(?AccResultImportService $importService = null)
     {
-        $this->importService = $importService ?? new AccResultImportService();
+        $this->importService = $importService ?? new AccResultImportService;
     }
 
-    public function parse(string $path): array
+    // $game picks the car-ID catalogue (console and PC number their cars differently).
+    public function parse(string $path, string $game = 'acc'): array
     {
-        if (!is_file($path)) {
+        if (! is_file($path)) {
             return $this->empty();
         }
 
@@ -31,32 +30,32 @@ class AccResultsParser
 
         $session = $this->extractRaceSession(json_decode($decoded, true));
 
-        if (!$session) {
+        if (! $session) {
             return $this->empty();
         }
 
-        $lines             = $session['sessionResult']['leaderBoardLines'] ?? [];
-        $allLaps           = $session['laps'] ?? [];
-        $penalties         = $session['penalties'] ?? [];
+        $lines = $session['sessionResult']['leaderBoardLines'] ?? [];
+        $allLaps = $session['laps'] ?? [];
+        $penalties = $session['penalties'] ?? [];
         $postRacePenalties = $session['post_race_penalties'] ?? [];
 
-        $leaderboard = $this->buildLeaderboard($lines, $allLaps);
+        $leaderboard = $this->buildLeaderboard($lines, $allLaps, $game);
         $bestSectors = $this->overallBestSectors($leaderboard);
         $leaderboard = $this->markPurpleSectors($leaderboard, $bestSectors);
 
         $fastestLaps = array_filter(array_column($leaderboard, 'bestLap'));
 
         return [
-            'sessionType'         => $session['sessionType'] ?? null,
-            'trackName'           => $session['trackName'] ?? null,
-            'serverName'          => $session['serverName'] ?? null,
-            'leaderboard'         => $leaderboard,
-            'laps'                => $allLaps,
-            'penalties'           => $this->parsePenalties($penalties, $lines),
+            'sessionType' => $session['sessionType'] ?? null,
+            'trackName' => $session['trackName'] ?? null,
+            'serverName' => $session['serverName'] ?? null,
+            'leaderboard' => $leaderboard,
+            'laps' => $allLaps,
+            'penalties' => $this->parsePenalties($penalties, $lines),
             'post_race_penalties' => $this->parsePenalties($postRacePenalties, $lines),
-            'bestOverallSectors'  => $bestSectors,
-            'fastestOverallLap'   => $fastestLaps ? min($fastestLaps) : null,
-            'leaderLapCount'      => $leaderboard[0]['lapCount'] ?? 0,
+            'bestOverallSectors' => $bestSectors,
+            'fastestOverallLap' => $fastestLaps ? min($fastestLaps) : null,
+            'leaderLapCount' => $leaderboard[0]['lapCount'] ?? 0,
         ];
     }
 
@@ -74,7 +73,7 @@ class AccResultsParser
     // handles when saving RaceResult rows. We only care about the race ('R') session.
     private function extractRaceSession(?array $data): ?array
     {
-        if (!$data) {
+        if (! $data) {
             return null;
         }
 
@@ -95,16 +94,16 @@ class AccResultsParser
         return null;
     }
 
-    private function buildLeaderboard(array $lines, array $allLaps): array
+    private function buildLeaderboard(array $lines, array $allLaps, string $game): array
     {
         $leaderTotal = null;
-        $result      = [];
+        $result = [];
 
         foreach ($lines as $index => $line) {
-            $car     = $line['car'] ?? [];
-            $timing  = $line['timing'] ?? [];
-            $carId   = $car['carId'] ?? $index;
-            $driver  = ($car['drivers'] ?? [])[0] ?? [];
+            $car = $line['car'] ?? [];
+            $timing = $line['timing'] ?? [];
+            $carId = $car['carId'] ?? $index;
+            $driver = ($car['drivers'] ?? [])[0] ?? [];
 
             $totalTime = (int) ($timing['totalTime'] ?? 0);
             if ($index === 0) {
@@ -122,24 +121,24 @@ class AccResultsParser
             ));
 
             $bestSplits = $timing['bestSplits'] ?? [null, null, null];
-            $bestLap    = (int) ($timing['bestLap'] ?? 0) ?: null;
+            $bestLap = (int) ($timing['bestLap'] ?? 0) ?: null;
 
             $result[] = [
-                'position'        => $index + 1,
-                'carId'           => $carId,
-                'firstName'       => $driver['firstName'] ?? '',
-                'lastName'        => $driver['lastName'] ?? '',
-                'shortName'       => $driver['shortName'] ?? '',
-                'playerId'        => $driver['playerId'] ?? null,
-                'carModel'        => $car['carModel'] ?? null,
-                'carName'         => RaceResult::accCarName($car['carModel'] ?? null),
-                'bestLap'         => $bestLap,
-                'bestSplits'      => $bestSplits,
-                'totalTime'       => $totalTime ?: null,
-                'lapCount'        => (int) ($timing['lapCount'] ?? 0),
-                'gap'             => $index === 0 ? 0 : max(0, $totalTime - $leaderTotal),
-                'allLaps'         => $driverLaps,
-                'consistency'     => $this->consistency($validLaps),
+                'position' => $index + 1,
+                'carId' => $carId,
+                'firstName' => $driver['firstName'] ?? '',
+                'lastName' => $driver['lastName'] ?? '',
+                'shortName' => $driver['shortName'] ?? '',
+                'playerId' => $driver['playerId'] ?? null,
+                'carModel' => $car['carModel'] ?? null,
+                'carName' => AccCarCatalog::name($car['carModel'] ?? null, $game),
+                'bestLap' => $bestLap,
+                'bestSplits' => $bestSplits,
+                'totalTime' => $totalTime ?: null,
+                'lapCount' => (int) ($timing['lapCount'] ?? 0),
+                'gap' => $index === 0 ? 0 : max(0, $totalTime - $leaderTotal),
+                'allLaps' => $driverLaps,
+                'consistency' => $this->consistency($validLaps),
                 'theoreticalBest' => $this->theoreticalBest($driverLaps),
             ];
         }
@@ -149,19 +148,19 @@ class AccResultsParser
 
     private function consistency(array $validLaps): ?array
     {
-        if (!$validLaps) {
+        if (! $validLaps) {
             return null;
         }
 
         $times = array_map(fn ($lap) => (int) $lap['laptime'], $validLaps);
-        $best  = min($times);
-        $avg   = array_sum($times) / count($times);
+        $best = min($times);
+        $avg = array_sum($times) / count($times);
 
         return [
-            'bestLap'       => $best,
-            'avgLap'        => (int) round($avg),
-            'worstLap'      => max($times),
-            'delta'         => $best > 0 ? round((($avg - $best) / $best) * 100, 2) : null,
+            'bestLap' => $best,
+            'avgLap' => (int) round($avg),
+            'worstLap' => max($times),
+            'delta' => $best > 0 ? round((($avg - $best) / $best) * 100, 2) : null,
             'validLapCount' => count($times),
         ];
     }
@@ -218,19 +217,19 @@ class AccResultsParser
     {
         $namesByCarId = [];
         foreach ($lines as $line) {
-            $carId  = $line['car']['carId'] ?? null;
+            $carId = $line['car']['carId'] ?? null;
             $driver = ($line['car']['drivers'] ?? [])[0] ?? [];
-            $namesByCarId[$carId] = trim(($driver['firstName'] ?? '') . ' ' . ($driver['lastName'] ?? ''));
+            $namesByCarId[$carId] = trim(($driver['firstName'] ?? '').' '.($driver['lastName'] ?? ''));
         }
 
         return array_values(array_map(fn ($p) => [
-            'carId'          => $p['carId'] ?? null,
-            'driverName'     => $namesByCarId[$p['carId'] ?? null] ?? 'Unknown',
-            'reason'         => $p['reason'] ?? null,
-            'penalty'        => $p['penalty'] ?? null,
-            'penaltyValue'   => $p['penaltyValue'] ?? null,
+            'carId' => $p['carId'] ?? null,
+            'driverName' => $namesByCarId[$p['carId'] ?? null] ?? 'Unknown',
+            'reason' => $p['reason'] ?? null,
+            'penalty' => $p['penalty'] ?? null,
+            'penaltyValue' => $p['penaltyValue'] ?? null,
             'violationInLap' => $p['violationInLap'] ?? null,
-            'clearedInLap'   => $p['clearedInLap'] ?? null,
+            'clearedInLap' => $p['clearedInLap'] ?? null,
         ], $penalties));
     }
 
@@ -242,7 +241,7 @@ class AccResultsParser
 
         $minutes = intdiv($ms, 60000);
         $seconds = intdiv($ms % 60000, 1000);
-        $millis  = $ms % 1000;
+        $millis = $ms % 1000;
 
         return $minutes > 0
             ? sprintf('%d:%02d.%03d', $minutes, $seconds, $millis)
@@ -257,10 +256,10 @@ class AccResultsParser
             return '—';
         }
 
-        $hours   = intdiv($ms, 3600000);
+        $hours = intdiv($ms, 3600000);
         $minutes = intdiv($ms % 3600000, 60000);
         $seconds = intdiv($ms % 60000, 1000);
-        $millis  = $ms % 1000;
+        $millis = $ms % 1000;
 
         return $hours > 0
             ? sprintf('%d:%02d:%02d.%03d', $hours, $minutes, $seconds, $millis)
