@@ -163,7 +163,7 @@ class AccResultImportService
                     continue;
                 }
 
-                $driverName = trim($driver['lastName'] ?? '');
+                $driverName = AccServerConfigService::driverDisplayName($driver);
                 $user = $usersByPlatformId->get($playerId);
 
                 RaceResult::updateOrCreate(

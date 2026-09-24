@@ -16,6 +16,7 @@ use App\Models\RaceRegistration;
 use App\Models\RaceTeamEntry;
 use App\Models\User;
 use App\Rules\PracticeWindowNotOverlapping;
+use App\Services\AccServerConfigService;
 use App\Services\Contracts\ServerConfigGenerator;
 use App\Services\FtpService;
 use App\Services\PracticeServer\PracticeServerSessionManager;
@@ -126,7 +127,7 @@ class RaceController extends Controller
                     continue;
                 }
                 $playerId = $driver['playerID'] ?? null;
-                $name = trim(($driver['firstName'] ?? '').' '.($driver['lastName'] ?? ''));
+                $name = AccServerConfigService::driverDisplayName($driver);
                 $entrylistDrivers[] = [
                     'name' => $name ?: 'Unknown',
                     'player_id' => $playerId,
@@ -184,7 +185,7 @@ class RaceController extends Controller
                 'drivers' => [
                     [
                         'firstName' => '',
-                        'lastName' => $user->name ?? '',
+                        'lastName' => AccServerConfigService::entryLastName($user),
                         'shortName' => $shortName,
                         'playerID' => $user->playerIdFor($race->game) ?? '',
                         'driverCategory' => $user->ratingClass($race->game),

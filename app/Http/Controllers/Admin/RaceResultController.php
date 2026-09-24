@@ -9,6 +9,7 @@ use App\Models\Race;
 use App\Models\RaceResult;
 use App\Models\User;
 use App\Services\AccResultImportService;
+use App\Services\AccServerConfigService;
 use App\Services\AuditLogger;
 use App\Services\FtpService;
 use App\Services\RatingService;
@@ -95,7 +96,7 @@ class RaceResultController extends Controller
                     continue;
                 }
 
-                $name = trim(($driver['firstName'] ?? '').' '.($driver['lastName'] ?? ''));
+                $name = AccServerConfigService::driverDisplayName($driver);
                 $entrylistDnsCandidates->push([
                     'player_id' => $playerId,
                     'name' => $name ?: 'Unknown',

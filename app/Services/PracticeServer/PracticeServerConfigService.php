@@ -174,7 +174,6 @@ class PracticeServerConfigService
                     'ballastKg' => 0,
                     'forcedCarModel' => $teamEntry?->car_model ?? -1,
                     'overrideDriverInfo' => 1,
-                    'teamName' => $teamEntry?->team?->name ?? '',
                 ];
             } else {
                 $user = $reg->user;
@@ -189,7 +188,7 @@ class PracticeServerConfigService
                 $entries[] = [
                     'drivers' => [[
                         'firstName' => '',
-                        'lastName' => $user->name ?? '',
+                        'lastName' => AccServerConfigService::entryLastName($user),
                         'shortName' => mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3)),
                         'playerID' => $playerId,
                         'driverCategory' => $user->ratingClass($race->game),
@@ -199,7 +198,6 @@ class PracticeServerConfigService
                     'ballastKg' => 0,
                     'forcedCarModel' => is_numeric($user->car_model) ? (int) $user->car_model : -1,
                     'overrideDriverInfo' => 1,
-                    'teamName' => $this->soloTeamName($user),
                 ];
             }
         }
@@ -213,17 +211,5 @@ class PracticeServerConfigService
             entryCount: count($entries),
             skippedCount: $skipped,
         );
-    }
-
-    // Same rule as AccServerConfigService::soloTeamName() -- a solo driver's
-    // in-game team name should reflect the RacingTeam they actually belong
-    // to (owned team first, else a team they're a member of); the free-text
-    // personal "Team / Quote" field is only a fallback for drivers with no
-    // RacingTeam at all.
-    private function soloTeamName(User $user): string
-    {
-        $team = $user->allRacingTeams()->first();
-
-        return $team?->name ?? $user->team ?? '';
     }
 }

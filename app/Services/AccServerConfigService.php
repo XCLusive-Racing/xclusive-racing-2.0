@@ -57,7 +57,6 @@ class AccServerConfigService implements ServerConfigGenerator
                     'ballastKg' => 0,
                     'forcedCarModel' => -1,
                     'overrideDriverInfo' => 1,
-                    'teamName' => $teamEntry?->team?->name ?? '',
                 ];
             } else {
                 // Solo driver
@@ -68,7 +67,7 @@ class AccServerConfigService implements ServerConfigGenerator
                     'drivers' => [
                         [
                             'firstName' => '',
-                            'lastName' => $user->name ?? '',
+                            'lastName' => self::entryLastName($user),
                             'shortName' => $shortName,
                             'playerID' => $user->playerIdFor($race->game) ?? '',
                             'driverCategory' => $user->ratingClass($race->game),
@@ -79,7 +78,6 @@ class AccServerConfigService implements ServerConfigGenerator
                     'ballastKg' => 0,
                     'forcedCarModel' => -1,
                     'overrideDriverInfo' => 1,
-                    'teamName' => $this->soloTeamName($user),
                 ];
             }
         }
@@ -93,18 +91,25 @@ class AccServerConfigService implements ServerConfigGenerator
         ];
     }
 
-    // A solo driver's in-game team name should reflect the RacingTeam they
-    // actually belong to (owned team first, else whichever team they're a
-    // member of) -- most drivers never bother filling in the free-text
-    // "Team / Quote" profile field (open to everyone, max 16 chars), so relying on
-    // that alone left the name blank for the vast majority of team members.
-    // The personal quote is kept only as a fallback for drivers with no
-    // RacingTeam at all.
-    private function soloTeamName(User $user): string
+    // A solo driver's in-game name tag: their name, and their "Team / Quote" profile
+    // field on a second line under it. ACC renders the newline inside lastName as two
+    // lines -- this is the only way to get that second line; teamName is not an ACC
+    // entrylist field (not in the server handbook) and the server ignores it.
+    public static function entryLastName(User $user): string
     {
-        $team = $user->allRacingTeams()->first();
+        $name = $user->name ?? '';
+        $quote = trim((string) $user->team);
 
-        return $team?->name ?? $user->team ?? '';
+        return $quote !== '' ? $name."\n".$quote : $name;
+    }
+
+    // Reverse of entryLastName() for a driver read back from an entrylist or results
+    // file: just the driver's name, without the Team / Quote line.
+    public static function driverDisplayName(array $driver): string
+    {
+        $full = trim(($driver['firstName'] ?? '').' '.($driver['lastName'] ?? ''));
+
+        return trim(strtok($full, "\n") ?: '');
     }
 
     // ACC's dedicated server rejects an entrylist outright ("The payload is

@@ -126,8 +126,10 @@ class AccResultsParser
             $result[] = [
                 'position' => $index + 1,
                 'carId' => $carId,
-                'firstName' => $driver['firstName'] ?? '',
-                'lastName' => $driver['lastName'] ?? '',
+                // Name only -- lastName can carry the Team / Quote line after a newline
+                // (AccServerConfigService::entryLastName()).
+                'firstName' => '',
+                'lastName' => AccServerConfigService::driverDisplayName($driver),
                 'shortName' => $driver['shortName'] ?? '',
                 'playerId' => $driver['playerId'] ?? null,
                 'carModel' => $car['carModel'] ?? null,
@@ -219,7 +221,7 @@ class AccResultsParser
         foreach ($lines as $line) {
             $carId = $line['car']['carId'] ?? null;
             $driver = ($line['car']['drivers'] ?? [])[0] ?? [];
-            $namesByCarId[$carId] = trim(($driver['firstName'] ?? '').' '.($driver['lastName'] ?? ''));
+            $namesByCarId[$carId] = AccServerConfigService::driverDisplayName($driver);
         }
 
         return array_values(array_map(fn ($p) => [
