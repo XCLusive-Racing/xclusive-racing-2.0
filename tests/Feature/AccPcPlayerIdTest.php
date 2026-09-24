@@ -107,6 +107,30 @@ class AccPcPlayerIdTest extends TestCase
         $this->assertSame($user->id, $result->user_id);
     }
 
+    public function test_pc_registration_requires_a_steam_id(): void
+    {
+        $race = $this->makeRace('ac');
+        $psnUser = User::factory()->create(['platform' => 'ps5', 'platform_id' => 'PSN-1']);
+
+        $this->actingAs($psnUser)->post(route('events.register', $race))
+            ->assertSessionHas('error', User::STEAM_REQUIRED_MESSAGE);
+        $this->assertFalse(RaceRegistration::where('user_id', $psnUser->id)->exists());
+
+        $linkedUser = $this->xboxUserWithSteam();
+        $this->actingAs($linkedUser)->post(route('events.register', $race))
+            ->assertSessionHas('success');
+        $this->assertTrue(RaceRegistration::where('user_id', $linkedUser->id)->exists());
+    }
+
+    public function test_console_registration_does_not_need_steam(): void
+    {
+        $race = $this->makeRace('acc');
+        $psnUser = User::factory()->create(['platform' => 'ps5', 'platform_id' => 'PSN-1']);
+
+        $this->actingAs($psnUser)->post(route('events.register', $race))
+            ->assertSessionHas('success');
+    }
+
     public function test_primary_platform_id_wins_over_a_linked_account(): void
     {
         $owner = User::factory()->create(['platform' => 'steam', 'platform_id' => 'S76561198000000003']);

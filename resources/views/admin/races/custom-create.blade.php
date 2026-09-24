@@ -532,6 +532,11 @@ $tagsConfig = json_encode([
 </form>
 
 <script>
+// ACC Console and ACC PC are the same game (same tracks), only the platform differs.
+function isAccGame(game) {
+    return game === 'acc' || game === 'ac';
+}
+
 // ── Stepper ─────────────────────────────────────────────────────────────────
 (function () {
     const TOTAL   = 4;
@@ -650,7 +655,7 @@ $tagsConfig = json_encode([
     function updatePreview() {
         const game     = ($('cr-game')         || {}).value || '';
         const _tSel = $('cr-track-select'), _tTxt = $('cr-track-text');
-        const track    = (game === 'acc' ? (_tSel && _tSel.value) : (_tTxt && _tTxt.value)) || '';
+        const track    = (isAccGame(game) ? (_tSel && _tSel.value) : (_tTxt && _tTxt.value)) || '';
         const carClass = ($('cr-car-class')    || {}).value || '';
         const pracMin  = ($('cr-practice')     || {}).value || '';
         const qualiMin = ($('cr-qualifying')   || {}).value || '';
@@ -791,7 +796,7 @@ $tagsConfig = json_encode([
 
     function updateTrackInput() {
         const game = gameEl ? gameEl.value : '';
-        if (game === 'acc') {
+        if (isAccGame(game)) {
             trackSelect.name  = 'track';
             trackText.name    = '';
             trackSelect.style.display = '';
@@ -807,7 +812,7 @@ $tagsConfig = json_encode([
 
     function getTrack() {
         const game = gameEl ? gameEl.value : '';
-        return game === 'acc'
+        return isAccGame(game)
             ? (trackSelect ? trackSelect.value : '')
             : (trackText  ? trackText.value   : '');
     }

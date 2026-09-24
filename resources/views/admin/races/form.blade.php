@@ -951,6 +951,11 @@ $mcExisting = $isEdit
 </form>
 
 <script>
+// ACC Console and ACC PC are the same game (same tracks), only the platform differs.
+function isAccGame(game) {
+    return game === 'acc' || game === 'ac';
+}
+
 (function () {
     // ── Mode switching ──────────────────────────────────────────────────────
     const form            = document.getElementById('ce-form');
@@ -1118,7 +1123,7 @@ $mcExisting = $isEdit
     }
 
     function updateTrackInput(game) {
-        if (game === 'acc') {
+        if (isAccGame(game)) {
             trackSelect.name  = 'track';
             trackText.name    = '';
             trackSelect.style.display = '';
@@ -1174,7 +1179,7 @@ $mcExisting = $isEdit
     if (oldGame) {
         updateFormats(oldGame);
         updateTrackInput(oldGame);
-        if (oldGame === 'acc') updateTrackHint(trackSelect.value);
+        if (isAccGame(oldGame)) updateTrackHint(trackSelect.value);
     }
 
     window.__ceAllowNoFormat = allowNoFormat;
@@ -1355,7 +1360,7 @@ $mcExisting = $isEdit
         const fmtOpt    = (fmtEl && fmtId) ? fmtEl.options[fmtEl.selectedIndex] : null;
         const fmtName   = fmtOpt  ? fmtOpt.textContent.trim() : '';
         const fmtData   = (formats[game] || []).find(f => String(f.id) === fmtId);
-        const track     = (game === 'acc' && trackSelEl && trackSelEl.style.display !== 'none')
+        const track     = (isAccGame(game) && trackSelEl && trackSelEl.style.display !== 'none')
                             ? (trackSelEl.value || '')
                             : (trackTxtEl ? trackTxtEl.value : '');
         const weather   = weatherSel  ? weatherSel.value  : '';

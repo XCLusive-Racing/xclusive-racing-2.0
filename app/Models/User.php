@@ -22,6 +22,8 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
 
+    public const STEAM_REQUIRED_MESSAGE = 'ACC PC events need a Steam account. Connect Steam on your profile to register.';
+
     /**
      * Get the attributes that should be cast.
      *
@@ -110,8 +112,16 @@ class User extends Authenticatable
     // the leaderboard) against an SR/rating requirement. Returns an error message if they
     // don't qualify, or null if they do. A game with no tracked rating can't be checked,
     // so requirements are skipped rather than blocking everyone.
+    //
+    // Also the one place every registration path (solo, team, championship) asks, so it
+    // doubles as the platform check: an ACC PC server can only seat a driver it knows by
+    // Steam ID (playerIdFor()), so a PC registration without one would be a dead entry.
     public function requirementFailure(string $game, ?string $srRequirement, ?string $minRating, ?string $maxRating = null): ?string
     {
+        if ($game === 'ac' && ! $this->playerIdFor($game)) {
+            return self::STEAM_REQUIRED_MESSAGE;
+        }
+
         $eloColumn = self::eloColumn($game);
         if (! $eloColumn) {
             return null;
