@@ -77,7 +77,8 @@ class ProfileTeamQuoteTest extends TestCase
     }
 
     // A team entry (driver swap / endurance) shows the team the car races for under every
-    // driver's name instead of their personal quote -- long team names are not shortened.
+    // driver's name instead of their personal quote, cut at 24 characters (solo quotes are
+    // already capped at 16 by the profile form).
     public function test_team_entry_drivers_get_their_team_name_under_their_name(): void
     {
         $race = Race::create([
@@ -95,6 +96,6 @@ class ProfileTeamQuoteTest extends TestCase
 
         $lastName = app(AccServerConfigService::class)->entryList($race)['entries'][0]['drivers'][0]['lastName'];
 
-        $this->assertSame("DeEchteOlle\nVery Long Endurance Team Name Racing", $lastName);
+        $this->assertSame("DeEchteOlle\nVery Long Endurance Team", $lastName);
     }
 }
