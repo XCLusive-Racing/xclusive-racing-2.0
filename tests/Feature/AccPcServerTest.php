@@ -9,7 +9,9 @@ use App\Models\League;
 use App\Models\Race;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\AccResultImportService;
 use App\Services\AccServerConfigService;
+use App\Services\FtpService;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -125,6 +127,21 @@ class AccPcServerTest extends TestCase
 
         $this->assertSame(0, $config->settings($this->makeRace('ac'), $this->makeServer('pc'))['isCrossplayServer']);
         $this->assertSame(1, $config->settings($this->makeRace('acc'), $this->makeServer('console'))['isCrossplayServer']);
+    }
+
+    public function test_config_json_is_utf16le_for_pc_servers_and_untouched_for_console(): void
+    {
+        $json = json_encode(['serverName' => 'XCL SERVER 4 - PC', 'note' => 'Huracán']);
+
+        $pc = FtpService::encodeConfigFor($this->makeServer('pc'), $json);
+        $this->assertSame("\xFF\xFE", substr($pc, 0, 2));
+        $this->assertSame($json, mb_convert_encoding(substr($pc, 2), 'UTF-8', 'UTF-16LE'));
+        // Round-trips through the same decoder the result import uses for server files.
+        [$decoded, $error] = app(AccResultImportService::class)->decodeContent($pc, 'settings.json');
+        $this->assertNull($error);
+        $this->assertSame($json, $decoded);
+
+        $this->assertSame($json, FtpService::encodeConfigFor($this->makeServer('console'), $json));
     }
 
     public function test_server_name_shows_the_platform(): void

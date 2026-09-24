@@ -3,10 +3,12 @@
 namespace App\Services;
 
 use App\Models\FtpServer;
+use Illuminate\Support\Carbon;
 
 class FtpService
 {
     private ?FtpServer $server = null;
+
     private ?string $lastError = null;
 
     public function getLastError(): ?string
@@ -16,13 +18,13 @@ class FtpService
 
     public function connect(FtpServer $server): bool
     {
-        if (!extension_loaded('curl')) {
+        if (! extension_loaded('curl')) {
             return false;
         }
 
-        $ch     = $this->makeCurl($server, rtrim($server->path, '/') . '/');
+        $ch = $this->makeCurl($server, rtrim($server->path, '/').'/');
         $result = curl_exec($ch);
-        $error  = curl_errno($ch);
+        $error = curl_errno($ch);
         curl_close($ch);
 
         if ($error !== 0 || $result === false) {
@@ -30,12 +32,13 @@ class FtpService
         }
 
         $this->server = $server;
+
         return true;
     }
 
     public function listFiles(string $path): array
     {
-        if (!$this->server) {
+        if (! $this->server) {
             return ['json' => [], 'all' => []];
         }
 
@@ -47,7 +50,7 @@ class FtpService
 
         $all = array_values(array_filter(
             array_map('basename', $raw),
-            fn($f) => $f !== '' && $f !== '.' && $f !== '..'
+            fn ($f) => $f !== '' && $f !== '.' && $f !== '..'
         ));
 
         $meta = $this->parseRawList($path);
@@ -56,26 +59,32 @@ class FtpService
         foreach ($all as $filename) {
             $lower = strtolower($filename);
 
-            if (!str_ends_with($lower, '.json')) continue;
-            if (str_contains($lower, '_fp_') || str_ends_with($lower, '_fp.json')) continue;
-            if (str_contains($lower, 'entrylist')) continue;
+            if (! str_ends_with($lower, '.json')) {
+                continue;
+            }
+            if (str_contains($lower, '_fp_') || str_ends_with($lower, '_fp.json')) {
+                continue;
+            }
+            if (str_contains($lower, 'entrylist')) {
+                continue;
+            }
 
             $json[] = [
-                'name'     => $filename,
-                'size'     => $meta[$filename]['size'] ?? null,
+                'name' => $filename,
+                'size' => $meta[$filename]['size'] ?? null,
                 'modified' => $meta[$filename]['modified'] ?? null,
             ];
         }
 
-        usort($json, fn($a, $b) => strcmp($b['name'], $a['name']));
+        usort($json, fn ($a, $b) => strcmp($b['name'], $a['name']));
 
         return ['json' => $json, 'all' => $all];
     }
 
     private function makeCurl(FtpServer $server, string $path): \CurlHandle
     {
-        $path = '/' . ltrim($path, '/');
-        $url  = "ftp://{$server->host}:{$server->port}{$path}";
+        $path = '/'.ltrim($path, '/');
+        $url = "ftp://{$server->host}:{$server->port}{$path}";
 
         $ch = curl_init();
         curl_setopt($ch, \CURLOPT_URL, $url);
@@ -91,16 +100,16 @@ class FtpService
     private function tryList(string $path): ?array
     {
         $candidates = array_unique([
-            rtrim($path, '/') . '/',
-            '/' . ltrim(rtrim($path, '/'), '/') . '/',
+            rtrim($path, '/').'/',
+            '/'.ltrim(rtrim($path, '/'), '/').'/',
             $path,
-            '/' . ltrim($path, '/'),
+            '/'.ltrim($path, '/'),
         ]);
 
         foreach ($candidates as $p) {
-            $ch     = $this->makeCurl($this->server, $p);
+            $ch = $this->makeCurl($this->server, $p);
             $result = curl_exec($ch);
-            $error  = curl_errno($ch);
+            $error = curl_errno($ch);
             curl_close($ch);
 
             if ($error !== 0 || $result === false || trim($result) === '') {
@@ -122,7 +131,9 @@ class FtpService
         $files = [];
         foreach (explode("\n", trim($listing)) as $line) {
             $line = trim($line);
-            if ($line === '' || $line === '.' || $line === '..') continue;
+            if ($line === '' || $line === '.' || $line === '..') {
+                continue;
+            }
 
             if (preg_match('/\s(\S+)\s*$/', $line, $m)) {
                 $files[] = $m[1];
@@ -130,21 +141,22 @@ class FtpService
                 $files[] = $line;
             }
         }
+
         return $files;
     }
 
     private function parseRawList(string $path): array
     {
         $candidates = [
-            '/' . rtrim(ltrim($path, '/'), '/') . '/',
+            '/'.rtrim(ltrim($path, '/'), '/').'/',
             $path,
         ];
 
         $listing = null;
         foreach ($candidates as $p) {
-            $ch     = $this->makeCurl($this->server, $p);
+            $ch = $this->makeCurl($this->server, $p);
             $result = curl_exec($ch);
-            $error  = curl_errno($ch);
+            $error = curl_errno($ch);
             curl_close($ch);
 
             if ($error === 0 && $result !== false && trim($result) !== '') {
@@ -168,16 +180,17 @@ class FtpService
                 $line, $m
             )) {
                 $meta[basename(trim($m[3]))] = [
-                    'size'     => (int) $m[1],
+                    'size' => (int) $m[1],
                     'modified' => trim($m[2]),
                 ];
+
                 continue;
             }
 
             // Windows/IIS style: 05-29-26  02:34PM  45632 filename.json
             if (preg_match('/^(\d{2}-\d{2}-\d{2}\s+\d{2}:\d{2}[AP]M)\s+(\d+)\s+(.+)$/', $line, $m)) {
                 $meta[basename(trim($m[3]))] = [
-                    'size'     => (int) $m[2],
+                    'size' => (int) $m[2],
                     'modified' => trim($m[1]),
                 ];
             }
@@ -188,14 +201,14 @@ class FtpService
 
     public function getFileContent(string $fullPath): string|false
     {
-        if (!$this->server) {
+        if (! $this->server) {
             return false;
         }
 
         $ch = $this->makeCurl($this->server, $fullPath);
         curl_setopt($ch, CURLOPT_TIMEOUT, 60);
         $content = curl_exec($ch);
-        $error   = curl_errno($ch);
+        $error = curl_errno($ch);
         curl_close($ch);
 
         if ($error !== 0 || $content === false) {
@@ -205,17 +218,36 @@ class FtpService
         return $content;
     }
 
+    // Uploads a generated ACC config JSON (entrylist/event/settings/..., bop.json -- also
+    // under a temporary name, as the practice push does before renaming it into place).
+    // The ACC PC dedicated server reads its JSON as UTF-16 LE (the encoding it writes its
+    // own files in), so PC servers get that, with a BOM; console (GPORTAL) servers have
+    // always worked with UTF-8 and keep it. Deliberately separate from uploadFile(): the
+    // file browser uploads arbitrary files as-is and must never be re-encoded.
+    public function uploadConfigFile(string $remotePath, string $content): bool
+    {
+        return $this->uploadFile($remotePath, self::encodeConfigFor($this->server, $content));
+    }
+
+    public static function encodeConfigFor(?FtpServer $server, string $content): string
+    {
+        return $server?->platform === 'pc'
+            ? "\xFF\xFE".mb_convert_encoding($content, 'UTF-16LE', 'UTF-8')
+            : $content;
+    }
+
     public function uploadFile(string $remotePath, string $content): bool
     {
         $this->lastError = null;
 
-        if (!$this->server) {
+        if (! $this->server) {
             $this->lastError = 'Not connected';
+
             return false;
         }
 
-        $path = '/' . ltrim($remotePath, '/');
-        $url  = "ftp://{$this->server->host}:{$this->server->port}{$path}";
+        $path = '/'.ltrim($remotePath, '/');
+        $url = "ftp://{$this->server->host}:{$this->server->port}{$path}";
 
         $fp = fopen('php://temp', 'r+');
         fwrite($fp, $content);
@@ -244,18 +276,18 @@ class FtpService
 
     public function listDirectory(string $path): array
     {
-        if (!$this->server) {
+        if (! $this->server) {
             return [];
         }
 
-        $dirPath    = '/' . ltrim(rtrim($path, '/'), '/') . '/';
+        $dirPath = '/'.ltrim(rtrim($path, '/'), '/').'/';
         $candidates = array_unique([$dirPath, rtrim($dirPath, '/'), $path]);
-        $listing    = null;
+        $listing = null;
 
         foreach ($candidates as $p) {
-            $ch     = $this->makeCurl($this->server, $p);
+            $ch = $this->makeCurl($this->server, $p);
             $result = curl_exec($ch);
-            $error  = curl_errno($ch);
+            $error = curl_errno($ch);
             curl_close($ch);
 
             if ($error === 0 && $result !== false && trim($result) !== '') {
@@ -274,6 +306,7 @@ class FtpService
             if ($a['type'] !== $b['type']) {
                 return $a['type'] === 'dir' ? -1 : 1;
             }
+
             return strcasecmp($a['name'], $b['name']);
         });
 
@@ -282,17 +315,17 @@ class FtpService
 
     public function makeDirectory(string $path): bool
     {
-        return $this->runFtpCommands(['MKD ' . $this->absPath($path)]);
+        return $this->runFtpCommands(['MKD '.$this->absPath($path)]);
     }
 
     public function deleteFile(string $path): bool
     {
-        return $this->runFtpCommands(['DELE ' . $this->absPath($path)]);
+        return $this->runFtpCommands(['DELE '.$this->absPath($path)]);
     }
 
     public function deleteDirectory(string $path): bool
     {
-        return $this->runFtpCommands(['RMD ' . $this->absPath($path)]);
+        return $this->runFtpCommands(['RMD '.$this->absPath($path)]);
     }
 
     public function renameFile(string $from, string $to): bool
@@ -304,9 +337,9 @@ class FtpService
             // Delete the destination first; the leading '*' tells libcurl to
             // ignore this command failing (nothing to delete on the very first
             // push), then the rename lands on a guaranteed-clear path.
-            '*DELE ' . $this->absPath($to),
-            'RNFR ' . $this->absPath($from),
-            'RNTO ' . $this->absPath($to),
+            '*DELE '.$this->absPath($to),
+            'RNFR '.$this->absPath($from),
+            'RNTO '.$this->absPath($to),
         ]);
     }
 
@@ -314,13 +347,14 @@ class FtpService
     {
         $this->lastError = null;
 
-        if (!$this->server) {
+        if (! $this->server) {
             $this->lastError = 'Not connected';
+
             return false;
         }
 
         $url = "ftp://{$this->server->host}:{$this->server->port}/";
-        $ch  = curl_init();
+        $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_USERPWD, "{$this->server->username}:{$this->server->password}");
         curl_setopt($ch, defined('CURLOPT_FTP_USE_PASV') ? CURLOPT_FTP_USE_PASV : 119, true);
@@ -355,11 +389,12 @@ class FtpService
                 $line, $m
             )) {
                 $entries[] = [
-                    'name'     => basename(trim($m[4])),
-                    'type'     => $m[1][0] === 'd' ? 'dir' : 'file',
-                    'size'     => (int) $m[2],
+                    'name' => basename(trim($m[4])),
+                    'type' => $m[1][0] === 'd' ? 'dir' : 'file',
+                    'size' => (int) $m[2],
                     'modified' => trim($m[3]),
                 ];
+
                 continue;
             }
 
@@ -368,11 +403,11 @@ class FtpService
                 '/^(\d{2}-\d{2}-\d{2}\s+\d{2}:\d{2}[AP]M)\s+(<DIR>|\d+)\s+(.+)$/',
                 $line, $m
             )) {
-                $isDir     = $m[2] === '<DIR>';
+                $isDir = $m[2] === '<DIR>';
                 $entries[] = [
-                    'name'     => basename(trim($m[3])),
-                    'type'     => $isDir ? 'dir' : 'file',
-                    'size'     => $isDir ? null : (int) $m[2],
+                    'name' => basename(trim($m[3])),
+                    'type' => $isDir ? 'dir' : 'file',
+                    'size' => $isDir ? null : (int) $m[2],
                     'modified' => trim($m[1]),
                 ];
             }
@@ -383,7 +418,7 @@ class FtpService
 
     private function absPath(string $path): string
     {
-        return '/' . ltrim($path, '/');
+        return '/'.ltrim($path, '/');
     }
 
     public function disconnect(): void
@@ -396,10 +431,10 @@ class FtpService
     // it lines up with the race times they scheduled.
     public static function parseFilename(string $filename): array
     {
-        $name  = pathinfo($filename, PATHINFO_FILENAME);
+        $name = pathinfo($filename, PATHINFO_FILENAME);
         $parts = explode('_', $name);
 
-        $date    = '—';
+        $date = '—';
         $session = 'Unknown';
 
         if (count($parts) >= 3) {
@@ -410,7 +445,7 @@ class FtpService
             if (strlen($datePart) === 6 && is_numeric($datePart)) {
                 try {
                     $hhmm = str_pad(substr($timePart, 0, 4), 4, '0');
-                    $date = \Illuminate\Support\Carbon::createFromFormat('ymd Hi', $datePart . ' ' . $hhmm, 'Europe/Berlin')
+                    $date = Carbon::createFromFormat('ymd Hi', $datePart.' '.$hhmm, 'Europe/Berlin')
                         ->timezone('Europe/London')
                         ->format('d/m/Y H:i T');
                 } catch (\Throwable) {

@@ -153,7 +153,7 @@ class BopController extends Controller
         }
 
         $cfgPath = rtrim($server->cfg_path ?: $server->path, '/');
-        $ok = $ftp->uploadFile($cfgPath.'/bop.json', $json);
+        $ok = $ftp->uploadConfigFile($cfgPath.'/bop.json', $json);
         $ftp->disconnect();
 
         if (! $ok) {

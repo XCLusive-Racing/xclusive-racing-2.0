@@ -1266,7 +1266,7 @@ class RaceController extends Controller
 
         $failed = [];
         foreach ($files as $filename => $content) {
-            if (! $ftp->uploadFile($cfgPath.'/'.$filename, $content)) {
+            if (! $ftp->uploadConfigFile($cfgPath.'/'.$filename, $content)) {
                 $failed[] = $filename;
             }
         }

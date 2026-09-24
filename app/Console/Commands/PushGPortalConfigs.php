@@ -12,7 +12,8 @@ use Illuminate\Support\Facades\Log;
 
 class PushGPortalConfigs extends Command
 {
-    protected $signature   = 'gportal:push-configs';
+    protected $signature = 'gportal:push-configs';
+
     protected $description = 'Auto-push ACC server config to gPortal before a race slot, with safety repush and retry logic';
 
     public function handle(ServerConfigGenerator $config, FtpService $ftp): void
@@ -36,7 +37,7 @@ class PushGPortalConfigs extends Command
             ->whereBetween('slot_time', [$now->copy()->subMinutes(2), $now->copy()->addMinutes(5)])
             ->where(function ($q) use ($now) {
                 $q->whereNull('config_pushed_at')
-                  ->orWhere('config_pushed_at', '<', $now->copy()->subMinutes(5));
+                    ->orWhere('config_pushed_at', '<', $now->copy()->subMinutes(5));
             })
             ->with(['ftpServer' => fn ($q) => $q->withoutTenantScope()])
             ->get();
@@ -49,12 +50,12 @@ class PushGPortalConfigs extends Command
 
         foreach ($races as $race) {
             $server = $race->ftpServer;
-            if (!$server || !$server->active) {
+            if (! $server || ! $server->active) {
                 continue;
             }
 
             $isSafetyPush = $race->config_push_status === 'pushed';
-            $label        = $isSafetyPush ? 'safety-repush' : 'auto-push';
+            $label = $isSafetyPush ? 'safety-repush' : 'auto-push';
 
             Log::info("gPortal {$label}: race #{$race->id} ({$race->title}) → {$server->name}");
 
@@ -62,9 +63,9 @@ class PushGPortalConfigs extends Command
             // server had at save time — if the race is later reassigned to a different
             // server, that override goes stale. Force these two fields fresh every push.
             $freshSettings = $config->settings($race, $server);
-            $settingsData  = $race->configFile('settings.json')
+            $settingsData = $race->configFile('settings.json')
                 ? array_merge(json_decode($race->configFile('settings.json'), true), [
-                    'password'   => $freshSettings['password'],
+                    'password' => $freshSettings['password'],
                     'serverName' => $freshSettings['serverName'],
                 ])
                 : $freshSettings;
@@ -105,20 +106,22 @@ class PushGPortalConfigs extends Command
             }
 
             if ($invalid) {
-                $this->markFailed($race, $label, 'Invalid JSON, push skipped: ' . implode(', ', $invalid));
+                $this->markFailed($race, $label, 'Invalid JSON, push skipped: '.implode(', ', $invalid));
+
                 continue;
             }
 
-            if (!$ftp->connect($server)) {
+            if (! $ftp->connect($server)) {
                 $this->markFailed($race, $label, "Could not connect to {$server->host}:{$server->port}");
+
                 continue;
             }
 
             $cfgPath = rtrim($server->cfg_path ?? '/cfg', '/');
-            $failed  = [];
+            $failed = [];
 
             foreach ($files as $filename => $content) {
-                if (!$ftp->uploadFile("{$cfgPath}/{$filename}", $content)) {
+                if (! $ftp->uploadConfigFile("{$cfgPath}/{$filename}", $content)) {
                     $failed[] = $filename;
                 }
             }
@@ -134,14 +137,14 @@ class PushGPortalConfigs extends Command
             $ftp->disconnect();
 
             if ($failed) {
-                $this->markFailed($race, $label, 'Upload failed: ' . implode(', ', $failed));
+                $this->markFailed($race, $label, 'Upload failed: '.implode(', ', $failed));
             } else {
                 Log::info("gPortal {$label}: success for race #{$race->id}");
 
                 Race::where('id', $race->id)->update([
-                    'config_push_status'   => 'pushed',
-                    'config_push_error'    => null,
-                    'config_pushed_at'     => now(),
+                    'config_push_status' => 'pushed',
+                    'config_push_error' => null,
+                    'config_pushed_at' => now(),
                     'config_push_attempts' => 0,
                 ]);
             }
@@ -153,14 +156,14 @@ class PushGPortalConfigs extends Command
         Log::error("gPortal {$label}: {$error} for race #{$race->id}");
 
         Race::where('id', $race->id)->update([
-            'config_push_status'   => 'failed',
-            'config_push_error'    => $error,
-            'config_pushed_at'     => now(),
+            'config_push_status' => 'failed',
+            'config_push_error' => $error,
+            'config_pushed_at' => now(),
             'config_push_attempts' => DB::raw('config_push_attempts + 1'),
         ]);
 
         $webhook = config('services.discord.webhook_mrs_racewell');
-        if (!$webhook) {
+        if (! $webhook) {
             return;
         }
 
@@ -169,7 +172,7 @@ class PushGPortalConfigs extends Command
                 'content' => "⚠️ **gPortal config push failed** — race #{$race->id} ({$race->title}): {$error}",
             ]);
         } catch (\Throwable $e) {
-            Log::error('gPortal push-failure Discord notify failed: ' . $e->getMessage());
+            Log::error('gPortal push-failure Discord notify failed: '.$e->getMessage());
         }
     }
 }

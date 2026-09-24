@@ -25,26 +25,25 @@ class PushRoundConfigJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
+
     public array $backoff = [30, 120, 300];
 
-    public function __construct(public int $raceId)
-    {
-    }
+    public function __construct(public int $raceId) {}
 
     public function handle(ServerConfigGenerator $config, FtpService $ftp): void
     {
         $race = Race::with(['ftpServer' => fn ($q) => $q->withoutTenantScope()])->find($this->raceId);
 
-        if (!$race || !$race->ftpServer || !$race->ftpServer->active) {
+        if (! $race || ! $race->ftpServer || ! $race->ftpServer->active) {
             return;
         }
 
         $server = $race->ftpServer;
 
         $freshSettings = $config->settings($race, $server);
-        $settingsData  = $race->configFile('settings.json')
+        $settingsData = $race->configFile('settings.json')
             ? array_merge(json_decode($race->configFile('settings.json'), true), [
-                'password'   => $freshSettings['password'],
+                'password' => $freshSettings['password'],
                 'serverName' => $freshSettings['serverName'],
             ])
             : $freshSettings;
@@ -80,20 +79,22 @@ class PushRoundConfigJob implements ShouldQueue
         }
 
         if ($invalid) {
-            $this->markFailed($race, 'Invalid JSON, push skipped: ' . implode(', ', $invalid));
+            $this->markFailed($race, 'Invalid JSON, push skipped: '.implode(', ', $invalid));
+
             return;
         }
 
-        if (!$ftp->connect($server)) {
+        if (! $ftp->connect($server)) {
             $this->markFailed($race, "Could not connect to {$server->host}:{$server->port}");
+
             return;
         }
 
         $cfgPath = rtrim($server->cfg_path ?? '/cfg', '/');
-        $failed  = [];
+        $failed = [];
 
         foreach ($files as $filename => $content) {
-            if (!$ftp->uploadFile("{$cfgPath}/{$filename}", $content)) {
+            if (! $ftp->uploadConfigFile("{$cfgPath}/{$filename}", $content)) {
                 $failed[] = $filename;
             }
         }
@@ -101,16 +102,17 @@ class PushRoundConfigJob implements ShouldQueue
         $ftp->disconnect();
 
         if ($failed) {
-            $this->markFailed($race, 'Upload failed: ' . implode(', ', $failed));
+            $this->markFailed($race, 'Upload failed: '.implode(', ', $failed));
+
             return;
         }
 
         Log::info("Round config push: success for race #{$race->id}");
 
         Race::where('id', $race->id)->update([
-            'config_push_status'   => 'pushed',
-            'config_push_error'    => null,
-            'config_pushed_at'     => now(),
+            'config_push_status' => 'pushed',
+            'config_push_error' => null,
+            'config_pushed_at' => now(),
             'config_push_attempts' => 0,
         ]);
     }
@@ -120,9 +122,9 @@ class PushRoundConfigJob implements ShouldQueue
         Log::error("Round config push: {$error} for race #{$race->id}");
 
         Race::where('id', $race->id)->update([
-            'config_push_status'   => 'failed',
-            'config_push_error'    => $error,
-            'config_pushed_at'     => now(),
+            'config_push_status' => 'failed',
+            'config_push_error' => $error,
+            'config_pushed_at' => now(),
             'config_push_attempts' => DB::raw('config_push_attempts + 1'),
         ]);
     }
@@ -131,12 +133,12 @@ class PushRoundConfigJob implements ShouldQueue
     {
         Race::where('id', $this->raceId)->update([
             'config_push_status' => 'failed',
-            'config_push_error'  => $e->getMessage(),
-            'config_pushed_at'   => now(),
+            'config_push_error' => $e->getMessage(),
+            'config_pushed_at' => now(),
         ]);
 
         $webhook = config('services.discord.webhook_mrs_racewell');
-        if (!$webhook) {
+        if (! $webhook) {
             return;
         }
 
@@ -145,7 +147,7 @@ class PushRoundConfigJob implements ShouldQueue
                 'content' => "⚠️ **Round config push failed** — race #{$this->raceId}: {$e->getMessage()}",
             ]);
         } catch (\Throwable $notifyError) {
-            Log::error('Round config push failure Discord notify failed: ' . $notifyError->getMessage());
+            Log::error('Round config push failure Discord notify failed: '.$notifyError->getMessage());
         }
     }
 }
