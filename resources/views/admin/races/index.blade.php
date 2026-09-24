@@ -50,6 +50,12 @@
                 style="font-size:.72rem;border-radius:6px;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb">
             ACC Console
         </button>
+        <button onclick="filterGame('ACC PC')"
+                id="filter-ac"
+                class="btn btn-sm fw-bold text-uppercase px-3"
+                style="font-size:.72rem;border-radius:6px;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb">
+            ACC PC
+        </button>
         <button onclick="filterGame('Le Mans Ultimate')"
                 id="filter-lmu"
                 class="btn btn-sm fw-bold text-uppercase px-3"
@@ -267,6 +273,7 @@
         const filterIds = {
             '':                 'filter-all',
             'ACC Console':      'filter-acc',
+            'ACC PC':           'filter-ac',
             'Le Mans Ultimate': 'filter-lmu',
             'iRacing':          'filter-iracing',
         };
