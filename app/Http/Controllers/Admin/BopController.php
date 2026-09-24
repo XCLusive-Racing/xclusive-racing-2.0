@@ -195,6 +195,7 @@ class BopController extends Controller
         $now = now();
         $rows = [];
         $skipped = 0;
+        $unknownCars = [];
 
         foreach ($entries as $entry) {
             if (! is_array($entry)) {
@@ -210,6 +211,15 @@ class BopController extends Controller
             }
 
             if (! $carModel) {
+                $skipped++;
+
+                continue;
+            }
+
+            // Same rule as the BOP form (carModelRules()): an ACC name outside the game's
+            // catalogue can never be pushed, so it isn't stored either.
+            if (AccCarCatalog::supports($game) && AccCarCatalog::id($carModel, $game) === null) {
+                $unknownCars[$carModel] = true;
                 $skipped++;
 
                 continue;
@@ -274,6 +284,11 @@ class BopController extends Controller
             $parts[] = "{$skipped} skipped";
         }
 
-        return back()->with('success', 'Import complete: '.implode(', ', $parts).'.');
+        $message = 'Import complete: '.implode(', ', $parts).'.';
+        if ($unknownCars) {
+            $message .= ' Unknown car names (not in the '.Bop::games()[$game].' car list): '.implode(', ', array_keys($unknownCars)).'.';
+        }
+
+        return back()->with('success', $message);
     }
 }

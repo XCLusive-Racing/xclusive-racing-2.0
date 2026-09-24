@@ -93,7 +93,7 @@
                 </div>
                 <div class="col-sm-5">
                     <label class="form-label">Track <span class="text-danger">*</span></label>
-                    @if($championship->game === 'acc')
+                    @if(in_array($championship->game, ['acc', 'ac'], true))
                     <select name="track" class="form-select @error('track') is-invalid @enderror" required>
                         <option value="">Select track…</option>
                         @foreach($accTracks as $trackName)
@@ -220,7 +220,7 @@
     var tableWrap     = document.getElementById('rcb-table-wrap');
     var submitWrap    = document.getElementById('rcb-submit-wrap');
     var submitCount   = document.getElementById('rcb-submit-count');
-    var isAcc         = {{ $championship->game === 'acc' ? 'true' : 'false' }};
+    var isAcc         = {{ in_array($championship->game, ['acc', 'ac'], true) ? 'true' : 'false' }};
 
     var rows = [];
 

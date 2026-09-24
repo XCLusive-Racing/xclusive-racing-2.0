@@ -67,7 +67,7 @@
                 </div>
                 <div class="col-sm-5">
                     <label class="form-label">Track <span class="text-danger">*</span></label>
-                    @if($championship->game === 'acc')
+                    @if(in_array($championship->game, ['acc', 'ac'], true))
                     <select name="track" class="form-select @error('track') is-invalid @enderror" required>
                         <option value="">Select track…</option>
                         @foreach($accTracks as $trackName)

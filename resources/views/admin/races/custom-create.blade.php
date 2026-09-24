@@ -217,7 +217,7 @@ $tagsConfig = json_encode([
                                     @foreach($servers as $srv)
                                         <option value="{{ $srv->id }}"
                                                 {{ old('ftp_server_id') == $srv->id ? 'selected' : '' }}>
-                                            {{ $srv->name }}
+                                            {{ $srv->name }} · {{ $srv->platform === 'pc' ? 'PC' : 'Console' }}
                                             @if($srv->server_type === 'rolling')
                                                 (resets every {{ $srv->reset_interval_minutes }}min from {{ str_pad($srv->reset_start_hour,2,'0',STR_PAD_LEFT) }}:00)
                                             @else

@@ -8,14 +8,15 @@ use App\Http\Requests\Championship\PublishChampionshipRequest;
 use App\Http\Requests\Championship\SaveChampionshipStepRequest;
 use App\Jobs\PushRoundConfigJob;
 use App\Models\Championship;
+use App\Models\ChampionshipRegistration;
 use App\Models\FtpServer;
 use App\Models\League;
-use App\Models\ChampionshipRegistration;
 use App\Models\PointsScheme;
 use App\Models\Race;
 use App\Services\AuditLogger;
 use App\Services\ChampionshipTeamEntryService;
 use App\Settings\ChampionshipSettingsSchema;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -31,7 +32,7 @@ class ChampionshipWizardController extends Controller
     {
         Gate::authorize('viewAny', Championship::class);
 
-        $user    = $request->user();
+        $user = $request->user();
         $leagues = $user->canManage()
             ? League::withoutTenantScope()->orderBy('name')->get()
             : League::orderBy('name')->get();
@@ -58,13 +59,13 @@ class ChampionshipWizardController extends Controller
         Gate::authorize('create', [Championship::class, $league]);
 
         $championship = Championship::create([
-            'league_id'  => $league->id,
-            'name'       => 'New Championship',
-            'game'       => 'acc',
-            'season'     => now()->year,
-            'status'     => 'draft',
+            'league_id' => $league->id,
+            'name' => 'New Championship',
+            'game' => 'acc',
+            'season' => now()->year,
+            'status' => 'draft',
             'visibility' => 'public',
-            'settings'   => ChampionshipSettingsSchema::defaults(),
+            'settings' => ChampionshipSettingsSchema::defaults(),
         ]);
 
         AuditLogger::record($request->user(), $championship, 'championship.created', null, $league->id);
@@ -89,7 +90,7 @@ class ChampionshipWizardController extends Controller
 
         AuditLogger::record($request->user(), $championship, 'championship.deleted', null, $league->id);
 
-        return redirect()->route('admin.leagues.championships.index', $league)->with('success', $name . ' has been removed.');
+        return redirect()->route('admin.leagues.championships.index', $league)->with('success', $name.' has been removed.');
     }
 
     public function edit(Request $request, League $league, Championship $championship, string $step)
@@ -106,13 +107,13 @@ class ChampionshipWizardController extends Controller
         $servers = $league->ftpServers()->where('active', true)->orderBy('name')->get();
 
         return view('admin.leagues.championships.wizard', [
-            'league'        => $league,
-            'championship'  => $championship,
-            'step'          => $step,
-            'steps'         => ChampionshipSettingsSchema::STEPS,
-            'fields'        => ChampionshipSettingsSchema::fieldsForStep($step),
+            'league' => $league,
+            'championship' => $championship,
+            'step' => $step,
+            'steps' => ChampionshipSettingsSchema::STEPS,
+            'fields' => ChampionshipSettingsSchema::fieldsForStep($step),
             'pointsSchemes' => $pointsSchemes,
-            'servers'       => $servers,
+            'servers' => $servers,
             'canApproveRating' => $request->user()->can('approveRating', $championship),
         ]);
     }
@@ -137,7 +138,7 @@ class ChampionshipWizardController extends Controller
             // straight to update() would blow away every other settings group.
             unset($data['settings']);
 
-            if (!empty($data['ftp_server_id']) && !$league->ftpServers()->where('id', $data['ftp_server_id'])->exists()) {
+            if (! empty($data['ftp_server_id']) && ! $league->ftpServers()->where('id', $data['ftp_server_id'])->exists()) {
                 abort(403, 'That server does not belong to this league.');
             }
 
@@ -152,7 +153,7 @@ class ChampionshipWizardController extends Controller
         $next = $this->nextStep($step);
 
         return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, $next])
-            ->with('success', ucfirst($step) . ' saved.');
+            ->with('success', ucfirst($step).' saved.');
     }
 
     public function roundCreate(Request $request, League $league, Championship $championship)
@@ -164,7 +165,7 @@ class ChampionshipWizardController extends Controller
         // must never be able to push a round's config to another league's server.
         $servers = $league->ftpServers()->where('active', true)->orderBy('name')->get();
 
-        $nextRoundNumber      = $championship->rounds()->max('round_number') + 1;
+        $nextRoundNumber = $championship->rounds()->max('round_number') + 1;
         $suggestedScheduledAt = $championship->scheduledDateTimeForRound($nextRoundNumber);
 
         // Bulk mode (below) needs a suggestion per generated row, not just the next
@@ -187,27 +188,27 @@ class ChampionshipWizardController extends Controller
         Gate::authorize('update', $championship);
 
         $data = $request->validate([
-            'track'               => 'required|string|max:255',
-            'scheduled_at'        => 'required|date',
-            'round_number'        => 'nullable|integer|min:1',
-            'practice_duration'   => 'nullable|integer|min:1|max:999',
+            'track' => 'required|string|max:255',
+            'scheduled_at' => 'required|date',
+            'round_number' => 'nullable|integer|min:1',
+            'practice_duration' => 'nullable|integer|min:1|max:999',
             'qualifying_duration' => 'nullable|integer|min:1|max:999',
-            'race_duration'       => 'nullable|integer|min:1|max:999',
-            'weather'             => 'nullable|in:dry,wet,mixed,random',
-            'weather_randomness'  => 'nullable|in:0,1,2,3,4,5,6,7,random',
-            'rain_level'          => 'nullable|numeric|min:0|max:1',
-            'time_of_day'         => 'nullable|date_format:H:i',
-            'ambient_temp'        => 'nullable|integer|min:-30|max:50',
-            'description'         => 'nullable|string',
-            'xcl_r_multiplier'    => 'nullable|numeric|min:0.6|max:2.5',
-            'pitstop_count'       => 'nullable|integer|min:0|max:9',
-            'fixed_stop_time'     => 'nullable|boolean',
-            'driver_stint_time_mins'      => 'nullable|integer|min:1|max:1440',
+            'race_duration' => 'nullable|integer|min:1|max:999',
+            'weather' => 'nullable|in:dry,wet,mixed,random',
+            'weather_randomness' => 'nullable|in:0,1,2,3,4,5,6,7,random',
+            'rain_level' => 'nullable|numeric|min:0|max:1',
+            'time_of_day' => 'nullable|date_format:H:i',
+            'ambient_temp' => 'nullable|integer|min:-30|max:50',
+            'description' => 'nullable|string',
+            'xcl_r_multiplier' => 'nullable|numeric|min:0.6|max:2.5',
+            'pitstop_count' => 'nullable|integer|min:0|max:9',
+            'fixed_stop_time' => 'nullable|boolean',
+            'driver_stint_time_mins' => 'nullable|integer|min:1|max:1440',
             'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
-            'mandatory_driver_swap'       => 'nullable|boolean',
+            'mandatory_driver_swap' => 'nullable|boolean',
             // Restricted to this league's own servers — never any $id a manager
             // could otherwise guess, which is why this isn't just "exists:ftp_servers,id".
-            'ftp_server_id'       => 'nullable|exists:ftp_servers,id',
+            'ftp_server_id' => 'nullable|exists:ftp_servers,id',
         ]);
 
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
@@ -253,25 +254,25 @@ class ChampionshipWizardController extends Controller
         abort_unless($race->championship_id === $championship->id, 404);
 
         $data = $request->validate([
-            'track'               => 'required|string|max:255',
-            'scheduled_at'        => 'required|date',
-            'round_number'        => 'nullable|integer|min:1',
-            'practice_duration'   => 'nullable|integer|min:1|max:999',
+            'track' => 'required|string|max:255',
+            'scheduled_at' => 'required|date',
+            'round_number' => 'nullable|integer|min:1',
+            'practice_duration' => 'nullable|integer|min:1|max:999',
             'qualifying_duration' => 'nullable|integer|min:1|max:999',
-            'race_duration'       => 'nullable|integer|min:1|max:999',
-            'weather'             => 'nullable|in:dry,wet,mixed,random',
-            'weather_randomness'  => 'nullable|in:0,1,2,3,4,5,6,7,random',
-            'rain_level'          => 'nullable|numeric|min:0|max:1',
-            'time_of_day'         => 'nullable|date_format:H:i',
-            'ambient_temp'        => 'nullable|integer|min:-30|max:50',
-            'description'         => 'nullable|string',
-            'xcl_r_multiplier'    => 'nullable|numeric|min:0.6|max:2.5',
-            'pitstop_count'       => 'nullable|integer|min:0|max:9',
-            'fixed_stop_time'     => 'nullable|boolean',
-            'driver_stint_time_mins'      => 'nullable|integer|min:1|max:1440',
+            'race_duration' => 'nullable|integer|min:1|max:999',
+            'weather' => 'nullable|in:dry,wet,mixed,random',
+            'weather_randomness' => 'nullable|in:0,1,2,3,4,5,6,7,random',
+            'rain_level' => 'nullable|numeric|min:0|max:1',
+            'time_of_day' => 'nullable|date_format:H:i',
+            'ambient_temp' => 'nullable|integer|min:-30|max:50',
+            'description' => 'nullable|string',
+            'xcl_r_multiplier' => 'nullable|numeric|min:0.6|max:2.5',
+            'pitstop_count' => 'nullable|integer|min:0|max:9',
+            'fixed_stop_time' => 'nullable|boolean',
+            'driver_stint_time_mins' => 'nullable|integer|min:1|max:1440',
             'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
-            'mandatory_driver_swap'       => 'nullable|boolean',
-            'ftp_server_id'       => 'nullable|exists:ftp_servers,id',
+            'mandatory_driver_swap' => 'nullable|boolean',
+            'ftp_server_id' => 'nullable|exists:ftp_servers,id',
         ]);
 
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
@@ -319,26 +320,26 @@ class ChampionshipWizardController extends Controller
         Gate::authorize('update', $championship);
 
         $data = $request->validate([
-            'practice_duration'      => 'nullable|integer|min:1|max:999',
-            'qualifying_duration'    => 'nullable|integer|min:1|max:999',
-            'race_duration'          => 'nullable|integer|min:1|max:999',
-            'weather'                => 'nullable|in:dry,wet,mixed,random',
-            'weather_randomness'     => 'nullable|in:0,1,2,3,4,5,6,7,random',
-            'rain_level'             => 'nullable|numeric|min:0|max:1',
-            'time_of_day'            => 'nullable|date_format:H:i',
-            'ambient_temp'           => 'nullable|integer|min:-30|max:50',
-            'description'            => 'nullable|string',
-            'xcl_r_multiplier'       => 'nullable|numeric|min:0.6|max:2.5',
-            'pitstop_count'          => 'nullable|integer|min:0|max:9',
-            'fixed_stop_time'        => 'nullable|boolean',
-            'driver_stint_time_mins'      => 'nullable|integer|min:1|max:1440',
+            'practice_duration' => 'nullable|integer|min:1|max:999',
+            'qualifying_duration' => 'nullable|integer|min:1|max:999',
+            'race_duration' => 'nullable|integer|min:1|max:999',
+            'weather' => 'nullable|in:dry,wet,mixed,random',
+            'weather_randomness' => 'nullable|in:0,1,2,3,4,5,6,7,random',
+            'rain_level' => 'nullable|numeric|min:0|max:1',
+            'time_of_day' => 'nullable|date_format:H:i',
+            'ambient_temp' => 'nullable|integer|min:-30|max:50',
+            'description' => 'nullable|string',
+            'xcl_r_multiplier' => 'nullable|numeric|min:0.6|max:2.5',
+            'pitstop_count' => 'nullable|integer|min:0|max:9',
+            'fixed_stop_time' => 'nullable|boolean',
+            'driver_stint_time_mins' => 'nullable|integer|min:1|max:1440',
             'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
-            'mandatory_driver_swap'       => 'nullable|boolean',
-            'ftp_server_id'          => 'nullable|exists:ftp_servers,id',
-            'rounds'                 => 'required|array|min:1',
-            'rounds.*.track'         => 'required|string|max:255',
-            'rounds.*.scheduled_at'  => 'required|date',
-            'rounds.*.round_number'  => 'nullable|integer|min:1',
+            'mandatory_driver_swap' => 'nullable|boolean',
+            'ftp_server_id' => 'nullable|exists:ftp_servers,id',
+            'rounds' => 'required|array|min:1',
+            'rounds.*.track' => 'required|string|max:255',
+            'rounds.*.scheduled_at' => 'required|date',
+            'rounds.*.round_number' => 'nullable|integer|min:1',
         ]);
 
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
@@ -348,7 +349,7 @@ class ChampionshipWizardController extends Controller
         $data['min_stop_secs'] = $request->boolean('fixed_stop_time') ? 25 : null;
 
         $shared = collect($data)->except('rounds')->all();
-        $rows   = [];
+        $rows = [];
         $claimedSlots = [];
 
         // resolveRoundRow() auto-numbers a round from the DB's current max when
@@ -365,7 +366,7 @@ class ChampionshipWizardController extends Controller
             $result = $this->resolveRoundRow(array_merge($shared, $row), $championship, $league, $claimedSlots);
 
             if (is_string($result)) {
-                return back()->withInput()->withErrors(['rounds' => 'Row ' . ($i + 1) . ' (' . ($row['track'] ?: '—') . '): ' . $result]);
+                return back()->withInput()->withErrors(['rounds' => 'Row '.($i + 1).' ('.($row['track'] ?: '—').'): '.$result]);
             }
 
             $rows[] = $result;
@@ -381,7 +382,7 @@ class ChampionshipWizardController extends Controller
         AuditLogger::record($request->user(), $championship, 'championship.rounds_bulk_added', ['count' => count($rows)]);
 
         return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'rounds'])
-            ->with('success', count($rows) . ' rounds added.');
+            ->with('success', count($rows).' rounds added.');
     }
 
     // "Championship"-scope team registrations (settings.format.team_registration_scope,
@@ -415,28 +416,28 @@ class ChampionshipWizardController extends Controller
     // rounds already in the database.
     private function resolveRoundRow(array $data, Championship $championship, League $league, array &$claimedSlots, ?int $excludeRaceId = null): array|string
     {
-        if (!empty($data['ftp_server_id']) && !$league->ftpServers()->where('id', $data['ftp_server_id'])->exists()) {
+        if (! empty($data['ftp_server_id']) && ! $league->ftpServers()->where('id', $data['ftp_server_id'])->exists()) {
             abort(403, 'That server does not belong to this league.');
         }
 
         // Rain level is only meaningful for wet/mixed weather — drop a stray value
         // otherwise, same reasoning as RaceController::normalizeRainLevel().
-        if (!in_array($data['weather'] ?? null, ['wet', 'mixed'], true)) {
+        if (! in_array($data['weather'] ?? null, ['wet', 'mixed'], true)) {
             $data['rain_level'] = null;
         }
 
         $data['championship_id'] = $championship->id;
-        $data['game']            = $championship->game;
-        $data['car_class']       = $championship->car_class;
-        $data['max_drivers']     = $championship->max_drivers;
-        $data['status']          = 'open';
+        $data['game'] = $championship->game;
+        $data['car_class'] = $championship->car_class;
+        $data['max_drivers'] = $championship->max_drivers;
+        $data['status'] = 'open';
         $data['is_championship'] = true;
-        $data['event_tag']       = 'championship';
-        $data['scheduled_at']    = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
+        $data['event_tag'] = 'championship';
+        $data['scheduled_at'] = Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
 
         // Rounds start on the hour or half hour only — the datetime picker already
         // restricts this client-side, but a raw request could still smuggle in something else.
-        if (!in_array($data['scheduled_at']->minute, [0, 30], true)) {
+        if (! in_array($data['scheduled_at']->minute, [0, 30], true)) {
             return 'Rounds can only start on the hour or half hour.';
         }
 
@@ -446,13 +447,16 @@ class ChampionshipWizardController extends Controller
 
         // "Title" is chosen once at Basics (the championship's Name) and composed
         // with the round number here — a manager never re-types it per round.
-        $data['title'] = $championship->name . ' — Round ' . $data['round_number'];
+        $data['title'] = $championship->name.' — Round '.$data['round_number'];
 
-        if (!empty($data['ftp_server_id'])) {
-            $server   = FtpServer::find($data['ftp_server_id']);
-            $slotKey  = $data['scheduled_at']->format('Y-m-d H:i');
+        if (! empty($data['ftp_server_id'])) {
+            $server = FtpServer::find($data['ftp_server_id']);
+            $slotKey = $data['scheduled_at']->format('Y-m-d H:i');
 
-            if ($server && !$server->isValidSlot($data['scheduled_at'], allowHalfHour: true)) {
+            if ($server && ! $server->supportsRaceGame($championship->game)) {
+                return FtpServer::ERR_WRONG_PLATFORM;
+            }
+            if ($server && ! $server->isValidSlot($data['scheduled_at'], allowHalfHour: true)) {
                 return 'That time is not a valid slot on this server.';
             }
             if ($server && (in_array($slotKey, $server->takenSlots($excludeRaceId), true) || in_array($slotKey, $claimedSlots, true))) {
@@ -460,7 +464,7 @@ class ChampionshipWizardController extends Controller
             }
 
             $claimedSlots[] = $slotKey;
-            $data['slot_time']          = $data['scheduled_at']->copy();
+            $data['slot_time'] = $data['scheduled_at']->copy();
             $data['config_push_status'] = 'pending';
         } else {
             $data['slot_time'] = null;
@@ -500,7 +504,7 @@ class ChampionshipWizardController extends Controller
 
         AuditLogger::record($request->user(), $championship, 'championship.round_config_push_queued', ['race_id' => $race->id]);
 
-        return back()->with('success', 'Config push queued for ' . $race->title . '.');
+        return back()->with('success', 'Config push queued for '.$race->title.'.');
     }
 
     public function publish(PublishChampionshipRequest $request, League $league, Championship $championship)
@@ -512,7 +516,7 @@ class ChampionshipWizardController extends Controller
         AuditLogger::record($request->user(), $championship, 'championship.published');
 
         return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'review'])
-            ->with('success', $championship->name . ' has been published.');
+            ->with('success', $championship->name.' has been published.');
     }
 
     public function openRegistration(Request $request, League $league, Championship $championship)
@@ -525,7 +529,7 @@ class ChampionshipWizardController extends Controller
 
         AuditLogger::record($request->user(), $championship, 'championship.registration_opened');
 
-        return back()->with('success', 'Registration is now open for ' . $championship->name . '.');
+        return back()->with('success', 'Registration is now open for '.$championship->name.'.');
     }
 
     public function closeRegistration(Request $request, League $league, Championship $championship)
@@ -538,7 +542,7 @@ class ChampionshipWizardController extends Controller
 
         AuditLogger::record($request->user(), $championship, 'championship.registration_closed');
 
-        return back()->with('success', 'Registration is now closed for ' . $championship->name . '.');
+        return back()->with('success', 'Registration is now closed for '.$championship->name.'.');
     }
 
     // User-directed 2026-09: pulls an already-published championship out of
@@ -557,7 +561,7 @@ class ChampionshipWizardController extends Controller
 
         AuditLogger::record($request->user(), $championship, 'championship.hidden');
 
-        return back()->with('success', $championship->name . ' is now hidden from public listings.');
+        return back()->with('success', $championship->name.' is now hidden from public listings.');
     }
 
     public function unhide(Request $request, League $league, Championship $championship)
@@ -569,7 +573,7 @@ class ChampionshipWizardController extends Controller
 
         AuditLogger::record($request->user(), $championship, 'championship.unhidden');
 
-        return back()->with('success', $championship->name . ' is public again.');
+        return back()->with('success', $championship->name.' is public again.');
     }
 
     // The only route that can ever turn xcl_rating_enabled on. Authorization is
@@ -590,7 +594,7 @@ class ChampionshipWizardController extends Controller
             return response()->json(['success' => true, 'xcl_rating_enabled' => true]);
         }
 
-        return back()->with('success', 'XCL Rating approved for ' . $championship->name . '.');
+        return back()->with('success', 'XCL Rating approved for '.$championship->name.'.');
     }
 
     public function revokeRating(Request $request, League $league, Championship $championship)
@@ -606,7 +610,7 @@ class ChampionshipWizardController extends Controller
             return response()->json(['success' => true, 'xcl_rating_enabled' => false]);
         }
 
-        return back()->with('success', 'XCL Rating revoked for ' . $championship->name . '.');
+        return back()->with('success', 'XCL Rating revoked for '.$championship->name.'.');
     }
 
     // A championship's URL is nested under a league, but a canManage() user
@@ -629,9 +633,9 @@ class ChampionshipWizardController extends Controller
 
     private function applyStepSettings(Request $request, Championship $championship, string $step): void
     {
-        $groups   = ChampionshipSettingsSchema::STEP_GROUPS[$step] ?? [];
+        $groups = ChampionshipSettingsSchema::STEP_GROUPS[$step] ?? [];
         $settings = $championship->settings->toArray();
-        $input    = $request->input('settings', []);
+        $input = $request->input('settings', []);
 
         foreach ($groups as $group) {
             $settings[$group] = array_merge($settings[$group] ?? [], $input[$group] ?? []);
@@ -672,8 +676,8 @@ class ChampionshipWizardController extends Controller
         // to it, so a league championship's multiclass setup silently never took
         // effect at registration until now.
         if ($step === 'format') {
-            $championship->car_class    = $settings['format']['car_class'] ?? null;
-            $championship->max_drivers  = $settings['format']['max_entries'] ?? null;
+            $championship->car_class = $settings['format']['car_class'] ?? null;
+            $championship->max_drivers = $settings['format']['max_entries'] ?? null;
             $championship->is_multiclass = (bool) ($settings['format']['multiclass_enabled'] ?? false);
         }
 
@@ -710,9 +714,9 @@ class ChampionshipWizardController extends Controller
                 // class — the name and car_class are the same value. Falls back to
                 // a legacy eligible_cars list if a stored row still has one, from
                 // before the dropdown replaced free-typed names + a car picker.
-                'car_class'   => !empty($classData['eligible_cars']) ? implode(', ', (array) $classData['eligible_cars']) : $name,
+                'car_class' => ! empty($classData['eligible_cars']) ? implode(', ', (array) $classData['eligible_cars']) : $name,
                 'max_drivers' => $classData['max_entries'] ?? null,
-                'sort_order'  => $i,
+                'sort_order' => $i,
             ];
 
             if ($existing->has($name)) {
@@ -733,7 +737,8 @@ class ChampionshipWizardController extends Controller
     {
         if ($request->hasFile('image')) {
             $file = $request->file('image');
-            return $file->storeAs('images/championships', Str::uuid() . '.' . $file->getClientOriginalExtension(), 'media');
+
+            return $file->storeAs('images/championships', Str::uuid().'.'.$file->getClientOriginalExtension(), 'media');
         }
 
         return $request->filled('image_path') ? $request->image_path : null;
@@ -742,7 +747,7 @@ class ChampionshipWizardController extends Controller
     private function decodeList(?string $json, array $allowedKeys): array
     {
         $decoded = json_decode($json ?? '[]', true);
-        if (!is_array($decoded)) {
+        if (! is_array($decoded)) {
             return [];
         }
 

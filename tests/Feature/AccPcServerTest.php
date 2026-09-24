@@ -1,0 +1,102 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Bop;
+use App\Models\FtpServer;
+use App\Models\League;
+use App\Models\Race;
+use App\Models\Role;
+use App\Models\User;
+use App\Services\AccServerConfigService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Tests\TestCase;
+
+// ACC PC and ACC Console builds can't share a server, so an event can only be put on a
+// server of its own platform, and the server announces the right platform in its name.
+class AccPcServerTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private function makeAdmin(): User
+    {
+        $user = User::factory()->create();
+        $user->roles()->attach(Role::where('slug', 'admin')->first());
+
+        return $user;
+    }
+
+    private function makeServer(string $platform): FtpServer
+    {
+        return FtpServer::create([
+            'name' => ucfirst($platform).' Server', 'host' => '1.2.3.4', 'port' => 21,
+            'username' => 'u', 'password' => 'p', 'path' => '/results',
+            'server_type' => 'scheduled', 'server_number' => 3,
+            'league_id' => League::system()->id, 'game' => 'acc', 'platform' => $platform,
+        ]);
+    }
+
+    private function makeRace(string $game): Race
+    {
+        return Race::create([
+            'title' => 'Test Race', 'track' => 'Monza', 'game' => $game,
+            'status' => 'open', 'scheduled_at' => now()->addWeek()->startOfHour(), 'race_duration' => 30,
+        ]);
+    }
+
+    public function test_server_platform_must_match_the_event(): void
+    {
+        $this->assertTrue($this->makeServer('pc')->supportsRaceGame('ac'));
+        $this->assertFalse($this->makeServer('console')->supportsRaceGame('ac'));
+        $this->assertFalse($this->makeServer('pc')->supportsRaceGame('acc'));
+        $this->assertTrue($this->makeServer('cross')->supportsRaceGame('acc'));
+    }
+
+    public function test_saving_a_pc_event_on_a_console_server_is_rejected(): void
+    {
+        $race = $this->makeRace('ac');
+        $server = $this->makeServer('console');
+
+        $this->actingAs($this->makeAdmin())
+            ->put(route('admin.races.update', $race), [
+                'game' => 'ac', 'track' => 'Monza', 'status' => 'open', 'title' => 'Test Race',
+                'scheduled_at' => $race->scheduled_at->timezone('Europe/London')->format('Y-m-d\TH:i'),
+                'race_duration' => 30, 'ftp_server_id' => $server->id,
+            ])
+            ->assertSessionHasErrors(['ftp_server_id' => FtpServer::ERR_WRONG_PLATFORM]);
+
+        $this->assertNull($race->fresh()->ftp_server_id);
+    }
+
+    public function test_server_name_shows_the_platform(): void
+    {
+        $config = app(AccServerConfigService::class);
+
+        $this->assertSame('XCL SERVER 3 - PC', $config->settings($this->makeRace('ac'), $this->makeServer('pc'))['serverName']);
+        $this->assertSame(
+            'XCL SERVER 3 - Playstation 5 & Xbox Series S/X',
+            $config->settings($this->makeRace('acc'), $this->makeServer('console'))['serverName']
+        );
+    }
+
+    public function test_bop_import_skips_car_names_outside_the_games_catalogue(): void
+    {
+        $file = UploadedFile::fake()->createWithContent('bop.json', json_encode([
+            ['car_model' => 'BMW M4 GT3 (2022)', 'track' => 'monza', 'ballast_kg' => 5, 'restrictor' => 0],
+            ['car_model' => 'BMW M4 GT3', 'track' => 'monza', 'ballast_kg' => 5, 'restrictor' => 0],
+            ['carModel' => 30, 'track' => 'spa', 'ballastKg' => 3, 'restrictor' => 0],
+        ]));
+
+        $this->actingAs($this->makeAdmin())
+            ->post(route('admin.bops.import'), ['json_file' => $file, 'game' => 'ac', 'mode' => 'merge'])
+            ->assertSessionHas('success', fn ($msg) => str_contains($msg, '1 skipped') && str_contains($msg, 'BMW M4 GT3.'));
+
+        // carModel 30 is the BMW M4 GT3 on PC.
+        $this->assertEqualsCanonicalizing(
+            ['monza', 'spa'],
+            Bop::where('game', 'ac')->where('car_model', 'BMW M4 GT3 (2022)')->pluck('track')->all()
+        );
+        $this->assertSame(2, Bop::count());
+    }
+}

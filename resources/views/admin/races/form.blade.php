@@ -593,7 +593,7 @@ $mcExisting = $isEdit
                                             data-type="{{ $srv->server_type }}"
                                             data-number="{{ $srv->server_number }}"
                                             {{ old('ftp_server_id', $isEdit ? $race->ftp_server_id : '') == $srv->id ? 'selected' : '' }}>
-                                        {{ $srv->name }}
+                                        {{ $srv->name }} · {{ $srv->platform === 'pc' ? 'PC' : 'Console' }}
                                         @if($srv->server_type === 'rolling')
                                             (resets every {{ $srv->reset_interval_minutes }}min from {{ str_pad($srv->reset_start_hour,2,'0',STR_PAD_LEFT) }}:00)
                                         @else
@@ -602,6 +602,7 @@ $mcExisting = $isEdit
                                     </option>
                                 @endforeach
                             </select>
+                            @error('ftp_server_id') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                         </div>
 
                         <div id="gp-scheduled-note" class="small text-secondary" style="display:none">

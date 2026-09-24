@@ -10,9 +10,9 @@ use App\Models\League;
 use App\Models\Media;
 use App\Models\Race;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
 
 class ChampionshipController extends Controller
 {
@@ -34,41 +34,41 @@ class ChampionshipController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'                   => 'required|string|max:255',
-            'game'                   => 'required|in:acc,lmu,iracing,ac',
-            'season'                 => 'required|integer|min:1|max:999',
-            'status'                 => 'required|in:draft,active,finished',
-            'description'            => 'nullable|string',
-            'image'                  => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:20480',
-            'image_path'             => 'nullable|string|max:500',
-            'icon'                   => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
-            'icon_path'              => 'nullable|string|max:500',
-            'max_drivers'            => 'nullable|integer|min:1',
-            'is_multiclass'          => 'nullable|boolean',
-            'points_system'          => 'nullable|string',
-            'bonus_fastest_lap'      => 'nullable|integer|min:0',
-            'bonus_pole'             => 'nullable|integer|min:0',
-            'drop_rounds'            => 'nullable|integer|min:0',
-            'max_missed_rounds'           => 'nullable|integer|min:0',
-            'missed_rounds_action'        => 'nullable|in:none,penalise',
-            'missed_rounds_penalty_points'=> 'nullable|integer|min:1',
-            'registration_open'      => 'nullable|boolean',
-            'registration_deadline'  => 'nullable|date',
-            'sr_requirement'         => 'nullable|in:none,5,7',
-            'min_rating'             => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
-            'car_class'              => 'nullable|string|max:50',
-            'practice_duration'      => 'nullable|integer|min:1|max:999',
-            'qualifying_duration'    => 'nullable|integer|min:1|max:999',
-            'race_duration'          => 'nullable|integer|min:1|max:999',
-            'weather'                => 'nullable|in:dry,wet,mixed,random',
-            'time_of_day'            => 'nullable|date_format:H:i',
-            'duration_key'           => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
+            'name' => 'required|string|max:255',
+            'game' => 'required|in:acc,lmu,iracing,ac',
+            'season' => 'required|integer|min:1|max:999',
+            'status' => 'required|in:draft,active,finished',
+            'description' => 'nullable|string',
+            'image' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:20480',
+            'image_path' => 'nullable|string|max:500',
+            'icon' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
+            'icon_path' => 'nullable|string|max:500',
+            'max_drivers' => 'nullable|integer|min:1',
+            'is_multiclass' => 'nullable|boolean',
+            'points_system' => 'nullable|string',
+            'bonus_fastest_lap' => 'nullable|integer|min:0',
+            'bonus_pole' => 'nullable|integer|min:0',
+            'drop_rounds' => 'nullable|integer|min:0',
+            'max_missed_rounds' => 'nullable|integer|min:0',
+            'missed_rounds_action' => 'nullable|in:none,penalise',
+            'missed_rounds_penalty_points' => 'nullable|integer|min:1',
+            'registration_open' => 'nullable|boolean',
+            'registration_deadline' => 'nullable|date',
+            'sr_requirement' => 'nullable|in:none,5,7',
+            'min_rating' => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
+            'car_class' => 'nullable|string|max:50',
+            'practice_duration' => 'nullable|integer|min:1|max:999',
+            'qualifying_duration' => 'nullable|integer|min:1|max:999',
+            'race_duration' => 'nullable|integer|min:1|max:999',
+            'weather' => 'nullable|in:dry,wet,mixed,random',
+            'time_of_day' => 'nullable|date_format:H:i',
+            'duration_key' => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
         ]);
 
-        $data['image']          = $this->resolveMedia($request);
-        $data['icon']           = $this->resolveIcon($request);
-        $data['points_system']  = $this->parsePointsSystem($request->input('points_system'));
-        $data['is_multiclass']  = $request->boolean('is_multiclass');
+        $data['image'] = $this->resolveMedia($request);
+        $data['icon'] = $this->resolveIcon($request);
+        $data['points_system'] = $this->parsePointsSystem($request->input('points_system'));
+        $data['is_multiclass'] = $request->boolean('is_multiclass');
         $data['registration_open'] = $request->boolean('registration_open');
 
         unset($data['image_path'], $data['icon_path']);
@@ -84,10 +84,10 @@ class ChampionshipController extends Controller
     public function show(Championship $championship)
     {
         $championship->load(['classes', 'registrations.user', 'registrations.championshipClass', 'penalties.user', 'penalties.race']);
-        $rounds         = $championship->rounds()->with('registrations')->get();
-        $standings      = $championship->computeStandings();
+        $rounds = $championship->rounds()->with('registrations')->get();
+        $standings = $championship->computeStandings();
         $classStandings = $championship->computeClassStandings();
-        $users          = User::orderBy('name')->get();
+        $users = User::orderBy('name')->get();
 
         return view('admin.championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'users'));
     }
@@ -95,43 +95,44 @@ class ChampionshipController extends Controller
     public function edit(Championship $championship)
     {
         $championship->load('classes');
+
         return view('admin.championships.edit', compact('championship'));
     }
 
     public function update(Request $request, Championship $championship)
     {
         $data = $request->validate([
-            'name'                   => 'required|string|max:255',
-            'game'                   => 'required|in:acc,lmu,iracing,ac',
-            'season'                 => 'required|integer|min:1|max:999',
-            'status'                 => 'required|in:draft,active,finished',
-            'description'            => 'nullable|string',
-            'image'                  => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:20480',
-            'image_path'             => 'nullable|string|max:500',
-            'image_keep'             => 'nullable|in:0,1',
-            'icon'                   => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
-            'icon_path'              => 'nullable|string|max:500',
-            'icon_keep'              => 'nullable|in:0,1',
-            'max_drivers'            => 'nullable|integer|min:1',
-            'is_multiclass'          => 'nullable|boolean',
-            'points_system'          => 'nullable|string',
-            'bonus_fastest_lap'      => 'nullable|integer|min:0',
-            'bonus_pole'             => 'nullable|integer|min:0',
-            'drop_rounds'            => 'nullable|integer|min:0',
-            'max_missed_rounds'           => 'nullable|integer|min:0',
-            'missed_rounds_action'        => 'nullable|in:none,penalise',
-            'missed_rounds_penalty_points'=> 'nullable|integer|min:1',
-            'registration_open'      => 'nullable|boolean',
-            'registration_deadline'  => 'nullable|date',
-            'sr_requirement'         => 'nullable|in:none,5,7',
-            'min_rating'             => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
-            'car_class'              => 'nullable|string|max:50',
-            'practice_duration'      => 'nullable|integer|min:1|max:999',
-            'qualifying_duration'    => 'nullable|integer|min:1|max:999',
-            'race_duration'          => 'nullable|integer|min:1|max:999',
-            'weather'                => 'nullable|in:dry,wet,mixed,random',
-            'time_of_day'            => 'nullable|date_format:H:i',
-            'duration_key'           => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
+            'name' => 'required|string|max:255',
+            'game' => 'required|in:acc,lmu,iracing,ac',
+            'season' => 'required|integer|min:1|max:999',
+            'status' => 'required|in:draft,active,finished',
+            'description' => 'nullable|string',
+            'image' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:20480',
+            'image_path' => 'nullable|string|max:500',
+            'image_keep' => 'nullable|in:0,1',
+            'icon' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
+            'icon_path' => 'nullable|string|max:500',
+            'icon_keep' => 'nullable|in:0,1',
+            'max_drivers' => 'nullable|integer|min:1',
+            'is_multiclass' => 'nullable|boolean',
+            'points_system' => 'nullable|string',
+            'bonus_fastest_lap' => 'nullable|integer|min:0',
+            'bonus_pole' => 'nullable|integer|min:0',
+            'drop_rounds' => 'nullable|integer|min:0',
+            'max_missed_rounds' => 'nullable|integer|min:0',
+            'missed_rounds_action' => 'nullable|in:none,penalise',
+            'missed_rounds_penalty_points' => 'nullable|integer|min:1',
+            'registration_open' => 'nullable|boolean',
+            'registration_deadline' => 'nullable|date',
+            'sr_requirement' => 'nullable|in:none,5,7',
+            'min_rating' => 'nullable|in:all,rookie,bronze,silver,gold,platinum,alien',
+            'car_class' => 'nullable|string|max:50',
+            'practice_duration' => 'nullable|integer|min:1|max:999',
+            'qualifying_duration' => 'nullable|integer|min:1|max:999',
+            'race_duration' => 'nullable|integer|min:1|max:999',
+            'weather' => 'nullable|in:dry,wet,mixed,random',
+            'time_of_day' => 'nullable|date_format:H:i',
+            'duration_key' => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
         ]);
 
         $resolvedImage = $this->resolveMedia($request);
@@ -140,8 +141,8 @@ class ChampionshipController extends Controller
         $resolvedIcon = $this->resolveIcon($request);
         $data['icon'] = $resolvedIcon ?? ($request->input('icon_keep') === '0' ? null : $championship->icon);
 
-        $data['points_system']     = $this->parsePointsSystem($request->input('points_system'));
-        $data['is_multiclass']     = $request->boolean('is_multiclass');
+        $data['points_system'] = $this->parsePointsSystem($request->input('points_system'));
+        $data['is_multiclass'] = $request->boolean('is_multiclass');
         $data['registration_open'] = $request->boolean('registration_open');
 
         unset($data['image_path'], $data['image_keep'], $data['icon_path'], $data['icon_keep']);
@@ -160,15 +161,15 @@ class ChampionshipController extends Controller
         $championship->delete();
 
         return redirect()->route('admin.championships.index')
-            ->with('success', 'Championship "' . $name . '" has been deleted. Its rounds remain as standalone races.');
+            ->with('success', 'Championship "'.$name.'" has been deleted. Its rounds remain as standalone races.');
     }
 
     public function roundCreate(Championship $championship)
     {
-        $trackFilenames   = array_values(RaceController::TRACK_IMAGE_MAP);
+        $trackFilenames = array_values(RaceController::TRACK_IMAGE_MAP);
         $trackMediaByName = Media::whereIn('original_name', $trackFilenames)->get()->keyBy('original_name');
         $trackPreviewUrls = collect(RaceController::TRACK_IMAGE_MAP)
-            ->map(fn($fname) => $trackMediaByName->get($fname)?->url)
+            ->map(fn ($fname) => $trackMediaByName->get($fname)?->url)
             ->all();
 
         // XCL's own native championships only ever get pushed to XCL's own servers —
@@ -182,50 +183,53 @@ class ChampionshipController extends Controller
     public function addRound(Request $request, Championship $championship)
     {
         $data = $request->validate([
-            'title'               => 'required|string|max:255',
-            'track'               => 'required|string|max:255',
-            'scheduled_at'        => 'required|date',
-            'round_number'        => 'nullable|integer|min:1',
-            'max_drivers'         => 'nullable|integer|min:1',
-            'practice_duration'   => 'nullable|integer|min:1|max:999',
+            'title' => 'required|string|max:255',
+            'track' => 'required|string|max:255',
+            'scheduled_at' => 'required|date',
+            'round_number' => 'nullable|integer|min:1',
+            'max_drivers' => 'nullable|integer|min:1',
+            'practice_duration' => 'nullable|integer|min:1|max:999',
             'qualifying_duration' => 'nullable|integer|min:1|max:999',
-            'race_duration'       => 'nullable|integer|min:1|max:999',
-            'car_class'           => 'nullable|string|max:50',
-            'weather'             => 'nullable|in:dry,wet,mixed,random',
-            'time_of_day'         => 'nullable|date_format:H:i',
-            'ambient_temp'        => 'nullable|integer|min:-30|max:50',
-            'duration_key'        => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
-            'sr_requirement'      => 'nullable|in:3,4,5,6,7,8,9',
-            'min_rating'          => 'nullable|in:rookie,bronze,silver,gold,platinum,alien',
-            'max_rating'          => 'nullable|in:rookie,bronze,silver,gold,platinum,alien',
-            'description'         => 'nullable|string',
-            'ftp_server_id'       => 'nullable|exists:ftp_servers,id',
+            'race_duration' => 'nullable|integer|min:1|max:999',
+            'car_class' => 'nullable|string|max:50',
+            'weather' => 'nullable|in:dry,wet,mixed,random',
+            'time_of_day' => 'nullable|date_format:H:i',
+            'ambient_temp' => 'nullable|integer|min:-30|max:50',
+            'duration_key' => 'nullable|string|in:15,20,30,30+,30++,45,45+,60,60+,90,90+',
+            'sr_requirement' => 'nullable|in:3,4,5,6,7,8,9',
+            'min_rating' => 'nullable|in:rookie,bronze,silver,gold,platinum,alien',
+            'max_rating' => 'nullable|in:rookie,bronze,silver,gold,platinum,alien',
+            'description' => 'nullable|string',
+            'ftp_server_id' => 'nullable|exists:ftp_servers,id',
         ]);
 
         $data['championship_id'] = $championship->id;
-        $data['game']            = $championship->game;
-        $data['status']          = 'open';
+        $data['game'] = $championship->game;
+        $data['status'] = 'open';
         $data['is_championship'] = true;
-        $data['event_tag']       = 'championship';
-        $data['scheduled_at']    = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
-        $data['image']           = $this->resolveMedia($request);
-        $data['icon']            = $this->resolveIcon($request);
+        $data['event_tag'] = 'championship';
+        $data['scheduled_at'] = Carbon::createFromFormat('Y-m-d\TH:i', $data['scheduled_at'], 'Europe/London')->utc();
+        $data['image'] = $this->resolveMedia($request);
+        $data['icon'] = $this->resolveIcon($request);
 
-        if (!$data['round_number']) {
+        if (! $data['round_number']) {
             $data['round_number'] = $championship->rounds()->max('round_number') + 1;
         }
 
-        if (!empty($data['ftp_server_id'])) {
+        if (! empty($data['ftp_server_id'])) {
             $server = FtpServer::find($data['ftp_server_id']);
 
-            if ($server && !$server->isValidSlot($data['scheduled_at'], allowHalfHour: true)) {
+            if ($server && ! $server->supportsRaceGame($championship->game)) {
+                return back()->withInput()->withErrors(['ftp_server_id' => FtpServer::ERR_WRONG_PLATFORM]);
+            }
+            if ($server && ! $server->isValidSlot($data['scheduled_at'], allowHalfHour: true)) {
                 return back()->withInput()->withErrors(['scheduled_at' => RaceController::ERR_SLOT_WRONG_SERVER]);
             }
             if ($server && in_array($data['scheduled_at']->format('Y-m-d H:i'), $server->takenSlots(), true)) {
                 return back()->withInput()->withErrors(['scheduled_at' => RaceController::ERR_SLOT_TAKEN]);
             }
 
-            $data['slot_time']          = $data['scheduled_at']->copy();
+            $data['slot_time'] = $data['scheduled_at']->copy();
             $data['config_push_status'] = 'pending';
         } else {
             $data['slot_time'] = null;
@@ -249,17 +253,17 @@ class ChampionshipController extends Controller
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'points'  => 'required|integer',
+            'points' => 'required|integer',
             'race_id' => 'nullable|exists:races,id',
-            'reason'  => 'nullable|string|max:255',
+            'reason' => 'nullable|string|max:255',
         ]);
 
         ChampionshipPenalty::create([
             'championship_id' => $championship->id,
-            'user_id'         => $request->user_id,
-            'race_id'         => $request->race_id ?: null,
-            'points'          => $request->points,
-            'reason'          => $request->reason,
+            'user_id' => $request->user_id,
+            'race_id' => $request->race_id ?: null,
+            'points' => $request->points,
+            'reason' => $request->reason,
         ]);
 
         return redirect()->route('admin.championships.show', $championship)
@@ -281,12 +285,12 @@ class ChampionshipController extends Controller
     private function syncClasses(Request $request, Championship $championship): void
     {
         $classesJson = $request->input('classes_json');
-        if (!$classesJson) {
+        if (! $classesJson) {
             return;
         }
 
         $classes = json_decode($classesJson, true);
-        if (!is_array($classes)) {
+        if (! is_array($classes)) {
             return;
         }
 
@@ -295,13 +299,13 @@ class ChampionshipController extends Controller
 
         foreach ($classes as $i => $class) {
             $attrs = [
-                'name'           => $class['name'] ?? 'Class ' . ($i + 1),
-                'color'          => $class['color'] ?? '#db2777',
-                'car_class'      => $class['car_class'] ?? null,
-                'max_drivers'    => $class['max_drivers'] ?? null,
+                'name' => $class['name'] ?? 'Class '.($i + 1),
+                'color' => $class['color'] ?? '#db2777',
+                'car_class' => $class['car_class'] ?? null,
+                'max_drivers' => $class['max_drivers'] ?? null,
                 'sr_requirement' => $class['sr_requirement'] ?? null,
-                'min_rating'     => $class['min_rating'] ?? null,
-                'sort_order'     => $i,
+                'min_rating' => $class['min_rating'] ?? null,
+                'sort_order' => $i,
             ];
 
             $existing = $attrs['car_class'] ? $existingByCarClass->get($attrs['car_class']) : null;
@@ -318,11 +322,12 @@ class ChampionshipController extends Controller
 
     private function parsePointsSystem(?string $value): ?array
     {
-        if (!$value) {
+        if (! $value) {
             return null;
         }
         $parts = array_map('trim', explode(',', $value));
-        $pts   = array_filter(array_map(fn($p) => is_numeric($p) ? (int) $p : null, $parts), fn($v) => $v !== null);
+        $pts = array_filter(array_map(fn ($p) => is_numeric($p) ? (int) $p : null, $parts), fn ($v) => $v !== null);
+
         return array_values($pts) ?: null;
     }
 
@@ -330,8 +335,10 @@ class ChampionshipController extends Controller
     {
         if ($request->hasFile('image')) {
             $file = $request->file('image');
-            return $file->storeAs('images/media', Str::uuid() . '.' . $file->getClientOriginalExtension(), 'media');
+
+            return $file->storeAs('images/media', Str::uuid().'.'.$file->getClientOriginalExtension(), 'media');
         }
+
         return $request->filled('image_path') ? $request->image_path : null;
     }
 
@@ -339,8 +346,10 @@ class ChampionshipController extends Controller
     {
         if ($request->hasFile('icon')) {
             $file = $request->file('icon');
-            return $file->storeAs('images/icons', Str::uuid() . '.' . $file->getClientOriginalExtension(), 'media');
+
+            return $file->storeAs('images/icons', Str::uuid().'.'.$file->getClientOriginalExtension(), 'media');
         }
+
         return $request->filled('icon_path') ? $request->icon_path : null;
     }
 }

@@ -375,6 +375,9 @@ class RaceController extends Controller
             if (! $server) {
                 continue;
             }
+            if (! $server->supportsRaceGame($request->game)) {
+                return back()->withInput()->withErrors(['events.'.$i.'.ftp_server_id' => 'Row '.($i + 1).': '.FtpServer::ERR_WRONG_PLATFORM]);
+            }
             if (! $server->isValidSlot($data['scheduled_at'])) {
                 return back()->withInput()->withErrors(['events.'.$i.'.scheduled_at' => 'Row '.($i + 1).': '.self::ERR_SLOT_WRONG_SERVER]);
             }
@@ -1002,6 +1005,9 @@ class RaceController extends Controller
             // The race's own date & time (set above) is always the server slot now —
             // no separate slot grid. Reject it if that time isn't actually free on
             // this server.
+            if ($server && ! $server->supportsRaceGame($data['game'])) {
+                return back()->withInput()->withErrors(['ftp_server_id' => FtpServer::ERR_WRONG_PLATFORM]);
+            }
             if ($server && ! $server->isValidSlot($data['scheduled_at'])) {
                 return back()->withInput()->withErrors(['scheduled_at' => self::ERR_SLOT_WRONG_SERVER]);
             }
@@ -1131,6 +1137,9 @@ class RaceController extends Controller
         if (! empty($data['ftp_server_id'])) {
             $server = FtpServer::find($data['ftp_server_id']);
 
+            if ($server && ! $server->supportsRaceGame($data['game'])) {
+                return back()->withInput()->withErrors(['ftp_server_id' => FtpServer::ERR_WRONG_PLATFORM]);
+            }
             if ($server && ! $server->isValidSlot($data['scheduled_at'])) {
                 return back()->withInput()->withErrors(['scheduled_at' => self::ERR_SLOT_WRONG_SERVER]);
             }
@@ -1199,6 +1208,10 @@ class RaceController extends Controller
         $request->validate(['server_id' => 'required|exists:ftp_servers,id']);
 
         $server = FtpServer::findOrFail($request->server_id);
+
+        if (! $server->supportsRaceGame($race->game)) {
+            return back()->with('error', FtpServer::ERR_WRONG_PLATFORM);
+        }
 
         // A saved/pasted settings.json can carry a password or serverName left over from
         // a different server — force these two fields to match the server we're pushing

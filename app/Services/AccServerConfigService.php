@@ -232,10 +232,12 @@ class AccServerConfigService implements ServerConfigGenerator
 
         $n = $server?->server_number;
 
+        $platform = $this->platformLabel($race, $server);
+
         return array_merge($base, [
             'serverName' => $n
-                ? 'XCL SERVER '.$n.' - Playstation 5 & Xbox Series S/X'
-                : ($base['serverName'] ?? 'XCL SERVER - Playstation 5 & Xbox Series S/X'),
+                ? 'XCL SERVER '.$n.' - '.$platform
+                : ($base['serverName'] ?? 'XCL SERVER - '.$platform),
             'password' => $n ? $n.'xcl' : ($base['password'] ?? '1xcl'),
             'safetyRatingRequirement' => $this->srRequired($race),
             'racecraftRatingRequirement' => $this->rcRequired($race),
@@ -243,6 +245,16 @@ class AccServerConfigService implements ServerConfigGenerator
             'carGroup' => $this->carGroup($race->car_class),
             'shortFormationLap' => $this->shortFormationLap($race, $base),
         ]);
+    }
+
+    // The server's own platform decides (a server can only ever be one build); a race with
+    // no server yet falls back to its game. ACC has no PC/console crossplay, so 'cross'
+    // (PS5 + Xbox) is still console.
+    private function platformLabel(Race $race, ?FtpServer $server): string
+    {
+        $platform = $server?->platform ?? ($race->game === 'ac' ? 'pc' : 'console');
+
+        return $platform === 'pc' ? 'PC' : 'Playstation 5 & Xbox Series S/X';
     }
 
     public function eventRules(?Race $race = null, ?FtpServer $server = null): array

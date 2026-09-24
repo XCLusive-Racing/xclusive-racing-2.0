@@ -121,10 +121,11 @@
                 <div class="mt-3 p-3 rounded-2" style="background:#f9fafb;border:1px solid #f3f4f6">
                     <div class="fw-bold text-dark mb-1" style="font-size:.72rem">Expected JSON format</div>
                     <pre style="font-size:.72rem;color:#6b7280;margin:0;line-height:1.6">[
-  { "car_model": "Ferrari 488 GT3 Evo", "track": null, "ballast_kg": 10, "restrictor": 0, "notes": "" },
-  { "car_model": "Porsche 992 GT3 R",   "track": "monza", "ballast_kg": -5, "restrictor": 2 }
+  { "car_model": "Ferrari 488 GT3 Evo (2020)", "track": null, "ballast_kg": 10, "restrictor": 0, "notes": "" },
+  { "car_model": "Porsche 992 GT3 R (2023)",   "track": "monza", "ballast_kg": -5, "restrictor": 2 }
 ]</pre>
                     <div class="text-secondary mt-2" style="font-size:.71rem">
+                        ACC car names must match the car list of the selected game (same names as the Add BOP form suggests), or the entry is skipped.<br>
                         <strong>Merge</strong> — updates existing entries (matched on car_model + track), adds new ones.<br>
                         <strong>Replace all</strong> — deletes all existing BOP entries for the selected game first.
                     </div>
