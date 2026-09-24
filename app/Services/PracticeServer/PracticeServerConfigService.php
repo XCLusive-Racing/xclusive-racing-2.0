@@ -112,8 +112,9 @@ class PracticeServerConfigService
 
     // entrylist.json — a snapshot of confirmed signups at the moment of the push, not a
     // live query re-run later. forceEntryList is always 1, so only listed drivers can
-    // occupy the limited practice slots. Signups without a valid platform_id are skipped
-    // and counted rather than silently sent with a blank playerID.
+    // occupy the limited practice slots. Signups without a valid player ID for the race's
+    // game (User::playerIdFor() -- a Steam ID for ACC PC) are skipped and counted rather
+    // than silently sent with a blank playerID.
     //
     // Deliberately includes waitlisted registrations, unlike
     // AccServerConfigService::entryList() (the real race server) -- someone waiting for
@@ -122,7 +123,7 @@ class PracticeServerConfigService
     public function entryList(Race $race): PracticeEntryListResult
     {
         $registrations = $race->registrations()
-            ->with(['user.ownedRacingTeams', 'user.racingTeams', 'teamEntry.team'])
+            ->with(['user.ownedRacingTeams', 'user.racingTeams', 'user.connectedAccounts', 'teamEntry.team'])
             ->orderBy('team_entry_id')
             ->orderBy('created_at')
             ->get();
@@ -144,7 +145,8 @@ class PracticeServerConfigService
                 $drivers = [];
                 foreach ($teamRegs as $teamReg) {
                     $user = $teamReg->user;
-                    if (empty($user?->platform_id)) {
+                    $playerId = $user?->playerIdFor($race->game);
+                    if (! $playerId) {
                         $skipped++;
 
                         continue;
@@ -153,13 +155,13 @@ class PracticeServerConfigService
                         'firstName' => '',
                         'lastName' => $user->name ?? '',
                         'shortName' => mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3)),
-                        'playerID' => $user->platform_id,
+                        'playerID' => $playerId,
                         'driverCategory' => $user->ratingClass($race->game),
                     ];
                 }
 
                 if (empty($drivers)) {
-                    continue; // whole car had no valid platform IDs
+                    continue; // whole car had no valid player IDs
                 }
 
                 $carNumber = $teamEntry?->car_number ?? 0;
@@ -175,8 +177,9 @@ class PracticeServerConfigService
                 ];
             } else {
                 $user = $reg->user;
+                $playerId = $user?->playerIdFor($race->game);
 
-                if (empty($user?->platform_id)) {
+                if (! $playerId) {
                     $skipped++;
 
                     continue;
@@ -187,7 +190,7 @@ class PracticeServerConfigService
                         'firstName' => '',
                         'lastName' => $user->name ?? '',
                         'shortName' => mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3)),
-                        'playerID' => $user->platform_id,
+                        'playerID' => $playerId,
                         'driverCategory' => $user->ratingClass($race->game),
                     ]],
                     'raceNumber' => is_numeric($user->car_number) ? (int) $user->car_number : 0,

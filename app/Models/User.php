@@ -56,6 +56,42 @@ class User extends Authenticatable
         };
     }
 
+    // The ID a game's dedicated server knows this driver by (entrylist playerID / results
+    // playerId). ACC PC ('ac') servers only know Steam IDs ("S7656..."), while console
+    // servers use the console platform ID -- so a console-registered driver racing a PC
+    // event is identified by the Steam account linked on their profile instead. Every
+    // other game keeps using platform_id as before.
+    public function playerIdFor(string $game): ?string
+    {
+        if ($game !== 'ac' || $this->platform === 'steam') {
+            return $this->platform_id ?: null;
+        }
+
+        return $this->connectedAccounts->firstWhere('provider', 'steam')?->provider_id;
+    }
+
+    // Reverse of playerIdFor(): resolves server-side player IDs (from an entrylist or a
+    // results file) back to users, keyed by that player ID. A primary platform_id match
+    // wins; a linked Steam account only fills in IDs nobody has as their primary ID.
+    public static function keyedByPlayerIds(array $playerIds): Collection
+    {
+        $playerIds = array_values(array_unique(array_filter($playerIds)));
+
+        $users = static::whereIn('platform_id', $playerIds)->get()->keyBy('platform_id');
+
+        ConnectedAccount::with('user')
+            ->where('provider', 'steam')
+            ->whereIn('provider_id', $playerIds)
+            ->get()
+            ->each(function (ConnectedAccount $account) use ($users) {
+                if ($account->user && ! $users->has($account->provider_id)) {
+                    $users->put($account->provider_id, $account->user);
+                }
+            });
+
+        return $users->toBase();
+    }
+
     public static function eloColumn(string $game): ?string
     {
         $ratingGame = self::ratingGame($game);

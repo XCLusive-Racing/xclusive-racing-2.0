@@ -107,10 +107,13 @@ class AccResultImportService
             ? collect($lines)->max(fn ($l) => (int) ($l['timing']['lapCount'] ?? 0))
             : 0;
 
-        // Only save results for drivers who are actually registered — keyed for O(1) lookup
+        // Only save results for drivers who are actually registered — keyed for O(1) lookup.
+        // Keyed by the same per-game player ID the entrylist sent (User::playerIdFor()), so
+        // an ACC PC result's Steam ID matches a console-registered driver's linked Steam.
         $registeredIds = $race->registrations()
-            ->join('users', 'users.id', '=', 'race_registrations.user_id')
-            ->pluck('users.platform_id')
+            ->with('user.connectedAccounts')
+            ->get()
+            ->map(fn ($reg) => $reg->user?->playerIdFor($race->game))
             ->filter()
             ->flip()
             ->all();
@@ -123,9 +126,7 @@ class AccResultImportService
             ->values()
             ->all();
 
-        $usersByPlatformId = User::whereIn('platform_id', $playerIds)
-            ->get()
-            ->keyBy('platform_id');
+        $usersByPlatformId = User::keyedByPlayerIds($playerIds);
 
         $saved = 0;
 

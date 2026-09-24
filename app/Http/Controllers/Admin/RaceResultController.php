@@ -74,7 +74,7 @@ class RaceResultController extends Controller
             $playerIds = collect($parsed['entries'] ?? [])
                 ->map(fn ($e) => $e['drivers'][0]['playerID'] ?? null)
                 ->filter()->values()->all();
-            $usersByPlatformId = User::whereIn('platform_id', $playerIds)->get()->keyBy('platform_id');
+            $usersByPlatformId = User::keyedByPlayerIds($playerIds);
 
             foreach ($parsed['entries'] ?? [] as $entry) {
                 $driver = $entry['drivers'][0] ?? null;
@@ -261,7 +261,7 @@ class RaceResultController extends Controller
                 'race_id' => $race->id,
                 'session_type' => 'race',
                 'user_id' => $user->id,
-                'player_id' => $user->platform_id ?? 'DNS_'.$user->id,
+                'player_id' => $user->playerIdFor($race->game) ?? 'DNS_'.$user->id,
                 'driver_name' => $user->name,
                 'race_title' => $race->title,
                 'race_track' => $race->track,

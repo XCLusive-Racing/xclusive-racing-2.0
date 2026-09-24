@@ -118,8 +118,7 @@ class RaceController extends Controller
                 ->map(fn ($e) => $e['drivers'][0]['playerID'] ?? null)
                 ->filter()->values()->all();
 
-            $usersByPlatformId = User::whereIn('platform_id', $playerIds)
-                ->get()->keyBy('platform_id');
+            $usersByPlatformId = User::keyedByPlayerIds($playerIds);
 
             foreach ($parsed['entries'] ?? [] as $entry) {
                 $driver = $entry['drivers'][0] ?? null;
@@ -175,7 +174,7 @@ class RaceController extends Controller
 
     public function downloadEntryList(Race $race)
     {
-        $registrations = $race->registrations()->with('user')->orderBy('created_at')->get();
+        $registrations = $race->registrations()->with('user.connectedAccounts')->orderBy('created_at')->get();
 
         $entries = $registrations->map(function ($reg) use ($race) {
             $user = $reg->user;
@@ -187,7 +186,7 @@ class RaceController extends Controller
                         'firstName' => '',
                         'lastName' => $user->name ?? '',
                         'shortName' => $shortName,
-                        'playerID' => $user->platform_id ?? '',
+                        'playerID' => $user->playerIdFor($race->game) ?? '',
                         'driverCategory' => $user->ratingClass($race->game),
                     ],
                 ],

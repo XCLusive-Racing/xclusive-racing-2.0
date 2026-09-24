@@ -21,7 +21,7 @@ class AccServerConfigService implements ServerConfigGenerator
         // PracticeServerConfigService::entryList(), which deliberately has no such
         // filter.
         $registrations = $race->registrations()
-            ->with(['user.ownedRacingTeams', 'user.racingTeams', 'teamEntry'])
+            ->with(['user.ownedRacingTeams', 'user.racingTeams', 'user.connectedAccounts', 'teamEntry'])
             ->orderBy('team_entry_id')
             ->orderBy('created_at')
             ->get()
@@ -46,7 +46,7 @@ class AccServerConfigService implements ServerConfigGenerator
                     'firstName' => '',
                     'lastName' => $tr->user->name ?? '',
                     'shortName' => mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $tr->user->name ?? ''), 0, 3)),
-                    'playerID' => $tr->user->platform_id ?? '',
+                    'playerID' => $tr->user?->playerIdFor($race->game) ?? '',
                     'driverCategory' => $tr->user->ratingClass($race->game),
                 ])->values()->all();
 
@@ -70,7 +70,7 @@ class AccServerConfigService implements ServerConfigGenerator
                             'firstName' => '',
                             'lastName' => $user->name ?? '',
                             'shortName' => $shortName,
-                            'playerID' => $user->platform_id ?? '',
+                            'playerID' => $user->playerIdFor($race->game) ?? '',
                             'driverCategory' => $user->ratingClass($race->game),
                         ],
                     ],
