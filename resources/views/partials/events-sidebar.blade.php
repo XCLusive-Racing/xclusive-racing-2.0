@@ -165,14 +165,14 @@ $sbLeaderboards = [
                         <button class="xcl-sb-game-btn xcl-sb-game-btn--acc" data-sb-game="acc" title="Assetto Corsa Competizione">
                             <img src="/images/home/icons/ACC Logo.png" alt="ACC">
                         </button>
+                        <button class="xcl-sb-game-btn xcl-sb-game-btn--ac" data-sb-game="ac" title="ACC PC">
+                            <img src="/images/home/icons/ACC Logo.png" alt="ACC PC">
+                        </button>
                         <button class="xcl-sb-game-btn xcl-sb-game-btn--lmu" data-sb-game="lmu" title="Le Mans Ultimate">
                             <img src="/images/home/icons/LM Logo.png" alt="LMU">
                         </button>
                         <button class="xcl-sb-game-btn xcl-sb-game-btn--iracing" data-sb-game="iracing" title="iRacing">
                             <img src="/images/home/icons/iR Logo.png" alt="iRacing">
-                        </button>
-                        <button class="xcl-sb-game-btn xcl-sb-game-btn--ac" data-sb-game="ac" title="ACC PC">
-                            <img src="/images/home/icons/ACC Logo.png" alt="ACC PC">
                         </button>
                     </div>
                 </div>
