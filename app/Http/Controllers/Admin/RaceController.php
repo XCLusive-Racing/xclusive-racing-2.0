@@ -482,6 +482,11 @@ class RaceController extends Controller
             ->get()->keyBy(fn ($f) => strtolower($f->name))->map->id->all();
         $serversByKey = [];
         foreach (FtpServer::where('active', true)->where('league_id', League::system()->id)->get() as $s) {
+            // Server numbers repeat across ACC platforms — "2" must resolve to the PC
+            // Server 2 for an ACC PC import, never the console one.
+            if ($request->filled('game') && ! $s->supportsRaceGame($request->game)) {
+                continue;
+            }
             $serversByKey[strtolower($s->name)] = $s->id;
             if ($s->server_number) {
                 $serversByKey[(string) $s->server_number] = $s->id;

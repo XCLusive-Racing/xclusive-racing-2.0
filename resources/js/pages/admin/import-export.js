@@ -59,7 +59,7 @@ export function initImportExport(wrap) {
             const d = new Date(ev.scheduled_at);
             if (!isNaN(d)) {
                 const number = serverNumberFor(fmt.server_group, d.getHours());
-                const srv = (window.__ieServers || []).find(s => String(s.number) === String(number));
+                const srv = gameServers().find(s => String(s.number) === String(number));
                 if (srv) ev.ftp_server_id = srv.value;
             }
         }
@@ -78,9 +78,17 @@ export function initImportExport(wrap) {
         return opts.map(([v, label]) => `<option value="${v}" ${sel === v ? 'selected' : ''}>${esc(label)}</option>`).join('');
     }
 
+    // Only servers of the selected game's ACC platform — PC and console server numbers
+    // repeat, and a PC event can't run on a console server (FtpServer::supportsRaceGame()).
+    function gameServers() {
+        const game = gameSelect?.value;
+        return (window.__ieServers || []).filter(s =>
+            (game !== 'acc' && game !== 'ac') || (s.platform === 'pc') === (game === 'ac'));
+    }
+
     function serverOptions(selected) {
         const sel = String(selected ?? '');
-        const opts = [['', '— Use shared —'], ...(window.__ieServers || []).map(s => [s.value, s.label])];
+        const opts = [['', '— Use shared —'], ...gameServers().map(s => [s.value, s.label])];
         return opts.map(([v, label]) => `<option value="${v}" ${sel === v ? 'selected' : ''}>${esc(label)}</option>`).join('');
     }
 

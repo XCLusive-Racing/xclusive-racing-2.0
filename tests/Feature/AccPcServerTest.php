@@ -69,6 +69,20 @@ class AccPcServerTest extends TestCase
         $this->assertNull($race->fresh()->ftp_server_id);
     }
 
+    public function test_csv_server_number_resolves_to_the_server_of_the_imports_platform(): void
+    {
+        $console = $this->makeServer('console');
+        $pc = $this->makeServer('pc'); // same server_number (3) as the console one
+
+        $csv = "track,date,time,server\r\nMonza,2026-10-01,20:00,3\r\n";
+        $upload = fn (string $game) => $this->actingAs($this->makeAdmin())->post(route('admin.races.bulk-import-csv'), [
+            'file' => UploadedFile::fake()->createWithContent('races.csv', $csv), 'game' => $game,
+        ]);
+
+        $upload('ac')->assertOk()->assertJsonPath('rows.0.ftp_server_id', $pc->id);
+        $upload('acc')->assertOk()->assertJsonPath('rows.0.ftp_server_id', $console->id);
+    }
+
     public function test_server_name_shows_the_platform(): void
     {
         $config = app(AccServerConfigService::class);

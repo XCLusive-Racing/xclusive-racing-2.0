@@ -592,6 +592,7 @@ $mcExisting = $isEdit
                                     <option value="{{ $srv->id }}"
                                             data-type="{{ $srv->server_type }}"
                                             data-number="{{ $srv->server_number }}"
+                                            data-platform="{{ $srv->platform === 'pc' ? 'pc' : 'console' }}"
                                             {{ old('ftp_server_id', $isEdit ? $race->ftp_server_id : '') == $srv->id ? 'selected' : '' }}>
                                         {{ $srv->name }} · {{ $srv->platform === 'pc' ? 'PC' : 'Console' }}
                                         @if($srv->server_type === 'rolling')
@@ -957,6 +958,27 @@ function isAccGame(game) {
     return game === 'acc' || game === 'ac';
 }
 
+// Server dropdown only offers servers of the event's own ACC platform (a PC event
+// can't run on a console server and vice versa — also enforced server-side by
+// FtpServer::supportsRaceGame()). Other games aren't platform-split.
+function serverFitsGame(option, game) {
+    if (!option.value || !isAccGame(game)) return true;
+    return (option.dataset.platform === 'pc') === (game === 'ac');
+}
+
+function filterServersByGame(selectEl, game) {
+    if (!selectEl) return;
+    Array.from(selectEl.options).forEach(o => {
+        const fits = serverFitsGame(o, game);
+        o.hidden = !fits;
+        o.disabled = !fits;
+    });
+    if (selectEl.selectedOptions[0]?.disabled) {
+        selectEl.value = '';
+        selectEl.dispatchEvent(new Event('change'));
+    }
+}
+
 (function () {
     // ── Mode switching ──────────────────────────────────────────────────────
     const form            = document.getElementById('ce-form');
@@ -1163,6 +1185,7 @@ function isAccGame(game) {
     gameEl.addEventListener('change', () => {
         updateFormats(gameEl.value);
         updateTrackInput(gameEl.value);
+        filterServersByGame(document.getElementById('gp-server'), gameEl.value);
     });
     fmtEl.addEventListener('change', () => {
         const fmt = (formats[gameEl.value] || []).find(f => String(f.id) === fmtEl.value);
@@ -1181,6 +1204,7 @@ function isAccGame(game) {
         updateFormats(oldGame);
         updateTrackInput(oldGame);
         if (isAccGame(oldGame)) updateTrackHint(trackSelect.value);
+        filterServersByGame(document.getElementById('gp-server'), oldGame);
     }
 
     window.__ceAllowNoFormat = allowNoFormat;
@@ -1239,7 +1263,10 @@ function isAccGame(game) {
         const number = serverNumberFor(fmt.server_group, hour);
         if (number === null) return;
 
-        const opt = Array.from(serverEl.options).find(o => o.dataset.number === String(number));
+        // Server numbers repeat across platforms (PC Server 1 vs console Server 1),
+        // so only look among the servers that fit this event's game.
+        const opt = Array.from(serverEl.options)
+            .find(o => o.dataset.number === String(number) && serverFitsGame(o, gameEl?.value));
         if (!opt || serverEl.value === opt.value) return;
 
         serverEl.value = opt.value;

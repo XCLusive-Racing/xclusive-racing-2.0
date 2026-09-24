@@ -48,7 +48,7 @@ $ieFormatsForJs = $formats->map(fn($f) => [
     'value' => (string) $f->id, 'label' => $f->name, 'game' => $f->game,
     'server_group' => $f->server_group, 'default_event_tag' => $f->default_event_tag,
 ]);
-$ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' => $s->name, 'number' => $s->server_number]);
+$ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' => $s->name, 'number' => $s->server_number, 'platform' => $s->platform === 'pc' ? 'pc' : 'console']);
 @endphp
 
 <div class="row g-4 align-items-start">

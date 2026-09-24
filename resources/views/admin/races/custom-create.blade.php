@@ -215,7 +215,7 @@ $tagsConfig = json_encode([
                                 <select name="ftp_server_id" id="cr-server" class="form-select @error('ftp_server_id') is-invalid @enderror" required>
                                     <option value="">— Select server —</option>
                                     @foreach($servers as $srv)
-                                        <option value="{{ $srv->id }}"
+                                        <option value="{{ $srv->id }}" data-platform="{{ $srv->platform === 'pc' ? 'pc' : 'console' }}"
                                                 {{ old('ftp_server_id') == $srv->id ? 'selected' : '' }}>
                                             {{ $srv->name }} · {{ $srv->platform === 'pc' ? 'PC' : 'Console' }}
                                             @if($srv->server_type === 'rolling')
@@ -537,6 +537,27 @@ function isAccGame(game) {
     return game === 'acc' || game === 'ac';
 }
 
+// Server dropdown only offers servers of the event's own ACC platform (a PC event
+// can't run on a console server and vice versa — also enforced server-side by
+// FtpServer::supportsRaceGame()). Other games aren't platform-split.
+function serverFitsGame(option, game) {
+    if (!option.value || !isAccGame(game)) return true;
+    return (option.dataset.platform === 'pc') === (game === 'ac');
+}
+
+function filterServersByGame(selectEl, game) {
+    if (!selectEl) return;
+    Array.from(selectEl.options).forEach(o => {
+        const fits = serverFitsGame(o, game);
+        o.hidden = !fits;
+        o.disabled = !fits;
+    });
+    if (selectEl.selectedOptions[0]?.disabled) {
+        selectEl.value = '';
+        selectEl.dispatchEvent(new Event('change'));
+    }
+}
+
 // ── Stepper ─────────────────────────────────────────────────────────────────
 (function () {
     const TOTAL   = 4;
@@ -807,6 +828,7 @@ function isAccGame(game) {
             trackSelect.style.display = 'none';
             trackText.style.display   = '';
         }
+        filterServersByGame($('cr-server'), game);
         updatePreview();
     }
 
