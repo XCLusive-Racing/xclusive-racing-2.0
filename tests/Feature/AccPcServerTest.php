@@ -3,12 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\Bop;
+use App\Models\Championship;
 use App\Models\FtpServer;
 use App\Models\League;
 use App\Models\Race;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\AccServerConfigService;
+use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
@@ -27,13 +29,13 @@ class AccPcServerTest extends TestCase
         return $user;
     }
 
-    private function makeServer(string $platform): FtpServer
+    private function makeServer(string $platform, ?int $leagueId = null): FtpServer
     {
         return FtpServer::create([
             'name' => ucfirst($platform).' Server', 'host' => '1.2.3.4', 'port' => 21,
             'username' => 'u', 'password' => 'p', 'path' => '/results',
             'server_type' => 'scheduled', 'server_number' => 3,
-            'league_id' => League::system()->id, 'game' => 'acc', 'platform' => $platform,
+            'league_id' => $leagueId ?? League::system()->id, 'game' => 'acc', 'platform' => $platform,
         ]);
     }
 
@@ -81,6 +83,40 @@ class AccPcServerTest extends TestCase
 
         $upload('ac')->assertOk()->assertJsonPath('rows.0.ftp_server_id', $pc->id);
         $upload('acc')->assertOk()->assertJsonPath('rows.0.ftp_server_id', $console->id);
+    }
+
+    public function test_eligible_servers_match_the_events_platform_and_league(): void
+    {
+        $xclConsole = $this->makeServer('console');
+        $xclPc = $this->makeServer('pc');
+        $league = League::create([
+            'name' => 'NLRL', 'slug' => 'nlrl',
+            'primary_color' => '#7c3aed', 'accent_color' => '#db2777', 'status' => 'active',
+        ]);
+        $leagueConsole = $this->makeServer('cross', $league->id);
+        $leaguePc = $this->makeServer('pc', $league->id);
+
+        $this->assertSame([$xclPc->id], $this->makeRace('ac')->eligibleServers()->pluck('id')->all());
+        $this->assertSame([$xclConsole->id], $this->makeRace('acc')->eligibleServers()->pluck('id')->all());
+
+        $championship = Championship::create([
+            'league_id' => $league->id, 'name' => 'Cup', 'game' => 'acc', 'season' => 2026,
+            'status' => 'draft', 'visibility' => 'public', 'settings' => ChampionshipSettingsSchema::defaults(),
+        ]);
+        $round = $this->makeRace('acc');
+        $round->update(['championship_id' => $championship->id]);
+
+        $this->assertSame([$leagueConsole->id], $round->eligibleServers()->pluck('id')->all());
+    }
+
+    public function test_ftp_result_import_refuses_a_server_not_eligible_for_the_race(): void
+    {
+        $race = $this->makeRace('ac');
+        $console = $this->makeServer('console');
+
+        $this->actingAs($this->makeAdmin())
+            ->post(route('admin.races.results.ftp', $race), ['server_id' => $console->id, 'filename' => 'x.json'])
+            ->assertSessionHas('error', FtpServer::ERR_NOT_FOR_RACE);
     }
 
     public function test_server_name_shows_the_platform(): void

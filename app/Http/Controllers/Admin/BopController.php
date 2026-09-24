@@ -143,6 +143,9 @@ class BopController extends Controller
         }
 
         $server = FtpServer::findOrFail($request->server_id);
+        if (! $server->supportsRaceGame($game)) {
+            return back()->with('push_error', FtpServer::ERR_WRONG_PLATFORM);
+        }
         $ftp = new FtpService;
 
         if (! $ftp->connect($server)) {

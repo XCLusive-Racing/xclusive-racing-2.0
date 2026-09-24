@@ -87,7 +87,7 @@ class RaceController extends Controller
             ? $race->teamEntries()->with(['team', 'startingDriver', 'registrations.user'])->orderBy('created_at')->get()
             : collect();
 
-        $ftpServers = FtpServer::where('active', true)->orderBy('name')->get();
+        $ftpServers = $race->eligibleServers();
         $selectedServer = null;
         $ftpFiles = [];
         $ftpAllFiles = [];
@@ -1214,8 +1214,8 @@ class RaceController extends Controller
 
         $server = FtpServer::findOrFail($request->server_id);
 
-        if (! $server->supportsRaceGame($race->game)) {
-            return back()->with('error', FtpServer::ERR_WRONG_PLATFORM);
+        if (! $race->eligibleServers()->contains('id', $server->id)) {
+            return back()->with('error', FtpServer::ERR_NOT_FOR_RACE);
         }
 
         // A saved/pasted settings.json can carry a password or serverName left over from

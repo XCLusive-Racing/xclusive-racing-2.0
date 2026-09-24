@@ -38,7 +38,7 @@
             <div class="d-flex gap-3 align-items-end flex-wrap">
                 <div>
                     <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">Game</label>
-                    <select name="game" class="form-select form-select-sm" style="min-width:140px">
+                    <select name="game" class="form-select form-select-sm" style="min-width:140px" data-server-game-select>
                         @foreach($games as $key => $label)
                         <option value="{{ $key }}" {{ $key === 'acc' ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
@@ -46,10 +46,10 @@
                 </div>
                 <div class="flex-grow-1" style="min-width:220px">
                     <label class="form-label fw-bold text-dark mb-1" style="font-size:.78rem">Server</label>
-                    <select name="server_id" class="form-select form-select-sm">
+                    <select name="server_id" class="form-select form-select-sm" data-server-platform-select>
                         <option value="">Select server…</option>
                         @foreach($ftpServers as $ftpServer)
-                        <option value="{{ $ftpServer->id }}">{{ $ftpServer->name }} — {{ $ftpServer->cfg_path ?: $ftpServer->path }}</option>
+                        <option value="{{ $ftpServer->id }}" data-platform="{{ $ftpServer->platform === 'pc' ? 'pc' : 'console' }}">{{ $ftpServer->name }} — {{ $ftpServer->cfg_path ?: $ftpServer->path }}</option>
                         @endforeach
                     </select>
                 </div>

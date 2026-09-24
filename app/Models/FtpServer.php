@@ -58,6 +58,8 @@ class FtpServer extends Model
             ->toArray();
     }
 
+    public const ERR_NOT_FOR_RACE = 'This server isn\'t available for this event — it belongs to another league or runs a different ACC platform.';
+
     public const ERR_WRONG_PLATFORM = 'This server runs a different ACC platform than the event (ACC PC events need a PC server, ACC Console events a console server).';
 
     // ACC PC and ACC Console builds can't share a server (different car IDs, Steam vs

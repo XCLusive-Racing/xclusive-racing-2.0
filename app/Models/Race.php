@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 class Race extends Model
@@ -61,6 +62,27 @@ class Race extends Model
     public function championship(): BelongsTo
     {
         return $this->belongsTo(Championship::class);
+    }
+
+    // The servers this race may be pushed to / import results from: a championship
+    // round only its own league's servers, any other event only XCL's own (system
+    // league) servers -- and either way only servers of the race's ACC platform
+    // (FtpServer::supportsRaceGame()). Tenant scope is bypassed on purpose: this
+    // picks by league explicitly, and an admin's scope would otherwise show every
+    // league's servers.
+    public function eligibleServers(): Collection
+    {
+        $leagueId = $this->championship_id
+            ? Championship::withoutTenantScope()->whereKey($this->championship_id)->value('league_id')
+            : null;
+
+        return FtpServer::withoutTenantScope()
+            ->where('active', true)
+            ->where('league_id', $leagueId ?? League::system()->id)
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (FtpServer $server) => $server->supportsRaceGame($this->game))
+            ->values();
     }
 
     public function raceClasses(): HasMany

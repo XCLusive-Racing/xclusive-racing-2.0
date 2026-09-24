@@ -168,6 +168,25 @@ document.addEventListener('DOMContentLoaded', () => {
         updateBallast();
     });
 
+    // Server picker follows the selected game's ACC platform (BOP push) — ACC PC only
+    // lists PC servers, ACC console only console ones (FtpServer::supportsRaceGame()).
+    document.querySelectorAll('[data-server-platform-select]').forEach(serverSelect => {
+        const gameSelect = serverSelect.form?.querySelector('[data-server-game-select]');
+        if (!gameSelect) return;
+        function updateServers() {
+            const game = gameSelect.value;
+            Array.from(serverSelect.options).forEach(o => {
+                const fits = !o.value || (game !== 'acc' && game !== 'ac')
+                    || (o.dataset.platform === 'pc') === (game === 'ac');
+                o.hidden = !fits;
+                o.disabled = !fits;
+            });
+            if (serverSelect.selectedOptions[0]?.disabled) serverSelect.value = '';
+        }
+        gameSelect.addEventListener('change', updateServers);
+        updateServers();
+    });
+
     // Car model suggestions follow the selected game (bops form) — ACC console and
     // ACC PC each have their own car list, other games have none (free text).
     document.querySelectorAll('[data-bop-car-input]').forEach(input => {

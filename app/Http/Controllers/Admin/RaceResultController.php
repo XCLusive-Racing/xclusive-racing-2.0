@@ -29,7 +29,7 @@ class RaceResultController extends Controller
         $raceResults = $race->results()->where('session_type', 'race')->with('user')->get();
         $qualiResults = $race->results()->where('session_type', 'quali')->with('user')->get();
 
-        $ftpServers = FtpServer::where('active', true)->orderBy('name')->get();
+        $ftpServers = $race->eligibleServers();
         $selectedServer = null;
         $ftpFiles = [];
         $ftpAllFiles = [];
@@ -152,6 +152,9 @@ class RaceResultController extends Controller
         ]);
 
         $server = FtpServer::findOrFail($request->server_id);
+        if (! $race->eligibleServers()->contains('id', $server->id)) {
+            return back()->with('error', FtpServer::ERR_NOT_FOR_RACE);
+        }
         $filename = basename($request->filename);
 
         \Log::info('FTP import started', ['race_id' => $race->id, 'file' => $filename, 'server' => $server->host]);
