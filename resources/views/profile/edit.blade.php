@@ -53,20 +53,12 @@
                             <div class="col-12">
                                 <label class="form-label fw-bold text-dark" style="font-size:.82rem">
                                     Team / Quote
-                                    @if(!$user->is_supporter)
-                                    <span class="ms-1 fw-normal" style="font-size:.75rem;color:#f59e0b">
-                                        <i class="fa-solid fa-star" style="font-size:.65rem"></i> Supporter only
-                                    </span>
-                                    @endif
+                                    <span class="ms-1 fw-normal text-secondary" style="font-size:.75rem">max 16 characters</span>
                                 </label>
-                                @if($user->is_supporter)
                                 <input type="text" name="team" value="{{ old('team', $user->team) }}"
-                                       class="form-control" placeholder="Supporter"
+                                       class="form-control @error('team') is-invalid @enderror" placeholder="e.g. your team name"
                                        maxlength="16">
-                                @else
-                                <input type="text" class="form-control" value="{{ $user->displayTeam() ?? '' }}"
-                                       disabled style="opacity:.5;cursor:not-allowed">
-                                @endif
+                                @error('team')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
                     </div>

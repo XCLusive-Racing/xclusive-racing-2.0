@@ -96,7 +96,7 @@ class AccServerConfigService implements ServerConfigGenerator
     // A solo driver's in-game team name should reflect the RacingTeam they
     // actually belong to (owned team first, else whichever team they're a
     // member of) -- most drivers never bother filling in the free-text
-    // "Team / Quote" profile field (a supporter-only perk), so relying on
+    // "Team / Quote" profile field (open to everyone, max 16 chars), so relying on
     // that alone left the name blank for the vast majority of team members.
     // The personal quote is kept only as a fallback for drivers with no
     // RacingTeam at all.

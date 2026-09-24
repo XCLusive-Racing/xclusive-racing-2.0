@@ -246,7 +246,7 @@
                 $configFiles = [
                     'entrylist.json'   => json_encode($configData->entryList($race),               JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
                     'event.json'       => json_encode($configData->configuration($race, $race->ftpServer), JSON_PRETTY_PRINT),
-                    'settings.json'    => json_encode($configData->settings($race),                 JSON_PRETTY_PRINT),
+                    'settings.json'    => json_encode($configData->settings($race, $race->ftpServer), JSON_PRETTY_PRINT),
                     'eventrules.json'  => json_encode($configData->eventRules($race, $race->ftpServer),     JSON_PRETTY_PRINT),
                     'assistrules.json' => json_encode($configData->assistRules($race->ftpServer),    JSON_PRETTY_PRINT),
                 ];

@@ -22,8 +22,8 @@ class ProfileController extends Controller
 
         $stats = $user->raceStats();
 
-        $myEvents = Race::select(['id','title','game','track','scheduled_at','status'])
-            ->whereHas('registrations', fn($q) => $q->where('user_id', $user->id))
+        $myEvents = Race::select(['id', 'title', 'game', 'track', 'scheduled_at', 'status'])
+            ->whereHas('registrations', fn ($q) => $q->where('user_id', $user->id))
             ->where('status', '!=', 'finished')
             ->where('scheduled_at', '>', now())
             ->orderBy('scheduled_at')
@@ -36,6 +36,7 @@ class ProfileController extends Controller
     public function edit()
     {
         $user = Auth::user()->load('connectedAccounts');
+
         return view('profile.edit', compact('user'));
     }
 
@@ -44,18 +45,14 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $data = $request->validate([
-            'name'       => 'required|string|max:255',
-            'country'    => 'nullable|string|max:100',
-            'team'       => 'nullable|string|max:16',
+            'name' => 'required|string|max:255',
+            'country' => 'nullable|string|max:100',
+            'team' => 'nullable|string|max:16',
             'car_number' => 'nullable|integer|min:1|max:9999',
-            'car_model'  => 'nullable|string|max:100',
-            'game'       => 'nullable|in:acc,lmu,iracing',
-            'avatar'     => 'nullable|image|max:4096',
+            'car_model' => 'nullable|string|max:100',
+            'game' => 'nullable|in:acc,lmu,iracing',
+            'avatar' => 'nullable|image|max:4096',
         ]);
-
-        if (! $user->is_supporter) {
-            unset($data['team']);
-        }
 
         if ($request->hasFile('avatar')) {
             // Delete old avatar
@@ -64,15 +61,19 @@ class ProfileController extends Controller
                     // R2 — extract the path after the base URL and delete from disk
                     $diskUrl = rtrim(Storage::disk('media')->url(''), '/');
                     $oldPath = ltrim(str_replace($diskUrl, '', $user->banner), '/');
-                    if ($oldPath) Storage::disk('media')->delete($oldPath);
+                    if ($oldPath) {
+                        Storage::disk('media')->delete($oldPath);
+                    }
                 } elseif (str_starts_with($user->banner, 'images/avatars/')) {
                     $localPath = public_path($user->banner);
-                    if (file_exists($localPath)) unlink($localPath);
+                    if (file_exists($localPath)) {
+                        unlink($localPath);
+                    }
                 }
             }
 
-            $ext      = $request->file('avatar')->getClientOriginalExtension();
-            $path     = $request->file('avatar')->storeAs('avatars', Str::uuid() . '.' . $ext, 'media');
+            $ext = $request->file('avatar')->getClientOriginalExtension();
+            $path = $request->file('avatar')->storeAs('avatars', Str::uuid().'.'.$ext, 'media');
             $data['banner'] = Storage::disk('media')->url($path);
         }
 
@@ -88,11 +89,11 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'email'    => 'required|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'required|email|max:255|unique:users,email,'.$user->id,
             'password' => 'required',
         ]);
 
-        if (!Hash::check($request->password, $user->password)) {
+        if (! Hash::check($request->password, $user->password)) {
             return back()->withErrors(['password' => 'Password is incorrect.']);
         }
 
@@ -105,12 +106,12 @@ class ProfileController extends Controller
     {
         $request->validate([
             'current_password' => 'required',
-            'new_password'     => 'required|min:8|confirmed',
+            'new_password' => 'required|min:8|confirmed',
         ]);
 
         $user = Auth::user();
 
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             return back()->withErrors(['current_password' => 'Current password is incorrect.']);
         }
 
