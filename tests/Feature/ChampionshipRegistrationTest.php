@@ -190,7 +190,7 @@ class ChampionshipRegistrationTest extends TestCase
         $team->members()->attach($member->id);
 
         $this->actingAs($owner)
-            ->post(route('championships.register', $championship), ['racing_team_id' => $team->id])
+            ->post(route('championships.register', $championship), ['racing_team_id' => $team->id, 'driver_ids' => [$owner->id, $member->id]])
             ->assertRedirect();
 
         $this->assertDatabaseHas('championship_registrations', [
@@ -415,7 +415,7 @@ class ChampionshipRegistrationTest extends TestCase
 
         $this->actingAs($owner)
             ->post(route('championships.register', $championship), [
-                'racing_team_id' => $team->id,
+                'racing_team_id' => $team->id, 'driver_ids' => [$owner->id, $member->id],
                 'car_number' => 42,
                 'car_model' => 'Ferrari 296 GT3',
                 'starting_driver_id' => $member->id,
@@ -445,7 +445,7 @@ class ChampionshipRegistrationTest extends TestCase
         $team = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
 
         $this->actingAs($owner)
-            ->post(route('championships.register', $championship), ['racing_team_id' => $team->id])
+            ->post(route('championships.register', $championship), ['racing_team_id' => $team->id, 'driver_ids' => [$owner->id]])
             ->assertSessionHasErrors(['car_number', 'starting_driver_id']);
 
         $this->assertFalse($championship->fresh()->isRegistered($owner));
@@ -465,7 +465,7 @@ class ChampionshipRegistrationTest extends TestCase
 
         $this->actingAs($owner)
             ->post(route('championships.register', $championship), [
-                'racing_team_id' => $team->id, 'car_number' => 7, 'starting_driver_id' => $owner->id,
+                'racing_team_id' => $team->id, 'driver_ids' => [$owner->id], 'car_number' => 7, 'starting_driver_id' => $owner->id,
             ])
             ->assertRedirect();
 
@@ -501,7 +501,7 @@ class ChampionshipRegistrationTest extends TestCase
 
         $this->actingAs($owner)
             ->post(route('championships.register', $championship), [
-                'racing_team_id' => $team->id, 'car_number' => 42, 'starting_driver_id' => $owner->id,
+                'racing_team_id' => $team->id, 'driver_ids' => [$owner->id], 'car_number' => 42, 'starting_driver_id' => $owner->id,
             ])
             ->assertRedirect();
 
@@ -549,7 +549,7 @@ class ChampionshipRegistrationTest extends TestCase
         $race = $this->makeRound($championship, 1);
 
         $this->actingAs($owner)
-            ->post(route('championships.register', $championship), ['racing_team_id' => $team->id])
+            ->post(route('championships.register', $championship), ['racing_team_id' => $team->id, 'driver_ids' => [$owner->id]])
             ->assertRedirect();
 
         $this->assertDatabaseHas('championship_registrations', ['championship_id' => $championship->id, 'racing_team_id' => $team->id]);

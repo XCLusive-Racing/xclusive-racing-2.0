@@ -166,7 +166,7 @@ class ChampionshipAccPcTest extends TestCase
         $team->members()->attach($member->id);
 
         $register = fn () => $this->actingAs($owner)->post(route('championships.register', $championship), [
-            'racing_team_id' => $team->id, 'car_number' => 7, 'starting_driver_id' => $owner->id,
+            'racing_team_id' => $team->id, 'driver_ids' => [$owner->id, $member->id], 'car_number' => 7, 'starting_driver_id' => $owner->id,
         ]);
 
         $register()->assertSessionHas('error', $member->displayName().': '.User::STEAM_REQUIRED_MESSAGE);

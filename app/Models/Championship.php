@@ -249,6 +249,23 @@ class Championship extends Model
         };
     }
 
+    // Checks a team car's line-up size against the Format step's drivers-per-car
+    // bounds (either may be unset). Returns an error message, or null when it fits.
+    public function driverCountFailure(int $count): ?string
+    {
+        $min = (int) ($this->settings->format->min_drivers_per_car ?? 0);
+        $max = (int) ($this->settings->format->max_drivers_per_car ?? 0);
+
+        if ($min > 0 && $count < $min) {
+            return "Pick at least {$min} driver(s) for your car.";
+        }
+        if ($max > 0 && $count > $max) {
+            return "Pick at most {$max} driver(s) for your car.";
+        }
+
+        return null;
+    }
+
     public function isFull(): bool
     {
         if ($this->max_drivers === null) {

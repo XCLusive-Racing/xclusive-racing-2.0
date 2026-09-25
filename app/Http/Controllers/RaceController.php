@@ -97,6 +97,19 @@ class RaceController extends Controller
             }
         }
 
+        // A "per_round" championship team signs up for each round itself, starting
+        // from the line-up it picked at championship registration; a "championship"
+        // team is entered automatically (ChampionshipTeamEntryService).
+        $championshipTeamScope = null;
+        $championshipTeamRegistration = null;
+        if ($isChampionshipTeamRound) {
+            $championshipTeamScope = $championship->settings->format->team_registration_scope ?? 'per_round';
+            $championshipTeamRegistration = $userTeam
+                ? $championship->registrations()->where('racing_team_id', $userTeam->id)->first()
+                : null;
+        }
+        $preselectedDriverIds = $championshipTeamRegistration?->driverIds() ?: array_filter([$userTeam?->owner_id]);
+
         $platformIds = $race->registrations->pluck('user.platform_id')->filter()->values()->all();
         $driverMap = Driver::whereIn('xuid_psid', $platformIds)
             ->get(['id', 'xuid_psid'])
@@ -104,7 +117,7 @@ class RaceController extends Controller
 
         return view('race.show', compact(
             'race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries',
-            'isTeamRace', 'isChampionshipTeamRound'
+            'isTeamRace', 'isChampionshipTeamRound', 'championshipTeamScope', 'championshipTeamRegistration', 'preselectedDriverIds'
         ));
     }
 
@@ -375,6 +388,22 @@ class RaceController extends Controller
         $startingDriverId = (int) $validated['starting_driver_id'];
         if (! $selectedIds->contains($startingDriverId)) {
             return back()->with('error', 'The starting driver must be one of the selected drivers.');
+        }
+
+        // A driver-swap championship round: a "championship"-scope team is entered
+        // automatically (ChampionshipTeamEntryService), a "per_round" team signs up
+        // here itself — but only once it's registered for the championship.
+        $championship = $race->championship_id ? $race->championship()->withoutTenantScope()->first() : null;
+        if ($championship && ($championship->settings->format->driver_swaps_enabled ?? false)) {
+            if (($championship->settings->format->team_registration_scope ?? 'per_round') === 'championship') {
+                return back()->with('error', 'Your team is entered into this round automatically from its championship registration.');
+            }
+            if (! $championship->registrations()->where('racing_team_id', $team->id)->exists()) {
+                return back()->with('error', 'Register your team for the championship first.');
+            }
+            if ($failure = $championship->driverCountFailure($selectedIds->count())) {
+                return back()->with('error', $failure);
+            }
         }
 
         $users = User::whereIn('id', $selectedIds)->get()->keyBy('id');

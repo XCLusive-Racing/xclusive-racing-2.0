@@ -554,11 +554,15 @@
                             </form>
                         </div>
                         @endif
-                    @elseif($isChampionshipTeamRound)
+                    @elseif($isChampionshipTeamRound && ($championshipTeamScope === 'championship' || !$championshipTeamRegistration))
                         <p class="xcl-event-card__text mb-0" style="font-size:.82rem">
                             Register your team for the
                             <a href="{{ route('championships.show', $race->championship_id) }}" style="color:#e5e7eb;text-decoration:underline">championship</a>
+                            @if($championshipTeamScope === 'championship')
                             to enter this round — every round is entered automatically once your team is in.
+                            @else
+                            first — after that you sign your team up for each round here.
+                            @endif
                         </p>
                     @elseif($race->registrationOpen())
                         <p class="xcl-event-card__text mb-3" style="font-size:.82rem">
@@ -608,9 +612,10 @@
 
                                 {{-- Owner --}}
                                 <div class="d-flex align-items-center gap-2">
+                                    @php $starterId = $preselectedDriverIds[0] ?? $userTeam->owner_id; @endphp
                                     <input class="form-check-input m-0" type="checkbox" name="driver_ids[]"
                                            value="{{ $userTeam->owner_id }}" id="driver_{{ $userTeam->owner_id }}"
-                                           checked onchange="syncStarter(this)">
+                                           {{ in_array($userTeam->owner_id, $preselectedDriverIds) ? 'checked' : '' }} onchange="syncStarter(this)">
                                     <label for="driver_{{ $userTeam->owner_id }}" class="d-flex align-items-center gap-2" style="color:#e5e7eb;font-size:.85rem;cursor:pointer">
                                         @if(auth()->user()->avatarUrl())
                                         <img src="{{ auth()->user()->avatarUrl() }}" width="22" height="22"
@@ -626,7 +631,8 @@
                                 </div>
                                 <div class="text-center">
                                     <input type="radio" name="starting_driver_id" value="{{ $userTeam->owner_id }}"
-                                           id="starter_{{ $userTeam->owner_id }}" checked
+                                           id="starter_{{ $userTeam->owner_id }}"
+                                           {{ $starterId === $userTeam->owner_id ? 'checked' : '' }} {{ in_array($userTeam->owner_id, $preselectedDriverIds) ? '' : 'disabled' }}
                                            style="width:15px;height:15px;cursor:pointer;accent-color:{{ $race->gameColor() }}">
                                 </div>
 
@@ -634,7 +640,7 @@
                                 <div class="d-flex align-items-center gap-2">
                                     <input class="form-check-input m-0" type="checkbox" name="driver_ids[]"
                                            value="{{ $member->id }}" id="driver_{{ $member->id }}"
-                                           onchange="syncStarter(this)">
+                                           {{ in_array($member->id, $preselectedDriverIds) ? 'checked' : '' }} onchange="syncStarter(this)">
                                     <label for="driver_{{ $member->id }}" class="d-flex align-items-center gap-2" style="color:#e5e7eb;font-size:.85rem;cursor:pointer">
                                         @if($member->avatarUrl())
                                         <img src="{{ $member->avatarUrl() }}" width="22" height="22"
@@ -650,6 +656,7 @@
                                 <div class="text-center">
                                     <input type="radio" name="starting_driver_id" value="{{ $member->id }}"
                                            id="starter_{{ $member->id }}"
+                                           {{ $starterId === $member->id ? 'checked' : '' }} {{ in_array($member->id, $preselectedDriverIds) ? '' : 'disabled' }}
                                            style="width:15px;height:15px;cursor:pointer;accent-color:{{ $race->gameColor() }}">
                                 </div>
                                 @endforeach

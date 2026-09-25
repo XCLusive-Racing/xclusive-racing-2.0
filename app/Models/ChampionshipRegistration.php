@@ -13,11 +13,30 @@ class ChampionshipRegistration extends Model
         // "championship" — a team's car number/model/starting driver, captured
         // once so every round can auto-generate its own RaceTeamEntry from them.
         'car_number', 'car_model', 'starting_driver_id',
+        // The team members picked to drive this car. In "championship" scope they're
+        // the ones entered into every round; in "per_round" scope they're the
+        // pre-selected line-up on each round's team sign-up. Null = whole team.
+        'driver_ids',
     ];
 
     protected function casts(): array
     {
-        return ['is_spectator' => 'boolean'];
+        return ['is_spectator' => 'boolean', 'driver_ids' => 'array'];
+    }
+
+    // The picked line-up, falling back to every member of the team (owner included)
+    // for registrations made before drivers could be picked.
+    public function driverIds(): array
+    {
+        if ($this->driver_ids) {
+            return array_map('intval', $this->driver_ids);
+        }
+
+        $team = $this->racingTeam;
+
+        return $team
+            ? $team->members->pluck('id')->push($team->owner_id)->unique()->values()->all()
+            : [];
     }
 
     public function championship(): BelongsTo

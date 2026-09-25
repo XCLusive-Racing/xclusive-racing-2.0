@@ -24,7 +24,7 @@ class ChampionshipTeamEntryService
     // way, the same per-round entry gets created without anyone re-registering.
     public function syncRoundEntry(ChampionshipRegistration $registration, Race $race): void
     {
-        if (!$registration->racing_team_id || $registration->car_number === null) {
+        if (! $registration->racing_team_id || $registration->car_number === null) {
             return;
         }
 
@@ -36,25 +36,24 @@ class ChampionshipTeamEntryService
             Log::warning('Championship team auto-entry skipped: car number already taken in this round', [
                 'race_id' => $race->id, 'racing_team_id' => $registration->racing_team_id, 'car_number' => $registration->car_number,
             ]);
+
             return;
         }
 
         $team = $registration->racingTeam;
-        if (!$team) {
+        if (! $team) {
             return;
         }
 
         $entry = RaceTeamEntry::create([
-            'race_id'            => $race->id,
-            'racing_team_id'     => $team->id,
-            'car_number'         => $registration->car_number,
-            'car_model'          => $registration->car_model,
+            'race_id' => $race->id,
+            'racing_team_id' => $team->id,
+            'car_number' => $registration->car_number,
+            'car_model' => $registration->car_model,
             'starting_driver_id' => $registration->starting_driver_id,
         ]);
 
-        $memberIds = $team->members->pluck('id')->push($team->owner_id)->unique();
-
-        foreach ($memberIds as $userId) {
+        foreach ($registration->driverIds() as $userId) {
             RaceRegistration::withTrashed()->updateOrCreate(
                 ['race_id' => $race->id, 'user_id' => $userId],
                 ['team_entry_id' => $entry->id, 'deleted_at' => null]

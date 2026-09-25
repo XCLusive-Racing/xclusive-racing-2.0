@@ -414,18 +414,49 @@
                                         style="background:#1f2937;border-color:#374151;color:#e5e7eb"
                                         onchange="document.getElementById('teamEntryFields')?.classList.toggle('d-none', !this.value)">
                                     <option value="">Just me (no team)</option>
-                                    <option value="{{ $ownedTeam->id }}">My team — {{ $ownedTeam->name }}</option>
+                                    <option value="{{ $ownedTeam->id }}" {{ old('racing_team_id') ? 'selected' : '' }}>My team — {{ $ownedTeam->name }}</option>
                                 </select>
                                 @else
                                 <p style="color:#6b7280;font-size:.78rem" class="mb-0">This championship allows driver swaps, but you don't own a racing team — registering as an individual.</p>
                                 @endif
                             </div>
 
-                            @if($ownedTeam && $teamScope === 'championship')
-                            <div id="teamEntryFields" class="d-none mb-3 p-2" style="background:#1f293766;border:1px solid #374151;border-radius:8px">
+                            @if($ownedTeam)
+                            @php
+                                $teamDrivers = collect([$ownedTeam->owner])->concat($ownedTeam->members)->filter()->unique('id');
+                                $minDrivers  = (int) ($championship->settings->format->min_drivers_per_car ?? 0);
+                                $maxDrivers  = (int) ($championship->settings->format->max_drivers_per_car ?? 0);
+                                $selectedDriverIds = collect(old('driver_ids', [auth()->id()]))->map(fn ($id) => (int) $id);
+                            @endphp
+                            <div id="teamEntryFields" class="{{ old('racing_team_id') ? '' : 'd-none' }} mb-3 p-2" style="background:#1f293766;border:1px solid #374151;border-radius:8px">
                                 <p style="color:#9ca3af;font-size:.72rem" class="mb-2">
-                                    This championship registers your team once — the car number, model and starting driver below carry over to every round automatically.
+                                    @if($teamScope === 'championship')
+                                    This championship registers your team once — the drivers, car number, model and starting driver below carry over to every round automatically.
+                                    @else
+                                    Pick the drivers for your car. They're pre-selected when you sign your team up for each round, and you can still change them per round.
+                                    @endif
                                 </p>
+                                <div class="mb-2">
+                                    <label class="form-label text-white mb-1" style="font-size:.78rem">
+                                        Drivers
+                                        @if($minDrivers && $minDrivers === $maxDrivers)
+                                        <span style="color:#9ca3af;font-weight:400">(pick {{ $minDrivers }})</span>
+                                        @elseif($minDrivers || $maxDrivers)
+                                        <span style="color:#9ca3af;font-weight:400">({{ $minDrivers ?: 1 }}–{{ $maxDrivers ?: $teamDrivers->count() }})</span>
+                                        @endif
+                                    </label>
+                                    @foreach($teamDrivers as $driver)
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input" type="checkbox" name="driver_ids[]" value="{{ $driver->id }}"
+                                               id="champDriver{{ $driver->id }}" data-team-driver
+                                               {{ $selectedDriverIds->contains($driver->id) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="champDriver{{ $driver->id }}" style="color:#e5e7eb;font-size:.82rem">
+                                            {{ $driver->displayName() }}@if($driver->id === $ownedTeam->owner_id) <span style="color:#6b7280">(owner)</span>@endif
+                                        </label>
+                                    </div>
+                                    @endforeach
+                                </div>
+                                @if($teamScope === 'championship')
                                 <div class="mb-2">
                                     <label class="form-label text-white" style="font-size:.78rem">Car Number</label>
                                     <input type="number" name="car_number" min="0" max="999" class="form-control form-control-sm"
@@ -438,15 +469,33 @@
                                 </div>
                                 <div class="mb-0">
                                     <label class="form-label text-white" style="font-size:.78rem">Starting Driver</label>
-                                    <select name="starting_driver_id" class="form-select form-select-sm"
+                                    <select name="starting_driver_id" data-starting-driver class="form-select form-select-sm"
                                             style="background:#1f2937;border-color:#374151;color:#e5e7eb">
-                                        <option value="{{ $ownedTeam->owner_id }}">{{ $ownedTeam->owner->displayName() }} (owner)</option>
-                                        @foreach($ownedTeam->members as $member)
-                                        <option value="{{ $member->id }}">{{ $member->displayName() }}</option>
+                                        @foreach($teamDrivers as $driver)
+                                        <option value="{{ $driver->id }}" {{ (int) old('starting_driver_id') === $driver->id ? 'selected' : '' }}>{{ $driver->displayName() }}</option>
                                         @endforeach
                                     </select>
                                 </div>
+                                @endif
                             </div>
+                            <script>
+                            // Only a picked driver can start the race.
+                            (function () {
+                                var boxes   = document.querySelectorAll('[data-team-driver]');
+                                var starter = document.querySelector('[data-starting-driver]');
+                                if (!starter) return;
+                                function sync() {
+                                    var picked = Array.from(boxes).filter(function (b) { return b.checked; }).map(function (b) { return b.value; });
+                                    Array.from(starter.options).forEach(function (o) { o.hidden = o.disabled = picked.indexOf(o.value) === -1; });
+                                    if (starter.selectedOptions[0]?.disabled) {
+                                        var first = Array.from(starter.options).find(function (o) { return !o.disabled; });
+                                        starter.value = first ? first.value : '';
+                                    }
+                                }
+                                boxes.forEach(function (b) { b.addEventListener('change', sync); });
+                                sync();
+                            })();
+                            </script>
                             @endif
                             @endif
 

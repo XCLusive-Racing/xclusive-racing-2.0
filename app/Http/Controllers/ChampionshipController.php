@@ -147,9 +147,29 @@ class ChampionshipController extends Controller
                     return back()->with('error', 'Your team is already registered for this championship.');
                 }
 
-                // "Whole championship" scope captures the car/driver once here and
-                // auto-creates the per-round RaceTeamEntry for every existing (and,
-                // via ChampionshipWizardController, future) round — see
+                // The team picks which of its members drive this car, in both scopes:
+                // "championship" enters exactly them into every round, "per_round"
+                // pre-selects them on each round's own team sign-up.
+                $request->validate([
+                    'driver_ids' => 'required|array|min:1',
+                    'driver_ids.*' => 'integer',
+                ], ['driver_ids.required' => 'Pick the drivers for your car.']);
+
+                $eligibleIds = $team->members->pluck('id')->push($team->owner_id)->unique();
+                $driverIds = collect($request->input('driver_ids'))->map(fn ($id) => (int) $id)->unique()->values();
+
+                if ($driverIds->diff($eligibleIds)->isNotEmpty()) {
+                    return back()->with('error', 'Every driver must be a member of your team.');
+                }
+                if ($failure = $championship->driverCountFailure($driverIds->count())) {
+                    return back()->with('error', $failure);
+                }
+
+                $teamEntryFields = ['driver_ids' => $driverIds->all()];
+
+                // "Whole championship" scope also captures the car/starting driver once
+                // here and auto-creates the per-round RaceTeamEntry for every existing
+                // (and, via ChampionshipWizardController, future) round — see
                 // ChampionshipTeamEntryService.
                 if ($teamRegistrationScope === 'championship') {
                     $validated = $request->validate([
@@ -158,12 +178,11 @@ class ChampionshipController extends Controller
                         'starting_driver_id' => 'required|integer',
                     ]);
 
-                    $eligibleIds = $team->members->pluck('id')->push($team->owner_id)->unique();
-                    if (! $eligibleIds->contains((int) $validated['starting_driver_id'])) {
-                        return back()->with('error', 'The starting driver must be a member of your team.');
+                    if (! $driverIds->contains((int) $validated['starting_driver_id'])) {
+                        return back()->with('error', 'The starting driver must be one of the selected drivers.');
                     }
 
-                    $teamEntryFields = [
+                    $teamEntryFields += [
                         'car_number' => $validated['car_number'],
                         'car_model' => $validated['car_model'] ?? null,
                         'starting_driver_id' => $validated['starting_driver_id'],
@@ -199,13 +218,12 @@ class ChampionshipController extends Controller
             }
         }
 
-        // A whole-championship team registration enters every team member into every
-        // round (ChampionshipTeamEntryService), so each of them has to qualify — the
-        // same per-driver check RaceController::registerTeam() does for one round.
-        // Without it, a member with no Steam ID would land on an ACC PC entrylist
-        // with an empty playerID.
-        if ($team && $teamRegistrationScope === 'championship') {
-            $drivers = $team->members->concat([$team->owner])->filter()->unique('id');
+        // Every picked driver has to qualify, not just the one registering — the same
+        // per-driver check RaceController::registerTeam() does for one round. Without
+        // it, e.g. a driver with no Steam ID would land on an ACC PC entrylist with an
+        // empty playerID.
+        if ($team) {
+            $drivers = User::whereIn('id', $teamEntryFields['driver_ids'])->get();
 
             foreach ($drivers as $driver) {
                 $failure = $driver->requirementFailure($championship->game, $thresholds['sr'], $thresholds['min'], $thresholds['max'])
