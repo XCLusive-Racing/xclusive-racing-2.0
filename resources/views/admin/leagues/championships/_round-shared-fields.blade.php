@@ -139,7 +139,7 @@
     <div class="row g-3 mb-3">
         <div class="col-6 col-sm-3">
             <label class="form-label" style="font-size:.75rem">XCL-R Multiplier</label>
-            <input type="number" name="xcl_r_multiplier" step="0.1" min="0.6" max="2.5" value="{{ old('xcl_r_multiplier', $defaults['xcl_r_multiplier']) }}"
+            <input type="number" name="xcl_r_multiplier" step="0.01" min="0.6" max="2.5" value="{{ old('xcl_r_multiplier', $defaults['xcl_r_multiplier']) }}"
                    class="form-control form-control-sm @error('xcl_r_multiplier') is-invalid @enderror" placeholder="1.0"
                    {{ $championship->xcl_rating_enabled ? '' : 'disabled' }}>
             @error('xcl_r_multiplier')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
@@ -226,5 +226,13 @@ document.addEventListener('change', function (e) {
     var details = select.closest('div').nextElementSibling;
     if (details && details.tagName === 'DETAILS') details.open = true;
 });
+
+// A field failing browser validation inside the collapsed override panel can't
+// be focused or show its message, so submit silently does nothing — open the
+// panel first ('invalid' doesn't bubble, hence the capture listener).
+document.addEventListener('invalid', function (e) {
+    var details = e.target.closest('details');
+    if (details) details.open = true;
+}, true);
 </script>
 @endonce
