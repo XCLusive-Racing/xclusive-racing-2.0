@@ -403,23 +403,21 @@
                         <p style="color:#f59e0b;font-size:.875rem;font-weight:700">This championship is full.</p>
                         @endif
 
-                        @if(!$driverFull)
+                        {{-- Driver swaps = a team championship: drivers race as part of a team
+                             car, so only a team owner/manager can enter (ChampionshipController::register()). --}}
+                        @if(!$driverFull && $driverSwaps && !$ownedTeam)
+                        <p style="color:#9ca3af;font-size:.82rem" class="mb-0">
+                            This is a team championship — teams are registered by their owner or manager.
+                            Ask yours to register your team, or <a href="{{ route('racing-teams.index') }}" style="color:#e5e7eb;text-decoration:underline">create a team</a>.
+                        </p>
+                        @elseif(!$driverFull)
                         <form method="POST" action="{{ route('championships.register', $championship) }}">
                             @csrf
                             @if($driverSwaps)
-                            <div class="mb-3">
-                                <label class="form-label text-white" style="font-size:.82rem">Register as</label>
-                                @if($ownedTeam)
-                                <select name="racing_team_id" id="racingTeamSelect" class="form-select form-select-sm"
-                                        style="background:#1f2937;border-color:#374151;color:#e5e7eb"
-                                        onchange="document.getElementById('teamEntryFields')?.classList.toggle('d-none', !this.value)">
-                                    <option value="">Just me (no team)</option>
-                                    <option value="{{ $ownedTeam->id }}" {{ old('racing_team_id') ? 'selected' : '' }}>My team — {{ $ownedTeam->name }}</option>
-                                </select>
-                                @else
-                                <p style="color:#6b7280;font-size:.78rem" class="mb-0">This championship allows driver swaps, but you don't own a racing team — registering as an individual.</p>
-                                @endif
-                            </div>
+                            <input type="hidden" name="racing_team_id" value="{{ $ownedTeam->id }}">
+                            <p class="text-white mb-2" style="font-size:.82rem">
+                                Registering <strong>[{{ $ownedTeam->tag }}] {{ $ownedTeam->name }}</strong>
+                            </p>
 
                             @if($ownedTeam)
                             @php
@@ -428,7 +426,7 @@
                                 $maxDrivers  = (int) ($championship->settings->format->max_drivers_per_car ?? 0);
                                 $selectedDriverIds = collect(old('driver_ids', [auth()->id()]))->map(fn ($id) => (int) $id);
                             @endphp
-                            <div id="teamEntryFields" class="{{ old('racing_team_id') ? '' : 'd-none' }} mb-3 p-2" style="background:#1f293766;border:1px solid #374151;border-radius:8px">
+                            <div id="teamEntryFields" class="mb-3 p-2" style="background:#1f293766;border:1px solid #374151;border-radius:8px">
                                 <p style="color:#9ca3af;font-size:.72rem" class="mb-2">
                                     @if($teamScope === 'championship')
                                     This championship registers your team once — the drivers, car number, model and starting driver below carry over to every round automatically.
@@ -464,8 +462,27 @@
                                 </div>
                                 <div class="mb-2">
                                     <label class="form-label text-white" style="font-size:.78rem">Car Model</label>
+                                    @php
+                                        // ACC's own car catalogue for the championship's platform, narrowed
+                                        // to its single car class; with multiclass the class picker below
+                                        // narrows it further client-side (and server-side on submit).
+                                        $carOptions = collect(\App\Services\AccCarCatalog::namesWithClass($championship->game))
+                                            ->when(!$championship->is_multiclass && $championship->car_class,
+                                                fn ($cars) => $cars->filter(fn ($class) => $class === $championship->car_class));
+                                    @endphp
+                                    @if($carOptions->isNotEmpty())
+                                    <select name="car_model" data-car-select class="form-select form-select-sm"
+                                            style="background:#1f2937;border-color:#374151;color:#e5e7eb">
+                                        <option value="">— Select car —</option>
+                                        @foreach($carOptions as $carName => $carClass)
+                                        <option value="{{ $carName }}" data-car-class="{{ $carClass }}" {{ old('car_model') === $carName ? 'selected' : '' }}>{{ $carName }}</option>
+                                        @endforeach
+                                    </select>
+                                    @else
                                     <input type="text" name="car_model" class="form-control form-control-sm"
+                                           value="{{ old('car_model') }}"
                                            style="background:#1f2937;border-color:#374151;color:#e5e7eb">
+                                    @endif
                                 </div>
                                 <div class="mb-0">
                                     <label class="form-label text-white" style="font-size:.78rem">Starting Driver</label>
@@ -502,14 +519,31 @@
                             @if($championship->is_multiclass && $championship->classes->isNotEmpty())
                             <div class="mb-3">
                                 <label class="form-label text-white" style="font-size:.82rem">Select Class</label>
-                                <select name="championship_class_id" class="form-select form-select-sm" required
+                                <select name="championship_class_id" data-class-select class="form-select form-select-sm" required
                                         style="background:#1f2937;border-color:#374151;color:#e5e7eb">
                                     <option value="">Choose your class...</option>
                                     @foreach($championship->classes as $cls)
-                                    <option value="{{ $cls->id }}">{{ $cls->name }}{{ $cls->car_class ? ' (' . $cls->car_class . ')' : '' }}</option>
+                                    <option value="{{ $cls->id }}" data-car-class="{{ $cls->car_class }}" {{ (string) old('championship_class_id') === (string) $cls->id ? 'selected' : '' }}>{{ $cls->name }}{{ $cls->car_class && $cls->car_class !== $cls->name ? ' (' . $cls->car_class . ')' : '' }}</option>
                                     @endforeach
                                 </select>
                             </div>
+                            <script>
+                            // The car dropdown only offers cars of the picked class.
+                            (function () {
+                                var classSelect = document.querySelector('[data-class-select]');
+                                var carSelect   = document.querySelector('[data-car-select]');
+                                if (!classSelect || !carSelect) return;
+                                function sync() {
+                                    var wanted = classSelect.selectedOptions[0]?.dataset.carClass || '';
+                                    Array.from(carSelect.options).forEach(function (o) {
+                                        o.hidden = o.disabled = !!(o.value && wanted && o.dataset.carClass !== wanted);
+                                    });
+                                    if (carSelect.selectedOptions[0]?.disabled) carSelect.value = '';
+                                }
+                                classSelect.addEventListener('change', sync);
+                                sync();
+                            })();
+                            </script>
                             @endif
 
                             @if($championship->registration_deadline)

@@ -291,6 +291,11 @@ class AccServerConfigService implements ServerConfigGenerator
             ]);
         }
 
+        // Limited tyre sets (championship rounds); left out, ACC keeps its default (50).
+        if ($race?->tyre_set_count) {
+            $base['tyreSetCount'] = (int) $race->tyre_set_count;
+        }
+
         $fmt = $race?->eventFormat;
 
         if ($fmt) {

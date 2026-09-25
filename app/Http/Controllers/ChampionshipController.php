@@ -8,14 +8,22 @@ use App\Models\ChampionshipRegistration;
 use App\Models\League;
 use App\Models\RacingTeam;
 use App\Models\User;
+use App\Services\AccCarCatalog;
 use App\Services\ChampionshipTeamEntryService;
 use App\Services\DiscordRoleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class ChampionshipController extends Controller
 {
+    public const ERR_TEAM_ONLY = 'This is a team championship — your team owner or manager registers the team.';
+
+    // The fixed class list the championship wizard offers (ChampionshipSettingsSchema
+    // format.car_class / the classes builder) — a class's car_class is one of these.
+    private const CAR_CLASSES = ['GT2', 'GT3', 'GT4', 'TCX', 'GTC'];
+
     public function index(Request $request)
     {
         if ($slug = $request->query('league')) {
@@ -139,55 +147,66 @@ class ChampionshipController extends Controller
         $teamEntryFields = [];
         $teamRegistrationScope = $championship->settings->format->team_registration_scope ?? 'per_round';
         if ($championship->settings->format->driver_swaps_enabled ?? false) {
-            if ($request->filled('racing_team_id')) {
-                $team = RacingTeam::with('members')->findOrFail($request->integer('racing_team_id'));
-                abort_unless($team->canManage($user), 403);
+            // A team championship: every driver races as part of a team car, so a
+            // solo entry would be a car with nobody to swap with.
+            if (! $request->filled('racing_team_id')) {
+                return back()->with('error', self::ERR_TEAM_ONLY);
+            }
 
-                if ($championship->registrations()->where('racing_team_id', $team->id)->exists()) {
-                    return back()->with('error', 'Your team is already registered for this championship.');
+            $team = RacingTeam::with('members')->findOrFail($request->integer('racing_team_id'));
+            abort_unless($team->canManage($user), 403);
+
+            if ($championship->registrations()->where('racing_team_id', $team->id)->exists()) {
+                return back()->with('error', 'Your team is already registered for this championship.');
+            }
+
+            // The team picks which of its members drive this car, in both scopes:
+            // "championship" enters exactly them into every round, "per_round"
+            // pre-selects them on each round's own team sign-up.
+            $request->validate([
+                'driver_ids' => 'required|array|min:1',
+                'driver_ids.*' => 'integer',
+            ], ['driver_ids.required' => 'Pick the drivers for your car.']);
+
+            $eligibleIds = $team->members->pluck('id')->push($team->owner_id)->unique();
+            $driverIds = collect($request->input('driver_ids'))->map(fn ($id) => (int) $id)->unique()->values();
+
+            if ($driverIds->diff($eligibleIds)->isNotEmpty()) {
+                return back()->with('error', 'Every driver must be a member of your team.');
+            }
+            if ($failure = $championship->driverCountFailure($driverIds->count())) {
+                return back()->with('error', $failure);
+            }
+
+            $teamEntryFields = ['driver_ids' => $driverIds->all()];
+
+            // "Whole championship" scope also captures the car/starting driver once
+            // here and auto-creates the per-round RaceTeamEntry for every existing
+            // (and, via ChampionshipWizardController, future) round — see
+            // ChampionshipTeamEntryService.
+            if ($teamRegistrationScope === 'championship') {
+                // ACC cars come from the game's own catalogue (the sign-up form offers
+                // them as a dropdown); other games have no list, so free text.
+                $carRules = ['nullable', 'string', 'max:255'];
+                if (AccCarCatalog::supports($championship->game)) {
+                    $carRules[] = Rule::in(array_keys(AccCarCatalog::namesWithClass($championship->game)));
                 }
 
-                // The team picks which of its members drive this car, in both scopes:
-                // "championship" enters exactly them into every round, "per_round"
-                // pre-selects them on each round's own team sign-up.
-                $request->validate([
-                    'driver_ids' => 'required|array|min:1',
-                    'driver_ids.*' => 'integer',
-                ], ['driver_ids.required' => 'Pick the drivers for your car.']);
+                $validated = $request->validate([
+                    'car_number' => 'required|integer|min:0|max:999',
+                    'car_model' => $carRules,
+                    'starting_driver_id' => 'required|integer',
+                ]);
 
-                $eligibleIds = $team->members->pluck('id')->push($team->owner_id)->unique();
-                $driverIds = collect($request->input('driver_ids'))->map(fn ($id) => (int) $id)->unique()->values();
-
-                if ($driverIds->diff($eligibleIds)->isNotEmpty()) {
-                    return back()->with('error', 'Every driver must be a member of your team.');
-                }
-                if ($failure = $championship->driverCountFailure($driverIds->count())) {
-                    return back()->with('error', $failure);
+                if (! $driverIds->contains((int) $validated['starting_driver_id'])) {
+                    return back()->with('error', 'The starting driver must be one of the selected drivers.');
                 }
 
-                $teamEntryFields = ['driver_ids' => $driverIds->all()];
-
-                // "Whole championship" scope also captures the car/starting driver once
-                // here and auto-creates the per-round RaceTeamEntry for every existing
-                // (and, via ChampionshipWizardController, future) round — see
-                // ChampionshipTeamEntryService.
-                if ($teamRegistrationScope === 'championship') {
-                    $validated = $request->validate([
-                        'car_number' => 'required|integer|min:0|max:999',
-                        'car_model' => 'nullable|string|max:255',
-                        'starting_driver_id' => 'required|integer',
-                    ]);
-
-                    if (! $driverIds->contains((int) $validated['starting_driver_id'])) {
-                        return back()->with('error', 'The starting driver must be one of the selected drivers.');
-                    }
-
-                    $teamEntryFields += [
-                        'car_number' => $validated['car_number'],
-                        'car_model' => $validated['car_model'] ?? null,
-                        'starting_driver_id' => $validated['starting_driver_id'],
-                    ];
-                }
+                $teamEntryFields += [
+                    'car_number' => $validated['car_number'],
+                    'car_model' => $validated['car_model'] ?? null,
+                    'starting_driver_id' => $validated['starting_driver_id'],
+                ];
             }
         }
 
@@ -216,6 +235,15 @@ class ChampionshipController extends Controller
             if ($failure = $user->requirementFailure($championship->game, $class->sr_requirement, $class->min_rating)) {
                 return back()->with('error', $failure);
             }
+        }
+
+        // The car has to belong to the class the team races in (the multiclass pick,
+        // or the championship's single car class) — only checkable for ACC's catalogue.
+        $carModel = $teamEntryFields['car_model'] ?? null;
+        $requiredClass = isset($class) ? $class->car_class : $championship->car_class;
+        $carClass = $carModel ? AccCarCatalog::classOfName($carModel, $championship->game) : null;
+        if ($carClass && $requiredClass && in_array($requiredClass, self::CAR_CLASSES, true) && $carClass !== $requiredClass) {
+            return back()->withInput()->with('error', "The {$carModel} isn't a {$requiredClass} car.");
         }
 
         // Every picked driver has to qualify, not just the one registering — the same

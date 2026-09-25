@@ -33,6 +33,7 @@
         'rain_level'                  => $sessionDefaults->rain_level ?? 0.0,
         'xcl_r_multiplier'            => $sessionDefaults->xcl_r_multiplier,
         'pitstop_count'               => $sessionDefaults->pitstop_count,
+        'tyre_set_count'              => $sessionDefaults->tyre_set_count,
         'fixed_stop_time'             => $sessionDefaults->min_stop_secs !== null,
         'driver_stint_time_mins'      => $championship->settings->format->driver_stint_time_mins ?? null,
         'max_total_driving_time_mins' => $championship->settings->format->max_total_driving_time_mins ?? null,

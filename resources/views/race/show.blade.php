@@ -451,12 +451,7 @@
                             <p style="font-size:.78rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Add another car</p>
                             <form action="{{ route('events.register-team', $race) }}" method="POST">
                                 @csrf
-                                @php
-                                    $carList = \App\Models\Car::where('game', $race->game)
-                                        ->when($race->car_class, fn($q) => $q->where('car_class', $race->car_class))
-                                        ->orderBy('name')
-                                        ->pluck('name');
-                                @endphp
+                                @php $carList = $race->carOptions(); @endphp
                                 <div class="row g-2 mb-3">
                                     <div class="col-6">
                                         <label class="xcl-event-card__text d-block mb-1" style="font-size:.75rem">Car Number</label>
@@ -582,12 +577,7 @@
                                 </div>
                                 <div class="col-6">
                                     <label class="xcl-event-card__text d-block mb-1" style="font-size:.75rem">Car Model</label>
-                                    @php
-                                        $carList = \App\Models\Car::where('game', $race->game)
-                                            ->when($race->car_class, fn($q) => $q->where('car_class', $race->car_class))
-                                            ->orderBy('name')
-                                            ->pluck('name');
-                                    @endphp
+                                    @php $carList = $race->carOptions(); @endphp
                                     @if($carList->isNotEmpty())
                                     <select name="car_model" class="form-select form-select-sm"
                                             style="background:#1f2937;border-color:#374151;color:#e5e7eb">

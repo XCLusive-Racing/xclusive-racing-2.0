@@ -166,6 +166,20 @@ class AccCarCatalog
         return self::table($game)[$modelId][1] ?? null;
     }
 
+    /** name => class for the given game's platform, sorted by name; empty for non-ACC games. */
+    public static function namesWithClass(string $game): array
+    {
+        $cars = array_column(self::table($game), 1, 0);
+        ksort($cars);
+
+        return $cars;
+    }
+
+    public static function classOfName(string $name, string $game): ?string
+    {
+        return self::namesWithClass($game)[$name] ?? null;
+    }
+
     public static function id(string $name, string $game): ?int
     {
         $found = array_search($name, self::cars($game), true);

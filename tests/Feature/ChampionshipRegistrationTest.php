@@ -320,14 +320,27 @@ class ChampionshipRegistrationTest extends TestCase
         $championship->save();
         ChampionshipClass::create(['championship_id' => $championship->id, 'name' => 'Pro', 'max_drivers' => 20]);
 
+        // A driver without a team gets the team-only notice (driver swaps = team
+        // championship) plus the spectator option; a team owner gets the full
+        // team sign-up including the class picker.
         $driver = User::factory()->create();
 
         $this->actingAs($driver)
             ->get(route('championships.show', $championship->id))
             ->assertOk()
             ->assertSee('Register as Spectator')
+            ->assertSee('This is a team championship')
+            ->assertDontSee('Select Class');
+
+        $owner = User::factory()->create();
+        RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+
+        $this->actingAs($owner)
+            ->get(route('championships.show', $championship->id))
+            ->assertOk()
+            ->assertSee('Register as Spectator')
             ->assertSee('Select Class')
-            ->assertSee('driver swaps');
+            ->assertSee('Apex Racing');
     }
 
     // --- Multiclass: real ChampionshipClass rows kept in sync from the wizard ---
@@ -417,7 +430,7 @@ class ChampionshipRegistrationTest extends TestCase
             ->post(route('championships.register', $championship), [
                 'racing_team_id' => $team->id, 'driver_ids' => [$owner->id, $member->id],
                 'car_number' => 42,
-                'car_model' => 'Ferrari 296 GT3',
+                'car_model' => 'Ferrari 296 GT3 (2023)',
                 'starting_driver_id' => $member->id,
             ])
             ->assertRedirect();

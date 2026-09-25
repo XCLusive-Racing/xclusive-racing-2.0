@@ -134,6 +134,13 @@
             </div>
             <div class="form-text mt-0" style="font-size:.68rem;color:#9ca3af">Off = game default (dynamic). On = a fixed 25 seconds.</div>
         </div>
+        <div class="col-6 col-sm-3">
+            <label class="form-label" style="font-size:.75rem">Tyre Sets</label>
+            <input type="number" name="tyre_set_count" id="{{ $idPrefix }}-tyre-sets" min="1" max="50" placeholder="Unlimited" value="{{ old('tyre_set_count', $defaults['tyre_set_count']) }}"
+                   class="form-control form-control-sm @error('tyre_set_count') is-invalid @enderror">
+            <div class="form-text mt-0" style="font-size:.68rem;color:#9ca3af">Dry sets per car for the event. Blank = ACC default (50).</div>
+            @error('tyre_set_count')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+        </div>
     </div>
 
     @if($championship->settings->format->driver_swaps_enabled ?? false)

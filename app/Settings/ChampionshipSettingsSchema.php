@@ -16,17 +16,17 @@ use Illuminate\Support\Arr;
 // defaults for new keys) once this class gains fields for a new version.
 class ChampionshipSettingsSchema
 {
-    const CURRENT_VERSION = 7;
+    const CURRENT_VERSION = 8;
 
     const STEPS = [
-        'basics'       => 'Basics',
-        'sessions'     => 'Sessions',
-        'rounds'       => 'Rounds',
-        'format'       => 'Format',
-        'scoring'      => 'Scoring',
+        'basics' => 'Basics',
+        'sessions' => 'Sessions',
+        'rounds' => 'Rounds',
+        'format' => 'Format',
+        'scoring' => 'Scoring',
         'requirements' => 'Requirements',
-        'penalties'    => 'Penalties & Balance',
-        'review'       => 'Review',
+        'penalties' => 'Penalties & Balance',
+        'review' => 'Review',
     ];
 
     // Settings groups, in the order they appear on the Penalties & Balance step
@@ -44,10 +44,10 @@ class ChampionshipSettingsSchema
     // undivided heading (2026-09, user feedback: "1 kopje heel veel ... andere
     // bijna niks").
     const GROUP_SECTION_LABELS = [
-        'format'       => 'Format',
-        'scoring'      => 'Scoring',
+        'format' => 'Format',
+        'scoring' => 'Scoring',
         'requirements' => 'Entry Requirements',
-        'penalties'    => 'Stewarding & Penalties',
+        'penalties' => 'Stewarding & Penalties',
     ];
 
     // A field can carry 'depends_on' => '<boolean field key, same group>' (see
@@ -64,12 +64,12 @@ class ChampionshipSettingsSchema
     // its own (event-maker option parity: multiplier/pitstops/practice server),
     // which had made Basics enormous next to a thin Penalties step.
     const STEP_GROUPS = [
-        'basics'       => ['schedule'],
-        'sessions'     => ['sessions'],
-        'format'       => ['format'],
-        'scoring'      => ['scoring'],
+        'basics' => ['schedule'],
+        'sessions' => ['sessions'],
+        'format' => ['format'],
+        'scoring' => ['scoring'],
         'requirements' => ['requirements'],
-        'penalties'    => ['penalties', 'balance'],
+        'penalties' => ['penalties', 'balance'],
     ];
 
     public static function fields(): array
@@ -187,6 +187,10 @@ class ChampionshipSettingsSchema
             // (session defaults) keeps working the same way every other field here does.
             ['group' => 'sessions', 'key' => 'min_stop_secs', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Rating & Pitstops', 'hidden' => true,
                 'label' => 'Minimum Stop Time (seconds)', 'help' => 'Derived from Fixed Stop Time — 25 when on, blank when off.', 'rule' => 'nullable|integer|min:1|max:3600'],
+            // v8 (league feedback, NLRL 2026-09): ACC's eventRules.json tyreSetCount —
+            // how many dry tyre sets each car gets for the whole event weekend.
+            ['group' => 'sessions', 'key' => 'tyre_set_count', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Rating & Pitstops',
+                'label' => 'Tyre Sets', 'help' => 'Dry tyre sets per car for the whole event (1–50). Leave blank for unlimited (the ACC default of 50).', 'rule' => 'nullable|integer|min:1|max:50'],
 
             // --- Scoring ---
             ['group' => 'scoring', 'key' => 'points_scheme_id', 'type' => 'integer', 'nullable' => true, 'default' => null,
@@ -277,6 +281,7 @@ class ChampionshipSettingsSchema
     public static function fieldsForStep(string $step): array
     {
         $groups = self::STEP_GROUPS[$step] ?? [];
+
         return array_values(array_filter(self::fields(), fn ($f) => in_array($f['group'], $groups, true)));
     }
 
@@ -295,6 +300,7 @@ class ChampionshipSettingsSchema
             $label = $field['section'] ?? self::GROUP_SECTION_LABELS[$field['group']] ?? ucfirst($field['group']);
             $sections[$label][] = $field;
         }
+
         return $sections;
     }
 
@@ -303,8 +309,9 @@ class ChampionshipSettingsSchema
     {
         $defaults = [];
         foreach (self::fields() as $field) {
-            Arr::set($defaults, $field['group'] . '.' . $field['key'], $field['default']);
+            Arr::set($defaults, $field['group'].'.'.$field['key'], $field['default']);
         }
+
         return $defaults;
     }
 
@@ -323,13 +330,14 @@ class ChampionshipSettingsSchema
     {
         $rules = [];
         foreach (self::fields() as $field) {
-            if (!in_array($field['group'], $groups, true) || $field['type'] === 'list') {
+            if (! in_array($field['group'], $groups, true) || $field['type'] === 'list') {
                 continue;
             }
 
-            $key = $prefix . '.' . $field['group'] . '.' . $field['key'];
+            $key = $prefix.'.'.$field['group'].'.'.$field['key'];
             $rules[$key] = $field['rule'] ?? self::inferredRule($field);
         }
+
         return $rules;
     }
 
@@ -344,7 +352,8 @@ class ChampionshipSettingsSchema
     {
         if ($field['type'] === 'list') {
             $count = is_array($value) ? count($value) : 0;
-            return $count === 0 ? 'None set' : $count . ' set';
+
+            return $count === 0 ? 'None set' : $count.' set';
         }
 
         if ($value === null || $value === '') {
@@ -353,10 +362,10 @@ class ChampionshipSettingsSchema
 
         return match ($field['type']) {
             'boolean' => $value ? 'Yes' : 'No',
-            'enum'    => ucfirst(str_replace('_', ' ', (string) $value)),
-            'time'    => (string) $value,
-            'float'   => rtrim(rtrim(number_format((float) $value, 2), '0'), '.'),
-            default   => (string) $value,
+            'enum' => ucfirst(str_replace('_', ' ', (string) $value)),
+            'time' => (string) $value,
+            'float' => rtrim(rtrim(number_format((float) $value, 2), '0'), '.'),
+            default => (string) $value,
         };
     }
 
@@ -365,13 +374,13 @@ class ChampionshipSettingsSchema
         $nullable = ($field['nullable'] ?? false) ? 'nullable' : 'sometimes';
 
         return match ($field['type']) {
-            'boolean'  => 'boolean',
-            'integer'  => $nullable . '|integer',
-            'float'    => $nullable . '|numeric|between:0,1',
-            'enum'     => $nullable . '|in:' . implode(',', $field['options'] ?? []),
-            'text'     => $nullable . '|string|max:5000',
-            'datetime' => $nullable . '|date',
-            default    => $nullable . '|string|max:255',
+            'boolean' => 'boolean',
+            'integer' => $nullable.'|integer',
+            'float' => $nullable.'|numeric|between:0,1',
+            'enum' => $nullable.'|in:'.implode(',', $field['options'] ?? []),
+            'text' => $nullable.'|string|max:5000',
+            'datetime' => $nullable.'|date',
+            default => $nullable.'|string|max:255',
         };
     }
 }
