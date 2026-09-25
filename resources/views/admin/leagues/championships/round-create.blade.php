@@ -12,6 +12,9 @@
     ];
     $sessionDefaults = $championship->settings->sessions;
     $suggestedRoundNumber = old('round_number', $nextRoundNumber);
+    // Only the bulk form posts `rounds` — its presence in old input means this
+    // page is the redirect back from a rejected bulk submit.
+    $bulkFailed = old('rounds') !== null || $errors->has('rounds');
 
     // Resolved starting values for _round-shared-fields -- a brand new round has
     // nothing of its own yet, so every field falls back to the championship's
@@ -184,13 +187,24 @@
         @include('admin.leagues.championships._round-shared-fields', ['idPrefix' => 'rcb', 'defaults' => $defaults])
     </div>
 
-    <div class="d-flex gap-2" id="rcb-submit-wrap" style="display:none">
-        <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">
-            Add <span id="rcb-submit-count">0</span> Rounds
-        </button>
-        <a href="{{ route('admin.leagues.championships.wizard', [$league, $championship, 'rounds']) }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4">Cancel</a>
+    @if($bulkFailed && $errors->any())
+    {{-- Every error, not just 'rounds' — a shared field or a rounds.N.* rule can
+         fail too, and none of those have an inline slot in this panel. --}}
+    <div class="alert alert-danger mb-3" style="font-size:.85rem">
+        @foreach($errors->all() as $error)<div>{{ $error }}</div>@endforeach
     </div>
-    @error('rounds')<div class="alert alert-danger mt-3">{{ $message }}</div>@enderror
+    @endif
+
+    {{-- Wrapper toggled by JS; .d-flex lives on the inner div because its
+         !important display would override the inline display:none. --}}
+    <div id="rcb-submit-wrap" style="display:none">
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">
+                Add <span id="rcb-submit-count">0</span> Rounds
+            </button>
+            <a href="{{ route('admin.leagues.championships.wizard', [$league, $championship, 'rounds']) }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4">Cancel</a>
+        </div>
+    </div>
 </form>
 </div>
 
@@ -210,7 +224,9 @@
         });
     }
     modeBtns.forEach(function (b) { b.addEventListener('click', function () { setMode(b.dataset.rcModeBtn); }); });
-    setMode('single');
+    // A rejected bulk submit comes back to this page — reopen Bulk, not Single,
+    // or its errors and rows would sit in the hidden panel.
+    setMode(@json($bulkFailed ? 'bulk' : 'single'));
 
     // ── Bulk row generator ───────────────────────────────────────
     var suggestions   = @json($bulkSuggestions);
@@ -224,7 +240,17 @@
     var submitCount   = document.getElementById('rcb-submit-count');
     var isAcc         = {{ in_array($championship->game, ['acc', 'ac'], true) ? 'true' : 'false' }};
 
-    var rows = [];
+    var rows = @json(array_values(old('rounds', [])));
+
+    // render() rebuilds every row from `rows`, so pull what the manager typed
+    // back in first — otherwise adding/removing a row wipes the others.
+    function syncFromDom() {
+        tbody.querySelectorAll('tr').forEach(function (tr, i) {
+            if (!rows[i]) return;
+            rows[i].track = tr.querySelector('[name$="[track]"]').value;
+            rows[i].scheduled_at = tr.querySelector('[name$="[scheduled_at]"]').value;
+        });
+    }
 
     function render() {
         tbody.innerHTML = '';
@@ -249,6 +275,7 @@
                 '</td>';
             tr.querySelector('[data-track-cell]').innerHTML = trackField;
             tr.querySelector('[data-rcb-remove]').addEventListener('click', function () {
+                syncFromDom();
                 rows.splice(i, 1);
                 render();
             });
@@ -270,14 +297,17 @@
         render();
     }
 
+    // Next schedule suggestion, not a copy of the last row's date — a copy would
+    // claim the same server slot twice and get the whole batch rejected.
     function addRow() {
-        var last = rows[rows.length - 1];
-        rows.push({ track: '', scheduled_at: last ? last.scheduled_at : (suggestions[rows.length] || '') });
+        syncFromDom();
+        rows.push({ track: '', scheduled_at: suggestions[rows.length] || '' });
         render();
     }
 
     generateBtn.addEventListener('click', generate);
     addRowBtn.addEventListener('click', addRow);
+    render();
 })();
 </script>
 

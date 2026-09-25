@@ -276,6 +276,31 @@ class RoundCreationTest extends TestCase
             ->assertSessionHasErrors('rounds.0.track');
     }
 
+    // A rejected bulk submit used to come back in Single mode, hiding the error
+    // and the rows inside the collapsed Bulk panel — the page looked like the
+    // button just did nothing.
+    public function test_rejected_bulk_submit_reopens_bulk_mode_with_its_rows_and_errors(): void
+    {
+        $league       = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+        $manager      = $this->makeManager($league);
+        $createUrl    = route('admin.leagues.championships.rounds.create', [$league, $championship]);
+
+        $this->actingAs($manager)
+            ->from($createUrl)
+            ->followingRedirects()
+            ->post(route('admin.leagues.championships.rounds.bulk-store', [$league, $championship]), [
+                'rounds' => [
+                    ['track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i')],
+                    ['track' => '', 'scheduled_at' => now()->addWeeks(2)->startOfHour()->format('Y-m-d\TH:i')],
+                ],
+            ])
+            ->assertOk()
+            ->assertSee('setMode("bulk")', false)
+            ->assertSee('"track":"Monza"', false)
+            ->assertSee('rounds.1.track');
+    }
+
     // --- Edit Round (refinement request item 8: rounds only had Add/Remove) ---
 
     private function makeRound(Championship $championship, array $overrides = []): Race
