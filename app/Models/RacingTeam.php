@@ -44,11 +44,6 @@ class RacingTeam extends Model
         return Storage::disk('media')->url($this->logo);
     }
 
-    public function hasMember(User $user): bool
-    {
-        return $this->owner_id === $user->id || $this->members->contains($user);
-    }
-
     // A member promoted to 'manager' -- distinct from the owner, but trusted the same
     // way for entering the team into an event/championship (see canManage()). Roster,
     // logo, and delete-team actions stay owner-only.

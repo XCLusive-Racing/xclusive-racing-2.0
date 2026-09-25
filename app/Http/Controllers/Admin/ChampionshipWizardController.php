@@ -337,7 +337,7 @@ class ChampionshipWizardController extends Controller
             ->with('success', 'Round updated.');
     }
 
-    // "Bulk" the same way admin/races/bulk-create.blade.php is: generate a run of
+    // "Bulk" the same way the race wizard's Bulk Schedule tab is: generate a run of
     // rounds from one shared set of session/weather/server settings, each only
     // needing its own track and date — reusing resolveRoundRow() per row so the
     // exact same slot/validity rules single-round Add Round already enforces

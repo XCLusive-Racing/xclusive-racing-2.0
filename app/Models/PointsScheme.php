@@ -20,12 +20,12 @@ class PointsScheme extends Model
     protected function casts(): array
     {
         return [
-            'config'              => 'array',
-            'points_table'        => 'array',
-            'fastest_lap_points'  => 'integer',
-            'pole_points'         => 'integer',
-            'leading_lap_points'  => 'integer',
-            'is_template'         => 'boolean',
+            'config' => 'array',
+            'points_table' => 'array',
+            'fastest_lap_points' => 'integer',
+            'pole_points' => 'integer',
+            'leading_lap_points' => 'integer',
+            'is_template' => 'boolean',
         ];
     }
 
@@ -42,17 +42,17 @@ class PointsScheme extends Model
     public function copyFor(League $league, ?string $name = null): self
     {
         return self::create([
-            'league_id'           => $league->id,
-            'name'                => $name ?: $this->name,
-            'type'                => $this->type,
-            'description'         => $this->description,
-            'config'              => $this->config,
-            'points_table'        => $this->points_table,
-            'fastest_lap_points'  => $this->fastest_lap_points,
-            'pole_points'         => $this->pole_points,
-            'leading_lap_points'  => $this->leading_lap_points,
-            'is_template'         => false,
-            'scope_note'          => $this->scope_note,
+            'league_id' => $league->id,
+            'name' => $name ?: $this->name,
+            'type' => $this->type,
+            'description' => $this->description,
+            'config' => $this->config,
+            'points_table' => $this->points_table,
+            'fastest_lap_points' => $this->fastest_lap_points,
+            'pole_points' => $this->pole_points,
+            'leading_lap_points' => $this->leading_lap_points,
+            'is_template' => false,
+            'scope_note' => $this->scope_note,
         ]);
     }
 
@@ -68,6 +68,7 @@ class PointsScheme extends Model
 
         if ($this->type === 'linear') {
             $depth = PointsSchemeGenerator::resolveDepth($config, $referenceFieldSize);
+
             return PointsSchemeGenerator::linear(
                 (int) ($config['top'] ?? 25),
                 (int) ($config['gap'] ?? 1),
@@ -78,6 +79,7 @@ class PointsScheme extends Model
 
         if ($this->type === 'curved') {
             $depth = PointsSchemeGenerator::resolveDepth($config, $referenceFieldSize);
+
             return PointsSchemeGenerator::curved(
                 (int) ($config['top'] ?? 30),
                 (int) ($config['floor'] ?? 1),
@@ -108,7 +110,7 @@ class PointsScheme extends Model
     public function championshipsInUse(): Collection
     {
         if ($this->is_template) {
-            return new Collection();
+            return new Collection;
         }
 
         return Championship::withoutTenantScope()
@@ -128,16 +130,5 @@ class PointsScheme extends Model
         return $this->championshipsInUse()->contains(
             fn (Championship $c) => $c->rounds()->where('status', 'finished')->exists()
         );
-    }
-
-    // Max points a single round's winner can take from this scheme — top
-    // table value plus every bonus. Used for the "total points available
-    // across a full season" sanity check in the editor.
-    public function maxPointsPerRound(): int
-    {
-        $table = $this->points_table ?? [];
-        $top   = !empty($table) ? (int) reset($table) : 0;
-
-        return $top + $this->fastest_lap_points + $this->pole_points + $this->leading_lap_points;
     }
 }

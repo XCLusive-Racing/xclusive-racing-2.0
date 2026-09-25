@@ -44,7 +44,6 @@ import { initCheckboxToggles } from './components/toggle.js';
 import { initTabs, initAccordions, initActivateTab } from './components/tabs.js';
 import { initRegister } from './pages/auth/register.js';
 import { initTeamCards } from './pages/team.js';
-import { initImageUploads } from './components/image-upload.js';
 import { initCalendar } from './pages/calendar.js';
 import { initMeetTeam } from './components/meet-team-carousel.js';
 import { initMulticlass } from './components/multiclass.js';
@@ -104,7 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initActivateTab();
     initRegister();
     initTeamCards();
-    initImageUploads();
     initCalendar();
     initMeetTeam();
     document.querySelectorAll('[data-multiclass-wrap]').forEach(el => initMulticlass(el));

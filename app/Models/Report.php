@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Services\PenaltyCalculator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -166,14 +165,6 @@ class Report extends Model
         return $this->slotFor($user) !== null;
     }
 
-    /** Whether this user has already submitted a verdict (slot 1/2 or additional). */
-    public function hasVerdictFrom(User $user): bool
-    {
-        return $this->relationLoaded('verdicts')
-            ? $this->verdicts->contains('steward_id', $user->id)
-            : $this->verdicts()->where('steward_id', $user->id)->exists();
-    }
-
     /** First two verdicts (from different stewards) that share the same penalty + multiplier. */
     public function matchingVerdictPair(): ?array
     {
@@ -261,15 +252,5 @@ class Report extends Model
         return User::where('platform_id', $driver->xuid_psid)
             ->orWhere('name', $driver->gamertag)
             ->first();
-    }
-
-    /** Live preview of the rating/SR impact for a given penalty + multiplier selection. */
-    public function previewCalculation(string $penaltyCode, float|int $multiplier): array
-    {
-        $reportedUser = $this->reportedUser();
-        $fields = $this->ratingFields();
-        $rating = $fields && $reportedUser ? (float) ($reportedUser->{$fields['elo']} ?? 0) : 0.0;
-
-        return PenaltyCalculator::calculate($penaltyCode, $multiplier, $this->session_type, $rating);
     }
 }

@@ -20,25 +20,21 @@ class EventFormat extends Model
         ];
     }
 
-    public function isDouble(): bool
-    {
-        return $this->race2_mins !== null;
-    }
-
     public function pitstopLabel(): string
     {
         if ($this->pitstop_type === 'none' || $this->pitstop_count === 0) {
             return 'None';
         }
-        $label = 'Fuel Only (' . $this->pitstop_count . 'x';
+        $label = 'Fuel Only ('.$this->pitstop_count.'x';
         if ($this->min_stop_secs) {
-            $label .= ', min ' . $this->min_stop_secs . 's';
+            $label .= ', min '.$this->min_stop_secs.'s';
         }
-        return $label . ')';
+
+        return $label.')';
     }
 
     public function xclRLabel(): string
     {
-        return '×' . number_format($this->xcl_r_multiplier, 1);
+        return '×'.number_format($this->xcl_r_multiplier, 1);
     }
 }

@@ -18,11 +18,11 @@ class Media extends Model
 
     private static array $folderMap = [
         'image' => 'images/media',
-        'icon'  => 'images/icons',
+        'icon' => 'images/icons',
         'video' => 'videos/media',
     ];
 
-    public static function createFromUpload(UploadedFile $file, string $forcedType = null, string $category = null): self
+    public static function createFromUpload(UploadedFile $file, ?string $forcedType = null, ?string $category = null): self
     {
         $mime = $file->getMimeType();
 
@@ -32,50 +32,62 @@ class Media extends Model
             $type = in_array($mime, self::$videoMimes) ? 'video' : 'image';
         }
 
-        $folder   = self::$folderMap[$type] ?? 'images/media';
-        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-        $path     = $file->storeAs($folder, $filename, 'media');
+        $folder = self::$folderMap[$type] ?? 'images/media';
+        $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
+        $path = $file->storeAs($folder, $filename, 'media');
 
         return self::create([
-            'filename'      => $filename,
+            'filename' => $filename,
             'original_name' => $file->getClientOriginalName(),
-            'path'          => $path,
-            'type'          => $type,
-            'mime_type'     => $mime,
-            'size'          => $file->getSize(),
-            'category'      => $category,
+            'path' => $path,
+            'type' => $type,
+            'mime_type' => $mime,
+            'size' => $file->getSize(),
+            'category' => $category,
         ]);
     }
 
-    public static function createFromYoutube(string $youtubeUrl, string $title = null, string $category = null): self
+    public static function createFromYoutube(string $youtubeUrl, ?string $title = null, ?string $category = null): self
     {
         $id = self::extractYoutubeId($youtubeUrl);
 
         return self::create([
-            'type'       => 'youtube',
+            'type' => 'youtube',
             'youtube_id' => $id,
-            'title'      => $title ?: $id,
-            'size'       => 0,
-            'category'   => $category,
+            'title' => $title ?: $id,
+            'size' => 0,
+            'category' => $category,
         ]);
     }
 
     public static function extractYoutubeId(string $url): ?string
     {
         preg_match('/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $url, $m);
+
         return $m[1] ?? null;
     }
 
-    public function isVideo(): bool   { return $this->type === 'video'; }
-    public function isImage(): bool   { return $this->type === 'image'; }
-    public function isIcon(): bool    { return $this->type === 'icon'; }
-    public function isYoutube(): bool { return $this->type === 'youtube'; }
+    public function isVideo(): bool
+    {
+        return $this->type === 'video';
+    }
+
+    public function isIcon(): bool
+    {
+        return $this->type === 'icon';
+    }
+
+    public function isYoutube(): bool
+    {
+        return $this->type === 'youtube';
+    }
 
     public function getUrlAttribute(): string
     {
         if ($this->isYoutube()) {
             return "https://www.youtube.com/embed/{$this->youtube_id}";
         }
+
         return Storage::disk('media')->url($this->path);
     }
 
@@ -86,10 +98,17 @@ class Media extends Model
 
     public function getFormattedSizeAttribute(): string
     {
-        if ($this->isYoutube()) return 'YouTube';
+        if ($this->isYoutube()) {
+            return 'YouTube';
+        }
         $bytes = $this->size;
-        if ($bytes < 1024) return $bytes . ' B';
-        if ($bytes < 1048576) return round($bytes / 1024, 1) . ' KB';
-        return round($bytes / 1048576, 1) . ' MB';
+        if ($bytes < 1024) {
+            return $bytes.' B';
+        }
+        if ($bytes < 1048576) {
+            return round($bytes / 1024, 1).' KB';
+        }
+
+        return round($bytes / 1048576, 1).' MB';
     }
 }

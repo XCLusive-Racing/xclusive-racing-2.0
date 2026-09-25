@@ -195,29 +195,9 @@ class User extends Authenticatable
         return $this->hasRole('admin');
     }
 
-    public function isModerator(): bool
-    {
-        return $this->hasRole('moderator');
-    }
-
-    public function isEventManager(): bool
-    {
-        return $this->hasRole('event_manager');
-    }
-
     public function isSteward(): bool
     {
         return $this->hasRole('steward');
-    }
-
-    public function isDriver(): bool
-    {
-        return $this->hasRole('driver');
-    }
-
-    public function isSuperAdmin(): bool
-    {
-        return $this->isOwner();
     }
 
     public function isBroadcaster(): bool
@@ -513,16 +493,6 @@ class User extends Authenticatable
     public function connectedAccount(string $provider): ?ConnectedAccount
     {
         return $this->connectedAccounts->firstWhere('provider', $provider);
-    }
-
-    public function carForGame(string $game): ?Car
-    {
-        return $this->carAssignments()
-            ->whereNull('championship_id')
-            ->whereHas('car', fn ($q) => $q->where('game', $game))
-            ->latest()
-            ->first()
-            ?->car;
     }
 
     // --- Rank based on XCL rating ---
