@@ -16,7 +16,7 @@ use Illuminate\Support\Arr;
 // defaults for new keys) once this class gains fields for a new version.
 class ChampionshipSettingsSchema
 {
-    const CURRENT_VERSION = 9;
+    const CURRENT_VERSION = 10;
 
     const STEPS = [
         'basics' => 'Basics',
@@ -115,6 +115,10 @@ class ChampionshipSettingsSchema
                 'label' => 'Minimum Drivers per Car', 'help' => 'Only used when driver swaps are on.'],
             ['group' => 'format', 'key' => 'max_drivers_per_car', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',
                 'label' => 'Maximum Drivers per Car', 'help' => 'Only used when driver swaps are on.'],
+            // v10 (league feedback, NLRL 2026-09): a team may enter several cars; each
+            // car is its own registration and scores on its own — never added up.
+            ['group' => 'format', 'key' => 'max_cars_per_team', 'type' => 'integer', 'nullable' => true, 'default' => 1, 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',
+                'label' => 'Maximum Cars per Team', 'help' => 'Only used when driver swaps are on. How many cars one team may enter. A driver can only be in one car. Blank = 1.', 'rule' => 'nullable|integer|min:1|max:20'],
             ['group' => 'format', 'key' => 'team_registration_scope', 'type' => 'enum', 'options' => ['per_round', 'championship'], 'default' => 'per_round', 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',
                 'label' => 'Team Registration', 'help' => 'Only used when driver swaps are on. "Per round" (today\'s behaviour): a team still signs up separately for every round. "Whole championship": a team\'s car number, model and starting driver are captured once and copied into every round automatically — including rounds added later.'],
             // Mirror the race wizard's own in-game swap-enforcement fields

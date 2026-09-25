@@ -28,8 +28,10 @@ class ChampionshipTeamEntryService
             return;
         }
 
-        if (RaceTeamEntry::where('race_id', $race->id)->where('racing_team_id', $registration->racing_team_id)->exists()) {
-            return; // already entered this round (e.g. sync ran twice)
+        // Matched on the car number too: a team can have several cars in one round.
+        if (RaceTeamEntry::where('race_id', $race->id)->where('racing_team_id', $registration->racing_team_id)
+            ->where('car_number', $registration->car_number)->exists()) {
+            return; // this car is already entered in this round (e.g. sync ran twice)
         }
 
         if (RaceTeamEntry::where('race_id', $race->id)->where('car_number', $registration->car_number)->exists()) {

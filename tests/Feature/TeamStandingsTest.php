@@ -35,7 +35,7 @@ class TeamStandingsTest extends TestCase
         ]);
         $championship->settings = array_replace_recursive($championship->settings->toArray(), [
             'scoring' => ['team_points_enabled' => $teamPointsEnabled],
-            'format'  => ['driver_swaps_enabled' => true],
+            'format' => ['driver_swaps_enabled' => true],
         ]);
         $championship->save();
 
@@ -46,7 +46,7 @@ class TeamStandingsTest extends TestCase
     {
         return Race::create([
             'championship_id' => $championship->id, 'round_number' => $roundNumber,
-            'title' => 'Round ' . $roundNumber, 'track' => 'Monza', 'game' => 'acc',
+            'title' => 'Round '.$roundNumber, 'track' => 'Monza', 'game' => 'acc',
             'status' => 'finished', 'scheduled_at' => now()->subWeek(),
         ]);
     }
@@ -60,9 +60,9 @@ class TeamStandingsTest extends TestCase
         ]);
     }
 
-    public function test_a_teams_points_combine_every_member_who_scored_across_rounds(): void
+    public function test_a_cars_points_combine_every_driver_who_scored_across_rounds(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
         $championship->settings = array_replace_recursive($championship->settings->toArray(), [
             'scoring' => ['points_scheme_id' => null],
@@ -71,9 +71,9 @@ class TeamStandingsTest extends TestCase
         $championship->points_system = [25, 18, 15];
         $championship->save();
 
-        $owner  = User::factory()->create();
+        $owner = User::factory()->create();
         $member = User::factory()->create();
-        $team   = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+        $team = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
         $team->members()->attach($member->id);
 
         ChampionshipRegistration::create([
@@ -95,13 +95,45 @@ class TeamStandingsTest extends TestCase
         $this->assertSame(43.0, (float) $teamStandings[0]['total_points']);
     }
 
+    // Both drivers of a car get the car's result row — the car still scores that
+    // finish once, and a second car of the same team is its own row.
+    public function test_each_car_scores_its_own_finish_once(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+        $championship->points_system = [25, 18, 15];
+        $championship->save();
+
+        $owner = User::factory()->create();
+        [$a, $b, $c, $d] = User::factory()->count(4)->create()->all();
+        $team = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+        $team->members()->attach([$a->id, $b->id, $c->id, $d->id]);
+
+        foreach ([[7, [$a->id, $b->id]], [8, [$c->id, $d->id]]] as [$number, $driverIds]) {
+            ChampionshipRegistration::create([
+                'championship_id' => $championship->id, 'user_id' => $owner->id, 'racing_team_id' => $team->id,
+                'car_number' => $number, 'driver_ids' => $driverIds,
+            ]);
+        }
+
+        $r1 = $this->finishedRound($championship, 1);
+        $this->makeResult($r1, $a, 1);
+        $this->makeResult($r1, $b, 1);
+        $this->makeResult($r1, $c, 2);
+        $this->makeResult($r1, $d, 2);
+
+        $points = collect($championship->computeTeamStandings())->pluck('total_points', 'car_label')->map(fn ($p) => (float) $p);
+
+        $this->assertEquals(['#7' => 25.0, '#8' => 18.0], $points->all());
+    }
+
     public function test_team_standings_are_empty_when_the_setting_is_off(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league, teamPointsEnabled: false);
 
         $owner = User::factory()->create();
-        $team  = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+        $team = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
         ChampionshipRegistration::create(['championship_id' => $championship->id, 'user_id' => $owner->id, 'racing_team_id' => $team->id]);
 
         $this->assertSame([], $championship->computeTeamStandings());
@@ -109,7 +141,7 @@ class TeamStandingsTest extends TestCase
 
     public function test_team_standings_are_empty_when_nobody_registered_as_a_team(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
 
         $driver = User::factory()->create();
@@ -120,13 +152,13 @@ class TeamStandingsTest extends TestCase
 
     public function test_public_show_page_renders_team_standings(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
         $championship->points_system = [25, 18, 15];
         $championship->save();
 
         $owner = User::factory()->create();
-        $team  = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+        $team = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
         ChampionshipRegistration::create(['championship_id' => $championship->id, 'user_id' => $owner->id, 'racing_team_id' => $team->id]);
         $r1 = $this->finishedRound($championship, 1);
         $this->makeResult($r1, $owner, 1);

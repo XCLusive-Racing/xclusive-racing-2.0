@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 class Championship extends Model
@@ -266,6 +267,26 @@ class Championship extends Model
         return null;
     }
 
+    public function maxCarsPerTeam(): int
+    {
+        return max(1, (int) ($this->settings->format->max_cars_per_team ?? 1));
+    }
+
+    // One registration per car. Oldest first, so "car 1, car 2…" stays stable.
+    public function teamCarRegistrations(RacingTeam $team): Collection
+    {
+        return $this->registrations()->where('racing_team_id', $team->id)->orderBy('id')->get();
+    }
+
+    // Every driver already in a car of this championship (any team) — a driver
+    // can only be in one car.
+    public function driverIdsInCars(): Collection
+    {
+        return $this->registrations()->whereNotNull('racing_team_id')->with('racingTeam.members')->get()
+            ->flatMap(fn (ChampionshipRegistration $registration) => $registration->driverIds())
+            ->unique()->values();
+    }
+
     public function isFull(): bool
     {
         if ($this->max_drivers === null) {
@@ -443,25 +464,44 @@ class Championship extends Model
 
         $driverStandings = collect($this->buildDriverStandings())->keyBy('user_id');
 
-        $teams = [];
-        foreach ($teamRegistrations as $registration) {
+        // One row per car (registration), never a team total (league-directed
+        // 2026-09: "elke auto telt apart"). Every driver of a car gets the car's
+        // result, so per round the car scores its drivers' best round score once
+        // — adding them up would count the same finish once per driver — and a
+        // round driven by just one of them still counts.
+        $cars = [];
+        $carsPerTeam = $teamRegistrations->countBy('racing_team_id');
+        $carIndex = [];
+        foreach ($teamRegistrations->sortBy('id') as $registration) {
             $team = $registration->racingTeam;
-            if (! $team || isset($teams[$team->id])) {
+            if (! $team) {
                 continue;
             }
 
-            $memberIds = $team->members->pluck('id')->push($team->owner_id)->unique();
+            $carIndex[$team->id] = ($carIndex[$team->id] ?? 0) + 1;
 
-            $teams[$team->id] = [
+            // "#12" when the car has a championship-wide number ("championship"
+            // scope); "Car 2" for a per-round team's cars, whose number can change
+            // round to round; nothing for a team's only car.
+            $carLabel = match (true) {
+                $registration->car_number !== null => '#'.$registration->car_number,
+                $carsPerTeam[$team->id] > 1 => 'Car '.$carIndex[$team->id],
+                default => null,
+            };
+
+            $cars[] = [
                 'team' => $team,
-                'total_points' => $memberIds->sum(fn ($id) => $driverStandings->get($id)['total_points'] ?? 0),
+                'car_label' => $carLabel,
+                'total_points' => collect($registration->driverIds())
+                    ->flatMap(fn ($id) => $driverStandings->get($id)['rounds'] ?? [])
+                    ->groupBy('race_id')
+                    ->sum(fn ($roundEntries) => $roundEntries->max('points')),
             ];
         }
 
-        $teams = array_values($teams);
-        usort($teams, fn ($a, $b) => $b['total_points'] <=> $a['total_points']);
+        usort($cars, fn ($a, $b) => $b['total_points'] <=> $a['total_points']);
 
-        return $teams;
+        return $cars;
     }
 
     // League-owned championships (settings.scoring.points_scheme_id set) score

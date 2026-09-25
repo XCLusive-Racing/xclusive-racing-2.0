@@ -211,6 +211,9 @@
                                             <img src="{{ $entry['team']->logoUrl() }}" alt="" style="width:26px;height:26px;object-fit:contain;border-radius:6px">
                                             @endif
                                             <span class="fw-bold text-white">{{ $entry['team']->name }}</span>
+                                            @if($entry['car_label'])
+                                            <span style="color:#9ca3af;font-size:.8rem">{{ $entry['car_label'] }}</span>
+                                            @endif
                                         </div>
                                     </td>
                                     <td class="text-center pe-4 fw-black" style="color:#db2777;font-size:1rem">{{ $entry['total_points'] }}</td>
@@ -339,10 +342,18 @@
                         <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Registration</h2>
                     </div>
                     <div class="px-4 py-4">
+                        @php
+                            // A team manager's cars so far — while there's room for another
+                            // (settings.format.max_cars_per_team) the sign-up form stays open.
+                            $myOwnedTeam   = ($championship->settings->format->driver_swaps_enabled ?? false) ? auth()->user()->manageableRacingTeam() : null;
+                            $myTeamCars    = $myOwnedTeam ? $championship->teamCarRegistrations($myOwnedTeam) : collect();
+                            $canAddTeamCar = $myTeamCars->isNotEmpty() && $myTeamCars->count() < $championship->maxCarsPerTeam()
+                                && $championship->registration_open && $championship->registrationIsOpen();
+                        @endphp
                         @if(!in_array($championship->status, ['active', 'registration_open']))
                         <p style="color:#6b7280;font-size:.875rem">Registration is not open yet.</p>
 
-                        @elseif($championship->isRegistered(auth()->user()))
+                        @elseif($championship->isRegistered(auth()->user()) && !$canAddTeamCar)
                         @php
                             $myManageableTeam = auth()->user()->manageableRacingTeam();
                             $ownRegistration = $championship->registrations()
@@ -365,7 +376,9 @@
                             @endif
                         </p>
                         @endif
-                        @if($ownRegistration)
+                        @if($myTeamCars->count() > 1)
+                        @include('championships._team-cars', ['ownedTeam' => $myOwnedTeam])
+                        @elseif($ownRegistration)
                         <form method="POST" action="{{ route('championships.unregister', $championship) }}" onsubmit="return confirm('Unregister from this championship?')">
                             @csrf @method('DELETE')
                             <button class="btn btn-sm fw-bold text-uppercase text-danger w-100" style="background:#fee2e2;border:1px solid #fca5a5;font-size:.75rem">
@@ -416,16 +429,23 @@
                             @csrf
                             @if($driverSwaps)
                             <input type="hidden" name="racing_team_id" value="{{ $ownedTeam->id }}">
+                            @if($myTeamCars->isNotEmpty())
+                            @include('championships._team-cars')
+                            <p class="fw-black text-uppercase mb-2 mt-3" style="color:#9ca3af;font-size:.72rem;letter-spacing:.06em">Add another car</p>
+                            @else
                             <p class="text-white mb-2" style="font-size:.82rem">
                                 Registering <strong>[{{ $ownedTeam->tag }}] {{ $ownedTeam->name }}</strong>
                             </p>
+                            @endif
 
                             @if($ownedTeam)
                             @php
                                 $teamDrivers = collect([$ownedTeam->owner])->concat($ownedTeam->members)->filter()->unique('id');
                                 $minDrivers  = (int) ($championship->settings->format->min_drivers_per_car ?? 0);
                                 $maxDrivers  = (int) ($championship->settings->format->max_drivers_per_car ?? 0);
-                                $selectedDriverIds = collect(old('driver_ids', [auth()->id()]))->map(fn ($id) => (int) $id);
+                                // A driver can only be in one car of this championship.
+                                $takenDriverIds = $championship->driverIdsInCars();
+                                $selectedDriverIds = collect(old('driver_ids', [auth()->id()]))->map(fn ($id) => (int) $id)->diff($takenDriverIds);
                             @endphp
                             <div id="teamEntryFields" class="mb-3 p-2" style="background:#1f293766;border:1px solid #374151;border-radius:8px">
                                 <p style="color:#9ca3af;font-size:.72rem" class="mb-2">
@@ -448,9 +468,11 @@
                                     <div class="form-check mb-1">
                                         <input class="form-check-input" type="checkbox" name="driver_ids[]" value="{{ $driver->id }}"
                                                id="champDriver{{ $driver->id }}" data-team-driver
-                                               {{ $selectedDriverIds->contains($driver->id) ? 'checked' : '' }}>
+                                               {{ $selectedDriverIds->contains($driver->id) ? 'checked' : '' }}
+                                               {{ $takenDriverIds->contains($driver->id) ? 'disabled' : '' }}>
                                         <label class="form-check-label" for="champDriver{{ $driver->id }}" style="color:#e5e7eb;font-size:.82rem">
                                             {{ $driver->displayName() }}@if($driver->id === $ownedTeam->owner_id) <span style="color:#6b7280">(owner)</span>@endif
+                                            @if($takenDriverIds->contains($driver->id)) <span style="color:#6b7280">(already in a car)</span>@endif
                                         </label>
                                     </div>
                                     @endforeach
@@ -559,12 +581,12 @@
 
                             <button type="submit" class="btn fw-black text-uppercase text-white w-100"
                                     style="background:{{ $accent }};font-size:.82rem">
-                                {{ $championship->isFull() ? 'Join Waiting List' : 'Register Now' }}
+                                {{ $championship->isFull() ? 'Join Waiting List' : ($myTeamCars->isNotEmpty() ? 'Add Car' : 'Register Now') }}
                             </button>
                         </form>
                         @endif
 
-                        @if($spectatorOpen)
+                        @if($spectatorOpen && $myTeamCars->isEmpty())
                         <form method="POST" action="{{ route('championships.register', $championship) }}" class="{{ $driverFull ? '' : 'mt-2' }}">
                             @csrf
                             <input type="hidden" name="is_spectator" value="1">

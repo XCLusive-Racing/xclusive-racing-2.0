@@ -102,13 +102,16 @@ class RaceController extends Controller
         // A "per_round" championship team signs up for each round itself, starting
         // from the line-up it picked at championship registration; a "championship"
         // team is entered automatically (ChampionshipTeamEntryService).
+        // A team with several cars signs each one up in turn: the next car not yet in
+        // this round supplies the pre-selected line-up.
         $championshipTeamScope = null;
         $championshipTeamRegistration = null;
+        $canAddChampionshipCar = false;
         if ($isChampionshipTeamRound) {
             $championshipTeamScope = $championship->settings->format->team_registration_scope ?? 'per_round';
-            $championshipTeamRegistration = $userTeam
-                ? $championship->registrations()->where('racing_team_id', $userTeam->id)->first()
-                : null;
+            $teamCars = $userTeam ? $championship->teamCarRegistrations($userTeam) : collect();
+            $championshipTeamRegistration = $teamCars->get($myTeamEntries->count()) ?? $teamCars->first();
+            $canAddChampionshipCar = $championshipTeamScope === 'per_round' && $myTeamEntries->count() < $teamCars->count();
         }
         $preselectedDriverIds = $championshipTeamRegistration?->driverIds() ?: array_filter([$userTeam?->owner_id]);
 
@@ -127,7 +130,8 @@ class RaceController extends Controller
 
         return view('race.show', compact(
             'race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries',
-            'isTeamRace', 'isChampionshipTeamRound', 'championshipTeamScope', 'championshipTeamRegistration', 'preselectedDriverIds', 'successBallast'
+            'isTeamRace', 'isChampionshipTeamRound', 'championshipTeamScope', 'championshipTeamRegistration', 'preselectedDriverIds', 'successBallast',
+            'canAddChampionshipCar'
         ));
     }
 
@@ -408,8 +412,13 @@ class RaceController extends Controller
             if (($championship->settings->format->team_registration_scope ?? 'per_round') === 'championship') {
                 return back()->with('error', 'Your team is entered into this round automatically from its championship registration.');
             }
-            if (! $championship->registrations()->where('racing_team_id', $team->id)->exists()) {
+            // One round entry per car the team registered for the championship.
+            $teamCars = $championship->teamCarRegistrations($team)->count();
+            if ($teamCars === 0) {
                 return back()->with('error', 'Register your team for the championship first.');
+            }
+            if (RaceTeamEntry::where('race_id', $race->id)->where('racing_team_id', $team->id)->count() >= $teamCars) {
+                return back()->with('error', "Every car your team registered for the championship ({$teamCars}) is already in this round.");
             }
             if ($failure = $championship->driverCountFailure($selectedIds->count())) {
                 return back()->with('error', $failure);

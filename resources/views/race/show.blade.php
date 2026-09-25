@@ -458,15 +458,21 @@
 
                         @include('race.partials.add-to-calendar', ['race' => $race])
 
-                        {{-- A championship-scope team is entered here from its one championship-level
-                             registration (ChampionshipTeamEntryService) — adding a second car per round
-                             isn't part of that model, only opting this round's entry out (REMOVE above). --}}
-                        @if($race->registrationOpen() && !$isChampionshipTeamRound)
+                        {{-- A championship round only takes as many cars as the team registered for
+                             the championship; "championship"-scope cars are entered automatically
+                             (ChampionshipTeamEntryService), so only per-round teams add them here. --}}
+                        @if($race->registrationOpen() && (!$isChampionshipTeamRound || $canAddChampionshipCar))
                         <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)">
                             <p style="font-size:.78rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Add another car</p>
                             <form action="{{ route('events.register-team', $race) }}" method="POST">
                                 @csrf
-                                @php $carList = $race->carOptions(); @endphp
+                                @php
+                                    $carList = $race->carOptions();
+                                    // A championship team's next car comes with the line-up it
+                                    // registered; otherwise start from the owner, as before.
+                                    $addCarDriverIds = $isChampionshipTeamRound ? $preselectedDriverIds : [$userTeam->owner_id];
+                                    $addCarStarterId = $addCarDriverIds[0] ?? $userTeam->owner_id;
+                                @endphp
                                 <div class="row g-2 mb-3">
                                     <div class="col-6">
                                         <label class="xcl-event-card__text d-block mb-1" style="font-size:.75rem">Car Number</label>
@@ -499,7 +505,7 @@
                                     <div class="d-flex align-items-center gap-2">
                                         <input class="form-check-input m-0" type="checkbox" name="driver_ids[]"
                                                value="{{ $userTeam->owner_id }}" id="driver2_{{ $userTeam->owner_id }}"
-                                               checked onchange="syncStarter2(this)">
+                                               {{ in_array($userTeam->owner_id, $addCarDriverIds) ? 'checked' : '' }} onchange="syncStarter2(this)">
                                         <label for="driver2_{{ $userTeam->owner_id }}" class="d-flex align-items-center gap-2" style="color:#e5e7eb;font-size:.85rem;cursor:pointer">
                                             @if(auth()->user()->avatarUrl())
                                             <img src="{{ auth()->user()->avatarUrl() }}" width="22" height="22"
@@ -515,14 +521,15 @@
                                     </div>
                                     <div class="text-center">
                                         <input type="radio" name="starting_driver_id" value="{{ $userTeam->owner_id }}"
-                                               id="starter2_{{ $userTeam->owner_id }}" checked
+                                               id="starter2_{{ $userTeam->owner_id }}"
+                                               {{ $addCarStarterId === $userTeam->owner_id ? 'checked' : '' }} {{ in_array($userTeam->owner_id, $addCarDriverIds) ? '' : 'disabled' }}
                                                style="width:15px;height:15px;cursor:pointer;accent-color:{{ $race->gameColor() }}">
                                     </div>
                                     @foreach($userTeam->members as $member)
                                     <div class="d-flex align-items-center gap-2">
                                         <input class="form-check-input m-0" type="checkbox" name="driver_ids[]"
                                                value="{{ $member->id }}" id="driver2_{{ $member->id }}"
-                                               onchange="syncStarter2(this)">
+                                               {{ in_array($member->id, $addCarDriverIds) ? 'checked' : '' }} onchange="syncStarter2(this)">
                                         <label for="driver2_{{ $member->id }}" class="d-flex align-items-center gap-2" style="color:#e5e7eb;font-size:.85rem;cursor:pointer">
                                             @if($member->avatarUrl())
                                             <img src="{{ $member->avatarUrl() }}" width="22" height="22"
@@ -538,6 +545,7 @@
                                     <div class="text-center">
                                         <input type="radio" name="starting_driver_id" value="{{ $member->id }}"
                                                id="starter2_{{ $member->id }}"
+                                               {{ $addCarStarterId === $member->id ? 'checked' : '' }} {{ in_array($member->id, $addCarDriverIds) ? '' : 'disabled' }}
                                                style="width:15px;height:15px;cursor:pointer;accent-color:{{ $race->gameColor() }}">
                                     </div>
                                     @endforeach

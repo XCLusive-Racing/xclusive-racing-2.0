@@ -114,7 +114,12 @@ class ChampionshipController extends Controller
             return back()->with('error', 'Registration is not open right now.');
         }
 
-        if ($championship->isRegistered($user)) {
+        // A team entering another car is "already registered" by definition — the
+        // per-team car limit below takes over from this check for that case.
+        $isTeamCarSignUp = ($championship->settings->format->driver_swaps_enabled ?? false)
+            && $request->filled('racing_team_id') && ! $request->boolean('is_spectator');
+
+        if (! $isTeamCarSignUp && $championship->isRegistered($user)) {
             return back()->with('error', 'You are already registered.');
         }
 
@@ -156,8 +161,12 @@ class ChampionshipController extends Controller
             $team = RacingTeam::with('members')->findOrFail($request->integer('racing_team_id'));
             abort_unless($team->canManage($user), 403);
 
-            if ($championship->registrations()->where('racing_team_id', $team->id)->exists()) {
-                return back()->with('error', 'Your team is already registered for this championship.');
+            // Each car is its own registration, up to settings.format.max_cars_per_team.
+            $maxCars = $championship->maxCarsPerTeam();
+            if ($championship->teamCarRegistrations($team)->count() >= $maxCars) {
+                return back()->with('error', $maxCars === 1
+                    ? 'Your team is already registered for this championship.'
+                    : "Your team already has the maximum of {$maxCars} cars in this championship.");
             }
 
             // The team picks which of its members drive this car, in both scopes:
@@ -176,6 +185,13 @@ class ChampionshipController extends Controller
             }
             if ($failure = $championship->driverCountFailure($driverIds->count())) {
                 return back()->with('error', $failure);
+            }
+
+            $alreadyInACar = $driverIds->intersect($championship->driverIdsInCars());
+            if ($alreadyInACar->isNotEmpty()) {
+                $names = User::whereIn('id', $alreadyInACar)->get()->map->displayName()->join(', ');
+
+                return back()->withInput()->with('error', "{$names} already drives another car in this championship — a driver can only be in one car.");
             }
 
             $teamEntryFields = ['driver_ids' => $driverIds->all()];
@@ -200,6 +216,11 @@ class ChampionshipController extends Controller
 
                 if (! $driverIds->contains((int) $validated['starting_driver_id'])) {
                     return back()->with('error', 'The starting driver must be one of the selected drivers.');
+                }
+
+                // The number follows the car into every round, where it has to be unique.
+                if ($championship->registrations()->where('car_number', $validated['car_number'])->exists()) {
+                    return back()->withInput()->with('error', 'Car number #'.$validated['car_number'].' is already taken in this championship.');
                 }
 
                 $teamEntryFields += [
@@ -354,15 +375,23 @@ class ChampionshipController extends Controller
         // on user_id, so this also matches by their manageable team's racing_team_id.
         $team = $user->manageableRacingTeam();
 
-        $championship->registrations()
+        $registrations = $championship->registrations()
             ->where(function ($query) use ($user, $team) {
                 $query->where('user_id', $user->id);
                 if ($team) {
                     $query->orWhere('racing_team_id', $team->id);
                 }
-            })
-            ->delete();
+            });
 
-        return back()->with('success', 'You have been unregistered from the championship.');
+        // A team with several cars withdraws one car at a time.
+        if (request()->filled('registration_id')) {
+            $registrations->whereKey(request()->integer('registration_id'));
+        }
+
+        $registrations->delete();
+
+        return back()->with('success', request()->filled('registration_id')
+            ? 'The car has been withdrawn from the championship.'
+            : 'You have been unregistered from the championship.');
     }
 }
