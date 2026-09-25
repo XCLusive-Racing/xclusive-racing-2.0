@@ -112,6 +112,23 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
+
+                <div class="mb-3" data-psn-account-id style="{{ $startPlatform !== 'ps5' ? 'display:none' : '' }}">
+                    <label class="form-label small fw-bold text-uppercase text-white-50 mb-1">PSN Account ID</label>
+                    <input type="text" name="psn_account_id" inputmode="numeric"
+                           {{ $startPlatform === 'ps5' ? 'required' : 'disabled' }}
+                           placeholder="e.g. 1234567890123456789"
+                           value="{{ old('psn_account_id') }}"
+                           class="form-control xcl-auth-input @error('psn_account_id') is-invalid @enderror">
+                    <div class="mt-1" style="font-size:.78rem; color:rgba(255,255,255,.3);">
+                        Enter your exact PSN Online ID as Gamertag above. Then look it up on
+                        <a href="https://psn.flipscreen.games/" target="_blank" rel="noopener" style="color:#a78bfa">psn.flipscreen.games</a>
+                        and copy the <strong>decimal</strong> Account ID here (numbers only, not the hex version).
+                    </div>
+                    @error('psn_account_id')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
                 @endif
 
                 <div class="mb-3">

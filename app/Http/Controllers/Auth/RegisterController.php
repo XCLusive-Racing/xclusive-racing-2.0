@@ -15,45 +15,59 @@ class RegisterController extends Controller
     public function create()
     {
         return view('auth.register', [
-            'steamId'   => session('steam_platform_id'),
+            'steamId' => session('steam_platform_id'),
             'steamName' => session('steam_name'),
-            'xboxId'    => session('xbox_platform_id'),
-            'xboxName'  => session('xbox_name'),
+            'xboxId' => session('xbox_platform_id'),
+            'xboxName' => session('xbox_name'),
         ]);
     }
 
     public function store(Request $request, PlatformLookupService $lookup)
     {
         $steamOAuth = $request->platform === 'steam' && session('steam_platform_id');
-        $xboxOAuth  = $request->platform === 'xbox'  && session('xbox_platform_id');
+        $xboxOAuth = $request->platform === 'xbox' && session('xbox_platform_id');
 
         $rules = [
-            'email'            => 'required|email|unique:users',
-            'password'         => 'required|min:8|confirmed',
-            'country'          => 'required|string|max:100',
-            'platform'         => 'required|in:steam,ps5,xbox',
-            'team'             => 'nullable|string|max:255',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|min:8|confirmed',
+            'country' => 'required|string|max:100',
+            'platform' => 'required|in:steam,ps5,xbox',
+            'team' => 'nullable|string|max:255',
             'privacy_accepted' => 'accepted',
         ];
 
-        if (!$steamOAuth && !$xboxOAuth) {
+        if (! $steamOAuth && ! $xboxOAuth) {
             $rules['gamertag'] = 'required|string|max:255';
         }
 
-        $request->validate($rules);
+        // The automatic PSN lookup is unreliable, so PlayStation drivers look up their
+        // own numeric account ID and enter it alongside their Online ID.
+        if ($request->platform === 'ps5') {
+            $rules['psn_account_id'] = ['required', 'regex:/^\d{5,20}$/'];
+        }
+
+        $request->validate($rules, [
+            'psn_account_id.required' => 'Enter your PSN Account ID.',
+            'psn_account_id.regex' => 'Your PSN Account ID should be numbers only (the decimal ID, not the hex one).',
+        ]);
 
         if ($steamOAuth) {
             $profile = [
                 'platform_id' => session('steam_platform_id'),
-                'name'        => session('steam_name'),
+                'name' => session('steam_name'),
             ];
             session()->forget(['steam_platform_id', 'steam_name']);
         } elseif ($xboxOAuth) {
             $profile = [
                 'platform_id' => session('xbox_platform_id'),
-                'name'        => session('xbox_name'),
+                'name' => session('xbox_name'),
             ];
             session()->forget(['xbox_platform_id', 'xbox_name']);
+        } elseif ($request->platform === 'ps5') {
+            $profile = [
+                'platform_id' => 'P'.$request->psn_account_id,
+                'name' => trim($request->gamertag),
+            ];
         } else {
             try {
                 $profile = $lookup->lookup($request->platform, $request->gamertag);
@@ -68,19 +82,19 @@ class RegisterController extends Controller
 
         // Fallback: match temp-imported accounts by gamertag (T_ prefix).
         // Strip #xxxx discriminator from both sides so "Name#1234" matches "T_name".
-        if (!$existing && $profile['name'] !== null) {
+        if (! $existing && $profile['name'] !== null) {
             $normalizedName = strtolower(preg_replace('/#\d+$/', '', $profile['name']));
             $existing = User::where(function ($q) use ($normalizedName, $profile) {
-                    $q->where('platform_id', 'T_' . $normalizedName)
-                      ->orWhere('platform_id', 'T_' . strtolower($profile['name']));
-                })
+                $q->where('platform_id', 'T_'.$normalizedName)
+                    ->orWhere('platform_id', 'T_'.strtolower($profile['name']));
+            })
                 ->where('email', 'like', '%@import.local')
                 ->first();
         }
 
         // XUID entered directly but no matching imported account — can't create a new
         // account without a verified gamertag name.
-        if ($profile['name'] === null && !$existing) {
+        if ($profile['name'] === null && ! $existing) {
             return back()->withInput()->withErrors([
                 'gamertag' => 'No account found for this XUID. If you are a new member, enter your Xbox gamertag instead.',
             ]);
@@ -93,17 +107,18 @@ class RegisterController extends Controller
             // Imported placeholder — driver claims their account by linking email + password
             if (str_ends_with($existing->email, '@import.local')) {
                 $existing->update([
-                    'name'                => $resolvedName,
-                    'platform_id'         => $profile['platform_id'],
-                    'platform'            => $request->platform,
-                    'email'               => $request->email,
-                    'password'            => Hash::make($request->password),
-                    'country'             => $request->country,
-                    'team'                => $request->team ?? $existing->team,
-                    'must_set_password'   => false,
+                    'name' => $resolvedName,
+                    'platform_id' => $profile['platform_id'],
+                    'platform' => $request->platform,
+                    'email' => $request->email,
+                    'password' => Hash::make($request->password),
+                    'country' => $request->country,
+                    'team' => $request->team ?? $existing->team,
+                    'must_set_password' => false,
                     'privacy_accepted_at' => now(),
                 ]);
                 Auth::login($existing);
+
                 return redirect()->route('profile');
             }
 
@@ -116,19 +131,19 @@ class RegisterController extends Controller
         $driver = Driver::where('xuid_psid', $profile['platform_id'])->first();
 
         $user = User::create([
-            'name'                => $resolvedName,
-            'email'               => $request->email,
-            'password'            => Hash::make($request->password),
-            'country'             => $request->country,
-            'platform'            => $request->platform,
-            'platform_id'         => $profile['platform_id'],
-            'team'                => $request->team,
-            'elo_acc'             => $driver->xcl_rating ?? 1500,
-            'elo_lmu'             => 1500,
-            'elo_iracing'         => 1500,
-            'sr_acc'              => 4.00,
-            'sr_lmu'              => 4.00,
-            'sr_iracing'          => 4.00,
+            'name' => $resolvedName,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'country' => $request->country,
+            'platform' => $request->platform,
+            'platform_id' => $profile['platform_id'],
+            'team' => $request->team,
+            'elo_acc' => $driver->xcl_rating ?? 1500,
+            'elo_lmu' => 1500,
+            'elo_iracing' => 1500,
+            'sr_acc' => 4.00,
+            'sr_lmu' => 4.00,
+            'sr_iracing' => 4.00,
             'privacy_accepted_at' => now(),
         ]);
 
