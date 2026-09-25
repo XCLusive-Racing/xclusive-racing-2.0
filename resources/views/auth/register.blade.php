@@ -113,6 +113,7 @@
                     @enderror
                 </div>
 
+                @if ($psnManual)
                 <div class="mb-3" data-psn-account-id style="{{ $startPlatform !== 'ps5' ? 'display:none' : '' }}">
                     <label class="form-label small fw-bold text-uppercase text-white-50 mb-1">PSN Account ID</label>
                     <input type="text" name="psn_account_id" inputmode="numeric"
@@ -129,6 +130,7 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
+                @endif
                 @endif
 
                 <div class="mb-3">

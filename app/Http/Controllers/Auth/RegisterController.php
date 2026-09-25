@@ -19,6 +19,7 @@ class RegisterController extends Controller
             'steamName' => session('steam_name'),
             'xboxId' => session('xbox_platform_id'),
             'xboxName' => session('xbox_name'),
+            'psnManual' => config('services.psn_lookup.manual_account_id'),
         ]);
     }
 
@@ -26,6 +27,7 @@ class RegisterController extends Controller
     {
         $steamOAuth = $request->platform === 'steam' && session('steam_platform_id');
         $xboxOAuth = $request->platform === 'xbox' && session('xbox_platform_id');
+        $psnManual = $request->platform === 'ps5' && config('services.psn_lookup.manual_account_id');
 
         $rules = [
             'email' => 'required|email|unique:users',
@@ -40,9 +42,10 @@ class RegisterController extends Controller
             $rules['gamertag'] = 'required|string|max:255';
         }
 
-        // The automatic PSN lookup is unreliable, so PlayStation drivers look up their
-        // own numeric account ID and enter it alongside their Online ID.
-        if ($request->platform === 'ps5') {
+        // While the automatic PSN lookup is down (config services.psn_lookup.manual_account_id),
+        // PlayStation drivers look up their own numeric account ID and enter it alongside
+        // their Online ID.
+        if ($psnManual) {
             $rules['psn_account_id'] = ['required', 'regex:/^\d{5,20}$/'];
         }
 
@@ -63,7 +66,7 @@ class RegisterController extends Controller
                 'name' => session('xbox_name'),
             ];
             session()->forget(['xbox_platform_id', 'xbox_name']);
-        } elseif ($request->platform === 'ps5') {
+        } elseif ($psnManual) {
             $profile = [
                 'platform_id' => 'P'.$request->psn_account_id,
                 'name' => trim($request->gamertag),

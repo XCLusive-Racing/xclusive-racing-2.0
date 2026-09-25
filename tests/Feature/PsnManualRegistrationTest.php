@@ -51,6 +51,22 @@ class PsnManualRegistrationTest extends TestCase
         $this->assertDatabaseMissing('users', ['email' => 'psn@example.com']);
     }
 
+    public function test_ps5_registration_falls_back_to_the_lookup_when_manual_mode_is_off(): void
+    {
+        config(['services.psn_lookup.manual_account_id' => false]);
+
+        $this->mock(PsnLookupService::class)
+            ->shouldReceive('lookup')->once()->with('PsnDriver')
+            ->andReturn(['onlineId' => 'PsnDriver', 'accountId' => '999888777666']);
+
+        $this->get(route('register'))->assertDontSee('PSN Account ID');
+
+        $this->post(route('register'), $this->payload(['psn_account_id' => null]))
+            ->assertRedirect(route('profile'));
+
+        $this->assertSame('P999888777666', User::where('email', 'psn@example.com')->value('platform_id'));
+    }
+
     public function test_ps5_registration_claims_an_imported_placeholder_by_account_id(): void
     {
         $placeholder = User::factory()->create([
