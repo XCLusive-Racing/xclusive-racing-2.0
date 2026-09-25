@@ -16,7 +16,7 @@ use Illuminate\Support\Arr;
 // defaults for new keys) once this class gains fields for a new version.
 class ChampionshipSettingsSchema
 {
-    const CURRENT_VERSION = 8;
+    const CURRENT_VERSION = 9;
 
     const STEPS = [
         'basics' => 'Basics',
@@ -268,6 +268,14 @@ class ChampionshipSettingsSchema
                 'label' => 'Post-Race Time Penalties', 'help' => 'Allow a time penalty to be applied to a result after the race.'],
 
             // --- Balance (rendered on the Penalties & Balance step) ---
+            // v9 (league feedback, NLRL 2026-09): success ballast — a round's
+            // finishing positions earn ballast for the next round only
+            // (EntryBalanceService), ranked per class when multiclass.
+            ['group' => 'balance', 'key' => 'success_ballast_enabled', 'type' => 'boolean', 'default' => false,
+                'label' => 'Success Ballast', 'help' => 'Cars carry ballast into the next round based on where they finished in the previous one.'],
+            ['group' => 'balance', 'key' => 'success_ballast_kg', 'type' => 'string', 'nullable' => true, 'default' => null, 'depends_on' => 'success_ballast_enabled',
+                'label' => 'Ballast per Position (kg)', 'help' => 'Comma-separated, P1 first — e.g. "30, 20, 10" gives P1 30 kg, P2 20 kg, P3 10 kg for the next round only. Per class in multiclass; max 100 kg.',
+                'rule' => ['nullable', 'string', 'max:255', 'regex:/^\s*\d{1,3}(\s*,\s*\d{1,3})*\s*$/']],
             ['group' => 'balance', 'key' => 'adjustments', 'type' => 'list', 'default' => [],
                 'label' => 'Ballast & Restrictor Adjustments', 'help' => 'Per-driver or per-car overrides. Stored as a growing list rather than fixed columns.'],
         ];

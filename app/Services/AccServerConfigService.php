@@ -29,6 +29,7 @@ class AccServerConfigService implements ServerConfigGenerator
 
         $entries = [];
         $processedTeamIds = [];
+        $balance = app(EntryBalanceService::class);
 
         foreach ($registrations as $reg) {
             if ($reg->team_entry_id !== null) {
@@ -50,11 +51,14 @@ class AccServerConfigService implements ServerConfigGenerator
                     'driverCategory' => $tr->user->ratingClass($race->game),
                 ])->values()->all();
 
+                [$ballast, $restrictor] = $balance->forEntry($race, $teamRegs->pluck('user')->filter(), $teamEntry?->team?->name);
+
                 $entries[] = [
                     'drivers' => $drivers,
                     'raceNumber' => is_numeric($carNumber) ? (int) $carNumber : null,
                     'defaultGridPosition' => -1,
-                    'ballastKg' => 0,
+                    'ballastKg' => $ballast,
+                    'restrictor' => $restrictor,
                     'forcedCarModel' => -1,
                     'overrideDriverInfo' => 1,
                 ];
@@ -62,6 +66,7 @@ class AccServerConfigService implements ServerConfigGenerator
                 // Solo driver
                 $user = $reg->user;
                 $shortName = mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3));
+                [$ballast, $restrictor] = $balance->forEntry($race, collect([$user]));
 
                 $entries[] = [
                     'drivers' => [
@@ -75,7 +80,8 @@ class AccServerConfigService implements ServerConfigGenerator
                     ],
                     'raceNumber' => is_numeric($user->car_number) ? (int) $user->car_number : null,
                     'defaultGridPosition' => -1,
-                    'ballastKg' => 0,
+                    'ballastKg' => $ballast,
+                    'restrictor' => $restrictor,
                     'forcedCarModel' => -1,
                     'overrideDriverInfo' => 1,
                 ];

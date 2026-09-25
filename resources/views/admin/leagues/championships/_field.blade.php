@@ -97,6 +97,9 @@
         @elseif($field['type'] === 'datetime')
         <input type="datetime-local" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
                class="form-control @error($errorKey) is-invalid @enderror" {{ $locked ? 'disabled' : '' }}>
+        @elseif($field['type'] === 'string')
+        <input type="text" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
+               class="form-control @error($errorKey) is-invalid @enderror" {{ $locked ? 'disabled' : '' }}>
         @elseif($field['type'] === 'float')
         <input type="number" step="0.01" name="{{ $name }}" id="{{ $id }}" value="{{ old($errorKey, $current) }}"
                class="form-control @error($errorKey) is-invalid @enderror" {{ $locked ? 'disabled' : '' }}>

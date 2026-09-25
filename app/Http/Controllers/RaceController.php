@@ -11,6 +11,7 @@ use App\Models\RaceRegistration;
 use App\Models\RaceTeamEntry;
 use App\Models\User;
 use App\Services\Contracts\ServerConfigGenerator;
+use App\Services\EntryBalanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -110,6 +111,14 @@ class RaceController extends Controller
         }
         $preselectedDriverIds = $championshipTeamRegistration?->driverIds() ?: array_filter([$userTeam?->owner_id]);
 
+        // Success ballast this championship round's drivers carry (EntryBalanceService),
+        // heaviest first.
+        $ballastByUser = app(EntryBalanceService::class)->successBallast($race);
+        $successBallast = User::whereIn('id', array_keys($ballastByUser))->get()
+            ->map(fn (User $user) => ['user' => $user, 'kg' => $ballastByUser[$user->id]])
+            ->sortByDesc('kg')
+            ->values();
+
         $platformIds = $race->registrations->pluck('user.platform_id')->filter()->values()->all();
         $driverMap = Driver::whereIn('xuid_psid', $platformIds)
             ->get(['id', 'xuid_psid'])
@@ -117,7 +126,7 @@ class RaceController extends Controller
 
         return view('race.show', compact(
             'race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries',
-            'isTeamRace', 'isChampionshipTeamRound', 'championshipTeamScope', 'championshipTeamRegistration', 'preselectedDriverIds'
+            'isTeamRace', 'isChampionshipTeamRound', 'championshipTeamScope', 'championshipTeamRegistration', 'preselectedDriverIds', 'successBallast'
         ));
     }
 

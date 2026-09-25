@@ -327,6 +327,21 @@
             <div class="col-12 col-lg-4">
 
                 {{-- Requirements --}}
+                @if($successBallast->isNotEmpty())
+                <div class="xcl-event-card mb-4">
+                    <h3 class="xcl-event-card__heading">SUCCESS BALLAST</h3>
+                    <p class="xcl-event-card__text mb-2" style="font-size:.78rem">Earned in the previous round — carried in this round only.</p>
+                    <div class="xcl-event-reqs">
+                        @foreach($successBallast as $row)
+                        <div class="xcl-event-req-row">
+                            <span class="xcl-event-req-label">{{ $row['user']->displayName() }}</span>
+                            <span class="xcl-event-req-value" style="font-weight:700;color:#e5e7eb">{{ $row['kg'] }} kg</span>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
                 @php
                     // Multiclass events list every class with its own requirement ("Open" when it
                     // has none), so the event-level car class / SR / XCL rows are dropped there.
