@@ -12,6 +12,7 @@ use App\Models\Race;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ChampionshipController extends Controller
@@ -73,6 +74,7 @@ class ChampionshipController extends Controller
 
         unset($data['image_path'], $data['icon_path']);
 
+        $data['platform'] = Championship::platformForGame($data['game'], null);
         $championship = Championship::create($data);
 
         $this->syncClasses($request, $championship);
@@ -147,12 +149,28 @@ class ChampionshipController extends Controller
 
         unset($data['image_path'], $data['image_keep'], $data['icon_path'], $data['icon_keep']);
 
-        $championship->update($data);
+        $gameChanged = $data['game'] !== $championship->game;
+        if ($gameChanged && ! $championship->canChangeGame()) {
+            return back()->withInput()->withErrors(['game' => Championship::ERR_GAME_LOCKED]);
+        }
+
+        $data['platform'] = Championship::platformForGame($data['game'], $championship->platform);
+
+        $unassignedRounds = DB::transaction(function () use ($championship, $data, $gameChanged) {
+            $championship->update($data);
+
+            return $gameChanged ? $championship->syncRoundsToGame() : 0;
+        });
 
         $this->syncClasses($request, $championship);
 
+        $message = 'Championship updated successfully!';
+        if ($unassignedRounds > 0) {
+            $message .= ' '.$unassignedRounds.' round(s) were on a server of the other ACC platform and no longer have a server — pick a new one per round.';
+        }
+
         return redirect()->route('admin.championships.show', $championship)
-            ->with('success', 'Championship updated successfully!');
+            ->with('success', $message);
     }
 
     public function destroy(Championship $championship)
@@ -175,7 +193,9 @@ class ChampionshipController extends Controller
         // XCL's own native championships only ever get pushed to XCL's own servers —
         // an admin bypasses TenantScope entirely (canManage()), so without this filter
         // every league's private server would show up here too.
-        $servers = FtpServer::where('league_id', League::system()->id)->where('active', true)->orderBy('name')->get();
+        $servers = FtpServer::where('league_id', League::system()->id)->where('active', true)->orderBy('name')->get()
+            ->filter(fn (FtpServer $server) => $server->supportsRaceGame($championship->game))
+            ->values();
 
         return view('admin.championships.round-create', compact('championship', 'trackPreviewUrls', 'servers'));
     }

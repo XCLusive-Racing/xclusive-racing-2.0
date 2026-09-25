@@ -4,15 +4,48 @@ namespace App\Models;
 
 use App\Models\Concerns\Tenantable;
 use App\Settings\Casts\ChampionshipSettingsCast;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
 class Championship extends Model
 {
-    use Tenantable, SoftDeletes;
+    use SoftDeletes, Tenantable;
+
+    public const ERR_GAME_LOCKED = 'The game can\'t be changed anymore — rounds of this championship already have results.';
+
+    // Rounds copy the championship's game when they're created, so a later game
+    // switch has to be carried down to them — otherwise an ACC PC championship
+    // keeps console rounds (console IDs on the entrylist, console servers). Once a
+    // round has results it stays what it was raced as, so the game is locked.
+    public function canChangeGame(): bool
+    {
+        return ! $this->rounds()->whereHas('results')->exists();
+    }
+
+    // Carries the championship's (new) game down to its rounds. A round whose
+    // server runs the other ACC platform loses it, along with its slot and push
+    // status (same as a manual server change on a round) — returns how many did.
+    public function syncRoundsToGame(): int
+    {
+        $unassigned = 0;
+
+        foreach ($this->rounds()->with(['ftpServer' => fn ($q) => $q->withoutTenantScope()])->get() as $race) {
+            $changes = ['game' => $this->game];
+
+            if ($race->ftpServer && ! $race->ftpServer->supportsRaceGame($this->game)) {
+                $changes += ['ftp_server_id' => null, 'slot_time' => null, 'config_push_status' => null];
+                $unassigned++;
+            }
+
+            $race->update($changes);
+        }
+
+        return $unassigned;
+    }
 
     protected $fillable = [
         'name', 'tagline', 'slogan', 'game', 'season', 'status', 'description', 'image', 'icon',
@@ -31,19 +64,19 @@ class Championship extends Model
     protected function casts(): array
     {
         return [
-            'is_multiclass'         => 'boolean',
-            'registration_open'     => 'boolean',
+            'is_multiclass' => 'boolean',
+            'registration_open' => 'boolean',
             'registration_deadline' => 'datetime',
-            'points_system'         => 'array',
-            'bonus_fastest_lap'     => 'integer',
-            'bonus_pole'            => 'integer',
-            'drop_rounds'           => 'integer',
-            'starts_at'             => 'datetime',
-            'ends_at'               => 'datetime',
-            'xcl_rating_enabled'    => 'boolean',
+            'points_system' => 'array',
+            'bonus_fastest_lap' => 'integer',
+            'bonus_pole' => 'integer',
+            'drop_rounds' => 'integer',
+            'starts_at' => 'datetime',
+            'ends_at' => 'datetime',
+            'xcl_rating_enabled' => 'boolean',
             'xcl_rating_approved_at' => 'datetime',
-            'settings_version'      => 'integer',
-            'settings'              => ChampionshipSettingsCast::class,
+            'settings_version' => 'integer',
+            'settings' => ChampionshipSettingsCast::class,
         ];
     }
 
@@ -81,19 +114,19 @@ class Championship extends Model
     // date set, or recurrence is "none"), in which case Add Round is left blank
     // for the manager to fill in by hand. Always just a starting suggestion —
     // Add Round never enforces it, so one round can still be moved freely.
-    public function scheduledDateTimeForRound(int $roundNumber): ?\Carbon\Carbon
+    public function scheduledDateTimeForRound(int $roundNumber): ?Carbon
     {
-        $schedule   = $this->settings->schedule;
-        $startDate  = $schedule->start_date ?? null;
+        $schedule = $this->settings->schedule;
+        $startDate = $schedule->start_date ?? null;
         $recurrence = $schedule->recurrence ?? 'none';
-        $dayOfWeek  = $schedule->day_of_week ?? null;
-        $timeOfDay  = $schedule->time_of_day ?? '14:00';
+        $dayOfWeek = $schedule->day_of_week ?? null;
+        $timeOfDay = $schedule->time_of_day ?? '14:00';
 
-        if (!$startDate || $recurrence === 'none') {
+        if (! $startDate || $recurrence === 'none') {
             return null;
         }
 
-        $first = \Carbon\Carbon::parse($startDate, 'Europe/London')->startOfDay();
+        $first = Carbon::parse($startDate, 'Europe/London')->startOfDay();
 
         $daysOfWeek = ['sunday' => 0, 'monday' => 1, 'tuesday' => 2, 'wednesday' => 3, 'thursday' => 4, 'friday' => 5, 'saturday' => 6];
 
@@ -104,14 +137,14 @@ class Championship extends Model
         }
 
         $date = match ($recurrence) {
-            'daily'    => $first->copy()->addDays($roundNumber - 1),
-            'weekly'   => $first->copy()->addWeeks($roundNumber - 1),
+            'daily' => $first->copy()->addDays($roundNumber - 1),
+            'weekly' => $first->copy()->addWeeks($roundNumber - 1),
             'biweekly' => $first->copy()->addWeeks(($roundNumber - 1) * 2),
-            'monthly'  => $first->copy()->addMonthsNoOverflow($roundNumber - 1),
-            default    => null,
+            'monthly' => $first->copy()->addMonthsNoOverflow($roundNumber - 1),
+            default => null,
         };
 
-        if (!$date) {
+        if (! $date) {
             return null;
         }
 
@@ -128,6 +161,7 @@ class Championship extends Model
     public function pointsScheme(): ?PointsScheme
     {
         $id = $this->settings->scoring->points_scheme_id ?? null;
+
         return $id ? PointsScheme::withoutTenantScope()->find($id) : null;
     }
 
@@ -138,7 +172,7 @@ class Championship extends Model
     // update() call anywhere else in the app could ever touch them by accident.
     public function approveXclRating(User $admin): void
     {
-        $this->xcl_rating_enabled     = true;
+        $this->xcl_rating_enabled = true;
         $this->xcl_rating_approved_at = now();
         $this->xcl_rating_approved_by = $admin->id;
         $this->save();
@@ -146,7 +180,7 @@ class Championship extends Model
 
     public function revokeXclRating(): void
     {
-        $this->xcl_rating_enabled     = false;
+        $this->xcl_rating_enabled = false;
         $this->xcl_rating_approved_at = null;
         $this->xcl_rating_approved_by = null;
         $this->save();
@@ -185,22 +219,33 @@ class Championship extends Model
     public function gameLabel(): string
     {
         return match ($this->game) {
-            'acc'     => 'ACC Console',
-            'lmu'     => 'Le Mans Ultimate',
+            'acc' => 'ACC Console',
+            'lmu' => 'Le Mans Ultimate',
             'iracing' => 'iRacing',
-            'ac'      => 'ACC PC',
-            default   => strtoupper($this->game),
+            'ac' => 'ACC PC',
+            default => strtoupper($this->game),
+        };
+    }
+
+    // ACC PC ('ac') is always PC and ACC Console ('acc') never is, so for those the
+    // platform follows from the game; other games keep whatever was picked.
+    public static function platformForGame(string $game, ?string $platform): ?string
+    {
+        return match ($game) {
+            'ac' => 'pc',
+            'acc' => $platform === 'pc' ? 'console' : $platform,
+            default => $platform,
         };
     }
 
     public function gameColor(): string
     {
         return match ($this->game) {
-            'acc'     => '#7c3aed',
-            'lmu'     => '#db2877',
+            'acc' => '#7c3aed',
+            'lmu' => '#db2877',
             'iracing' => '#2563eb',
-            'ac'      => '#16a34a',
-            default   => '#6b7280',
+            'ac' => '#16a34a',
+            default => '#6b7280',
         };
     }
 
@@ -209,6 +254,7 @@ class Championship extends Model
         if ($this->max_drivers === null) {
             return false;
         }
+
         return $this->registrations()->where('is_spectator', false)->count() >= $this->max_drivers;
     }
 
@@ -236,7 +282,7 @@ class Championship extends Model
     {
         if ($this->league_id !== null && $this->league_id !== League::system()->id) {
             return [
-                'sr'  => $this->settings->requirements->min_safety_rating ?? null,
+                'sr' => $this->settings->requirements->min_safety_rating ?? null,
                 'min' => $this->settings->requirements->min_xcl_rating_tier ?? null,
                 'max' => $this->settings->requirements->max_xcl_rating_tier ?? null,
             ];
@@ -245,7 +291,7 @@ class Championship extends Model
         // Native championships have no upper-rating-cap column — only the wizard-driven
         // settings schema (above) supports it.
         return [
-            'sr'  => $this->sr_requirement,
+            'sr' => $this->sr_requirement,
             'min' => $this->min_rating,
             'max' => null,
         ];
@@ -274,12 +320,12 @@ class Championship extends Model
     // just by virtue of their rank now falling inside max_drivers.
     public function isRegistrationWaitlisted(User $user): bool
     {
-        if (!$this->waitlistEnabled() || $this->max_drivers === null) {
+        if (! $this->waitlistEnabled() || $this->max_drivers === null) {
             return false;
         }
 
         $registration = $this->registrations()->where('user_id', $user->id)->where('is_spectator', false)->first();
-        if (!$registration) {
+        if (! $registration) {
             return false;
         }
 
@@ -290,7 +336,7 @@ class Championship extends Model
 
     public function waitlistCount(): int
     {
-        if (!$this->waitlistEnabled() || $this->max_drivers === null) {
+        if (! $this->waitlistEnabled() || $this->max_drivers === null) {
             return 0;
         }
 
@@ -313,13 +359,13 @@ class Championship extends Model
         }
 
         if ($mode === 'specific_period') {
-            $opensAt  = $this->settings->requirements->registration_opens_at ?? null;
+            $opensAt = $this->settings->requirements->registration_opens_at ?? null;
             $closesAt = $this->settings->requirements->registration_closes_at ?? null;
 
-            if ($opensAt && now()->lt(\Carbon\Carbon::parse($opensAt))) {
+            if ($opensAt && now()->lt(Carbon::parse($opensAt))) {
                 return false;
             }
-            if ($closesAt && now()->gte(\Carbon\Carbon::parse($closesAt))) {
+            if ($closesAt && now()->gte(Carbon::parse($closesAt))) {
                 return false;
             }
         }
@@ -337,13 +383,13 @@ class Championship extends Model
     // (e.g. registered before a class existed) are omitted from every group.
     public function computeClassStandings(): array
     {
-        if (!$this->is_multiclass) {
+        if (! $this->is_multiclass) {
             return [];
         }
 
         $classByUser = $this->registrations->pluck('championship_class_id', 'user_id');
 
-        $grouped = $this->classes->mapWithKeys(fn($class) => [$class->id => ['class' => $class, 'standings' => []]])->all();
+        $grouped = $this->classes->mapWithKeys(fn ($class) => [$class->id => ['class' => $class, 'standings' => []]])->all();
 
         foreach ($this->buildDriverStandings() as $entry) {
             $classId = $classByUser[$entry['user_id']] ?? null;
@@ -365,7 +411,7 @@ class Championship extends Model
     // lives in RaceResult/RaceRegistration.team_entry_id, not here.
     public function computeTeamStandings(): array
     {
-        if (!($this->settings->scoring->team_points_enabled ?? false)) {
+        if (! ($this->settings->scoring->team_points_enabled ?? false)) {
             return [];
         }
 
@@ -383,14 +429,14 @@ class Championship extends Model
         $teams = [];
         foreach ($teamRegistrations as $registration) {
             $team = $registration->racingTeam;
-            if (!$team || isset($teams[$team->id])) {
+            if (! $team || isset($teams[$team->id])) {
                 continue;
             }
 
             $memberIds = $team->members->pluck('id')->push($team->owner_id)->unique();
 
             $teams[$team->id] = [
-                'team'         => $team,
+                'team' => $team,
                 'total_points' => $memberIds->sum(fn ($id) => $driverStandings->get($id)['total_points'] ?? 0),
             ];
         }
@@ -413,11 +459,11 @@ class Championship extends Model
         $scheme = $this->pointsScheme();
 
         $pointsSystem = $this->points_system ?? [];
-        $pointsTable  = $scheme?->points_table ?? [];
-        $bonusFL      = $scheme?->fastest_lap_points ?? $this->bonus_fastest_lap;
-        $bonusPole    = $scheme?->pole_points ?? $this->bonus_pole;
-        $bonusLead    = $scheme?->leading_lap_points ?? 0;
-        $dropRounds   = $scheme ? (int) ($this->settings->scoring->drop_rounds ?? 0) : $this->drop_rounds;
+        $pointsTable = $scheme?->points_table ?? [];
+        $bonusFL = $scheme?->fastest_lap_points ?? $this->bonus_fastest_lap;
+        $bonusPole = $scheme?->pole_points ?? $this->bonus_pole;
+        $bonusLead = $scheme?->leading_lap_points ?? 0;
+        $dropRounds = $scheme ? (int) ($this->settings->scoring->drop_rounds ?? 0) : $this->drop_rounds;
 
         // A league-owned championship reads its missed-rounds rule from settings;
         // XCL's own native championships keep the legacy flat columns. Neither was
@@ -425,11 +471,11 @@ class Championship extends Model
         // leagues, the schema field) existed, but nothing here read them.
         $isLeagueOwned = $this->league_id !== null && $this->league_id !== League::system()->id;
         if ($isLeagueOwned) {
-            $maxMissedRounds    = $this->settings->scoring->max_missed_rounds ?? null;
+            $maxMissedRounds = $this->settings->scoring->max_missed_rounds ?? null;
             $missedRoundsAction = $this->settings->scoring->missed_rounds_action ?? 'none';
             $missedRoundsPoints = (int) ($this->settings->scoring->missed_rounds_penalty_points ?? 0);
         } else {
-            $maxMissedRounds    = $this->max_missed_rounds;
+            $maxMissedRounds = $this->max_missed_rounds;
             $missedRoundsAction = $this->missed_rounds_action ?? 'none';
             $missedRoundsPoints = (int) ($this->missed_rounds_penalty_points ?? 0);
         }
@@ -449,33 +495,33 @@ class Championship extends Model
         // to apply to. Matches how a real championship classification still
         // lists a no-show at the back on zero points, rather than omitting them.
         foreach ($this->registrations()->where('is_spectator', false)->with('user')->get() as $registration) {
-            if (!isset($driverData[$registration->user_id])) {
+            if (! isset($driverData[$registration->user_id])) {
                 $driverData[$registration->user_id] = [
                     'user_id' => $registration->user_id,
-                    'user'    => $registration->user,
-                    'rounds'  => [],
+                    'user' => $registration->user,
+                    'rounds' => [],
                 ];
             }
         }
 
         foreach ($finishedRounds as $race) {
             $qualiResults = $race->qualiResults()->get();
-            $poleUserId   = $qualiResults->first()?->user_id;
+            $poleUserId = $qualiResults->first()?->user_id;
 
             // Percentage-depth schemes resolve their scoring cutoff fresh per
             // round, against that round's own classified-finisher count —
             // never the starting grid, so a retirement elsewhere in the field
             // never changes what a classified finisher scores.
             $classifiedCount = $race->raceResults->where('dnf', false)->count();
-            $cutoff          = $scheme ? $scheme->scoringCutoffFor($classifiedCount) : null;
+            $cutoff = $scheme ? $scheme->scoringCutoffFor($classifiedCount) : null;
 
             foreach ($race->raceResults as $result) {
                 $userId = $result->user_id;
-                if (!isset($driverData[$userId])) {
+                if (! isset($driverData[$userId])) {
                     $driverData[$userId] = [
                         'user_id' => $userId,
-                        'user'    => $result->user,
-                        'rounds'  => [],
+                        'user' => $result->user,
+                        'rounds' => [],
                     ];
                 }
 
@@ -502,10 +548,10 @@ class Championship extends Model
                 }
 
                 $driverData[$userId]['rounds'][] = [
-                    'race_id'  => $race->id,
+                    'race_id' => $race->id,
                     'position' => $pos,
-                    'points'   => $pts,
-                    'dnf'      => $result->dnf,
+                    'points' => $pts,
+                    'dnf' => $result->dnf,
                 ];
             }
         }
@@ -515,13 +561,13 @@ class Championship extends Model
 
             $dropped = [];
             if ($dropRounds > 0 && $roundPoints->count() > $dropRounds) {
-                $sorted    = $roundPoints->sort()->values();
+                $sorted = $roundPoints->sort()->values();
                 $dropCount = min($dropRounds, $sorted->count());
                 $droppedPts = $sorted->slice(0, $dropCount)->values();
 
                 $tempRounds = collect($data['rounds']);
                 foreach ($droppedPts as $dp) {
-                    $idx = $tempRounds->search(fn($r) => $r['points'] === $dp && !in_array($r['race_id'], $dropped));
+                    $idx = $tempRounds->search(fn ($r) => $r['points'] === $dp && ! in_array($r['race_id'], $dropped));
                     if ($idx !== false) {
                         $dropped[] = $tempRounds[$idx]['race_id'];
                     }
@@ -529,7 +575,7 @@ class Championship extends Model
             }
 
             $total = collect($data['rounds'])
-                ->filter(fn($r) => !in_array($r['race_id'], $dropped))
+                ->filter(fn ($r) => ! in_array($r['race_id'], $dropped))
                 ->sum('points');
 
             $penaltyPts = isset($penalties[$userId])
@@ -542,19 +588,19 @@ class Championship extends Model
             $missedPenalty = 0;
             if ($missedRoundsAction === 'penalise' && $maxMissedRounds !== null && $finishedRounds->isNotEmpty()) {
                 $participated = collect($data['rounds'])->pluck('race_id')->unique()->count();
-                $missed       = $finishedRounds->count() - $participated;
+                $missed = $finishedRounds->count() - $participated;
                 if ($missed > $maxMissedRounds) {
                     $missedPenalty = ($missed - $maxMissedRounds) * $missedRoundsPoints;
                 }
             }
 
-            $data['dropped']               = $dropped;
+            $data['dropped'] = $dropped;
             $data['missed_rounds_penalty'] = $missedPenalty;
-            $data['total_points']          = $total - $penaltyPts - $missedPenalty;
+            $data['total_points'] = $total - $penaltyPts - $missedPenalty;
         }
         unset($data);
 
-        usort($driverData, fn($a, $b) => $b['total_points'] <=> $a['total_points']);
+        usort($driverData, fn ($a, $b) => $b['total_points'] <=> $a['total_points']);
 
         return $driverData;
     }

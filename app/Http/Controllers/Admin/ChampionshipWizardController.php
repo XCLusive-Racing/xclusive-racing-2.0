@@ -18,6 +18,7 @@ use App\Services\ChampionshipTeamEntryService;
 use App\Settings\ChampionshipSettingsSchema;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -138,11 +139,25 @@ class ChampionshipWizardController extends Controller
             // straight to update() would blow away every other settings group.
             unset($data['settings']);
 
-            if (! empty($data['ftp_server_id']) && ! $league->ftpServers()->where('id', $data['ftp_server_id'])->exists()) {
-                abort(403, 'That server does not belong to this league.');
+            if (! empty($data['ftp_server_id'])) {
+                $server = $league->ftpServers()->find($data['ftp_server_id']);
+                abort_unless($server, 403, 'That server does not belong to this league.');
+
+                if (! $server->supportsRaceGame($data['game'])) {
+                    return back()->withInput()->withErrors(['ftp_server_id' => FtpServer::ERR_WRONG_PLATFORM]);
+                }
             }
 
-            $championship->update($data);
+            $gameChanged = $data['game'] !== $championship->game;
+            if ($gameChanged && ! $championship->canChangeGame()) {
+                return back()->withInput()->withErrors(['game' => Championship::ERR_GAME_LOCKED]);
+            }
+
+            $unassignedRounds = DB::transaction(function () use ($championship, $data, $gameChanged) {
+                $championship->update($data);
+
+                return $gameChanged ? $championship->syncRoundsToGame() : 0;
+            });
             $this->applyStepSettings($request, $championship, 'basics');
         } else {
             $this->applyStepSettings($request, $championship, $step);
@@ -152,8 +167,13 @@ class ChampionshipWizardController extends Controller
 
         $next = $this->nextStep($step);
 
+        $message = ucfirst($step).' saved.';
+        if (($unassignedRounds ?? 0) > 0) {
+            $message .= ' '.$unassignedRounds.' round(s) were on a server of the other ACC platform and no longer have a server — pick a new one per round.';
+        }
+
         return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, $next])
-            ->with('success', ucfirst($step).' saved.');
+            ->with('success', $message);
     }
 
     public function roundCreate(Request $request, League $league, Championship $championship)
@@ -163,7 +183,7 @@ class ChampionshipWizardController extends Controller
 
         // Scoped to this league's own assigned servers only — a league manager
         // must never be able to push a round's config to another league's server.
-        $servers = $league->ftpServers()->where('active', true)->orderBy('name')->get();
+        $servers = $this->roundServers($league, $championship);
 
         $nextRoundNumber = $championship->rounds()->max('round_number') + 1;
         $suggestedScheduledAt = $championship->scheduledDateTimeForRound($nextRoundNumber);
@@ -239,7 +259,7 @@ class ChampionshipWizardController extends Controller
         Gate::authorize('update', $championship);
         abort_unless($race->championship_id === $championship->id, 404);
 
-        $servers = $league->ftpServers()->where('active', true)->orderBy('name')->get();
+        $servers = $this->roundServers($league, $championship);
 
         return view('admin.leagues.championships.round-edit', compact('league', 'championship', 'race', 'servers'));
     }
@@ -621,6 +641,16 @@ class ChampionshipWizardController extends Controller
         if ($championship) {
             abort_unless($championship->league_id === $league->id, 404);
         }
+    }
+
+    // The league's active servers a round of this championship can actually run
+    // on — ACC PC rounds only PC servers, ACC Console rounds only console ones
+    // (FtpServer::supportsRaceGame(), also enforced on save in resolveRoundRow()).
+    private function roundServers(League $league, Championship $championship): Collection
+    {
+        return $league->ftpServers()->where('active', true)->orderBy('name')->get()
+            ->filter(fn (FtpServer $server) => $server->supportsRaceGame($championship->game))
+            ->values();
     }
 
     private function nextStep(string $step): string

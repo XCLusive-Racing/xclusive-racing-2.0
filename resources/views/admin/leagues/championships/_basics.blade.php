@@ -38,8 +38,8 @@
 <div class="row g-3 mb-3">
     <div class="col-sm-4">
         <label class="form-label">Game</label>
-        <select name="game" class="form-select @error('game') is-invalid @enderror">
-            <option value="acc" {{ old('game', $championship->game) === 'acc' ? 'selected' : '' }}>Assetto Corsa Competizione</option>
+        <select name="game" data-server-game-select class="form-select @error('game') is-invalid @enderror">
+            <option value="acc" {{ old('game', $championship->game) === 'acc' ? 'selected' : '' }}>ACC Console</option>
             <option value="ac" {{ old('game', $championship->game) === 'ac' ? 'selected' : '' }}>ACC PC</option>
             <option value="lmu" {{ old('game', $championship->game) === 'lmu' ? 'selected' : '' }}>Le Mans Ultimate</option>
             <option value="iracing" {{ old('game', $championship->game) === 'iracing' ? 'selected' : '' }}>iRacing</option>
@@ -48,7 +48,7 @@
     </div>
     <div class="col-sm-4">
         <label class="form-label">Platform</label>
-        <select name="platform" class="form-select @error('platform') is-invalid @enderror">
+        <select name="platform" data-championship-platform class="form-select @error('platform') is-invalid @enderror">
             <option value="pc" {{ old('platform', $championship->platform) === 'pc' ? 'selected' : '' }}>PC</option>
             <option value="console" {{ old('platform', $championship->platform) === 'console' ? 'selected' : '' }}>Console</option>
             <option value="cross" {{ old('platform', $championship->platform) === 'cross' ? 'selected' : '' }}>Cross-Platform</option>
@@ -122,10 +122,10 @@
 <div class="row g-3 mb-3">
     <div class="col-sm-6">
         <label class="form-label">Default Server</label>
-        <select name="ftp_server_id" class="form-select @error('ftp_server_id') is-invalid @enderror">
+        <select name="ftp_server_id" data-server-platform-select class="form-select @error('ftp_server_id') is-invalid @enderror">
             <option value="">— No server assigned —</option>
             @foreach($servers as $srv)
-            <option value="{{ $srv->id }}" {{ (string) old('ftp_server_id', $championship->ftp_server_id) === (string) $srv->id ? 'selected' : '' }}>{{ $srv->name }}</option>
+            <option value="{{ $srv->id }}" data-platform="{{ $srv->platform === 'pc' ? 'pc' : 'console' }}" {{ (string) old('ftp_server_id', $championship->ftp_server_id) === (string) $srv->id ? 'selected' : '' }}>{{ $srv->name }} · {{ $srv->platform === 'pc' ? 'PC' : 'Console' }}</option>
             @endforeach
         </select>
         <div class="form-text" style="font-size:.72rem;color:#9ca3af">Pre-selected on every new round — still overridable per round in Add Round.</div>
@@ -147,6 +147,31 @@
 </div>
 
 <script>
+// ACC's platform follows from the game (Championship::platformForGame(), also
+// applied server-side): ACC PC is always PC, ACC Console never is.
+(function () {
+    var game     = document.querySelector('[data-server-game-select]');
+    var platform = document.querySelector('[data-championship-platform]');
+    if (!game || !platform) return;
+
+    function allowed(value) {
+        if (game.value === 'ac') return value === 'pc';
+        if (game.value === 'acc') return value !== 'pc';
+        return true;
+    }
+
+    function updatePlatform() {
+        Array.from(platform.options).forEach(function (o) {
+            o.hidden = o.disabled = !allowed(o.value);
+        });
+        if (platform.selectedOptions[0]?.disabled) {
+            platform.value = Array.from(platform.options).find(function (o) { return !o.disabled; }).value;
+        }
+    }
+    game.addEventListener('change', updatePlatform);
+    updatePlatform();
+})();
+
 (function () {
     var recurrence = document.getElementById('f-schedule-recurrence');
     var dayWrap    = document.getElementById('f-schedule-day_of_week')?.parentElement;

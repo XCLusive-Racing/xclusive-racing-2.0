@@ -199,6 +199,24 @@ class ChampionshipController extends Controller
             }
         }
 
+        // A whole-championship team registration enters every team member into every
+        // round (ChampionshipTeamEntryService), so each of them has to qualify — the
+        // same per-driver check RaceController::registerTeam() does for one round.
+        // Without it, a member with no Steam ID would land on an ACC PC entrylist
+        // with an empty playerID.
+        if ($team && $teamRegistrationScope === 'championship') {
+            $drivers = $team->members->concat([$team->owner])->filter()->unique('id');
+
+            foreach ($drivers as $driver) {
+                $failure = $driver->requirementFailure($championship->game, $thresholds['sr'], $thresholds['min'], $thresholds['max'])
+                    ?? (isset($class) ? $driver->requirementFailure($championship->game, $class->sr_requirement, $class->min_rating) : null);
+
+                if ($failure) {
+                    return back()->with('error', $driver->displayName().': '.$failure);
+                }
+            }
+        }
+
         $registration = ChampionshipRegistration::create(array_merge([
             'championship_id' => $championship->id,
             'user_id' => $user->id,
