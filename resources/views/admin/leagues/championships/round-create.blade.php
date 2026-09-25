@@ -22,7 +22,8 @@
         'description'                 => null,
         'practice_duration'           => $sessionDefaults->practice_enabled ? $sessionDefaults->practice_length_minutes : '',
         'qualifying_duration'         => $sessionDefaults->qualifying_enabled ? $sessionDefaults->qualifying_length_minutes : '',
-        'race_duration'               => $sessionDefaults->race_length_minutes,
+        'race_lengths'                => $sessionDefaults->race_length_minutes,
+        'session_format_id'           => null,
         'time_of_day'                 => $sessionDefaults->ingame_time_of_day ?? '14:00',
         'ambient_temp'                => $sessionDefaults->ambient_temp,
         // "Randomised" maps cleanly onto the round's own "Random" option; "fixed"

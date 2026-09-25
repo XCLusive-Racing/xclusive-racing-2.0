@@ -30,6 +30,33 @@
     <textarea name="description" rows="2" class="form-control form-control-sm">{{ old('description', $defaults['description']) }}</textarea>
 </div>
 
+{{-- Race format: picking one fills the session fields below (the round keeps its
+     own copy, still editable) — SessionFormatController / session_formats. --}}
+<div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+    <label class="form-label" style="font-size:.75rem">Race Format <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
+    @if($sessionFormats->isEmpty())
+    <p class="text-secondary mb-0" style="font-size:.8rem">
+        No race formats yet — <a href="{{ route('admin.leagues.session-formats.index', $league) }}">create one</a> to reuse session lengths and multi-race setups across rounds.
+    </p>
+    @else
+    <select name="session_format_id" data-session-format class="form-select form-select-sm" style="max-width:420px">
+        <option value="">— Custom (set below) —</option>
+        @foreach($sessionFormats as $sf)
+        <option value="{{ $sf->id }}" {{ (string) old('session_format_id', $defaults['session_format_id'] ?? '') === (string) $sf->id ? 'selected' : '' }}
+                data-values="{{ json_encode([
+                    'practice_duration' => $sf->practice_duration,
+                    'qualifying_duration' => $sf->qualifying_duration,
+                    'race_lengths' => $sf->raceLengthsText(),
+                    'pitstop_count' => $sf->pitstop_count,
+                    'tyre_set_count' => $sf->tyre_set_count,
+                    'fixed_stop_time' => $sf->fixed_stop_time,
+                ]) }}">{{ $sf->name }} — {{ $sf->summary() }}</option>
+        @endforeach
+    </select>
+    <div class="form-text" style="font-size:.72rem;color:#9ca3af">Fills the session settings below — you can still change them for this round.</div>
+    @endif
+</div>
+
 <details class="px-4 py-3" style="border-top:1px solid #f3f4f6" {{ ($openByDefault ?? false) || $errors->any() ? 'open' : '' }}>
     <summary class="fw-black text-uppercase fst-italic" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af;cursor:pointer;list-style:none">
         <span style="display:inline-block;width:.8em">▸</span> Override Session Defaults for This Round
@@ -49,10 +76,11 @@
             @error('qualifying_duration')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         </div>
         <div class="col-6 col-sm-2">
-            <label class="form-label" style="font-size:.75rem">Race <span class="fw-normal text-secondary">(min)</span></label>
-            <input type="number" name="race_duration" value="{{ old('race_duration', $defaults['race_duration']) }}"
-                   class="form-control form-control-sm @error('race_duration') is-invalid @enderror" min="1" max="999" placeholder="{{ $defaults['race_duration'] }}">
-            @error('race_duration')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+            <label class="form-label" style="font-size:.75rem">Races <span class="fw-normal text-secondary">(min)</span></label>
+            <input type="text" name="race_lengths" data-sf="race_lengths" value="{{ old('race_lengths', $defaults['race_lengths']) }}"
+                   class="form-control form-control-sm @error('race_lengths') is-invalid @enderror" placeholder="e.g. 25, 25"
+                   title="One length per race — &quot;25, 25&quot; runs two races this round (max 4)">
+            @error('race_lengths')<div class="invalid-feedback d-block">Enter race lengths like "25" or "25, 25" (max 4 races).</div>@enderror
         </div>
         <div class="col-6 col-sm-3">
             <label class="form-label" style="font-size:.75rem">Start Time <span class="fw-normal text-secondary">(in-game)</span></label>
@@ -177,3 +205,26 @@
     }
 })();
 </script>
+
+@once
+<script>
+// Race format picker: fills this form's session fields from the picked format.
+document.addEventListener('change', function (e) {
+    var select = e.target.closest('[data-session-format]');
+    if (!select || !select.value) return;
+    var values = JSON.parse(select.selectedOptions[0].dataset.values || '{}');
+    var form = select.closest('form');
+    Object.keys(values).forEach(function (name) {
+        var input = form.querySelector('[name="' + name + '"]');
+        if (!input) return;
+        if (input.type === 'checkbox') {
+            input.checked = !!values[name];
+        } else {
+            input.value = values[name] === null ? '' : values[name];
+        }
+    });
+    var details = select.closest('div').nextElementSibling;
+    if (details && details.tagName === 'DETAILS') details.open = true;
+});
+</script>
+@endonce

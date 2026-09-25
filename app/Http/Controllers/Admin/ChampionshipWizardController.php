@@ -13,6 +13,7 @@ use App\Models\FtpServer;
 use App\Models\League;
 use App\Models\PointsScheme;
 use App\Models\Race;
+use App\Models\SessionFormat;
 use App\Services\AuditLogger;
 use App\Services\ChampionshipTeamEntryService;
 use App\Settings\ChampionshipSettingsSchema;
@@ -184,6 +185,7 @@ class ChampionshipWizardController extends Controller
         // Scoped to this league's own assigned servers only — a league manager
         // must never be able to push a round's config to another league's server.
         $servers = $this->roundServers($league, $championship);
+        $sessionFormats = SessionFormat::where('league_id', $league->id)->orderBy('name')->get();
 
         $nextRoundNumber = $championship->rounds()->max('round_number') + 1;
         $suggestedScheduledAt = $championship->scheduledDateTimeForRound($nextRoundNumber);
@@ -198,7 +200,7 @@ class ChampionshipWizardController extends Controller
         }
 
         return view('admin.leagues.championships.round-create', compact(
-            'league', 'championship', 'servers', 'suggestedScheduledAt', 'nextRoundNumber', 'bulkSuggestions'
+            'league', 'championship', 'servers', 'suggestedScheduledAt', 'nextRoundNumber', 'bulkSuggestions', 'sessionFormats'
         ));
     }
 
@@ -214,6 +216,8 @@ class ChampionshipWizardController extends Controller
             'practice_duration' => 'nullable|integer|min:1|max:999',
             'qualifying_duration' => 'nullable|integer|min:1|max:999',
             'race_duration' => 'nullable|integer|min:1|max:999',
+            'race_lengths' => ['nullable', 'string', 'regex:'.SessionFormatController::RACE_LENGTHS_REGEX],
+            'session_format_id' => 'nullable|integer',
             'weather' => 'nullable|in:dry,wet,mixed,random',
             'weather_randomness' => 'nullable|in:0,1,2,3,4,5,6,7,random',
             'rain_level' => 'nullable|numeric|min:0|max:1',
@@ -261,8 +265,9 @@ class ChampionshipWizardController extends Controller
         abort_unless($race->championship_id === $championship->id, 404);
 
         $servers = $this->roundServers($league, $championship);
+        $sessionFormats = SessionFormat::where('league_id', $league->id)->orderBy('name')->get();
 
-        return view('admin.leagues.championships.round-edit', compact('league', 'championship', 'race', 'servers'));
+        return view('admin.leagues.championships.round-edit', compact('league', 'championship', 'race', 'servers', 'sessionFormats'));
     }
 
     // Same validity rules Add Round enforces (resolveRoundRow()), except the
@@ -281,6 +286,8 @@ class ChampionshipWizardController extends Controller
             'practice_duration' => 'nullable|integer|min:1|max:999',
             'qualifying_duration' => 'nullable|integer|min:1|max:999',
             'race_duration' => 'nullable|integer|min:1|max:999',
+            'race_lengths' => ['nullable', 'string', 'regex:'.SessionFormatController::RACE_LENGTHS_REGEX],
+            'session_format_id' => 'nullable|integer',
             'weather' => 'nullable|in:dry,wet,mixed,random',
             'weather_randomness' => 'nullable|in:0,1,2,3,4,5,6,7,random',
             'rain_level' => 'nullable|numeric|min:0|max:1',
@@ -345,6 +352,8 @@ class ChampionshipWizardController extends Controller
             'practice_duration' => 'nullable|integer|min:1|max:999',
             'qualifying_duration' => 'nullable|integer|min:1|max:999',
             'race_duration' => 'nullable|integer|min:1|max:999',
+            'race_lengths' => ['nullable', 'string', 'regex:'.SessionFormatController::RACE_LENGTHS_REGEX],
+            'session_format_id' => 'nullable|integer',
             'weather' => 'nullable|in:dry,wet,mixed,random',
             'weather_randomness' => 'nullable|in:0,1,2,3,4,5,6,7,random',
             'rain_level' => 'nullable|numeric|min:0|max:1',
@@ -441,6 +450,23 @@ class ChampionshipWizardController extends Controller
     {
         if (! empty($data['ftp_server_id']) && ! $league->ftpServers()->where('id', $data['ftp_server_id'])->exists()) {
             abort(403, 'That server does not belong to this league.');
+        }
+
+        // The race format picked (if any) only prefilled the form client-side — kept
+        // for reference, and only one of this league's own.
+        if (! empty($data['session_format_id']) && ! SessionFormat::where('league_id', $league->id)->whereKey($data['session_format_id'])->exists()) {
+            abort(403, 'That race format does not belong to this league.');
+        }
+
+        // "Races (min)": "25" is the usual single race, "25, 25" a multi-race round —
+        // race_duration keeps the first race's length either way.
+        if (array_key_exists('race_lengths', $data)) {
+            $lengths = Race::parseRaceLengths($data['race_lengths']);
+            if ($lengths) {
+                $data['race_duration'] = $lengths[0];
+                $data['race_durations'] = count($lengths) > 1 ? $lengths : null;
+            }
+            unset($data['race_lengths']);
         }
 
         // Rain level is only meaningful for wet/mixed weather — drop a stray value

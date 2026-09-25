@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\RaceResultController;
 use App\Http\Controllers\Admin\RatingConfigController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\ResultController as AdminResultController;
+use App\Http\Controllers\Admin\SessionFormatController;
 use App\Http\Controllers\Admin\TeamEventController as AdminTeamEventController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\DiscordController;
@@ -46,7 +47,6 @@ use App\Http\Controllers\HotlapController;
 use App\Http\Controllers\LiveController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NewsController;
-use App\Http\Controllers\ProDriverController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RaceController;
 use App\Http\Controllers\RacingTeamController;
@@ -468,6 +468,16 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/poi
     Route::get('/{scheme}/edit', [PointsSchemeController::class, 'edit'])->name('edit');
     Route::put('/{scheme}', [PointsSchemeController::class, 'update'])->name('update');
     Route::delete('/{scheme}', [PointsSchemeController::class, 'destroy'])->name('destroy');
+});
+
+// Race formats — a league's own reusable session setups, picked per round.
+Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/session-formats')->name('admin.leagues.session-formats.')->group(function () {
+    Route::get('/', [SessionFormatController::class, 'index'])->name('index');
+    Route::get('/create', [SessionFormatController::class, 'create'])->name('create');
+    Route::post('/', [SessionFormatController::class, 'store'])->name('store');
+    Route::get('/{format}/edit', [SessionFormatController::class, 'edit'])->name('edit');
+    Route::put('/{format}', [SessionFormatController::class, 'update'])->name('update');
+    Route::delete('/{format}', [SessionFormatController::class, 'destroy'])->name('destroy');
 });
 
 // Points Schemes — cross-league browse. Not nested under {league}: every league's

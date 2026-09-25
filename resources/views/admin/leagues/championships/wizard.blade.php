@@ -123,6 +123,14 @@
                             </div>
                         @endforeach
 
+                        @if($step === 'sessions')
+                        <div class="mt-4 pt-4" style="border-top:1px solid #f3f4f6;font-size:.82rem">
+                            These are the defaults for every new round. For rounds that differ — other session lengths, or more than one race —
+                            <a href="{{ route('admin.leagues.session-formats.index', $league) }}">set up race formats →</a>
+                            and pick one per round on Add/Edit Round.
+                        </div>
+                        @endif
+
                         @if($step === 'scoring')
                         <div class="mt-4 pt-4" style="border-top:1px solid #f3f4f6">
                             @include('admin.leagues.championships._points-scheme-picker')
