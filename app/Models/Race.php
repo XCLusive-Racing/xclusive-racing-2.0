@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\SafetyRatingGrade;
 use App\Services\AccCarCatalog;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -409,9 +410,40 @@ class Race extends Model
 
     public function getIconUrlAttribute(): ?string
     {
-        $icon = $this->icon ?: $this->defaultCustomIconPath();
+        $icon = $this->icon ?: $this->championshipIconPath() ?: $this->defaultCustomIconPath();
 
         return $icon ? Storage::disk('media')->url($icon) : null;
+    }
+
+    // Eager-loads what icon_url needs for a championship round — use on any list
+    // that renders icon_url, or each round loads its championship + league on its own.
+    public function scopeWithIconOwners(Builder $query): void
+    {
+        $query->with(self::iconOwnerRelations());
+    }
+
+    // withoutTenantScope(): public pages (and anonymous visitors) have no league
+    // context, and TenantScope would otherwise hide every championship/league.
+    private static function iconOwnerRelations(): array
+    {
+        return [
+            'championship' => fn ($q) => $q->withoutTenantScope()->select(['id', 'league_id', 'icon']),
+            'championship.league' => fn ($q) => $q->withoutTenantScope()->select(['id', 'logo']),
+        ];
+    }
+
+    // A championship round without its own icon shows its championship's icon,
+    // else its league's logo — not XCL's generic "special event" logo, which
+    // made every league's rounds look like XCL events.
+    private function championshipIconPath(): ?string
+    {
+        if (! $this->championship_id) {
+            return null;
+        }
+
+        $this->loadMissing(self::iconOwnerRelations());
+
+        return $this->championship?->icon ?: $this->championship?->league?->logo;
     }
 
     // Custom races (no event_format_id) have no format-derived icon, so without an

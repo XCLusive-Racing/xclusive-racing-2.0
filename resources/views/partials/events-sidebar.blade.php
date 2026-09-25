@@ -13,14 +13,17 @@ $tickerArticles = NewsArticle::published()
     ->get();
 
 $sbNextEvent = Race::where('scheduled_at', '>', $now)
-    ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon','car_class','event_format_id'])
+    ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon','car_class','event_format_id','championship_id'])
     ->with('eventFormat:id,race1_mins,race2_mins')
+    ->withIconOwners()
     ->orderBy('scheduled_at')
     ->first();
 if ($sbNextEvent) $sbNextEvent->loadCount('registrations');
 
 $sbUpcoming = Race::where('scheduled_at', '>', $now)
-    ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon'])
+    // event_format_id too: without it icon_url treats every race as a custom one.
+    ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon','event_format_id','championship_id'])
+    ->withIconOwners()
     ->when($sbNextEvent, fn($q) => $q->where('id', '!=', $sbNextEvent->id))
     ->orderBy('scheduled_at')
     ->limit(2)
