@@ -100,6 +100,19 @@
                 @endphp
                 <div data-tabs data-default-tab="race">
 
+                    {{-- Multi-race round: one race at a time --}}
+                    @if($raceNumbers->count() > 1)
+                    <div class="d-flex gap-2 mb-3">
+                        @foreach($raceNumbers as $n)
+                        <a href="{{ route('results.index', ['race' => $selected->id, 'race_number' => $n]) }}"
+                           class="btn btn-sm fw-bold text-uppercase {{ $n === $raceNumber ? 'text-white' : 'btn-light' }}"
+                           style="font-size:.75rem;letter-spacing:.05em;{{ $n === $raceNumber ? 'background:#7c3aed' : '' }}">
+                            Race {{ $n }}
+                        </a>
+                        @endforeach
+                    </div>
+                    @endif
+
                     {{-- Event header --}}
                     <div class="bg-white rounded-3 shadow-sm mb-3 p-3 d-flex align-items-center gap-3">
                         @if($selected->icon_url)

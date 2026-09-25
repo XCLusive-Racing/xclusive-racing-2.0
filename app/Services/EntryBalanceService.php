@@ -85,9 +85,13 @@ class EntryBalanceService
             return $this->successBallast[$race->id] = [];
         }
 
+        // A multi-race previous round counts its last race — the finish drivers
+        // carry straight into this one.
+        $lastRace = (int) $previous->raceResults()->reorder()->max('race_number');
+
         // One row per driver per car — group a team car's drivers back into one car,
         // then rank the cars (within their class when multiclass).
-        $cars = $previous->raceResults()->where('dnf', false)->where('dns', false)->get()
+        $cars = $previous->raceResults()->where('race_number', $lastRace)->where('dnf', false)->where('dns', false)->get()
             ->groupBy(fn ($result) => $result->car_number !== null ? 'car'.$result->car_number : 'user'.$result->user_id)
             ->map(fn ($rows) => [
                 'position' => $rows->min('position'),

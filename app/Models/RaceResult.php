@@ -10,7 +10,7 @@ class RaceResult extends Model
 {
     protected $fillable = [
         'race_id', 'race_title', 'race_track', 'race_game', 'race_scheduled_at',
-        'session_type', 'user_id',
+        'session_type', 'race_number', 'user_id',
         'player_id', 'driver_name', 'car_number', 'vehicle', 'car_class',
         'position', 'best_lap', 'lap_count', 'laps_led', 'total_time', 'time_penalty_ms', 'consistency',
         'fastest_lap', 'dnf', 'dns', 'dsq', 'dc',
@@ -20,6 +20,7 @@ class RaceResult extends Model
     protected function casts(): array
     {
         return [
+            'race_number' => 'integer',
             'fastest_lap' => 'boolean',
             'dnf' => 'boolean',
             'dns' => 'boolean',

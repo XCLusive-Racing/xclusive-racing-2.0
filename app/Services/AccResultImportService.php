@@ -53,22 +53,54 @@ class AccResultImportService
             $sessions = [$data];
         }
 
+        $raceNumbers = [];
+
         foreach ($sessions as $session) {
             if (! in_array($session['sessionType'] ?? null, ['Q', 'R'], true)) {
                 continue;
             }
 
             $type = $session['sessionType'] === 'Q' ? 'quali' : 'race';
-            $counts[$type] += $this->parseSession($session, $race, $type);
+            $raceNumber = $type === 'race' ? $this->raceNumber($session, $race) : 1;
+            $saved = $this->parseSession($session, $race, $type, $raceNumber);
+            $counts[$type] += $saved;
+
+            if ($type === 'race' && $saved > 0) {
+                $raceNumbers[] = $raceNumber;
+            }
         }
 
         if ($counts['race'] > 0) {
-            $this->storeResultsJson($race, $content);
-            $race->update(['status' => 'finished']);
+            foreach (array_unique($raceNumbers) as $raceNumber) {
+                $this->storeResultsJson($race, $content, $raceNumber);
+            }
+
+            // A multi-race round only finishes once every race is in — until then
+            // the scheduled importer keeps looking for the next race's file.
+            $racesIn = $race->raceResults()->reorder()->distinct()->pluck('race_number')->count();
+            if ($racesIn >= $race->raceCount()) {
+                $race->update(['status' => 'finished']);
+            }
+
             (new RatingService(new XclRating))->processRace($race);
         }
 
         return [$counts, $errors];
+    }
+
+    // Which race of the round an R session is. ACC's sessionIndex is the session's
+    // position in the event's sessions list, which AccServerConfigService builds as
+    // [P?] [Q?] R R… — so it's the index past practice/quali, 1-based. A results
+    // file without a sessionIndex (older/hand-built uploads) counts as race 1.
+    public function raceNumber(array $session, Race $race): int
+    {
+        if (! isset($session['sessionIndex']) || $race->raceCount() === 1) {
+            return 1;
+        }
+
+        $firstRaceIndex = ($race->practice_duration ? 1 : 0) + ($race->qualifying_duration ? 1 : 0);
+
+        return max(1, min($race->raceCount(), (int) $session['sessionIndex'] - $firstRaceIndex + 1));
     }
 
     // Keeps the full decoded race-session JSON (laps, sectors, penalties) around so the
@@ -81,11 +113,14 @@ class AccResultImportService
     // ImportGportalResults — the scheduled every-minute importer that brings in
     // practically every real race — calls processSessions() directly and never knew to,
     // so those races silently got no stats panel at all.
-    private function storeResultsJson(Race $race, string $content): void
+    private function storeResultsJson(Race $race, string $content, int $raceNumber = 1): void
     {
-        $path = 'race-results/'.$race->id.'.json';
+        $path = $race->resultsJsonPath($raceNumber);
         Storage::disk('local')->put($path, $content);
-        $race->update(['results_json_path' => $path]);
+
+        if ($raceNumber === 1) {
+            $race->update(['results_json_path' => $path]);
+        }
     }
 
     // A driver who parks in the pits (or never gets going) still shows up in ACC's
@@ -96,7 +131,7 @@ class AccResultImportService
     // RatingService (only a lap-0/1 retirement gets that).
     private const DNF_LAP_THRESHOLD = 0.70;
 
-    private function parseSession(array $session, Race $race, string $sessionType): int
+    private function parseSession(array $session, Race $race, string $sessionType, int $raceNumber = 1): int
     {
         $lines = $session['sessionResult']['leaderBoardLines'] ?? [];
         $bestLapMs = ($session['sessionResult']['bestlap'] ?? -1) > 0
@@ -170,6 +205,7 @@ class AccResultImportService
                     [
                         'race_id' => $race->id,
                         'session_type' => $sessionType,
+                        'race_number' => $raceNumber,
                         'player_id' => $playerId,
                     ],
                     [

@@ -201,13 +201,18 @@ class AccServerConfigService implements ServerConfigGenerator
             ];
         }
 
-        $sessions[] = [
-            'hourOfDay' => $hour,
-            'dayOfWeekend' => 3,
-            'timeMultiplier' => (int) ($race->race_time_multiplier ?: 1),
-            'sessionType' => 'R',
-            'sessionDurationMinutes' => (int) ($race->race_duration ?? 20),
-        ];
+        // One R session per race — a multi-race round (race_durations) runs them back
+        // to back in the same server event; the result import tells them apart by
+        // ACC's sessionIndex (AccResultImportService::raceNumber()).
+        foreach ($race->raceLengths() as $minutes) {
+            $sessions[] = [
+                'hourOfDay' => $hour,
+                'dayOfWeekend' => 3,
+                'timeMultiplier' => (int) ($race->race_time_multiplier ?: 1),
+                'sessionType' => 'R',
+                'sessionDurationMinutes' => (int) $minutes,
+            ];
+        }
 
         if ($race->weather && $race->weather !== 'dry') {
             [$rain, $cloudLevel, $weatherRandomness] = $this->weatherParams($race->weather);

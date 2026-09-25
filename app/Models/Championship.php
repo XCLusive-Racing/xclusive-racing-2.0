@@ -525,51 +525,66 @@ class Championship extends Model
             $qualiResults = $race->qualiResults()->get();
             $poleUserId = $qualiResults->first()?->user_id;
 
-            // Percentage-depth schemes resolve their scoring cutoff fresh per
-            // round, against that round's own classified-finisher count —
-            // never the starting grid, so a retirement elsewhere in the field
-            // never changes what a classified finisher scores.
-            $classifiedCount = $race->raceResults->where('dnf', false)->count();
-            $cutoff = $scheme ? $scheme->scoringCutoffFor($classifiedCount) : null;
+            // A multi-race round scores every race with the same scheme and adds
+            // them up into one round entry — drop rounds and missed rounds stay a
+            // per-round thing. Pole is a qualifying bonus, so it's awarded once
+            // per round (with race 1).
+            $roundEntries = [];
 
-            foreach ($race->raceResults as $result) {
-                $userId = $result->user_id;
-                if (! isset($driverData[$userId])) {
-                    $driverData[$userId] = [
-                        'user_id' => $userId,
-                        'user' => $result->user,
-                        'rounds' => [],
-                    ];
-                }
+            foreach ($race->raceResults->groupBy('race_number')->sortKeys() as $raceNumber => $raceResults) {
+                // Percentage-depth schemes resolve their scoring cutoff fresh per
+                // race, against that race's own classified-finisher count —
+                // never the starting grid, so a retirement elsewhere in the field
+                // never changes what a classified finisher scores.
+                $classifiedCount = $raceResults->where('dnf', false)->count();
+                $cutoff = $scheme ? $scheme->scoringCutoffFor($classifiedCount) : null;
 
-                $pos = $result->dnf ? null : ($result->position ?? null);
-                $pts = 0;
-
-                if ($pos !== null) {
-                    if ($scheme) {
-                        if ($pos <= $cutoff) {
-                            $pts = (float) ($pointsTable[$pos] ?? 0);
-                        }
-                    } elseif (isset($pointsSystem[$pos - 1])) {
-                        $pts = (int) $pointsSystem[$pos - 1];
+                foreach ($raceResults as $result) {
+                    $userId = $result->user_id;
+                    if (! isset($driverData[$userId])) {
+                        $driverData[$userId] = [
+                            'user_id' => $userId,
+                            'user' => $result->user,
+                            'rounds' => [],
+                        ];
                     }
-                }
-                if ($result->fastest_lap) {
-                    $pts += $bonusFL;
-                }
-                if ($poleUserId && $poleUserId === $userId) {
-                    $pts += $bonusPole;
-                }
-                if ($bonusLead > 0 && $result->laps_led > 0) {
-                    $pts += $bonusLead;
-                }
 
-                $driverData[$userId]['rounds'][] = [
-                    'race_id' => $race->id,
-                    'position' => $pos,
-                    'points' => $pts,
-                    'dnf' => $result->dnf,
-                ];
+                    $pos = $result->dnf ? null : ($result->position ?? null);
+                    $pts = 0;
+
+                    if ($pos !== null) {
+                        if ($scheme) {
+                            if ($pos <= $cutoff) {
+                                $pts = (float) ($pointsTable[$pos] ?? 0);
+                            }
+                        } elseif (isset($pointsSystem[$pos - 1])) {
+                            $pts = (int) $pointsSystem[$pos - 1];
+                        }
+                    }
+                    if ($result->fastest_lap) {
+                        $pts += $bonusFL;
+                    }
+                    if ($poleUserId && $poleUserId === $userId && (int) $raceNumber === 1) {
+                        $pts += $bonusPole;
+                    }
+                    if ($bonusLead > 0 && $result->laps_led > 0) {
+                        $pts += $bonusLead;
+                    }
+
+                    $roundEntries[$userId] ??= [
+                        'race_id' => $race->id,
+                        'position' => $pos,
+                        'points' => 0,
+                        'dnf' => $result->dnf,
+                        'races' => [],
+                    ];
+                    $roundEntries[$userId]['points'] += $pts;
+                    $roundEntries[$userId]['races'][(int) $raceNumber] = ['position' => $pos, 'points' => $pts, 'dnf' => $result->dnf];
+                }
+            }
+
+            foreach ($roundEntries as $userId => $entry) {
+                $driverData[$userId]['rounds'][] = $entry;
             }
         }
 

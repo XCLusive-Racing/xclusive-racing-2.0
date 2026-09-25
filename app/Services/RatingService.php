@@ -24,8 +24,24 @@ class RatingService
      */
     public function processRace(Race $race): void
     {
+        // A multi-race round rates each race on its own, in order — every race is a
+        // separate result for the driver, with its own rating change.
+        $raceNumbers = RaceResult::where('race_id', $race->id)
+            ->where('session_type', 'race')
+            ->distinct()
+            ->orderBy('race_number')
+            ->pluck('race_number');
+
+        foreach ($raceNumbers as $raceNumber) {
+            $this->processRaceSession($race, (int) $raceNumber);
+        }
+    }
+
+    private function processRaceSession(Race $race, int $raceNumber): void
+    {
         $results = RaceResult::where('race_id', $race->id)
             ->where('session_type', 'race')
+            ->where('race_number', $raceNumber)
             ->whereNotNull('user_id')
             ->with('user')
             ->get();
@@ -78,25 +94,25 @@ class RatingService
                 // dnf-flagged who completed 2+ laps still just keeps their real ACC finishing
                 // position and goes through the normal position-based formula.
                 $isTrueDnf = $r->dnf && (int) ($r->lap_count ?? 0) <= 1;
-                $status    = $r->dsq ? 'DSQ' : ($r->dns ? 'DNS' : ($r->dc ? 'DC' : ($isTrueDnf ? 'DNF' : 'FIN')));
+                $status = $r->dsq ? 'DSQ' : ($r->dns ? 'DNS' : ($r->dc ? 'DC' : ($isTrueDnf ? 'DNF' : 'FIN')));
 
                 return [
-                    'driver_id'  => $r->user_id,
-                    'name'       => $r->displayName(),
-                    'rating'     => $rating,
+                    'driver_id' => $r->user_id,
+                    'name' => $r->displayName(),
+                    'rating' => $rating,
                     'finish_pos' => ($status === 'FIN') ? $positions->get($r->id) : null,
-                    'status'     => $status,
-                    'field_key'  => $teamEntryIdByUserId->get($r->user_id) ?? $r->car_number ?? ('solo_' . $r->id),
+                    'status' => $status,
+                    'field_key' => $teamEntryIdByUserId->get($r->user_id) ?? $r->car_number ?? ('solo_'.$r->id),
                 ];
             })->values()->all();
 
             $finisherCount = collect($entries)->where('status', 'FIN')->count();
             \Log::info('RatingService: starting calculation', [
-                'race_id'        => $race->id,
-                'class'          => $classKey,
+                'race_id' => $race->id,
+                'class' => $classKey,
                 'linked_drivers' => count($entries),
-                'finishers'      => $finisherCount,
-                'min_required'   => $this->calculator->MIN_DRIVERS,
+                'finishers' => $finisherCount,
+                'min_required' => $this->calculator->MIN_DRIVERS,
             ]);
 
             try {
@@ -105,7 +121,8 @@ class RatingService
                     $entries
                 );
             } catch (\InvalidArgumentException $e) {
-                \Log::warning('RatingService: skipped — ' . $e->getMessage(), ['race_id' => $race->id, 'class' => $classKey]);
+                \Log::warning('RatingService: skipped — '.$e->getMessage(), ['race_id' => $race->id, 'class' => $classKey]);
+
                 continue;
             }
 
@@ -117,7 +134,7 @@ class RatingService
         }
 
         $byUserId = $calculated->keyBy('driver_id');
-        $srField  = $this->srField($race->game);
+        $srField = $this->srField($race->game);
 
         DB::transaction(function () use ($results, $byUserId, $ratingField, $srField) {
             foreach ($results as $result) {
@@ -129,9 +146,9 @@ class RatingService
 
                 $result->update([
                     'rating_before' => $calc['rating_before'],
-                    'rating_after'  => $calc['rating_after'],
-                    'elo_change'    => $calc['elo_change'],
-                    'sof'           => $calc['sof'],
+                    'rating_after' => $calc['rating_after'],
+                    'elo_change' => $calc['elo_change'],
+                    'sof' => $calc['sof'],
                 ]);
 
                 User::where('id', $result->user_id)
@@ -192,13 +209,13 @@ class RatingService
      */
     private function applySrChange(RaceResult $result, string $srField): void
     {
-        $current  = (float) ($result->user->{$srField} ?? 4.00);
+        $current = (float) ($result->user->{$srField} ?? 4.00);
         $baseline = min(max($current - (float) ($result->sr_change ?? 0), 0.00), 9.99);
 
         $isFinisher = ! $result->dsq && ! $result->dns && ! $result->dc && ! $result->dnf;
 
         if ($isFinisher) {
-            $gain  = 2.2 / max($baseline, 0.01) * $this->calculator->MULTIPLIER;
+            $gain = 2.2 / max($baseline, 0.01) * $this->calculator->MULTIPLIER;
             $newSr = min(max($baseline + $gain, 0.00), 9.99);
         } else {
             $newSr = $baseline;

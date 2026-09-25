@@ -45,7 +45,7 @@
     </div>
 </div>
 
-@php $defaultTab = request('server') ? 'results' : 'info'; @endphp
+@php $defaultTab = request('server') || request('race_number') ? 'results' : 'info'; @endphp
 {{-- Main tabs --}}
 <div data-tabs data-default-tab="{{ $defaultTab }}">
 
@@ -703,6 +703,17 @@
                     </form>
                 </div>
             </div>
+
+            {{-- Multi-race round: one race at a time --}}
+            @if($raceNumbers->count() > 1)
+            <div class="d-flex gap-2 px-4 py-2" style="border-top:1px solid #f3f4f6">
+                @foreach($raceNumbers as $n)
+                <a href="{{ route('admin.races.show', ['race' => $race, 'race_number' => $n]) }}"
+                   class="btn btn-sm fw-bold text-uppercase {{ $n === $raceNumber ? 'text-white' : 'btn-light' }}"
+                   style="font-size:.72rem;{{ $n === $raceNumber ? 'background:#059669' : '' }}">Race {{ $n }}</a>
+                @endforeach
+            </div>
+            @endif
 
             {{-- Results sub-tabs --}}
             @php $defaultSubtab = $raceResults->isNotEmpty() ? 'race' : ($qualiResults->isNotEmpty() ? 'quali' : 'race'); @endphp

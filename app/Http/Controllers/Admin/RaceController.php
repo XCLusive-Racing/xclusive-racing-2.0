@@ -80,7 +80,11 @@ class RaceController extends Controller
     {
         $race->loadMissing(['raceClasses', 'teamEntries']);
 
-        $raceResults = $race->results()->where('session_type', 'race')->with('user')->get();
+        // A multi-race round's Results tab shows one race at a time (?race_number=2).
+        $raceNumbers = $race->results()->where('session_type', 'race')->reorder()->distinct()->orderBy('race_number')->pluck('race_number')->map(fn ($n) => (int) $n);
+        $raceNumber = $raceNumbers->contains((int) request('race_number')) ? (int) request('race_number') : ($raceNumbers->first() ?? 1);
+
+        $raceResults = $race->results()->where('session_type', 'race')->where('race_number', $raceNumber)->with('user')->get();
         $qualiResults = $race->results()->where('session_type', 'quali')->with('user')->get();
         $registrations = $race->registrations()->with('user')->orderBy('created_at')->get();
         $teamEntries = $race->is_endurance ? $race->teamEntries()->count() : null;
@@ -140,7 +144,7 @@ class RaceController extends Controller
         return view('admin.races.show', compact(
             'race', 'raceResults', 'qualiResults', 'registrations', 'teamEntries', 'teamEntryRows',
             'ftpServers', 'selectedServer', 'ftpFiles', 'ftpAllFiles', 'ftpError', 'importedFiles',
-            'entrylistDrivers'
+            'entrylistDrivers', 'raceNumbers', 'raceNumber'
         ))->with('configData', $config);
     }
 

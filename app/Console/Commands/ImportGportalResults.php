@@ -8,11 +8,13 @@ use App\Models\Race;
 use App\Services\AccResultImportService;
 use App\Services\FtpService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 
 class ImportGportalResults extends Command
 {
-    protected $signature   = 'gportal:import-results';
+    protected $signature = 'gportal:import-results';
+
     protected $description = 'Auto-close overdue races, auto-import their results from gPortal FTP once available, and auto-finish stale closed races with no results';
 
     // How long after scheduled_at before we start looking for a results file —
@@ -39,9 +41,12 @@ class ImportGportalResults extends Command
             Log::info("gportal:import-results: auto-closed {$closed} overdue race(s)");
         }
 
+        // No whereDoesntHave('raceResults') filter: a single-race event with results is
+        // already finished by the import itself, so the only "closed" events with
+        // results left here are multi-race rounds whose later race never came in —
+        // those finish with what they have rather than staying stuck.
         $staleFinished = Race::where('status', 'closed')
             ->where('scheduled_at', '<', now()->subHours(self::STALE_CLOSED_HOURS))
-            ->whereDoesntHave('raceResults')
             ->update(['status' => 'finished']);
 
         if ($staleFinished > 0) {
@@ -61,12 +66,13 @@ class ImportGportalResults extends Command
 
         foreach ($races as $serverId => $serverRaces) {
             $server = $serverRaces->first()->ftpServer;
-            if (!$server || !$server->active) {
+            if (! $server || ! $server->active) {
                 continue;
             }
 
-            if (!$ftp->connect($server)) {
+            if (! $ftp->connect($server)) {
                 Log::error("gportal:import-results: could not connect to {$server->host}");
+
                 continue;
             }
 
@@ -76,7 +82,7 @@ class ImportGportalResults extends Command
             foreach ($files as $file) {
                 $filename = $file['name'];
                 $fileTime = $this->parseFileTimestamp($filename);
-                if (!$fileTime) {
+                if (! $fileTime) {
                     continue;
                 }
 
@@ -84,12 +90,13 @@ class ImportGportalResults extends Command
                 $race = $serverRaces
                     ->filter(function ($r) use ($fileTime) {
                         $slot = $r->slot_time ?? $r->scheduled_at;
+
                         return $slot && $slot->lte($fileTime) && $slot->diffInHours($fileTime) <= self::MATCH_WINDOW_HOURS;
                     })
-                    ->sortByDesc(fn($r) => ($r->slot_time ?? $r->scheduled_at)->timestamp)
+                    ->sortByDesc(fn ($r) => ($r->slot_time ?? $r->scheduled_at)->timestamp)
                     ->first();
 
-                if (!$race) {
+                if (! $race) {
                     continue;
                 }
 
@@ -105,22 +112,25 @@ class ImportGportalResults extends Command
     private function importFile(FtpService $ftp, AccResultImportService $importer, FtpServer $server, Race $race, string $filename): void
     {
         try {
-            if (!$ftp->connect($server)) {
+            if (! $ftp->connect($server)) {
                 Log::error("gportal:import-results: reconnect failed for race #{$race->id}");
+
                 return;
             }
 
-            $content = $ftp->getFileContent(rtrim($server->path, '/') . '/' . $filename);
+            $content = $ftp->getFileContent(rtrim($server->path, '/').'/'.$filename);
             $ftp->disconnect();
 
             if ($content === false) {
-                Log::error("gportal:import-results: download failed", ['race_id' => $race->id, 'file' => $filename]);
+                Log::error('gportal:import-results: download failed', ['race_id' => $race->id, 'file' => $filename]);
+
                 return;
             }
 
             [$decoded, $error] = $importer->decodeContent($content, $filename);
             if ($error) {
-                Log::error("gportal:import-results: decode failed", ['race_id' => $race->id, 'file' => $filename, 'error' => $error]);
+                Log::error('gportal:import-results: decode failed', ['race_id' => $race->id, 'file' => $filename, 'error' => $error]);
+
                 return;
             }
 
@@ -131,13 +141,13 @@ class ImportGportalResults extends Command
                     ['race_id' => $race->id, 'filename' => $filename],
                     ['ftp_server_id' => $server->id]
                 );
-                Log::info("gportal:import-results: imported", [
+                Log::info('gportal:import-results: imported', [
                     'race_id' => $race->id, 'file' => $filename,
                     'race_rows' => $counts['race'], 'quali_rows' => $counts['quali'],
                 ]);
             }
         } catch (\Throwable $e) {
-            Log::error("gportal:import-results: exception", [
+            Log::error('gportal:import-results: exception', [
                 'race_id' => $race->id, 'file' => $filename, 'error' => $e->getMessage(),
             ]);
         }
@@ -149,17 +159,17 @@ class ImportGportalResults extends Command
     // UTC. Parsing them as UTC silently shifted every match by 1-2 hours (DST-dependent),
     // which mostly stayed inside the generous match window but could pick the wrong race
     // when two races on the same server are only a couple of hours apart.
-    private function parseFileTimestamp(string $filename): ?\Illuminate\Support\Carbon
+    private function parseFileTimestamp(string $filename): ?Carbon
     {
         $parts = explode('_', pathinfo($filename, PATHINFO_FILENAME));
-        if (count($parts) < 2 || strlen($parts[0]) !== 6 || !is_numeric($parts[0])) {
+        if (count($parts) < 2 || strlen($parts[0]) !== 6 || ! is_numeric($parts[0])) {
             return null;
         }
 
         $timePart = str_pad(substr($parts[1] ?? '', 0, 4), 4, '0');
 
         try {
-            return \Illuminate\Support\Carbon::createFromFormat('ymd Hi', $parts[0] . ' ' . $timePart, 'Europe/Berlin')
+            return Carbon::createFromFormat('ymd Hi', $parts[0].' '.$timePart, 'Europe/Berlin')
                 ->utc();
         } catch (\Throwable) {
             return null;

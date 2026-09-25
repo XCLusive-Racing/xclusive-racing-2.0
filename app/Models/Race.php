@@ -38,6 +38,14 @@ class Race extends Model
         return $this->race_durations ?: [(int) ($this->race_duration ?? 20)];
     }
 
+    // Where a race session's raw results JSON is kept (for the results page's stats
+    // tabs): race 1 at the long-standing results_json_path location, any further
+    // race of a multi-race round next to it.
+    public function resultsJsonPath(int $raceNumber = 1): string
+    {
+        return 'race-results/'.$this->id.($raceNumber > 1 ? '-race'.$raceNumber : '').'.json';
+    }
+
     public function raceCount(): int
     {
         return count($this->raceLengths());

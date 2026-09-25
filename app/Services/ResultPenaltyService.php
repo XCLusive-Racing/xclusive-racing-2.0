@@ -28,13 +28,15 @@ class ResultPenaltyService
     {
         $result->update(['time_penalty_ms' => $result->time_penalty_ms + $penaltyMs]);
 
-        $this->recomputePositions($result->race, $result->session_type);
+        $this->recomputePositions($result->race, $result->session_type, (int) ($result->race_number ?? 1));
     }
 
-    public function recomputePositions(Race $race, string $sessionType): void
+    // Per race — a multi-race round's races each have their own classification.
+    public function recomputePositions(Race $race, string $sessionType, int $raceNumber = 1): void
     {
         $results = RaceResult::where('race_id', $race->id)
             ->where('session_type', $sessionType)
+            ->where('race_number', $raceNumber)
             ->get();
 
         $groups = $race->is_multiclass

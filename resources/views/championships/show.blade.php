@@ -170,7 +170,8 @@
                                         $rd = collect($entry['rounds'])->firstWhere('race_id', $r->id);
                                         $dropped = in_array($r->id, $entry['dropped']);
                                     @endphp
-                                    <td class="text-center" style="color:{{ $dropped ? '#4b5563' : '#9ca3af' }};{{ $dropped ? 'text-decoration:line-through' : '' }}">
+                                    <td class="text-center" style="color:{{ $dropped ? '#4b5563' : '#9ca3af' }};{{ $dropped ? 'text-decoration:line-through' : '' }}"
+                                        @if($rd && count($rd['races'] ?? []) > 1) title="{{ collect($rd['races'])->map(fn ($race, $n) => 'Race ' . $n . ': ' . $race['points'])->implode(' · ') }}" @endif>
                                         {{ $rd ? $rd['points'] : '—' }}
                                     </td>
                                     @endforeach

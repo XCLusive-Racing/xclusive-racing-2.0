@@ -246,11 +246,15 @@ class RaceResultController extends Controller
             'user_ids.*' => 'integer|exists:users,id',
             'player_entries' => 'nullable|array',
             'player_entries.*' => 'string|max:100',
+            'race_number' => 'nullable|integer|min:1|max:4',
         ]);
 
-        $existingUserIds = RaceResult::where('race_id', $race->id)->where('session_type', 'race')->whereNotNull('user_id')->pluck('user_id')->toArray();
-        $existingPlayerIds = RaceResult::where('race_id', $race->id)->where('session_type', 'race')->pluck('player_id')->toArray();
-        $maxPos = RaceResult::where('race_id', $race->id)->where('session_type', 'race')->max('position') ?? 0;
+        // A multi-race round's DNS entries go to the race being viewed.
+        $raceNumber = (int) ($request->input('race_number') ?: 1);
+
+        $existingUserIds = RaceResult::where('race_id', $race->id)->where('session_type', 'race')->where('race_number', $raceNumber)->whereNotNull('user_id')->pluck('user_id')->toArray();
+        $existingPlayerIds = RaceResult::where('race_id', $race->id)->where('session_type', 'race')->where('race_number', $raceNumber)->pluck('player_id')->toArray();
+        $maxPos = RaceResult::where('race_id', $race->id)->where('session_type', 'race')->where('race_number', $raceNumber)->max('position') ?? 0;
         $added = 0;
 
         foreach ($request->user_ids ?? [] as $userId) {
@@ -264,6 +268,7 @@ class RaceResultController extends Controller
             RaceResult::create([
                 'race_id' => $race->id,
                 'session_type' => 'race',
+                'race_number' => $raceNumber,
                 'user_id' => $user->id,
                 'player_id' => $user->playerIdFor($race->game) ?? 'DNS_'.$user->id,
                 'driver_name' => $user->name,
@@ -289,6 +294,7 @@ class RaceResultController extends Controller
             RaceResult::create([
                 'race_id' => $race->id,
                 'session_type' => 'race',
+                'race_number' => $raceNumber,
                 'user_id' => null,
                 'player_id' => $playerId,
                 'driver_name' => $name,
