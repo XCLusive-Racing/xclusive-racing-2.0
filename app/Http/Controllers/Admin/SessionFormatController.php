@@ -55,7 +55,10 @@ class SessionFormatController extends Controller
     {
         $this->authorizeLeague($request, $league, $format);
 
-        $before = $format->only(['name', 'practice_duration', 'qualifying_duration', 'race_durations', 'pitstop_count', 'fixed_stop_time', 'tyre_set_count']);
+        $before = $format->only([
+            'name', 'practice_duration', 'qualifying_duration', 'race_durations', 'pitstop_count', 'fixed_stop_time', 'tyre_set_count',
+            'driver_stint_time_mins', 'max_total_driving_time_mins',
+        ]);
         $format->update($this->validatedInput($request));
 
         AuditLogger::record($request->user(), $format, 'session_format.updated', ['before' => $before], $league->id);
@@ -92,6 +95,8 @@ class SessionFormatController extends Controller
             'pitstop_count' => 'nullable|integer|min:0|max:9',
             'fixed_stop_time' => 'nullable|boolean',
             'tyre_set_count' => 'nullable|integer|min:1|max:50',
+            'driver_stint_time_mins' => 'nullable|integer|min:1|max:1440',
+            'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
         ], self::RACE_LENGTHS_MESSAGES);
 
         $lengths = Race::parseRaceLengths($data['race_lengths']);

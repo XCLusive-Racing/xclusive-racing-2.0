@@ -50,6 +50,8 @@
                     'pitstop_count' => $sf->pitstop_count,
                     'tyre_set_count' => $sf->tyre_set_count,
                     'fixed_stop_time' => $sf->fixed_stop_time,
+                    'driver_stint_time_mins' => $sf->driver_stint_time_mins,
+                    'max_total_driving_time_mins' => $sf->max_total_driving_time_mins,
                 ]) }}">{{ $sf->name }} — {{ $sf->summary() }}</option>
         @endforeach
     </select>

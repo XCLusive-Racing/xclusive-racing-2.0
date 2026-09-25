@@ -81,6 +81,23 @@
                     <div class="form-text mt-0" style="font-size:.72rem;color:#9ca3af">Off = game default (dynamic). On = a fixed 25 seconds.</div>
                 </div>
             </div>
+
+            <p class="fw-black text-uppercase fst-italic mb-2 mt-4" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Driver Swaps</p>
+            <div class="row g-3">
+                <div class="col-6 col-sm-3">
+                    <label class="form-label">Max. Stint Time <span class="fw-normal text-secondary">(min)</span></label>
+                    <input type="number" name="driver_stint_time_mins" value="{{ old('driver_stint_time_mins', $format->driver_stint_time_mins) }}" min="1" max="1440" placeholder="No limit"
+                           class="form-control @error('driver_stint_time_mins') is-invalid @enderror">
+                    @error('driver_stint_time_mins')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-6 col-sm-3">
+                    <label class="form-label">Max Driving Time / Driver <span class="fw-normal text-secondary">(min)</span></label>
+                    <input type="number" name="max_total_driving_time_mins" value="{{ old('max_total_driving_time_mins', $format->max_total_driving_time_mins) }}" min="1" max="1440" placeholder="No limit"
+                           class="form-control @error('max_total_driving_time_mins') is-invalid @enderror">
+                    @error('max_total_driving_time_mins')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            </div>
+            <div class="form-text mb-0" style="font-size:.72rem;color:#9ca3af">Only used by championships with driver swaps enabled.</div>
         </div>
     </div>
 

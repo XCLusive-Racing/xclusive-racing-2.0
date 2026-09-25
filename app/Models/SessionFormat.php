@@ -17,6 +17,7 @@ class SessionFormat extends Model
     protected $fillable = [
         'league_id', 'name', 'description', 'practice_duration', 'qualifying_duration',
         'race_durations', 'pitstop_count', 'fixed_stop_time', 'tyre_set_count',
+        'driver_stint_time_mins', 'max_total_driving_time_mins',
     ];
 
     protected function casts(): array

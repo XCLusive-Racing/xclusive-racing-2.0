@@ -81,6 +81,31 @@ class SessionFormatTest extends TestCase
             ->assertOk()->assertSee('Sprint Triple');
     }
 
+    public function test_a_format_carries_driver_swap_limits_into_the_round_picker(): void
+    {
+        $this->actingAs($this->manager)
+            ->post(route('admin.leagues.session-formats.store', $this->league), [
+                'name' => 'Endurance', 'race_lengths' => '180',
+                'driver_stint_time_mins' => 65, 'max_total_driving_time_mins' => 120,
+            ])
+            ->assertSessionHasNoErrors();
+
+        $format = SessionFormat::where('league_id', $this->league->id)->firstOrFail();
+        $this->assertSame(65, $format->driver_stint_time_mins);
+        $this->assertSame(120, $format->max_total_driving_time_mins);
+
+        $championship = Championship::create([
+            'league_id' => $this->league->id, 'name' => 'Cup', 'game' => 'acc', 'season' => 2026,
+            'status' => 'draft', 'visibility' => 'public', 'settings' => ChampionshipSettingsSchema::defaults(),
+        ]);
+
+        $this->actingAs($this->manager)
+            ->get(route('admin.leagues.championships.rounds.create', [$this->league, $championship]))
+            ->assertOk()
+            ->assertSee('&quot;driver_stint_time_mins&quot;:65', false)
+            ->assertSee('&quot;max_total_driving_time_mins&quot;:120', false);
+    }
+
     public function test_race_lengths_must_be_one_to_four_races_of_whole_minutes(): void
     {
         foreach (['', 'long', '25, 0', '10,10,10,10,10'] as $bad) {
