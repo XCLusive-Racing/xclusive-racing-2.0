@@ -16,12 +16,12 @@
             {{ collect($car->driverIds())->map(fn ($id) => $teamCarDrivers->get($id)?->displayName())->filter()->join(', ') }}
         </div>
     </div>
-    @if($myTeamCars->count() > 1)
+    {{-- Also for a team's only car — while it can still add more, this list is
+         the only place left to withdraw it. --}}
     <form method="POST" action="{{ route('championships.unregister', $championship) }}" onsubmit="return confirm('Withdraw this car from the championship?')" class="flex-shrink-0">
         @csrf @method('DELETE')
         <input type="hidden" name="registration_id" value="{{ $car->id }}">
         <button class="btn btn-sm fw-bold text-uppercase text-danger" style="background:#fee2e2;border:1px solid #fca5a5;font-size:.65rem;padding:2px 8px">Withdraw</button>
     </form>
-    @endif
 </div>
 @endforeach

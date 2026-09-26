@@ -161,6 +161,20 @@ class ChampionshipMultiCarTeamTest extends TestCase
         $this->assertSame(1, $championship->registrations()->count());
     }
 
+    // With room for a second car the page shows the sign-up form plus the car list,
+    // not the "registered" block with its Unregister button — the team's only car
+    // still needs a way out there.
+    public function test_a_teams_only_car_can_be_withdrawn_while_it_may_add_more(): void
+    {
+        $championship = $this->makeChampionship('per_round');
+        $this->registerCar($championship, [0, 1]);
+
+        $this->actingAs($this->owner)->get(route('championships.show', $championship))
+            ->assertOk()
+            ->assertSee('Add Car')
+            ->assertSee('Withdraw');
+    }
+
     public function test_team_standings_list_each_car_separately(): void
     {
         $championship = $this->makeChampionship('per_round');
