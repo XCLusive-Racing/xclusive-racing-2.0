@@ -338,9 +338,9 @@
         </div>
         @endif
 
-        {{-- FTP servers/credentials are XCL-staff-only — a league manager never sees this
-             card, even for their own league (see LeagueController::edit()). --}}
-        @if($isAdmin)
+        {{-- XCL staff and this league's own manager (this column is $canEdit-only) —
+             a manager only ever gets this league's own servers; removing a server and
+             the XCL-fleet "Assign Server" picker stay staff-only (LeagueController::edit()). --}}
         <div class="admin-card mb-4">
             <div class="admin-card-header">
                 <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.9rem">League Servers</div>
@@ -350,13 +350,18 @@
                 @forelse($servers as $server)
                 <div class="d-flex align-items-center justify-content-between py-2" style="border-bottom:1px solid #f3f4f6">
                     <div class="fw-bold text-dark" style="font-size:.85rem">{{ $server->name }}</div>
-                    <form action="{{ route('admin.leagues.servers.destroy', [$league, $server]) }}" method="POST" onsubmit="return false">
-                        @csrf @method('DELETE')
-                        <button type="button" class="btn btn-sm fw-bold" style="background:transparent;color:#dc2626;font-size:.72rem"
-                                onclick="xcDeleteSubmit(this.closest('form'), 'Remove {{ addslashes($server->name) }} from {{ addslashes($league->name) }}?')">
-                            Remove
-                        </button>
-                    </form>
+                    <div class="d-flex align-items-center">
+                        <a href="{{ route('admin.leagues.servers.edit', [$league, $server]) }}" class="btn btn-sm fw-bold" style="background:transparent;color:#7c3aed;font-size:.72rem">Edit</a>
+                        @if($isAdmin)
+                        <form action="{{ route('admin.leagues.servers.destroy', [$league, $server]) }}" method="POST" onsubmit="return false">
+                            @csrf @method('DELETE')
+                            <button type="button" class="btn btn-sm fw-bold" style="background:transparent;color:#dc2626;font-size:.72rem"
+                                    onclick="xcDeleteSubmit(this.closest('form'), 'Remove {{ addslashes($server->name) }} from {{ addslashes($league->name) }}?')">
+                                Remove
+                            </button>
+                        </form>
+                        @endif
+                    </div>
                 </div>
                 @empty
                 <p class="text-secondary mb-0" style="font-size:.82rem">No servers yet.</p>
@@ -402,7 +407,6 @@
             </div>
             @endif
         </div>
-        @endif
     </div>
     @endif
 </div>

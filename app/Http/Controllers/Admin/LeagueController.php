@@ -31,7 +31,7 @@ class LeagueController extends Controller
         // the real enforcement, this list is just visibility.
         $leagues = League::withoutTenantScope()->withTrashed()->withCount('members')->orderBy('name')->get();
 
-        if (!$user->canManage()) {
+        if (! $user->canManage()) {
             // A league manager/steward attached to exactly one league lands straight
             // on it, rather than an index full of leagues that aren't theirs — this
             // is about how many THEY belong to, not how many exist on the platform.
@@ -57,22 +57,22 @@ class LeagueController extends Controller
         abort_unless($user->canManage() || $user->isChampionshipManager(), 403);
 
         $data = $request->validate([
-            'name'                         => 'required|string|max:150',
-            'slug'                         => 'required|alpha_dash|max:150|unique:leagues,slug',
-            'primary_color'                => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'accent_color'                 => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'description'                  => 'nullable|string|max:5000',
-            'discord_invite_url'           => 'nullable|url|max:255',
-            'discord_guild_id'             => 'nullable|string|max:32',
-            'website_url'                  => 'nullable|url|max:255',
-            'requires_discord_membership'  => 'nullable|boolean',
-            'status'                       => 'required|in:draft,active',
-            'logo'                         => 'nullable|image|max:4096',
-            'banner'                       => 'nullable|image|max:8192',
+            'name' => 'required|string|max:150',
+            'slug' => 'required|alpha_dash|max:150|unique:leagues,slug',
+            'primary_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'accent_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'description' => 'nullable|string|max:5000',
+            'discord_invite_url' => 'nullable|url|max:255',
+            'discord_guild_id' => 'nullable|string|max:32',
+            'website_url' => 'nullable|url|max:255',
+            'requires_discord_membership' => 'nullable|boolean',
+            'status' => 'required|in:draft,active',
+            'logo' => 'nullable|image|max:4096',
+            'banner' => 'nullable|image|max:8192',
         ]);
 
         $data['requires_discord_membership'] = $request->boolean('requires_discord_membership');
-        $data['logo']   = $this->resolveUpload($request, 'logo', null);
+        $data['logo'] = $this->resolveUpload($request, 'logo', null);
         $data['banner'] = $this->resolveUpload($request, 'banner', null);
 
         $league = League::create($data);
@@ -81,7 +81,7 @@ class LeagueController extends Controller
         // (TenantScope only lets them see leagues they're actually attached to) --
         // without this they'd create a league and immediately lose it from view.
         // canManage() staff need no such row: they see every league regardless.
-        if (!$user->canManage()) {
+        if (! $user->canManage()) {
             $league->memberships()->create(['user_id' => $user->id, 'role' => 'manager']);
             $user->syncLeagueRoleFlags();
         }
@@ -93,8 +93,8 @@ class LeagueController extends Controller
 
     public function edit(Request $request, League $league)
     {
-        $user      = $request->user();
-        $isAdmin   = $user->canManage();
+        $user = $request->user();
+        $isAdmin = $user->canManage();
         $isManager = $user->managesLeague($league);
         $isSteward = $user->stewardsLeague($league);
 
@@ -102,12 +102,12 @@ class LeagueController extends Controller
 
         $canEdit = $isAdmin || $isManager;
         $members = $isAdmin ? $league->memberships()->with('user')->get() : collect();
-        $users   = $isAdmin ? User::orderBy('name')->get(['id', 'name']) : collect();
+        $users = $isAdmin ? User::orderBy('name')->get(['id', 'name']) : collect();
 
-        // FTP servers/credentials are XCL-staff-only now — a league manager no longer
-        // sees this league's own server list (or the cross-league unassigned picker,
-        // already admin-only below), even for their own league.
-        $servers           = $isAdmin ? $league->ftpServers()->orderBy('name')->get() : collect();
+        // A league manager sees and edits their own league's servers only (user-directed
+        // 2026-09) — never XCL's own fleet (the unassigned picker stays admin-only), and
+        // never another league's (ftpServers() is this league's rows only).
+        $servers = $canEdit ? $league->ftpServers()->orderBy('name')->get() : collect();
         $unassignedServers = $isAdmin ? FtpServer::withoutTenantScope()->where('league_id', League::system()->id)->orderBy('name')->get() : collect();
 
         // null = "couldn't check" (no bot token configured, or Discord unreachable),
@@ -121,20 +121,20 @@ class LeagueController extends Controller
 
     public function update(Request $request, League $league)
     {
-        $user      = $request->user();
-        $isAdmin   = $user->canManage();
+        $user = $request->user();
+        $isAdmin = $user->canManage();
         $isManager = $user->managesLeague($league);
 
         abort_unless($isAdmin || $isManager, 403);
 
         $rules = [
-            'primary_color'       => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'accent_color'        => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'description'         => 'nullable|string|max:5000',
-            'discord_invite_url'  => 'nullable|url|max:255',
-            'website_url'         => 'nullable|url|max:255',
-            'logo'                => 'nullable|image|max:4096',
-            'banner'              => 'nullable|image|max:8192',
+            'primary_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'accent_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'description' => 'nullable|string|max:5000',
+            'discord_invite_url' => 'nullable|url|max:255',
+            'website_url' => 'nullable|url|max:255',
+            'logo' => 'nullable|image|max:4096',
+            'banner' => 'nullable|image|max:8192',
         ];
 
         // A league's own manager can now publish it themselves (draft <-> active) —
@@ -151,10 +151,10 @@ class LeagueController extends Controller
         // field is present in the request body. Only the rules an admin passes are
         // ever read out of the request below.
         if ($isAdmin) {
-            $rules['name']                        = 'required|string|max:150';
-            $rules['slug']                        = 'required|alpha_dash|max:150|unique:leagues,slug,' . $league->id;
+            $rules['name'] = 'required|string|max:150';
+            $rules['slug'] = 'required|alpha_dash|max:150|unique:leagues,slug,'.$league->id;
             $rules['requires_discord_membership'] = 'nullable|boolean';
-            $rules['discord_guild_id']            = 'nullable|string|max:32';
+            $rules['discord_guild_id'] = 'nullable|string|max:32';
         }
 
         $data = $request->validate($rules);
@@ -163,7 +163,7 @@ class LeagueController extends Controller
             $data['requires_discord_membership'] = $request->boolean('requires_discord_membership');
         }
 
-        $data['logo']   = $this->resolveUpload($request, 'logo', $league->logo);
+        $data['logo'] = $this->resolveUpload($request, 'logo', $league->logo);
         $data['banner'] = $this->resolveUpload($request, 'banner', $league->banner);
 
         $before = $league->only(array_keys($data));
@@ -192,7 +192,7 @@ class LeagueController extends Controller
         $league->delete();
         AuditLogger::record($request->user(), $league, 'league.archived');
 
-        return back()->with('success', $league->name . ' has been archived.');
+        return back()->with('success', $league->name.' has been archived.');
     }
 
     public function restore(Request $request, League $league)
@@ -203,7 +203,7 @@ class LeagueController extends Controller
         $league->update(['status' => 'draft']);
         AuditLogger::record($request->user(), $league, 'league.restored');
 
-        return back()->with('success', $league->name . ' has been restored to draft.');
+        return back()->with('success', $league->name.' has been restored to draft.');
     }
 
     // Real, permanent removal — distinct from archive() above, which is
@@ -230,7 +230,7 @@ class LeagueController extends Controller
         AuditLogger::record($request->user(), $league, 'league.deleted');
         $league->forceDelete();
 
-        return redirect()->route('admin.leagues.index')->with('success', $name . ' has been permanently deleted.');
+        return redirect()->route('admin.leagues.index')->with('success', $name.' has been permanently deleted.');
     }
 
     public function addMember(Request $request, League $league)
@@ -239,7 +239,7 @@ class LeagueController extends Controller
 
         $data = $request->validate([
             'user_id' => 'required|exists:users,id',
-            'role'    => 'required|in:manager,steward',
+            'role' => 'required|in:manager,steward',
         ]);
 
         $member = $league->memberships()->firstOrCreate($data);
@@ -256,7 +256,7 @@ class LeagueController extends Controller
         abort_unless($member->league_id === $league->id, 404);
 
         $memberUser = $member->user;
-        $removed    = ['user_id' => $member->user_id, 'role' => $member->role];
+        $removed = ['user_id' => $member->user_id, 'role' => $member->role];
         $member->delete();
         $memberUser->syncLeagueRoleFlags();
 
@@ -278,7 +278,7 @@ class LeagueController extends Controller
 
         AuditLogger::record($request->user(), $league, 'league.server_assigned', ['ftp_server_id' => $server->id]);
 
-        return back()->with('success', $server->name . ' assigned to ' . $league->name . '.');
+        return back()->with('success', $server->name.' assigned to '.$league->name.'.');
     }
 
     public function unassignServer(Request $request, League $league, FtpServer $server)
@@ -291,52 +291,97 @@ class LeagueController extends Controller
 
         AuditLogger::record($user, $league, 'league.server_unassigned', ['ftp_server_id' => $server->id]);
 
-        return back()->with('success', $server->name . ' unassigned from ' . $league->name . '.');
+        return back()->with('success', $server->name.' unassigned from '.$league->name.'.');
     }
 
     // A league brings its own server (its own credentials, its own box) — unlike
     // assignServer above, this creates a brand new FtpServer row rather than
-    // reassigning one of XCL's existing ones. XCL-staff-only, like every other server
-    // action — a league manager no longer sees or manages servers/credentials at all.
+    // reassigning one of XCL's existing ones. XCL staff, or this league's own manager.
     public function storeServer(Request $request, League $league)
     {
         $user = $request->user();
-        abort_unless($user->canManage(), 403);
+        abort_unless($this->managesServers($user, $league), 403);
 
-        $data = $request->validate([
-            'name'                   => 'required|string|max:150',
-            'server_number'          => 'nullable|integer|min:1|max:9',
-            'host'                   => 'required|string|max:255',
-            'port'                   => 'required|integer|min:1|max:65535',
-            'username'               => 'required|string|max:100',
-            'password'               => 'required|string|max:255',
-            'path'                   => 'required|string|max:255',
-            'cfg_path'               => 'nullable|string|max:255',
-            'server_type'            => 'required|in:rolling,scheduled',
-            'reset_start_hour'       => 'required_if:server_type,rolling|integer|min:0|max:23',
-            'reset_interval_minutes' => 'required_if:server_type,rolling|integer|min:30|max:1440',
-            'game'                   => 'required|in:acc,lmu',
-            'platform'               => 'required|in:pc,console,cross',
+        $data = $request->validate($this->serverRules() + [
+            'username' => 'required|string|max:100',
+            'password' => 'required|string|max:255',
         ]);
 
         $data['league_id'] = $league->id;
-        $data['active']    = true;
+        $data['active'] = true;
 
         $server = FtpServer::create($data);
 
         AuditLogger::record($user, $server, 'league.server_created', $request->only('name', 'host', 'path', 'server_type'));
 
-        return back()->with('success', $server->name . ' added to ' . $league->name . '.');
+        return back()->with('success', $server->name.' added to '.$league->name.'.');
+    }
+
+    public function editServer(Request $request, League $league, FtpServer $server)
+    {
+        abort_unless($this->managesServers($request->user(), $league), 403);
+        abort_unless($server->league_id === $league->id, 404);
+
+        return view('admin.leagues.server-edit', compact('league', 'server'));
+    }
+
+    // Username/password render blank on the edit form and only overwrite the stored
+    // (encrypted) value when a new one is typed — same as Configuration > Servers.
+    public function updateServer(Request $request, League $league, FtpServer $server)
+    {
+        $user = $request->user();
+        abort_unless($this->managesServers($user, $league), 403);
+        abort_unless($server->league_id === $league->id, 404);
+
+        $data = $request->validate($this->serverRules() + [
+            'username' => 'nullable|string|max:100',
+            'password' => 'nullable|string|max:255',
+        ]);
+
+        foreach (['username', 'password'] as $credential) {
+            if (blank($data[$credential] ?? null)) {
+                unset($data[$credential]);
+            }
+        }
+
+        $server->update($data);
+
+        AuditLogger::record($user, $server, 'league.server_updated', $request->only('name', 'host', 'path', 'server_type'));
+
+        return redirect()->route('admin.leagues.edit', $league)->with('success', $server->name.' updated.');
+    }
+
+    private function managesServers(User $user, League $league): bool
+    {
+        return $user->canManage() || $user->managesLeague($league);
+    }
+
+    private function serverRules(): array
+    {
+        return [
+            'name' => 'required|string|max:150',
+            'server_number' => 'nullable|integer|min:1|max:9',
+            'host' => 'required|string|max:255',
+            'port' => 'required|integer|min:1|max:65535',
+            'path' => 'required|string|max:255',
+            'cfg_path' => 'nullable|string|max:255',
+            'server_type' => 'required|in:rolling,scheduled',
+            'reset_start_hour' => 'required_if:server_type,rolling|integer|min:0|max:23',
+            'reset_interval_minutes' => 'required_if:server_type,rolling|integer|min:30|max:1440',
+            'game' => 'required|in:acc,lmu',
+            'platform' => 'required|in:pc,console,cross',
+        ];
     }
 
     private function resolveUpload(Request $request, string $field, ?string $current): ?string
     {
         if ($request->hasFile($field)) {
             $file = $request->file($field);
-            return $file->storeAs('images/leagues', Str::uuid() . '.' . $file->getClientOriginalExtension(), 'media');
+
+            return $file->storeAs('images/leagues', Str::uuid().'.'.$file->getClientOriginalExtension(), 'media');
         }
 
-        if ($request->boolean($field . '_remove')) {
+        if ($request->boolean($field.'_remove')) {
             return null;
         }
 
