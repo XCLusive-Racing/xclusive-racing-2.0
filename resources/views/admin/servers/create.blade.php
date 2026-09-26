@@ -18,7 +18,7 @@
         <div class="col-12 col-lg-7">
 
             <div class="admin-card mb-4">
-                @include('admin.servers._add-server-fields')
+                @include('admin.servers._add-server-fields', ['xclHints' => true])
             </div>
 
             <div class="d-flex gap-2">

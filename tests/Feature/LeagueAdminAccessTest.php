@@ -490,7 +490,7 @@ class LeagueAdminAccessTest extends TestCase
         $mainPage = $this->actingAs($admin)->get(route('admin.servers.create'));
         $leaguePage = $this->actingAs($admin)->get(route('admin.leagues.edit', $league));
 
-        foreach (['Server No.', 'Reset Schedule', 'Rolling resets (SERVER 1 / 2 / 3)', 'Results Path', 'Config Path'] as $needle) {
+        foreach (['Server No.', 'Reset Schedule', 'Rolling resets (', 'Results Path', 'Config Path'] as $needle) {
             $mainPage->assertSee($needle);
             $leaguePage->assertSee($needle);
         }

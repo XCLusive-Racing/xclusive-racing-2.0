@@ -4,7 +4,7 @@
 @section('page-title', 'Edit FTP Server')
 
 @section('page-actions')
-    <a href="{{ route('admin.servers.index') }}" class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.78rem">
+    <a href="{{ $server->listUrl() }}" class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.78rem">
         ← Back
     </a>
 @endsection
@@ -49,7 +49,7 @@
                         <div class="col-sm-3">
                             <label class="form-label">Server No. <span class="fw-normal text-secondary" style="text-transform:none">(gPortal)</span></label>
                             <input type="number" name="server_number" value="{{ old('server_number', $server->server_number) }}"
-                                   min="1" max="9" placeholder="1–4"
+                                   min="1" max="9" @if($server->isXclServer()) placeholder="1–4" @endif
                                    class="form-control @error('server_number') is-invalid @enderror">
                             @error('server_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
@@ -154,8 +154,8 @@
                     <div class="mb-3">
                         <label class="form-label">Server Type</label>
                         <select name="server_type" id="srv-type" class="form-select @error('server_type') is-invalid @enderror">
-                            <option value="rolling" {{ old('server_type', $server->server_type) === 'rolling' ? 'selected' : '' }}>Rolling resets (SERVER 1 / 2 / 3)</option>
-                            <option value="scheduled" {{ old('server_type', $server->server_type) === 'scheduled' ? 'selected' : '' }}>Manual restart (SERVER 4)</option>
+                            <option value="rolling" {{ old('server_type', $server->server_type) === 'rolling' ? 'selected' : '' }}>{{ $server->isXclServer() ? 'Rolling resets (SERVER 1 / 2 / 3)' : 'Rolling resets (gPortal restarts it on a schedule)' }}</option>
+                            <option value="scheduled" {{ old('server_type', $server->server_type) === 'scheduled' ? 'selected' : '' }}>{{ $server->isXclServer() ? 'Manual restart (SERVER 4)' : 'Manual restart' }}</option>
                         </select>
                         @error('server_type') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
@@ -163,7 +163,7 @@
                     <div id="rolling-fields">
                         <div class="row g-3">
                             <div class="col-sm-6">
-                                <label class="form-label">First Reset Hour (UTC)</label>
+                                <label class="form-label">First Reset Hour (UK time)</label>
                                 <select name="reset_start_hour" class="form-select @error('reset_start_hour') is-invalid @enderror">
                                     @for($h = 0; $h < 24; $h++)
                                         <option value="{{ $h }}" {{ old('reset_start_hour', $server->reset_start_hour) == $h ? 'selected' : '' }}>
@@ -239,7 +239,7 @@
                 <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">
                     Save Changes
                 </button>
-                <a href="{{ route('admin.servers.index') }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4">
+                <a href="{{ $server->listUrl() }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4">
                     Cancel
                 </a>
             </div>

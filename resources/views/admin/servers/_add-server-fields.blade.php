@@ -6,7 +6,12 @@
      stay blank there -- blank keeps the current ones). The main page's Edit Server
      form has its own extra fields (active flag, config JSON overrides) and doesn't
      use this. --}}
-@php $editServer ??= null; @endphp
+@php
+    $editServer ??= null;
+    // XCL's own SERVER 1-4 naming hints — only on Configuration > Servers; a league's
+    // servers are its own, with its own gPortal restart schedule.
+    $xclHints ??= false;
+@endphp
 <div class="px-4 pt-4 pb-2">
     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Server Info</p>
 
@@ -20,7 +25,7 @@
         <div class="col-sm-3">
             <label class="form-label">Server No. <span class="fw-normal text-secondary" style="text-transform:none">(gPortal)</span></label>
             <input type="number" name="server_number" value="{{ old('server_number', $editServer?->server_number) }}"
-                   min="1" max="9" placeholder="1–4"
+                   min="1" max="9" @if($xclHints) placeholder="1–4" @endif
                    class="form-control @error('server_number') is-invalid @enderror">
             @error('server_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
@@ -111,8 +116,8 @@
     <div class="mb-3">
         <label class="form-label">Server Type</label>
         <select name="server_type" id="{{ $idPrefix ?? '' }}srv-type" class="form-select @error('server_type') is-invalid @enderror">
-            <option value="rolling" {{ old('server_type', $editServer?->server_type ?? 'rolling') === 'rolling' ? 'selected' : '' }}>Rolling resets (SERVER 1 / 2 / 3)</option>
-            <option value="scheduled" {{ old('server_type', $editServer?->server_type) === 'scheduled' ? 'selected' : '' }}>Manual restart (SERVER 4)</option>
+            <option value="rolling" {{ old('server_type', $editServer?->server_type ?? 'rolling') === 'rolling' ? 'selected' : '' }}>{{ $xclHints ? 'Rolling resets (SERVER 1 / 2 / 3)' : 'Rolling resets (gPortal restarts it on a schedule)' }}</option>
+            <option value="scheduled" {{ old('server_type', $editServer?->server_type) === 'scheduled' ? 'selected' : '' }}>{{ $xclHints ? 'Manual restart (SERVER 4)' : 'Manual restart' }}</option>
         </select>
         @error('server_type') <div class="invalid-feedback">{{ $message }}</div> @enderror
     </div>
@@ -120,7 +125,7 @@
     <div id="{{ $idPrefix ?? '' }}rolling-fields">
         <div class="row g-3">
             <div class="col-sm-6">
-                <label class="form-label">First Reset Hour (UTC)</label>
+                <label class="form-label">First Reset Hour (UK time)</label>
                 <select name="reset_start_hour" class="form-select @error('reset_start_hour') is-invalid @enderror">
                     @for($h = 0; $h < 24; $h++)
                         <option value="{{ $h }}" {{ old('reset_start_hour', $editServer?->reset_start_hour ?? 0) == $h ? 'selected' : '' }}>
@@ -128,7 +133,7 @@
                         </option>
                     @endfor
                 </select>
-                <div class="form-text" style="font-size:.72rem;color:#9ca3af">SERVER 1 = 00:00 · SERVER 2/3 = 01:00</div>
+                <div class="form-text" style="font-size:.72rem;color:#9ca3af">{{ $xclHints ? 'SERVER 1 = 00:00 · SERVER 2/3 = 01:00' : 'The first gPortal restart of the day — must match the restart schedule in gPortal.' }}</div>
                 @error('reset_start_hour') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>
             <div class="col-sm-6">
@@ -136,7 +141,7 @@
                 <input type="number" name="reset_interval_minutes" value="{{ old('reset_interval_minutes', $editServer?->reset_interval_minutes ?? 120) }}"
                        class="form-control @error('reset_interval_minutes') is-invalid @enderror"
                        min="30" max="1440">
-                <div class="form-text" style="font-size:.72rem;color:#9ca3af">All servers = 120 min</div>
+                <div class="form-text" style="font-size:.72rem;color:#9ca3af">{{ $xclHints ? 'All servers = 120 min' : 'Minutes between gPortal restarts.' }}</div>
                 @error('reset_interval_minutes') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>
         </div>

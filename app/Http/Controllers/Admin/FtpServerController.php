@@ -164,7 +164,7 @@ class FtpServerController extends Controller
             'name', 'server_number', 'host', 'port', 'path', 'cfg_path', 'server_type', 'active'
         ));
 
-        return redirect()->route('admin.servers.index')->with('success', 'Server updated.');
+        return redirect($ftpServer->listUrl())->with('success', 'Server updated.');
     }
 
     public function destroy(Request $request, FtpServer $ftpServer)
@@ -172,7 +172,7 @@ class FtpServerController extends Controller
         AuditLogger::record($request->user(), $ftpServer, 'ftp_server.deleted', ['name' => $ftpServer->name, 'host' => $ftpServer->host]);
         $ftpServer->delete();
 
-        return redirect()->route('admin.servers.index')->with('success', 'Server deleted.');
+        return redirect($ftpServer->listUrl())->with('success', 'Server deleted.');
     }
 
     public function pushDefaults(FtpServer $ftpServer, FtpService $ftp, ServerConfigGenerator $config)

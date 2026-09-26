@@ -62,6 +62,18 @@ class FtpServer extends Model
 
     public const ERR_WRONG_PLATFORM = 'This server runs a different ACC platform than the event (ACC PC events need a PC server, ACC Console events a console server).';
 
+    // XCL's own fleet (Configuration > Servers) vs a league's own server (listed on
+    // the admin-only "All League Servers" page) — decides where its edit page returns.
+    public function isXclServer(): bool
+    {
+        return $this->league_id === null || $this->league_id === League::system()->id;
+    }
+
+    public function listUrl(): string
+    {
+        return route($this->isXclServer() ? 'admin.servers.index' : 'admin.league-servers.index');
+    }
+
     // ACC PC and ACC Console builds can't share a server (different car IDs, Steam vs
     // console player IDs), so an ACC PC event ('ac') needs a platform=pc server and an
     // ACC Console event ('acc') anything but. Other games aren't platform-split.
