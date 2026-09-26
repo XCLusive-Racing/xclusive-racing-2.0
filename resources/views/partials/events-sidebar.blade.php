@@ -13,7 +13,7 @@ $tickerArticles = NewsArticle::published()
     ->get();
 
 $sbNextEvent = Race::where('scheduled_at', '>', $now)
-    ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon','car_class','event_format_id','championship_id'])
+    ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon','car_class','event_format_id','championship_id','is_championship','is_endurance'])
     ->with('eventFormat:id,race1_mins,race2_mins')
     ->withIconOwners()
     ->orderBy('scheduled_at')
@@ -22,7 +22,7 @@ if ($sbNextEvent) $sbNextEvent->loadCount('registrations');
 
 $sbUpcoming = Race::where('scheduled_at', '>', $now)
     // event_format_id too: without it icon_url treats every race as a custom one.
-    ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon','event_format_id','championship_id'])
+    ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon','event_format_id','championship_id','is_championship','is_endurance'])
     ->withIconOwners()
     ->when($sbNextEvent, fn($q) => $q->where('id', '!=', $sbNextEvent->id))
     ->orderBy('scheduled_at')
@@ -291,7 +291,7 @@ $sbLeaderboards = [
                                 {{-- Lobby counter top-right --}}
                                 <div class="xcl-sb-lobby">
                                     <x-icon-helmet />
-                                    <span>{{ $sbNextEvent->is_endurance ? $sbNextEvent->team_entries_count : $sbNextEvent->registrations_count }} / {{ $sbNextEvent->max_drivers ?? '∞' }}</span>
+                                    <span>{{ $sbNextEvent->is_endurance ? $sbNextEvent->team_entries_count : $sbNextEvent->displayedSignupCount() }} / {{ $sbNextEvent->max_drivers ?? '∞' }}</span>
                                 </div>
                                 {{-- Platform icons bottom-left --}}
                                 <div class="xcl-sb-next__hero-platforms">
@@ -412,7 +412,7 @@ $sbLeaderboards = [
                                     </div>
                                     <div class="xcl-sb-lobby xcl-sb-lobby--small">
                                         <x-icon-helmet />
-                                        <span>{{ $event->is_endurance ? $event->team_entries_count : $event->registrations_count }} / {{ $event->max_drivers ?? '∞' }}</span>
+                                        <span>{{ $event->is_endurance ? $event->team_entries_count : $event->displayedSignupCount() }} / {{ $event->max_drivers ?? '∞' }}</span>
                                     </div>
                                 </div>
                             </div>

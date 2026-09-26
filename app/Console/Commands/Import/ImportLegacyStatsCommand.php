@@ -54,7 +54,7 @@ class ImportLegacyStatsCommand extends Command
 
         $force = (bool) $this->option('force');
 
-        $usersByName = User::query()->pluck('id', 'name')->mapWithKeys(
+        $usersByName = User::where('is_filler', false)->pluck('id', 'name')->mapWithKeys(
             fn ($id, $name) => [mb_strtolower($name) => $id]
         );
 

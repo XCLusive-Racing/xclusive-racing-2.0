@@ -199,6 +199,72 @@ class Race extends Model
         return $this->status === 'open' && $this->scheduled_at->gt(now()->addMinutes(5));
     }
 
+    // ── Grid fillers ─────────────────────────────────────────────────────────
+    // Filler drivers (users.is_filler, see config/fillers.php) are shown on an upcoming
+    // standalone event's grid and sign-up counter: one per config('fillers.per_real_drivers')
+    // real sign-ups (4 → 5, 8 → 10, 12 → 15), and never more than the free spots left —
+    // so they drop out as the grid fills and a real driver never waits behind one.
+    // They're display-only: never stored as registrations, so the server entry list,
+    // results, ratings, capacity and the waiting list don't know they exist.
+
+    public function usesGridFillers(): bool
+    {
+        return ! $this->is_endurance
+            && ! $this->is_championship
+            && $this->championship_id === null
+            && $this->scheduled_at?->isFuture();
+    }
+
+    // How many fillers to show next to $real real drivers, within $freeSpots (null = no cap).
+    public static function fillerCountFor(int $real, ?int $freeSpots): int
+    {
+        $count = intdiv($real, max(1, (int) config('fillers.per_real_drivers', 4)));
+
+        return $freeSpots === null ? $count : max(0, min($count, $freeSpots));
+    }
+
+    // The public sign-up counter ("12 / 30"): real registrations plus fillers.
+    public function displayedSignupCount(): int
+    {
+        $real = (int) ($this->registrations_count ?? $this->registrations()->count());
+        if (! $this->usesGridFillers()) {
+            return $real;
+        }
+
+        return $real + self::fillerCountFor($real, $this->max_drivers !== null ? $this->max_drivers - $real : null);
+    }
+
+    // Unsaved RaceRegistration stand-ins for the fillers in one grid box ($cls = null for
+    // a single-class race). $offset skips fillers already used by an earlier class box,
+    // so the same name never appears twice in one race. The pick is a stable per-race
+    // shuffle, so the same names stay put on reload and new ones are only added.
+    public function fillerRegistrations(int $real, ?int $freeSpots, ?RaceClass $cls = null, int $offset = 0): Collection
+    {
+        if (! $this->usesGridFillers()) {
+            return collect();
+        }
+
+        $count = self::fillerCountFor($real, $freeSpots);
+        if ($count === 0) {
+            return collect();
+        }
+
+        $pool = once(fn () => User::where('is_filler', true)->get());
+
+        return $pool
+            ->sortBy(fn (User $u) => crc32($this->id.'-'.$u->id))
+            ->slice($offset, $count)
+            ->map(function (User $filler) use ($cls) {
+                $reg = new RaceRegistration;
+                $reg->setRelation('user', $filler);
+                $reg->setRelation('raceClass', $cls);
+                $reg->setRelation('teamEntry', null);
+
+                return $reg;
+            })
+            ->values();
+    }
+
     public function isFull(): bool
     {
         if ($this->is_multiclass && $this->raceClasses->isNotEmpty()) {

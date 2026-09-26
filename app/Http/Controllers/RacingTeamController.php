@@ -40,6 +40,7 @@ class RacingTeamController extends Controller
             ->push($team->owner_id);
 
         $users = User::where('name', 'like', '%'.$q.'%')
+            ->where('is_filler', false)
             ->whereNull('deleted_at')
             ->whereNotIn('id', $existingIds)
             ->select('id', 'name')

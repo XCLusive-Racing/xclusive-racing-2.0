@@ -891,6 +891,12 @@
                     $classSections = ($race->is_multiclass && $race->raceClasses->isNotEmpty())
                         ? $race->raceClasses
                         : collect([null]);
+                    // Grid fillers (Race::fillerRegistrations()) fill each box on top of its
+                    // real drivers, within both the box's own cap and the race-wide one.
+                    $fillerRaceFree = $race->max_drivers !== null
+                        ? $race->max_drivers - $race->registrations->filter(fn ($r) => $r->user && ! $race->isRegistrationWaitlisted($r))->count()
+                        : null;
+                    $fillerOffset = 0;
                 @endphp
 
                 @foreach($classSections as $cls)
@@ -907,6 +913,13 @@
                         ->sortByDesc(fn ($r) => $eloCol ? ($r->user->{$eloCol} ?? 0) : 0)
                         ->values();
                     $cap = $cls ? $cls->effectiveCap() : $race->max_drivers;
+                    $fillerFree = collect([$cap !== null ? $cap - $activeRegs->count() : null, $fillerRaceFree])->filter(fn ($v) => $v !== null)->min();
+                    $fillers = $race->fillerRegistrations($activeRegs->count(), $fillerFree, $cls, $fillerOffset);
+                    $fillerOffset += $fillers->count();
+                    $fillerRaceFree = $fillerRaceFree !== null ? $fillerRaceFree - $fillers->count() : null;
+                    $activeRegs = $activeRegs->concat($fillers)
+                        ->sortByDesc(fn ($r) => $eloCol ? ($r->user->{$eloCol} ?? 0) : 0)
+                        ->values();
                     $sofRatings = $eloCol
                         ? $activeRegs->pluck('user')->map(fn ($u) => (int) ($u->{$eloCol} ?? 0))->filter(fn ($r) => $r > 0)
                         : collect();
