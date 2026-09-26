@@ -271,7 +271,7 @@
                 {{-- Rules — the league's own free-text Rules/Prizes notes. Entry Requirements
                      lives in the sidebar next to Registration instead (not duplicated here). --}}
                 <div data-tab-panel="rules" style="display:none">
-                @if($isLeagueOwned && ($req->notes || $req->prizes_text))
+                @if($req->notes || $req->prizes_text)
                 <div class="row g-4">
                     @if($req->notes)
                     <div class="col-12 col-md-{{ $req->prizes_text ? '6' : '12' }}">
@@ -580,12 +580,6 @@
                             </script>
                             @endif
 
-                            @if($championship->registration_deadline)
-                            <p style="color:#9ca3af;font-size:.75rem" class="mb-3">
-                                Deadline: {{ $championship->registration_deadline->timezone('Europe/London')->format('d M Y, H:i T') }}
-                            </p>
-                            @endif
-
                             @if($championship->isFull())
                             <p class="fw-bold mb-3" style="color:#f59e0b;font-size:.8rem">Full — you'll join the waiting list.</p>
                             @endif
@@ -622,7 +616,6 @@
 
                 {{-- Entry Requirements — back as its own box under Registration (its original
                      spot), not tucked away inside the Rules tab. --}}
-                @if($isLeagueOwned)
                 <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
                         <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Entry Requirements</h2>
@@ -659,7 +652,6 @@
                     </div>
                     @endif
                 </div>
-                @endif
 
                 {{-- Drivers summary — count + strength of field at a glance (same SoF
                      calculation as an event page's Drivers card), the full entry list stays

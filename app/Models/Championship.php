@@ -50,11 +50,9 @@ class Championship extends Model
 
     protected $fillable = [
         'name', 'tagline', 'slogan', 'game', 'season', 'status', 'description', 'image', 'icon',
-        'max_drivers', 'is_multiclass', 'points_system', 'bonus_fastest_lap',
-        'bonus_pole', 'drop_rounds', 'max_missed_rounds', 'missed_rounds_action',
-        'missed_rounds_penalty_points', 'registration_open', 'registration_deadline',
-        'sr_requirement', 'min_rating', 'car_class', 'practice_duration',
-        'qualifying_duration', 'race_duration', 'weather', 'time_of_day', 'duration_key',
+        'max_drivers', 'is_multiclass', 'car_class', 'registration_open',
+        // Scoring fallback for a championship with no points scheme picked.
+        'points_system', 'bonus_fastest_lap', 'bonus_pole',
         // League-scoped championships (see 2026_09_08_000010_add_league_fields_to_championships_table.php)
         'league_id', 'slug', 'platform', 'visibility', 'starts_at', 'ends_at', 'settings',
         // Default server for new rounds, set on the Basics step — see
@@ -67,11 +65,9 @@ class Championship extends Model
         return [
             'is_multiclass' => 'boolean',
             'registration_open' => 'boolean',
-            'registration_deadline' => 'datetime',
             'points_system' => 'array',
             'bonus_fastest_lap' => 'integer',
             'bonus_pole' => 'integer',
-            'drop_rounds' => 'integer',
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
             'xcl_rating_enabled' => 'boolean',
@@ -315,39 +311,13 @@ class Championship extends Model
         return $this->registrations()->where('is_spectator', true)->count() >= $slots;
     }
 
-    // A championship built through the wizard keeps its rules in `settings`; the
-    // legacy native admin form never writes that column and keeps using the flat
-    // columns instead. The league alone doesn't tell the two apart — XCL builds
-    // wizard championships of its own too, and those used to be treated as native
-    // (their wizard requirements, missed-rounds rule, fixed weather, penalty
-    // rules and public Rules/Requirements sections were all silently ignored).
-    //
-    // Reads the stored (original) value: once `settings` has been read, the cast
-    // merges its all-defaults object back into the live attributes, so those
-    // can't tell a native championship apart any more.
-    public function usesSettings(): bool
-    {
-        return $this->getRawOriginal('settings') !== null;
-    }
-
-    // Which entry-requirement thresholds gate registration — a wizard championship
-    // reads its own settings.requirements; a legacy native one the flat columns.
+    // Which entry-requirement thresholds gate registration (settings.requirements).
     public function requirementThresholds(): array
     {
-        if ($this->usesSettings()) {
-            return [
-                'sr' => $this->settings->requirements->min_safety_rating ?? null,
-                'min' => $this->settings->requirements->min_xcl_rating_tier ?? null,
-                'max' => $this->settings->requirements->max_xcl_rating_tier ?? null,
-            ];
-        }
-
-        // Native championships have no upper-rating-cap column — only the wizard-driven
-        // settings schema (above) supports it.
         return [
-            'sr' => $this->sr_requirement,
-            'min' => $this->min_rating,
-            'max' => null,
+            'sr' => $this->settings->requirements->min_safety_rating ?? null,
+            'min' => $this->settings->requirements->min_xcl_rating_tier ?? null,
+            'max' => $this->settings->requirements->max_xcl_rating_tier ?? null,
         ];
     }
 
@@ -363,21 +333,21 @@ class Championship extends Model
             ->exists();
     }
 
-    // A wizard championship only takes incident reports / post-race time penalties
-    // when it switched them on; legacy native ones always have (XCL stewards them).
+    // A championship only takes incident reports / post-race time penalties when
+    // it switched them on (Penalties & Balance step).
     public function usesXclStewarding(): bool
     {
-        return ! $this->usesSettings() || (bool) ($this->settings->penalties->stewarding_enabled ?? false);
+        return (bool) ($this->settings->penalties->stewarding_enabled ?? false);
     }
 
     public function allowsPostRaceTimePenalties(): bool
     {
-        return ! $this->usesSettings() || (bool) ($this->settings->penalties->post_race_time_penalties_enabled ?? false);
+        return (bool) ($this->settings->penalties->post_race_time_penalties_enabled ?? false);
     }
 
     public function requiresManualApproval(): bool
     {
-        return $this->usesSettings() && (bool) ($this->settings->requirements->manual_approval_required ?? false);
+        return (bool) ($this->settings->requirements->manual_approval_required ?? false);
     }
 
     public function waitlistEnabled(): bool
@@ -606,10 +576,10 @@ class Championship extends Model
         return $cars;
     }
 
-    // League-owned championships (settings.scoring.points_scheme_id set) score
-    // from that PointsScheme's own resolved, stored points_table and bonus
-    // values; XCL's own native championships (no scheme selected) keep using
-    // the legacy flat columns exactly as before. Points already on the board
+    // A championship with a points scheme (settings.scoring.points_scheme_id)
+    // scores from that PointsScheme's own resolved, stored points_table and bonus
+    // values; without one it falls back to the flat points_system/bonus_* columns.
+    // Points already on the board
     // for a scored round never move because of this — the scheme's table is
     // itself locked the moment a round is scored (PointsScheme::isLockedByCompletedRounds()),
     // so only the *shape of future rounds* can ever be affected by an edit.
@@ -622,20 +592,12 @@ class Championship extends Model
         $bonusFL = $scheme?->fastest_lap_points ?? $this->bonus_fastest_lap;
         $bonusPole = $scheme?->pole_points ?? $this->bonus_pole;
         $bonusLead = $scheme?->leading_lap_points ?? 0;
-        $dropRounds = $this->usesSettings() ? (int) ($this->settings->scoring->drop_rounds ?? 0) : $this->drop_rounds;
+        $dropRounds = (int) ($this->settings->scoring->drop_rounds ?? 0);
         $scaleByLength = (bool) ($this->settings->scoring->points_scale_with_length ?? false);
 
-        // A wizard championship reads its missed-rounds rule from settings; a legacy
-        // native one keeps the flat columns (see usesSettings()).
-        if ($this->usesSettings()) {
-            $maxMissedRounds = $this->settings->scoring->max_missed_rounds ?? null;
-            $missedRoundsAction = $this->settings->scoring->missed_rounds_action ?? 'none';
-            $missedRoundsPoints = (int) ($this->settings->scoring->missed_rounds_penalty_points ?? 0);
-        } else {
-            $maxMissedRounds = $this->max_missed_rounds;
-            $missedRoundsAction = $this->missed_rounds_action ?? 'none';
-            $missedRoundsPoints = (int) ($this->missed_rounds_penalty_points ?? 0);
-        }
+        $maxMissedRounds = $this->settings->scoring->max_missed_rounds ?? null;
+        $missedRoundsAction = $this->settings->scoring->missed_rounds_action ?? 'none';
+        $missedRoundsPoints = (int) ($this->settings->scoring->missed_rounds_penalty_points ?? 0);
 
         $finishedRounds = $this->rounds()
             ->where('status', 'finished')

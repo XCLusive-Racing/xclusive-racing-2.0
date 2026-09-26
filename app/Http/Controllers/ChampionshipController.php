@@ -93,13 +93,7 @@ class ChampionshipController extends Controller
         $teamStandings = $championship->computeTeamStandings();
         $teamChampionship = $championship->computeTeamChampionship();
 
-        // Legacy native championships don't use the settings schema at all — they'd
-        // show as all-defaults here, which would misrepresent them. Only a wizard
-        // championship (XCL's own included) shows the settings-driven
-        // Requirements/Rules/Prizes/Penalties sections.
-        $isLeagueOwned = $championship->usesSettings();
-
-        return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'teamStandings', 'teamChampionship', 'isLeagueOwned'));
+        return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'teamStandings', 'teamChampionship'));
     }
 
     public function register(Request $request, int $championship)

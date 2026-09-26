@@ -92,19 +92,6 @@ class ChampionshipFixedWeatherDefaultsTest extends TestCase
         $this->assertSame(-1, $config['trackTemp']);
     }
 
-    // A legacy native championship (the old admin form never writes `settings`).
-    public function test_native_championship_is_unaffected(): void
-    {
-        $championship = Championship::create([
-            'league_id' => League::system()->id, 'name' => 'Native Cup', 'game' => 'acc', 'season' => 2026, 'status' => 'active',
-        ]);
-        $round = $this->makeRound($championship);
-
-        $config = app(AccServerConfigService::class)->configuration($round);
-
-        $this->assertSame(-1, $config['trackTemp']);
-    }
-
     public function test_xcls_own_wizard_championship_uses_its_fixed_weather(): void
     {
         $championship = $this->makeChampionship(League::system(), ['weather_mode' => 'fixed', 'track_temp' => 24]);

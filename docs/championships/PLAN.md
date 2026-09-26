@@ -15,8 +15,12 @@ up without re-deriving context.
   - `Championship::usesSettings()` (stored `settings` column not null) replaces
     every "league = XCL means native" check: XCL's own wizard championships
     now use their wizard requirements, missed-rounds rule, fixed weather,
-    penalty rules and public Rules/Requirements. Only legacy row id 21
-    ("Test Champ", no league) is still native.
+    penalty rules and public Rules/Requirements. The last native row (id 21,
+    "Test Champ", no league) was then deleted with the user's go-ahead, and
+    `usesSettings()` plus every flat-column fallback removed with it — every
+    championship reads its rules from `settings` now. The flat columns stay in
+    the database unused (only `points_system`/`bonus_*` remain, as the scoring
+    fallback when no points scheme is picked).
   - Display-only wizard options now enforced: Manual Approval
     (`championship_registrations.approved_at`, new Entries page with
     approve/reject), XCL Stewarding (off = no reports, penalties do nothing),

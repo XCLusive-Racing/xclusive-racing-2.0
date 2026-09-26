@@ -80,23 +80,6 @@ class ReportProcessingTest extends TestCase
         $this->assertDatabaseCount('championship_penalties', 0);
     }
 
-    // A legacy native championship (the old admin form never writes `settings`).
-    public function test_native_championship_also_mutates_rating_unconditionally(): void
-    {
-        $admin = $this->makeAdmin();
-        $championship = Championship::create([
-            'league_id' => League::system()->id, 'name' => 'Native Cup', 'game' => 'acc', 'season' => 2026, 'status' => 'active',
-        ]);
-        $race = Race::create(['title' => 'T', 'track' => 'Monza', 'game' => 'acc', 'status' => 'finished', 'scheduled_at' => now(), 'championship_id' => $championship->id]);
-        $reportedUser = User::factory()->create(['elo_acc' => 1500]);
-        $report = $this->makeReport($race, $reportedUser);
-
-        $this->actingAs($admin)->post(route('admin.reports.process', $report))->assertRedirect();
-
-        $this->assertSame(1493, $reportedUser->fresh()->elo_acc);
-        $this->assertDatabaseCount('championship_penalties', 0);
-    }
-
     public function test_league_championship_with_affects_none_changes_neither_rating_nor_points(): void
     {
         $admin = $this->makeAdmin();

@@ -482,7 +482,7 @@ class AccServerConfigService implements ServerConfigGenerator
 
         $championship = Championship::withoutTenantScope()->find($race->championship_id);
 
-        if (! $championship || ! $championship->usesSettings()) {
+        if (! $championship) {
             return null;
         }
 
@@ -512,7 +512,7 @@ class AccServerConfigService implements ServerConfigGenerator
         // A championship round follows its Sessions-step Formation Lap setting.
         if ($race->championship_id) {
             $championship = Championship::withoutTenantScope()->find($race->championship_id);
-            if ($championship?->usesSettings() && ($championship->settings->sessions->formation_lap_type ?? 'full') === 'short') {
+            if ($championship && ($championship->settings->sessions->formation_lap_type ?? 'full') === 'short') {
                 return 1;
             }
         }

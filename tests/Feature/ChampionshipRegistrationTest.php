@@ -65,25 +65,11 @@ class ChampionshipRegistrationTest extends TestCase
         $this->assertSame('gold', $thresholds['min']);
     }
 
-    // A legacy native championship (the old admin form never writes `settings`).
-    public function test_native_championship_still_reads_requirement_thresholds_from_flat_columns(): void
-    {
-        $championship = Championship::create([
-            'league_id' => League::system()->id, 'name' => 'Native Cup', 'game' => 'acc', 'season' => 2026,
-            'status' => 'active', 'sr_requirement' => '7', 'min_rating' => 'silver',
-        ]);
-
-        $thresholds = $championship->fresh()->requirementThresholds();
-
-        $this->assertSame('7', $thresholds['sr']);
-        $this->assertSame('silver', $thresholds['min']);
-    }
-
     // XCL builds wizard championships of its own too — those used to be mistaken
     // for native ones, so their wizard requirements were never checked.
     public function test_xcls_own_wizard_championship_reads_requirement_thresholds_from_settings(): void
     {
-        $championship = $this->makeChampionship(League::system(), ['sr_requirement' => null, 'min_rating' => null]);
+        $championship = $this->makeChampionship(League::system());
         $championship->settings = array_replace_recursive($championship->settings->toArray(), [
             'requirements' => ['min_safety_rating' => 7, 'min_xcl_rating_tier' => 'gold'],
         ]);

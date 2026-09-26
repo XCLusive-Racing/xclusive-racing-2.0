@@ -147,21 +147,4 @@ class MissedRoundsStandingsTest extends TestCase
 
         $this->assertSame(0, $standings[0]['missed_rounds_penalty']);
     }
-
-    public function test_native_championship_reads_missed_rounds_rule_from_flat_columns(): void
-    {
-        // A legacy native championship (the old admin form never writes `settings`).
-        $championship = Championship::create([
-            'league_id' => League::system()->id, 'name' => 'Native Cup', 'game' => 'acc', 'season' => 2026, 'status' => 'active',
-            'max_missed_rounds' => 0, 'missed_rounds_action' => 'penalise', 'missed_rounds_penalty_points' => 3,
-        ]);
-
-        $driver = User::factory()->create();
-        ChampionshipRegistration::create(['championship_id' => $championship->id, 'user_id' => $driver->id]);
-        $this->finishedRound($championship, 1); // missed, 0 allowed
-
-        $standings = $championship->computeStandings();
-
-        $this->assertSame(-3.0, (float) $standings[0]['total_points']);
-    }
 }

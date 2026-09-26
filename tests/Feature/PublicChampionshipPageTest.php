@@ -123,19 +123,6 @@ class PublicChampionshipPageTest extends TestCase
             ->assertSee('Discord membership required.', false);
     }
 
-    // A legacy native championship (the old admin form never writes `settings`).
-    public function test_native_championship_does_not_show_the_settings_driven_sections(): void
-    {
-        $championship = Championship::create([
-            'league_id' => League::system()->id, 'name' => 'Native Cup', 'game' => 'acc', 'season' => 2026,
-            'status' => 'active', 'visibility' => 'public',
-        ]);
-
-        $this->get(route('championships.show', $championship->id))
-            ->assertOk()
-            ->assertDontSee('Entry Requirements');
-    }
-
     public function test_xcls_own_wizard_championship_shows_the_settings_driven_sections(): void
     {
         $championship = $this->makeChampionship(League::system());

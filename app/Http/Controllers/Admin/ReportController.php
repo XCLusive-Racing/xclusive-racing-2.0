@@ -312,21 +312,18 @@ class ReportController extends Controller
             // touches points, rating, both or neither (settings.penalties.affects,
             // Phase 2) — but that choice can never turn on real XCL Rating changes
             // by itself: xcl_rating_enabled (an XCL-admin-only approval, Phase 2)
-            // gates rating regardless of what the league's own setting says. A legacy
-            // native championship (Championship::usesSettings() false — not simply
-            // "XCL's league", XCL builds wizard championships too), and any report on
-            // a race with no championship at all, behave exactly as before this
-            // phase — rating always applies, no points side-effect. With XCL
-            // stewarding switched off, a penalty changes nothing at all.
+            // gates rating regardless of what the league's own setting says. With XCL
+            // stewarding switched off, a penalty changes nothing at all. A report on
+            // a race with no championship always applies rating, no points side-effect.
             $championship = $report->race?->championship;
-            $isLeagueOwned = $championship && $championship->usesSettings();
-            $stewarded = $isLeagueOwned && ($championship->settings->penalties->stewarding_enabled ?? false);
 
-            $affects = $isLeagueOwned ? ($stewarded ? ($championship->settings->penalties->affects ?? 'none') : 'none') : 'both';
-            $applyRating = $isLeagueOwned
+            $affects = $championship
+                ? ($championship->usesXclStewarding() ? ($championship->settings->penalties->affects ?? 'none') : 'none')
+                : 'both';
+            $applyRating = $championship
                 ? (in_array($affects, ['rating', 'both'], true) && $championship->xcl_rating_enabled)
                 : true;
-            $applyPoints = $isLeagueOwned && in_array($affects, ['points', 'both'], true);
+            $applyPoints = $championship && in_array($affects, ['points', 'both'], true);
 
             if (! $noPenalty && $reportedUser && $ratingFields && $applyRating) {
                 $ratingService = app(RatingService::class);
