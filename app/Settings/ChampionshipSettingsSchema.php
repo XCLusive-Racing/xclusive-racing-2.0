@@ -16,7 +16,7 @@ use Illuminate\Support\Arr;
 // defaults for new keys) once this class gains fields for a new version.
 class ChampionshipSettingsSchema
 {
-    const CURRENT_VERSION = 12;
+    const CURRENT_VERSION = 13;
 
     const STEPS = [
         'basics' => 'Basics',
@@ -195,6 +195,11 @@ class ChampionshipSettingsSchema
             // how many dry tyre sets each car gets for the whole event weekend.
             ['group' => 'sessions', 'key' => 'tyre_set_count', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Rating & Pitstops',
                 'label' => 'Tyre Sets', 'help' => 'Dry tyre sets per car for the whole event (1–50). Leave blank for unlimited (the ACC default of 50).', 'rule' => 'nullable|integer|min:1|max:50'],
+            // v13 (2026-09): a 24h open practice session on the rounds' own server,
+            // pushed every midnight with the next round's track — see
+            // ChampionshipPracticeService / championships:push-practice.
+            ['group' => 'sessions', 'key' => 'practice_server_enabled', 'type' => 'boolean', 'default' => false, 'section' => 'Practice Server',
+                'label' => '24h Practice Server', 'help' => 'Every night at midnight (UK) the server the next round runs on gets a 24-hour open practice session on that round\'s track — no entry list. The race config takes over 5 minutes before each round; the night after, practice moves on to the next track. Takes effect when the server restarts (rolling servers do that by themselves).'],
 
             // --- Scoring ---
             ['group' => 'scoring', 'key' => 'points_scheme_id', 'type' => 'integer', 'nullable' => true, 'default' => null,

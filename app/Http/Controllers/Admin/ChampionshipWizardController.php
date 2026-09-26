@@ -16,6 +16,7 @@ use App\Models\Race;
 use App\Models\SessionFormat;
 use App\Services\AuditLogger;
 use App\Services\ChampionshipTeamEntryService;
+use App\Services\PracticeServer\ChampionshipPracticeService;
 use App\Settings\ChampionshipSettingsSchema;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -542,6 +543,32 @@ class ChampionshipWizardController extends Controller
         AuditLogger::record($request->user(), $championship, 'championship.round_config_push_queued', ['race_id' => $race->id]);
 
         return back()->with('success', 'Config push queued for '.$race->title.'.');
+    }
+
+    // "Push now" for the 24h practice server — same push the midnight run does, e.g.
+    // right after switching it on instead of waiting for the night.
+    public function pushPractice(Request $request, League $league, Championship $championship, ChampionshipPracticeService $practice)
+    {
+        $this->assertLeagueOfInterest($league, $championship);
+        Gate::authorize('update', $championship);
+
+        $round = $practice->nextRound($championship);
+        if (! $round) {
+            return back()->with('error', 'There is no upcoming round to practise for.');
+        }
+
+        $server = $practice->serverFor($championship, $round);
+        if (! $server) {
+            return back()->with('error', 'Round '.$round->round_number.' has no active server (and the championship has no default server) to run practice on.');
+        }
+
+        $error = $practice->push($championship, $round, $server);
+
+        AuditLogger::record($request->user(), $championship, 'championship.practice_pushed', ['race_id' => $round->id, 'error' => $error]);
+
+        return $error
+            ? back()->with('error', 'Practice push failed: '.$error)
+            : back()->with('success', 'Practice for '.$round->track.' pushed to '.$server->name.'.');
     }
 
     public function publish(PublishChampionshipRequest $request, League $league, Championship $championship)

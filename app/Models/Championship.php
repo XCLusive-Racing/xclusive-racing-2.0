@@ -73,6 +73,7 @@ class Championship extends Model
             'xcl_rating_enabled' => 'boolean',
             'xcl_rating_approved_at' => 'datetime',
             'settings_version' => 'integer',
+            'practice_pushed_at' => 'datetime',
             'settings' => ChampionshipSettingsCast::class,
         ];
     }
@@ -103,6 +104,12 @@ class Championship extends Model
     public function ftpServer(): BelongsTo
     {
         return $this->belongsTo(FtpServer::class);
+    }
+
+    // The round whose track the 24h practice server last got (ChampionshipPracticeService).
+    public function practiceRace(): BelongsTo
+    {
+        return $this->belongsTo(Race::class, 'practice_race_id');
     }
 
     // Suggests when round $roundNumber should run, from the Basics-step

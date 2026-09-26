@@ -169,6 +169,29 @@
         </form>
         @endif
 
+        {{-- 24h practice server status — outside the step form (its own POST). --}}
+        @if($step === 'sessions' && ($championship->settings->sessions->practice_server_enabled ?? false))
+        @php $practiceRound = $championship->practiceRace; @endphp
+        <div class="admin-card mt-4">
+            <div class="px-4 py-3 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                <div style="font-size:.82rem">
+                    <div class="fw-black text-uppercase fst-italic text-dark mb-1" style="font-size:.72rem;letter-spacing:.08em">24h Practice Server</div>
+                    @if(! $championship->practice_pushed_at)
+                    <span class="text-secondary">Not pushed yet — the next push is tonight at midnight (UK).</span>
+                    @elseif($championship->practice_push_error)
+                    <span class="fw-bold" style="color:#dc2626">Last push failed {{ $championship->practice_pushed_at->timezone('Europe/London')->format('d M H:i') }}: {{ $championship->practice_push_error }}</span>
+                    @else
+                    <span class="text-secondary">Last pushed {{ $championship->practice_pushed_at->timezone('Europe/London')->format('d M H:i') }}{{ $practiceRound ? ' — '.$practiceRound->track.' (Round '.$practiceRound->round_number.')' : '' }}</span>
+                    @endif
+                </div>
+                <form action="{{ route('admin.leagues.championships.practice.push', [$league, $championship]) }}" method="POST">
+                    @csrf
+                    <button class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.72rem">Push practice now</button>
+                </form>
+            </div>
+        </div>
+        @endif
+
     </div>
 </div>
 

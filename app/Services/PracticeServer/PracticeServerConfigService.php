@@ -74,19 +74,20 @@ class PracticeServerConfigService
     // that applies to an open practice session.
     public function eventRules(Race $race): array
     {
-        $base = $this->raceConfig->eventRules($race, $race->ftpServer);
-
-        return array_merge($base, [
-            'mandatoryPitstopCount' => 0,
-            'isRefuellingAllowedInRace' => false,
-            'isRefuellingTimeFixed' => false,
-            'isMandatoryPitstopRefuellingRequired' => false,
-            'isMandatoryPitstopTyreChangeRequired' => false,
-            'isMandatoryPitstopSwapDriverRequired' => false,
-            'driverStintTimeSec' => -1,
-            'maxTotalDrivingTime' => -1,
-        ]);
+        return array_merge($this->raceConfig->eventRules($race, $race->ftpServer), self::PRACTICE_EVENT_RULES);
     }
+
+    // Shared with ChampionshipPracticeService's 24h practice.
+    public const PRACTICE_EVENT_RULES = [
+        'mandatoryPitstopCount' => 0,
+        'isRefuellingAllowedInRace' => false,
+        'isRefuellingTimeFixed' => false,
+        'isMandatoryPitstopRefuellingRequired' => false,
+        'isMandatoryPitstopTyreChangeRequired' => false,
+        'isMandatoryPitstopSwapDriverRequired' => false,
+        'driverStintTimeSec' => -1,
+        'maxTotalDrivingTime' => -1,
+    ];
 
     // assistrules.json — copied as-is from whatever the race itself would run.
     public function assistRules(Race $race): array
