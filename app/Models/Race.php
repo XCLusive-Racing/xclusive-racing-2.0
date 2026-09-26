@@ -15,6 +15,15 @@ use Illuminate\Support\Facades\Storage;
 
 class Race extends Model
 {
+    // Public /events/{slug} URL per game, so each platform's event list has its own
+    // address (and going back from an event lands on that game's list, not the picker).
+    public const PLATFORM_SLUGS = [
+        'acc' => 'acc-console',
+        'ac' => 'acc-pc',
+        'lmu' => 'le-mans-ultimate',
+        'iracing' => 'iracing',
+    ];
+
     protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon', 'duration_key', 'xcl_r_multiplier', 'practice_duration', 'qualifying_duration', 'race_duration', 'pitstop_count', 'min_stop_secs', 'tyre_set_count', 'car_class', 'sr_requirement', 'min_rating', 'max_rating', 'weather', 'weather_randomness', 'rain_level', 'time_of_day', 'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier', 'race_time_multiplier', 'config_overrides', 'results_json_path', 'championship_id', 'round_number', 'is_multiclass', 'is_endurance', 'driver_stint_time_mins', 'max_total_driving_time_mins', 'mandatory_driver_swap', 'event_format_id', 'session_format_id', 'race_durations', 'ftp_server_id', 'slot_time', 'config_pushed_at', 'config_push_status', 'config_push_attempts', 'config_push_error', 'has_practice_server', 'practice_notes'];
 
     protected function casts(): array

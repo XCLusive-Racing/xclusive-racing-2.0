@@ -3,7 +3,9 @@
 @section('title', 'XCL Events - ' . config('xcl.name'))
 
 @section('content')
-<main class="events-page xcl-page pb-5 px-3" data-events-filter>
+<main class="events-page xcl-page pb-5 px-3" data-events-filter
+      data-events-url="{{ route('events.index') }}"
+      data-initial-platform="{{ $initialGame ?? '' }}">
     <div class="about-section__topo" style="background-image:url('/topo.png')"></div>
 
     <div class="container-xl" style="position:relative;z-index:1">
@@ -16,7 +18,7 @@
 
         {{-- ── Platform selector (shown when no platform selected) ────────────── --}}
         <div data-platform-selector>
-            <div class="events-platform-grid mb-5">
+            <div class="events-platform-grid mb-3">
                 @foreach([
                     ['acc',     '#7c3aed', 'ACC Console',     'Assetto Corsa Competizione · PS5 & Xbox Series X/S', '/images/home/icons/ACC Logo.png',  false],
                     ['ac',      '#16a34a', 'ACC PC',           'Assetto Corsa Competizione · PC Sim Racing',         '/images/home/icons/ACC Logo.png',  false],
@@ -31,6 +33,7 @@
                 <div class="events-platform-card"
                      data-platform-card="{{ $comingSoon ? '' : $game }}"
                      data-platform-label="{{ $label }}"
+                     data-platform-url="{{ route('events.platform', \App\Models\Race::PLATFORM_SLUGS[$game]) }}"
                      style="{{ $comingSoon ? 'cursor:default;opacity:.75' : 'cursor:pointer' }}">
 
                     @if($hasVideo)
@@ -65,6 +68,23 @@
                         @endif
                     </div>
                 </div>
+                @endforeach
+            </div>
+
+            {{-- Full-width bars under the platform cards: Results and Reports --}}
+            <div class="events-link-bars mb-5">
+                @foreach([
+                    [route('results.index'), '#eab308', 'fa-solid fa-flag-checkered', 'Results',  'Race results and standings from every XCL event'],
+                    [route('reports.index'), '#dc2626', 'fa-solid fa-gavel',          'Reports',  'Report an incident or follow up on a stewarding decision'],
+                ] as [$href, $color, $icon, $label, $desc])
+                <a href="{{ $href }}" class="events-link-bar" style="--bar-color:{{ $color }}">
+                    <span class="events-link-bar__icon"><i class="{{ $icon }}"></i></span>
+                    <span class="events-link-bar__text">
+                        <span class="events-link-bar__title">{{ $label }}</span>
+                        <span class="events-link-bar__desc">{{ $desc }}</span>
+                    </span>
+                    <span class="events-link-bar__cta">View {{ $label }} →</span>
+                </a>
                 @endforeach
             </div>
 
@@ -275,7 +295,7 @@
 
                                 {{-- Registrations count — top-right --}}
                                 <div class="xcl-ec2__lobby">
-                                    <i class="fa-solid fa-comments"></i>
+                                    <x-icon-helmet />
                                     <span>{{ $race->is_endurance ? $race->team_entries_count : $race->registrations_count }} / {{ $race->max_drivers ?? '∞' }}</span>
                                 </div>
 

@@ -42,10 +42,13 @@ class RaceController extends Controller
     // format the row resolves to (see deriveFormatFields()), so there's nothing for a
     // column to set.
     public const CSV_COLUMNS = [
-        'format', 'track', 'weather', 'date', 'time', 'time_of_day',
+        'format', 'track', 'weather', 'rain_level', 'date', 'time', 'time_of_day',
         'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier', 'race_time_multiplier',
         'weather_randomness', 'has_practice_server', 'server',
-        'sr_requirement', 'min_rating', 'max_rating', 'car_class', 'car_class_2', 'car_class_3', 'description',
+        'sr_requirement', 'min_rating', 'max_rating', 'car_class',
+        'multiclass_class_1', 'multiclass_class_1_min_sr', 'multiclass_class_1_min_rating',
+        'multiclass_class_2', 'multiclass_class_2_min_sr', 'multiclass_class_2_min_rating',
+        'description',
     ];
 
     public function index()
@@ -276,6 +279,7 @@ class RaceController extends Controller
             'events.*.event_format_id' => 'nullable|exists:event_formats,id',
             'events.*.ftp_server_id' => 'nullable|exists:ftp_servers,id',
             'events.*.weather' => 'nullable|in:dry,wet,mixed,random',
+            'events.*.rain_level' => 'nullable|numeric|min:0|max:1',
             'events.*.weather_randomness' => 'nullable|in:0,1,2,3,4,5,6,7,random',
             'events.*.time_of_day' => 'nullable|date_format:H:i',
             'events.*.ambient_temp' => 'nullable|integer|min:-30|max:50',
@@ -348,6 +352,9 @@ class RaceController extends Controller
                 'event_tag' => $eventTag,
                 'event_format_id' => ($event['event_format_id'] ?? null) ?: $shared['event_format_id'],
                 'weather' => $event['weather'] ?: $shared['weather'],
+                'rain_level' => isset($event['rain_level']) && $event['rain_level'] !== ''
+                    ? (float) $event['rain_level']
+                    : $shared['rain_level'],
                 'weather_randomness' => ($event['weather_randomness'] ?? null) ?: $shared['weather_randomness'],
                 'time_of_day' => $event['time_of_day'] ?: $shared['time_of_day'],
                 'ambient_temp' => $event['ambient_temp'] ?? $shared['ambient_temp'],
@@ -518,6 +525,17 @@ class RaceController extends Controller
                 continue;
             }
 
+            // Max drivers (the preview's per-track table) and the track image
+            // (TRACK_IMAGE_MAP) are both looked up by the exact track name, so "spa" or
+            // "Nurburgring" silently got neither. Match case/accent-insensitively and
+            // store the canonical spelling instead.
+            $canonicalTrack = $this->canonicalTrackName($track);
+            if ($canonicalTrack !== null) {
+                $track = $canonicalTrack;
+            } elseif (in_array($request->game, ['acc', 'ac'], true)) {
+                $errors[] = "Row {$lineNum}: unknown track \"{$track}\" — no max drivers or track image will be set.";
+            }
+
             try {
                 // Accepts "2026-09-21" (the app's own export/template format) and
                 // "2026/09/21" (what a spreadsheet's date column commonly renders as)
@@ -538,6 +556,22 @@ class RaceController extends Controller
             if ($weather !== '' && ! in_array($weather, ['dry', 'wet', 'mixed', 'random'], true)) {
                 $errors[] = "Row {$lineNum}: unknown weather \"{$weather}\" — ignored.";
                 $weather = '';
+            }
+
+            // Same 0.0-1.0 scale (one decimal) as the Create Race slider; "0,3" or "0.3"
+            // alike. Only means something for wet/mixed weather — normalizeRainLevel()
+            // drops it for any other row on save, so warn rather than silently lose it.
+            $rainLevel = isset($colIndex['rain_level']) ? str_replace(',', '.', trim($line[$colIndex['rain_level']] ?? '')) : '';
+            if ($rainLevel !== '') {
+                if (! is_numeric($rainLevel) || (float) $rainLevel < 0 || (float) $rainLevel > 1) {
+                    $errors[] = "Row {$lineNum}: invalid rain_level \"{$rainLevel}\" (expected 0.0-1.0) — ignored.";
+                    $rainLevel = '';
+                } elseif (in_array($weather, ['dry', 'random'], true)) {
+                    $errors[] = "Row {$lineNum}: rain_level only applies to wet or mixed weather — ignored.";
+                    $rainLevel = '';
+                } else {
+                    $rainLevel = number_format(round((float) $rainLevel, 1), 1, '.', '');
+                }
             }
 
             $timeOfDay = isset($colIndex['time_of_day']) ? trim($line[$colIndex['time_of_day']] ?? '') : '';
@@ -604,56 +638,50 @@ class RaceController extends Controller
                 }
             }
 
-            // Accepts "5", "5.00" or the European "5,00" alike, and 0 (or blank) means "no
-            // requirement" rather than an error — matching how the field reads elsewhere
-            // ("Standard is just open"). Anything else numeric is rounded to the nearest
-            // whole tier and clamped into 3-9, rather than rejected outright.
-            $srRequirement = isset($colIndex['sr_requirement']) ? trim($line[$colIndex['sr_requirement']] ?? '') : '';
-            if ($srRequirement !== '') {
-                $normalized = str_replace(',', '.', $srRequirement);
-                if (! is_numeric($normalized)) {
-                    $errors[] = "Row {$lineNum}: invalid sr_requirement \"{$srRequirement}\" — ignored.";
-                    $srRequirement = '';
-                } else {
-                    $num = (float) $normalized;
-                    $srRequirement = $num <= 0 ? '' : (string) max(3, min(9, (int) round($num)));
-                }
-            }
-
-            $ratingValues = ['all', 'rookie', 'bronze', 'silver', 'gold', 'platinum', 'alien'];
-            $minRating = isset($colIndex['min_rating']) ? $this->normalizeRatingTier($line[$colIndex['min_rating']] ?? '') : '';
-            if ($minRating !== '' && ! in_array($minRating, $ratingValues, true)) {
-                $errors[] = "Row {$lineNum}: unknown min_rating \"{$minRating}\" — ignored.";
-                $minRating = '';
-            }
-            $maxRating = isset($colIndex['max_rating']) ? $this->normalizeRatingTier($line[$colIndex['max_rating']] ?? '') : '';
-            if ($maxRating !== '' && ! in_array($maxRating, $ratingValues, true)) {
-                $errors[] = "Row {$lineNum}: unknown max_rating \"{$maxRating}\" — ignored.";
-                $maxRating = '';
-            }
+            $srRequirement = $this->parseSrRequirementColumn($line, $colIndex, 'sr_requirement', $lineNum, $errors);
+            $minRating = $this->parseRatingColumn($line, $colIndex, 'min_rating', $lineNum, $errors);
+            $maxRating = $this->parseRatingColumn($line, $colIndex, 'max_rating', $lineNum, $errors);
 
             $carClass = isset($colIndex['car_class']) ? trim($line[$colIndex['car_class']] ?? '') : '';
             $description = isset($colIndex['description']) ? trim($line[$colIndex['description']] ?? '') : '';
 
-            // Multiclass: car_class_2 (and optionally car_class_3) turns this row into a
-            // multiclass race with one RaceClass per column. Restrictions aren't asked for
-            // per class in the CSV yet — Class 1 defaults to a Bronze+ minimum rating, every
-            // other class is left fully open, and an event manager can tighten either by
-            // hand afterwards from the race's own edit page.
+            // Multiclass: multiclass_class_1 + multiclass_class_2 turn this row into a
+            // multiclass race with one RaceClass each, carrying that class's own minimum SR
+            // and rating. car_class itself stays as given (typically "open"), so the entry
+            // list stays open and every driver joins in the class they pick.
+            $classColors = ['GT3' => '#7c3aed', 'GT4' => '#2563eb', 'GT2' => '#db2777', 'TCX' => '#16a34a', 'GTC' => '#ea580c'];
+            $makeClass = fn (string $cls, string $minRating, string $sr) => [
+                'name' => $cls,
+                'car_class' => $cls,
+                'color' => $classColors[strtoupper($cls)] ?? '#6b7280',
+                'min_rating' => $minRating ?: null,
+                'sr_requirement' => $sr ?: null,
+                'max_drivers' => null,
+            ];
+            $classes = [];
+            $mcClass1 = isset($colIndex['multiclass_class_1']) ? trim($line[$colIndex['multiclass_class_1']] ?? '') : '';
+            $mcClass2 = isset($colIndex['multiclass_class_2']) ? trim($line[$colIndex['multiclass_class_2']] ?? '') : '';
+            if ($mcClass1 !== '' && $mcClass2 !== '') {
+                foreach ([1 => $mcClass1, 2 => $mcClass2] as $n => $cls) {
+                    $classes[] = $makeClass(
+                        $cls,
+                        $this->parseRatingColumn($line, $colIndex, "multiclass_class_{$n}_min_rating", $lineNum, $errors),
+                        $this->parseSrRequirementColumn($line, $colIndex, "multiclass_class_{$n}_min_sr", $lineNum, $errors),
+                    );
+                }
+            } elseif ($mcClass1 !== '' || $mcClass2 !== '') {
+                $errors[] = "Row {$lineNum}: multiclass needs both multiclass_class_1 and multiclass_class_2 — imported as a single-class race.";
+            }
+
+            // Legacy columns from before the multiclass_* ones: car_class_2 (and optionally
+            // car_class_3) turn the row multiclass, Class 1 (car_class) with a Bronze+
+            // minimum rating and every other class fully open. Still read so an older CSV
+            // keeps importing the same way.
             $carClass2 = isset($colIndex['car_class_2']) ? trim($line[$colIndex['car_class_2']] ?? '') : '';
             $carClass3 = isset($colIndex['car_class_3']) ? trim($line[$colIndex['car_class_3']] ?? '') : '';
-            $classes = [];
-            if ($carClass !== '' && $carClass2 !== '') {
-                $classColors = ['GT3' => '#7c3aed', 'GT4' => '#2563eb', 'GT2' => '#db2777', 'TCX' => '#16a34a', 'GTC' => '#ea580c'];
+            if (! $classes && $carClass !== '' && $carClass2 !== '') {
                 foreach (array_values(array_filter([$carClass, $carClass2, $carClass3], fn ($c) => $c !== '')) as $idx => $cls) {
-                    $classes[] = [
-                        'name' => $cls,
-                        'car_class' => $cls,
-                        'color' => $classColors[strtoupper($cls)] ?? '#6b7280',
-                        'min_rating' => $idx === 0 ? 'bronze' : null,
-                        'sr_requirement' => null,
-                        'max_drivers' => null,
-                    ];
+                    $classes[] = $makeClass($cls, $idx === 0 ? 'bronze' : '', '');
                 }
             }
 
@@ -664,6 +692,7 @@ class RaceController extends Controller
                 'event_format_id' => $formatId,
                 'ftp_server_id' => $serverId,
                 'weather' => $weather,
+                'rain_level' => $rainLevel,
                 'time_of_day' => $timeOfDay,
                 'ambient_temp' => $ambientTemp,
                 'practice_time_multiplier' => $practiceTimeMultiplier,
@@ -697,6 +726,56 @@ class RaceController extends Controller
         $value = strtolower(trim($value));
 
         return trim(preg_replace('/\s*(\+|min(imum)?|max(imum)?|only|and up|or (higher|above|lower|below))\s*$/', '', $value));
+    }
+
+    // The TRACK_IMAGE_MAP spelling of $track ("spa" → "Spa", "Nurburgring" →
+    // "Nürburgring"), or null when it isn't a known track.
+    private function canonicalTrackName(string $track): ?string
+    {
+        $key = fn (string $t) => strtolower(Str::ascii(trim($t)));
+
+        foreach (array_keys(self::TRACK_IMAGE_MAP) as $known) {
+            if ($key($known) === $key($track)) {
+                return $known;
+            }
+        }
+
+        return null;
+    }
+
+    // Accepts "5", "5.00" or the European "5,00" alike, and 0 (or blank) means "no
+    // requirement" rather than an error — matching how the field reads elsewhere
+    // ("Standard is just open"). Anything else numeric is rounded to the nearest
+    // whole tier and clamped into 3-9, rather than rejected outright.
+    private function parseSrRequirementColumn(array $line, array $colIndex, string $column, int $lineNum, array &$errors): string
+    {
+        $value = isset($colIndex[$column]) ? trim($line[$colIndex[$column]] ?? '') : '';
+        if ($value === '') {
+            return '';
+        }
+        $normalized = str_replace(',', '.', $value);
+        if (! is_numeric($normalized)) {
+            $errors[] = "Row {$lineNum}: invalid {$column} \"{$value}\" — ignored.";
+
+            return '';
+        }
+        $num = (float) $normalized;
+
+        return $num <= 0 ? '' : (string) max(3, min(9, (int) round($num)));
+    }
+
+    // A rating-tier CSV column (min_rating, max_rating, multiclass_class_N_min_rating),
+    // blanked with a warning when the tier isn't one the app knows.
+    private function parseRatingColumn(array $line, array $colIndex, string $column, int $lineNum, array &$errors): string
+    {
+        $value = isset($colIndex[$column]) ? $this->normalizeRatingTier($line[$colIndex[$column]] ?? '') : '';
+        if ($value !== '' && ! in_array($value, ['all', 'rookie', 'bronze', 'silver', 'gold', 'platinum', 'alien'], true)) {
+            $errors[] = "Row {$lineNum}: unknown {$column} \"{$value}\" — ignored.";
+
+            return '';
+        }
+
+        return $value;
     }
 
     // Parses one of the three optional time-multiplier CSV columns (1-24) for a single row,
@@ -767,15 +846,18 @@ class RaceController extends Controller
         $local = $race->scheduledAtUk();
         $format = $race->eventFormat;
         $server = $race->ftpServer;
-        // Multiclass races carry their classes on race_classes, in grid order, instead of
-        // the single car_class column — export those back out as car_class/_2/_3 so the
+        // Multiclass races carry their classes on race_classes, in grid order — export
+        // them as multiclass_class_1/_2 (with each class's own min SR / rating) so the
         // row round-trips through bulkImportCsv() as the same multiclass event.
-        $classCars = $race->is_multiclass ? $race->raceClasses->pluck('car_class')->values() : collect();
+        $classes = $race->is_multiclass ? $race->raceClasses->sortBy('sort_order')->values() : collect();
+        $class1 = $classes->get(0);
+        $class2 = $classes->get(1);
 
         return [
             'format' => $format?->name,
             'track' => $race->track,
             'weather' => $race->weather,
+            'rain_level' => $race->rain_level !== null ? number_format((float) $race->rain_level, 1, '.', '') : null,
             'date' => $local->format('Y-m-d'),
             'time' => $local->format('H:i'),
             'time_of_day' => $race->time_of_day,
@@ -789,9 +871,13 @@ class RaceController extends Controller
             'sr_requirement' => $race->sr_requirement,
             'min_rating' => $race->min_rating,
             'max_rating' => $race->max_rating,
-            'car_class' => $classCars->get(0) ?? $race->car_class,
-            'car_class_2' => $classCars->get(1),
-            'car_class_3' => $classCars->get(2),
+            'car_class' => $race->car_class,
+            'multiclass_class_1' => $class1?->car_class,
+            'multiclass_class_1_min_sr' => $class1?->sr_requirement,
+            'multiclass_class_1_min_rating' => $class1?->min_rating,
+            'multiclass_class_2' => $class2?->car_class,
+            'multiclass_class_2_min_sr' => $class2?->sr_requirement,
+            'multiclass_class_2_min_rating' => $class2?->min_rating,
             'description' => $race->description,
         ];
     }

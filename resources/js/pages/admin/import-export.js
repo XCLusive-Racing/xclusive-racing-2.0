@@ -9,6 +9,20 @@ export function initImportExport(wrap) {
     const downloadBtn   = wrap.querySelector('[data-ie-download]');
     const tbody         = wrap.querySelector('[data-ie-tbody]');
     const eventsSection = wrap.querySelector('[data-ie-events-section]');
+
+    // Top scrollbar above the preview table, mirroring the table's own horizontal
+    // scroll so a long preview can be scrolled sideways without going to its bottom.
+    const scrollBox      = wrap.querySelector('[data-ie-scroll]');
+    const scrollTop      = wrap.querySelector('[data-ie-scroll-top]');
+    const scrollTopInner = wrap.querySelector('[data-ie-scroll-top-inner]');
+    function syncScrollbarWidth() {
+        if (!scrollBox || !scrollTop) return;
+        scrollTopInner.style.width = scrollBox.scrollWidth + 'px';
+        scrollTop.style.display = scrollBox.scrollWidth > scrollBox.clientWidth ? '' : 'none';
+    }
+    scrollTop?.addEventListener('scroll', () => { scrollBox.scrollLeft = scrollTop.scrollLeft; });
+    scrollBox?.addEventListener('scroll', () => { scrollTop.scrollLeft = scrollBox.scrollLeft; });
+    window.addEventListener('resize', syncScrollbarWidth);
     const countDisplay  = wrap.querySelector('[data-ie-count-display]');
     const errorsBox     = wrap.querySelector('[data-ie-errors]');
     const gameSelect    = wrap.querySelector('[data-ie-game]');
@@ -125,12 +139,12 @@ export function initImportExport(wrap) {
 
         const [datePart, timePart] = (ev.scheduled_at || '').split('T');
         const classes = ev.classes || [];
-        // Read-only preview only — GT3 (+1) for a 2-class multiclass row, etc. The real
-        // submitted value is the hidden car_class field below; this span never has a
-        // `name`, so it can't itself corrupt what actually gets sent.
-        const carClassDisplay = ev.car_class
-            ? esc(ev.car_class) + (classes.length > 1 ? ` <span style="color:#9ca3af">+${classes.length - 1}</span>` : '')
-            : '<span style="color:#9ca3af">—</span>';
+        // Read-only preview only — "GT3 / GT4" for a multiclass row. The real submitted
+        // values are the hidden car_class / classes_json fields below; this span never
+        // has a `name`, so it can't itself corrupt what actually gets sent.
+        const carClassDisplay = classes.length > 1
+            ? classes.map(c => esc(c.car_class)).join(' <span style="color:#9ca3af">/</span> ')
+            : (ev.car_class ? esc(ev.car_class) : '<span style="color:#9ca3af">—</span>');
 
         const ratingOptions = (selected) => RATING_OPTIONS
             .map(([v, label]) => `<option value="${v}" ${selected === v ? 'selected' : ''}>${label}</option>`).join('');
@@ -171,6 +185,10 @@ export function initImportExport(wrap) {
                 <select name="events[${i}][weather]" class="form-select form-select-sm" data-field="weather">
                     ${weatherOptions}
                 </select>
+                <input type="number" name="events[${i}][rain_level]" data-field="rain_level"
+                       min="0" max="1" step="0.1" value="${esc(ev.rain_level ?? '')}"
+                       class="form-control form-control-sm mt-1" placeholder="Rain 0.0-1.0" title="Rain level (0.0 dry · 0.3 damp · 0.5 light · 0.8 heavy · 1.0 flooded)"
+                       style="${ev.weather === 'wet' || ev.weather === 'mixed' ? '' : 'display:none'}">
             </td>
             <td>
                 <input type="time" name="events[${i}][time_of_day]" value="${esc(ev.time_of_day)}"
@@ -283,7 +301,20 @@ export function initImportExport(wrap) {
             render();
         });
         serverInput.addEventListener('change', () => { events[i].ftp_server_id = serverInput.value; });
-        weatherInput.addEventListener('change', () => { events[i].weather = weatherInput.value; });
+        // Rain level only for wet/mixed, same as the Create Race slider — defaults to 0.3
+        // (damp) when switching to rain, cleared when switching away.
+        const rainInput = tr.querySelector('[data-field="rain_level"]');
+        weatherInput.addEventListener('change', () => {
+            events[i].weather = weatherInput.value;
+            const needsRain = weatherInput.value === 'wet' || weatherInput.value === 'mixed';
+            rainInput.style.display = needsRain ? '' : 'none';
+            if (!needsRain) {
+                events[i].rain_level = ''; rainInput.value = '';
+            } else if (!rainInput.value) {
+                events[i].rain_level = '0.3'; rainInput.value = '0.3';
+            }
+        });
+        rainInput.addEventListener('input', () => { events[i].rain_level = rainInput.value; });
         timeInput.addEventListener('change', () => { events[i].time_of_day = timeInput.value; });
         ambientTempInput.addEventListener('input', () => { events[i].ambient_temp = ambientTempInput.value; });
         practiceMultInput.addEventListener('change', () => { events[i].practice_time_multiplier = practiceMultInput.value; });
@@ -307,13 +338,14 @@ export function initImportExport(wrap) {
         updateCount();
         initDateTimePickers();
         if (eventsSection) eventsSection.style.display = events.length ? '' : 'none';
+        syncScrollbarWidth();
     }
 
     function addRow() {
         events.push({
             title: '', track: '', scheduled_at: '',
             event_format_id: '', ftp_server_id: '',
-            weather: '', time_of_day: '', ambient_temp: '',
+            weather: '', rain_level: '', time_of_day: '', ambient_temp: '',
             practice_time_multiplier: '1', qualifying_time_multiplier: '1', race_time_multiplier: '1',
             weather_randomness: '', has_practice_server: '', sr_requirement: '',
             min_rating: '', max_rating: '', car_class: '', description: '', classes: [],
@@ -336,10 +368,13 @@ export function initImportExport(wrap) {
         if (!events.length) return;
 
         const header = [
-            'format', 'track', 'weather', 'date', 'time', 'time_of_day',
+            'format', 'track', 'weather', 'rain_level', 'date', 'time', 'time_of_day',
             'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier', 'race_time_multiplier',
             'weather_randomness', 'has_practice_server', 'server',
-            'sr_requirement', 'min_rating', 'max_rating', 'car_class', 'car_class_2', 'car_class_3', 'description',
+            'sr_requirement', 'min_rating', 'max_rating', 'car_class',
+            'multiclass_class_1', 'multiclass_class_1_min_sr', 'multiclass_class_1_min_rating',
+            'multiclass_class_2', 'multiclass_class_2_min_sr', 'multiclass_class_2_min_rating',
+            'description',
         ];
         const lines = [header.join(',')];
 
@@ -350,12 +385,14 @@ export function initImportExport(wrap) {
             const classes = ev.classes || [];
 
             lines.push([
-                format?.label || '', ev.track || '', ev.weather || '', date || '', time || '', ev.time_of_day || '',
+                format?.label || '', ev.track || '', ev.weather || '', ev.rain_level ?? '', date || '', time || '', ev.time_of_day || '',
                 ev.ambient_temp ?? '', ev.practice_time_multiplier || '1', ev.qualifying_time_multiplier || '1', ev.race_time_multiplier || '1',
                 ev.weather_randomness || '', ev.has_practice_server === '1' ? 'on' : (ev.has_practice_server === '0' ? 'off' : ''),
                 server ? (server.number ?? server.label) : '',
                 ev.sr_requirement || '', ev.min_rating || '', ev.max_rating || '',
-                classes[0]?.car_class || ev.car_class || '', classes[1]?.car_class || '', classes[2]?.car_class || '',
+                ev.car_class || '',
+                classes[0]?.car_class || '', classes[0]?.sr_requirement || '', classes[0]?.min_rating || '',
+                classes[1]?.car_class || '', classes[1]?.sr_requirement || '', classes[1]?.min_rating || '',
                 ev.description || '',
             ].map(csvCell).join(','));
         });

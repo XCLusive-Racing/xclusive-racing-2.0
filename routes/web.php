@@ -53,6 +53,7 @@ use App\Http\Controllers\RacingTeamController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ResultsController;
 use App\Http\Controllers\TeamApplicationController;
+use App\Models\Race;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -98,6 +99,9 @@ Route::get('/live', [LiveController::class, 'index'])->name('live');
 
 // Events - public
 Route::get('/events', [RaceController::class, 'index'])->name('events.index');
+Route::get('/events/{platform}', [RaceController::class, 'index'])
+    ->whereIn('platform', array_values(Race::PLATFORM_SLUGS))
+    ->name('events.platform');
 Route::get('/events/{race}', [RaceController::class, 'show'])->name('events.show');
 Route::get('/events/{race}/calendar.ics', [RaceController::class, 'calendar'])->name('events.calendar');
 

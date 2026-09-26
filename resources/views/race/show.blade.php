@@ -10,7 +10,7 @@
 
         {{-- Back button --}}
         <div class="pt-4 mb-4">
-            <a href="{{ route('events.index') }}" class="events-back-btn text-decoration-none">
+            <a href="{{ isset(\App\Models\Race::PLATFORM_SLUGS[$race->game]) ? route('events.platform', \App\Models\Race::PLATFORM_SLUGS[$race->game]) : route('events.index') }}" class="events-back-btn text-decoration-none">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5M12 5l-7 7 7 7"/>
                 </svg>

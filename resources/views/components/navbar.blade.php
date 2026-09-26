@@ -109,27 +109,6 @@
                     </ul>
                 </li>
 
-                {{-- TEAM --}}
-                <li class="nav-item position-relative" data-dropdown>
-                    <div class="xcl-nav-item-row">
-                        <a class="nav-link" href="{{ route('team') }}">TEAM</a>
-                        <button type="button" class="xcl-nav-chevron d-xcl-none" data-mobile-dropdown-toggle
-                                aria-expanded="false" aria-label="Toggle TEAM submenu">
-                            <svg class="xcl-nav-chevron__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <ul class="xcl-dropdown" data-dropdown-menu
-                        style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
-                        <li class="d-xcl-none"><a class="xcl-dropdown-item" href="{{ route('team') }}">OVERVIEW</a></li>
-                        <li><a class="xcl-dropdown-item" href="{{ route('teams.esports.index') }}">ESPORTS</a></li>
-                        <li><a class="xcl-dropdown-item" href="#">STAFF</a></li>
-                        <li><a class="xcl-dropdown-item" href="{{ route('coaching.index') }}">COACHING</a></li>
-                        <li><a class="xcl-dropdown-item" href="{{ route('team.join') }}">JOIN THE TEAM</a></li>
-                    </ul>
-                </li>
-
                 {{-- XCL EVENTS --}}
                 <li class="nav-item position-relative" data-dropdown>
                     <div class="xcl-nav-item-row">
@@ -170,6 +149,27 @@
                         @auth
                         <li><a class="xcl-dropdown-item" href="{{ route('racing-teams.index') }}">MY TEAM</a></li>
                         @endauth
+                    </ul>
+                </li>
+
+                {{-- TEAM --}}
+                <li class="nav-item position-relative" data-dropdown>
+                    <div class="xcl-nav-item-row">
+                        <a class="nav-link" href="{{ route('team') }}">TEAM</a>
+                        <button type="button" class="xcl-nav-chevron d-xcl-none" data-mobile-dropdown-toggle
+                                aria-expanded="false" aria-label="Toggle TEAM submenu">
+                            <svg class="xcl-nav-chevron__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <ul class="xcl-dropdown" data-dropdown-menu
+                        style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
+                        <li class="d-xcl-none"><a class="xcl-dropdown-item" href="{{ route('team') }}">OVERVIEW</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('teams.esports.index') }}">ESPORTS</a></li>
+                        <li><a class="xcl-dropdown-item" href="#">STAFF</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('coaching.index') }}">COACHING</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('team.join') }}">JOIN THE TEAM</a></li>
                     </ul>
                 </li>
 

@@ -290,7 +290,7 @@ $sbLeaderboards = [
 
                                 {{-- Lobby counter top-right --}}
                                 <div class="xcl-sb-lobby">
-                                    <i class="fa-solid fa-comments"></i>
+                                    <x-icon-helmet />
                                     <span>{{ $sbNextEvent->is_endurance ? $sbNextEvent->team_entries_count : $sbNextEvent->registrations_count }} / {{ $sbNextEvent->max_drivers ?? '∞' }}</span>
                                 </div>
                                 {{-- Platform icons bottom-left --}}
@@ -411,7 +411,7 @@ $sbLeaderboards = [
                                         <span data-cd-d>00</span>D&nbsp;<span data-cd-h>00</span>H&nbsp;<span data-cd-m>00</span>M
                                     </div>
                                     <div class="xcl-sb-lobby xcl-sb-lobby--small">
-                                        <i class="fa-solid fa-comments"></i>
+                                        <x-icon-helmet />
                                         <span>{{ $event->is_endurance ? $event->team_entries_count : $event->registrations_count }} / {{ $event->max_drivers ?? '∞' }}</span>
                                     </div>
                                 </div>

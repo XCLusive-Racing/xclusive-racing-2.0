@@ -18,8 +18,12 @@ use Illuminate\Support\Str;
 
 class RaceController extends Controller
 {
-    public function index()
+    // $platform is one of Race::PLATFORM_SLUGS (/events/acc-console etc.) — opens the
+    // page straight on that game's event list instead of the platform picker.
+    public function index(?string $platform = null)
     {
+        $initialGame = $platform ? array_search($platform, Race::PLATFORM_SLUGS, true) ?: null : null;
+
         $races = Race::select(['id', 'title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'duration_key', 'image', 'icon', 'description', 'sr_requirement', 'min_rating', 'max_rating', 'car_class', 'weather', 'event_format_id', 'is_endurance', 'championship_id'])
             ->with('eventFormat:id,race1_mins,race2_mins')
             ->withIconOwners()
@@ -46,7 +50,7 @@ class RaceController extends Controller
         // for the public browse page — excluded here rather than deleted.
         $eventTags = EventTag::whereNotIn('slug', ['rookies', 'test-event'])->orderBy('name')->get();
 
-        return view('race.index', compact('races', 'eventTags'));
+        return view('race.index', compact('races', 'eventTags', 'initialGame'));
     }
 
     public function show(Race $race)

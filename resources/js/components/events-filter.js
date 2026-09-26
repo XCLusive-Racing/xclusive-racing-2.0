@@ -140,6 +140,17 @@ export function initEventsFilter() {
         });
     }
 
+    // Each game has its own URL (/events/acc-console etc., see Race::PLATFORM_SLUGS)
+    // — the list is shown in place, the URL just follows it so a reload or coming
+    // back from an event page lands on the same game.
+    function selectPlatform(game) {
+        platform = game || null;
+        const card = platform && wrap.querySelector(`[data-platform-card="${platform}"]`);
+        if (heading) heading.textContent = card ? `${card.dataset.platformLabel} Events` : defaultHeading;
+        resetFilters();
+        apply();
+    }
+
     // Platform cards — click to select, hover for video + active class
     wrap.querySelectorAll('[data-platform-card]').forEach(card => {
         const game = card.dataset.platformCard;
@@ -147,10 +158,8 @@ export function initEventsFilter() {
 
         if (game) {
             card.addEventListener('click', () => {
-                platform = game;
-                if (heading) heading.textContent = `${card.dataset.platformLabel} Events`;
-                resetFilters();
-                apply();
+                selectPlatform(game);
+                history.pushState({ platform: game }, '', card.dataset.platformUrl);
             });
         }
 
@@ -169,10 +178,13 @@ export function initEventsFilter() {
     });
 
     backBtn?.addEventListener('click', () => {
-        platform = null;
-        if (heading) heading.textContent = defaultHeading;
-        resetFilters();
-        apply();
+        selectPlatform(null);
+        history.pushState({ platform: null }, '', wrap.dataset.eventsUrl);
+    });
+
+    // Browser back/forward between /events and /events/{game}
+    window.addEventListener('popstate', e => {
+        selectPlatform(e.state?.platform ?? wrap.dataset.initialPlatform ?? null);
     });
 
     filterBtns.forEach(btn => {
@@ -216,5 +228,6 @@ export function initEventsFilter() {
         });
     });
 
-    apply();
+    history.replaceState({ platform: wrap.dataset.initialPlatform || null }, '');
+    selectPlatform(wrap.dataset.initialPlatform);
 }

@@ -118,6 +118,7 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
                             ['time', true, 'HH:MM, 24h, BST/GMT (real-world scheduled time)', '20:00'],
                             ['format', false, 'Exact format name (a trailing " Race", e.g. "Multiclass Race", is also accepted) — also auto-fills server below when it\'s left blank, and always sets the event tag', 'Daily Race'],
                             ['weather', false, 'dry / wet / mixed / random', 'dry'],
+                            ['rain_level', false, '0.0-1.0, one decimal (comma or dot) — same as the Create Race slider: 0.0 dry · 0.3 damp · 0.5 light · 0.8 heavy · 1.0 flooded. Only used with wet or mixed weather', '0.3'],
                             ['time_of_day', false, 'HH:MM, 24h — in-game start time', '21:00'],
                             ['ambient_temp', false, 'Whole number, °C', '20'],
                             ['practice_time_multiplier', false, '1-24, "x"/"×" suffix optional, defaults to 1×', '2x'],
@@ -129,9 +130,13 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
                             ['sr_requirement', false, 'Whole number 3-9 (minimum Safety Rating), comma or dot decimals accepted — 0 or blank means none', '5'],
                             ['min_rating', false, 'rookie / bronze / silver / gold / platinum / alien / all — a trailing "+" (e.g. "bronze+") is also accepted', 'rookie'],
                             ['max_rating', false, 'rookie / bronze / silver / gold / platinum / alien / all — e.g. rookie for a Rookies Only event; "rookie max" is also accepted', 'all'],
-                            ['car_class', false, 'open / GT3 / GT4 / GT2 / TCX / GTC', 'open'],
-                            ['car_class_2', false, 'Same values as car_class — fill this in to make the row multiclass (2 classes)', 'GT4'],
-                            ['car_class_3', false, 'Same values as car_class — a 3rd class, only used when car_class_2 is also set', ''],
+                            ['car_class', false, 'open / GT3 / GT4 / GT2 / TCX / GTC — keep "open" for a multiclass row', 'open'],
+                            ['multiclass_class_1', false, 'GT3 / GT4 / GT2 / TCX / GTC — fill this and multiclass_class_2 in to make the row multiclass', 'GT3'],
+                            ['multiclass_class_1_min_sr', false, 'Same as sr_requirement, for class 1 only', '5'],
+                            ['multiclass_class_1_min_rating', false, 'Same as min_rating, for class 1 only', 'bronze'],
+                            ['multiclass_class_2', false, 'Same values as multiclass_class_1 — the 2nd class', 'GT4'],
+                            ['multiclass_class_2_min_sr', false, 'Same as sr_requirement, for class 2 only', ''],
+                            ['multiclass_class_2_min_rating', false, 'Same as min_rating, for class 2 only', 'rookie'],
                             ['description', false, 'Free text, shown on the event page', ''],
                         ] as [$col, $required, $format, $example])
                         <tr>
@@ -155,9 +160,9 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
                 <p class="text-secondary mb-0" style="font-size:.78rem">{{ implode(' · ', array_keys($accTracks)) }}</p>
             </div>
             <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-                <p class="fw-bold text-uppercase mb-2" style="font-size:.65rem;letter-spacing:.06em;color:#9ca3af">Multiclass defaults</p>
+                <p class="fw-bold text-uppercase mb-2" style="font-size:.65rem;letter-spacing:.06em;color:#9ca3af">Multiclass</p>
                 <p class="text-secondary mb-0" style="font-size:.78rem">
-                    Filling in car_class_2 turns the row multiclass. Class 1 (car_class) gets a Bronze+ minimum rating by default; every other class is left fully open. Adjust either from the race's own edit page afterwards.
+                    Filling in both multiclass_class_1 and multiclass_class_2 turns the row multiclass, each class with its own min SR and min rating (blank = open). Keep car_class on "open" so every driver can join in the class they pick.
                 </p>
             </div>
         </div>
@@ -222,27 +227,34 @@ $ieServersForJs = $servers->map(fn($s) => ['value' => (string) $s->id, 'label' =
                             </div>
                         </div>
 
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0" style="font-size:.875rem">
+                        {{-- Every column has a min-width, so the table is wider than the card and
+                             scrolls sideways instead of squeezing its inputs. The extra scrollbar
+                             above it mirrors the table's own (see import-export.js) so it can be
+                             scrolled without first going down past a long preview. --}}
+                        <div data-ie-scroll-top style="overflow-x:auto;overflow-y:hidden">
+                            <div data-ie-scroll-top-inner style="height:1px"></div>
+                        </div>
+                        <div class="table-responsive" data-ie-scroll>
+                            <table class="table align-middle mb-0" style="font-size:.875rem;min-width:max-content">
                                 <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
                                     <tr>
-                                        <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:36px">#</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:220px">Track</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:120px">Date (BST/GMT)</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:80px">Time</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:150px">Format</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:150px">Server</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:120px">Weather</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:110px">In-game Time</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Amb. Temp</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:75px">Prac. ×</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:75px">Qual. ×</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:75px">Race ×</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Min Rating</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:70px">SR</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Max Rating</th>
-                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:80px">Car Class</th>
-                                        <th class="pe-4" style="width:40px"></th>
+                                        <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:44px">#</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:160px">Track</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:135px">Date (BST/GMT)</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:100px">Time</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:200px">Format</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:200px">Server</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:135px">Weather</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:125px">In-game Time</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:105px">Amb. Temp</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:90px">Prac. ×</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:90px">Qual. ×</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:90px">Race ×</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:120px">Min Rating</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:95px">SR</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:120px">Max Rating</th>
+                                        <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;min-width:110px">Car Class</th>
+                                        <th class="pe-4" style="min-width:56px"></th>
                                     </tr>
                                 </thead>
                                 <tbody data-ie-tbody></tbody>
