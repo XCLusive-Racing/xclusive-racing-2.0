@@ -185,11 +185,20 @@
                 </div>
                 @endforeach
 
-                {{-- Team Standings --}}
-                @if(!empty($teamStandings))
+                {{-- Team Standings — with a team championship (settings.scoring.team_scoring_cars)
+                     the per-car table sits below it as "Car Standings". --}}
+                @php
+                    $teamTables = array_filter(!empty($teamChampionship)
+                        ? ['Team Championship' => $teamChampionship, 'Car Standings' => $teamStandings]
+                        : ['Team Standings' => $teamStandings]);
+                @endphp
+                @foreach($teamTables as $tableTitle => $tableRows)
                 <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
-                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Team Standings</h2>
+                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">{{ $tableTitle }}</h2>
+                        @if($tableTitle === 'Team Championship')
+                        <p class="mb-0 mt-1" style="color:#6b7280;font-size:.72rem">Each round, a team's best {{ $championship->settings->scoring->team_scoring_cars }} {{ \Illuminate\Support\Str::plural('car', $championship->settings->scoring->team_scoring_cars) }} score for the team.</p>
+                        @endif
                     </div>
                     <div class="table-responsive">
                         <table class="table align-middle mb-0" style="font-size:.875rem">
@@ -201,7 +210,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($teamStandings as $i => $entry)
+                                @foreach($tableRows as $i => $entry)
                                 @php $medalColors = ['#f59e0b','#9ca3af','#b45309']; @endphp
                                 <tr style="border-bottom:1px solid #1f2937">
                                     <td class="ps-4 fw-black" style="color:{{ $medalColors[$i] ?? '#6b7280' }};font-size:.95rem">{{ $i + 1 }}</td>
@@ -211,7 +220,7 @@
                                             <img src="{{ $entry['team']->logoUrl() }}" alt="" style="width:26px;height:26px;object-fit:contain;border-radius:6px">
                                             @endif
                                             <span class="fw-bold text-white">{{ $entry['team']->name }}</span>
-                                            @if($entry['car_label'])
+                                            @if($entry['car_label'] ?? null)
                                             <span style="color:#9ca3af;font-size:.8rem">{{ $entry['car_label'] }}</span>
                                             @endif
                                         </div>
@@ -223,7 +232,7 @@
                         </table>
                     </div>
                 </div>
-                @endif
+                @endforeach
 
                 </div>{{-- /standings panel --}}
 

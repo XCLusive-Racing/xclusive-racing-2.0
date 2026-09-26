@@ -449,6 +449,43 @@ class Championship extends Model
     // lives in RaceResult/RaceRegistration.team_entry_id, not here.
     public function computeTeamStandings(): array
     {
+        $cars = collect($this->buildCarStandings())->map(fn ($car) => array_diff_key($car, ['rounds' => true]))->all();
+
+        usort($cars, fn ($a, $b) => $b['total_points'] <=> $a['total_points']);
+
+        return $cars;
+    }
+
+    // One row per team, on top of the per-car standings above — only when
+    // settings.scoring.team_scoring_cars is set. Each round a team scores the
+    // points of its best N cars in that round; the rest of its cars only score
+    // for themselves (league feedback 2026-09: "top 3 cars in each team score").
+    public function computeTeamChampionship(): array
+    {
+        $scoringCars = (int) ($this->settings->scoring->team_scoring_cars ?? 0);
+        if ($scoringCars < 1) {
+            return [];
+        }
+
+        $teams = collect($this->buildCarStandings())
+            ->groupBy(fn ($car) => $car['team']->id)
+            ->map(fn (Collection $cars) => [
+                'team' => $cars->first()['team'],
+                'total_points' => $cars->flatMap(fn ($car) => collect($car['rounds'])->map(fn ($points, $raceId) => ['race_id' => $raceId, 'points' => $points])->values())
+                    ->groupBy('race_id')
+                    ->sum(fn (Collection $roundCars) => $roundCars->pluck('points')->sortDesc()->take($scoringCars)->sum()),
+            ])
+            ->values()
+            ->all();
+
+        usort($teams, fn ($a, $b) => $b['total_points'] <=> $a['total_points']);
+
+        return $teams;
+    }
+
+    // Every team car with its points per round (race_id => points) and total.
+    private function buildCarStandings(): array
+    {
         if (! ($this->settings->scoring->team_points_enabled ?? false)) {
             return [];
         }
@@ -489,17 +526,18 @@ class Championship extends Model
                 default => null,
             };
 
+            $rounds = collect($registration->driverIds())
+                ->flatMap(fn ($id) => $driverStandings->get($id)['rounds'] ?? [])
+                ->groupBy('race_id')
+                ->map(fn ($roundEntries) => $roundEntries->max('points'));
+
             $cars[] = [
                 'team' => $team,
                 'car_label' => $carLabel,
-                'total_points' => collect($registration->driverIds())
-                    ->flatMap(fn ($id) => $driverStandings->get($id)['rounds'] ?? [])
-                    ->groupBy('race_id')
-                    ->sum(fn ($roundEntries) => $roundEntries->max('points')),
+                'rounds' => $rounds->all(),
+                'total_points' => $rounds->sum(),
             ];
         }
-
-        usort($cars, fn ($a, $b) => $b['total_points'] <=> $a['total_points']);
 
         return $cars;
     }

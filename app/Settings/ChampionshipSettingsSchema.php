@@ -16,7 +16,7 @@ use Illuminate\Support\Arr;
 // defaults for new keys) once this class gains fields for a new version.
 class ChampionshipSettingsSchema
 {
-    const CURRENT_VERSION = 11;
+    const CURRENT_VERSION = 12;
 
     const STEPS = [
         'basics' => 'Basics',
@@ -206,6 +206,10 @@ class ChampionshipSettingsSchema
             // a flat yes/no toggle couldn't carry an actual point value anyway.
             ['group' => 'scoring', 'key' => 'team_points_enabled', 'type' => 'boolean', 'default' => false,
                 'label' => 'Separate Team Points', 'help' => 'Score teams independently of individual drivers.'],
+            // v12 (league feedback 2026-09): a team championship on top of the per-car
+            // standings — each round only a team's best N cars score for the team.
+            ['group' => 'scoring', 'key' => 'team_scoring_cars', 'type' => 'integer', 'nullable' => true, 'default' => null, 'depends_on' => 'team_points_enabled',
+                'label' => 'Scoring Cars per Team', 'help' => 'Adds a team championship: each round, a team\'s best-placed cars up to this number score for the team; the rest only score for themselves. Blank = no team championship, every car only scores on its own.', 'rule' => 'nullable|integer|min:1|max:20'],
             // v11 (league feedback 2026-09): finishing points scale with race length
             // against a 60-minute race — 30 min = ×0.5, 90 min = ×1.5.
             ['group' => 'scoring', 'key' => 'points_scale_with_length', 'type' => 'boolean', 'default' => false,

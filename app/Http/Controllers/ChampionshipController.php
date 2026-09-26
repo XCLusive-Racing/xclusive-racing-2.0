@@ -86,6 +86,7 @@ class ChampionshipController extends Controller
         $standings = $championship->computeStandings();
         $classStandings = $championship->computeClassStandings();
         $teamStandings = $championship->computeTeamStandings();
+        $teamChampionship = $championship->computeTeamChampionship();
 
         // Native championships (league_id = XCL's own system league, Phase 2.5) don't
         // use the settings schema for requirements/penalties at all — they'd show as
@@ -94,7 +95,7 @@ class ChampionshipController extends Controller
         // an actual league-owned championship.
         $isLeagueOwned = $championship->league && $championship->league->id !== League::system()->id;
 
-        return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'teamStandings', 'isLeagueOwned'));
+        return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'teamStandings', 'teamChampionship', 'isLeagueOwned'));
     }
 
     public function register(Request $request, int $championship)
