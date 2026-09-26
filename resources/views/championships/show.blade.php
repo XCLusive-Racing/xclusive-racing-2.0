@@ -294,7 +294,7 @@
                     </div>
                     @endif
                 </div>
-                @elseif(!$isLeagueOwned)
+                @else
                 <div style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-4 text-center" style="color:#6b7280;font-size:.875rem">No rules published for this championship.</div>
                 </div>
@@ -357,7 +357,7 @@
                             $myOwnedTeam   = ($championship->settings->format->driver_swaps_enabled ?? false) ? auth()->user()->manageableRacingTeam() : null;
                             $myTeamCars    = $myOwnedTeam ? $championship->teamCarRegistrations($myOwnedTeam) : collect();
                             $canAddTeamCar = $myTeamCars->isNotEmpty() && $myTeamCars->count() < $championship->maxCarsPerTeam()
-                                && $championship->registration_open && $championship->registrationIsOpen();
+                                && $championship->acceptsRegistrations();
                         @endphp
                         @if(!in_array($championship->status, ['active', 'registration_open']))
                         <p style="color:#6b7280;font-size:.875rem">Registration is not open yet.</p>
@@ -400,7 +400,7 @@
                         <p style="color:#6b7280;font-size:.78rem" class="mb-0">Your team's owner or a manager registered you — only they can unregister the team.</p>
                         @endif
 
-                        @elseif(!$championship->registration_open || !$championship->registrationIsOpen())
+                        @elseif(! $championship->acceptsRegistrations())
                         <p style="color:#6b7280;font-size:.875rem">Registration is currently closed.</p>
 
                         @else

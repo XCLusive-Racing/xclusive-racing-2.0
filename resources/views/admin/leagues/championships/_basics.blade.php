@@ -70,6 +70,10 @@
         <x-media-picker name="image" label="Banner" :current="$championship->image" />
         <div class="form-text mt-n2" style="font-size:.72rem;color:#9ca3af">Shown as the hero image on the public championship page.</div>
     </div>
+    <div class="col-sm-4">
+        <x-media-picker name="icon" label="Icon" :current="$championship->icon" />
+        <div class="form-text mt-n2" style="font-size:.72rem;color:#9ca3af">Shown on the championship page and on every round in the events list. Blank = the league logo.</div>
+    </div>
 </div>
 
 <div class="row g-3 mt-1">

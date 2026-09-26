@@ -4,7 +4,6 @@ use App\Http\Controllers\Admin\ApplicationController as AdminApplicationControll
 use App\Http\Controllers\Admin\BopController as AdminBopController;
 use App\Http\Controllers\Admin\BroadcastController;
 use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
-use App\Http\Controllers\Admin\ChampionshipController as AdminChampionshipController;
 use App\Http\Controllers\Admin\ChampionshipEntryController;
 use App\Http\Controllers\Admin\ChampionshipWizardController;
 use App\Http\Controllers\Admin\EventFormatController;
@@ -240,13 +239,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/races/{race}/reset-config', [AdminRaceController::class, 'resetConfig'])->name('races.reset-config');
     Route::delete('/races/{race}', [AdminRaceController::class, 'destroy'])->name('races.destroy');
 
-    // Championships
-    Route::resource('championships', AdminChampionshipController::class);
-    Route::get('championships/{championship}/rounds/create', [AdminChampionshipController::class, 'roundCreate'])->name('championships.rounds.create');
-    Route::post('championships/{championship}/rounds', [AdminChampionshipController::class, 'addRound'])->name('championships.rounds.store');
-    Route::delete('championships/{championship}/rounds/{race}', [AdminChampionshipController::class, 'removeRound'])->name('championships.rounds.destroy');
-    Route::post('championships/{championship}/penalties', [AdminChampionshipController::class, 'addPenalty'])->name('championships.penalties.store');
-    Route::delete('championships/{championship}/penalties/{penalty}', [AdminChampionshipController::class, 'destroyPenalty'])->name('championships.penalties.destroy');
+    // The legacy native championship admin is gone — every championship is built
+    // and managed through the league wizard now; old links land there.
+    Route::redirect('championships', '/admin/leagues/championships');
 
     // Event Tags
     Route::post('/event-tags', [EventTagController::class, 'store'])->name('event-tags.store');
@@ -465,6 +460,8 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/cha
     Route::get('/{championship}/entries', [ChampionshipEntryController::class, 'index'])->name('entries.index');
     Route::post('/{championship}/entries/{registration}/approve', [ChampionshipEntryController::class, 'approve'])->name('entries.approve');
     Route::delete('/{championship}/entries/{registration}', [ChampionshipEntryController::class, 'reject'])->name('entries.reject');
+    Route::post('/{championship}/penalties', [ChampionshipEntryController::class, 'storePenalty'])->name('penalties.store');
+    Route::delete('/{championship}/penalties/{penalty}', [ChampionshipEntryController::class, 'destroyPenalty'])->name('penalties.destroy');
 });
 
 // Points Schemes — templates (league_id null) plus each league's own copies.

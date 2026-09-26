@@ -215,12 +215,9 @@ class ChampionshipSettingsSchema
             ['group' => 'scoring', 'key' => 'points_scale_with_length', 'type' => 'boolean', 'default' => false,
                 'label' => 'Scale Points by Race Length', 'help' => 'Finishing points are multiplied by race length ÷ 60 minutes: a 60-minute race scores the normal points, a 30-minute sprint half, a 90-minute race 1.5×. Bonus points (fastest lap, pole, leading a lap) are not scaled.'],
 
-            // Mirrors the legacy native-championship form's "Rounds Allowed to
-            // Miss" / "If limit exceeded" fields exactly
-            // (resources/views/admin/championships/{create,edit}.blade.php) —
-            // present as flat columns since before leagues existed, but never
-            // actually wired into Championship::buildDriverStandings() for
-            // either a native or a league championship until now.
+            // Same rule as the legacy native championships' flat
+            // max_missed_rounds/missed_rounds_* columns, applied in
+            // Championship::buildDriverStandings().
             ['group' => 'scoring', 'key' => 'max_missed_rounds', 'type' => 'integer', 'nullable' => true, 'default' => null,
                 'label' => 'Rounds Allowed to Miss', 'help' => 'Leave blank for no limit.'],
             ['group' => 'scoring', 'key' => 'missed_rounds_action', 'type' => 'enum', 'options' => ['none', 'penalise'], 'default' => 'none',

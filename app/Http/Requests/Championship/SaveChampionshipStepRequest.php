@@ -45,6 +45,8 @@ class SaveChampionshipStepRequest extends FormRequest
                 // Gallery-pick path from <x-media-picker> — an uploaded file (above)
                 // always wins; this carries a reused/kept media path otherwise.
                 'image_path' => 'nullable|string|max:500',
+                'icon' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
+                'icon_path' => 'nullable|string|max:500',
                 // Ownership (does this server actually belong to the championship's
                 // league?) is checked in the controller, not here — a plain
                 // exists:ftp_servers,id can't scope that.

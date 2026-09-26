@@ -44,7 +44,7 @@
                 <form action="{{ route('admin.leagues.championships.rounds.destroy', [$league, $championship, $round]) }}" method="POST" onsubmit="return false">
                     @csrf @method('DELETE')
                     <button type="button" class="btn btn-sm fw-bold" style="background:transparent;color:#dc2626;font-size:.72rem"
-                            onclick="xcDeleteSubmit(this.closest('form'), 'Remove round {{ addslashes($round->title) }}?')">
+                            onclick="xcDeleteSubmit(this.closest('form'), 'Remove round {{ addslashes($round->title) }}? A round without results is deleted; one with results stays as a standalone race.')">
                         Remove
                     </button>
                 </form>

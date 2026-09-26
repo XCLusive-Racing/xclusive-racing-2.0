@@ -13,11 +13,14 @@ use App\Services\ChampionshipTeamEntryService;
 use App\Services\DiscordRoleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class ChampionshipController extends Controller
 {
+    public const ERR_ALREADY_REGISTERED = 'You are already registered.';
+
     public const ERR_TEAM_ONLY = 'This is a team championship — your team owner or manager registers the team.';
 
     // The fixed class list the championship wizard offers (ChampionshipSettingsSchema
@@ -108,21 +111,8 @@ class ChampionshipController extends Controller
             return back()->with('error', 'Your account has been suspended. Please contact an administrator.');
         }
 
-        if (! in_array($championship->status, ['active', 'registration_open'], true) || ! $championship->registration_open) {
+        if (! $championship->acceptsRegistrations()) {
             return back()->with('error', 'Registration is not open.');
-        }
-
-        if (! $championship->registrationIsOpen()) {
-            return back()->with('error', 'Registration is not open right now.');
-        }
-
-        // A team entering another car is "already registered" by definition — the
-        // per-team car limit below takes over from this check for that case.
-        $isTeamCarSignUp = ($championship->settings->format->driver_swaps_enabled ?? false)
-            && $request->filled('racing_team_id') && ! $request->boolean('is_spectator');
-
-        if (! $isTeamCarSignUp && $championship->isRegistered($user)) {
-            return back()->with('error', 'You are already registered.');
         }
 
         if ($failure = $this->discordMembershipFailure($championship, $user)) {
@@ -133,17 +123,24 @@ class ChampionshipController extends Controller
         // against max_drivers, and skip the driver-only checks below entirely —
         // they aren't racing, so an SR/rating requirement doesn't apply to them.
         if ($request->boolean('is_spectator')) {
-            if ($championship->isSpectatorFull()) {
-                return back()->with('error', 'There are no spectator slots left.');
-            }
+            $failure = $this->createUnderLock($championship, function () use ($championship, $user) {
+                if ($championship->isRegistered($user)) {
+                    return self::ERR_ALREADY_REGISTERED;
+                }
+                if ($championship->isSpectatorFull()) {
+                    return 'There are no spectator slots left.';
+                }
 
-            ChampionshipRegistration::create([
-                'championship_id' => $championship->id,
-                'user_id' => $user->id,
-                'is_spectator' => true,
-            ]);
+                ChampionshipRegistration::create([
+                    'championship_id' => $championship->id,
+                    'user_id' => $user->id,
+                    'is_spectator' => true,
+                ]);
 
-            return back()->with('success', 'You have been registered as a spectator!');
+                return null;
+            });
+
+            return $failure ? back()->with('error', $failure) : back()->with('success', 'You have been registered as a spectator!');
         }
 
         // Driver-swaps-enabled championships register a team (one row, one of its
@@ -163,14 +160,6 @@ class ChampionshipController extends Controller
             $team = RacingTeam::with('members')->findOrFail($request->integer('racing_team_id'));
             abort_unless($team->canManage($user), 403);
 
-            // Each car is its own registration, up to settings.format.max_cars_per_team.
-            $maxCars = $championship->maxCarsPerTeam();
-            if ($championship->teamCarRegistrations($team)->count() >= $maxCars) {
-                return back()->with('error', $maxCars === 1
-                    ? 'Your team is already registered for this championship.'
-                    : "Your team already has the maximum of {$maxCars} cars in this championship.");
-            }
-
             // The team picks which of its members drive this car, in both scopes:
             // "championship" enters exactly them into every round, "per_round"
             // pre-selects them on each round's own team sign-up.
@@ -187,13 +176,6 @@ class ChampionshipController extends Controller
             }
             if ($failure = $championship->driverCountFailure($driverIds->count())) {
                 return back()->with('error', $failure);
-            }
-
-            $alreadyInACar = $driverIds->intersect($championship->driverIdsInCars());
-            if ($alreadyInACar->isNotEmpty()) {
-                $names = User::whereIn('id', $alreadyInACar)->get()->map->displayName()->join(', ');
-
-                return back()->withInput()->with('error', "{$names} already drives another car in this championship — a driver can only be in one car.");
             }
 
             $teamEntryFields = ['driver_ids' => $driverIds->all()];
@@ -220,21 +202,12 @@ class ChampionshipController extends Controller
                     return back()->with('error', 'The starting driver must be one of the selected drivers.');
                 }
 
-                // The number follows the car into every round, where it has to be unique.
-                if ($championship->registrations()->where('car_number', $validated['car_number'])->exists()) {
-                    return back()->withInput()->with('error', 'Car number #'.$validated['car_number'].' is already taken in this championship.');
-                }
-
                 $teamEntryFields += [
                     'car_number' => $validated['car_number'],
                     'car_model' => $validated['car_model'] ?? null,
                     'starting_driver_id' => $validated['starting_driver_id'],
                 ];
             }
-        }
-
-        if ($championship->isFull() && ! $championship->waitlistEnabled()) {
-            return back()->with('error', 'Championship is full.');
         }
 
         $thresholds = $championship->requirementThresholds();
@@ -245,15 +218,11 @@ class ChampionshipController extends Controller
         $classId = null;
         if ($championship->is_multiclass) {
             $request->validate(['championship_class_id' => 'required|exists:championship_classes,id']);
-            $classId = $request->championship_class_id;
+            $classId = $request->integer('championship_class_id');
 
             $class = ChampionshipClass::where('id', $classId)
                 ->where('championship_id', $championship->id)
                 ->firstOrFail();
-
-            if ($class->isFull()) {
-                return back()->with('error', 'The selected class is full.');
-            }
 
             if ($failure = $user->requirementFailure($championship->game, $class->sr_requirement, $class->min_rating)) {
                 return back()->with('error', $failure);
@@ -290,13 +259,26 @@ class ChampionshipController extends Controller
         // approves it on the Entries page — only then is a team carried into rounds.
         $pending = $championship->requiresManualApproval();
 
-        $registration = ChampionshipRegistration::create(array_merge([
-            'championship_id' => $championship->id,
-            'user_id' => $user->id,
-            'championship_class_id' => $classId,
-            'racing_team_id' => $team?->id,
-            'approved_at' => $pending ? null : now(),
-        ], $teamEntryFields));
+        $registration = null;
+        $failure = $this->createUnderLock($championship, function () use ($championship, $user, $team, $teamEntryFields, $classId, $pending, &$registration) {
+            if ($failure = $this->capacityFailure($championship, $user, $team, $teamEntryFields, $classId)) {
+                return $failure;
+            }
+
+            $registration = ChampionshipRegistration::create(array_merge([
+                'championship_id' => $championship->id,
+                'user_id' => $user->id,
+                'championship_class_id' => $classId,
+                'racing_team_id' => $team?->id,
+                'approved_at' => $pending ? null : now(),
+            ], $teamEntryFields));
+
+            return null;
+        });
+
+        if ($failure) {
+            return back()->withInput()->with('error', $failure);
+        }
 
         if (! $pending && $team && $teamRegistrationScope === 'championship') {
             app(ChampionshipTeamEntryService::class)->syncAllExistingRounds($registration, $championship);
@@ -310,6 +292,61 @@ class ChampionshipController extends Controller
         };
 
         return back()->with('success', $message);
+    }
+
+    // Runs $create inside a transaction holding a row lock on the championship, so
+    // two sign-ups at the same instant can't both pass a capacity check (last spot,
+    // team car limit, car number, a driver in two cars) before either insert lands —
+    // same fix as RaceController::register(). $create returns an error or null.
+    private function createUnderLock(Championship $championship, callable $create): ?string
+    {
+        return DB::transaction(function () use ($championship, $create) {
+            Championship::withoutTenantScope()->whereKey($championship->id)->lockForUpdate()->first();
+
+            return $create();
+        });
+    }
+
+    // Every check that depends on who else has registered — only authoritative
+    // inside createUnderLock().
+    private function capacityFailure(Championship $championship, User $user, ?RacingTeam $team, array $teamEntryFields, ?int $classId): ?string
+    {
+        if ($team) {
+            // Each car is its own registration, up to settings.format.max_cars_per_team.
+            $maxCars = $championship->maxCarsPerTeam();
+            if ($championship->teamCarRegistrations($team)->count() >= $maxCars) {
+                return $maxCars === 1
+                    ? 'Your team is already registered for this championship.'
+                    : "Your team already has the maximum of {$maxCars} cars in this championship.";
+            }
+
+            $alreadyInACar = collect($teamEntryFields['driver_ids'])->intersect($championship->driverIdsInCars());
+            if ($alreadyInACar->isNotEmpty()) {
+                $names = User::whereIn('id', $alreadyInACar)->get()->map->displayName()->join(', ');
+
+                return "{$names} already drives another car in this championship — a driver can only be in one car.";
+            }
+
+            // The number follows the car into every round, where it has to be unique.
+            $carNumber = $teamEntryFields['car_number'] ?? null;
+            if ($carNumber !== null && $championship->registrations()->where('car_number', $carNumber)->exists()) {
+                return 'Car number #'.$carNumber.' is already taken in this championship.';
+            }
+        } elseif ($championship->isRegistered($user)) {
+            // A team entering another car is "already registered" by definition —
+            // the per-team car limit above covers that case instead.
+            return self::ERR_ALREADY_REGISTERED;
+        }
+
+        if ($championship->isFull() && ! $championship->waitlistEnabled()) {
+            return 'Championship is full.';
+        }
+
+        if ($classId !== null && ChampionshipClass::find($classId)?->isFull()) {
+            return 'The selected class is full.';
+        }
+
+        return null;
     }
 
     // Phase 4 (docs/championships/PLAN.md): requires_discord_membership was purely

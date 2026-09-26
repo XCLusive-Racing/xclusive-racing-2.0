@@ -91,7 +91,8 @@ class ChampionshipRuleEnforcementTest extends TestCase
             ->assertSessionHas('success');
 
         $this->assertFalse($registration->fresh()->isPending());
-        $this->assertCount(1, $championship->computeStandings());
+        // refresh(): standings are cached per instance, like within one request.
+        $this->assertCount(1, $championship->refresh()->computeStandings());
         $this->assertTrue(Message::where('user_id', $driver->id)->where('type', 'championship_entry')->exists());
     }
 

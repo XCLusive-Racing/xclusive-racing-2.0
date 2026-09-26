@@ -11,6 +11,26 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-26 — championship section review + clean-up.**
+  - `Championship::usesSettings()` (stored `settings` column not null) replaces
+    every "league = XCL means native" check: XCL's own wizard championships
+    now use their wizard requirements, missed-rounds rule, fixed weather,
+    penalty rules and public Rules/Requirements. Only legacy row id 21
+    ("Test Champ", no league) is still native.
+  - Display-only wizard options now enforced: Manual Approval
+    (`championship_registrations.approved_at`, new Entries page with
+    approve/reject), XCL Stewarding (off = no reports, penalties do nothing),
+    Post-Race Time Penalties, Formation Lap.
+  - Legacy native admin (`Admin\ChampionshipController`, `admin/championships/*`)
+    removed — `/admin/championships` redirects to the wizard. The wizard took
+    over its icon field and manual points penalties (Entries page; points are
+    *deducted*, the old form's "negative = penalty" hint was backwards).
+  - Registration capacity checks run under a row lock
+    (`ChampionshipController::createUnderLock()`); `acceptsRegistrations()` is
+    the single registration gate; standings are memoised per instance.
+  - Rounds: unique round numbers; removing a round without results deletes it,
+    one with results becomes a standalone race.
+  - Needs migration `2026_09_26_000000_add_approved_at_to_championship_registrations_table`.
 - **2026-09-11, twenty-sixth follow-up — investigated "league of championship
   managers kunnen de admin button niet zien," found no code bug.** User then
   clarified the intended rule: "elke role behalve driver mag admin button

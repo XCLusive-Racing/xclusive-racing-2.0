@@ -414,10 +414,18 @@ class Championship extends Model
         return max(0, $this->registrations()->where('is_spectator', false)->count() - $this->max_drivers);
     }
 
-    // Governs the registration form itself — status/registration_open still gate
-    // it first (see ChampionshipController::register()); this layers the wizard's
-    // own Registration Closes setting (always open / at first round / a window)
-    // on top of that.
+    // The one answer to "can someone sign up right now?" — used by both
+    // ChampionshipController::register() and the public page, which used to each
+    // combine the three pieces of state below themselves.
+    public function acceptsRegistrations(): bool
+    {
+        return in_array($this->status, ['active', 'registration_open'], true)
+            && $this->registration_open
+            && $this->registrationIsOpen();
+    }
+
+    // The wizard's own Registration Closes setting (always open / at first round /
+    // a window), on top of status/registration_open — see acceptsRegistrations().
     public function registrationIsOpen(): bool
     {
         $mode = $this->settings->requirements->registration_mode ?? 'always_open';
@@ -516,8 +524,31 @@ class Championship extends Model
         return $teams;
     }
 
-    // Every team car with its points per round (race_id => points) and total.
+    // Standings are computed live from results, but the public page asks for them
+    // up to five ways (drivers, classes, cars, team championship) in one request —
+    // each built on the same driver standings. Computed once per instance;
+    // refresh() starts over.
+    private array $standingsCache = [];
+
+    public function refresh()
+    {
+        $this->standingsCache = [];
+
+        return parent::refresh();
+    }
+
     private function buildCarStandings(): array
+    {
+        return $this->standingsCache['cars'] ??= $this->computeCarStandings();
+    }
+
+    private function buildDriverStandings(): array
+    {
+        return $this->standingsCache['drivers'] ??= $this->computeDriverStandings();
+    }
+
+    // Every team car with its points per round (race_id => points) and total.
+    private function computeCarStandings(): array
     {
         if (! ($this->settings->scoring->team_points_enabled ?? false)) {
             return [];
@@ -582,7 +613,7 @@ class Championship extends Model
     // for a scored round never move because of this — the scheme's table is
     // itself locked the moment a round is scored (PointsScheme::isLockedByCompletedRounds()),
     // so only the *shape of future rounds* can ever be affected by an edit.
-    private function buildDriverStandings(): array
+    private function computeDriverStandings(): array
     {
         $scheme = $this->pointsScheme();
 
@@ -608,7 +639,7 @@ class Championship extends Model
 
         $finishedRounds = $this->rounds()
             ->where('status', 'finished')
-            ->with(['raceResults.user'])
+            ->with(['raceResults.user', 'qualiResults'])
             ->get();
 
         $penalties = $this->penalties()->get()->groupBy('user_id');
@@ -631,7 +662,7 @@ class Championship extends Model
         }
 
         foreach ($finishedRounds as $race) {
-            $qualiResults = $race->qualiResults()->get();
+            $qualiResults = $race->qualiResults;
             $poleUserId = $qualiResults->first()?->user_id;
 
             // A multi-race round scores every race with the same scheme and adds

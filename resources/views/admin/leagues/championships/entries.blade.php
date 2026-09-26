@@ -79,4 +79,81 @@
     @endif
 </div>
 
+<div class="row g-4 mt-1">
+    <div class="col-12 col-lg-7">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.9rem">Points Penalties</div>
+            </div>
+            @if($penalties->isEmpty())
+            <div class="px-4 py-4 text-secondary" style="font-size:.85rem">No penalties.</div>
+            @else
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" style="font-size:.85rem">
+                    <tbody>
+                        @foreach($penalties as $penalty)
+                        <tr>
+                            <td class="ps-4 fw-bold text-dark">{{ $penalty->user?->displayName() }}</td>
+                            <td class="fw-bold text-danger">−{{ $penalty->points }}</td>
+                            <td class="text-secondary d-none d-md-table-cell" style="font-size:.78rem">{{ $penalty->race?->title ?? '—' }}</td>
+                            <td class="text-secondary" style="font-size:.78rem">{{ $penalty->reason ?? '—' }}</td>
+                            <td class="text-end pe-4">
+                                <form action="{{ route('admin.leagues.championships.penalties.destroy', [$league, $championship, $penalty]) }}" method="POST" onsubmit="return false">
+                                    @csrf @method('DELETE')
+                                    <button type="button" class="btn btn-link fw-bold p-0" style="color:#dc2626;font-size:.75rem"
+                                            onclick="xcDeleteSubmit(this.closest('form'), 'Remove this penalty?')">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @endif
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-5">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.9rem">Add Penalty</div>
+            </div>
+            <form action="{{ route('admin.leagues.championships.penalties.store', [$league, $championship]) }}" method="POST" class="px-4 py-3">
+                @csrf
+                <div class="mb-3">
+                    <label class="form-label">Driver</label>
+                    <select name="user_id" class="form-select form-select-sm @error('user_id') is-invalid @enderror" required>
+                        <option value="">Select driver…</option>
+                        @foreach($drivers as $driver)
+                        <option value="{{ $driver->id }}" @selected(old('user_id') == $driver->id)>{{ $driver->displayName() }}</option>
+                        @endforeach
+                    </select>
+                    @error('user_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-sm-5">
+                        <label class="form-label">Points to deduct</label>
+                        <input type="number" name="points" min="1" max="999" value="{{ old('points') }}" class="form-control form-control-sm @error('points') is-invalid @enderror" required>
+                        @error('points') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+                    <div class="col-sm-7">
+                        <label class="form-label">Round <span class="text-secondary fw-normal">(optional)</span></label>
+                        <select name="race_id" class="form-select form-select-sm">
+                            <option value="">—</option>
+                            @foreach($rounds as $round)
+                            <option value="{{ $round->id }}" @selected(old('race_id') == $round->id)>Round {{ $round->round_number }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Reason <span class="text-secondary fw-normal">(optional)</span></label>
+                    <input type="text" name="reason" maxlength="255" value="{{ old('reason') }}" class="form-control form-control-sm">
+                </div>
+                <button type="submit" class="btn btn-sm fw-black text-uppercase text-white w-100" style="background:#7c3aed;font-size:.78rem">Deduct Points</button>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection

@@ -4,13 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Championship;
+use App\Models\ChampionshipPenalty;
 use App\Models\ChampionshipRegistration;
 use App\Models\League;
 use App\Models\Message;
+use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\ChampionshipTeamEntryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 // A championship's entry list for its league staff — and where entries wait when
 // settings.requirements.manual_approval_required is on: approving one makes it
@@ -22,12 +25,53 @@ class ChampionshipEntryController extends Controller
         $this->authorizeChampionship($league, $championship);
 
         $entries = $championship->registrations()
-            ->with(['user', 'racingTeam', 'championshipClass'])
+            ->with(['user', 'racingTeam.members', 'championshipClass'])
             ->orderByRaw('approved_at is not null')
             ->orderBy('created_at')
             ->get();
 
-        return view('admin.leagues.championships.entries', compact('league', 'championship', 'entries'));
+        // Everyone who can score: solo entrants and every driver of a team car.
+        $driverIds = $entries->reject(fn ($entry) => $entry->is_spectator || $entry->isPending())
+            ->flatMap(fn ($entry) => $entry->racing_team_id ? $entry->driverIds() : [$entry->user_id])
+            ->unique();
+        $drivers = User::whereIn('id', $driverIds)->orderBy('name')->get();
+
+        $penalties = $championship->penalties()->with(['user', 'race'])->latest()->get();
+        $rounds = $championship->rounds()->get(['id', 'round_number', 'title']);
+
+        return view('admin.leagues.championships.entries', compact('league', 'championship', 'entries', 'drivers', 'penalties', 'rounds'));
+    }
+
+    // Points deducted from a driver's championship total (Championship::buildDriverStandings()
+    // subtracts them) — the manual counterpart of a stewarding report's points penalty.
+    public function storePenalty(Request $request, League $league, Championship $championship)
+    {
+        $this->authorizeChampionship($league, $championship);
+
+        $data = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'points' => 'required|integer|min:1|max:999',
+            'race_id' => ['nullable', Rule::exists('races', 'id')->where('championship_id', $championship->id)],
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        $penalty = $championship->penalties()->create($data);
+
+        AuditLogger::record($request->user(), $championship, 'championship.penalty_added', $data);
+
+        return back()->with('success', $penalty->points.' point(s) deducted from '.$penalty->user->displayName().'.');
+    }
+
+    public function destroyPenalty(Request $request, League $league, Championship $championship, ChampionshipPenalty $penalty)
+    {
+        $this->authorizeChampionship($league, $championship);
+        abort_unless($penalty->championship_id === $championship->id, 404);
+
+        $penalty->delete();
+
+        AuditLogger::record($request->user(), $championship, 'championship.penalty_removed', ['penalty_id' => $penalty->id]);
+
+        return back()->with('success', 'Penalty removed.');
     }
 
     public function approve(Request $request, League $league, Championship $championship, ChampionshipRegistration $registration)

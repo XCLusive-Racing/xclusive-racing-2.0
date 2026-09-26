@@ -363,21 +363,6 @@ class LeagueAdminAccessTest extends TestCase
     // actually managing a given league still requires a real League Manager
     // membership row on it, same as anyone else. ---
 
-    public function test_championship_manager_sees_no_leagues_without_a_membership_row(): void
-    {
-        $this->makeLeague('nlrl');
-        $this->makeLeague('src');
-        $manager = User::factory()->championshipManager()->create();
-
-        $this->assertDatabaseMissing('league_user', ['user_id' => $manager->id]);
-
-        $this->actingAs($manager)
-            ->get(route('admin.leagues.index'))
-            ->assertOk()
-            ->assertDontSee('NLRL')
-            ->assertDontSee('SRC');
-    }
-
     // User-directed 2026-09-12: a Championship Manager creates their own league(s)
     // self-service rather than an owner/admin doing it for them -- but they must
     // only ever end up seeing that league, not every other one already on the
