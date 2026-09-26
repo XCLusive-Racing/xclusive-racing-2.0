@@ -371,6 +371,11 @@ class RaceResultController extends Controller
             'reason' => 'nullable|string|max:500',
         ]);
 
+        $championship = $race->championship()->withoutTenantScope()->first();
+        if ($championship && ! $championship->allowsPostRaceTimePenalties()) {
+            return back()->with('error', $championship->name.' doesn\'t allow post-race time penalties (Penalties & Balance step).');
+        }
+
         if ($result->dsq || $result->dns) {
             return back()->with('error', 'Cannot apply a time penalty to a DSQ/DNS result.');
         }

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Championship;
 use App\Models\League;
 use App\Models\Race;
+use App\Models\User;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -21,7 +22,7 @@ class PublicChampionshipPageTest extends TestCase
         return League::create([
             'name' => strtoupper($slug), 'slug' => $slug,
             'primary_color' => '#7c3aed', 'accent_color' => '#db2777', 'status' => 'active',
-            'discord_invite_url' => 'https://discord.gg/' . $slug,
+            'discord_invite_url' => 'https://discord.gg/'.$slug,
         ]);
     }
 
@@ -36,7 +37,7 @@ class PublicChampionshipPageTest extends TestCase
 
     public function test_a_guest_sees_the_leagues_branding_on_the_championship_page(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
 
         // No actingAs() — a genuine unauthenticated guest, the exact audience this
@@ -50,9 +51,9 @@ class PublicChampionshipPageTest extends TestCase
 
     public function test_a_logged_in_driver_with_no_league_membership_also_sees_the_branding(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $driver       = \App\Models\User::factory()->create();
+        $driver = User::factory()->create();
 
         $this->actingAs($driver)
             ->get(route('championships.show', $championship->id))
@@ -62,7 +63,7 @@ class PublicChampionshipPageTest extends TestCase
 
     public function test_rules_and_prizes_render_when_set(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
         $championship->settings = array_replace_recursive($championship->settings->toArray(), [
             'requirements' => ['notes' => 'No pit lane speeding.', 'prizes_text' => 'Winner gets a trophy.'],
@@ -77,7 +78,7 @@ class PublicChampionshipPageTest extends TestCase
 
     public function test_rules_and_prizes_are_absent_when_not_set(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
 
         $this->get(route('championships.show', $championship->id))
@@ -96,7 +97,7 @@ class PublicChampionshipPageTest extends TestCase
         ]);
         $championship->save();
 
-        $driver = \App\Models\User::factory()->create();
+        $driver = User::factory()->create();
 
         $this->actingAs($driver)
             ->get(route('championships.show', $championship->id))
@@ -107,14 +108,14 @@ class PublicChampionshipPageTest extends TestCase
 
     public function test_championship_level_discord_opt_in_shows_the_notice_even_when_the_league_itself_does_not_require_it(): void
     {
-        $league       = $this->makeLeague('nlrl'); // requires_discord_membership stays false
+        $league = $this->makeLeague('nlrl'); // requires_discord_membership stays false
         $championship = $this->makeChampionship($league);
         $championship->settings = array_replace_recursive($championship->settings->toArray(), [
             'requirements' => ['discord_membership_required' => true],
         ]);
         $championship->save();
 
-        $driver = \App\Models\User::factory()->create();
+        $driver = User::factory()->create();
 
         $this->actingAs($driver)
             ->get(route('championships.show', $championship->id))
@@ -122,14 +123,26 @@ class PublicChampionshipPageTest extends TestCase
             ->assertSee('Discord membership required.', false);
     }
 
-    public function test_native_xcl_championship_does_not_show_the_settings_driven_sections(): void
+    // A legacy native championship (the old admin form never writes `settings`).
+    public function test_native_championship_does_not_show_the_settings_driven_sections(): void
     {
-        $xcl          = League::system();
-        $championship = $this->makeChampionship($xcl);
+        $championship = Championship::create([
+            'league_id' => League::system()->id, 'name' => 'Native Cup', 'game' => 'acc', 'season' => 2026,
+            'status' => 'active', 'visibility' => 'public',
+        ]);
 
         $this->get(route('championships.show', $championship->id))
             ->assertOk()
             ->assertDontSee('Entry Requirements');
+    }
+
+    public function test_xcls_own_wizard_championship_shows_the_settings_driven_sections(): void
+    {
+        $championship = $this->makeChampionship(League::system());
+
+        $this->get(route('championships.show', $championship->id))
+            ->assertOk()
+            ->assertSee('Entry Requirements');
     }
 
     // Refinement request item 7: the single-class standings heading used to
@@ -138,7 +151,7 @@ class PublicChampionshipPageTest extends TestCase
     // now reads "Overall Standings" instead, same on a league page or XCL's own.
     public function test_single_class_standings_heading_says_overall_not_championship(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
 
         $this->get(route('championships.show', $championship->id))
@@ -153,7 +166,7 @@ class PublicChampionshipPageTest extends TestCase
     // direct link, just not in any listing -- so the page itself stays up.
     public function test_a_hidden_championships_own_page_is_still_reachable_directly(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league, ['visibility' => 'unlisted']);
 
         $this->get(route('championships.show', $championship->id))
@@ -163,8 +176,8 @@ class PublicChampionshipPageTest extends TestCase
 
     public function test_a_hidden_championship_is_excluded_from_the_leagues_public_listing(): void
     {
-        $league  = $this->makeLeague('nlrl');
-        $hidden  = $this->makeChampionship($league, ['visibility' => 'unlisted', 'name' => 'Hidden Cup']);
+        $league = $this->makeLeague('nlrl');
+        $hidden = $this->makeChampionship($league, ['visibility' => 'unlisted', 'name' => 'Hidden Cup']);
         $visible = $this->makeChampionship($league, ['name' => 'Visible Cup']);
 
         $this->get(route('championships.index', ['league' => 'nlrl']))
@@ -181,8 +194,8 @@ class PublicChampionshipPageTest extends TestCase
     // now hidden) championship's rounds were leaking onto /events already.
     public function test_a_hidden_championships_rounds_are_excluded_from_the_public_events_page(): void
     {
-        $league  = $this->makeLeague('nlrl');
-        $hidden  = $this->makeChampionship($league, ['visibility' => 'unlisted']);
+        $league = $this->makeLeague('nlrl');
+        $hidden = $this->makeChampionship($league, ['visibility' => 'unlisted']);
         $visible = $this->makeChampionship($league, ['name' => 'Visible Cup']);
 
         Race::create([

@@ -41,7 +41,7 @@ class MissedRoundsStandingsTest extends TestCase
     {
         return Race::create([
             'championship_id' => $championship->id, 'round_number' => $roundNumber,
-            'title' => 'Round ' . $roundNumber, 'track' => 'Monza', 'game' => 'acc',
+            'title' => 'Round '.$roundNumber, 'track' => 'Monza', 'game' => 'acc',
             'status' => 'finished', 'scheduled_at' => now()->subWeeks(4 - $roundNumber),
         ]);
     }
@@ -57,9 +57,9 @@ class MissedRoundsStandingsTest extends TestCase
 
     public function test_a_registered_driver_with_zero_results_still_appears_in_standings(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $driver       = User::factory()->create();
+        $driver = User::factory()->create();
 
         ChampionshipRegistration::create(['championship_id' => $championship->id, 'user_id' => $driver->id]);
 
@@ -71,9 +71,9 @@ class MissedRoundsStandingsTest extends TestCase
 
     public function test_a_spectator_registration_never_appears_in_standings(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $spectator    = User::factory()->create();
+        $spectator = User::factory()->create();
 
         ChampionshipRegistration::create(['championship_id' => $championship->id, 'user_id' => $spectator->id, 'is_spectator' => true]);
 
@@ -82,7 +82,7 @@ class MissedRoundsStandingsTest extends TestCase
 
     public function test_missing_more_rounds_than_allowed_deducts_the_configured_points(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
         $championship->settings = array_replace_recursive($championship->settings->toArray(), [
             'scoring' => ['max_missed_rounds' => 1, 'missed_rounds_action' => 'penalise', 'missed_rounds_penalty_points' => 5],
@@ -110,7 +110,7 @@ class MissedRoundsStandingsTest extends TestCase
 
     public function test_missing_fewer_rounds_than_allowed_is_not_penalised(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
         $championship->settings = array_replace_recursive($championship->settings->toArray(), [
             'scoring' => ['max_missed_rounds' => 2, 'missed_rounds_action' => 'penalise', 'missed_rounds_penalty_points' => 5],
@@ -131,7 +131,7 @@ class MissedRoundsStandingsTest extends TestCase
 
     public function test_missed_rounds_action_none_never_penalises(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
         $championship->settings = array_replace_recursive($championship->settings->toArray(), [
             'scoring' => ['max_missed_rounds' => 0, 'missed_rounds_action' => 'none', 'missed_rounds_penalty_points' => 5],
@@ -150,8 +150,9 @@ class MissedRoundsStandingsTest extends TestCase
 
     public function test_native_championship_reads_missed_rounds_rule_from_flat_columns(): void
     {
-        $xcl = League::system();
-        $championship = $this->makeChampionship($xcl, [
+        // A legacy native championship (the old admin form never writes `settings`).
+        $championship = Championship::create([
+            'league_id' => League::system()->id, 'name' => 'Native Cup', 'game' => 'acc', 'season' => 2026, 'status' => 'active',
             'max_missed_rounds' => 0, 'missed_rounds_action' => 'penalise', 'missed_rounds_penalty_points' => 3,
         ]);
 

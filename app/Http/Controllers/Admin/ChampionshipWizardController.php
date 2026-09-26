@@ -424,6 +424,7 @@ class ChampionshipWizardController extends Controller
     private function syncTeamEntriesForNewRound(Championship $championship, Race $race): void
     {
         $registrations = ChampionshipRegistration::where('championship_id', $championship->id)
+            ->approved()
             ->whereNotNull('racing_team_id')
             ->whereNotNull('car_number')
             ->get();

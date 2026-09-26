@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\BopController as AdminBopController;
 use App\Http\Controllers\Admin\BroadcastController;
 use App\Http\Controllers\Admin\CalendarController as AdminCalendarController;
 use App\Http\Controllers\Admin\ChampionshipController as AdminChampionshipController;
+use App\Http\Controllers\Admin\ChampionshipEntryController;
 use App\Http\Controllers\Admin\ChampionshipWizardController;
 use App\Http\Controllers\Admin\EventFormatController;
 use App\Http\Controllers\Admin\EventTagController;
@@ -461,6 +462,9 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/cha
     Route::post('/{championship}/approve-rating', [ChampionshipWizardController::class, 'approveRating'])->name('approve-rating');
     Route::post('/{championship}/revoke-rating', [ChampionshipWizardController::class, 'revokeRating'])->name('revoke-rating');
     Route::delete('/{championship}', [ChampionshipWizardController::class, 'destroy'])->name('destroy');
+    Route::get('/{championship}/entries', [ChampionshipEntryController::class, 'index'])->name('entries.index');
+    Route::post('/{championship}/entries/{registration}/approve', [ChampionshipEntryController::class, 'approve'])->name('entries.approve');
+    Route::delete('/{championship}/entries/{registration}', [ChampionshipEntryController::class, 'reject'])->name('entries.reject');
 });
 
 // Points Schemes — templates (league_id null) plus each league's own copies.

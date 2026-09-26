@@ -113,7 +113,7 @@ class RaceController extends Controller
         $canAddChampionshipCar = false;
         if ($isChampionshipTeamRound) {
             $championshipTeamScope = $championship->settings->format->team_registration_scope ?? 'per_round';
-            $teamCars = $userTeam ? $championship->teamCarRegistrations($userTeam) : collect();
+            $teamCars = $userTeam ? $championship->teamCarRegistrations($userTeam, approvedOnly: true) : collect();
             $championshipTeamRegistration = $teamCars->get($myTeamEntries->count()) ?? $teamCars->first();
             $canAddChampionshipCar = $championshipTeamScope === 'per_round' && $myTeamEntries->count() < $teamCars->count();
         }
@@ -417,9 +417,11 @@ class RaceController extends Controller
                 return back()->with('error', 'Your team is entered into this round automatically from its championship registration.');
             }
             // One round entry per car the team registered for the championship.
-            $teamCars = $championship->teamCarRegistrations($team)->count();
+            $teamCars = $championship->teamCarRegistrations($team, approvedOnly: true)->count();
             if ($teamCars === 0) {
-                return back()->with('error', 'Register your team for the championship first.');
+                return back()->with('error', $championship->teamCarRegistrations($team)->isNotEmpty()
+                    ? 'Your team\'s championship entry is still waiting for approval by the league.'
+                    : 'Register your team for the championship first.');
             }
             if (RaceTeamEntry::where('race_id', $race->id)->where('racing_team_id', $team->id)->count() >= $teamCars) {
                 return back()->with('error', "Every car your team registered for the championship ({$teamCars}) is already in this round.");

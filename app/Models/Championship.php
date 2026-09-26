@@ -273,9 +273,13 @@ class Championship extends Model
     }
 
     // One registration per car. Oldest first, so "car 1, car 2…" stays stable.
-    public function teamCarRegistrations(RacingTeam $team): Collection
+    // $approvedOnly leaves out cars still waiting for manual approval — those
+    // count toward the team's car limit but can't be entered into a round yet.
+    public function teamCarRegistrations(RacingTeam $team, bool $approvedOnly = false): Collection
     {
-        return $this->registrations()->where('racing_team_id', $team->id)->orderBy('id')->get();
+        return $this->registrations()->where('racing_team_id', $team->id)
+            ->when($approvedOnly, fn ($query) => $query->approved())
+            ->orderBy('id')->get();
     }
 
     // Every driver already in a car of this championship (any team) — a driver
@@ -311,14 +315,26 @@ class Championship extends Model
         return $this->registrations()->where('is_spectator', true)->count() >= $slots;
     }
 
-    // Which entry-requirement thresholds gate registration — a league-owned
-    // championship (built through the wizard) reads its own settings.requirements;
-    // XCL's own native championship (league_id = XCL's system league, Phase 2.5)
-    // keeps reading the legacy flat columns exactly as before, since the wizard
-    // never touches them and the native admin form still writes to them directly.
+    // A championship built through the wizard keeps its rules in `settings`; the
+    // legacy native admin form never writes that column and keeps using the flat
+    // columns instead. The league alone doesn't tell the two apart — XCL builds
+    // wizard championships of its own too, and those used to be treated as native
+    // (their wizard requirements, missed-rounds rule, fixed weather, penalty
+    // rules and public Rules/Requirements sections were all silently ignored).
+    //
+    // Reads the stored (original) value: once `settings` has been read, the cast
+    // merges its all-defaults object back into the live attributes, so those
+    // can't tell a native championship apart any more.
+    public function usesSettings(): bool
+    {
+        return $this->getRawOriginal('settings') !== null;
+    }
+
+    // Which entry-requirement thresholds gate registration — a wizard championship
+    // reads its own settings.requirements; a legacy native one the flat columns.
     public function requirementThresholds(): array
     {
-        if ($this->league_id !== null && $this->league_id !== League::system()->id) {
+        if ($this->usesSettings()) {
             return [
                 'sr' => $this->settings->requirements->min_safety_rating ?? null,
                 'min' => $this->settings->requirements->min_xcl_rating_tier ?? null,
@@ -345,6 +361,23 @@ class Championship extends Model
                     ->orWhereIn('racing_team_id', $user->allRacingTeams()->pluck('id'));
             })
             ->exists();
+    }
+
+    // A wizard championship only takes incident reports / post-race time penalties
+    // when it switched them on; legacy native ones always have (XCL stewards them).
+    public function usesXclStewarding(): bool
+    {
+        return ! $this->usesSettings() || (bool) ($this->settings->penalties->stewarding_enabled ?? false);
+    }
+
+    public function allowsPostRaceTimePenalties(): bool
+    {
+        return ! $this->usesSettings() || (bool) ($this->settings->penalties->post_race_time_penalties_enabled ?? false);
+    }
+
+    public function requiresManualApproval(): bool
+    {
+        return $this->usesSettings() && (bool) ($this->settings->requirements->manual_approval_required ?? false);
     }
 
     public function waitlistEnabled(): bool
@@ -490,7 +523,7 @@ class Championship extends Model
             return [];
         }
 
-        $teamRegistrations = $this->registrations()
+        $teamRegistrations = $this->registrations()->approved()
             ->whereNotNull('racing_team_id')
             ->with('racingTeam.members', 'racingTeam.owner')
             ->get();
@@ -558,15 +591,12 @@ class Championship extends Model
         $bonusFL = $scheme?->fastest_lap_points ?? $this->bonus_fastest_lap;
         $bonusPole = $scheme?->pole_points ?? $this->bonus_pole;
         $bonusLead = $scheme?->leading_lap_points ?? 0;
-        $dropRounds = $scheme ? (int) ($this->settings->scoring->drop_rounds ?? 0) : $this->drop_rounds;
+        $dropRounds = $this->usesSettings() ? (int) ($this->settings->scoring->drop_rounds ?? 0) : $this->drop_rounds;
         $scaleByLength = (bool) ($this->settings->scoring->points_scale_with_length ?? false);
 
-        // A league-owned championship reads its missed-rounds rule from settings;
-        // XCL's own native championships keep the legacy flat columns. Neither was
-        // ever actually wired into standings before now — the admin form (and, for
-        // leagues, the schema field) existed, but nothing here read them.
-        $isLeagueOwned = $this->league_id !== null && $this->league_id !== League::system()->id;
-        if ($isLeagueOwned) {
+        // A wizard championship reads its missed-rounds rule from settings; a legacy
+        // native one keeps the flat columns (see usesSettings()).
+        if ($this->usesSettings()) {
             $maxMissedRounds = $this->settings->scoring->max_missed_rounds ?? null;
             $missedRoundsAction = $this->settings->scoring->missed_rounds_action ?? 'none';
             $missedRoundsPoints = (int) ($this->settings->scoring->missed_rounds_penalty_points ?? 0);
@@ -590,7 +620,7 @@ class Championship extends Model
         // never appears in standings, and max_missed_rounds would have nobody
         // to apply to. Matches how a real championship classification still
         // lists a no-show at the back on zero points, rather than omitting them.
-        foreach ($this->registrations()->where('is_spectator', false)->with('user')->get() as $registration) {
+        foreach ($this->registrations()->approved()->where('is_spectator', false)->with('user')->get() as $registration) {
             if (! isset($driverData[$registration->user_id])) {
                 $driverData[$registration->user_id] = [
                     'user_id' => $registration->user_id,

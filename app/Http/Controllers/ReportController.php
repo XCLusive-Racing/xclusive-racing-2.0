@@ -20,11 +20,15 @@ class ReportController extends Controller
         $user = auth()->user();
         $userId = $user->id;
 
+        // Rounds of a championship that doesn't use XCL stewarding can't be reported.
+        // Tenant scope bypassed: a driver isn't a member of the championship's league.
         $races = Race::whereHas('registrations', fn ($q) => $q->where('user_id', $userId))
             ->where('status', 'finished')
-            ->with('eventFormat')
+            ->with(['eventFormat', 'championship' => fn ($q) => $q->withoutTenantScope()])
             ->orderBy('scheduled_at', 'desc')
-            ->get();
+            ->get()
+            ->reject(fn (Race $race) => $race->championship && ! $race->championship->usesXclStewarding())
+            ->values();
 
         $reportsMade = Report::where('user_id', $userId)
             ->with('race.eventFormat')
@@ -90,6 +94,11 @@ class ReportController extends Controller
 
         if ((int) $data['reported_user_id'] === auth()->id()) {
             return back()->withErrors(['reported_user_id' => 'You cannot report yourself.'])->withInput();
+        }
+
+        $championship = Race::find($data['race_id'])->championship()->withoutTenantScope()->first();
+        if ($championship && ! $championship->usesXclStewarding()) {
+            return back()->withErrors(['race_id' => 'This championship doesn\'t use XCL stewarding — contact the league about incidents.'])->withInput();
         }
 
         $selfParticipated = RaceRegistration::where('race_id', $data['race_id'])

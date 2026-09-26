@@ -80,7 +80,9 @@ class ChampionshipController extends Controller
         // league's own members ever saw it render.
         $championship->load([
             'league' => fn ($q) => $q->withoutTenantScope(),
-            'classes', 'registrations.user', 'registrations.championshipClass',
+            'classes',
+            // Entries still waiting for manual approval aren't entrants yet.
+            'registrations' => fn ($q) => $q->approved()->with('user', 'championshipClass'),
         ]);
         $rounds = $championship->rounds()->where('status', '!=', 'draft')->orderBy('round_number')->get();
         $standings = $championship->computeStandings();
@@ -88,12 +90,11 @@ class ChampionshipController extends Controller
         $teamStandings = $championship->computeTeamStandings();
         $teamChampionship = $championship->computeTeamChampionship();
 
-        // Native championships (league_id = XCL's own system league, Phase 2.5) don't
-        // use the settings schema for requirements/penalties at all — they'd show as
-        // all-defaults here, which would misrepresent them. Only show the
-        // settings-driven Requirements/Rules/Prizes/Penalties sections (Phase 7) for
-        // an actual league-owned championship.
-        $isLeagueOwned = $championship->league && $championship->league->id !== League::system()->id;
+        // Legacy native championships don't use the settings schema at all — they'd
+        // show as all-defaults here, which would misrepresent them. Only a wizard
+        // championship (XCL's own included) shows the settings-driven
+        // Requirements/Rules/Prizes/Penalties sections.
+        $isLeagueOwned = $championship->usesSettings();
 
         return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'teamStandings', 'teamChampionship', 'isLeagueOwned'));
     }
@@ -285,20 +286,28 @@ class ChampionshipController extends Controller
             }
         }
 
+        // Manual approval: the entry waits (approved_at null) until the league
+        // approves it on the Entries page — only then is a team carried into rounds.
+        $pending = $championship->requiresManualApproval();
+
         $registration = ChampionshipRegistration::create(array_merge([
             'championship_id' => $championship->id,
             'user_id' => $user->id,
             'championship_class_id' => $classId,
             'racing_team_id' => $team?->id,
+            'approved_at' => $pending ? null : now(),
         ], $teamEntryFields));
 
-        if ($team && $teamRegistrationScope === 'championship') {
+        if (! $pending && $team && $teamRegistrationScope === 'championship') {
             app(ChampionshipTeamEntryService::class)->syncAllExistingRounds($registration, $championship);
         }
 
-        $message = $championship->isRegistrationWaitlisted($user)
-            ? 'The championship is full — you have been added to the waiting list.'
-            : ($team ? 'Your team has been registered for the championship!' : 'You have been registered for the championship!');
+        $message = match (true) {
+            $pending => 'Your entry has been received — the league will review it before it is confirmed.',
+            $championship->isRegistrationWaitlisted($user) => 'The championship is full — you have been added to the waiting list.',
+            (bool) $team => 'Your team has been registered for the championship!',
+            default => 'You have been registered for the championship!',
+        };
 
         return back()->with('success', $message);
     }

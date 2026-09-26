@@ -1291,6 +1291,11 @@
                     </button>
                 </form>
             </div>
+            @php
+                // A championship can switch post-race time penalties off (Penalties & Balance step).
+                $timePenaltiesAllowed = ! $race->championship_id
+                    || ($race->championship()->withoutTenantScope()->first()?->allowsPostRaceTimePenalties() ?? true);
+            @endphp
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0" style="font-size:.82rem">
                     <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
@@ -1298,7 +1303,7 @@
                             <th class="fw-bold text-uppercase ps-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:50px">Pos</th>
                             <th class="fw-bold text-uppercase" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af">Driver</th>
                             <th class="fw-bold text-uppercase text-center" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:90px">Status</th>
-                            <th class="fw-bold text-uppercase text-center" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:150px">Time Penalty</th>
+                            <th class="fw-bold text-uppercase text-center" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:150px" @unless($timePenaltiesAllowed) title="Off for this championship" @endunless>Time Penalty</th>
                             <th class="fw-bold text-uppercase text-center pe-4" style="font-size:.68rem;letter-spacing:.06em;color:#9ca3af;width:140px">Actions</th>
                         </tr>
                     </thead>
@@ -1336,7 +1341,7 @@
                                 @if($result->time_penalty_ms > 0)
                                 <div class="fw-bold mb-1" style="color:#b45309;font-size:.75rem">+{{ $result->time_penalty_ms / 1000 }}s</div>
                                 @endif
-                                @if($result->dsq || $result->dns || $result->total_time === null)
+                                @if(! $timePenaltiesAllowed || $result->dsq || $result->dns || $result->total_time === null)
                                 <span class="text-secondary" style="font-size:.72rem">—</span>
                                 @else
                                 <form action="{{ route('admin.races.results.time-penalty', [$race, $result]) }}" method="POST" class="d-flex align-items-center justify-content-center gap-1">

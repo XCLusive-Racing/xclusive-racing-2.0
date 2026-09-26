@@ -39,7 +39,7 @@
                     <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Game</th>
                     <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:120px">Status</th>
                     <th class="fw-bold text-uppercase text-center d-none d-lg-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:110px">XCL Rating</th>
-                    <th class="fw-bold text-uppercase text-end pe-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:100px">Actions</th>
+                    <th class="fw-bold text-uppercase text-end pe-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:180px">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -68,6 +68,9 @@
                     <td class="text-end pe-4">
                         <a href="{{ route('admin.leagues.championships.wizard', [$league, $c, 'basics']) }}" class="fw-bold" style="color:#7c3aed;font-size:.8rem">
                             Edit
+                        </a>
+                        <a href="{{ route('admin.leagues.championships.entries.index', [$league, $c]) }}" class="fw-bold ms-3" style="color:#7c3aed;font-size:.8rem">
+                            Entries
                         </a>
                         @can('delete', $c)
                         <form action="{{ route('admin.leagues.championships.destroy', [$league, $c]) }}" method="POST" class="d-inline" onsubmit="return false">

@@ -27,6 +27,7 @@ class ReportProcessingTest extends TestCase
     {
         $user = User::factory()->create();
         $user->roles()->attach(Role::where('slug', 'admin')->first());
+
         return $user;
     }
 
@@ -65,10 +66,10 @@ class ReportProcessingTest extends TestCase
 
     public function test_a_report_on_a_race_with_no_championship_still_mutates_rating_unconditionally(): void
     {
-        $admin        = $this->makeAdmin();
-        $race         = Race::create(['title' => 'T', 'track' => 'Monza', 'game' => 'acc', 'status' => 'finished', 'scheduled_at' => now()]);
+        $admin = $this->makeAdmin();
+        $race = Race::create(['title' => 'T', 'track' => 'Monza', 'game' => 'acc', 'status' => 'finished', 'scheduled_at' => now()]);
         $reportedUser = User::factory()->create(['elo_acc' => 1500, 'sr_acc' => 5.00]);
-        $report       = $this->makeReport($race, $reportedUser);
+        $report = $this->makeReport($race, $reportedUser);
 
         $this->actingAs($admin)->post(route('admin.reports.process', $report))->assertRedirect();
 
@@ -79,14 +80,16 @@ class ReportProcessingTest extends TestCase
         $this->assertDatabaseCount('championship_penalties', 0);
     }
 
-    public function test_xcls_native_championship_also_mutates_rating_unconditionally(): void
+    // A legacy native championship (the old admin form never writes `settings`).
+    public function test_native_championship_also_mutates_rating_unconditionally(): void
     {
-        $admin        = $this->makeAdmin();
-        $xcl          = League::system();
-        $championship = $this->makeChampionship($xcl);
-        $race         = Race::create(['title' => 'T', 'track' => 'Monza', 'game' => 'acc', 'status' => 'finished', 'scheduled_at' => now(), 'championship_id' => $championship->id]);
+        $admin = $this->makeAdmin();
+        $championship = Championship::create([
+            'league_id' => League::system()->id, 'name' => 'Native Cup', 'game' => 'acc', 'season' => 2026, 'status' => 'active',
+        ]);
+        $race = Race::create(['title' => 'T', 'track' => 'Monza', 'game' => 'acc', 'status' => 'finished', 'scheduled_at' => now(), 'championship_id' => $championship->id]);
         $reportedUser = User::factory()->create(['elo_acc' => 1500]);
-        $report       = $this->makeReport($race, $reportedUser);
+        $report = $this->makeReport($race, $reportedUser);
 
         $this->actingAs($admin)->post(route('admin.reports.process', $report))->assertRedirect();
 
@@ -96,12 +99,12 @@ class ReportProcessingTest extends TestCase
 
     public function test_league_championship_with_affects_none_changes_neither_rating_nor_points(): void
     {
-        $admin        = $this->makeAdmin();
-        $league       = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league); // affects defaults to 'none'
-        $race         = Race::create(['title' => 'T', 'track' => 'Monza', 'game' => 'acc', 'status' => 'finished', 'scheduled_at' => now(), 'championship_id' => $championship->id]);
+        $race = Race::create(['title' => 'T', 'track' => 'Monza', 'game' => 'acc', 'status' => 'finished', 'scheduled_at' => now(), 'championship_id' => $championship->id]);
         $reportedUser = User::factory()->create(['elo_acc' => 1500]);
-        $report       = $this->makeReport($race, $reportedUser);
+        $report = $this->makeReport($race, $reportedUser);
 
         $this->actingAs($admin)->post(route('admin.reports.process', $report))->assertRedirect();
 
@@ -112,15 +115,15 @@ class ReportProcessingTest extends TestCase
 
     public function test_league_championship_with_affects_rating_but_not_xcl_approved_does_not_touch_rating(): void
     {
-        $admin        = $this->makeAdmin();
-        $league       = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $championship->settings = array_replace_recursive($championship->settings->toArray(), ['penalties' => ['affects' => 'rating']]);
+        $championship->settings = array_replace_recursive($championship->settings->toArray(), ['penalties' => ['stewarding_enabled' => true, 'affects' => 'rating']]);
         $championship->save(); // xcl_rating_enabled stays false — never touched via mass assignment
 
-        $race         = Race::create(['title' => 'T', 'track' => 'Monza', 'game' => 'acc', 'status' => 'finished', 'scheduled_at' => now(), 'championship_id' => $championship->id]);
+        $race = Race::create(['title' => 'T', 'track' => 'Monza', 'game' => 'acc', 'status' => 'finished', 'scheduled_at' => now(), 'championship_id' => $championship->id]);
         $reportedUser = User::factory()->create(['elo_acc' => 1500]);
-        $report       = $this->makeReport($race, $reportedUser);
+        $report = $this->makeReport($race, $reportedUser);
 
         $this->actingAs($admin)->post(route('admin.reports.process', $report))->assertRedirect();
 
@@ -129,16 +132,16 @@ class ReportProcessingTest extends TestCase
 
     public function test_league_championship_with_affects_rating_and_xcl_approved_applies_rating(): void
     {
-        $admin        = $this->makeAdmin();
-        $league       = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $championship->settings = array_replace_recursive($championship->settings->toArray(), ['penalties' => ['affects' => 'rating']]);
+        $championship->settings = array_replace_recursive($championship->settings->toArray(), ['penalties' => ['stewarding_enabled' => true, 'affects' => 'rating']]);
         $championship->save();
         $championship->approveXclRating($admin);
 
-        $race         = Race::create(['title' => 'T', 'track' => 'Monza', 'game' => 'acc', 'status' => 'finished', 'scheduled_at' => now(), 'championship_id' => $championship->id]);
+        $race = Race::create(['title' => 'T', 'track' => 'Monza', 'game' => 'acc', 'status' => 'finished', 'scheduled_at' => now(), 'championship_id' => $championship->id]);
         $reportedUser = User::factory()->create(['elo_acc' => 1500]);
-        $report       = $this->makeReport($race, $reportedUser);
+        $report = $this->makeReport($race, $reportedUser);
 
         $this->actingAs($admin)->post(route('admin.reports.process', $report))->assertRedirect();
 
@@ -148,16 +151,16 @@ class ReportProcessingTest extends TestCase
 
     public function test_league_championship_with_affects_points_creates_a_championship_penalty_and_skips_rating(): void
     {
-        $admin        = $this->makeAdmin();
-        $league       = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $championship->settings = array_replace_recursive($championship->settings->toArray(), ['penalties' => ['affects' => 'points']]);
+        $championship->settings = array_replace_recursive($championship->settings->toArray(), ['penalties' => ['stewarding_enabled' => true, 'affects' => 'points']]);
         $championship->save();
         $championship->approveXclRating($admin); // approved, but 'points' mode still shouldn't touch rating
 
-        $race         = Race::create(['title' => 'T', 'track' => 'Monza', 'game' => 'acc', 'status' => 'finished', 'scheduled_at' => now(), 'championship_id' => $championship->id]);
+        $race = Race::create(['title' => 'T', 'track' => 'Monza', 'game' => 'acc', 'status' => 'finished', 'scheduled_at' => now(), 'championship_id' => $championship->id]);
         $reportedUser = User::factory()->create(['elo_acc' => 1500]);
-        $report       = $this->makeReport($race, $reportedUser);
+        $report = $this->makeReport($race, $reportedUser);
 
         $this->actingAs($admin)->post(route('admin.reports.process', $report))->assertRedirect();
 
@@ -169,16 +172,16 @@ class ReportProcessingTest extends TestCase
 
     public function test_league_championship_with_affects_both_applies_rating_and_creates_a_penalty(): void
     {
-        $admin        = $this->makeAdmin();
-        $league       = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $championship->settings = array_replace_recursive($championship->settings->toArray(), ['penalties' => ['affects' => 'both']]);
+        $championship->settings = array_replace_recursive($championship->settings->toArray(), ['penalties' => ['stewarding_enabled' => true, 'affects' => 'both']]);
         $championship->save();
         $championship->approveXclRating($admin);
 
-        $race         = Race::create(['title' => 'T', 'track' => 'Monza', 'game' => 'acc', 'status' => 'finished', 'scheduled_at' => now(), 'championship_id' => $championship->id]);
+        $race = Race::create(['title' => 'T', 'track' => 'Monza', 'game' => 'acc', 'status' => 'finished', 'scheduled_at' => now(), 'championship_id' => $championship->id]);
         $reportedUser = User::factory()->create(['elo_acc' => 1500]);
-        $report       = $this->makeReport($race, $reportedUser);
+        $report = $this->makeReport($race, $reportedUser);
 
         $this->actingAs($admin)->post(route('admin.reports.process', $report))->assertRedirect();
 

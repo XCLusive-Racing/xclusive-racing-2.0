@@ -4,6 +4,14 @@
 @section('page-title', $league->name . ' — ' . $championship->name)
 
 @section('page-actions')
+    @php $pendingEntries = $championship->registrations()->whereNull('approved_at')->count(); @endphp
+    <a href="{{ route('admin.leagues.championships.entries.index', [$league, $championship]) }}"
+       class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.78rem">
+        Entries
+        @if($pendingEntries > 0)
+        <span class="badge ms-1" style="background:#f59e0b;color:#fff;font-size:.65rem">{{ $pendingEntries }} pending</span>
+        @endif
+    </a>
     <a href="{{ route('championships.show', $championship) }}" target="_blank" rel="noopener"
        class="btn btn-sm fw-black text-uppercase text-white" style="font-size:.78rem;background:#7c3aed">
         Preview Championship →

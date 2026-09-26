@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Bop;
 use App\Models\Championship;
 use App\Models\FtpServer;
-use App\Models\League;
 use App\Models\Race;
 use App\Models\User;
 use App\Services\Contracts\ServerConfigGenerator;
@@ -483,7 +482,7 @@ class AccServerConfigService implements ServerConfigGenerator
 
         $championship = Championship::withoutTenantScope()->find($race->championship_id);
 
-        if (! $championship || $championship->league_id === League::system()->id) {
+        if (! $championship || ! $championship->usesSettings()) {
             return null;
         }
 
@@ -508,6 +507,14 @@ class AccServerConfigService implements ServerConfigGenerator
         // Format explicitly uses a short formation lap for all tracks.
         if (strtolower(trim($formationType)) === 'short') {
             return 1;
+        }
+
+        // A championship round follows its Sessions-step Formation Lap setting.
+        if ($race->championship_id) {
+            $championship = Championship::withoutTenantScope()->find($race->championship_id);
+            if ($championship?->usesSettings() && ($championship->settings->sessions->formation_lap_type ?? 'full') === 'short') {
+                return 1;
+            }
         }
 
         // Nordschleife always gets short regardless of format — a full lap takes too long.

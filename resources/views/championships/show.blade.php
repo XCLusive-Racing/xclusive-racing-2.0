@@ -374,7 +374,9 @@
                                 })
                                 ->first();
                         @endphp
-                        @if($championship->isRegistrationWaitlisted(auth()->user()))
+                        @if($ownRegistration?->isPending())
+                        <p class="fw-bold mb-3" style="color:#f59e0b;font-size:.875rem">Your entry is waiting for approval by the league.</p>
+                        @elseif($championship->isRegistrationWaitlisted(auth()->user()))
                         <p class="fw-bold mb-3" style="color:#f59e0b;font-size:.875rem">You are on the waiting list for this championship.</p>
                         @else
                         <p class="text-white fw-bold mb-3" style="font-size:.875rem">

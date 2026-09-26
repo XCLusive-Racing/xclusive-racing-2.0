@@ -52,7 +52,7 @@ class ChampionshipFixedWeatherDefaultsTest extends TestCase
 
     public function test_a_league_championships_fixed_weather_settings_flow_into_the_pushed_config(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league, [
             'weather_mode' => 'fixed', 'ambient_temp' => 18, 'track_temp' => 24, 'cloud_level' => 0.4, 'rain_level' => 0.15,
         ]);
@@ -68,7 +68,7 @@ class ChampionshipFixedWeatherDefaultsTest extends TestCase
 
     public function test_a_round_with_its_own_ambient_temp_overrides_the_championships_fixed_default(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league, ['weather_mode' => 'fixed', 'ambient_temp' => 18, 'track_temp' => 24]);
         $round = $this->makeRound($championship, ['ambient_temp' => 30]);
 
@@ -82,7 +82,7 @@ class ChampionshipFixedWeatherDefaultsTest extends TestCase
 
     public function test_randomised_weather_mode_does_not_apply_the_fixed_defaults(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league, ['weather_mode' => 'randomised', 'track_temp' => 24, 'cloud_level' => 0.4]);
         $round = $this->makeRound($championship);
 
@@ -92,15 +92,39 @@ class ChampionshipFixedWeatherDefaultsTest extends TestCase
         $this->assertSame(-1, $config['trackTemp']);
     }
 
-    public function test_xcls_native_championship_is_unaffected(): void
+    // A legacy native championship (the old admin form never writes `settings`).
+    public function test_native_championship_is_unaffected(): void
     {
-        $xcl = League::system();
-        $championship = $this->makeChampionship($xcl, ['weather_mode' => 'fixed', 'track_temp' => 24]);
+        $championship = Championship::create([
+            'league_id' => League::system()->id, 'name' => 'Native Cup', 'game' => 'acc', 'season' => 2026, 'status' => 'active',
+        ]);
         $round = $this->makeRound($championship);
 
         $config = app(AccServerConfigService::class)->configuration($round);
 
         $this->assertSame(-1, $config['trackTemp']);
+    }
+
+    public function test_xcls_own_wizard_championship_uses_its_fixed_weather(): void
+    {
+        $championship = $this->makeChampionship(League::system(), ['weather_mode' => 'fixed', 'track_temp' => 24]);
+        $round = $this->makeRound($championship);
+
+        $config = app(AccServerConfigService::class)->configuration($round);
+
+        $this->assertSame(24, $config['trackTemp']);
+    }
+
+    public function test_a_short_formation_lap_reaches_the_server_config(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $short = $this->makeRound($this->makeChampionship($league, ['formation_lap_type' => 'short']));
+        $full = $this->makeRound($this->makeChampionship($league, ['formation_lap_type' => 'full']));
+
+        $service = app(AccServerConfigService::class);
+
+        $this->assertSame(1, $service->settings($short)['shortFormationLap']);
+        $this->assertSame(0, $service->settings($full)['shortFormationLap']);
     }
 
     public function test_a_round_with_no_championship_at_all_is_unaffected(): void
