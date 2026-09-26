@@ -521,6 +521,7 @@ class Championship extends Model
         $bonusPole = $scheme?->pole_points ?? $this->bonus_pole;
         $bonusLead = $scheme?->leading_lap_points ?? 0;
         $dropRounds = $scheme ? (int) ($this->settings->scoring->drop_rounds ?? 0) : $this->drop_rounds;
+        $scaleByLength = (bool) ($this->settings->scoring->points_scale_with_length ?? false);
 
         // A league-owned championship reads its missed-rounds rule from settings;
         // XCL's own native championships keep the legacy flat columns. Neither was
@@ -578,6 +579,7 @@ class Championship extends Model
                 // never changes what a classified finisher scores.
                 $classifiedCount = $raceResults->where('dnf', false)->count();
                 $cutoff = $scheme ? $scheme->scoringCutoffFor($classifiedCount) : null;
+                $lengthFactor = $scaleByLength ? $this->lengthFactor($race, (int) $raceNumber) : 1.0;
 
                 foreach ($raceResults as $result) {
                     $userId = $result->user_id;
@@ -599,6 +601,9 @@ class Championship extends Model
                             }
                         } elseif (isset($pointsSystem[$pos - 1])) {
                             $pts = (int) $pointsSystem[$pos - 1];
+                        }
+                        if ($lengthFactor !== 1.0) {
+                            $pts = round($pts * $lengthFactor, 2);
                         }
                     }
                     if ($result->fastest_lap) {
@@ -675,5 +680,14 @@ class Championship extends Model
         usort($driverData, fn ($a, $b) => $b['total_points'] <=> $a['total_points']);
 
         return $driverData;
+    }
+
+    // Race $raceNumber's length against a 60-minute race (30 min = 0.5, 90 = 1.5).
+    // A race with no known length scores normally rather than guessing one.
+    private function lengthFactor(Race $race, int $raceNumber): float
+    {
+        $minutes = (int) ($race->race_durations[$raceNumber - 1] ?? $race->race_duration ?? 0);
+
+        return $minutes > 0 ? $minutes / 60 : 1.0;
     }
 }

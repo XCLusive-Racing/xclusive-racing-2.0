@@ -16,7 +16,7 @@ use Illuminate\Support\Arr;
 // defaults for new keys) once this class gains fields for a new version.
 class ChampionshipSettingsSchema
 {
-    const CURRENT_VERSION = 10;
+    const CURRENT_VERSION = 11;
 
     const STEPS = [
         'basics' => 'Basics',
@@ -206,6 +206,10 @@ class ChampionshipSettingsSchema
             // a flat yes/no toggle couldn't carry an actual point value anyway.
             ['group' => 'scoring', 'key' => 'team_points_enabled', 'type' => 'boolean', 'default' => false,
                 'label' => 'Separate Team Points', 'help' => 'Score teams independently of individual drivers.'],
+            // v11 (league feedback 2026-09): finishing points scale with race length
+            // against a 60-minute race — 30 min = ×0.5, 90 min = ×1.5.
+            ['group' => 'scoring', 'key' => 'points_scale_with_length', 'type' => 'boolean', 'default' => false,
+                'label' => 'Scale Points by Race Length', 'help' => 'Finishing points are multiplied by race length ÷ 60 minutes: a 60-minute race scores the normal points, a 30-minute sprint half, a 90-minute race 1.5×. Bonus points (fastest lap, pole, leading a lap) are not scaled.'],
 
             // Mirrors the legacy native-championship form's "Rounds Allowed to
             // Miss" / "If limit exceeded" fields exactly
