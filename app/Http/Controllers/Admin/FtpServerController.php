@@ -9,6 +9,7 @@ use App\Models\Race;
 use App\Services\AuditLogger;
 use App\Services\Contracts\ServerConfigGenerator;
 use App\Services\FtpService;
+use App\Services\ServerStatusService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +24,17 @@ class FtpServerController extends Controller
         $servers = FtpServer::where('league_id', League::system()->id)->orderBy('name')->get();
 
         return view('admin.servers.index', compact('servers'));
+    }
+
+    // Every server's last push, next race, last result import and practice at a
+    // glance, with the ones that need a look first (ServerStatusService).
+    public function status(ServerStatusService $status)
+    {
+        $rows = $status->rows()->sortBy(fn (array $row) => [
+            ServerStatusService::HEALTH_WARNING => 0, ServerStatusService::HEALTH_OK => 1, ServerStatusService::HEALTH_INACTIVE => 2,
+        ][$row['health']])->values();
+
+        return view('admin.servers.status', compact('rows'));
     }
 
     public function schedule()
