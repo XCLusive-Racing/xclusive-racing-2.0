@@ -330,12 +330,18 @@
                 @if($successBallast->isNotEmpty())
                 <div class="xcl-event-card mb-4">
                     <h3 class="xcl-event-card__heading">SUCCESS BALLAST</h3>
-                    <p class="xcl-event-card__text mb-2" style="font-size:.78rem">Earned in the previous round — carried in this round only.</p>
+                    <p class="xcl-event-card__text mb-2" style="font-size:.78rem">
+                        @if($successBallastMode === 'cumulative')
+                        Built up over the season so far — on top of the normal BOP.
+                        @else
+                        From each driver's last round raced — on top of the normal BOP.
+                        @endif
+                    </p>
                     <div class="xcl-event-reqs">
                         @foreach($successBallast as $row)
                         <div class="xcl-event-req-row">
                             <span class="xcl-event-req-label">{{ $row['user']->displayName() }}</span>
-                            <span class="xcl-event-req-value" style="font-weight:700;color:#e5e7eb">{{ $row['kg'] }} kg</span>
+                            <span class="xcl-event-req-value" style="font-weight:700;color:#e5e7eb">{{ $row['kg'] > 0 ? '+' : '' }}{{ $row['kg'] }} kg</span>
                         </div>
                         @endforeach
                     </div>

@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\AccCarCatalog;
 use App\Services\ChampionshipTeamEntryService;
 use App\Services\DiscordRoleService;
+use App\Services\EntryBalanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -92,8 +93,9 @@ class ChampionshipController extends Controller
         $classStandings = $championship->computeClassStandings();
         $teamStandings = $championship->computeTeamStandings();
         $teamChampionship = $championship->computeTeamChampionship();
+        $ballastChart = app(EntryBalanceService::class)->chart($championship);
 
-        return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'teamStandings', 'teamChampionship'));
+        return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'teamStandings', 'teamChampionship', 'ballastChart'));
     }
 
     public function register(Request $request, int $championship)
@@ -429,7 +431,12 @@ class ChampionshipController extends Controller
             $registrations->whereKey(request()->integer('registration_id'));
         }
 
-        $registrations->delete();
+        DB::transaction(function () use ($registrations, $championship) {
+            foreach ($registrations->get() as $registration) {
+                app(ChampionshipTeamEntryService::class)->withdrawFromOpenRounds($registration, $championship);
+                $registration->delete();
+            }
+        });
 
         return back()->with('success', request()->filled('registration_id')
             ? 'The car has been withdrawn from the championship.'

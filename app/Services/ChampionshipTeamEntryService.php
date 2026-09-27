@@ -77,4 +77,24 @@ class ChampionshipTeamEntryService
             $this->syncRoundEntry($registration, $race);
         }
     }
+
+    // The reverse of syncRoundEntry(): a team car withdrawn from the championship
+    // leaves every round that's still open, the same way a per-round withdraw
+    // (RaceController::unregisterTeam()) does. Rounds the car already left on its
+    // own have nothing left to delete, so this is safe to run again.
+    public function withdrawFromOpenRounds(ChampionshipRegistration $registration, Championship $championship): void
+    {
+        if (! $registration->racing_team_id || $registration->car_number === null) {
+            return;
+        }
+
+        RaceTeamEntry::where('racing_team_id', $registration->racing_team_id)
+            ->where('car_number', $registration->car_number)
+            ->whereIn('race_id', $championship->rounds()->reorder()->where('status', 'open')->select('races.id'))
+            ->get()
+            ->each(function (RaceTeamEntry $entry) {
+                $entry->registrations()->delete();
+                $entry->delete();
+            });
+    }
 }

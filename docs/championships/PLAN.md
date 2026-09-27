@@ -11,6 +11,30 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-27 — withdraw 405 fixed, Success Ballast reworked (settings v14).**
+  - Withdraw: a team that could still add a car got its car list (with the
+    Withdraw forms) rendered *inside* the "Add Car" register form; the browser
+    drops a nested `<form>`, so Withdraw sent `_method=DELETE` to
+    `championships/{id}/register` → 405 (live on championship 30). The list now
+    renders before the form. Withdrawing a "championship"-scope team car also
+    takes it out of every still-open round
+    (`ChampionshipTeamEntryService::withdrawFromOpenRounds()`) — before, its
+    auto-created round entries stayed on the entrylists. Idempotent; tests in
+    `ChampionshipWithdrawTest`.
+  - Success ballast (`EntryBalanceService`, Sunday League feedback): mode
+    `next_round` (default, existing championships) or `cumulative`; negative
+    per-position values; the last value covers every position after it; cap
+    (default and max 40 kg — ACC's range is ±40, same as our bop.json);
+    "Allow below 0" floor down to -40; minimum laps (default 1) — fewer laps or
+    a missed round leaves ballast unchanged; multi-race rounds use the best
+    result that meets the lap minimum, once; starting ballast per round
+    (cumulative, default "2, 3, … 11") keyed on a driver's first actual race.
+    Nothing is stored: `history()` recalculates from results every time, so
+    edited/re-imported results flow through automatically. DSQ counts as no
+    classified result (unchanged). Tracked per driver (ranked within class).
+    Ballast Record SVG chart under the public standings (`_ballast-chart`).
+    No live championship had success ballast on, so the changed "last value
+    covers the rest" rule affected no existing data.
 - **2026-09-26 — championship section review + clean-up.**
   - `Championship::usesSettings()` (stored `settings` column not null) replaces
     every "league = XCL means native" check: XCL's own wizard championships

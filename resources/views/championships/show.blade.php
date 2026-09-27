@@ -234,6 +234,10 @@
                 </div>
                 @endforeach
 
+                @if($ballastChart)
+                @include('championships._ballast-chart')
+                @endif
+
                 </div>{{-- /standings panel --}}
 
                 {{-- Rounds --}}
@@ -436,12 +440,17 @@
                             Ask yours to register your team, or <a href="{{ route('racing-teams.index') }}" style="color:#e5e7eb;text-decoration:underline">create a team</a>.
                         </p>
                         @elseif(!$driverFull)
+                        {{-- Outside the register form: the cars' Withdraw forms can't be
+                             nested in it — a browser drops a nested <form>, so its DELETE
+                             would submit to the register route instead. --}}
+                        @if($driverSwaps && $myTeamCars->isNotEmpty())
+                        @include('championships._team-cars')
+                        @endif
                         <form method="POST" action="{{ route('championships.register', $championship) }}">
                             @csrf
                             @if($driverSwaps)
                             <input type="hidden" name="racing_team_id" value="{{ $ownedTeam->id }}">
                             @if($myTeamCars->isNotEmpty())
-                            @include('championships._team-cars')
                             <p class="fw-black text-uppercase mb-2 mt-3" style="color:#9ca3af;font-size:.72rem;letter-spacing:.06em">Add another car</p>
                             @else
                             <p class="text-white mb-2" style="font-size:.82rem">

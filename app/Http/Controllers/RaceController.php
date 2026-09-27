@@ -126,6 +126,9 @@ class RaceController extends Controller
             ->map(fn (User $user) => ['user' => $user, 'kg' => $ballastByUser[$user->id]])
             ->sortByDesc('kg')
             ->values();
+        $successBallastMode = $race->championship_id
+            ? ($race->championship()->withoutTenantScope()->first()?->settings->balance->success_ballast_mode ?? 'next_round')
+            : null;
 
         $platformIds = $race->registrations->pluck('user.platform_id')->filter()->values()->all();
         $driverMap = Driver::whereIn('xuid_psid', $platformIds)
@@ -134,7 +137,7 @@ class RaceController extends Controller
 
         return view('race.show', compact(
             'race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries',
-            'isTeamRace', 'isChampionshipTeamRound', 'championshipTeamScope', 'championshipTeamRegistration', 'preselectedDriverIds', 'successBallast',
+            'isTeamRace', 'isChampionshipTeamRound', 'championshipTeamScope', 'championshipTeamRegistration', 'preselectedDriverIds', 'successBallast', 'successBallastMode',
             'canAddChampionshipCar'
         ));
     }
