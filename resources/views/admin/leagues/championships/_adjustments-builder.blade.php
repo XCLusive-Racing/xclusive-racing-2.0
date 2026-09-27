@@ -44,7 +44,7 @@
                 <option value="{{ $option }}" {{ ($a['target'] ?? '') === $option ? 'selected' : '' }}>{{ $option }}</option>
                 @endforeach
             </select>
-            <input type="number" placeholder="Ballast kg" value="{{ $a['ballast_kg'] ?? '' }}" data-adj-ballast class="form-control form-control-sm" style="max-width:110px">
+            <input type="number" placeholder="Ballast kg" value="{{ $a['ballast_kg'] ?? '' }}" data-adj-ballast min="-40" max="40" class="form-control form-control-sm" style="max-width:110px">
             <input type="number" placeholder="Restrictor %" value="{{ $a['restrictor_percent'] ?? '' }}" data-adj-restrictor class="form-control form-control-sm" style="max-width:120px">
             <button type="button" class="btn btn-sm btn-outline-secondary" data-remove-adjustment>×</button>
         </div>
@@ -93,7 +93,7 @@
                 '<option value="car">Car</option><option value="driver">Driver/Team</option>' +
             '</select>' +
             '<select data-adj-target class="form-select form-select-sm"></select>' +
-            '<input type="number" placeholder="Ballast kg" data-adj-ballast class="form-control form-control-sm" style="max-width:110px">' +
+            '<input type="number" placeholder="Ballast kg" data-adj-ballast min="-40" max="40" class="form-control form-control-sm" style="max-width:110px">' +
             '<input type="number" placeholder="Restrictor %" data-adj-restrictor class="form-control form-control-sm" style="max-width:120px">' +
             '<button type="button" class="btn btn-sm btn-outline-secondary" data-remove-adjustment>×</button>';
         rows.appendChild(row);

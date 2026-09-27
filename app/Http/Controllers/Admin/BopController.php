@@ -7,6 +7,7 @@ use App\Models\Bop;
 use App\Models\FtpServer;
 use App\Services\AccCarCatalog;
 use App\Services\AccServerConfigService;
+use App\Services\EntryBalanceService;
 use App\Services\FtpService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -36,7 +37,7 @@ class BopController extends Controller
             'game' => 'required|in:acc,lmu,iracing,ac',
             'car_model' => ['required', 'string', 'max:100', ...$this->carModelRules($request)],
             'track' => 'nullable|string|max:100',
-            'ballast_kg' => 'required|integer|min:-100|max:200',
+            'ballast_kg' => 'required|integer|min:-40|max:40',
             'restrictor' => 'required|integer|min:0|max:20',
             'notes' => 'nullable|string|max:500',
         ]);
@@ -81,7 +82,7 @@ class BopController extends Controller
             'game' => 'required|in:acc,lmu,iracing,ac',
             'car_model' => ['required', 'string', 'max:100', ...$this->carModelRules($request)],
             'track' => 'nullable|string|max:100',
-            'ballast_kg' => 'required|integer|min:-100|max:200',
+            'ballast_kg' => 'required|integer|min:-40|max:40',
             'restrictor' => 'required|integer|min:0|max:20',
             'notes' => 'nullable|string|max:500',
         ]);
@@ -232,7 +233,7 @@ class BopController extends Controller
                 'game' => $game,
                 'car_model' => $carModel,
                 'track' => ($entry['track'] ?? null) ?: null,
-                'ballast_kg' => (int) ($entry['ballast_kg'] ?? $entry['ballastKg'] ?? 0),
+                'ballast_kg' => max(EntryBalanceService::MIN_BALLAST_KG, min(EntryBalanceService::MAX_BALLAST_KG, (int) ($entry['ballast_kg'] ?? $entry['ballastKg'] ?? 0))),
                 'restrictor' => (int) ($entry['restrictor'] ?? 0),
                 'notes' => ($entry['notes'] ?? null) ?: null,
                 'created_at' => $now,

@@ -18,6 +18,9 @@ class ChampionshipSettingsSchema
 {
     const CURRENT_VERSION = 14;
 
+    // A comma-separated list of whole kg values, each -40..40 (ACC's BOP range).
+    const KG_LIST_RULE = 'regex:/^\s*-?(40|[1-3]?\d)(\s*,\s*-?(40|[1-3]?\d))*\s*$/';
+
     const STEPS = [
         'basics' => 'Basics',
         'sessions' => 'Sessions',
@@ -287,26 +290,25 @@ class ChampionshipSettingsSchema
             // (EntryBalanceService), ranked per class when multiclass.
             // v14 (Sunday League feedback, 2026-09-27): negative values, the last
             // value covering every position after it, a cumulative season mode,
-            // a cap, an optional floor below 0, a minimum-laps rule and a
-            // starting-ballast table for mid-season joiners.
+            // a cap, a minimum-laps rule and a starting-ballast table for
+            // mid-season joiners. Every kg value stays within ACC's BOP range,
+            // -40..+40 — below 0 is always allowed, no toggle (user-directed).
             ['group' => 'balance', 'key' => 'success_ballast_enabled', 'type' => 'boolean', 'default' => false,
                 'label' => 'Success Ballast', 'help' => 'Cars carry ballast based on where they finished, on top of the normal BOP.'],
             ['group' => 'balance', 'key' => 'success_ballast_mode', 'type' => 'enum', 'options' => ['next_round', 'cumulative'], 'default' => 'next_round', 'depends_on' => 'success_ballast_enabled',
                 'label' => 'Ballast Mode', 'help' => 'Next round: the ballast only comes from the previous round a driver raced. Cumulative: each round adds to (or takes from) the ballast built up over the season.'],
             ['group' => 'balance', 'key' => 'success_ballast_kg', 'type' => 'string', 'nullable' => true, 'default' => null, 'depends_on' => 'success_ballast_enabled',
-                'label' => 'Ballast per Position (kg)', 'help' => 'Comma-separated, P1 first; negative values take weight off. The last value counts for every position after it — "5, 3, 2, 1, 0, -1, -2" gives P7 and lower -2 kg. With multiple races in a round, a driver\'s best result of the round counts, once. Per class in multiclass.',
-                'rule' => ['nullable', 'string', 'max:255', 'regex:/^\s*-?\d{1,2}(\s*,\s*-?\d{1,2})*\s*$/']],
+                'label' => 'Ballast per Position (kg)', 'help' => 'Comma-separated, P1 first, each between -40 and 40; negative values take weight off. The last value counts for every position after it — "5, 3, 2, 1, 0, -1, -2" gives P7 and lower -2 kg. With multiple races in a round, a driver\'s best result of the round counts, once. Per class in multiclass.',
+                'rule' => ['nullable', 'string', 'max:255', self::KG_LIST_RULE]],
             ['group' => 'balance', 'key' => 'success_ballast_cap', 'type' => 'integer', 'default' => 40, 'depends_on' => 'success_ballast_enabled',
-                'label' => 'Maximum Ballast (kg)', 'help' => 'A car never carries more success ballast than this. 40 kg is ACC\'s maximum.',
+                'label' => 'Maximum Ballast (kg)', 'help' => 'A car never carries more success ballast than this. Ballast always stays between -40 and 40 kg, ACC\'s range.',
                 'rule' => ['sometimes', 'integer', 'min:0', 'max:40']],
-            ['group' => 'balance', 'key' => 'success_ballast_allow_negative', 'type' => 'boolean', 'default' => false, 'depends_on' => 'success_ballast_enabled',
-                'label' => 'Allow Ballast Below 0', 'help' => 'Off: ballast never drops below 0 kg. On: a car can go down to -40 kg (lighter than normal), ACC\'s minimum.'],
             ['group' => 'balance', 'key' => 'success_ballast_min_laps', 'type' => 'integer', 'default' => 1, 'depends_on' => 'success_ballast_enabled',
                 'label' => 'Minimum Laps', 'help' => 'A driver who completed fewer laps than this in a round (e.g. an early DNF) keeps the ballast they had — no gain, no loss. A missed round never changes it either.',
                 'rule' => ['sometimes', 'integer', 'min:0', 'max:999']],
             ['group' => 'balance', 'key' => 'success_ballast_starting', 'type' => 'string', 'nullable' => true, 'default' => '2, 3, 4, 5, 6, 7, 8, 9, 10, 11', 'depends_on' => 'success_ballast_enabled',
-                'label' => 'Starting Ballast per Round (kg)', 'help' => 'Cumulative mode only. Comma-separated, round 1 first: a driver starts with the value of the round they first actually race, so a mid-season joiner doesn\'t start light. The last value counts for every round after it. Leave empty for no starting ballast.',
-                'rule' => ['nullable', 'string', 'max:255', 'regex:/^\s*-?\d{1,2}(\s*,\s*-?\d{1,2})*\s*$/']],
+                'label' => 'Starting Ballast per Round (kg)', 'help' => 'Cumulative mode only. Comma-separated, round 1 first, each between -40 and 40: a driver starts with the value of the round they first actually race, so a mid-season joiner doesn\'t start light. The last value counts for every round after it. Leave empty for no starting ballast.',
+                'rule' => ['nullable', 'string', 'max:255', self::KG_LIST_RULE]],
             ['group' => 'balance', 'key' => 'adjustments', 'type' => 'list', 'default' => [],
                 'label' => 'Ballast & Restrictor Adjustments', 'help' => 'Per-driver or per-car overrides. Stored as a growing list rather than fixed columns.'],
         ];

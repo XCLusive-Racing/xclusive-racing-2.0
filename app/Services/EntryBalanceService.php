@@ -19,7 +19,8 @@ use Illuminate\Support\Collection;
 // results is picked up by that round and every round after it.
 class EntryBalanceService
 {
-    // ACC's ballast range, the same -40..+40 our own bop.json uses.
+    // ACC's ballast range, the same -40..+40 our own bop.json uses — success
+    // ballast may always go below 0, down to the minimum.
     public const MAX_BALLAST_KG = 40;
 
     public const MIN_BALLAST_KG = -40;
@@ -75,7 +76,7 @@ class EntryBalanceService
         }
 
         return [
-            max($config['floor'] ?? 0, min(self::MAX_BALLAST_KG, $ballast)),
+            max(self::MIN_BALLAST_KG, min(self::MAX_BALLAST_KG, $ballast)),
             max(0, min(self::MAX_RESTRICTOR, $restrictor)),
         ];
     }
@@ -222,7 +223,7 @@ class EntryBalanceService
         $table = $config['table'];
         $delta = $table[min($position, count($table)) - 1];
         $raw = $config['mode'] === self::MODE_CUMULATIVE ? $before + $delta : $delta;
-        $after = max($config['floor'], min($config['cap'], $raw));
+        $after = max(self::MIN_BALLAST_KG, min($config['cap'], $raw));
 
         return [
             'round' => $round, 'before' => $before, 'position' => $position, 'delta' => $delta, 'after' => $after,
@@ -278,7 +279,7 @@ class EntryBalanceService
 
         $starting = $config['starting'];
 
-        return max($config['floor'], min($config['cap'], $starting[min($round, count($starting)) - 1]));
+        return max(self::MIN_BALLAST_KG, min($config['cap'], $starting[min($round, count($starting)) - 1]));
     }
 
     /** The championship's success-ballast settings, or null when it's off. */
@@ -297,7 +298,6 @@ class EntryBalanceService
             'mode' => $balance->success_ballast_mode ?? self::MODE_NEXT_ROUND,
             'table' => $table,
             'cap' => $cap,
-            'floor' => ($balance->success_ballast_allow_negative ?? false) ? self::MIN_BALLAST_KG : 0,
             'min_laps' => max(0, (int) ($balance->success_ballast_min_laps ?? 1)),
             'starting' => self::parseTable($balance->success_ballast_starting ?? null),
         ];

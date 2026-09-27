@@ -62,7 +62,7 @@
                    value="{{ old('ballast_kg', $bop?->ballast_kg ?? 0) }}"
                    class="form-control @error('ballast_kg') is-invalid @enderror"
                    style="font-size:.85rem"
-                   min="-100" max="200">
+                   min="-40" max="40">
             @error('ballast_kg')<div class="invalid-feedback">{{ $message }}</div>@enderror
             <div class="mt-2 fw-black" style="font-size:1.1rem" data-ballast-display></div>
         </div>

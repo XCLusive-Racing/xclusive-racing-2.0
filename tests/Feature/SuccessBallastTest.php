@@ -181,29 +181,28 @@ class SuccessBallastTest extends TestCase
         $this->assertSame(20, $entry['restrictor']);
     }
 
-    public function test_cumulative_mode_builds_up_and_stops_at_the_cap_and_at_zero(): void
+    public function test_cumulative_mode_builds_up_stops_at_the_cap_and_goes_below_zero(): void
     {
         $this->cumulative(['success_ballast_cap' => 8]);
         [$winner, $loser] = $this->drivers(2);
         $field = $this->drivers(8);
 
-        // $winner wins twice (5 + 5 = 10, capped at 8); $loser is P10 then P10 (floored at 0).
+        // $winner wins twice (5 + 5 = 10, capped at 8); $loser is P10 twice (-5 - 5).
         $this->finishRound(1, [$winner, ...$field, $loser]);
         $this->finishRound(2, [$winner, ...$field, $loser]);
 
         $this->assertSame(8, $this->ballastInto(3, $winner));
-        $this->assertSame(0, $this->ballastInto(3, $loser));
+        $this->assertSame(-10, $this->ballastInto(3, $loser));
         // $field[0] was P2 twice: 3 + 3.
         $this->assertSame(6, $this->ballastInto(3, $field[0]));
 
         $history = app(EntryBalanceService::class)->history($this->championship);
         $this->assertSame(EntryBalanceService::REASON_CAPPED, $history[$winner->id][1]['reason']);
-        $this->assertSame(EntryBalanceService::REASON_FLOORED, $history[$loser->id][0]['reason']);
     }
 
-    public function test_cumulative_mode_can_go_below_zero_when_allowed(): void
+    public function test_ballast_never_goes_below_acc_minimum_of_minus_40(): void
     {
-        $this->cumulative(['success_ballast_allow_negative' => true]);
+        $this->cumulative();
         [$loser] = $this->drivers(1);
         $field = $this->drivers(9);
 
@@ -213,6 +212,8 @@ class SuccessBallastTest extends TestCase
 
         // 9 × -5 = -45, stopped at ACC's -40.
         $this->assertSame(-40, $this->ballastInto(10, $loser));
+        $history = app(EntryBalanceService::class)->history($this->championship);
+        $this->assertSame(EntryBalanceService::REASON_FLOORED, end($history[$loser->id])['reason']);
 
         $round10 = $this->makeRound(10);
         RaceRegistration::create(['race_id' => $round10->id, 'user_id' => $loser->id]);
@@ -323,15 +324,16 @@ class SuccessBallastTest extends TestCase
 
         $this->actingAs($manager->refresh())
             ->put($url, ['settings' => ['balance' => [
-                'success_ballast_enabled' => 1, 'success_ballast_kg' => 'lots', 'success_ballast_cap' => 50,
+                'success_ballast_enabled' => 1, 'success_ballast_kg' => '5, 41', 'success_ballast_cap' => 50,
+                'success_ballast_starting' => '-45',
             ]]])
-            ->assertSessionHasErrors(['settings.balance.success_ballast_kg', 'settings.balance.success_ballast_cap']);
+            ->assertSessionHasErrors(['settings.balance.success_ballast_kg', 'settings.balance.success_ballast_cap', 'settings.balance.success_ballast_starting']);
 
         $this->actingAs($manager)
             ->put($url, ['settings' => ['penalties' => ['affects' => 'none'], 'balance' => [
                 'success_ballast_enabled' => 1, 'success_ballast_mode' => 'cumulative',
-                'success_ballast_kg' => '5, 3, -1, -5', 'success_ballast_cap' => 30,
-                'success_ballast_allow_negative' => 1, 'success_ballast_min_laps' => 3,
+                'success_ballast_kg' => '40, 3, -1, -40', 'success_ballast_cap' => 30,
+                'success_ballast_min_laps' => 3,
                 'success_ballast_starting' => '2, 3, 4',
             ]]])
             ->assertSessionHasNoErrors();
@@ -339,9 +341,8 @@ class SuccessBallastTest extends TestCase
         $balance = $this->championship->fresh()->settings->balance;
         $this->assertTrue($balance->success_ballast_enabled);
         $this->assertSame('cumulative', $balance->success_ballast_mode);
-        $this->assertSame('5, 3, -1, -5', $balance->success_ballast_kg);
+        $this->assertSame('40, 3, -1, -40', $balance->success_ballast_kg);
         $this->assertEquals(30, $balance->success_ballast_cap);
-        $this->assertTrue((bool) $balance->success_ballast_allow_negative);
         $this->assertEquals(3, $balance->success_ballast_min_laps);
         $this->assertSame('2, 3, 4', $balance->success_ballast_starting);
     }

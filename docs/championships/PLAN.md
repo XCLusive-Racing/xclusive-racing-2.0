@@ -24,8 +24,9 @@ up without re-deriving context.
   - Success ballast (`EntryBalanceService`, Sunday League feedback): mode
     `next_round` (default, existing championships) or `cumulative`; negative
     per-position values; the last value covers every position after it; cap
-    (default and max 40 kg — ACC's range is ±40, same as our bop.json);
-    "Allow below 0" floor down to -40; minimum laps (default 1) — fewer laps or
+    (default and max 40 kg); every kg value is -40..+40, ACC's BOP range —
+    ballast may always go below 0, no toggle (user-directed; BOP form/import
+    tightened from -100..200 to the same range); minimum laps (default 1) — fewer laps or
     a missed round leaves ballast unchanged; multi-race rounds use the best
     result that meets the lap minimum, once; starting ballast per round
     (cumulative, default "2, 3, … 11") keyed on a driver's first actual race.
