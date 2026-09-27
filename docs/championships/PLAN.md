@@ -11,6 +11,19 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-27 — Duplicate championship (new season).** "Duplicate" on the
+  league's Championships list → `ChampionshipWizardController::duplicateForm()/
+  duplicate()`: new name/season, a draft copy of every setting, the classes,
+  default server and media; optionally the rounds, shifted so round 1 starts on
+  the chosen date and the gaps stay the same (UK wall-clock, so DST doesn't move
+  start times), each validated through `resolveRoundRow()` — a round whose slot
+  is taken/invalid is copied without its server (reported in the flash
+  message). Not copied: registrations, results, penalties, per-driver balance
+  adjustments, registration open/close dates, XCL rating approval. Tests in
+  `ChampionshipDuplicateTest`.
+- **2026-09-27 — 24h practice server shows the round's own Q/R sessions after
+  the 24h practice and lists the approved entrants (not forced) with their
+  team name under their name** (`ChampionshipPracticeService::entryList()`).
 - **2026-09-27 — withdraw 405 fixed, Success Ballast reworked (settings v14).**
   - Withdraw: a team that could still add a car got its car list (with the
     Withdraw forms) rendered *inside* the "Add Car" register form; the browser

@@ -96,6 +96,126 @@ class ChampionshipWizardController extends Controller
         return redirect()->route('admin.leagues.championships.index', $league)->with('success', $name.' has been removed.');
     }
 
+    // Round fields a duplicated season carries over — the track, sessions and
+    // conditions; never results, push status or the date (shifted instead).
+    private const DUPLICATED_ROUND_FIELDS = [
+        'track', 'round_number', 'is_multiclass', 'is_endurance', 'practice_duration', 'qualifying_duration',
+        'race_duration', 'race_durations', 'session_format_id', 'event_format_id', 'weather', 'weather_randomness',
+        'rain_level', 'time_of_day', 'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier',
+        'race_time_multiplier', 'description', 'image', 'icon', 'xcl_r_multiplier', 'pitstop_count', 'min_stop_secs',
+        'tyre_set_count', 'driver_stint_time_mins', 'max_total_driving_time_mins', 'mandatory_driver_swap',
+        'config_overrides', 'has_practice_server', 'practice_notes', 'ftp_server_id',
+    ];
+
+    public function duplicateForm(Request $request, League $league, Championship $championship)
+    {
+        $this->assertLeagueOfInterest($league, $championship);
+        Gate::authorize('view', $championship);
+        Gate::authorize('create', [Championship::class, $league]);
+
+        $rounds = $championship->rounds()->get();
+        // Suggested start: a week after the last round, same weekday and time.
+        $suggestedStart = $rounds->isNotEmpty()
+            ? $rounds->max('scheduled_at')->copy()->tz('Europe/London')->addWeek()->format('Y-m-d\TH:i')
+            : null;
+
+        return view('admin.leagues.championships.duplicate', compact('league', 'championship', 'rounds', 'suggestedStart'));
+    }
+
+    // A new season from an existing championship: every setting, the classes and
+    // (optionally) the rounds, shifted so the first one starts on the chosen date
+    // and the gaps between them stay the same. Entries, results, penalties and
+    // the XCL rating approval start over; the copy is a draft.
+    public function duplicate(Request $request, League $league, Championship $championship)
+    {
+        $this->assertLeagueOfInterest($league, $championship);
+        Gate::authorize('view', $championship);
+        Gate::authorize('create', [Championship::class, $league]);
+
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'season' => 'required|integer|min:2000|max:2100',
+            'copy_rounds' => 'nullable|boolean',
+            'first_round_at' => 'required_if:copy_rounds,1|nullable|date_format:Y-m-d\TH:i|after:now',
+        ]);
+
+        $copyRounds = $request->boolean('copy_rounds') && $championship->rounds()->exists();
+        $roundIssues = ['without_server' => 0, 'skipped' => 0];
+
+        $copy = DB::transaction(function () use ($championship, $league, $data, $copyRounds, &$roundIssues) {
+            $settings = $championship->settings->toArray();
+            $settings['requirements']['registration_opens_at'] = null;
+            $settings['requirements']['registration_closes_at'] = null;
+            $settings['schedule']['start_date'] = $copyRounds ? substr($data['first_round_at'], 0, 10) : null;
+            // Last season's per-driver ballast/restrictor adjustments were for last season.
+            $settings['balance']['adjustments'] = [];
+
+            $copy = Championship::create(array_merge(
+                $championship->only([
+                    'tagline', 'slogan', 'game', 'platform', 'visibility', 'description', 'image', 'icon',
+                    'max_drivers', 'is_multiclass', 'car_class', 'points_system', 'bonus_fastest_lap', 'bonus_pole',
+                    'ftp_server_id',
+                ]),
+                [
+                    'league_id' => $league->id,
+                    'name' => $data['name'],
+                    'season' => $data['season'],
+                    'status' => 'draft',
+                    'registration_open' => false,
+                    'settings' => $settings,
+                ]
+            ));
+
+            foreach ($championship->classes()->get() as $class) {
+                $copy->classes()->create($class->only(['name', 'color', 'car_class', 'max_drivers', 'sr_requirement', 'min_rating', 'sort_order']));
+            }
+
+            if ($copyRounds) {
+                $roundIssues = $this->duplicateRounds($championship, $copy, $league, $data['first_round_at']);
+            }
+
+            return $copy;
+        });
+
+        AuditLogger::record($request->user(), $copy, 'championship.duplicated', ['from' => $championship->id], $league->id);
+
+        return redirect()->route('admin.leagues.championships.wizard', [$league, $copy, 'basics'])
+            ->with('success', trim($championship->name.' duplicated as a draft.'
+                .($roundIssues['without_server'] ? ' '.$roundIssues['without_server'].' '.Str::plural('round', $roundIssues['without_server']).' lost their server (slot taken or not valid) — pick one on the Rounds step.' : '')
+                .($roundIssues['skipped'] ? ' '.$roundIssues['skipped'].' '.Str::plural('round', $roundIssues['skipped']).' could not be copied (start time not on the hour or half hour).' : '')));
+    }
+
+    // Copies $from's rounds into $to, the first one on $firstRoundAt (UK time) and
+    // the rest keeping their gaps. Shifted in UK wall-clock time, so a 20:00 round
+    // stays 20:00 across a clock change. A round whose server slot is taken or not
+    // valid is still copied, without the server; one that still isn't valid (an old
+    // off-slot start time) is skipped. Returns how many of each.
+    private function duplicateRounds(Championship $from, Championship $to, League $league, string $firstRoundAt): array
+    {
+        $rounds = $from->rounds()->reorder('scheduled_at')->get();
+        $wallClock = fn (Race $race) => Carbon::parse($race->scheduled_at->copy()->tz('Europe/London')->format('Y-m-d H:i'), 'UTC');
+        $shift = $wallClock($rounds->first())->diffInMinutes(Carbon::parse($firstRoundAt, 'UTC'), false);
+
+        $claimedSlots = [];
+        $issues = ['without_server' => 0, 'skipped' => 0];
+
+        foreach ($rounds as $round) {
+            $row = $round->only(self::DUPLICATED_ROUND_FIELDS);
+            $row['scheduled_at'] = $wallClock($round)->addMinutes((int) $shift)->format('Y-m-d\TH:i');
+
+            $result = $this->resolveRoundRow($row, $to, $league, $claimedSlots);
+            if (is_string($result) && ! empty($row['ftp_server_id'])) {
+                $row['ftp_server_id'] = null;
+                $result = $this->resolveRoundRow($row, $to, $league, $claimedSlots);
+                $issues['without_server']++;
+            }
+
+            is_array($result) ? Race::create($result) : $issues['skipped']++;
+        }
+
+        return $issues;
+    }
+
     public function edit(Request $request, League $league, Championship $championship, string $step)
     {
         $this->assertLeagueOfInterest($league, $championship);

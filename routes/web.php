@@ -458,6 +458,8 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/cha
     Route::post('/{championship}/approve-rating', [ChampionshipWizardController::class, 'approveRating'])->name('approve-rating');
     Route::post('/{championship}/revoke-rating', [ChampionshipWizardController::class, 'revokeRating'])->name('revoke-rating');
     Route::delete('/{championship}', [ChampionshipWizardController::class, 'destroy'])->name('destroy');
+    Route::get('/{championship}/duplicate', [ChampionshipWizardController::class, 'duplicateForm'])->name('duplicate');
+    Route::post('/{championship}/duplicate', [ChampionshipWizardController::class, 'duplicate'])->name('duplicate.store');
     Route::get('/{championship}/entries', [ChampionshipEntryController::class, 'index'])->name('entries.index');
     Route::post('/{championship}/entries/{registration}/approve', [ChampionshipEntryController::class, 'approve'])->name('entries.approve');
     Route::delete('/{championship}/entries/{registration}', [ChampionshipEntryController::class, 'reject'])->name('entries.reject');
