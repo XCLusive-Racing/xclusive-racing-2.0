@@ -5,6 +5,7 @@ namespace App\Services\PracticeServer;
 use App\Models\Championship;
 use App\Models\FtpServer;
 use App\Models\Race;
+use App\Models\User;
 use App\Services\AccServerConfigService;
 use App\Services\FtpService;
 use Illuminate\Support\Collection;
@@ -12,7 +13,8 @@ use Illuminate\Support\Facades\Log;
 
 // A championship's 24h practice server (settings.sessions.practice_server_enabled):
 // every midnight the server its next round runs on gets one open 24-hour practice
-// session on that round's track — no entry list. Unlike the per-event practice server
+// session on that round's track, open to everyone (entrylist not forced, but the
+// entrants are listed with their team names). Unlike the per-event practice server
 // (PracticeServerSessionManager) there's no window to fit: the round's own config push
 // (gportal:push-configs, 5 minutes before the start) simply takes over the server, and
 // the next midnight after the round, "next round" is the following one.
@@ -108,13 +110,19 @@ class ChampionshipPracticeService
     public function buildFiles(Race $round, FtpServer $server): array
     {
         $event = $this->raceConfig->configuration($round, $server);
-        $event['sessions'] = [[
-            'hourOfDay' => $this->raceConfig->startHour($round->time_of_day),
-            'dayOfWeekend' => 2,
-            'timeMultiplier' => 1,
-            'sessionType' => 'P',
-            'sessionDurationMinutes' => self::SESSION_MINUTES,
-        ]];
+        // The 24h practice, followed by the round's own qualifying and race(s) so
+        // drivers see the round's format while they practise (league request) —
+        // the next midnight push restarts the practice before those ever start.
+        $event['sessions'] = [
+            [
+                'hourOfDay' => $this->raceConfig->startHour($round->time_of_day),
+                'dayOfWeekend' => 2,
+                'timeMultiplier' => 1,
+                'sessionType' => 'P',
+                'sessionDurationMinutes' => self::SESSION_MINUTES,
+            ],
+            ...array_values(array_filter($event['sessions'], fn (array $session) => $session['sessionType'] !== 'P')),
+        ];
 
         return [
             'event.json' => json_encode($event, JSON_PRETTY_PRINT),
@@ -124,9 +132,65 @@ class ChampionshipPracticeService
                 JSON_PRETTY_PRINT
             ),
             'assistrules.json' => json_encode($this->raceConfig->assistRules($server), JSON_PRETTY_PRINT),
-            // Open to everyone — and it has to be written: the previous round's forced
-            // entry list would otherwise still be on the server, locking everyone else out.
-            'entrylist.json' => json_encode(['entries' => [], 'forceEntryList' => 0], JSON_PRETTY_PRINT),
+            'entrylist.json' => json_encode($this->entryList($round), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
         ];
+    }
+
+    // The championship's entrants with their team's name under each driver's name
+    // (AccServerConfigService::entryLastName()) — a team car under its team, a solo
+    // driver under the team they're in (else their own Team / Quote). Never forced:
+    // the practice stays open to everyone, and it has to be written anyway — the
+    // previous round's forced entry list would otherwise still be on the server,
+    // locking everyone else out.
+    public function entryList(Race $round): array
+    {
+        $championship = Championship::withoutTenantScope()->find($round->championship_id);
+        $registrations = $championship
+            ? $championship->registrations()->approved()->where('is_spectator', false)
+                ->with(['user.ownedRacingTeams', 'user.racingTeams', 'user.connectedAccounts', 'racingTeam.members'])
+                ->orderBy('id')->get()
+            : collect();
+
+        $entries = [];
+        foreach ($registrations as $registration) {
+            if ($registration->racing_team_id) {
+                $team = $registration->racingTeam;
+                $users = User::with('connectedAccounts')->whereIn('id', $registration->driverIds())->get();
+                $carNumber = $registration->car_number;
+            } else {
+                $team = $registration->user?->allRacingTeams()->first();
+                $users = collect([$registration->user])->filter();
+                $carNumber = $registration->user?->car_number;
+            }
+
+            $tag = $team ? mb_substr($team->name, 0, AccServerConfigService::TEAM_TAG_MAX) : null;
+            $drivers = $users
+                ->filter(fn (User $user) => $user->playerIdFor($round->game))
+                ->map(fn (User $user) => [
+                    'firstName' => '',
+                    'lastName' => AccServerConfigService::entryLastName($user, $tag),
+                    'shortName' => mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3)),
+                    'playerID' => $user->playerIdFor($round->game),
+                    'driverCategory' => $user->ratingClass($round->game),
+                ])
+                ->values()->all();
+
+            if (! $drivers) {
+                continue;
+            }
+
+            $entries[] = [
+                'drivers' => $drivers,
+                'raceNumber' => is_numeric($carNumber) ? (int) $carNumber : null,
+                'defaultGridPosition' => -1,
+                'ballastKg' => 0,
+                'forcedCarModel' => -1,
+                'overrideDriverInfo' => 1,
+            ];
+        }
+
+        AccServerConfigService::assignUniqueRaceNumbers($entries);
+
+        return ['entries' => $entries, 'configVersion' => 1, 'forceEntryList' => 0];
     }
 }

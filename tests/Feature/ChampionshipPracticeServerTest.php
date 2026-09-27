@@ -7,6 +7,7 @@ use App\Models\FtpServer;
 use App\Models\League;
 use App\Models\LeagueUser;
 use App\Models\Race;
+use App\Models\RacingTeam;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\FtpService;
@@ -123,20 +124,49 @@ class ChampionshipPracticeServerTest extends TestCase
         $this->assertSame($soon->id, $pushes[0]['championship']->id);
     }
 
-    public function test_the_config_is_one_open_24_hour_practice_session(): void
+    public function test_the_config_is_an_open_24_hour_practice_followed_by_the_rounds_own_sessions(): void
     {
         $server = $this->makeServer();
         $round = $this->makeRound($this->makeChampionship(server: $server), 1, 'monza', '2026-10-05 20:00');
-        $round->update(['pitstop_count' => 1]);
+        $round->update(['pitstop_count' => 1, 'practice_duration' => 20, 'qualifying_duration' => 15, 'race_duration' => 40]);
 
         $files = array_map(fn ($json) => json_decode($json, true), $this->service()->buildFiles($round->fresh(), $server));
 
         $this->assertSame('monza', $files['event.json']['track']);
-        $this->assertCount(1, $files['event.json']['sessions']);
-        $this->assertSame('P', $files['event.json']['sessions'][0]['sessionType']);
-        $this->assertSame(1440, $files['event.json']['sessions'][0]['sessionDurationMinutes']);
-        $this->assertSame(['entries' => [], 'forceEntryList' => 0], $files['entrylist.json']);
+        $sessions = collect($files['event.json']['sessions']);
+        $this->assertSame(['P', 'Q', 'R'], $sessions->pluck('sessionType')->all());
+        $this->assertSame([1440, 15, 40], $sessions->pluck('sessionDurationMinutes')->all());
+        $this->assertSame(['entries' => [], 'configVersion' => 1, 'forceEntryList' => 0], $files['entrylist.json']);
         $this->assertSame(0, $files['eventrules.json']['mandatoryPitstopCount']);
+    }
+
+    public function test_the_entrylist_lists_the_entrants_under_their_team_name_without_forcing_it(): void
+    {
+        $server = $this->makeServer();
+        $championship = $this->makeChampionship(server: $server);
+        $round = $this->makeRound($championship, 1, 'monza', '2026-10-05 20:00');
+
+        $driver = fn (string $name, string $id) => User::factory()->create(['name' => $name, 'platform' => 'xbox', 'platform_id' => $id, 'team' => 'My quote']);
+        [$owner, $mate, $solo, $pending] = [$driver('Owner', 'M1'), $driver('Mate', 'M2'), $driver('Solo', 'M3'), $driver('Pending', 'M4')];
+
+        $team = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+        $team->members()->attach($mate->id);
+        RacingTeam::create(['name' => 'Solo Squad', 'tag' => 'SOL', 'owner_id' => $solo->id]);
+
+        $championship->registrations()->create(['user_id' => $owner->id, 'racing_team_id' => $team->id, 'car_number' => 7,
+            'driver_ids' => [$owner->id, $mate->id], 'approved_at' => now()]);
+        $championship->registrations()->create(['user_id' => $solo->id, 'approved_at' => now()]);
+        $championship->registrations()->create(['user_id' => $pending->id, 'approved_at' => null]);
+
+        $entrylist = $this->service()->entryList($round);
+
+        $this->assertSame(0, $entrylist['forceEntryList']);
+        $this->assertCount(2, $entrylist['entries']);
+        [$car, $soloEntry] = $entrylist['entries'];
+        $this->assertSame(7, $car['raceNumber']);
+        $this->assertSame(["Owner\nApex Racing", "Mate\nApex Racing"], array_column($car['drivers'], 'lastName'));
+        $this->assertSame(["Solo\nSolo Squad"], array_column($soloEntry['drivers'], 'lastName'));
+        $this->assertNotSame(7, $soloEntry['raceNumber']);
     }
 
     public function test_the_midnight_command_uploads_every_file_and_records_the_push(): void

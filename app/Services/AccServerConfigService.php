@@ -87,7 +87,7 @@ class AccServerConfigService implements ServerConfigGenerator
             }
         }
 
-        $this->assignUniqueRaceNumbers($entries);
+        self::assignUniqueRaceNumbers($entries);
 
         return [
             'entries' => $entries,
@@ -131,7 +131,7 @@ class AccServerConfigService implements ServerConfigGenerator
     // genuinely unique number instead: whatever a driver/team actually chose
     // is kept unless another entry already claimed it (first one in wins),
     // and anyone with no number (or a clash) gets the lowest free number.
-    private function assignUniqueRaceNumbers(array &$entries): void
+    public static function assignUniqueRaceNumbers(array &$entries): void
     {
         $claimed = [];
 
