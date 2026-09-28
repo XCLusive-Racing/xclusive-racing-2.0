@@ -11,11 +11,11 @@ return [
         'ApexHunter_77', 'LateBr4ke03', 'xDriftKing', 'NightStint', 'SamsStreamzZ',
         'Kerb_Crusher', 'GT3_Ghost', 'John2voelta', 'RedMist_R', 'llPitwallPetyll',
         'SectorPurple', 'Fullyzendsit01', 'OversteerOllie', 'TracklimitTom', 'BlueFlagBen',
-        'HotlapHenk', 'ChicoChican3', 'MaxAttack_M', 'EauRougeEd', 'VortexRacing99',
+        'HotlapHenk', 'ChicoChican3', 'Max01Ver-33', 'EauRougeEd', 'VortexRacing99',
         'TurboTimo3666', 'RainMaster_NL', 'DeltaPositive', 'UnderCutUwe', 'SundaySprinter',
-        'Paddock_Pixie', 'CarbonCorsa', 'MuleLuca', 'GripLevelZero', 'Thacarman_steve',
+        'Paddie-Pixie', 'CarbonCorsa', 'MuleLuca', 'GripLevelZero', 'Stev0car',
         'Biazed0387', 'ThijsBNL', 'MidnightMonza', 'CopseCorner', 'NordzGHsleifer',
-        'quickerquicks1956', 'SvnSevn777', 'StintKing_DK', 'GravelTrapGary', 'FlatearthNFlatout',
+        'quickerquicks1956', 'SvnSevn777', 'StintKing_DK', 'GravelTrapGary', 'FlatearthN1',
     ],
 
 ];
