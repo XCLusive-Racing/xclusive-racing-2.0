@@ -8,14 +8,14 @@ return [
     'per_real_drivers' => 4,
 
     'gamertags' => [
-        'ApexHunter_77', 'LateBrakeLarry', 'xDriftKing', 'NightStint', 'SlipstreamSam',
-        'Kerb_Crusher', 'GT3_Ghost', 'TyreWhisperer', 'RedMist_R', 'PitWallPete',
-        'SectorPurple', 'FullSendFinn', 'OversteerOllie', 'TracklimitTom', 'BlueFlagBen',
-        'HotlapHenk', 'Chicane_Charlie', 'MaxAttack_M', 'EauRougeEd', 'VortexRacing99',
-        'TurboTimo', 'RainMaster_NL', 'DeltaPositive', 'UnderCutUwe', 'SundaySprinter',
-        'Paddock_Pixie', 'CarbonCorsa', 'LockUpLuca', 'GripLevelZero', 'SafetyCarSteve',
-        'Brake_Bias_B', 'Throttle_Thijs', 'MidnightMonza', 'CopseCorner', 'Nordschleifer',
-        'QuickQuali_Q', 'Sideways_Sven', 'StintKing_DK', 'GravelTrapGary', 'FlatOut_Fabio',
+        'ApexHunter_77', 'LateBr4ke03', 'xDriftKing', 'NightStint', 'SamsStreamzZ',
+        'Kerb_Crusher', 'GT3_Ghost', 'John2voelta', 'RedMist_R', 'llPitwallPetyll',
+        'SectorPurple', 'Fullyzendsit01', 'OversteerOllie', 'TracklimitTom', 'BlueFlagBen',
+        'HotlapHenk', 'ChicoChican3', 'MaxAttack_M', 'EauRougeEd', 'VortexRacing99',
+        'TurboTimo3666', 'RainMaster_NL', 'DeltaPositive', 'UnderCutUwe', 'SundaySprinter',
+        'Paddock_Pixie', 'CarbonCorsa', 'MuleLuca', 'GripLevelZero', 'Thacarman_steve',
+        'Biazed0387', 'ThijsBNL', 'MidnightMonza', 'CopseCorner', 'NordzGHsleifer',
+        'quickerquicks1956', 'SvnSevn777', 'StintKing_DK', 'GravelTrapGary', 'FlatearthNFlatout',
     ],
 
 ];
