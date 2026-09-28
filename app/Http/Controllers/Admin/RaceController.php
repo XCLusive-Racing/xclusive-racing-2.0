@@ -61,11 +61,17 @@ class RaceController extends Controller
         $races = Race::select(['id', 'title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'duration_key', 'is_endurance', 'event_format_id'])
             ->where('is_endurance', false)
             ->whereNotNull('event_format_id')
+            ->with('eventFormat:id,name,sort_order,default_event_tag')
             ->orderBy('scheduled_at', 'asc')
             ->get();
         $races->loadCount(['registrations', 'teamEntries']);
 
-        return view('admin.races.index', compact('races'));
+        // Type filter buttons: one per format name in use (formats are per game, so the
+        // same name can exist several times), in the formats' own short-to-long order.
+        $formatFilters = $races->pluck('eventFormat')->filter()
+            ->sortBy('sort_order')->unique('name')->values();
+
+        return view('admin.races.index', compact('races', 'formatFilters'));
     }
 
     public function specialIndex()

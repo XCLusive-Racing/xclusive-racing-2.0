@@ -70,6 +70,31 @@
         </button>
     </div>
 
+    {{-- Event type filters — one per format, colored like the public Events page's
+         format filter (by the format's event tag). --}}
+    @php
+        $typeColors = [
+            'supersprint' => '#dc2626', 'sprint' => '#f97316', 'daily' => '#eab308',
+            'intermediate' => '#16a34a', 'fullrace' => '#0d9488', 'multiclass' => '#0ea5e9',
+            'longrace' => '#4338ca', 'mini-enduro' => '#7c3aed', 'endurance' => '#9d174d',
+        ];
+    @endphp
+    <div class="d-flex align-items-center gap-2 px-4 py-3 border-bottom flex-wrap">
+        <span class="fw-bold text-uppercase me-1" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Type:</span>
+        <button type="button" data-type-filter=""
+                class="btn btn-sm fw-bold text-uppercase px-3"
+                style="font-size:.72rem;border-radius:6px;background:#111827;color:white;border:1px solid #111827">
+            All
+        </button>
+        @foreach($formatFilters as $fmt)
+        <button type="button" data-type-filter="{{ $fmt->name }}" data-color="{{ $typeColors[$fmt->default_event_tag] ?? '#6b7280' }}"
+                class="btn btn-sm fw-bold text-uppercase px-3"
+                style="font-size:.72rem;border-radius:6px;background:#f3f4f6;color:{{ $typeColors[$fmt->default_event_tag] ?? '#374151' }};border:1px solid #e5e7eb">
+            {{ $fmt->name }}
+        </button>
+        @endforeach
+    </div>
+
     {{-- Status filters --}}
     <div class="d-flex align-items-center gap-2 px-4 py-3 border-bottom flex-wrap">
         <span class="fw-bold text-uppercase me-1" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Status:</span>
@@ -105,7 +130,7 @@
             </thead>
             <tbody>
                 @foreach($races as $race)
-                <tr>
+                <tr data-format="{{ $race->eventFormat?->name }}">
                     <td class="ps-4">
                         <input type="checkbox" class="race-checkbox" value="{{ $race->id }}"
                                style="width:15px;height:15px;cursor:pointer;accent-color:#7c3aed">
@@ -289,6 +314,29 @@
                 btn.style.color       = active ? 'white'   : '#374151';
             });
         }
+
+        // Type (event format) filter — matches each row's data-format, on top of the
+        // game/status column searches.
+        let typeFilter = '';
+        $.fn.dataTable.ext.search.push((settings, data, index) => {
+            if (settings.nTable.id !== 'races-table' || typeFilter === '') return true;
+            return settings.aoData[index].nTr.dataset.format === typeFilter;
+        });
+
+        document.querySelectorAll('[data-type-filter]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                typeFilter = btn.dataset.typeFilter;
+                table.draw();
+
+                document.querySelectorAll('[data-type-filter]').forEach(b => {
+                    const active = b === btn;
+                    const color  = b.dataset.color || '#111827';
+                    b.style.background  = active ? color : '#f3f4f6';
+                    b.style.borderColor = active ? color : '#e5e7eb';
+                    b.style.color       = active ? 'white' : (b.dataset.color || '#374151');
+                });
+            });
+        });
 
         const statusFilterIds = { upcoming: 'status-upcoming', past: 'status-past' };
 
