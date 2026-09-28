@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Race;
+use App\Models\RaceClass;
 use App\Models\RaceRegistration;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -85,6 +86,36 @@ class GridFillerTest extends TestCase
             $race = $this->makeRace($attributes);
             $this->assertCount(0, $race->fillerRegistrations(8, null));
         }
+    }
+
+    // User-reported 2026-09: Rookie fillers showed up in a multiclass race's Bronze+ GT3
+    // class. Fillers follow the same sign-up rules as real drivers.
+    public function test_fillers_only_join_classes_and_races_they_could_sign_up_for(): void
+    {
+        foreach ([1200, 1500, 1800, 2100, 2600, 3200] as $i => $elo) {
+            $filler = User::factory()->create(['elo_acc' => $elo, 'sr_acc' => 5.0]);
+            $filler->forceFill(['is_filler' => true, 'name' => 'Filler'.$i])->save();
+        }
+
+        $race = $this->makeRace(['is_multiclass' => true, 'max_drivers' => null]);
+        $gt3 = RaceClass::create(['race_id' => $race->id, 'name' => 'GT3', 'min_rating' => 'bronze']);
+        $gt4 = RaceClass::create(['race_id' => $race->id, 'name' => 'GT4']);
+
+        $gt3Fillers = $race->fillerRegistrations(40, null, $gt3);
+        $this->assertCount(3, $gt3Fillers);
+        $this->assertTrue($gt3Fillers->every(fn ($r) => $r->user->elo_acc >= 2000));
+
+        // The GT4 box takes the rest, without repeating a GT3 name.
+        $used = $gt3Fillers->map(fn ($r) => $r->user->id)->all();
+        $gt4Fillers = $race->fillerRegistrations(40, null, $gt4, $used);
+        $this->assertCount(3, $gt4Fillers);
+        $this->assertEmpty(array_intersect($used, $gt4Fillers->map(fn ($r) => $r->user->id)->all()));
+
+        $rookieRace = $this->makeRace(['max_rating' => 'rookie']);
+        $this->assertTrue($rookieRace->fillerRegistrations(40, null)->every(fn ($r) => $r->user->elo_acc < 2000));
+
+        $srRace = $this->makeRace(['sr_requirement' => '6']);
+        $this->assertCount(0, $srRace->fillerRegistrations(40, null));
     }
 
     public function test_fillers_are_on_the_rating_list(): void

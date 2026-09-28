@@ -902,7 +902,7 @@
                     $fillerRaceFree = $race->max_drivers !== null
                         ? $race->max_drivers - $race->registrations->filter(fn ($r) => $r->user && ! $race->isRegistrationWaitlisted($r))->count()
                         : null;
-                    $fillerOffset = 0;
+                    $fillerUsed = [];
                 @endphp
 
                 @foreach($classSections as $cls)
@@ -920,8 +920,8 @@
                         ->values();
                     $cap = $cls ? $cls->effectiveCap() : $race->max_drivers;
                     $fillerFree = collect([$cap !== null ? $cap - $activeRegs->count() : null, $fillerRaceFree])->filter(fn ($v) => $v !== null)->min();
-                    $fillers = $race->fillerRegistrations($activeRegs->count(), $fillerFree, $cls, $fillerOffset);
-                    $fillerOffset += $fillers->count();
+                    $fillers = $race->fillerRegistrations($activeRegs->count(), $fillerFree, $cls, $fillerUsed);
+                    $fillerUsed = array_merge($fillerUsed, $fillers->map(fn ($r) => $r->user->id)->all());
                     $fillerRaceFree = $fillerRaceFree !== null ? $fillerRaceFree - $fillers->count() : null;
                     $activeRegs = $activeRegs->concat($fillers)
                         ->sortByDesc(fn ($r) => $eloCol ? ($r->user->{$eloCol} ?? 0) : 0)

@@ -235,10 +235,13 @@ class Race extends Model
     }
 
     // Unsaved RaceRegistration stand-ins for the fillers in one grid box ($cls = null for
-    // a single-class race). $offset skips fillers already used by an earlier class box,
-    // so the same name never appears twice in one race. The pick is a stable per-race
-    // shuffle, so the same names stay put on reload and new ones are only added.
-    public function fillerRegistrations(int $real, ?int $freeSpots, ?RaceClass $cls = null, int $offset = 0): Collection
+    // a single-class race). Only fillers who could sign up themselves are used: the
+    // race's and the class's SR and min/max rating rules, the same check a real driver
+    // gets (minus the Steam-account one, fillers have no platform ID). $exclude holds the
+    // user IDs already used by an earlier class box, so the same name never appears twice
+    // in one race. The pick is a stable per-race shuffle, so the same names stay put on
+    // reload and new ones are only added.
+    public function fillerRegistrations(int $real, ?int $freeSpots, ?RaceClass $cls = null, array $exclude = []): Collection
     {
         if (! $this->usesGridFillers()) {
             return collect();
@@ -252,8 +255,10 @@ class Race extends Model
         $pool = once(fn () => User::where('is_filler', true)->get());
 
         return $pool
+            ->reject(fn (User $u) => in_array($u->id, $exclude, true))
+            ->filter(fn (User $u) => $this->fillerMeetsRequirements($u, $cls))
             ->sortBy(fn (User $u) => crc32($this->id.'-'.$u->id))
-            ->slice($offset, $count)
+            ->take($count)
             ->map(function (User $filler) use ($cls) {
                 $reg = new RaceRegistration;
                 $reg->setRelation('user', $filler);
@@ -263,6 +268,16 @@ class Race extends Model
                 return $reg;
             })
             ->values();
+    }
+
+    private function fillerMeetsRequirements(User $filler, ?RaceClass $cls): bool
+    {
+        $failures = [
+            $filler->requirementFailure($this->game, $this->sr_requirement, $this->min_rating, $this->max_rating),
+            $cls ? $filler->requirementFailure($this->game, $cls->sr_requirement, $cls->min_rating, $cls->max_rating ?? null) : null,
+        ];
+
+        return collect($failures)->every(fn ($f) => $f === null || $f === User::STEAM_REQUIRED_MESSAGE);
     }
 
     public function isFull(): bool
