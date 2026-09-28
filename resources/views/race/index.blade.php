@@ -140,7 +140,7 @@
                         <div class="d-flex justify-content-start justify-content-md-end align-items-baseline gap-2 mb-1">
                             <span class="xcl-filters__categories-label fw-bold text-uppercase">Timezone</span>
                             <span class="xcl-filters__tz-hint">
-                                Times in <span data-viewer-tz>UK time</span>
+                                <span class="d-none d-sm-inline">Times in</span> <span data-viewer-tz>UK time</span>
                                 @auth · <a href="{{ route('profile.edit') }}">change</a>@endauth
                             </span>
                         </div>
