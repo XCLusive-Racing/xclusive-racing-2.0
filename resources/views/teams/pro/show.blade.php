@@ -123,7 +123,7 @@ $upcomingRaces = \App\Models\TeamEvent::upcoming()
                                 <div class="pro-upcoming-card__sub">{{ $race->subtitle }}</div>
                                 @endif
                                 <div class="pro-upcoming-card__date">
-                                    {{ $race->starts_at->timezone('Europe/London')->format('d M Y · H:i T') }}
+                                    <x-local-time :at="$race->starts_at" format="date-time" />
                                 </div>
                             </div>
                             <div class="pro-upcoming-card__right">

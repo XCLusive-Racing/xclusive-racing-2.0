@@ -114,7 +114,7 @@
                          style="--game-color:{{ $race->gameColor() }}"
                          title="{{ $race->title }} · {{ $race->scheduledAtUk()->format('H:i') }} UK">
                         <a href="{{ route('events.show', $race) }}" class="xcl-cal__pill-link">
-                            <span class="xcl-cal__pill-time">{{ $race->scheduledAtUk()->format('H:i') }}</span>
+                            <span class="xcl-cal__pill-time"><x-local-time :at="$race->scheduled_at" format="time" /></span>
                             <span class="xcl-cal__pill-title">{{ $race->title }}</span>
                         </a>
                         @if($race->championship_id)
@@ -166,7 +166,7 @@
                             <div class="flex-grow-1">
                                 <div class="xcl-cal__mobile-title">{{ $race->title }}</div>
                                 <div class="xcl-cal__mobile-meta">
-                                    {{ $race->scheduledAtUk()->format('H:i T') }}
+                                    <x-local-time :at="$race->scheduled_at" format="time-tz" />
                                     @if($race->track) · {{ $race->track }} @endif
                                     @if($race->championship_id) · <span style="color:rgba(255,255,255,.5)">Championship</span> @endif
                                 </div>

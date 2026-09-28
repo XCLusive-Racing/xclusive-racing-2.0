@@ -341,8 +341,8 @@
 
             {{-- Date block --}}
             <div class="live-card-date">
-                <div class="live-card-date__day">{{ $event->starts_at->timezone('Europe/London')->format('d') }}</div>
-                <div class="live-card-date__month">{{ $event->starts_at->timezone('Europe/London')->format('M Y') }}</div>
+                <div class="live-card-date__day"><x-local-time :at="$event->starts_at" format="day" /></div>
+                <div class="live-card-date__month"><x-local-time :at="$event->starts_at" format="month-year" /></div>
             </div>
 
             <div class="live-card-divider"></div>
@@ -362,7 +362,7 @@
                     <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-.1em;opacity:.5">
                         <circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 6v6l4 2"/>
                     </svg>
-                    {{ $event->starts_at->timezone('Europe/London')->format('H:i T') }}
+                    <x-local-time :at="$event->starts_at" format="time-tz" />
                 </div>
             </div>
 

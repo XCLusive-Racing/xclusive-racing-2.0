@@ -127,7 +127,7 @@
                         <div class="next-step-title mb-1">{{ $event->title }}</div>
                         <p class="mb-1 text-secondary" style="font-size:.85rem">{{ $event->track }}</p>
                         <p class="mb-0 text-secondary" style="font-size:.78rem">
-                            {{ $event->scheduledAtUk()->format('d M Y · H:i T') }}
+                            <x-local-time :at="$event->scheduled_at" format="date-time" />
                         </p>
                     </a>
                 </div>

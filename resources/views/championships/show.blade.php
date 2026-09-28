@@ -4,6 +4,18 @@
 
 @php
     $accent = $championship->league?->primary_color ?? $championship->gameColor();
+    // The league's second colour highlights the tab nav and section titles on the dark
+    // panels — but only when it's light enough to read there; else the primary colour,
+    // else plain light grey.
+    $readableOnDark = function (?string $hex): bool {
+        if (! $hex || ! preg_match('/^#?([0-9a-f]{6})$/i', $hex, $m)) {
+            return false;
+        }
+        [$r, $g, $b] = array_map(fn ($c) => hexdec($c) / 255, str_split($m[1], 2));
+
+        return (0.2126 * $r + 0.7152 * $g + 0.0722 * $b) >= 0.25;
+    };
+    $highlight = collect([$championship->league?->accent_color, $accent])->first($readableOnDark) ?? '#e5e7eb';
     $req    = $championship->settings->requirements;
     $pen    = $championship->settings->penalties;
     $discordRequiredHere = ($championship->league?->requires_discord_membership) || ($req->discord_membership_required ?? false);
@@ -65,11 +77,16 @@
         </div>
     </div>
 
-    <div class="container-xl px-3 mt-4" data-tabs data-default-tab="about">
+    {{-- position:relative: without it the page's absolutely-positioned topo
+         background is painted on top of these (unpositioned) panels, making them
+         look see-through. --}}
+    <div class="container-xl px-3 mt-4 xcl-champ" data-tabs data-default-tab="about"
+         style="position:relative;--ch-highlight:{{ $highlight }};--ch-primary:{{ $accent }}">
 
         {{-- Section nav — jumps between the tab panels below, same tabs.js component
-             the pro driver profile's year-switcher already uses. --}}
-        <div class="mb-4 d-flex gap-4" style="border-bottom:1px solid #1f2937;overflow-x:auto">
+             the pro driver profile's year-switcher already uses. A solid dark bar in
+             the league's colours: primary edge, active tab in the highlight colour. --}}
+        <div class="mb-4 d-flex gap-4 xcl-champ__nav">
             @foreach([
                 'about'     => 'About',
                 'standings' => 'Standings',
@@ -77,7 +94,7 @@
                 'rules'     => 'Rules',
                 'drivers'   => 'Drivers',
             ] as $tabKey => $tabLabel)
-            <button data-tab-btn="{{ $tabKey }}" data-tab-color="{{ $accent }}"
+            <button data-tab-btn="{{ $tabKey }}" data-tab-color="{{ $highlight }}"
                     class="fw-black text-uppercase bg-transparent pb-2 flex-shrink-0"
                     style="font-size:.8rem;letter-spacing:.05em;white-space:nowrap;border:none;border-bottom:2px solid transparent;cursor:pointer">
                 {{ $tabLabel }}
@@ -95,7 +112,7 @@
                     @if($championship->description)
                     <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
                         <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
-                            <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">About This Championship</h2>
+                            <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.85rem;letter-spacing:.08em">About This Championship</h2>
                         </div>
                         <div class="px-4 py-3">
                             <div style="color:#9ca3af;font-size:.9rem;line-height:1.7">
@@ -121,7 +138,7 @@
                 @foreach($standingsGroups as $group)
                 <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-3 d-flex align-items-center gap-2" style="border-bottom:1px solid #1f2937">
-                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">
+                        <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.85rem;letter-spacing:.08em">
                             {{ $group['class'] ? $group['class']->name : 'Overall' }} Standings
                         </h2>
                         @if($group['class'])
@@ -195,7 +212,7 @@
                 @foreach($teamTables as $tableTitle => $tableRows)
                 <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
-                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">{{ $tableTitle }}</h2>
+                        <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.85rem;letter-spacing:.08em">{{ $tableTitle }}</h2>
                         @if($tableTitle === 'Team Championship')
                         <p class="mb-0 mt-1" style="color:#6b7280;font-size:.72rem">Each round, a team's best {{ $championship->settings->scoring->team_scoring_cars }} {{ \Illuminate\Support\Str::plural('car', $championship->settings->scoring->team_scoring_cars) }} score for the team.</p>
                         @endif
@@ -244,7 +261,7 @@
                 <div data-tab-panel="rounds" style="display:none">
                 <div style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
-                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Rounds</h2>
+                        <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.85rem;letter-spacing:.08em">Rounds</h2>
                     </div>
 
                     @if($rounds->isEmpty())
@@ -260,7 +277,7 @@
                         <div class="flex-grow-1">
                             <div class="fw-bold text-white" style="font-size:.9rem">{{ $round->title }}</div>
                             <div style="font-size:.75rem;color:#6b7280">
-                                {{ $round->track }} · {{ $round->scheduledAtUk()->format('d M Y, H:i T') }}
+                                {{ $round->track }} · <x-local-time :at="$round->scheduled_at" format="date-time-comma" />
                             </div>
                         </div>
                         <div>
@@ -281,7 +298,7 @@
                     <div class="col-12 col-md-{{ $req->prizes_text ? '6' : '12' }}">
                         <div style="background:#111827;border-radius:12px;overflow:hidden;height:100%">
                             <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
-                                <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Rules</h2>
+                                <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.85rem;letter-spacing:.08em">Rules</h2>
                             </div>
                             <div class="px-4 py-3" style="color:#c7ccd6;font-size:.85rem;white-space:pre-wrap">{{ $req->notes }}</div>
                         </div>
@@ -291,7 +308,7 @@
                     <div class="col-12 col-md-{{ $req->notes ? '6' : '12' }}">
                         <div style="background:#111827;border-radius:12px;overflow:hidden;height:100%">
                             <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
-                                <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Prizes</h2>
+                                <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.85rem;letter-spacing:.08em">Prizes</h2>
                             </div>
                             <div class="px-4 py-3" style="color:#c7ccd6;font-size:.85rem;white-space:pre-wrap">{{ $req->prizes_text }}</div>
                         </div>
@@ -309,7 +326,7 @@
                 <div data-tab-panel="drivers" style="display:none">
                 <div style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
-                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">
+                        <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.85rem;letter-spacing:.08em">
                             Drivers
                             <span style="color:#6b7280;font-weight:400">({{ $championship->registrations->count() }}{{ $championship->max_drivers ? '/' . $championship->max_drivers : '' }})</span>
                             @if($championship->waitlistCount() > 0)
@@ -352,7 +369,7 @@
                 @auth
                 <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
-                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Registration</h2>
+                        <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.85rem;letter-spacing:.08em">Registration</h2>
                     </div>
                     <div class="px-4 py-4">
                         @php
@@ -627,7 +644,7 @@
                      spot), not tucked away inside the Rules tab. --}}
                 <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
-                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Entry Requirements</h2>
+                        <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.85rem;letter-spacing:.08em">Entry Requirements</h2>
                     </div>
                     <div class="px-4 py-3" style="font-size:.82rem">
                         <div class="d-flex justify-content-between py-1" style="border-bottom:1px solid #1f2937">
@@ -676,7 +693,7 @@
                 @endphp
                 <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
-                        <h2 class="fw-black text-uppercase text-white mb-0" style="font-size:.85rem;letter-spacing:.08em">Drivers</h2>
+                        <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.85rem;letter-spacing:.08em">Drivers</h2>
                     </div>
                     <div class="px-4 py-3" style="font-size:.82rem">
                         <div class="d-flex justify-content-between py-1" style="border-bottom:1px solid #1f2937">

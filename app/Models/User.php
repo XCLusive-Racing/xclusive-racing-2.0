@@ -15,7 +15,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 
-#[Fillable(['name', 'email', 'password', 'must_set_password', 'display_name_preference', 'is_supporter', 'is_suspended', 'suspension_reason', 'suspended_until', 'privacy_accepted_at', 'country', 'platform', 'platform_id', 'car_number', 'car_model', 'banner', 'game', 'team', 'role', 'flag', 'elo_acc', 'elo_lmu', 'elo_iracing', 'sr_acc', 'sr_lmu', 'sr_iracing', 'legacy_races', 'legacy_wins', 'legacy_podiums', 'last_seen_at'])]
+#[Fillable(['name', 'email', 'password', 'must_set_password', 'display_name_preference', 'is_supporter', 'is_suspended', 'suspension_reason', 'suspended_until', 'privacy_accepted_at', 'country', 'timezone', 'uses_12_hour_clock', 'platform', 'platform_id', 'car_number', 'car_model', 'banner', 'game', 'team', 'role', 'flag', 'elo_acc', 'elo_lmu', 'elo_iracing', 'sr_acc', 'sr_lmu', 'sr_iracing', 'legacy_races', 'legacy_wins', 'legacy_podiums', 'last_seen_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -36,6 +36,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'must_set_password' => 'boolean',
             'is_supporter' => 'boolean',
+            'uses_12_hour_clock' => 'boolean',
             'is_suspended' => 'boolean',
             'suspended_until' => 'datetime',
             'privacy_accepted_at' => 'datetime',

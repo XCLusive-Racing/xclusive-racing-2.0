@@ -50,6 +50,38 @@
                                 <input type="text" name="country" value="{{ old('country', $user->country) }}"
                                        class="form-control" placeholder="Netherlands">
                             </div>
+                            {{-- Event times across the site are shown in this timezone (see
+                                 resources/js/components/local-time.js); Automatic follows the
+                                 browser — set one by hand when on holiday or behind a VPN. --}}
+                            <div class="col-sm-6">
+                                <label class="form-label fw-bold text-dark" style="font-size:.82rem">
+                                    Timezone
+                                    <span class="ms-1 fw-normal text-secondary" style="font-size:.75rem">event times are shown in this timezone</span>
+                                </label>
+                                @php
+                                    $selectedTz = old('timezone', $user->timezone);
+                                    $tzGroups = collect(\DateTimeZone::listIdentifiers())
+                                        ->groupBy(fn ($tz) => str_contains($tz, '/') ? strstr($tz, '/', true) : 'Other');
+                                @endphp
+                                <select name="timezone" class="form-select @error('timezone') is-invalid @enderror">
+                                    <option value="" data-tz-auto-option>Automatic (detect from my browser)</option>
+                                    @foreach($tzGroups as $group => $zones)
+                                    <optgroup label="{{ $group }}">
+                                        @foreach($zones as $tz)
+                                        <option value="{{ $tz }}" @selected($selectedTz === $tz)>{{ str_replace('_', ' ', $tz) }}</option>
+                                        @endforeach
+                                    </optgroup>
+                                    @endforeach
+                                </select>
+                                @error('timezone')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-bold text-dark" style="font-size:.82rem">Clock</label>
+                                <select name="uses_12_hour_clock" class="form-select">
+                                    <option value="0" @selected(! old('uses_12_hour_clock', $user->uses_12_hour_clock))>24-hour (20:00)</option>
+                                    <option value="1" @selected(old('uses_12_hour_clock', $user->uses_12_hour_clock))>12-hour (8:00 PM)</option>
+                                </select>
+                            </div>
                             <div class="col-12">
                                 <label class="form-label fw-bold text-dark" style="font-size:.82rem">
                                     Team / Quote

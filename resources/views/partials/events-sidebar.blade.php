@@ -12,7 +12,17 @@ $tickerArticles = NewsArticle::published()
     ->limit(5)
     ->get();
 
+// Only what the public may see: a championship round only once its championship is
+// public (same rule as the Events page, RaceController::index()) and the round itself
+// isn't a draft. withoutTenantScope(): an anonymous visitor has no league context,
+// which would otherwise hide every championship.
+$sbPublicRaces = fn($q) => $q
+    ->where('status', '!=', 'draft')
+    ->where(fn($q) => $q->whereNull('championship_id')
+        ->orWhereHas('championship', fn($cq) => $cq->withoutTenantScope()->publiclyVisible()));
+
 $sbNextEvent = Race::where('scheduled_at', '>', $now)
+    ->where($sbPublicRaces)
     ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon','car_class','event_format_id','championship_id','is_championship','is_endurance'])
     ->with('eventFormat:id,race1_mins,race2_mins')
     ->withIconOwners()
@@ -21,6 +31,7 @@ $sbNextEvent = Race::where('scheduled_at', '>', $now)
 if ($sbNextEvent) $sbNextEvent->loadCount('registrations');
 
 $sbUpcoming = Race::where('scheduled_at', '>', $now)
+    ->where($sbPublicRaces)
     // event_format_id too: without it icon_url treats every race as a custom one.
     ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon','event_format_id','championship_id','is_championship','is_endurance'])
     ->withIconOwners()
@@ -29,6 +40,21 @@ $sbUpcoming = Race::where('scheduled_at', '>', $now)
     ->limit(2)
     ->get();
 $sbUpcoming->loadCount('registrations');
+
+// Championships tab: the next upcoming rounds of publicly visible championships.
+$sbChampRounds = Race::where('scheduled_at', '>', $now)
+    ->whereNotNull('championship_id')
+    ->where($sbPublicRaces)
+    ->where('status', '!=', 'finished')
+    ->select(['id','title','game','track','scheduled_at','status','max_drivers','image','icon','event_format_id','championship_id','round_number','is_championship','is_endurance'])
+    ->withIconOwners()
+    ->orderBy('scheduled_at')
+    ->limit(8)
+    ->get();
+$sbChampRounds->loadCount('registrations');
+$sbChampNames = \App\Models\Championship::withoutTenantScope()
+    ->whereIn('id', $sbChampRounds->pluck('championship_id')->unique())
+    ->pluck('name', 'id');
 
 $sbTeamEvents = TeamEvent::upcoming()->with('participatingDrivers')->limit(2)->get();
 
@@ -264,7 +290,7 @@ $sbLeaderboards = [
 
                             {{-- Hero image with overlays --}}
                             <div class="xcl-sb-next__hero">
-                                @if($sbNextEvent->image)
+                                @if($sbNextEvent->image_url)
                                     <img src="{{ $sbNextEvent->image_url }}"
                                          alt="{{ $sbNextEvent->title }}" loading="lazy"
                                          class="xcl-sb-next__hero-img">
@@ -327,7 +353,7 @@ $sbLeaderboards = [
                                         @endif
                                     </div>
                                     <span class="xcl-sb-next__next-time">
-                                        {{ strtoupper($sbNextEvent->scheduledAtUk()->format('D, M d, g:iA T')) }}
+                                        <x-local-time :at="$sbNextEvent->scheduled_at" format="sidebar" upper />
                                     </span>
                                 </div>
 
@@ -395,7 +421,7 @@ $sbLeaderboards = [
                                         default   => '/images/home/teams/XCLusive_Placeholder_ACC.png',
                                     };
                                 @endphp
-                                <img src="{{ $event->image ? $event->image_url : $upPlaceholder }}"
+                                <img src="{{ $event->image_url ?? $upPlaceholder }}"
                                      alt="{{ $event->title }}" loading="lazy"
                                      class="xcl-sb-up-card__img">
                                 <div class="xcl-sb-up-card__img-gradient"></div>
@@ -536,7 +562,7 @@ $sbLeaderboards = [
                                         </div>
                                     @endif
                                     <div style="font-size:.65rem;color:#9ca3af;font-weight:600;white-space:nowrap">
-                                        {{ $te->starts_at->timezone('Europe/London')->format('d M · H:i T') }}
+                                        <x-local-time :at="$te->starts_at" format="dm-time" />
                                     </div>
                                     @if($te->duration_minutes)
                                     <span class="xcl-sb-next__duration-badge" style="font-size:.6rem;padding:.1rem .4rem">
@@ -589,9 +615,81 @@ $sbLeaderboards = [
 
             {{-- ═══ CHAMPIONSHIPS ═════════════════════════════════════════════ --}}
             <div data-sb-tab-panel="championships" style="display:none">
-                <div class="xcl-sb-empty">
-                    <p>CHAMPIONSHIPS</p>
-                    <p>Season standings coming soon</p>
+                <div class="xcl-sb-col xcl-sb-col--full">
+                    <div class="xcl-sb-title">
+                        <span>UPCOMING </span><span>ROUNDS</span>
+                    </div>
+
+                    @if($sbChampRounds->isEmpty())
+                    <div class="xcl-sb-empty">
+                        <p>NO ROUNDS</p>
+                        <p>No championship rounds scheduled</p>
+                    </div>
+                    @else
+                    <div class="xcl-sb-champ-grid">
+                        @foreach($sbChampRounds as $round)
+                        @php
+                            $roundPlatLabel = match($round->game) {
+                                'acc'             => 'PS5 / XBOX',
+                                'lmu','iracing','ac' => 'PC / STEAM',
+                                default           => 'PC',
+                            };
+                            $roundGameLabel = match($round->game) {
+                                'acc' => 'ACC', 'lmu' => 'LMU',
+                                'iracing' => 'iRACING', 'ac' => 'ACC PC',
+                                default => strtoupper($round->game),
+                            };
+                            $roundPlaceholder = match($round->game) {
+                                'lmu'     => '/images/home/teams/XCLusive_Placeholder_lmu.png',
+                                'iracing' => '/images/home/teams/XCLusive_Placeholder_iRacing.png',
+                                default   => '/images/home/teams/XCLusive_Placeholder_ACC.png',
+                            };
+                        @endphp
+                        <div class="xcl-sb-up-card"
+                             data-sb-game-card="{{ $round->game }}"
+                             data-countdown="{{ $round->scheduled_at->toIso8601String() }}">
+
+                            <div class="xcl-sb-up-card__img-wrap">
+                                <img src="{{ $round->image_url ?? $roundPlaceholder }}"
+                                     alt="{{ $round->title }}" loading="lazy"
+                                     class="xcl-sb-up-card__img">
+                                <div class="xcl-sb-up-card__img-gradient"></div>
+
+                                @if($round->icon_url)
+                                <div class="xcl-sb-up-card__icon-overlay">
+                                    <img src="{{ $round->icon_url }}" alt="{{ $round->title }}">
+                                </div>
+                                @endif
+
+                                <div class="xcl-sb-up-card__title">
+                                    {{ $sbChampNames[$round->championship_id] ?? $round->title }}
+                                    <span class="xcl-sb-champ-round">
+                                        {{ $round->round_number ? 'ROUND '.$round->round_number.' · ' : '' }}{{ $round->track }}
+                                    </span>
+                                </div>
+
+                                <div class="xcl-sb-up-card__meta-row">
+                                    <div class="xcl-sb-countdown xcl-sb-countdown--small">
+                                        <span data-cd-d>00</span>D&nbsp;<span data-cd-h>00</span>H&nbsp;<span data-cd-m>00</span>M
+                                    </div>
+                                    <div class="xcl-sb-lobby xcl-sb-lobby--small">
+                                        <x-icon-helmet />
+                                        <span>{{ $round->registrations_count }} / {{ $round->max_drivers ?? '∞' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="xcl-sb-up-card__footer">
+                                <div class="d-flex gap-1 flex-wrap align-items-center">
+                                    <span class="xcl-sb-badge xcl-sb-badge--platform">{{ $roundPlatLabel }}</span>
+                                    <span class="xcl-sb-badge xcl-sb-badge--game">{{ $roundGameLabel }}</span>
+                                </div>
+                                <a href="{{ route('events.show', $round) }}" class="xcl-sb-up-card__join">VIEW ROUND</a>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @endif
                 </div>
             </div>
 

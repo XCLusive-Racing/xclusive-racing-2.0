@@ -992,34 +992,9 @@ class RaceController extends Controller
         return $data;
     }
 
-    // Track name → background image filename in media library
-    public const TRACK_IMAGE_MAP = [
-        'Barcelona' => 'Barcelona.png',
-        'Brands Hatch' => 'Brands.png',
-        'COTA' => 'COTA.png',
-        'Donington' => 'Donington.png',
-        'Hungaroring' => 'Hungaroring.png',
-        'Imola' => 'Imola.png',
-        'Indianapolis' => 'Indy.png',
-        'Kyalami' => 'Kyalami.png',
-        'Laguna Seca' => 'Laguna Seca.png',
-        'Misano' => 'Misano.png',
-        'Monza' => 'Monza.png',
-        'Mount Panorama' => 'Bathurst.png',
-        'Nürburgring' => 'Nurburgring.png',
-        'Nordschleife' => 'Nords.png',
-        'Oulton Park' => 'Oulton.png',
-        'Paul Ricard' => 'Paul Ricard.png',
-        'Red Bull Ring' => 'RBR.png',
-        'Silverstone' => 'Silverstone.png',
-        'Snetterton' => 'Snetterton.png',
-        'Spa' => 'Spa.png',
-        'Suzuka' => 'Suzuka.png',
-        'Valencia' => 'Valencia.png',
-        'Watkins Glen' => 'Watkins.png',
-        'Zandvoort' => 'Zandvoort.png',
-        'Zolder' => 'Zolder.png',
-    ];
+    // Track name → background image filename in media library (shared with the
+    // championship rounds' track-image fallback, see Race::trackImagePath()).
+    public const TRACK_IMAGE_MAP = Race::TRACK_IMAGE_MAP;
 
     // Format slug override map (for slugs that differ from Str::slug(name))
     private const FORMAT_IMAGE_OVERRIDES = [

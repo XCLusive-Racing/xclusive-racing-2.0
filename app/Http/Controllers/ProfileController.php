@@ -47,6 +47,9 @@ class ProfileController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'country' => 'nullable|string|max:100',
+            // Empty = "Automatic": event times follow the browser's own timezone.
+            'timezone' => 'nullable|timezone:all',
+            'uses_12_hour_clock' => 'nullable|boolean',
             'team' => 'nullable|string|max:16',
             'car_number' => 'nullable|integer|min:1|max:9999',
             'car_model' => 'nullable|string|max:100',

@@ -35,7 +35,7 @@
                 <div class="pro-upcoming-card__sub">{{ $event->subtitle }}</div>
                 @endif
                 <div class="pro-upcoming-card__date">
-                    {{ $event->starts_at->timezone('Europe/London')->format('d M Y · H:i T') }}
+                    <x-local-time :at="$event->starts_at" format="date-time" />
                 </div>
 
                 @if($eventTeamDrivers->isNotEmpty())

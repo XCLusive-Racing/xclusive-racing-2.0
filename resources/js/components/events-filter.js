@@ -56,7 +56,7 @@ export function initEventsFilter() {
         closeFilterCategories();
     }
 
-    // Phone-only: the four filter groups (event/requirements/timezone/class) are
+    // The three filter groups (event/requirements/class) are
     // collapsed behind a single row of category buttons, and only the tapped
     // group's buttons are shown, below that row. No-op on desktop, where all
     // groups are always visible via CSS regardless of this state.

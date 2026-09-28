@@ -1991,6 +1991,22 @@ span.flatpickr-weekday {
     filter: invert(1) sepia(1) saturate(3) hue-rotate(220deg) brightness(1.4);
 }
 
+// Public championship page (championships/show): league-coloured tab nav and
+// section titles on solid dark panels. --ch-highlight / --ch-primary are set
+// inline from the league's colours (see the view's $highlight / $accent).
+.xcl-champ {
+    &__nav {
+        background: #0b0f1a;
+        border: 1px solid #1f2937;
+        border-bottom: 2px solid var(--ch-primary);
+        border-radius: 10px 10px 0 0;
+        padding: .75rem 1.25rem 0;
+        overflow-x: auto;
+    }
+
+    &__heading { color: var(--ch-highlight); }
+}
+
 .about-stats-card {
     background: #4a1168;
     border: 2px solid #a855f7;
@@ -2421,7 +2437,7 @@ span.flatpickr-weekday {
 }
 
 // Event filters — one layout on every screen size (phone through full
-// desktop): the four groups (event/requirements/timezone/class) collapse
+// desktop): the three groups (event/requirements/class) collapse
 // behind a single row of category buttons, and only the tapped group's
 // buttons show, below that row — see events-filter.js for the toggle logic.
 .xcl-filters {
@@ -2432,6 +2448,46 @@ span.flatpickr-weekday {
         font-weight: 900;
         letter-spacing: .06em;
         color: #a855f7;
+    }
+
+    // Filter bar under BACK TO PLATFORMS: Event Filter on the left, the always-
+    // visible Timezone row right-aligned on the same line (wrapping below it on
+    // narrow screens).
+    &__bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: .75rem 1rem;
+    }
+
+    // Right-aligned next to the Event Filter; on phones, where it wraps onto its
+    // own line below it, left-aligned like everything else.
+    &__timezone {
+        margin-left: auto;
+        text-align: right;
+
+        @media (max-width: 767px) {
+            margin-left: 0;
+            text-align: left;
+        }
+    }
+
+    &__tz-hint {
+        font-size: .68rem;
+        color: #9ca3af;
+
+        a { color: #a855f7; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    }
+
+    // Fixed basis: the category buttons are flex:1 with min-width:0, so without
+    // one this box would shrink to nothing next to the Timezone row (and at full
+    // width they'd stretch across the page).
+    &__event {
+        flex: 0 1 340px;
+
+        @media (max-width: 767px) { flex-basis: 100%; }
     }
 
     &__groups {
@@ -2445,7 +2501,7 @@ span.flatpickr-weekday {
     [data-filter-group] { display: none !important; }
     [data-filter-group].xcl-filter-group--open { display: flex !important; }
 
-    // Category row — all four always in one line, so each button shrinks to
+    // Category row — all three always in one line, so each button shrinks to
     // an even share of the width (flex:1) with smaller text/padding than the
     // regular filter buttons, instead of wrapping to a second row.
     &__categories {
@@ -5892,6 +5948,36 @@ table.dataTable thead th {
 .xcl-sb-up-list {
     display: flex;
     flex-direction: column;
+}
+
+// Championships tab: one full-width column with the upcoming rounds as a grid
+// of the same cards the Daily Events tab uses.
+.xcl-sb-col--full { border-right: 0; }
+
+// 4 per row (2 on tablets, 1 on phones), each a bit bigger than the Daily Events
+// tab's stacked cards: taller image, larger badge and title.
+.xcl-sb-champ-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .9rem;
+
+    @media (max-width: 1199px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (max-width: 575px)  { grid-template-columns: 1fr; }
+
+    .xcl-sb-up-card { margin-bottom: 0; }
+    .xcl-sb-up-card__img-wrap { aspect-ratio: 16 / 9; }
+    .xcl-sb-up-card__icon-overlay img { width: 130px; height: 130px; }
+    .xcl-sb-up-card__title { font-size: 1.15rem; }
+}
+
+.xcl-sb-champ-round {
+    display: block;
+    margin-top: .2rem;
+    font-size: .65rem;
+    font-weight: 700;
+    font-style: normal;
+    letter-spacing: .06em;
+    color: #d4ee6a;
 }
 
 // ── Upcoming event stacked cards ──────────────────────────────────────────────

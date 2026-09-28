@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class Race extends Model
 {
@@ -405,8 +406,9 @@ class Race extends Model
     // people browsing for their own region's evening slot aren't shown every
     // race we run. A race can match more than one region at once (the windows
     // are independent local-hour checks), so this returns every match rather
-    // than a single label. 17:00-23:59 local is a reasonable default "evening"
-    // window; adjust here if the actual prime-time slots end up different.
+    // than a single label. The window is 14:00-23:59 local (user-directed 2026-09:
+    // wide enough that the regions overlap, so e.g. Europe also shows a US
+    // afternoon race that's still evening in Europe).
     public function eveningRegions(): array
     {
         $regions = [
@@ -418,7 +420,7 @@ class Race extends Model
         $matches = [];
         foreach ($regions as $region => $timezone) {
             $hour = $this->scheduled_at->copy()->timezone($timezone)->hour;
-            if ($hour >= 17 && $hour <= 23) {
+            if ($hour >= 14 && $hour <= 23) {
                 $matches[] = $region;
             }
         }
@@ -493,9 +495,67 @@ class Race extends Model
         return $mins.' MIN';
     }
 
+    // Track name → background image filename in the media library. Regular events get
+    // theirs stored at creation (Admin\RaceController); championship rounds, created by
+    // the wizard, fall back to it at display time (image_url below).
+    public const TRACK_IMAGE_MAP = [
+        'Barcelona' => 'Barcelona.png',
+        'Brands Hatch' => 'Brands.png',
+        'COTA' => 'COTA.png',
+        'Donington' => 'Donington.png',
+        'Hungaroring' => 'Hungaroring.png',
+        'Imola' => 'Imola.png',
+        'Indianapolis' => 'Indy.png',
+        'Kyalami' => 'Kyalami.png',
+        'Laguna Seca' => 'Laguna Seca.png',
+        'Misano' => 'Misano.png',
+        'Monza' => 'Monza.png',
+        'Mount Panorama' => 'Bathurst.png',
+        'Nürburgring' => 'Nurburgring.png',
+        'Nordschleife' => 'Nords.png',
+        'Oulton Park' => 'Oulton.png',
+        'Paul Ricard' => 'Paul Ricard.png',
+        'Red Bull Ring' => 'RBR.png',
+        'Silverstone' => 'Silverstone.png',
+        'Snetterton' => 'Snetterton.png',
+        'Spa' => 'Spa.png',
+        'Suzuka' => 'Suzuka.png',
+        'Valencia' => 'Valencia.png',
+        'Watkins Glen' => 'Watkins.png',
+        'Zandvoort' => 'Zandvoort.png',
+        'Zolder' => 'Zolder.png',
+    ];
+
+    // A championship round without an image of its own shows its track's stock image,
+    // like a regular event — the league's badge (icon_url) then sits on top of it.
     public function getImageUrlAttribute(): ?string
     {
-        return $this->image ? Storage::disk('media')->url($this->image) : null;
+        $path = $this->image ?: ($this->championship_id ? self::trackImagePath($this->track) : null);
+
+        return $path ? Storage::disk('media')->url($path) : null;
+    }
+
+    // Media path of $track's stock image, matched loosely: "spa", "Spa-Francorchamps"
+    // and "Nurburgring" all find theirs. A track name containing more than one known
+    // name ("Nürburgring Nordschleife") takes the longest match. Cached per request
+    // and track (once() keys on the arguments).
+    public static function trackImagePath(?string $track): ?string
+    {
+        return once(function () use ($track) {
+            $normalize = fn (string $t) => strtolower(Str::ascii(trim($t)));
+            $name = $normalize((string) $track);
+            if ($name === '') {
+                return null;
+            }
+
+            $match = collect(self::TRACK_IMAGE_MAP)
+                ->filter(fn ($file, $known) => $normalize($known) === $name
+                    || preg_match('/\b'.preg_quote($normalize($known), '/').'\b/', $name))
+                ->sortByDesc(fn ($file, $known) => strlen($normalize($known)))
+                ->first();
+
+            return $match ? Media::where('original_name', $match)->value('path') : null;
+        });
     }
 
     public function getIconUrlAttribute(): ?string

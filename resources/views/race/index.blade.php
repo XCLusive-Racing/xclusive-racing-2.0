@@ -96,37 +96,64 @@
         {{-- ── Platform selected: event list (hidden initially) ──────────────── --}}
         <div data-events-list style="display:none">
 
-            <button data-back-btn class="events-back-btn mb-4">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5M12 5l-7 7 7 7"/>
-                </svg>
-                BACK TO PLATFORMS
-            </button>
-
-            {{-- Filters: one row of category buttons (Formats / Specs / Timezone /
-                 Class) — tap one to open that group's options directly below it.
+            {{-- Filters: BACK TO PLATFORMS on its own line; below it the Event Filter
+                 category buttons (Formats / Specs / Class) on the left and the
+                 always-visible Timezone filter right-aligned on the same line — tap a
+                 category to open that group's options below the bar.
                  Same behavior on every screen size (phone through full desktop) so
                  there's a single layout to reason about instead of a separate
                  always-expanded desktop version — see events-filter.js and the
                  .xcl-filters rules in app.scss. --}}
             <div class="mb-4 xcl-filters">
 
-                {{-- Category row — each button reuses one of the platform-card accent
-                     colors so the row reads as color instead of the plain dark
-                     default button. --}}
-                <div class="mb-2">
-                    <div class="xcl-filters__categories-label fw-bold text-uppercase mb-1">Event Filter</div>
-                    <div class="d-flex gap-2 xcl-filters__categories">
-                        @foreach([
-                            ['event',        'Formats',   '#7c3aed'],
-                            ['requirements', 'Specs',     '#f97316'],
-                            ['timezone',     'Timezone',  '#2563eb'],
-                            ['class',        'Class',     '#16a34a'],
-                        ] as [$category, $label, $color])
-                        <button data-filter-category="{{ $category }}" data-color="{{ $color }}"
-                                class="xcl-filter-btn fw-bold text-uppercase"
-                                style="border-color:{{ $color }}66;color:{{ $color }}">{{ $label }}</button>
-                        @endforeach
+                <button data-back-btn class="events-back-btn mb-3">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5M12 5l-7 7 7 7"/>
+                    </svg>
+                    BACK TO PLATFORMS
+                </button>
+
+                <div class="xcl-filters__bar mb-2">
+                    {{-- Category row — each button reuses one of the platform-card accent
+                         colors so the row reads as color instead of the plain dark
+                         default button. --}}
+                    <div class="xcl-filters__event">
+                        <div class="xcl-filters__categories-label fw-bold text-uppercase mb-1">Event Filter</div>
+                        <div class="d-flex gap-2 xcl-filters__categories">
+                            @foreach([
+                                ['event',        'Formats',   '#7c3aed'],
+                                ['requirements', 'Specs',     '#f97316'],
+                                ['class',        'Class',     '#16a34a'],
+                            ] as [$category, $label, $color])
+                            <button data-filter-category="{{ $category }}" data-color="{{ $color }}"
+                                    class="xcl-filter-btn fw-bold text-uppercase"
+                                    style="border-color:{{ $color }}66;color:{{ $color }}">{{ $label }}</button>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Timezone filter — which region's 14:00-23:59 local slot to
+                         show (Race::eveningRegions()); always visible, All Times by default. --}}
+                    <div class="xcl-filters__timezone">
+                        {{-- Label + which timezone the event times below are in (local-time.js). Region
+                             names are shortened to AUS / EU / US on small phones. --}}
+                        <div class="d-flex justify-content-start justify-content-md-end align-items-baseline gap-2 mb-1">
+                            <span class="xcl-filters__categories-label fw-bold text-uppercase">Timezone</span>
+                            <span class="xcl-filters__tz-hint">
+                                Times in <span data-viewer-tz>UK time</span>
+                                @auth · <a href="{{ route('profile.edit') }}">change</a>@endauth
+                            </span>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap justify-content-start justify-content-md-end">
+                            <button data-region-filter="all"
+                                    class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase xcl-filter-btn--active">All Times</button>
+                            <button data-region-filter="australia"
+                                    class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase"><span class="d-none d-sm-inline">Australia</span><span class="d-sm-none">AUS</span></button>
+                            <button data-region-filter="europe"
+                                    class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase"><span class="d-none d-sm-inline">Europe</span><span class="d-sm-none">EU</span></button>
+                            <button data-region-filter="us"
+                                    class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase"><span class="d-none d-sm-inline">America</span><span class="d-sm-none">US</span></button>
+                        </div>
                     </div>
                 </div>
 
@@ -172,18 +199,6 @@
                                 class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase"
                                 style="border-color:{{ $color }}66;color:{{ $color }}">{{ $label }}</button>
                         @endforeach
-                    </div>
-
-                    {{-- Timezone filter — which region's evening slot to show --}}
-                    <div class="d-flex gap-2 flex-wrap" data-filter-group="timezone">
-                        <button data-region-filter="all"
-                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase xcl-filter-btn--active">All Times</button>
-                        <button data-region-filter="europe"
-                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">Europe</button>
-                        <button data-region-filter="australia"
-                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">Australia</button>
-                        <button data-region-filter="us"
-                                class="xcl-filter-btn xcl-filter-btn--sm fw-bold text-uppercase">US</button>
                     </div>
 
                     {{-- Car class filter — colored the same as each class's badge on the
@@ -266,7 +281,7 @@
                         <div class="xcl-ec2">
                             <div class="xcl-ec2__img-wrap">
                                 {{-- Track image: full-bleed background --}}
-                                @if($race->image)
+                                @if($race->image_url)
                                     <img src="{{ $race->image_url }}" alt="{{ $race->track ?? '' }}" loading="lazy" class="xcl-ec2__img">
                                 @else
                                     <div class="xcl-ec2__img-placeholder"></div>
@@ -331,8 +346,8 @@
                                 @endphp
                                 <div class="xcl-ec2__time-row">
                                     <div class="xcl-ec2__time">
-                                        {{ strtoupper($race->scheduledAtUk()->format('l')) }} /
-                                        {{ strtoupper($race->scheduledAtUk()->format('g:i A T')) }}
+                                        <x-local-time :at="$race->scheduled_at" format="weekday" upper /> /
+                                        <x-local-time :at="$race->scheduled_at" format="time-tz" upper />
                                     </div>
                                 </div>
                                 <div class="xcl-ec2__badges-row">
@@ -353,7 +368,7 @@
                                     @endif
                                 </div>
                                 <div class="xcl-ec2__meta">
-                                    {{ $race->scheduledAtUk()->format('D, M d') }}
+                                    <x-local-time :at="$race->scheduled_at" format="date-short" />
                                     @if($race->track) | {{ $race->track }} @endif
                                     @if($weatherIcon)
                                         | <i class="fa-solid {{ $weatherIcon }}"></i> {{ ucfirst($race->weather) }}

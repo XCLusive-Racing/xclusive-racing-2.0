@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    {{-- Event times follow these (profile settings): timezone (empty = the browser's own) and clock. --}}
+    <meta name="xcl-timezone" content="{{ auth()->user()?->timezone }}">
+    <meta name="xcl-clock" content="{{ auth()->user()?->uses_12_hour_clock ? '12h' : '24h' }}">
     <title>@yield('title', config('xcl.name') . ' - ' . config('xcl.tagline'))</title>
     <link rel="icon" type="image/x-icon" href="/favicons/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">

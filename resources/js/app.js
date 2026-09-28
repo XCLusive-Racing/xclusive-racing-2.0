@@ -39,6 +39,7 @@ import { initHeaderHeight } from './components/header-height.js';
 import { initEventsFilter } from './components/events-filter.js';
 import { initEventTags } from './components/event-tags.js';
 import { initCountdownTimers } from './components/countdown-timer.js';
+import { initLocalTimes } from './components/local-time.js';
 import { initPasswordToggles } from './components/password-toggle.js';
 import { initCheckboxToggles } from './components/toggle.js';
 import { initTabs, initAccordions, initActivateTab } from './components/tabs.js';
@@ -91,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initHeaderHeight();
     initEventsFilter();
     initCountdownTimers();
+    initLocalTimes();
     initPasswordToggles();
     initCheckboxToggles();
     document.querySelectorAll('[data-tags-wrap]').forEach(el => initEventTags(el));

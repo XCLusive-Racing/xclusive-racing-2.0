@@ -39,7 +39,7 @@
                                 {{ $race->title }} &middot; {{ $race->track }}
                             </div>
                             <div class="fw-bold" style="font-size:.68rem;letter-spacing:.03em;color:#7c3aed">
-                                {{ strtoupper($race->scheduledAtUk()->format('l')) }} / {{ strtoupper($race->scheduledAtUk()->format('g:i A T')) }}
+                                <x-local-time :at="$race->scheduled_at" format="weekday" upper /> / <x-local-time :at="$race->scheduled_at" format="time-tz" upper />
                             </div>
                             <div class="d-flex align-items-center justify-content-between">
                                 <span class="badge flex-shrink-0" style="background:{{ $race->gameColor() }};font-size:.6rem">{{ $race->gameLabel() }}</span>
@@ -120,7 +120,7 @@
                         @endif
                         <div>
                             <div class="fw-black text-dark" style="font-size:1rem">
-                                {{ $selected->title }}, {{ strtoupper($selected->scheduledAtUk()->format('l')) }} / {{ strtoupper($selected->scheduledAtUk()->format('g:i A T')) }}
+                                {{ $selected->title }}, <x-local-time :at="$selected->scheduled_at" format="weekday" upper /> / <x-local-time :at="$selected->scheduled_at" format="time-tz" upper />
                             </div>
                             <div class="text-secondary" style="font-size:.78rem">
                                 {{ $selected->track }} &middot; {{ $selected->scheduledAtUk()->format('d M Y') }}
