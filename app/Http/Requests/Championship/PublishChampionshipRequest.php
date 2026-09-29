@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Championship;
 
+use App\Models\Championship;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 // Full validation across every group, run again at publish time even though each
 // group already passed per-step validation on the way here — a step can be
@@ -20,10 +22,10 @@ class PublishChampionshipRequest extends FormRequest
         $championship = $this->route('championship');
 
         return array_merge([
-            'name'       => 'required|string|max:150',
-            'slug'       => 'required|alpha_dash|max:150|unique:championships,slug,' . $championship->id,
-            'game'       => 'required|in:acc,lmu',
-            'platform'   => 'required|in:pc,console,cross',
+            'name' => 'required|string|max:150',
+            'slug' => 'required|alpha_dash|max:150|unique:championships,slug,'.$championship->id,
+            'game' => ['required', Rule::in(Championship::GAMES)],
+            'platform' => 'required|in:pc,console,cross',
         ], ChampionshipSettingsSchema::rules());
     }
 
@@ -35,9 +37,9 @@ class PublishChampionshipRequest extends FormRequest
         $championship = $this->route('championship');
 
         $this->merge([
-            'name'     => $championship->name,
-            'slug'     => $championship->slug,
-            'game'     => $championship->game,
+            'name' => $championship->name,
+            'slug' => $championship->slug,
+            'game' => $championship->game,
             'platform' => $championship->platform,
             'settings' => $championship->settings->toArray(),
         ]);

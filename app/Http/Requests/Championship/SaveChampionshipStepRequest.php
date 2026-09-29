@@ -5,6 +5,7 @@ namespace App\Http\Requests\Championship;
 use App\Models\Championship;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 // Validates one wizard step at a time. For every step but "basics" the rule set
 // is generated straight from ChampionshipSettingsSchema — a new rule in the
@@ -37,7 +38,7 @@ class SaveChampionshipStepRequest extends FormRequest
                 'tagline' => 'nullable|string|max:100',
                 'slogan' => 'nullable|string|max:150',
                 'slug' => 'required|alpha_dash|max:150|unique:championships,slug,'.$championship->id,
-                'game' => 'required|in:acc,lmu,iracing,ac',
+                'game' => ['required', Rule::in(Championship::GAMES)],
                 'platform' => 'required|in:pc,console,cross',
                 'visibility' => 'required|in:public,unlisted',
                 'description' => 'nullable|string|max:5000',

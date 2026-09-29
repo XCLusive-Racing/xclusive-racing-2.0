@@ -16,6 +16,10 @@ class Championship extends Model
 {
     use SoftDeletes, Tenantable;
 
+    // 'ac' = ACC PC, 'acc' = ACC Console. Shared by the wizard's basics step and the
+    // publish check so the two can't drift apart again.
+    public const GAMES = ['acc', 'lmu', 'iracing', 'ac'];
+
     public const ERR_GAME_LOCKED = 'The game can\'t be changed anymore — rounds of this championship already have results.';
 
     // Rounds copy the championship's game when they're created, so a later game

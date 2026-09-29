@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\Car;
 use App\Models\Championship;
+use App\Models\ChampionshipRegistration;
 use App\Models\League;
 use App\Models\LeagueUser;
+use App\Models\RacingTeam;
 use App\Models\Role;
 use App\Models\User;
 use App\Settings\ChampionshipSettingsSchema;
@@ -34,6 +37,7 @@ class ChampionshipSettingsTest extends TestCase
     {
         $user = User::factory()->create();
         $user->roles()->attach(Role::where('slug', 'admin')->first());
+
         return $user;
     }
 
@@ -49,7 +53,7 @@ class ChampionshipSettingsTest extends TestCase
 
     public function test_settings_cast_fills_defaults_for_an_empty_blob(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
 
         $this->assertFalse($championship->settings->format->multiclass_enabled);
@@ -59,7 +63,7 @@ class ChampionshipSettingsTest extends TestCase
 
     public function test_settings_upgrade_fills_missing_keys_without_disturbing_stored_values(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
 
         // Simulate a row saved under an older, smaller schema — only one key stored.
@@ -82,18 +86,18 @@ class ChampionshipSettingsTest extends TestCase
     // input instead of <x-media-picker>'s gallery-pick flow.
     public function test_basics_step_accepts_every_game_saves_the_description_and_a_gallery_picked_image(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $manager      = User::factory()->leagueManager()->create();
+        $league = $this->makeLeague('nlrl');
+        $manager = User::factory()->leagueManager()->create();
         $this->attachManager($manager, $league);
         $championship = $this->makeChampionship($league);
 
         $this->actingAs($manager)->put(
             route('admin.leagues.championships.wizard.update', [$league, $championship, 'basics']),
             [
-                'name' => 'Test Cup', 'slug' => 'test-cup-' . $championship->id,
+                'name' => 'Test Cup', 'slug' => 'test-cup-'.$championship->id,
                 'game' => 'ac', 'platform' => 'pc', 'visibility' => 'public',
                 'description' => 'A friendly ACC PC series.',
-                'image_path'  => 'images/media/picked-from-gallery.jpg',
+                'image_path' => 'images/media/picked-from-gallery.jpg',
                 'settings' => [
                     'schedule' => ['recurrence' => 'weekly', 'time_of_day' => '14:00'],
                 ],
@@ -112,8 +116,8 @@ class ChampionshipSettingsTest extends TestCase
     // split step actually saves, and that Basics no longer touches it.
     public function test_sessions_is_its_own_step_independent_of_basics(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $manager      = User::factory()->leagueManager()->create();
+        $league = $this->makeLeague('nlrl');
+        $manager = User::factory()->leagueManager()->create();
         $this->attachManager($manager, $league);
         $championship = $this->makeChampionship($league);
 
@@ -138,8 +142,8 @@ class ChampionshipSettingsTest extends TestCase
 
     public function test_a_step_save_only_touches_its_own_settings_group(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $manager      = User::factory()->leagueManager()->create();
+        $league = $this->makeLeague('nlrl');
+        $manager = User::factory()->leagueManager()->create();
         $this->attachManager($manager, $league);
         $championship = $this->makeChampionship($league);
 
@@ -158,8 +162,8 @@ class ChampionshipSettingsTest extends TestCase
 
     public function test_league_manager_cannot_enable_xcl_rating_through_any_step_save(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $manager      = User::factory()->leagueManager()->create();
+        $league = $this->makeLeague('nlrl');
+        $manager = User::factory()->leagueManager()->create();
         $this->attachManager($manager, $league);
         $championship = $this->makeChampionship($league);
 
@@ -182,8 +186,8 @@ class ChampionshipSettingsTest extends TestCase
     // XCL-staff-only before this).
     public function test_league_manager_can_approve_and_revoke_rating_for_their_own_championship(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $manager      = User::factory()->leagueManager()->create();
+        $league = $this->makeLeague('nlrl');
+        $manager = User::factory()->leagueManager()->create();
         $this->attachManager($manager, $league);
         $championship = $this->makeChampionship($league);
 
@@ -207,9 +211,9 @@ class ChampionshipSettingsTest extends TestCase
     // test in this file (test_league_manager_cannot_reach_another_leagues_championship).
     public function test_a_different_leagues_manager_still_cannot_approve_rating(): void
     {
-        $owner        = $this->makeLeague('nlrl');
-        $otherLeague  = $this->makeLeague('src');
-        $outsider     = User::factory()->leagueManager()->create();
+        $owner = $this->makeLeague('nlrl');
+        $otherLeague = $this->makeLeague('src');
+        $outsider = User::factory()->leagueManager()->create();
         $this->attachManager($outsider, $otherLeague);
         $championship = $this->makeChampionship($owner);
 
@@ -222,8 +226,8 @@ class ChampionshipSettingsTest extends TestCase
 
     public function test_admin_can_approve_rating_and_it_records_who_and_when(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $admin        = $this->makeAdmin();
+        $league = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
         $championship = $this->makeChampionship($league);
 
         $this->actingAs($admin)
@@ -242,8 +246,8 @@ class ChampionshipSettingsTest extends TestCase
     // as before, just a second, more visible entry point.
     public function test_basics_step_shows_the_rating_toggle_for_an_admin_and_unlocks_the_multiplier(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $admin        = $this->makeAdmin();
+        $league = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
         $championship = $this->makeChampionship($league);
 
         $this->actingAs($admin)
@@ -274,8 +278,8 @@ class ChampionshipSettingsTest extends TestCase
 
     public function test_basics_step_shows_the_rating_toggle_to_the_leagues_own_manager_too(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $manager      = User::factory()->leagueManager()->create();
+        $league = $this->makeLeague('nlrl');
+        $manager = User::factory()->leagueManager()->create();
         $this->attachManager($manager, $league);
         $championship = $this->makeChampionship($league);
 
@@ -294,19 +298,20 @@ class ChampionshipSettingsTest extends TestCase
     // correctly, not a second source of truth.
     private function isFieldHidden(string $html, string $fieldId): bool
     {
-        $dom = new \DOMDocument();
+        $dom = new \DOMDocument;
         @$dom->loadHTML($html);
         // getElementById needs a DTD-declared ID attribute to work reliably against
         // loadHTML, which this markup doesn't have — an XPath id match doesn't.
         $xpath = new \DOMXPath($dom);
         $node = $xpath->query("//*[@id='{$fieldId}']")->item(0);
+
         return $node && $node->parentNode->attributes->getNamedItem('hidden') !== null;
     }
 
     public function test_format_step_hides_car_class_once_multiclass_is_on(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $admin        = $this->makeAdmin();
+        $league = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
         $championship = $this->makeChampionship($league);
 
         // Multiclass off (default): Car Class is visible.
@@ -335,8 +340,8 @@ class ChampionshipSettingsTest extends TestCase
     // separately hand-picked car list.
     public function test_classes_builder_offers_the_fixed_class_dropdown(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $admin        = $this->makeAdmin();
+        $league = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
         $championship = $this->makeChampionship($league);
 
         // The fixed 5-class list rows added via "+ Add Class" build from is
@@ -356,8 +361,8 @@ class ChampionshipSettingsTest extends TestCase
     // no separate eligible_cars list to keep in sync any more.
     public function test_saving_classes_sets_car_class_from_the_picked_class_name(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $manager      = User::factory()->leagueManager()->create();
+        $league = $this->makeLeague('nlrl');
+        $manager = User::factory()->leagueManager()->create();
         $this->attachManager($manager, $league);
         $championship = $this->makeChampionship($league);
 
@@ -386,8 +391,8 @@ class ChampionshipSettingsTest extends TestCase
     // wizard too via the schema's generic 'locked' flag.
     public function test_requirements_step_locks_the_discord_toggle(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $admin        = $this->makeAdmin();
+        $league = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
         $championship = $this->makeChampionship($league);
 
         $this->actingAs($admin)
@@ -406,14 +411,14 @@ class ChampionshipSettingsTest extends TestCase
     // list for the (renamed) "Driver/Team" scope.
     public function test_adjustments_builder_offers_cars_filtered_by_the_championships_class(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $admin        = $this->makeAdmin();
+        $league = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
         $championship = $this->makeChampionship($league);
         $championship->update(['car_class' => 'GT3']);
 
-        \App\Models\Car::create(['id' => 1001, 'game' => 'acc', 'car_class' => 'GT3', 'name' => 'Audi R8 LMS GT3']);
-        \App\Models\Car::create(['id' => 1002, 'game' => 'acc', 'car_class' => 'GT4', 'name' => 'BMW M4 GT4']);
-        \App\Models\Car::create(['id' => 1003, 'game' => 'lmu', 'car_class' => 'GT3', 'name' => 'Some LMU GT3']);
+        Car::create(['id' => 1001, 'game' => 'acc', 'car_class' => 'GT3', 'name' => 'Audi R8 LMS GT3']);
+        Car::create(['id' => 1002, 'game' => 'acc', 'car_class' => 'GT4', 'name' => 'BMW M4 GT4']);
+        Car::create(['id' => 1003, 'game' => 'lmu', 'car_class' => 'GT3', 'name' => 'Some LMU GT3']);
 
         $this->actingAs($admin)
             ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'penalties']))
@@ -426,24 +431,24 @@ class ChampionshipSettingsTest extends TestCase
 
     public function test_adjustments_builder_offers_the_championships_own_entry_list(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $admin        = $this->makeAdmin();
+        $league = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
         $championship = $this->makeChampionship($league);
 
         $solo = User::factory()->create(['name' => 'Solo Driver']);
-        \App\Models\ChampionshipRegistration::create([
+        ChampionshipRegistration::create([
             'championship_id' => $championship->id, 'user_id' => $solo->id, 'is_spectator' => false,
         ]);
 
         $teamOwner = User::factory()->create();
-        $team = \App\Models\RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $teamOwner->id]);
-        \App\Models\ChampionshipRegistration::create([
+        $team = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $teamOwner->id]);
+        ChampionshipRegistration::create([
             'championship_id' => $championship->id, 'user_id' => $teamOwner->id,
             'racing_team_id' => $team->id, 'is_spectator' => false,
         ]);
 
         $spectator = User::factory()->create(['name' => 'Just Watching']);
-        \App\Models\ChampionshipRegistration::create([
+        ChampionshipRegistration::create([
             'championship_id' => $championship->id, 'user_id' => $spectator->id, 'is_spectator' => true,
         ]);
 
@@ -466,8 +471,8 @@ class ChampionshipSettingsTest extends TestCase
     // which can't tell the two apart.
     public function test_first_step_has_no_back_button_but_a_later_one_does(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $admin        = $this->makeAdmin();
+        $league = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
         $championship = $this->makeChampionship($league);
 
         $basics = $this->actingAs($admin)
@@ -485,8 +490,8 @@ class ChampionshipSettingsTest extends TestCase
     // Add/Edit/Remove) but still gets the same Back button as every other step.
     public function test_rounds_step_has_a_back_button_too(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $admin        = $this->makeAdmin();
+        $league = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
         $championship = $this->makeChampionship($league);
 
         $rounds = $this->actingAs($admin)
@@ -504,8 +509,8 @@ class ChampionshipSettingsTest extends TestCase
     // to whichever confirm action (Publish/Open/Close Registration) shows.
     public function test_review_step_cards_are_collapsible_and_has_a_back_button(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $admin        = $this->makeAdmin();
+        $league = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
         $championship = $this->makeChampionship($league);
 
         $response = $this->actingAs($admin)
@@ -527,8 +532,8 @@ class ChampionshipSettingsTest extends TestCase
     // only appears, once there's something to actually hide.
     public function test_hide_button_only_appears_once_published(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $admin        = $this->makeAdmin();
+        $league = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
         $championship = $this->makeChampionship($league);
 
         $this->actingAs($admin)
@@ -544,10 +549,27 @@ class ChampionshipSettingsTest extends TestCase
             ->assertSee('Hide from Public');
     }
 
+    // Publish used to allow only acc/lmu while the basics step allowed every game,
+    // so an ACC PC ('ac') championship saved fine but then failed to publish.
+    public function test_acc_pc_championship_can_be_published(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
+        $championship = $this->makeChampionship($league);
+        $championship->update(['game' => 'ac', 'platform' => 'pc', 'slug' => 'acc-pc-cup']);
+
+        $this->actingAs($admin)
+            ->post(route('admin.leagues.championships.publish', [$league, $championship]))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $this->assertSame('published', $championship->fresh()->status);
+    }
+
     public function test_league_manager_can_hide_and_unhide_their_own_published_championship(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $manager      = User::factory()->leagueManager()->create();
+        $league = $this->makeLeague('nlrl');
+        $manager = User::factory()->leagueManager()->create();
         $this->attachManager($manager, $league);
         $championship = $this->makeChampionship($league);
         $championship->update(['status' => 'published']);
@@ -565,8 +587,8 @@ class ChampionshipSettingsTest extends TestCase
 
     public function test_hide_route_rejects_a_draft_championship(): void
     {
-        $league       = $this->makeLeague('nlrl');
-        $admin        = $this->makeAdmin();
+        $league = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
         $championship = $this->makeChampionship($league);
 
         $this->actingAs($admin)
@@ -577,8 +599,8 @@ class ChampionshipSettingsTest extends TestCase
 
     public function test_a_different_leagues_manager_cannot_hide_another_leagues_championship(): void
     {
-        $nlrl    = $this->makeLeague('nlrl');
-        $src     = $this->makeLeague('src');
+        $nlrl = $this->makeLeague('nlrl');
+        $src = $this->makeLeague('src');
         $manager = User::factory()->leagueManager()->create();
         $this->attachManager($manager, $nlrl);
 
@@ -596,7 +618,7 @@ class ChampionshipSettingsTest extends TestCase
     public function test_league_manager_cannot_reach_another_leagues_championship(): void
     {
         $nlrl = $this->makeLeague('nlrl');
-        $src  = $this->makeLeague('src');
+        $src = $this->makeLeague('src');
 
         $manager = User::factory()->leagueManager()->create();
         $this->attachManager($manager, $nlrl);
@@ -611,7 +633,7 @@ class ChampionshipSettingsTest extends TestCase
     public function test_admin_bypassing_scope_still_cant_pair_a_championship_with_the_wrong_league_in_the_url(): void
     {
         $nlrl = $this->makeLeague('nlrl');
-        $src  = $this->makeLeague('src');
+        $src = $this->makeLeague('src');
         $admin = $this->makeAdmin();
 
         $nlrlChampionship = $this->makeChampionship($nlrl);
