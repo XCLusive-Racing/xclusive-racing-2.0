@@ -51,7 +51,7 @@
                                     <option value="{{ \App\Models\User::DISPLAY_GAMERTAG }}" @selected(old('display_name_preference', $user->display_name_preference) !== \App\Models\User::DISPLAY_REAL_NAME)>Gamertag</option>
                                     <option value="{{ \App\Models\User::DISPLAY_REAL_NAME }}" @selected(old('display_name_preference', $user->display_name_preference) === \App\Models\User::DISPLAY_REAL_NAME)>Real name</option>
                                 </select>
-                                <div class="form-text" style="font-size:.72rem">Without a real name filled in, your gamertag is shown.</div>
+                                <div class="form-text" style="font-size:.72rem">On the site and in-game, shortened there (Jan Jansen → J. Jansen). Without a real name filled in, your gamertag is shown.</div>
                                 @error('display_name_preference')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-sm-6">
@@ -112,8 +112,7 @@
                                        class="form-control @error('team') is-invalid @enderror" placeholder="e.g. your team name"
                                        maxlength="16">
                                 <div class="form-text" style="font-size:.72rem">
-                                    Shown in-game under your gamertag. In driver-swap events your car's team from My Team is shown instead.
-                                    The in-game name is always your gamertag, even when the site shows your real name.
+                                    Shown in-game under your name. In driver-swap events your car's team from My Team is shown instead.
                                 </div>
                                 @error('team')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>

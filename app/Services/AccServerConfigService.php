@@ -106,21 +106,48 @@ class AccServerConfigService implements ServerConfigGenerator
     // a team entry (driver swap / endurance) the team they're racing for, for every
     // other event their own "Team / Quote" profile field ($tag null, already max 16
     // chars via the profile form). A team name is cut at TEAM_TAG_MAX (24) chars by
-    // the caller. Always the gamertag, never the real name a driver may show on the site.
+    // the caller. The name follows the driver's site choice (entryName()).
     // ACC renders the newline inside lastName as two lines; this is the only way to get
     // that second line -- teamName is not an ACC entrylist field (not in the server
     // handbook) and the server ignores it.
     public static function entryLastName(User $user, ?string $tag = null): string
     {
-        $name = $user->gamertag();
+        $name = self::entryName($user);
         $tag = trim((string) ($tag ?? $user->team));
 
         return $tag !== '' ? $name."\n".$tag : $name;
     }
 
+    // The gamertag, or — when the driver shows their real name on the site — that
+    // name shortened for the in-game tag: "Jan Jansen" becomes "J. Jansen".
+    public static function entryName(User $user): string
+    {
+        if (! self::usesRealName($user)) {
+            return $user->gamertag();
+        }
+
+        $first = trim((string) $user->first_name);
+        $last = trim((string) $user->last_name);
+
+        return match (true) {
+            $first !== '' && $last !== '' => mb_strtoupper(mb_substr($first, 0, 1)).'. '.$last,
+            default => $first.$last,
+        };
+    }
+
+    // Three letters for the leaderboard: the last name's when the real name is shown.
     public static function entryShortName(User $user): string
     {
-        return mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->gamertag()), 0, 3));
+        $source = self::usesRealName($user) && trim((string) $user->last_name) !== ''
+            ? $user->last_name
+            : self::entryName($user);
+
+        return mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $source), 0, 3));
+    }
+
+    private static function usesRealName(User $user): bool
+    {
+        return $user->display_name_preference === User::DISPLAY_REAL_NAME && $user->realName() !== null;
     }
 
     // Reverse of entryLastName() for a driver read back from an entrylist or results

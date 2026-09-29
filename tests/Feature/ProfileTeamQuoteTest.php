@@ -99,25 +99,34 @@ class ProfileTeamQuoteTest extends TestCase
         $this->assertSame("DeEchteOlle\nVery Long Endurance Team", $lastName);
     }
 
-    // The real name a driver may show on the site never goes in-game: the entrylist
-    // always carries the gamertag (without a Discord-style "#1234" suffix).
-    public function test_entrylist_uses_the_gamertag_even_when_the_site_shows_the_real_name(): void
+    // In-game the name follows the driver's site choice: the real name shortened
+    // ("Jan Jansen" -> "J. Jansen", leaderboard letters from the last name), else the
+    // gamertag without a Discord-style "#1234" suffix.
+    public function test_entrylist_name_follows_the_real_name_choice_shortened(): void
     {
         $race = Race::create([
             'title' => 'Test Race', 'track' => 'Monza', 'game' => 'acc',
             'status' => 'open', 'scheduled_at' => now()->addWeek(),
         ]);
-        $user = User::factory()->create([
-            'name' => 'DeEchteOlle#1234', 'team' => 'Quote', 'platform_id' => 'X-1',
-            'first_name' => 'Olle', 'last_name' => 'Kuiper', 'display_name_preference' => User::DISPLAY_REAL_NAME,
+        $realName = User::factory()->create([
+            'name' => 'FastGuy', 'team' => 'Quote', 'platform_id' => 'X-1',
+            'first_name' => 'jan', 'last_name' => 'Jansen', 'display_name_preference' => User::DISPLAY_REAL_NAME,
         ]);
-        RaceRegistration::create(['race_id' => $race->id, 'user_id' => $user->id]);
+        $gamertag = User::factory()->create([
+            'name' => 'SlowGuy#1234', 'team' => null, 'platform_id' => 'X-2',
+            'first_name' => 'Piet', 'last_name' => 'Pietersen', 'display_name_preference' => User::DISPLAY_GAMERTAG,
+        ]);
+        RaceRegistration::create(['race_id' => $race->id, 'user_id' => $realName->id]);
+        RaceRegistration::create(['race_id' => $race->id, 'user_id' => $gamertag->id]);
 
-        $driver = app(AccServerConfigService::class)->entryList($race)['entries'][0]['drivers'][0];
+        $drivers = collect(app(AccServerConfigService::class)->entryList($race)['entries'])
+            ->flatMap(fn ($e) => $e['drivers'])->keyBy('playerID');
 
-        $this->assertSame('Olle Kuiper', $user->displayName());
-        $this->assertSame('', $driver['firstName']);
-        $this->assertSame("DeEchteOlle\nQuote", $driver['lastName']);
-        $this->assertSame('DEE', $driver['shortName']);
+        $this->assertSame('', $drivers['X-1']['firstName']);
+        $this->assertSame("J. Jansen\nQuote", $drivers['X-1']['lastName']);
+        $this->assertSame('JAN', $drivers['X-1']['shortName']);
+
+        $this->assertSame('SlowGuy', $drivers['X-2']['lastName']);
+        $this->assertSame('SLO', $drivers['X-2']['shortName']);
     }
 }
