@@ -17,9 +17,9 @@
 
     <div class="container-xl" style="position:relative;z-index:1">
         <div class="pt-4 mb-4">
-            <a href="{{ route('time-trials.index', ['platform' => $board]) }}" class="xcl-tt__back">&larr; All tracks</a>
             <h1 class="display-4 fw-black text-uppercase fst-italic about-section__heading mb-3">{{ $trackName }}</h1>
             <div class="section-divider mb-3" style="margin-left:0"></div>
+            <a href="{{ route('time-trials.index', ['platform' => $board]) }}" class="xcl-tt__back">&larr; All tracks</a>
             <p class="xcl-tt__lead mb-0">All time Time Trials leaderboard. Each driver's best lap per car.</p>
         </div>
 

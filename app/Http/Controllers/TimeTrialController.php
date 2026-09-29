@@ -62,7 +62,9 @@ class TimeTrialController extends Controller
 
         $carIds = $onBoard()->when($class, fn ($q) => $q->where('car_class', $class))->distinct()->pluck('car_id');
         $cars = TimeTrialCar::whereIn('id', $carIds)->get()->sortBy(fn ($car) => $car->label())->values();
-        $car = $cars->firstWhere('id', (int) $request->query('car'));
+        // Car ID 0 is a real car (Porsche 991 GT3 R), so a missing ?car must not cast to 0.
+        $carParam = (string) $request->query('car', '');
+        $car = ctype_digit($carParam) ? $cars->firstWhere('id', (int) $carParam) : null;
 
         $filtered = fn () => $onBoard()
             ->when($class, fn ($q) => $q->where('car_class', $class))

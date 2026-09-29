@@ -181,6 +181,30 @@ CSV);
             ->assertOk()->assertSee('1:22.457')->assertSee('1:23.000')->assertDontSee('1:22.312');
     }
 
+    // Car ID 0 (Porsche 991 GT3 R) is a real car: without ?car the page shows every car,
+    // it must not fall back to filtering on car 0.
+    public function test_track_page_defaults_to_all_cars_even_with_car_id_zero(): void
+    {
+        $this->lapsCsv = $this->csv(<<<'CSV'
+Track, DriverID, DriverName, BestLap, Car, CarClass, S1, S2, S3, Patch, Event, NoOfLaps,
+brands_hatch,M111,Alpha,1:22.312,35,GT3,26.547,21.31,34.455,v1.9.5,27,167,
+brands_hatch,M222,Porsche Pilot,1:24.393,0,GT3,27.0,21.9,35.493,v1.9.12,77,10,
+CSV);
+        $this->carsCsv = $this->csv(<<<'CSV'
+CarID,CarName,Year,Logo
+0,Porsche 991 GT3 R,2018,x
+35,McLaren 720S GT3 Evo,2023,x
+CSV);
+
+        $this->import()->assertSuccessful();
+
+        $this->get(route('time-trials.show', 'brands_hatch'))
+            ->assertOk()->assertSeeInOrder(['Alpha', 'Porsche Pilot']);
+
+        $this->get(route('time-trials.show', ['track' => 'brands_hatch', 'car' => 0]))
+            ->assertOk()->assertSee('Porsche Pilot')->assertDontSee('1:22.312');
+    }
+
     public function test_console_and_pc_are_separate_boards(): void
     {
         $this->import()->assertSuccessful();
