@@ -48,7 +48,12 @@
                     $sc = ['draft' => '#f59e0b', 'published' => '#2563eb', 'registration_open' => '#16a34a', 'registration_closed' => '#6b7280', 'running' => '#7c3aed', 'completed' => '#6b7280', 'cancelled' => '#dc2626'][$c->status] ?? '#6b7280';
                 @endphp
                 <tr>
-                    <td class="ps-4 fw-bold text-dark">{{ $c->name }}</td>
+                    <td class="ps-4">
+                        <div class="fw-bold text-dark">{{ $c->name }}</div>
+                        @if($c->tagline)
+                        <div class="text-secondary" style="font-size:.75rem">{{ $c->tagline }}</div>
+                        @endif
+                    </td>
                     <td class="d-none d-md-table-cell text-secondary">{{ strtoupper($c->game) }}</td>
                     <td class="text-center">
                         <span class="badge" style="background:{{ $sc }}22;color:{{ $sc }};font-size:.68rem;padding:3px 8px;border-radius:6px;font-weight:700">

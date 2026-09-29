@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Championship;
 use App\Models\League;
+use App\Models\LeagueUser;
 use App\Models\Race;
+use App\Models\User;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -52,5 +54,30 @@ class SidebarChampionshipRoundsTest extends TestCase
             ->assertDontSee('Secret Cup')
             ->assertDontSee('Hidden Cup')
             ->assertDontSee('Season standings coming soon');
+    }
+
+    // The subtitle ("Season 3") tells two seasons of the same championship apart —
+    // on the dashboard, the league's championship cards and the admin list.
+    public function test_the_subtitle_shows_next_to_the_championship_name(): void
+    {
+        $championship = $this->championship('Sunday Cup', 'registration_open');
+        $championship->update(['tagline' => 'Season 3']);
+        $this->round($championship, 'Spa-Francorchamps');
+
+        $this->get('/')->assertOk()->assertSee('SEASON 3 · ROUND 2 · Spa-Francorchamps');
+
+        $this->get(route('championships.index', ['league' => 'nlrl']))
+            ->assertOk()
+            ->assertSee('Sunday Cup')
+            ->assertSee('Season 3');
+
+        $manager = User::factory()->leagueManager()->create();
+        LeagueUser::create(['league_id' => $championship->league_id, 'user_id' => $manager->id, 'role' => 'manager']);
+        $manager->syncLeagueRoleFlags();
+
+        $this->actingAs($manager->refresh())
+            ->get(route('admin.leagues.championships.index', $championship->league_id))
+            ->assertOk()
+            ->assertSee('Season 3');
     }
 }

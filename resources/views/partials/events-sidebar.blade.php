@@ -52,9 +52,10 @@ $sbChampRounds = Race::where('scheduled_at', '>', $now)
     ->limit(8)
     ->get();
 $sbChampRounds->loadCount('registrations');
-$sbChampNames = \App\Models\Championship::withoutTenantScope()
+$sbChamps = \App\Models\Championship::withoutTenantScope()
     ->whereIn('id', $sbChampRounds->pluck('championship_id')->unique())
-    ->pluck('name', 'id');
+    ->get(['id', 'name', 'tagline'])
+    ->keyBy('id');
 
 $sbTeamEvents = TeamEvent::upcoming()->with('participatingDrivers')->limit(2)->get();
 
@@ -662,9 +663,10 @@ $sbLeaderboards = [
                                 @endif
 
                                 <div class="xcl-sb-up-card__title">
-                                    {{ $sbChampNames[$round->championship_id] ?? $round->title }}
+                                    @php $sbChamp = $sbChamps[$round->championship_id] ?? null; @endphp
+                                    {{ $sbChamp?->name ?? $round->title }}
                                     <span class="xcl-sb-champ-round">
-                                        {{ $round->round_number ? 'ROUND '.$round->round_number.' · ' : '' }}{{ $round->track }}
+                                        {{ $sbChamp?->tagline ? mb_strtoupper($sbChamp->tagline).' · ' : '' }}{{ $round->round_number ? 'ROUND '.$round->round_number.' · ' : '' }}{{ $round->track }}
                                     </span>
                                 </div>
 

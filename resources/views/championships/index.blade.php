@@ -84,7 +84,13 @@
 
                         <div class="p-3">
                             <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
-                                <h3 class="fw-black text-uppercase mb-0 text-white" style="font-size:.95rem;line-height:1.3">{{ $c->name }}</h3>
+                                <div>
+                                    <h3 class="fw-black text-uppercase mb-0 text-white" style="font-size:.95rem;line-height:1.3">{{ $c->name }}</h3>
+                                    {{-- The subtitle (e.g. "Season 3") tells two seasons of the same championship apart. --}}
+                                    @if($c->tagline)
+                                    <div style="font-size:.8rem;color:#9ca3af;line-height:1.3;margin-top:2px">{{ $c->tagline }}</div>
+                                    @endif
+                                </div>
                                 <span class="badge text-white fw-bold flex-shrink-0"
                                       style="background:{{ $c->gameColor() }};font-size:.62rem;padding:3px 8px;border-radius:5px">
                                     {{ $c->gameLabel() }}
