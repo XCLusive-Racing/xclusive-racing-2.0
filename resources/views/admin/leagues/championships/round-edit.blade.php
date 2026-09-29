@@ -1,15 +1,7 @@
 @extends('layouts.admin')
 
 @php
-    // ACC's real track roster — reused from admin.races.form so a typo here can
-    // never produce a track name gPortal's event.json doesn't recognise.
-    $accTracks = [
-        'Barcelona', 'Brands Hatch', 'COTA', 'Donington', 'Hungaroring', 'Imola',
-        'Indianapolis', 'Kyalami', 'Laguna Seca', 'Misano', 'Monza', 'Mount Panorama',
-        'Nürburgring', 'Nordschleife', 'Oulton Park', 'Paul Ricard', 'Red Bull Ring',
-        'Silverstone', 'Snetterton', 'Spa', 'Suzuka', 'Valencia', 'Watkins Glen',
-        'Zandvoort', 'Zolder',
-    ];
+    $accTracks = \App\Models\Race::ACC_TRACKS;
 
     // Resolved starting values for _round-shared-fields -- an existing round
     // already has its own saved values for every field, unlike a brand new one
@@ -70,8 +62,9 @@
                 <div class="col-sm-5">
                     <label class="form-label">Track <span class="text-danger">*</span></label>
                     @if(in_array($championship->game, ['acc', 'ac'], true))
-                    <select name="track" class="form-select @error('track') is-invalid @enderror" required>
+                    <select name="track" class="form-select @error('track') is-invalid @enderror" required data-track-randomize>
                         <option value="">Select track…</option>
+                        <option value="{{ \App\Models\Race::RANDOM_TRACK }}">🎲 Randomize</option>
                         @foreach($accTracks as $trackName)
                         <option value="{{ $trackName }}" {{ old('track', $race->track) === $trackName ? 'selected' : '' }}>{{ $trackName }}</option>
                         @endforeach

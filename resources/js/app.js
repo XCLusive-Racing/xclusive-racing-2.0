@@ -41,6 +41,7 @@ import { initEventTags } from './components/event-tags.js';
 import { initCountdownTimers } from './components/countdown-timer.js';
 import { initLocalTimes } from './components/local-time.js';
 import { initPasswordToggles } from './components/password-toggle.js';
+import { initTrackRandomize } from './components/track-randomize.js';
 import { initCheckboxToggles } from './components/toggle.js';
 import { initTabs, initAccordions, initActivateTab } from './components/tabs.js';
 import { initRegister } from './pages/auth/register.js';
@@ -94,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initCountdownTimers();
     initLocalTimes();
     initPasswordToggles();
+    initTrackRandomize();
     initCheckboxToggles();
     document.querySelectorAll('[data-tags-wrap]').forEach(el => initEventTags(el));
     document.querySelectorAll('[data-tabs]').forEach(wrap => {

@@ -551,6 +551,10 @@ class ChampionshipWizardController extends Controller
             abort(403, 'That race format does not belong to this league.');
         }
 
+        if (isset($data['track'])) {
+            $data['track'] = Race::resolveTrack($data['track']);
+        }
+
         // "Races (min)": "25" is the usual single race, "25, 25" a multi-race round —
         // race_duration keeps the first race's length either way.
         if (array_key_exists('race_lengths', $data)) {

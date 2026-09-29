@@ -25,6 +25,25 @@ class Race extends Model
         'iracing' => 'iracing',
     ];
 
+    // ACC's real track roster for the championship round forms, so a typo can never
+    // produce a track name gPortal's event.json doesn't recognise.
+    public const ACC_TRACKS = [
+        'Barcelona', 'Brands Hatch', 'COTA', 'Donington', 'Hungaroring', 'Imola',
+        'Indianapolis', 'Kyalami', 'Laguna Seca', 'Misano', 'Monza', 'Mount Panorama',
+        'Nürburgring', 'Nordschleife', 'Oulton Park', 'Paul Ricard', 'Red Bull Ring',
+        'Silverstone', 'Snetterton', 'Spa', 'Suzuka', 'Valencia', 'Watkins Glen',
+        'Zandvoort', 'Zolder',
+    ];
+
+    // The track forms' "Randomize" option — normally swapped for a real track in the
+    // browser (track-randomize.js); resolveTrack() covers a submit without JS.
+    public const RANDOM_TRACK = '__random__';
+
+    public static function resolveTrack(string $track): string
+    {
+        return $track === self::RANDOM_TRACK ? self::ACC_TRACKS[array_rand(self::ACC_TRACKS)] : $track;
+    }
+
     protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon', 'duration_key', 'xcl_r_multiplier', 'practice_duration', 'qualifying_duration', 'race_duration', 'pitstop_count', 'min_stop_secs', 'tyre_set_count', 'car_class', 'sr_requirement', 'min_rating', 'max_rating', 'weather', 'weather_randomness', 'rain_level', 'time_of_day', 'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier', 'race_time_multiplier', 'config_overrides', 'results_json_path', 'championship_id', 'round_number', 'is_multiclass', 'is_endurance', 'driver_stint_time_mins', 'max_total_driving_time_mins', 'mandatory_driver_swap', 'event_format_id', 'session_format_id', 'race_durations', 'ftp_server_id', 'slot_time', 'config_pushed_at', 'config_push_status', 'config_push_attempts', 'config_push_error', 'has_practice_server', 'practice_notes'];
 
     protected function casts(): array

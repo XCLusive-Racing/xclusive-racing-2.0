@@ -121,6 +121,30 @@ class ChampionshipLeagueFeedbackTest extends TestCase
         $this->assertArrayNotHasKey('tyreSetCount', $config->eventRules($round->fresh()));
     }
 
+    // The track dropdown's Randomize option is swapped for a real track in the
+    // browser; a submit that still carries it gets a random ACC track server-side.
+    public function test_a_randomized_round_track_becomes_a_real_acc_track(): void
+    {
+        $championship = $this->makeChampionship([], ['status' => 'draft']);
+        $manager = User::factory()->leagueManager()->create();
+        LeagueUser::create(['league_id' => $this->league->id, 'user_id' => $manager->id, 'role' => 'manager']);
+        $manager->syncLeagueRoleFlags();
+
+        $this->actingAs($manager->refresh())
+            ->get(route('admin.leagues.championships.rounds.create', [$this->league, $championship]))
+            ->assertOk()
+            ->assertSee('value="'.Race::RANDOM_TRACK.'"', false)
+            ->assertSee('data-track-randomize', false);
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.rounds.store', [$this->league, $championship]), [
+                'track' => Race::RANDOM_TRACK, 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i'),
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertContains($championship->rounds()->firstOrFail()->track, Race::ACC_TRACKS);
+    }
+
     public function test_race_page_car_options_use_the_platforms_catalogue(): void
     {
         $pc = Race::create([

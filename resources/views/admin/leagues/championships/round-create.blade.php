@@ -1,15 +1,7 @@
 @extends('layouts.admin')
 
 @php
-    // ACC's real track roster — reused from admin.races.form so a typo here can
-    // never produce a track name gPortal's event.json doesn't recognise.
-    $accTracks = [
-        'Barcelona', 'Brands Hatch', 'COTA', 'Donington', 'Hungaroring', 'Imola',
-        'Indianapolis', 'Kyalami', 'Laguna Seca', 'Misano', 'Monza', 'Mount Panorama',
-        'Nürburgring', 'Nordschleife', 'Oulton Park', 'Paul Ricard', 'Red Bull Ring',
-        'Silverstone', 'Snetterton', 'Spa', 'Suzuka', 'Valencia', 'Watkins Glen',
-        'Zandvoort', 'Zolder',
-    ];
+    $accTracks = \App\Models\Race::ACC_TRACKS;
     $sessionDefaults = $championship->settings->sessions;
     $suggestedRoundNumber = old('round_number', $nextRoundNumber);
     // Only the bulk form posts `rounds` — its presence in old input means this
@@ -99,8 +91,9 @@
                 <div class="col-sm-5">
                     <label class="form-label">Track <span class="text-danger">*</span></label>
                     @if(in_array($championship->game, ['acc', 'ac'], true))
-                    <select name="track" class="form-select @error('track') is-invalid @enderror" required>
+                    <select name="track" class="form-select @error('track') is-invalid @enderror" required data-track-randomize>
                         <option value="">Select track…</option>
+                        <option value="{{ \App\Models\Race::RANDOM_TRACK }}">🎲 Randomize</option>
                         @foreach($accTracks as $trackName)
                         <option value="{{ $trackName }}" {{ old('track') === $trackName ? 'selected' : '' }}>{{ $trackName }}</option>
                         @endforeach
@@ -257,8 +250,9 @@
         rows.forEach(function (row, i) {
             var tr = document.createElement('tr');
             var trackField = isAcc
-                ? '<select name="rounds[' + i + '][track]" class="form-select form-select-sm" required>'
+                ? '<select name="rounds[' + i + '][track]" class="form-select form-select-sm" required data-track-randomize>'
                     + '<option value="">Select track…</option>'
+                    + '<option value="{{ \App\Models\Race::RANDOM_TRACK }}">🎲 Randomize</option>'
                     + @json($accTracks).map(function (t) {
                         return '<option value="' + t + '"' + (row.track === t ? ' selected' : '') + '>' + t + '</option>';
                     }).join('')
