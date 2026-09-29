@@ -59,6 +59,12 @@
             <div class="xcl-event-hero__body">
                 <h1 class="xcl-event-hero__title">{{ $race->title }}</h1>
                 <div class="xcl-event-hero__meta-row">
+                    @if($race->round_type)
+                    <span class="xcl-event-hero__meta-item fw-bold text-uppercase" style="letter-spacing:.05em">
+                        <i class="fa-solid fa-flag-checkered" style="font-size:.75rem"></i>
+                        {{ $race->round_type }}
+                    </span>
+                    @endif
                     @if($race->track)
                     <span class="xcl-event-hero__meta-item">
                         <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24">

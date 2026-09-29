@@ -11,6 +11,17 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-29 — Round type + smaller round/championship fixes.**
+  `races.round_type` (Standard / Endurance / Sprint = `Race::ROUND_TYPES`, plus
+  a league's own `league_round_types`, added via "+ Add type…" in the round
+  form, `ChampionshipWizardController::resolveRoundType()`); shown on the
+  public Rounds tab, the round's event page and the admin rounds list, copied
+  on Duplicate. Also: "Randomize" in the round track dropdown
+  (`Race::RANDOM_TRACK`, `track-randomize.js`, server-side fallback in
+  `resolveRoundRow()`); the subtitle shows on championship cards/admin
+  list/dashboard; the event page's Session Schedule lists every race of a
+  multi-race round. Track "TBA" is parked on the backlog (a TBA round can't be
+  pushed — options noted in the project memory backlog).
 - **2026-09-29 — Solo car + number at registration.** An ACC championship
   without driver swaps asks a solo driver for car (the championship's car
   class, or the multiclass pick) and a championship-unique number, stored on

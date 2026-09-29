@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Storage;
 
 class League extends Model
 {
-    use Tenantable, SoftDeletes;
+    use SoftDeletes, Tenantable;
 
     protected $fillable = [
         'name', 'slug', 'logo', 'banner', 'primary_color', 'accent_color',
@@ -23,7 +23,7 @@ class League extends Model
     {
         return [
             'requires_discord_membership' => 'boolean',
-            'is_system'                   => 'boolean',
+            'is_system' => 'boolean',
         ];
     }
 
@@ -61,6 +61,17 @@ class League extends Model
     public function stewards(): BelongsToMany
     {
         return $this->members()->wherePivot('role', 'steward');
+    }
+
+    public function roundTypes(): HasMany
+    {
+        return $this->hasMany(LeagueRoundType::class)->orderBy('name');
+    }
+
+    // The round type dropdown: the built-in types, then the league's own.
+    public function roundTypeOptions(): array
+    {
+        return array_values(array_unique(array_merge(Race::ROUND_TYPES, $this->roundTypes()->pluck('name')->all())));
     }
 
     public function ftpServers(): HasMany
@@ -101,11 +112,11 @@ class League extends Model
             return null;
         }
 
-        return 'https://discord.com/oauth2/authorize?' . http_build_query([
-            'client_id'            => $clientId,
-            'scope'                => 'bot',
-            'permissions'          => 0,
-            'guild_id'             => $this->discord_guild_id,
+        return 'https://discord.com/oauth2/authorize?'.http_build_query([
+            'client_id' => $clientId,
+            'scope' => 'bot',
+            'permissions' => 0,
+            'guild_id' => $this->discord_guild_id,
             'disable_guild_select' => 'true',
         ]);
     }

@@ -9,6 +9,7 @@
     // Sessions-step defaults instead).
     $defaults = [
         'ftp_server_id'               => $race->ftp_server_id,
+        'round_type'                  => $race->round_type,
         'description'                 => $race->description,
         'practice_duration'           => $race->practice_duration,
         'qualifying_duration'         => $race->qualifying_duration,

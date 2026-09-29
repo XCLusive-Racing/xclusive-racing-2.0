@@ -25,6 +25,32 @@
     @endif
 </div>
 
+{{-- Round type: the built-in types plus the league's own. "+ Add type…" opens a
+     text field; the new name joins this league's list for every later round
+     (ChampionshipWizardController::resolveRoundType()). --}}
+@php
+    $roundTypeOptions = $league->roundTypeOptions();
+    $currentRoundType = old('round_type', $defaults['round_type'] ?? null);
+@endphp
+<div class="px-4 py-3" style="border-top:1px solid #f3f4f6" data-round-type>
+    <label class="form-label" style="font-size:.75rem">Round Type <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
+    <div class="d-flex flex-wrap gap-2">
+        <select name="round_type" data-round-type-select class="form-select form-select-sm" style="max-width:220px">
+            <option value="">— None —</option>
+            @foreach($roundTypeOptions as $option)
+            <option value="{{ $option }}" @selected($currentRoundType === $option)>{{ $option }}</option>
+            @endforeach
+            @if($currentRoundType && $currentRoundType !== \App\Models\Race::NEW_ROUND_TYPE && !in_array($currentRoundType, $roundTypeOptions, true))
+            <option value="{{ $currentRoundType }}" selected>{{ $currentRoundType }}</option>
+            @endif
+            <option value="{{ \App\Models\Race::NEW_ROUND_TYPE }}" @selected($currentRoundType === \App\Models\Race::NEW_ROUND_TYPE)>+ Add type…</option>
+        </select>
+        <input type="text" name="round_type_new" data-round-type-new maxlength="50" value="{{ old('round_type_new') }}"
+               placeholder="New type, e.g. Night Race" class="form-control form-control-sm" style="max-width:220px"
+               @if($currentRoundType !== \App\Models\Race::NEW_ROUND_TYPE) hidden @endif>
+    </div>
+</div>
+
 <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
     <label class="form-label" style="font-size:.75rem">Notes <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
     <textarea name="description" rows="2" class="form-control form-control-sm">{{ old('description', $defaults['description']) }}</textarea>
@@ -227,6 +253,17 @@ document.addEventListener('change', function (e) {
     });
     var details = select.closest('div').nextElementSibling;
     if (details && details.tagName === 'DETAILS') details.open = true;
+});
+
+// Round type "+ Add type…" shows the field for the new name.
+document.addEventListener('change', function (e) {
+    var select = e.target.closest('[data-round-type-select]');
+    if (!select) return;
+    var input = select.closest('[data-round-type]').querySelector('[data-round-type-new]');
+    var adding = select.value === @json(\App\Models\Race::NEW_ROUND_TYPE);
+    input.hidden = !adding;
+    input.required = adding;
+    if (adding) input.focus();
 });
 
 // A field failing browser validation inside the collapsed override panel can't

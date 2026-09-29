@@ -19,7 +19,12 @@
         @forelse($championship->rounds as $round)
         <div class="d-flex align-items-center justify-content-between py-2" style="border-bottom:1px solid #f3f4f6">
             <div>
-                <div class="fw-bold text-dark" style="font-size:.85rem">R{{ $round->round_number }} — {{ $round->title }}</div>
+                <div class="fw-bold text-dark" style="font-size:.85rem">
+                    R{{ $round->round_number }} — {{ $round->title }}
+                    @if($round->round_type)
+                    <span class="badge ms-1 fw-bold text-uppercase" style="font-size:.6rem;background:#fce7f3;color:#be185d">{{ $round->round_type }}</span>
+                    @endif
+                </div>
                 <div class="text-secondary" style="font-size:.72rem">
                     {{ $round->track }} · {{ $round->scheduledAtUk()->format('d M Y, H:i T') }}
                     @if($round->weather) · {{ ucfirst($round->weather) }} @endif

@@ -39,12 +39,18 @@ class Race extends Model
     // browser (track-randomize.js); resolveTrack() covers a submit without JS.
     public const RANDOM_TRACK = '__random__';
 
+    // Built-in championship round types; a league can add its own (LeagueRoundType).
+    public const ROUND_TYPES = ['Standard', 'Endurance', 'Sprint'];
+
+    // The round type dropdown's "+ Add type…" option, with the name in round_type_new.
+    public const NEW_ROUND_TYPE = '__new__';
+
     public static function resolveTrack(string $track): string
     {
         return $track === self::RANDOM_TRACK ? self::ACC_TRACKS[array_rand(self::ACC_TRACKS)] : $track;
     }
 
-    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon', 'duration_key', 'xcl_r_multiplier', 'practice_duration', 'qualifying_duration', 'race_duration', 'pitstop_count', 'min_stop_secs', 'tyre_set_count', 'car_class', 'sr_requirement', 'min_rating', 'max_rating', 'weather', 'weather_randomness', 'rain_level', 'time_of_day', 'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier', 'race_time_multiplier', 'config_overrides', 'results_json_path', 'championship_id', 'round_number', 'is_multiclass', 'is_endurance', 'driver_stint_time_mins', 'max_total_driving_time_mins', 'mandatory_driver_swap', 'event_format_id', 'session_format_id', 'race_durations', 'ftp_server_id', 'slot_time', 'config_pushed_at', 'config_push_status', 'config_push_attempts', 'config_push_error', 'has_practice_server', 'practice_notes'];
+    protected $fillable = ['title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'description', 'image', 'icon', 'duration_key', 'xcl_r_multiplier', 'practice_duration', 'qualifying_duration', 'race_duration', 'pitstop_count', 'min_stop_secs', 'tyre_set_count', 'car_class', 'sr_requirement', 'min_rating', 'max_rating', 'weather', 'weather_randomness', 'rain_level', 'time_of_day', 'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier', 'race_time_multiplier', 'config_overrides', 'results_json_path', 'championship_id', 'round_number', 'round_type', 'is_multiclass', 'is_endurance', 'driver_stint_time_mins', 'max_total_driving_time_mins', 'mandatory_driver_swap', 'event_format_id', 'session_format_id', 'race_durations', 'ftp_server_id', 'slot_time', 'config_pushed_at', 'config_push_status', 'config_push_attempts', 'config_push_error', 'has_practice_server', 'practice_notes'];
 
     protected function casts(): array
     {

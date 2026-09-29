@@ -14,6 +14,7 @@
     // the round's own saved values instead).
     $defaults = [
         'ftp_server_id'               => $championship->ftp_server_id,
+        'round_type'                  => null,
         'description'                 => null,
         'practice_duration'           => $sessionDefaults->practice_enabled ? $sessionDefaults->practice_length_minutes : '',
         'qualifying_duration'         => $sessionDefaults->qualifying_enabled ? $sessionDefaults->qualifying_length_minutes : '',

@@ -100,7 +100,7 @@ class ChampionshipWizardController extends Controller
     // Round fields a duplicated season carries over — the track, sessions and
     // conditions; never results, push status or the date (shifted instead).
     private const DUPLICATED_ROUND_FIELDS = [
-        'track', 'round_number', 'is_multiclass', 'is_endurance', 'practice_duration', 'qualifying_duration',
+        'track', 'round_number', 'round_type', 'is_multiclass', 'is_endurance', 'practice_duration', 'qualifying_duration',
         'race_duration', 'race_durations', 'session_format_id', 'event_format_id', 'weather', 'weather_randomness',
         'rain_level', 'time_of_day', 'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier',
         'race_time_multiplier', 'description', 'image', 'icon', 'xcl_r_multiplier', 'pitstop_count', 'min_stop_secs',
@@ -505,6 +505,9 @@ class ChampionshipWizardController extends Controller
             'driver_stint_time_mins' => 'nullable|integer|min:1|max:1440',
             'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
             'mandatory_driver_swap' => 'nullable|boolean',
+            // Checked against the league's own list in resolveRoundType().
+            'round_type' => 'nullable|string|max:50',
+            'round_type_new' => 'nullable|string|max:50',
             // Ownership (this league's own servers only) is checked in resolveRoundRow() —
             // a plain exists:ftp_servers,id can't scope that.
             'ftp_server_id' => 'nullable|exists:ftp_servers,id',
@@ -531,6 +534,33 @@ class ChampionshipWizardController extends Controller
         return $data;
     }
 
+    // The round's type: one of the league's options, or — picked "+ Add type…" —
+    // a new name, which joins the league's list for every later round. False
+    // when it's neither.
+    private function resolveRoundType(?string $picked, ?string $newName, League $league): string|null|false
+    {
+        if ($picked === null || $picked === '') {
+            return null;
+        }
+
+        if ($picked !== Race::NEW_ROUND_TYPE) {
+            return in_array($picked, $league->roundTypeOptions(), true) ? $picked : false;
+        }
+
+        $name = trim((string) $newName);
+        if ($name === '') {
+            return false;
+        }
+
+        // Same name in another case is the same type, not a second one.
+        $existing = collect($league->roundTypeOptions())->first(fn ($option) => mb_strtolower($option) === mb_strtolower($name));
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        return $league->roundTypes()->create(['name' => $name])->name;
+    }
+
     // Shared by addRound() and bulkAddRounds() — turns one row's raw
     // track/scheduled_at/round_number plus the shared session/weather/server
     // fields into a finalized Race::create() payload, or returns a plain error
@@ -554,6 +584,15 @@ class ChampionshipWizardController extends Controller
         if (isset($data['track'])) {
             $data['track'] = Race::resolveTrack($data['track']);
         }
+
+        if (array_key_exists('round_type', $data)) {
+            $roundType = $this->resolveRoundType($data['round_type'], $data['round_type_new'] ?? null, $league);
+            if ($roundType === false) {
+                return 'Pick a round type from the list, or enter a name for the new one.';
+            }
+            $data['round_type'] = $roundType;
+        }
+        unset($data['round_type_new']);
 
         // "Races (min)": "25" is the usual single race, "25, 25" a multi-race round —
         // race_duration keeps the first race's length either way.
