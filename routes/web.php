@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\ResultController as AdminResultController;
 use App\Http\Controllers\Admin\SessionFormatController;
 use App\Http\Controllers\Admin\TeamEventController as AdminTeamEventController;
+use App\Http\Controllers\Admin\TimeTrialEventController as AdminTimeTrialEventController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\DiscordController;
 use App\Http\Controllers\Auth\LoginController;
@@ -116,6 +117,11 @@ Route::get('/hotlaps', [HotlapController::class, 'index'])->name('hotlaps.index'
 
 // Time Trials leaderboards - public
 Route::get('/time-trials', [TimeTrialController::class, 'index'])->name('time-trials.index');
+Route::get('/time-trials/events/{event}', [TimeTrialController::class, 'event'])->name('time-trials.events.show');
+Route::post('/time-trials/events/{event}/register', [TimeTrialController::class, 'register'])
+    ->middleware('auth')->name('time-trials.events.register');
+Route::delete('/time-trials/events/{event}/register', [TimeTrialController::class, 'withdraw'])
+    ->middleware('auth')->name('time-trials.events.withdraw');
 Route::get('/time-trials/{track}', [TimeTrialController::class, 'show'])
     ->where('track', '[a-z0-9_]+')
     ->name('time-trials.show');
@@ -210,6 +216,17 @@ Route::middleware('auth')->group(function () {
 // Admin
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/calendar', [AdminCalendarController::class, 'index'])->name('calendar');
+
+    // Weekly Time Trials
+    Route::get('/time-trials', [AdminTimeTrialEventController::class, 'index'])->name('time-trials.index');
+    Route::get('/time-trials/create', [AdminTimeTrialEventController::class, 'create'])->name('time-trials.create');
+    Route::post('/time-trials', [AdminTimeTrialEventController::class, 'store'])->name('time-trials.store');
+    Route::get('/time-trials/{timeTrial}/edit', [AdminTimeTrialEventController::class, 'edit'])->name('time-trials.edit');
+    Route::put('/time-trials/{timeTrial}', [AdminTimeTrialEventController::class, 'update'])->name('time-trials.update');
+    Route::delete('/time-trials/{timeTrial}', [AdminTimeTrialEventController::class, 'destroy'])->name('time-trials.destroy');
+    Route::post('/time-trials/{timeTrial}/push', [AdminTimeTrialEventController::class, 'push'])->name('time-trials.push');
+    Route::post('/time-trials/{timeTrial}/collect', [AdminTimeTrialEventController::class, 'collect'])->name('time-trials.collect');
+
     Route::get('/races', [AdminRaceController::class, 'index'])->name('races.index');
     Route::get('/races/special', [AdminRaceController::class, 'specialIndex'])->name('races.special');
     Route::get('/races/create', [AdminRaceController::class, 'create'])->name('races.create');

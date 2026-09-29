@@ -16,3 +16,7 @@ Schedule::command('reports:announce-daily')->dailyAt('12:00')->timezone('Europe/
 Schedule::command('practice:push-due')->everyFiveMinutes()->onOneServer();
 // 24h championship practice servers: next round's track, every midnight (UK).
 Schedule::command('championships:push-practice')->dailyAt('00:00')->timezone('Europe/London')->onOneServer();
+// Weekly Time Trials: config + entry list before every server restart, results collected
+// from the hourly practice sessions, events finalized once they end.
+Schedule::command('time-trials:push-due')->everyFiveMinutes()->onOneServer();
+Schedule::command('time-trials:collect-results')->everyTenMinutes()->onOneServer();

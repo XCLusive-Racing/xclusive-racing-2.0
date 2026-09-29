@@ -10,10 +10,38 @@
         <div class="pt-4 mb-4">
             <h1 class="display-4 fw-black text-uppercase fst-italic about-section__heading mb-3">TIME TRIALS</h1>
             <div class="section-divider mb-3" style="margin-left:0"></div>
-            <p class="xcl-tt__lead mb-0">All time leaderboards for every track, one row per driver per car.</p>
+            <p class="xcl-tt__lead mb-0">A new track every week, and the all time records of every track.</p>
         </div>
 
-        @include('time-trials._boards', ['url' => fn ($key) => route('time-trials.index', ['platform' => $key])])
+        {{-- This week's event --}}
+        @if($event)
+        <a href="{{ route('time-trials.events.show', $event) }}" class="xcl-tt__weekly mb-4">
+            <div>
+                <span class="xcl-tt__status xcl-tt__status--{{ $event->status() }}">{{ $event->status() === 'live' ? 'Live now' : 'Coming up' }}</span>
+                <h2 class="xcl-tt__weekly-title">{{ $event->displayTitle() }}</h2>
+                <p class="xcl-tt__muted mb-0">
+                    {{ $event->classLabel() }} ·
+                    @if($event->status() === 'live')
+                    closes <x-local-time :at="$event->ends_at" format="dm-time" />
+                    @else
+                    opens <x-local-time :at="$event->starts_at" format="dm-time" />
+                    @endif
+                    · {{ $event->registrations_count }} {{ \Illuminate\Support\Str::plural('driver', $event->registrations_count) }}
+                </p>
+            </div>
+            <span class="btn fw-black text-uppercase text-white xcl-tt__cta">Sign up and standings</span>
+        </a>
+        @endif
+        @if($lastEvent)
+        <p class="xcl-tt__muted small mb-4">
+            Last week: <a href="{{ route('time-trials.events.show', $lastEvent) }}" class="xcl-tt__link">{{ $lastEvent->displayTitle() }} results</a>
+        </p>
+        @endif
+
+        <h2 id="records" class="xcl-tt__section-title">All Time Records</h2>
+        <p class="xcl-tt__muted mb-3">One row per driver per car. Every counting lap from a weekly Time Trial is added when the week ends.</p>
+
+        @include('time-trials._boards', ['url' => fn ($key) => route('time-trials.index', ['platform' => $key]) . '#records'])
 
         @include('time-trials._bop-note')
 

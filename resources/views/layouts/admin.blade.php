@@ -75,6 +75,13 @@
                 </svg>
                 <span>Special Events</span>
             </a>
+            <a href="{{ route('admin.time-trials.index') }}"
+               class="admin-nav-link {{ request()->routeIs('admin.time-trials.*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span>Time Trials</span>
+            </a>
             <a href="{{ route('admin.calendar') }}"
                class="admin-nav-link {{ request()->routeIs('admin.calendar') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

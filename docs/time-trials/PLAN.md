@@ -1,9 +1,29 @@
 # Time Trials plan
 
-## Current state (2026-09-29)
+## Current state (2026-09-30)
 
-Phase one is built. The data model and the historical import are ready; the import has only
-been dry run. Nothing has been written to production yet.
+Phase one is live on production: the tables exist and the historical import has run
+(10303 laps, 54 cars).
+
+Phase two (weekly events) is built and tested but not deployed yet. Its migration is
+`2026_09_30_000000_create_time_trial_events_table`.
+
+- Admin > Events > Time Trials: create a week's event with a track, car class, window (UK
+  time) and server. XCL SERVER 6 is the default. Only published events are pushed, shown and open for signup.
+- `time-trials:push-due` runs every 5 minutes. Ten minutes before each hourly server restart
+  it pushes the config: one practice session of the restart interval minus 5 minutes, dry,
+  and the event's class as carGroup. It also pushes a forced entry list of every signup so far.
+- `time-trials:collect-results` runs every 10 minutes. It reads each new `_FP.json` result
+  file once and keeps each signed-up driver's best valid lap per car.
+- About 90 minutes after the window closes, the same command finalizes the event. It stores
+  the classification, awards points through `RatingService::applyManualAdjustment()`, and
+  adds every counting lap to the All Time Records (`source = server`, `time_trial_event_id`).
+- A lap counts only when it beats the driver's own all-time record in that car on the track
+  (`TimeTrialStandings`).
+- Points use a placeholder formula: 50 for the winner down to 1 for the last driver
+  (`TimeTrialRating::points()`). The real formula replaces that one method.
+- Public: `/time-trials` shows this week's event, then the All Time Records.
+  `/time-trials/events/{event}` has signup, times to beat, standings and final results.
 
 - Tables: `time_trial_cars` and `time_trial_laps` (migrations `2026_09_29_100000` / `100001`).
 - Import: `php artisan time-trials:import <laps.csv> <cars.csv>` is a dry run.
@@ -11,7 +31,7 @@ been dry run. Nothing has been written to production yet.
 - Public pages: `/time-trials` (track index) and `/time-trials/{track}` (leaderboard). The
   `?platform=console|pc` filter picks the board. Boards are set up in `config/time_trials.php`.
 
-Not built yet: signup, entry lists, FTP upload, result collection (`source = server`).
+Not built yet: the real rating formula and a PC Time Trials server.
 
 ## Decisions
 

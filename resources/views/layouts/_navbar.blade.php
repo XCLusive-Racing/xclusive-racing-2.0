@@ -93,7 +93,7 @@
                             </a>
                         </li>
                         <li>
-                            <a class="xcl-dropdown-item" href="{{ url('/events?type=time-trial') }}">
+                            <a class="xcl-dropdown-item" href="{{ route('time-trials.index') }}">
                                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 TIME TRIALS
                             </a>

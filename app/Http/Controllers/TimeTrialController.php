@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Driver;
 use App\Models\Race;
 use App\Models\TimeTrialCar;
+use App\Models\TimeTrialEvent;
 use App\Models\TimeTrialLap;
+use App\Services\TimeTrials\TimeTrialStandings;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -42,7 +45,11 @@ class TimeTrialController extends Controller
             ->sortBy('name')
             ->values();
 
-        return view('time-trials.index', compact('boards', 'board', 'tracks'));
+        // This week's event on top (live, else the next one), and the last finished one.
+        $event = TimeTrialEvent::currentOrNext()->withCount('registrations')->first();
+        $lastEvent = TimeTrialEvent::published()->whereNotNull('finalized_at')->latest('ends_at')->first();
+
+        return view('time-trials.index', compact('boards', 'board', 'tracks', 'event', 'lastEvent'));
     }
 
     public function show(Request $request, string $track)
@@ -96,6 +103,93 @@ class TimeTrialController extends Controller
             'theoretical' => $theoretical,
             'profiles' => $profiles,
         ]);
+    }
+
+    // A weekly Time Trial event: signup, how to join, the driver's times to beat, and the
+    // live classification (the stored final one once the event is finalized).
+    public function event(Request $request, TimeTrialEvent $event, TimeTrialStandings $standings)
+    {
+        abort_unless($event->is_published, 404);
+
+        $user = $request->user();
+        $registered = $event->isRegistered($user);
+
+        $finished = $event->finalized_at !== null;
+        $leaderMs = $finished ? (int) $event->results()->min('lap_time_ms') : 0;
+        $rows = $finished
+            ? $event->results()->with('car')->get()->map(fn ($result) => [
+                'position' => $result->position,
+                'driver_name' => $result->driver_name,
+                'identifier' => $result->platform_identifier,
+                'car' => $result->car,
+                'car_id' => $result->car_id,
+                'lap_time_ms' => $result->lap_time_ms,
+                'sectors' => null,
+                'gap_ms' => $result->lap_time_ms - $leaderMs,
+                'points' => $result->rating_change,
+            ])
+            : $standings->for($event)->map(fn ($row) => [
+                'position' => $row['position'],
+                'driver_name' => $row['lap']->driver_name,
+                'identifier' => $row['lap']->platform_identifier,
+                'car' => $row['lap']->car,
+                'car_id' => $row['lap']->car_id,
+                'lap_time_ms' => $row['lap']->lap_time_ms,
+                'sectors' => [$row['lap']->sector1_ms, $row['lap']->sector2_ms, $row['lap']->sector3_ms],
+                'gap_ms' => $row['gap_ms'],
+                'points' => $row['points'],
+            ]);
+
+        // The signed-in driver's own all-time bests on this track: the times to beat, per car.
+        $playerId = $user?->playerIdFor('acc');
+        $timesToBeat = $playerId
+            ? TimeTrialLap::with('car')->where('track', $event->track)->where('platform_identifier', $playerId)
+                ->where('is_personal_best', true)
+                ->when($event->car_class, fn ($q) => $q->where('car_class', $event->car_class))
+                ->where(fn ($q) => $q->whereNull('time_trial_event_id')->orWhere('time_trial_event_id', '!=', $event->id))
+                ->orderBy('lap_time_ms')->get()
+            : collect();
+
+        $profiles = Driver::whereIn('xuid_psid', collect($rows)->pluck('identifier')->unique())->pluck('id', 'xuid_psid');
+
+        return view('time-trials.event', [
+            'event' => $event->loadCount('registrations'),
+            'registered' => $registered,
+            'rows' => $rows,
+            'finished' => $finished,
+            'timesToBeat' => $timesToBeat,
+            'hasPlayerId' => (bool) $playerId,
+            'profiles' => $profiles,
+            'trackImage' => $this->trackImage($event->track),
+        ]);
+    }
+
+    public function register(Request $request, TimeTrialEvent $event): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (! $event->isOpenForSignup()) {
+            return back()->with('error', 'Signups for this Time Trial are closed.');
+        }
+        if ($user->is_suspended) {
+            return back()->with('error', 'Your account is suspended, so you cannot sign up right now.');
+        }
+        if (! $user->playerIdFor('acc')) {
+            return back()->with('error', 'Add your Xbox or PlayStation account to your profile first, so the server knows you.');
+        }
+
+        $event->registrations()->firstOrCreate(['user_id' => $user->id]);
+
+        return back()->with('success', 'You are signed up. You can join the server from the next full hour.');
+    }
+
+    public function withdraw(Request $request, TimeTrialEvent $event): RedirectResponse
+    {
+        if ($event->finalized_at === null) {
+            $event->registrations()->where('user_id', $request->user()->id)->delete();
+        }
+
+        return back()->with('success', 'You are no longer signed up for this Time Trial.');
     }
 
     /** @return array{0: array, 1: string} enabled boards and the requested (or default) one */

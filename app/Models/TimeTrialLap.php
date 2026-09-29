@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 #[Fillable([
     'user_id', 'platform_identifier', 'platform', 'driver_name', 'track', 'car_id', 'car_class',
     'lap_time_ms', 'sector1_ms', 'sector2_ms', 'sector3_ms', 'game_patch', 'source_event',
-    'laps_driven', 'source', 'is_personal_best', 'source_key', 'recorded_at',
+    'laps_driven', 'source', 'time_trial_event_id', 'is_personal_best', 'source_key', 'recorded_at',
 ])]
 class TimeTrialLap extends Model
 {

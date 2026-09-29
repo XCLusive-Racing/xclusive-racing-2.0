@@ -7712,3 +7712,144 @@ table.dataTable thead th {
         &__car-form { flex-basis: 100%; }
     }
 }
+
+// Weekly Time Trial event (banner on the Time Trials page, event page with signup).
+.xcl-tt {
+    &__weekly {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.25rem 1.5rem;
+        border: 1px solid #1f2937;
+        border-left: 4px solid $primary;
+        border-radius: 12px;
+        background: linear-gradient(90deg, rgba($primary, .22), #111827 60%);
+        text-decoration: none;
+        transition: border-color .2s;
+        &:hover { border-color: #a855f7; }
+    }
+
+    &__weekly-title, &__section-title {
+        margin: .35rem 0 .25rem;
+        color: #fff;
+        font-weight: 900;
+        font-style: italic;
+        text-transform: uppercase;
+    }
+    &__weekly-title { font-size: clamp(1.2rem, 2.4vw, 1.6rem); }
+    &__section-title { font-size: 1.15rem; margin-top: 1rem; scroll-margin-top: calc(var(--xcl-header-h) + 1rem); }
+
+    &__link {
+        color: #c084fc;
+        font-weight: 700;
+        &:hover { color: #fff; }
+    }
+
+    &__cta {
+        background: $primary;
+        font-size: .8rem;
+        &:hover { background: $primary-hover; color: #fff; }
+    }
+
+    &__status {
+        display: inline-block;
+        padding: .15rem .55rem;
+        border-radius: 20px;
+        background: #374151;
+        color: #fff;
+        font-size: .65rem;
+        font-weight: 800;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        &--live { background: #16a34a; }
+        &--upcoming { background: #2563eb; }
+        &--closed { background: #b45309; }
+    }
+
+    &__event-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+        gap: 1.25rem;
+        align-items: start;
+
+        @include media-breakpoint-down(md) { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    &__event-card {
+        overflow: hidden;
+        border-radius: 12px;
+        background: #111827;
+    }
+
+    &__event-body { padding: 0 1.25rem 1.25rem; }
+
+    &__facts {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: .35rem 1rem;
+        margin: .9rem 0 1.1rem;
+        font-size: .88rem;
+        dt { color: #6b7280; font-weight: 700; text-transform: uppercase; font-size: .72rem; letter-spacing: .05em; align-self: center; }
+        dd { margin: 0; color: #e5e7eb; font-weight: 600; }
+    }
+
+    &__signed-up {
+        color: #4ade80;
+        font-weight: 800;
+    }
+
+    &__rules {
+        padding: 1.1rem 1.25rem;
+        color: #9ca3af;
+        font-size: .88rem;
+        ul { padding-left: 1.1rem; margin-bottom: 0; }
+        li + li { margin-top: .35rem; }
+    }
+
+    &__panel-title {
+        color: #fff;
+        font-size: .9rem;
+        font-weight: 900;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        margin-bottom: .75rem;
+    }
+
+    &__panel-subtitle {
+        margin: 1.1rem 0 .5rem;
+        color: #e5e7eb;
+        font-size: .78rem;
+        font-weight: 800;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+
+    &__rules &__to-beat {
+        list-style: none;
+        padding: 0;
+        li {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: .3rem 0;
+            border-bottom: 1px solid #1f2937;
+        }
+    }
+
+    &__panel-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: .5rem;
+        padding: .9rem 1.25rem;
+        border-bottom: 1px solid #1f2937;
+    }
+
+    &__points {
+        color: #4ade80;
+        font-weight: 800;
+    }
+}
