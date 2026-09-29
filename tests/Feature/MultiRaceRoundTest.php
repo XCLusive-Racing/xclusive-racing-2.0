@@ -71,6 +71,23 @@ class MultiRaceRoundTest extends TestCase
         $this->assertSame(['P', 'Q', 'R'], array_column($single, 'sessionType'));
     }
 
+    // The event page's Session Schedule used to show only the first race.
+    public function test_the_session_schedule_lists_every_race(): void
+    {
+        $round = $this->makeRound(['status' => 'open', 'scheduled_at' => now()->addWeek(), 'race_durations' => [25, 20, 15]]);
+
+        $this->get(route('events.show', $round))
+            ->assertOk()
+            ->assertSeeInOrder(['PRACTICE', '10 min', 'QUALIFYING', '15 min', 'RACE 1', '25 min', 'RACE 2', '20 min', 'RACE 3', '15 min']);
+
+        $single = $this->makeRound(['status' => 'open', 'scheduled_at' => now()->addWeek(), 'race_durations' => null]);
+
+        $this->get(route('events.show', $single))
+            ->assertOk()
+            ->assertSeeInOrder(['QUALIFYING', '15 min', 'RACE', '25 min'])
+            ->assertDontSee('RACE 2');
+    }
+
     public function test_each_race_imports_separately_and_the_round_finishes_after_the_last(): void
     {
         Storage::fake('local');

@@ -125,6 +125,31 @@
                     $quali2Mins = $fmt ? $fmt->quali2_mins  : null;
                     $race2Mins  = $fmt ? $fmt->race2_mins   : null;
 
+                    // A multi-race round (race_durations, e.g. "25, 25") runs P, Q and then
+                    // every race back to back — the same sessions the server gets
+                    // (AccServerConfigService::configuration()).
+                    $raceLengths = count($race->race_durations ?? []) > 1
+                        ? $race->raceLengths()
+                        : array_values(array_filter([$race1Mins, $race2Mins]));
+                    if (count($race->race_durations ?? []) > 1) {
+                        $quali2Mins = null;
+                    }
+
+                    $scheduleSteps = [];
+                    if ($pracMins) {
+                        $scheduleSteps[] = ['label' => 'PRACTICE', 'mins' => $pracMins, 'race' => false];
+                    }
+                    if ($qualiMins) {
+                        $scheduleSteps[] = ['label' => $quali2Mins ? 'QUALIFYING 1' : 'QUALIFYING', 'mins' => $qualiMins, 'race' => false];
+                    }
+                    foreach ($raceLengths as $i => $mins) {
+                        // A format's second qualifying sits between its two races.
+                        if ($i === 1 && $quali2Mins) {
+                            $scheduleSteps[] = ['label' => 'QUALIFYING 2', 'mins' => $quali2Mins, 'race' => false];
+                        }
+                        $scheduleSteps[] = ['label' => count($raceLengths) > 1 ? 'RACE '.($i + 1) : 'RACE', 'mins' => (int) $mins, 'race' => true];
+                    }
+
                     // Pitstop info: format-based first, then race-level for custom events
                     if ($fmt) {
                         $hasPitstop   = $fmt->pitstop_count > 0;
@@ -156,57 +181,31 @@
                         @endif
                     </h2>
                     <div class="xcl-session-schedule">
-                        @if($pracMins)
-                        <div class="xcl-session-schedule__step">
-                            <div class="xcl-session-schedule__dot"></div>
-                            <div class="xcl-session-schedule__info">
-                                <span class="xcl-session-schedule__label">PRACTICE</span>
-                                <span class="xcl-session-schedule__dur">{{ $pracMins }} min</span>
-                            </div>
-                        </div>
-                        @endif
-                        @if($qualiMins)
-                        <div class="xcl-session-schedule__step">
-                            <div class="xcl-session-schedule__dot"></div>
-                            <div class="xcl-session-schedule__info">
-                                <span class="xcl-session-schedule__label">{{ $race2Mins ? 'QUALIFYING 1' : 'QUALIFYING' }}</span>
-                                <span class="xcl-session-schedule__dur">{{ $qualiMins }} min</span>
-                            </div>
-                        </div>
-                        @endif
-                        @if($race1Mins)
+                        @foreach($scheduleSteps as $step)
+                        @if($step['race'])
                         <div class="xcl-session-schedule__step xcl-session-schedule__step--race">
                             <div class="xcl-session-schedule__dot xcl-session-schedule__dot--race" style="border-color:{{ $race->gameColor() }};background:{{ $race->gameColor() }}22"></div>
                             <div class="xcl-session-schedule__info">
-                                <span class="xcl-session-schedule__label xcl-session-schedule__label--race" style="color:{{ $race->gameColor() }}">{{ $race2Mins ? 'RACE 1' : 'RACE' }}</span>
+                                <span class="xcl-session-schedule__label xcl-session-schedule__label--race" style="color:{{ $race->gameColor() }}">{{ $step['label'] }}</span>
                                 <span class="xcl-session-schedule__dur xcl-session-schedule__dur--race">
-                                    @if($race->is_endurance && $race1Mins % 60 === 0)
-                                        {{ $race1Mins / 60 }}h
+                                    @if($race->is_endurance && $step['mins'] % 60 === 0)
+                                        {{ $step['mins'] / 60 }}h
                                     @else
-                                        {{ $race1Mins }} min
+                                        {{ $step['mins'] }} min
                                     @endif
                                 </span>
                             </div>
                         </div>
-                        @endif
-                        @if($quali2Mins)
+                        @else
                         <div class="xcl-session-schedule__step">
                             <div class="xcl-session-schedule__dot"></div>
                             <div class="xcl-session-schedule__info">
-                                <span class="xcl-session-schedule__label">QUALIFYING 2</span>
-                                <span class="xcl-session-schedule__dur">{{ $quali2Mins }} min</span>
+                                <span class="xcl-session-schedule__label">{{ $step['label'] }}</span>
+                                <span class="xcl-session-schedule__dur">{{ $step['mins'] }} min</span>
                             </div>
                         </div>
                         @endif
-                        @if($race2Mins)
-                        <div class="xcl-session-schedule__step xcl-session-schedule__step--race">
-                            <div class="xcl-session-schedule__dot xcl-session-schedule__dot--race" style="border-color:{{ $race->gameColor() }};background:{{ $race->gameColor() }}22"></div>
-                            <div class="xcl-session-schedule__info">
-                                <span class="xcl-session-schedule__label xcl-session-schedule__label--race" style="color:{{ $race->gameColor() }}">RACE 2</span>
-                                <span class="xcl-session-schedule__dur xcl-session-schedule__dur--race">{{ $race2Mins }} min</span>
-                            </div>
-                        </div>
-                        @endif
+                        @endforeach
                     </div>
                     @if($fmt || $hasPitstop || $customMultiplier)
                     <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap">
