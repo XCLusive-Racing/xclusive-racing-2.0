@@ -232,6 +232,21 @@ class Championship extends Model
         return $overrides;
     }
 
+    // user_id => ['car_model', 'car_number'] for every approved solo entry that
+    // picked a car at registration — forced on every round's entrylist.
+    public function soloCars(): array
+    {
+        return $this->registrations()->approved()
+            ->where('is_spectator', false)
+            ->whereNull('racing_team_id')
+            ->whereNotNull('car_model')
+            ->get(['user_id', 'car_model', 'car_number'])
+            ->mapWithKeys(fn (ChampionshipRegistration $registration) => [
+                $registration->user_id => $registration->only(['car_model', 'car_number']),
+            ])
+            ->all();
+    }
+
     public function registrations(): HasMany
     {
         return $this->hasMany(ChampionshipRegistration::class);

@@ -56,6 +56,31 @@
                         @if($entry->racingTeam)
                         <div class="text-secondary" style="font-size:.75rem">Entered by {{ $entry->user?->displayName() }}</div>
                         @endif
+                        {{-- A solo driver can't change their own car once registered — the league can, here. --}}
+                        @if(!$entry->racingTeam && !$entry->is_spectator && $carOptions->isNotEmpty())
+                        <details class="mt-1" @if($errors->any() && (int) old('registration_id') === $entry->id) open @endif>
+                            <summary class="text-secondary" style="font-size:.75rem;cursor:pointer">
+                                {{ $entry->car_model ?? 'No car picked' }}
+                            </summary>
+                            <form action="{{ route('admin.leagues.championships.entries.car', [$league, $championship, $entry]) }}" method="POST" class="d-flex flex-wrap gap-2 mt-2">
+                                @csrf @method('PUT')
+                                <input type="hidden" name="registration_id" value="{{ $entry->id }}">
+                                <select name="car_model" class="form-select form-select-sm" style="max-width:240px;font-size:.78rem" required>
+                                    <option value="">Select car…</option>
+                                    @foreach($carOptions as $carName)
+                                    <option value="{{ $carName }}" @selected($entry->car_model === $carName)>{{ $carName }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="number" name="car_number" min="0" max="999" value="{{ $entry->car_number }}" placeholder="#"
+                                       class="form-control form-control-sm" style="max-width:80px;font-size:.78rem" required>
+                                <button class="btn btn-sm fw-bold text-uppercase text-white" style="background:#7c3aed;font-size:.7rem">Save</button>
+                            </form>
+                            @if((int) old('registration_id') === $entry->id)
+                            @error('car_number')<div class="text-danger" style="font-size:.75rem">{{ $message }}</div>@enderror
+                            @error('car_model')<div class="text-danger" style="font-size:.75rem">{{ $message }}</div>@enderror
+                            @endif
+                        </details>
+                        @endif
                     </td>
                     <td class="d-none d-md-table-cell text-secondary">{{ $entry->championshipClass?->name ?? '—' }}</td>
                     @if($driverClasses->isNotEmpty())

@@ -24,6 +24,14 @@ class ChampionshipRegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
+    private int $nextCarNumber = 1;
+
+    // A solo ACC entry picks its car and a championship-unique number.
+    private function soloEntry(): array
+    {
+        return ['car_model' => 'Ferrari 296 GT3 (2023)', 'car_number' => $this->nextCarNumber++];
+    }
+
     private function makeLeague(string $slug): League
     {
         return League::create([
@@ -96,14 +104,14 @@ class ChampionshipRegistrationTest extends TestCase
         $tooHighRated = User::factory()->create(['elo_acc' => 6000]); // gold, above the bronze cap
 
         $this->actingAs($tooHighRated)
-            ->post(route('championships.register', $championship))
+            ->post(route('championships.register', $championship), $this->soloEntry())
             ->assertRedirect();
 
         $this->assertFalse($championship->fresh()->isRegistered($tooHighRated));
 
         $eligible = User::factory()->create(['elo_acc' => 1000]); // rookie/bronze range
         $this->actingAs($eligible)
-            ->post(route('championships.register', $championship))
+            ->post(route('championships.register', $championship), $this->soloEntry())
             ->assertRedirect();
 
         $this->assertTrue($championship->fresh()->isRegistered($eligible));
@@ -121,7 +129,7 @@ class ChampionshipRegistrationTest extends TestCase
         $driver = User::factory()->create(['elo_acc' => 100]); // well below gold
 
         $this->actingAs($driver)
-            ->post(route('championships.register', $championship))
+            ->post(route('championships.register', $championship), $this->soloEntry())
             ->assertRedirect();
 
         $this->assertFalse($championship->fresh()->isRegistered($driver));
@@ -234,7 +242,7 @@ class ChampionshipRegistrationTest extends TestCase
         $driver = User::factory()->create();
 
         $this->actingAs($driver)
-            ->post(route('championships.register', $championship))
+            ->post(route('championships.register', $championship), $this->soloEntry())
             ->assertRedirect();
 
         $this->assertFalse($championship->fresh()->isRegistered($driver));
@@ -254,7 +262,7 @@ class ChampionshipRegistrationTest extends TestCase
         });
 
         $this->actingAs($driver)
-            ->post(route('championships.register', $championship))
+            ->post(route('championships.register', $championship), $this->soloEntry())
             ->assertRedirect();
 
         $this->assertTrue($championship->fresh()->isRegistered($driver));
@@ -273,7 +281,7 @@ class ChampionshipRegistrationTest extends TestCase
             $mock->shouldReceive('isGuildMember')->once()->andReturn(false);
         });
 
-        $response = $this->actingAs($driver)->post(route('championships.register', $championship));
+        $response = $this->actingAs($driver)->post(route('championships.register', $championship), $this->soloEntry());
         $response->assertRedirect();
         $this->assertStringContainsString('discord.gg/nlrl', session('error'));
 
@@ -294,7 +302,7 @@ class ChampionshipRegistrationTest extends TestCase
         });
 
         $this->actingAs($driver)
-            ->post(route('championships.register', $championship))
+            ->post(route('championships.register', $championship), $this->soloEntry())
             ->assertRedirect();
 
         $this->assertFalse($championship->fresh()->isRegistered($driver));
@@ -309,7 +317,7 @@ class ChampionshipRegistrationTest extends TestCase
         $driver = User::factory()->create();
 
         $this->actingAs($driver)
-            ->post(route('championships.register', $championship))
+            ->post(route('championships.register', $championship), $this->soloEntry())
             ->assertRedirect();
 
         $this->assertTrue($championship->fresh()->isRegistered($driver));

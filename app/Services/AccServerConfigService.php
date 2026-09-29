@@ -29,10 +29,11 @@ class AccServerConfigService implements ServerConfigGenerator
         $entries = [];
         $processedTeamIds = [];
         $balance = app(EntryBalanceService::class);
+        $championship = $race->championship_id ? Championship::withoutTenantScope()->find($race->championship_id) : null;
         // A championship driver class can set the in-game banner (Pro white, …).
-        $categoryOverrides = $race->championship_id
-            ? Championship::withoutTenantScope()->find($race->championship_id)?->driverCategoryOverrides() ?? []
-            : [];
+        $categoryOverrides = $championship?->driverCategoryOverrides() ?? [];
+        // A solo championship entrant's car and number, picked at registration.
+        $soloCars = $championship?->soloCars() ?? [];
 
         foreach ($registrations as $reg) {
             if ($reg->team_entry_id !== null) {
@@ -70,6 +71,8 @@ class AccServerConfigService implements ServerConfigGenerator
                 $user = $reg->user;
                 $shortName = self::entryShortName($user);
                 [$ballast, $restrictor] = $balance->forEntry($race, collect([$user]));
+                $soloCar = $soloCars[$user->id] ?? null;
+                $carNumber = $soloCar['car_number'] ?? $user->car_number;
 
                 $entries[] = [
                     'drivers' => [
@@ -81,11 +84,12 @@ class AccServerConfigService implements ServerConfigGenerator
                             'driverCategory' => $categoryOverrides[$user->id] ?? $user->ratingClass($race->game),
                         ],
                     ],
-                    'raceNumber' => is_numeric($user->car_number) ? (int) $user->car_number : null,
+                    'raceNumber' => is_numeric($carNumber) ? (int) $carNumber : null,
                     'defaultGridPosition' => -1,
                     'ballastKg' => $ballast,
                     'restrictor' => $restrictor,
-                    'forcedCarModel' => -1,
+                    // The picked car is locked in; anyone else chooses in-game.
+                    'forcedCarModel' => $soloCar ? (AccCarCatalog::id($soloCar['car_model'], $race->game) ?? -1) : -1,
                     'overrideDriverInfo' => 1,
                 ];
             }

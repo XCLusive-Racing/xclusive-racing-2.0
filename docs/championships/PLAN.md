@@ -11,6 +11,15 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-29 — Solo car + number at registration.** An ACC championship
+  without driver swaps asks a solo driver for car (the championship's car
+  class, or the multiclass pick) and a championship-unique number, stored on
+  `championship_registrations.car_model/car_number`. Every round's entrylist
+  forces that car (`forcedCarModel`) and number (`Championship::soloCars()`);
+  a solo entry without a car (registered before this) keeps free choice and
+  the profile number. The driver can't change it; the league can, per entry on
+  the Entries page (`ChampionshipEntryController::updateCar()`). The 24h
+  practice server stays free choice.
 - **2026-09-29 — Driver classes (Pro / Pro-Am / Am, settings v15).** Separate
   from the car classes (`ChampionshipClass`/multiclass): `ChampionshipDriverClass`
   rows (name, optional max entries, optional ACC banner `acc_category` 0 red /

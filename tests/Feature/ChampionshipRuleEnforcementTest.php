@@ -23,6 +23,14 @@ class ChampionshipRuleEnforcementTest extends TestCase
 {
     use RefreshDatabase;
 
+    private int $nextCarNumber = 1;
+
+    // A solo ACC entry picks its car and a championship-unique number.
+    private function soloEntry(): array
+    {
+        return ['car_model' => 'Ferrari 296 GT3 (2023)', 'car_number' => $this->nextCarNumber++];
+    }
+
     private League $league;
 
     protected function setUp(): void
@@ -72,7 +80,7 @@ class ChampionshipRuleEnforcementTest extends TestCase
         $championship = $this->makeChampionship(['requirements' => ['manual_approval_required' => true]]);
         $driver = User::factory()->create(['name' => 'Pending Pete']);
 
-        $this->actingAs($driver)->post(route('championships.register', $championship))
+        $this->actingAs($driver)->post(route('championships.register', $championship), $this->soloEntry())
             ->assertSessionHas('success', 'Your entry has been received — the league will review it before it is confirmed.');
 
         $registration = $championship->registrations()->firstOrFail();
@@ -117,7 +125,7 @@ class ChampionshipRuleEnforcementTest extends TestCase
         $championship = $this->makeChampionship();
         $driver = User::factory()->create();
 
-        $this->actingAs($driver)->post(route('championships.register', $championship))->assertSessionHas('success');
+        $this->actingAs($driver)->post(route('championships.register', $championship), $this->soloEntry())->assertSessionHas('success');
 
         $this->assertFalse($championship->registrations()->firstOrFail()->isPending());
     }

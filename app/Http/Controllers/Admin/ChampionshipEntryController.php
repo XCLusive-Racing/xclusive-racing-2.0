@@ -10,6 +10,7 @@ use App\Models\ChampionshipRegistration;
 use App\Models\League;
 use App\Models\Message;
 use App\Models\User;
+use App\Services\AccCarCatalog;
 use App\Services\AuditLogger;
 use App\Services\ChampionshipTeamEntryService;
 use Illuminate\Http\Request;
@@ -44,7 +45,14 @@ class ChampionshipEntryController extends Controller
             ? $championship->driverClasses()->withCount('registrations')->get()
             : collect();
 
-        return view('admin.leagues.championships.entries', compact('league', 'championship', 'entries', 'drivers', 'penalties', 'rounds', 'driverClasses'));
+        // Cars a solo entry can be switched to (updateCar()).
+        $carOptions = AccCarCatalog::supports($championship->game)
+            ? collect(AccCarCatalog::namesWithClass($championship->game))
+                ->when(! $championship->is_multiclass && $championship->car_class, fn ($cars) => $cars->filter(fn ($class) => $class === $championship->car_class))
+                ->keys()
+            : collect();
+
+        return view('admin.leagues.championships.entries', compact('league', 'championship', 'entries', 'drivers', 'penalties', 'rounds', 'driverClasses', 'carOptions'));
     }
 
     // Points deducted from a driver's championship total (Championship::buildDriverStandings()
@@ -120,6 +128,33 @@ class ChampionshipEntryController extends Controller
         ]);
 
         return back()->with('success', $this->entrantName($registration).($class ? ' is now in '.$class->name.'.' : ' is no longer in a class.'));
+    }
+
+    // A solo driver's car and number are locked in at registration
+    // (ChampionshipController::register()); only the league changes them, here.
+    public function updateCar(Request $request, League $league, Championship $championship, ChampionshipRegistration $registration)
+    {
+        $this->authorizeChampionship($league, $championship, $registration);
+        abort_if($registration->is_spectator || $registration->racing_team_id, 404);
+        abort_unless(AccCarCatalog::supports($championship->game), 404);
+
+        $data = $request->validate([
+            'car_model' => ['required', 'string', Rule::in(array_keys(AccCarCatalog::namesWithClass($championship->game)))],
+            'car_number' => [
+                'required', 'integer', 'min:0', 'max:999',
+                Rule::unique('championship_registrations', 'car_number')
+                    ->where('championship_id', $championship->id)
+                    ->ignore($registration->id),
+            ],
+        ], ['car_number.unique' => 'That car number is already taken in this championship.']);
+
+        $registration->update($data);
+
+        AuditLogger::record($request->user(), $championship, 'championship.entry_car_changed', [
+            'registration_id' => $registration->id,
+        ] + $data);
+
+        return back()->with('success', $this->entrantName($registration).' now races the '.$data['car_model'].' #'.$data['car_number'].'.');
     }
 
     public function reject(Request $request, League $league, Championship $championship, ChampionshipRegistration $registration)

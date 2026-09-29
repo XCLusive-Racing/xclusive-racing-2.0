@@ -363,6 +363,9 @@
                                     {{ $reg->driverClass->name }}
                                 </span>
                                 @endif
+                                @if(!$reg->racing_team_id && $reg->car_model)
+                                <div style="color:#6b7280;font-size:.72rem">{{ $reg->car_number !== null ? '#'.$reg->car_number.' · ' : '' }}{{ $reg->car_model }}</div>
+                                @endif
                             </div>
                         </div>
                         @endforeach
@@ -599,8 +602,9 @@
                                 </select>
                             </div>
                             <script>
-                            // The car dropdown only offers cars of the picked class.
-                            (function () {
+                            // The car dropdown only offers cars of the picked class. Runs once the
+                            // page is parsed: a solo entry's car dropdown comes after this script.
+                            document.addEventListener('DOMContentLoaded', function () {
                                 var classSelect = document.querySelector('[data-class-select]');
                                 var carSelect   = document.querySelector('[data-car-select]');
                                 if (!classSelect || !carSelect) return;
@@ -613,8 +617,37 @@
                                 }
                                 classSelect.addEventListener('change', sync);
                                 sync();
-                            })();
+                            });
                             </script>
+                            @endif
+
+                            {{-- A solo driver picks car and number once; every round forces that
+                                 car, and only the league can change it (Entries page). --}}
+                            @if(!$driverSwaps && \App\Services\AccCarCatalog::supports($championship->game))
+                            @php
+                                $soloCarOptions = collect(\App\Services\AccCarCatalog::namesWithClass($championship->game))
+                                    ->when(!$championship->is_multiclass && $championship->car_class,
+                                        fn ($cars) => $cars->filter(fn ($class) => $class === $championship->car_class));
+                            @endphp
+                            <div class="mb-3">
+                                <label class="form-label text-white" style="font-size:.82rem">Car</label>
+                                <select name="car_model" data-car-select class="form-select form-select-sm" required
+                                        style="background:#1f2937;border-color:#374151;color:#e5e7eb">
+                                    <option value="">— Select car —</option>
+                                    @foreach($soloCarOptions as $carName => $carClass)
+                                    <option value="{{ $carName }}" data-car-class="{{ $carClass }}" @selected(old('car_model') === $carName)>{{ $carName }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label text-white" style="font-size:.82rem">Car Number</label>
+                                <input type="number" name="car_number" min="0" max="999" required
+                                       value="{{ old('car_number', auth()->user()->car_number) }}"
+                                       class="form-control form-control-sm" style="background:#1f2937;border-color:#374151;color:#e5e7eb">
+                            </div>
+                            <p class="mb-3" style="color:#9ca3af;font-size:.72rem">
+                                You race this car and number in every round. Only the league can change them after you register.
+                            </p>
                             @endif
 
                             @if($championship->isFull())
