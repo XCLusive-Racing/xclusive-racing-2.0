@@ -54,7 +54,7 @@
                     @error('ends_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
-            <div class="text-secondary mt-1" style="font-size:.75rem">Pick whole hours: the server restarts every hour, and each hour is one session.</div>
+            <div class="text-secondary mt-1" style="font-size:.75rem">Laps count when their session ends inside this window. The server switches to this track at its first own restart after the start.</div>
         </div>
 
         <div class="px-4 py-3 border-bottom">
@@ -83,6 +83,20 @@
                 <label class="form-check-label fw-bold text-dark" for="tt-published" style="font-size:.85rem">Published</label>
             </div>
             <div class="text-secondary mt-1" style="font-size:.75rem">Only published Time Trials show on the site, take signups and are pushed to the server.</div>
+        </div>
+
+        <div class="px-4 py-3 border-bottom">
+            <div class="form-check">
+                <input type="hidden" name="forced_entry_list" value="0">
+                <input class="form-check-input" type="checkbox" name="forced_entry_list" value="1" id="tt-forced"
+                       @checked(old('forced_entry_list', $event->forced_entry_list))>
+                <label class="form-check-label fw-bold text-dark" for="tt-forced" style="font-size:.85rem">Signups only (forced entry list)</label>
+            </div>
+            <div class="text-secondary mt-1" style="font-size:.75rem">
+                Off: the entry list holds every member and anyone can join; only signed up drivers count.
+                On: only signed up drivers can join, and the list is uploaded again within 5 minutes of every signup.
+                Only turn this on once it is confirmed that the server loads a new entry list without a restart.
+            </div>
         </div>
 
         <div class="px-4 py-3">

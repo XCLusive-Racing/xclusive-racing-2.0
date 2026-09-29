@@ -11,8 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 // A weekly Time Trial event. See docs/time-trials/PLAN.md for the full flow.
 #[Fillable([
-    'title', 'track', 'car_class', 'starts_at', 'ends_at', 'ftp_server_id', 'is_published',
-    'last_pushed_for', 'last_pushed_at', 'last_push_error', 'last_entry_count',
+    'title', 'track', 'car_class', 'starts_at', 'ends_at', 'ftp_server_id', 'is_published', 'forced_entry_list',
+    'last_pushed_at', 'last_push_error', 'last_entry_count',
     'results_checked_at', 'results_error', 'finalized_at',
 ])]
 class TimeTrialEvent extends Model
@@ -26,7 +26,7 @@ class TimeTrialEvent extends Model
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
             'is_published' => 'boolean',
-            'last_pushed_for' => 'datetime',
+            'forced_entry_list' => 'boolean',
             'last_pushed_at' => 'datetime',
             'results_checked_at' => 'datetime',
             'finalized_at' => 'datetime',

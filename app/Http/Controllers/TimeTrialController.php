@@ -179,17 +179,30 @@ class TimeTrialController extends Controller
         }
 
         $event->registrations()->firstOrCreate(['user_id' => $user->id]);
+        $this->entryListChanged($event);
 
-        return back()->with('success', 'You are signed up. You can join the server from the next full hour.');
+        return back()->with('success', $event->forced_entry_list
+            ? 'You are signed up. The server gets the new entry list within a few minutes, your laps count from now on.'
+            : 'You are signed up. Join the server any time, your laps count from now on.');
     }
 
     public function withdraw(Request $request, TimeTrialEvent $event): RedirectResponse
     {
         if ($event->finalized_at === null) {
             $event->registrations()->where('user_id', $request->user()->id)->delete();
+            $this->entryListChanged($event);
         }
 
         return back()->with('success', 'You are no longer signed up for this Time Trial.');
+    }
+
+    // A forced entry list is the signups themselves: clearing last_pushed_at makes the
+    // scheduler (time-trials:push-due, every 5 minutes) upload it again right away.
+    private function entryListChanged(TimeTrialEvent $event): void
+    {
+        if ($event->forced_entry_list) {
+            $event->update(['last_pushed_at' => null]);
+        }
     }
 
     /** @return array{0: array, 1: string} enabled boards and the requested (or default) one */

@@ -93,10 +93,10 @@ class TimeTrialEventController extends Controller
             return back()->with('error', 'Pick a server first.');
         }
 
-        $error = $servers->push($timeTrial, $servers->nextRestart($timeTrial->server, now()));
+        $error = $servers->push($timeTrial);
 
         return back()->with($error ? 'error' : 'success', $error
-            ?? "Pushed to {$timeTrial->server->name} ({$timeTrial->last_entry_count} entries). It takes effect at the server's next restart.");
+            ?? "Uploaded to {$timeTrial->server->name} ({$timeTrial->last_entry_count} members in the entry list). The server uses it from its next own restart.");
     }
 
     public function collect(TimeTrialEvent $timeTrial, TimeTrialResultCollector $collector): RedirectResponse
@@ -138,6 +138,7 @@ class TimeTrialEventController extends Controller
             'ends_at' => ['required', 'date_format:Y-m-d\TH:i'],
             'ftp_server_id' => ['required', Rule::in($serverIds)],
             'is_published' => ['nullable', 'boolean'],
+            'forced_entry_list' => ['nullable', 'boolean'],
         ]);
 
         $validator->after(function (Validator $v) use ($request, $event) {
@@ -164,6 +165,7 @@ class TimeTrialEventController extends Controller
         $data = $validator->validate();
         [$data['starts_at'], $data['ends_at']] = $this->window($request);
         $data['is_published'] = $request->boolean('is_published');
+        $data['forced_entry_list'] = $request->boolean('forced_entry_list');
 
         return $data;
     }

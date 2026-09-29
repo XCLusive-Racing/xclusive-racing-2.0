@@ -25,10 +25,8 @@ class TimeTrialFinalizer
     // result file has had time to be collected.
     public function isDue(TimeTrialEvent $event): bool
     {
-        $interval = (int) ($event->server?->reset_interval_minutes ?: 60);
-
         return $event->is_published && $event->finalized_at === null
-            && now()->gte($event->ends_at->copy()->addMinutes($interval + 30));
+            && now()->gte($event->ends_at->copy()->addMinutes(TimeTrialResultCollector::sessionLoopMinutes() + 30));
     }
 
     public function finalize(TimeTrialEvent $event): bool

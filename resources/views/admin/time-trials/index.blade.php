@@ -19,10 +19,12 @@
 @endif
 
 <div class="admin-card mb-4 px-4 py-3 text-secondary" style="font-size:.82rem">
-    Each week's Time Trial runs on its server as one practice session per hour. Before every restart the
-    config and the entry list (everyone signed up so far) are pushed automatically, and each hour's results are
-    collected. When the week ends, the classification is stored, rating points are awarded (+50 for the winner
-    down to +1 for the last driver) and the counting laps are added to the All Time Records.
+    Each week's Time Trial runs on its server as 2 minutes of practice and 30 minutes of qualifying, on a loop.
+    The config and an open entry list with every member are uploaded every hour; the server picks them up at its
+    own next restart (an upload never kicks anyone). Results are collected automatically, and only drivers who
+    signed up on the website count. When the week ends, the classification is stored, rating points are awarded
+    (+50 for the winner down to +1 for the last driver) and the counting laps are added to the All Time Records.
+    Tip: publish the next week's event in time, the server switches track at its first restart after the start.
 </div>
 
 <div class="admin-card p-0 overflow-hidden">

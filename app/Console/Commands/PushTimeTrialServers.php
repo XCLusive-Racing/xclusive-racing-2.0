@@ -9,15 +9,15 @@ class PushTimeTrialServers extends Command
 {
     protected $signature = 'time-trials:push-due';
 
-    protected $description = 'Push each live weekly Time Trial event (config + entry list) to its server ahead of the next restart';
+    protected $description = 'Upload each weekly Time Trial event\'s config and entry list to its server again (hourly); the server reads them on its own next restart';
 
     public function handle(TimeTrialServerService $servers): int
     {
-        foreach ($servers->duePushes(now()) as ['event' => $event, 'restart' => $restart]) {
-            $error = $servers->push($event, $restart);
+        foreach ($servers->duePushes(now()) as $event) {
+            $error = $servers->push($event);
             $error
                 ? $this->error("Event #{$event->id}: {$error}")
-                : $this->info("Event #{$event->id}: pushed {$event->last_entry_count} entries for the {$restart->timezone('Europe/London')->format('H:i')} restart");
+                : $this->info("Event #{$event->id}: uploaded, {$event->last_entry_count} entries");
         }
 
         return self::SUCCESS;

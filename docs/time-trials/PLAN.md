@@ -5,17 +5,23 @@
 Phase one is live on production: the tables exist and the historical import has run
 (10303 laps, 54 cars).
 
-Phase two (weekly events) is built and tested but not deployed yet. Its migration is
-`2026_09_30_000000_create_time_trial_events_table`.
+Phase two (weekly events) is on Dev. Its tables are on production
+(`2026_09_30_000000`); `2026_09_30_000001` (drops `last_pushed_for`) still has to run there.
 
 - Admin > Events > Time Trials: create a week's event with a track, car class, window (UK
   time) and server. XCL SERVER 6 is the default. Only published events are pushed, shown and open for signup.
-- `time-trials:push-due` runs every 5 minutes. Ten minutes before each hourly server restart
-  it pushes the config: one practice session of the restart interval minus 5 minutes, dry,
-  and the event's class as carGroup. It also pushes a forced entry list of every signup so far.
-- `time-trials:collect-results` runs every 10 minutes. It reads each new `_FP.json` result
-  file once and keeps each signed-up driver's best valid lap per car.
-- About 90 minutes after the window closes, the same command finalizes the event. It stores
+- Server constraint: XCL SERVER 6 can't be restarted remotely and only reads its config on
+  its own restart; a forced entry list would need a restart for every signup, and an hourly
+  restart kicks drivers. So the design doesn't depend on restarts:
+- `time-trials:push-due` runs every 5 minutes and uploads the event's files once an hour
+  (the live event, else the next one). The config is 2 minutes of practice and 30 minutes of
+  qualifying on a loop, dry, with the event's class as carGroup. The entry list is open
+  (`forceEntryList` 0) and holds every console member, like the old site's daily upload.
+  The server picks the files up at its next own restart; an upload never kicks anyone.
+- `time-trials:collect-results` runs every 10 minutes. It reads each new `_FP.json` and
+  `_Q.json` result file once and keeps each signed-up driver's best valid lap per car, from
+  sessions that ended after they signed up. Signups on the website decide who counts.
+- About 1.5 hours after the window closes, the same command finalizes the event. It stores
   the classification, awards points through `RatingService::applyManualAdjustment()`, and
   adds every counting lap to the All Time Records (`source = server`, `time_trial_event_id`).
 - A lap counts only when it beats the driver's own all-time record in that car on the track
@@ -54,5 +60,10 @@ Not built yet: the real rating formula and a PC Time Trials server.
   table that maps event numbers to dates.
 
 ## Open items
+
+- To test: does XCL SERVER 6 load a new entrylist.json without a restart (at the end of its
+  P + Q loop)? If yes, turn on "Signups only (forced entry list)" per event: then only
+  signups can join and the list is re-uploaded within 5 minutes of every signup change.
+  Until then events use the open list of every member.
 
 - Nordschleife rows have event `0`, stored as `0`.

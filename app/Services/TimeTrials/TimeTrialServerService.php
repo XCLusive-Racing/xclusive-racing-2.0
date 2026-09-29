@@ -10,102 +10,79 @@ use App\Services\AccServerConfigService;
 use App\Services\FtpService;
 use App\Services\PracticeServer\PracticeServerConfigService;
 use Carbon\CarbonInterface;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-// Pushes a weekly Time Trial event to its server (XCL SERVER 6). The server restarts on
-// its own cadence (reset_interval_minutes, every hour) and reads its config files on each
-// restart, so the push goes up shortly before every restart: the config is written again
-// every time and the entry list carries whoever signed up by then.
+// Keeps a weekly Time Trial event's config on its server (XCL SERVER 6).
 //
-// The server runs a single practice session a few minutes shorter than the restart
-// interval: ACC writes the session's result file (_FP.json) when the session ends, which
-// has to happen before the restart cuts it off.
+// The server can't be restarted remotely and only reads its config files when it restarts
+// on its own, so nothing here depends on a restart: the files are simply uploaded again
+// every hour (an upload never kicks anyone) and whichever restart comes next picks up the
+// latest. For the same reason the entry list is open by default: it lists every member with
+// a console ID, like the old site's daily upload, so anyone can join at any time. Who counts
+// for the event is decided by the signups on the website (TimeTrialResultCollector). An
+// event can instead use a forced list of only its signups (entryList()), re-uploaded
+// within minutes of every signup change.
+//
+// The server loops a short practice and a qualifying session; ACC writes a result file at
+// the end of each (…_FP.json, …_Q.json).
 class TimeTrialServerService
 {
-    // How long before a restart the push may go up (the scheduler runs every 5 minutes).
-    public const PUSH_LEAD_MINUTES = 10;
-
-    // Minutes the session ends before the next restart, so its result file gets written.
-    public const SESSION_MARGIN_MINUTES = 5;
-
     public function __construct(
         private readonly AccServerConfigService $raceConfig,
         private readonly FtpService $ftp,
     ) {}
 
-    // The server's next restart after $now. Rolling servers restart every
-    // reset_interval_minutes from reset_start_hour (UK wall clock, like isValidSlot()).
-    public function nextRestart(FtpServer $server, CarbonInterface $now): Carbon
-    {
-        $interval = max(1, (int) ($server->reset_interval_minutes ?: 60));
-        $local = Carbon::instance($now)->timezone('Europe/London');
-        $restart = $local->copy()->startOfDay()->addHours((int) $server->reset_start_hour)->subDay();
-
-        while ($restart->lte($local)) {
-            $restart->addMinutes($interval);
-        }
-
-        return $restart->utc();
-    }
-
-    public function sessionMinutes(FtpServer $server): int
-    {
-        return max(10, (int) ($server->reset_interval_minutes ?: 60) - self::SESSION_MARGIN_MINUTES);
-    }
-
-    /** @return Collection<int, array{event: TimeTrialEvent, restart: Carbon}> events whose push is due now */
-    public function duePushes(CarbonInterface $now): Collection
+    // The event each server should carry: the one live now, else the next one coming up.
+    public function eventFor(FtpServer $server, CarbonInterface $now): ?TimeTrialEvent
     {
         return TimeTrialEvent::published()
             ->whereNull('finalized_at')
-            ->whereNotNull('ftp_server_id')
+            ->where('ftp_server_id', $server->id)
             ->where('ends_at', '>', $now)
-            ->with('server')
+            ->orderBy('starts_at')
+            ->first();
+    }
+
+    /** @return Collection<int, TimeTrialEvent> events whose upload is due now, one per server */
+    public function duePushes(CarbonInterface $now): Collection
+    {
+        $every = (int) config('time_trials.push_every_minutes', 60);
+
+        return FtpServer::withoutTenantScope()
+            ->whereIn('id', TimeTrialEvent::published()->whereNull('finalized_at')->select('ftp_server_id'))
+            ->where('active', true)
             ->get()
-            ->map(function (TimeTrialEvent $event) use ($now) {
-                $server = $event->server;
-                if (! $server || ! $server->active || ! $server->supportsRaceGame('acc')) {
-                    return null;
-                }
-
-                $restart = $this->nextRestart($server, $now);
-                $due = $now->gte($restart->copy()->subMinutes(self::PUSH_LEAD_MINUTES))
-                    && $event->starts_at->lte($restart) && $event->ends_at->gt($restart)
-                    && ! $event->last_pushed_for?->eq($restart);
-
-                return $due ? ['event' => $event, 'restart' => $restart] : null;
-            })
-            ->filter()
+            ->filter(fn (FtpServer $server) => $server->supportsRaceGame('acc'))
+            ->map(fn (FtpServer $server) => $this->eventFor($server, $now))
+            ->filter(fn (?TimeTrialEvent $event) => $event
+                && ($event->last_pushed_at === null || $event->last_pushed_at->lte($now->copy()->subMinutes($every - 1))))
             ->values();
     }
 
     // Uploads every config file and records the outcome on the event. Returns an error
     // message, or null when it worked.
-    public function push(TimeTrialEvent $event, Carbon $restart): ?string
+    public function push(TimeTrialEvent $event): ?string
     {
         $server = $event->server;
         if (! $server) {
-            return $this->recordPush($event, $restart, 'The event has no server.', null);
+            return $this->recordPush($event, 'The event has no server.', null);
         }
 
         [$files, $entryCount] = $this->buildFiles($event, $server);
 
-        return $this->recordPush($event, $restart, $this->upload($files, $server), $entryCount);
+        return $this->recordPush($event, $this->upload($files, $server), $entryCount);
     }
 
-    private function recordPush(TimeTrialEvent $event, Carbon $restart, ?string $error, ?int $entryCount): ?string
+    private function recordPush(TimeTrialEvent $event, ?string $error, ?int $entryCount): ?string
     {
-        $event->update([
-            'last_pushed_at' => now(),
-            'last_push_error' => $error,
-        ] + ($error ? [] : ['last_pushed_for' => $restart, 'last_entry_count' => $entryCount]));
+        $event->update(['last_pushed_at' => now(), 'last_push_error' => $error]
+            + ($error ? [] : ['last_entry_count' => $entryCount]));
 
         $error
             ? Log::error("Time Trial push failed for event #{$event->id}: {$error}")
-            : Log::info("Time Trial push: event #{$event->id} ({$event->track}), {$entryCount} entries, for the restart at {$restart->toIso8601String()}");
+            : Log::info("Time Trial push: event #{$event->id} ({$event->track}), {$entryCount} entries");
 
         return $error;
     }
@@ -141,16 +118,26 @@ class TimeTrialServerService
     public function buildFiles(TimeTrialEvent $event, FtpServer $server): array
     {
         $race = $this->race($event);
+        $hour = $this->raceConfig->startHour(null);
 
         $config = $this->raceConfig->configuration($race, $server);
-        $config['sessions'] = [[
-            'hourOfDay' => $this->raceConfig->startHour(null),
-            'dayOfWeekend' => 2,
-            'timeMultiplier' => 1,
-            'sessionType' => 'P',
-            'sessionDurationMinutes' => $this->sessionMinutes($server),
-        ]];
-        // The same dry conditions all week, so every hour is comparable.
+        $config['sessions'] = [
+            [
+                'hourOfDay' => $hour,
+                'dayOfWeekend' => 2,
+                'timeMultiplier' => 1,
+                'sessionType' => 'P',
+                'sessionDurationMinutes' => (int) config('time_trials.practice_minutes', 2),
+            ],
+            [
+                'hourOfDay' => $hour,
+                'dayOfWeekend' => 3,
+                'timeMultiplier' => 1,
+                'sessionType' => 'Q',
+                'sessionDurationMinutes' => (int) config('time_trials.qualifying_minutes', 30),
+            ],
+        ];
+        // The same dry conditions all week, so every session is comparable.
         $config['rain'] = 0.0;
         $config['weatherRandomness'] = 0;
 
@@ -158,52 +145,61 @@ class TimeTrialServerService
 
         return [[
             'event.json' => json_encode($config, JSON_PRETTY_PRINT),
-            'settings.json' => json_encode($this->settings($event, $server), JSON_PRETTY_PRINT),
+            'settings.json' => json_encode($this->raceConfig->settings($race, $server), JSON_PRETTY_PRINT),
             'eventrules.json' => json_encode(
                 array_merge($this->raceConfig->eventRules($race, $server), PracticeServerConfigService::PRACTICE_EVENT_RULES),
                 JSON_PRETTY_PRINT
             ),
             'assistrules.json' => json_encode($this->raceConfig->assistRules($server), JSON_PRETTY_PRINT),
-            'entrylist.json' => json_encode($entryList, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            // Compact: the open list holds every member, and the server ignores formatting.
+            'entrylist.json' => json_encode($entryList, JSON_UNESCAPED_UNICODE),
         ], count($entryList['entries'])];
     }
 
-    public function settings(TimeTrialEvent $event, FtpServer $server): array
-    {
-        return $this->raceConfig->settings($this->race($event), $server);
-    }
-
-    // Only signed-up drivers can join (forced entry list); each picks their own car in game,
-    // limited to the event's class by the server's carGroup.
+    // Open (default): every member with a console ID (no grid fillers or suspended accounts),
+    // so they show with their XCL name and number, and anyone can join.
+    // Forced (event->forced_entry_list): only the signups can join. That only helps if the
+    // server reloads the entry list without a restart, which is still to be tested.
     public function entryList(TimeTrialEvent $event): array
     {
         $entries = [];
-        foreach ($event->drivers()->with('connectedAccounts')->orderBy('time_trial_registrations.id')->get() as $user) {
-            /** @var User $user */
-            $playerId = $user->playerIdFor('acc');
-            if (! $playerId) {
-                continue;
-            }
+        $add = function ($users) use (&$entries) {
+            foreach ($users as $user) {
+                $playerId = $user->playerIdFor('acc');
+                if (! $playerId) {
+                    continue;
+                }
 
-            $entries[] = [
-                'drivers' => [[
-                    'firstName' => '',
-                    'lastName' => AccServerConfigService::entryLastName($user),
-                    'shortName' => AccServerConfigService::entryShortName($user),
-                    'playerID' => $playerId,
-                    'driverCategory' => $user->ratingClass('acc'),
-                ]],
-                'raceNumber' => is_numeric($user->car_number) ? (int) $user->car_number : null,
-                'defaultGridPosition' => -1,
-                'ballastKg' => 0,
-                'forcedCarModel' => -1,
-                'overrideDriverInfo' => 1,
-            ];
+                $entries[] = [
+                    'drivers' => [[
+                        'firstName' => '',
+                        'lastName' => AccServerConfigService::entryLastName($user),
+                        'shortName' => AccServerConfigService::entryShortName($user),
+                        'playerID' => $playerId,
+                        'driverCategory' => $user->ratingClass('acc'),
+                    ]],
+                    'raceNumber' => is_numeric($user->car_number) ? (int) $user->car_number : null,
+                    'defaultGridPosition' => -1,
+                    'ballastKg' => 0,
+                    'forcedCarModel' => -1,
+                    'overrideDriverInfo' => 1,
+                ];
+            }
+        };
+
+        if ($event->forced_entry_list) {
+            $add($event->drivers()->with('connectedAccounts')->orderBy('time_trial_registrations.id')->get());
+        } else {
+            User::where('is_filler', false)
+                ->where('is_suspended', false)
+                ->where(fn ($q) => $q->where('platform_id', 'like', 'M%')->orWhere('platform_id', 'like', 'P%'))
+                ->orderBy('id')
+                ->chunk(1000, $add);
         }
 
         AccServerConfigService::assignUniqueRaceNumbers($entries);
 
-        return ['entries' => $entries, 'configVersion' => 1, 'forceEntryList' => 1];
+        return ['entries' => $entries, 'configVersion' => 1, 'forceEntryList' => $event->forced_entry_list ? 1 : 0];
     }
 
     // An unsaved Race carrying the event's track and class, so the race config builder

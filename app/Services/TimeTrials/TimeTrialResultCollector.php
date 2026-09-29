@@ -14,9 +14,10 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-// Collects a weekly event's hourly practice result files (…_FP.json) from its server and
-// stores each driver's best valid lap per car per file. Only signed-up drivers are kept
-// (the server's entry list is forced anyway). Each file is read once
+// Collects a weekly event's result files (…_FP.json and …_Q.json, one per session) from its
+// server and stores each driver's best valid lap per car per file. The server lets every
+// member in, so only drivers signed up on the website are kept, and only from sessions that
+// ended after they signed up. Each file is read once
 // (time_trial_result_files), so it can run as often as the scheduler likes.
 class TimeTrialResultCollector
 {
@@ -43,7 +44,7 @@ class TimeTrialResultCollector
         $seen = TimeTrialResultFile::where('ftp_server_id', $server->id)->pluck('filename')->flip();
 
         $files = collect($this->ftp->listFiles($path)['all'])
-            ->filter(fn ($name) => preg_match('/_FP\.json$/i', $name) && ! isset($seen[$name]))
+            ->filter(fn ($name) => preg_match('/_(FP|Q)\.json$/i', $name) && ! isset($seen[$name]))
             ->filter(fn ($name) => $this->belongsToEvent($event, self::fileTime($name)))
             ->sort()
             ->values();
@@ -74,10 +75,10 @@ class TimeTrialResultCollector
     }
 
     // A session that started inside the event window: its file is written when the session
-    // ends, so it may land up to one restart interval after the event closes.
+    // ends, so it may land up to one session length after the event closes.
     private function belongsToEvent(TimeTrialEvent $event, ?Carbon $fileTime): bool
     {
-        $interval = (int) ($event->server?->reset_interval_minutes ?: 60);
+        $interval = self::sessionLoopMinutes();
 
         return $fileTime !== null
             && $fileTime->gt($event->starts_at)
@@ -113,7 +114,12 @@ class TimeTrialResultCollector
         return count($rows);
     }
 
-    /** Each signed-up driver's best valid lap per car in the file's practice session(s). */
+    public static function sessionLoopMinutes(): int
+    {
+        return (int) config('time_trials.practice_minutes', 2) + (int) config('time_trials.qualifying_minutes', 30) + 15;
+    }
+
+    /** Each signed-up driver's best valid lap per car in the file's practice and qualifying sessions. */
     public function lapsFromResult(?array $data, TimeTrialEvent $event, string $name): array
     {
         $sessions = isset($data['sessions']) ? $data['sessions'] : (isset($data[0]) ? $data : [$data]);
@@ -123,7 +129,7 @@ class TimeTrialResultCollector
 
         $best = [];
         foreach ($sessions as $session) {
-            if (! in_array($session['sessionType'] ?? null, ['FP', 'P'], true)
+            if (! in_array($session['sessionType'] ?? null, ['FP', 'P', 'Q'], true)
                 || ($session['trackName'] ?? null) !== $event->track) {
                 continue;
             }
@@ -139,7 +145,8 @@ class TimeTrialResultCollector
                 $carModel = $car['carModel'] ?? null;
 
                 if (! ($lap['isValidForBest'] ?? false) || ! $playerId || $carModel === null
-                    || $lapMs <= 0 || $lapMs >= 2147483647 || ! $users->has($playerId)) {
+                    || $lapMs <= 0 || $lapMs >= 2147483647 || ! $users->has($playerId)
+                    || ($recordedAt && $users[$playerId]->pivot->created_at?->gt($recordedAt))) {
                     continue;
                 }
 

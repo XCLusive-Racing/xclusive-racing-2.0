@@ -44,7 +44,7 @@
                             <p class="xcl-tt__signed-up mb-2"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> You are signed up</p>
                             <p class="xcl-tt__muted small mb-3">
                                 Join <strong class="text-white">{{ $event->server?->ingame_name ?: $event->server?->name }}</strong>
-                                from the in game server list. New signups can join from the next full hour.
+                                from the in game server list. Your laps count from sessions that end after you signed up.
                             </p>
                             <form method="POST" action="{{ route('time-trials.events.withdraw', $event) }}">
                                 @csrf @method('DELETE')
@@ -68,9 +68,14 @@
             <section class="xcl-tt__panel xcl-tt__rules">
                 <h2 class="xcl-tt__panel-title">How it works</h2>
                 <ul>
-                    <li>The server runs one practice session every hour. Drive as many laps as you like, your fastest valid lap counts.</li>
+                    @if($event->forced_entry_list)
+                    <li>Sign up here first: only signed up drivers can join the server. A new signup reaches the server within a few minutes.</li>
+                    @else
+                    <li>Sign up here first: the server is open to every member, but only laps of signed up drivers count.</li>
+                    @endif
+                    <li>The server runs 2 minutes of practice and 30 minutes of qualifying, on a loop. Drive as many laps as you like, your fastest valid lap counts.</li>
                     <li>A lap only counts when it beats your own All Time Record in that car on this track. Already set a faster time in a car? Pick another car to improve.</li>
-                    <li>The standings update every hour. A faster lap replaces your old one.</li>
+                    <li>The standings update after every session. A faster lap replaces your old one.</li>
                     <li>When the week ends, points go to every classified driver: {{ \App\Services\TimeTrials\TimeTrialRating::FIRST }} for the winner down to {{ \App\Services\TimeTrials\TimeTrialRating::LAST }} for the last driver. Your counting laps join the All Time Records.</li>
                     <li>No custom Balance of Performance, the standard in game ACC balance applies.</li>
                 </ul>

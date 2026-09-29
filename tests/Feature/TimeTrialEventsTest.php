@@ -128,49 +128,60 @@ class TimeTrialEventsTest extends TestCase
 
     // ── Server push ─────────────────────────────────────────────────────────────
 
-    public function test_next_restart_is_the_next_full_hour_on_an_hourly_server(): void
+    public function test_the_upload_is_due_once_an_hour_for_the_live_event(): void
     {
-        $next = app(TimeTrialServerService::class)->nextRestart($this->server, Carbon::parse('2026-10-05 13:42', 'Europe/London'));
-
-        $this->assertSame('2026-10-05 14:00', $next->timezone('Europe/London')->format('Y-m-d H:i'));
-    }
-
-    public function test_the_push_is_due_ten_minutes_before_a_restart_inside_the_window(): void
-    {
-        Carbon::setTestNow(Carbon::parse('2026-10-05 13:52', 'Europe/London'));
-        $event = $this->event([
-            'starts_at' => Carbon::parse('2026-10-05 00:00', 'Europe/London'),
-            'ends_at' => Carbon::parse('2026-10-12 00:00', 'Europe/London'),
-        ]);
+        $live = $this->event();
+        $this->event(['starts_at' => now()->addDays(7), 'ends_at' => now()->addDays(14)]); // next week
         $servers = app(TimeTrialServerService::class);
 
-        $this->assertCount(1, $servers->duePushes(now()));
+        $this->assertSame([$live->id], $servers->duePushes(now())->pluck('id')->all());
 
-        $event->update(['last_pushed_for' => Carbon::parse('2026-10-05 14:00', 'Europe/London')]);
-        $this->assertCount(0, $servers->duePushes(now()), 'Already pushed for this restart');
+        $live->update(['last_pushed_at' => now()->subMinutes(20)]);
+        $this->assertCount(0, $servers->duePushes(now()), 'Uploaded 20 minutes ago');
 
-        Carbon::setTestNow(Carbon::parse('2026-10-05 14:30', 'Europe/London'));
-        $this->assertCount(0, $servers->duePushes(now()), 'Too early for the 15:00 restart');
+        $live->update(['last_pushed_at' => now()->subMinutes(60)]);
+        $this->assertCount(1, $servers->duePushes(now()), 'An hour later it goes up again');
     }
 
-    public function test_the_config_is_one_practice_session_with_a_forced_entry_list_of_signups(): void
+    public function test_between_events_the_next_one_is_uploaded(): void
+    {
+        $next = $this->event(['starts_at' => now()->addHours(3), 'ends_at' => now()->addDays(7)]);
+
+        $this->assertSame([$next->id], app(TimeTrialServerService::class)->duePushes(now())->pluck('id')->all());
+    }
+
+    public function test_the_config_is_practice_then_qualifying_with_an_open_entry_list_of_all_members(): void
     {
         $event = $this->event();
-        $signedUp = $this->driver('M1', 'Alpha');
-        $this->driver('M2', 'Not Signed Up');
-        $event->drivers()->attach($signedUp);
+        $this->driver('M1', 'Alpha');
+        $this->driver('P2', 'Bravo');
+        User::factory()->create(['platform_id' => 'M3', 'is_filler' => true]);
+        User::factory()->create(['platform_id' => 'S7656', 'platform' => 'steam']);
 
         [$files, $entryCount] = app(TimeTrialServerService::class)->buildFiles($event, $this->server);
 
         $config = json_decode($files['event.json'], true);
         $this->assertSame('spa', $config['track']);
-        $this->assertCount(1, $config['sessions']);
-        $this->assertSame('P', $config['sessions'][0]['sessionType']);
-        $this->assertSame(55, $config['sessions'][0]['sessionDurationMinutes']);
+        $this->assertSame([['P', 2], ['Q', 30]], array_map(fn ($s) => [$s['sessionType'], $s['sessionDurationMinutes']], $config['sessions']));
 
         $settings = json_decode($files['settings.json'], true);
         $this->assertSame('GT3', $settings['carGroup']);
         $this->assertSame('XCL SERVER 6 - Time Trials', $settings['serverName']);
+
+        // Every console member, signed up or not; no grid fillers, no Steam-only accounts.
+        $entryList = json_decode($files['entrylist.json'], true);
+        $this->assertSame(0, $entryList['forceEntryList']);
+        $this->assertSame(2, $entryCount);
+        $this->assertSame(['M1', 'P2'], array_map(fn ($e) => $e['drivers'][0]['playerID'], $entryList['entries']));
+    }
+
+    public function test_a_forced_entry_list_holds_only_the_signups(): void
+    {
+        $event = $this->event(['forced_entry_list' => true]);
+        $event->drivers()->attach($this->driver('M1', 'Alpha'));
+        $this->driver('P2', 'Not Signed Up');
+
+        [$files, $entryCount] = app(TimeTrialServerService::class)->buildFiles($event, $this->server);
 
         $entryList = json_decode($files['entrylist.json'], true);
         $this->assertSame(1, $entryList['forceEntryList']);
@@ -178,7 +189,24 @@ class TimeTrialEventsTest extends TestCase
         $this->assertSame('M1', $entryList['entries'][0]['drivers'][0]['playerID']);
     }
 
-    public function test_a_push_uploads_every_file_and_records_the_restart(): void
+    public function test_a_signup_triggers_a_new_upload_only_with_a_forced_entry_list(): void
+    {
+        $forced = $this->event(['forced_entry_list' => true, 'last_pushed_at' => now()->subMinutes(10)]);
+        $user = $this->driver('M1');
+
+        $this->actingAs($user)->post(route('time-trials.events.register', $forced));
+        $this->assertNull($forced->fresh()->last_pushed_at);
+        $this->assertCount(1, app(TimeTrialServerService::class)->duePushes(now()));
+
+        $open = $this->event([
+            'track' => 'monza', 'starts_at' => now()->addDays(7), 'ends_at' => now()->addDays(14),
+            'last_pushed_at' => now()->subMinutes(10),
+        ]);
+        $this->actingAs($user)->post(route('time-trials.events.register', $open));
+        $this->assertNotNull($open->fresh()->last_pushed_at);
+    }
+
+    public function test_an_upload_sends_every_file_and_records_it(): void
     {
         $event = $this->event();
         $this->mock(FtpService::class, function (MockInterface $ftp) {
@@ -188,19 +216,17 @@ class TimeTrialEventsTest extends TestCase
             $ftp->shouldReceive('disconnect')->once();
         });
 
-        $servers = app(TimeTrialServerService::class);
-        $restart = $servers->nextRestart($this->server, now());
-
-        $this->assertNull($servers->push($event, $restart));
-        $this->assertTrue($event->fresh()->last_pushed_for->eq($restart));
+        $this->assertNull(app(TimeTrialServerService::class)->push($event));
+        $this->assertNotNull($event->fresh()->last_pushed_at);
+        $this->assertNull($event->fresh()->last_push_error);
     }
 
     // ── Results ─────────────────────────────────────────────────────────────────
 
-    private function resultFile(array $laps, string $track = 'spa'): string
+    private function resultFile(array $laps, string $track = 'spa', string $type = 'FP'): string
     {
         return json_encode([
-            'sessionType' => 'FP',
+            'sessionType' => $type,
             'trackName' => $track,
             'sessionResult' => ['leaderBoardLines' => [
                 ['car' => ['carId' => 1001, 'carModel' => 35, 'drivers' => [['playerId' => 'M1', 'firstName' => 'A', 'lastName' => 'B']]]],
@@ -231,6 +257,31 @@ class TimeTrialEventsTest extends TestCase
         $this->assertSame([40000, 50000, 45800], [$lap->sector1_ms, $lap->sector2_ms, $lap->sector3_ms]);
         $this->assertSame($alpha->id, $lap->user_id);
         $this->assertSame(35, $lap->car_id);
+    }
+
+    public function test_qualifying_laps_count_too(): void
+    {
+        $event = $this->event();
+        $event->drivers()->attach($this->driver('M1'));
+
+        $json = $this->resultFile([
+            ['carId' => 1001, 'driverIndex' => 0, 'laptime' => 136000, 'isValidForBest' => true, 'splits' => [40000, 50000, 46000]],
+        ], type: 'Q');
+
+        $this->assertSame(1, app(TimeTrialResultCollector::class)->storeFile($event, $this->server->id, '261005_1432_Q.json', $json));
+    }
+
+    public function test_sessions_that_ended_before_the_driver_signed_up_do_not_count(): void
+    {
+        $event = $this->event();
+        $alpha = $this->driver('M1');
+        $event->drivers()->attach($alpha, ['created_at' => Carbon::parse('2026-10-05 15:00', 'Europe/Berlin')->utc()]);
+
+        $lap = [['carId' => 1001, 'driverIndex' => 0, 'laptime' => 136000, 'isValidForBest' => true, 'splits' => [40000, 50000, 46000]]];
+        $collector = app(TimeTrialResultCollector::class);
+
+        $this->assertSame(0, $collector->storeFile($event, $this->server->id, '261005_1432_Q.json', $this->resultFile($lap, type: 'Q')));
+        $this->assertSame(1, $collector->storeFile($event, $this->server->id, '261005_1532_Q.json', $this->resultFile($lap, type: 'Q')));
     }
 
     public function test_a_result_file_from_another_track_is_ignored(): void
