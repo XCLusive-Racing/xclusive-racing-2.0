@@ -40,10 +40,31 @@
                         <h2 class="fw-black text-uppercase fst-italic text-dark mb-4" style="font-size:1rem">Identity</h2>
                         <div class="row g-3">
                             <div class="col-sm-6">
-                                <label class="form-label fw-bold text-dark" style="font-size:.82rem">Display Name</label>
+                                <label class="form-label fw-bold text-dark" style="font-size:.82rem">Gamertag</label>
                                 <input type="text" name="name" value="{{ old('name', $user->name) }}"
                                        class="form-control @error('name') is-invalid @enderror" required>
                                 @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-bold text-dark" style="font-size:.82rem">Show My Name As</label>
+                                <select name="display_name_preference" class="form-select @error('display_name_preference') is-invalid @enderror">
+                                    <option value="{{ \App\Models\User::DISPLAY_GAMERTAG }}" @selected(old('display_name_preference', $user->display_name_preference) !== \App\Models\User::DISPLAY_REAL_NAME)>Gamertag</option>
+                                    <option value="{{ \App\Models\User::DISPLAY_REAL_NAME }}" @selected(old('display_name_preference', $user->display_name_preference) === \App\Models\User::DISPLAY_REAL_NAME)>Real name</option>
+                                </select>
+                                <div class="form-text" style="font-size:.72rem">Without a real name filled in, your gamertag is shown.</div>
+                                @error('display_name_preference')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-bold text-dark" style="font-size:.82rem">First Name <span class="fw-normal text-secondary" style="font-size:.75rem">optional</span></label>
+                                <input type="text" name="first_name" value="{{ old('first_name', $user->first_name) }}" maxlength="50"
+                                       class="form-control @error('first_name') is-invalid @enderror" autocomplete="given-name">
+                                @error('first_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-bold text-dark" style="font-size:.82rem">Last Name <span class="fw-normal text-secondary" style="font-size:.75rem">optional</span></label>
+                                <input type="text" name="last_name" value="{{ old('last_name', $user->last_name) }}" maxlength="50"
+                                       class="form-control @error('last_name') is-invalid @enderror" autocomplete="family-name">
+                                @error('last_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-sm-6">
                                 <label class="form-label fw-bold text-dark" style="font-size:.82rem">Country</label>

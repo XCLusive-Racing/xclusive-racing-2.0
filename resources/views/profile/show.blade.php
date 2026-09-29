@@ -14,7 +14,7 @@
                     <x-rank-avatar :user="$user" :size="88" />
                 </div>
                 <div class="flex-grow-1">
-                    <h1 class="display-6 fw-black text-uppercase fst-italic text-dark mb-1">{{ $user->name }}</h1>
+                    <h1 class="display-6 fw-black text-uppercase fst-italic text-dark mb-1">{{ $user->displayName() }}</h1>
                     <p class="text-secondary text-uppercase mb-1">
                         @php $countryFlag = \App\Services\CountryFlagService::emoji($user->country); @endphp
                         @if($countryFlag)<span aria-hidden="true">{{ $countryFlag }}</span> @endif{{ $user->country }} &bull; {{ strtoupper($user->platform) }}

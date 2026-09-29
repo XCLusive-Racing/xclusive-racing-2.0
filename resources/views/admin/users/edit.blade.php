@@ -138,11 +138,19 @@
                            class="form-control" placeholder="https://... or images/avatars/...">
                 </div>
                 <div class="col-sm-6">
-                    <label class="form-label">Display Name</label>
+                    <label class="form-label">Show Name As</label>
                     <select name="display_name_preference" class="form-select">
-                        <option value="gamertag" {{ old('display_name_preference',$user->display_name_preference??'gamertag')==='gamertag'?'selected':'' }}>Gamertag (platform ID)</option>
-                        <option value="name"     {{ old('display_name_preference',$user->display_name_preference??'gamertag')==='name'    ?'selected':'' }}>Real name ({{ $user->name }})</option>
+                        <option value="{{ \App\Models\User::DISPLAY_GAMERTAG }}" @selected(old('display_name_preference', $user->display_name_preference) !== \App\Models\User::DISPLAY_REAL_NAME)>Gamertag ({{ $user->gamertag() }})</option>
+                        <option value="{{ \App\Models\User::DISPLAY_REAL_NAME }}" @selected(old('display_name_preference', $user->display_name_preference) === \App\Models\User::DISPLAY_REAL_NAME)>Real name{{ $user->realName() ? ' ('.$user->realName().')' : '' }}</option>
                     </select>
+                </div>
+                <div class="col-sm-3">
+                    <label class="form-label">First Name</label>
+                    <input type="text" name="first_name" value="{{ old('first_name', $user->first_name) }}" maxlength="50" class="form-control">
+                </div>
+                <div class="col-sm-3">
+                    <label class="form-label">Last Name</label>
+                    <input type="text" name="last_name" value="{{ old('last_name', $user->last_name) }}" maxlength="50" class="form-control">
                 </div>
                 <div class="col-sm-6">
                     <label class="form-label d-block">Supporter</label>

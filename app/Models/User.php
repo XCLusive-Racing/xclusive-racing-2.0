@@ -15,7 +15,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 
-#[Fillable(['name', 'email', 'password', 'must_set_password', 'display_name_preference', 'is_supporter', 'is_suspended', 'suspension_reason', 'suspended_until', 'privacy_accepted_at', 'country', 'timezone', 'uses_12_hour_clock', 'platform', 'platform_id', 'car_number', 'car_model', 'banner', 'game', 'team', 'role', 'flag', 'elo_acc', 'elo_lmu', 'elo_iracing', 'sr_acc', 'sr_lmu', 'sr_iracing', 'legacy_races', 'legacy_wins', 'legacy_podiums', 'last_seen_at'])]
+#[Fillable(['name', 'first_name', 'last_name', 'email', 'password', 'must_set_password', 'display_name_preference', 'is_supporter', 'is_suspended', 'suspension_reason', 'suspended_until', 'privacy_accepted_at', 'country', 'timezone', 'uses_12_hour_clock', 'platform', 'platform_id', 'car_number', 'car_model', 'banner', 'game', 'team', 'role', 'flag', 'elo_acc', 'elo_lmu', 'elo_iracing', 'sr_acc', 'sr_lmu', 'sr_iracing', 'legacy_races', 'legacy_wins', 'legacy_podiums', 'last_seen_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -361,9 +361,32 @@ class User extends Authenticatable
         $this->unsetRelation('roles');
     }
 
+    public const DISPLAY_GAMERTAG = 'gamertag';
+
+    public const DISPLAY_REAL_NAME = 'real_name';
+
+    // The name shown across the site: the real name when the driver chose it on
+    // their profile and filled it in, otherwise the gamertag.
     public function displayName(): string
     {
+        if ($this->display_name_preference === self::DISPLAY_REAL_NAME && ($realName = $this->realName())) {
+            return $realName;
+        }
+
+        return $this->gamertag();
+    }
+
+    // users.name without a Discord-style "#1234" suffix.
+    public function gamertag(): string
+    {
         return preg_replace('/#\d+$/', '', $this->name ?? '');
+    }
+
+    public function realName(): ?string
+    {
+        $realName = trim(($this->first_name ?? '').' '.($this->last_name ?? ''));
+
+        return $realName !== '' ? $realName : null;
     }
 
     public function displayTeam(): ?string

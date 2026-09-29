@@ -183,9 +183,9 @@
                                         <div class="d-flex align-items-center gap-2">
                                             <div class="rounded-circle d-flex align-items-center justify-content-center fw-black text-white flex-shrink-0"
                                                  style="width:30px;height:30px;font-size:.7rem;background:linear-gradient(135deg,{{ $championship->gameColor() }},#db2777)">
-                                                {{ strtoupper(substr($entry['user']?->name ?? '?', 0, 1)) }}
+                                                {{ strtoupper(substr($entry['user']?->displayName() ?? '?', 0, 1)) }}
                                             </div>
-                                            <span class="fw-bold text-white">{{ $entry['user']?->name ?? 'Unknown' }}</span>
+                                            <span class="fw-bold text-white">{{ $entry['user']?->displayName() ?? 'Unknown' }}</span>
                                         </div>
                                     </td>
                                     @foreach($rounds->where('status','finished') as $r)
@@ -349,10 +349,10 @@
                         <div class="d-flex align-items-center gap-2 py-2" style="border-bottom:1px solid #1f2937">
                             <div class="rounded-circle d-flex align-items-center justify-content-center fw-black text-white flex-shrink-0"
                                  style="width:28px;height:28px;font-size:.65rem;background:linear-gradient(135deg,#374151,#6b7280)">
-                                {{ strtoupper(substr($reg->user?->name ?? '?', 0, 1)) }}
+                                {{ strtoupper(substr($reg->user?->displayName() ?? '?', 0, 1)) }}
                             </div>
                             <div class="flex-grow-1">
-                                <span class="text-white fw-bold" style="font-size:.82rem">{{ $reg->user?->name }}</span>
+                                <span class="text-white fw-bold" style="font-size:.82rem">{{ $reg->user?->displayName() }}</span>
                                 @if($championship->is_multiclass && $reg->championshipClass)
                                 <span class="badge ms-1 fw-bold" style="font-size:.6rem;background:{{ $reg->championshipClass->color }}22;color:{{ $reg->championshipClass->color }}">
                                     {{ $reg->championshipClass->name }}

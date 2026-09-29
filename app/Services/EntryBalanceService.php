@@ -66,10 +66,15 @@ class EntryBalanceService
             : 0;
         $restrictor = 0;
 
-        $entrant = $teamName ?? $drivers->first()?->displayName();
+        // A driver adjustment may have been saved under the gamertag before the
+        // driver switched to showing their real name, or the other way round.
+        $firstDriver = $drivers->first();
+        $entrantNames = $teamName !== null
+            ? [$teamName]
+            : array_filter([$firstDriver?->displayName(), $firstDriver?->gamertag()]);
         foreach ($championship->settings->balance->adjustments ?? [] as $adjustment) {
             $adjustment = (array) $adjustment;
-            if (($adjustment['scope'] ?? null) === 'driver' && $entrant !== null && ($adjustment['target'] ?? null) === $entrant) {
+            if (($adjustment['scope'] ?? null) === 'driver' && in_array($adjustment['target'] ?? null, $entrantNames, true)) {
                 $ballast += (int) ($adjustment['ballast_kg'] ?? 0);
                 $restrictor += (int) ($adjustment['restrictor_percent'] ?? 0);
             }

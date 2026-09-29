@@ -46,7 +46,7 @@ class RaceResult extends Model
 
     public function displayName(): string
     {
-        return $this->user?->name ?? $this->driver_name ?? 'Unknown';
+        return $this->user?->displayName() ?? $this->driver_name ?? 'Unknown';
     }
 
     /**

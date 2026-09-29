@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Race;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
@@ -46,6 +48,9 @@ class ProfileController extends Controller
 
         $data = $request->validate([
             'name' => 'required|string|max:255',
+            'first_name' => 'nullable|string|max:50',
+            'last_name' => 'nullable|string|max:50',
+            'display_name_preference' => ['sometimes', Rule::in([User::DISPLAY_GAMERTAG, User::DISPLAY_REAL_NAME])],
             'country' => 'nullable|string|max:100',
             // Empty = "Automatic": event times follow the browser's own timezone.
             'timezone' => 'nullable|timezone:all',

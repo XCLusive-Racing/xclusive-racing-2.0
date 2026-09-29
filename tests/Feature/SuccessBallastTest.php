@@ -181,6 +181,21 @@ class SuccessBallastTest extends TestCase
         $this->assertSame(20, $entry['restrictor']);
     }
 
+    public function test_a_driver_adjustment_saved_under_the_gamertag_still_applies_after_switching_to_the_real_name(): void
+    {
+        $this->setBalance(['success_ballast_enabled' => false]);
+        $driver = $this->driver();
+        $this->setBalance(['adjustments' => [
+            ['scope' => 'driver', 'target' => $driver->gamertag(), 'ballast_kg' => 15, 'restrictor_percent' => 0],
+        ]]);
+        $driver->update(['first_name' => 'Jan', 'last_name' => 'Jansen', 'display_name_preference' => User::DISPLAY_REAL_NAME]);
+
+        $round = $this->makeRound(1);
+        RaceRegistration::create(['race_id' => $round->id, 'user_id' => $driver->id]);
+
+        $this->assertSame(15, app(AccServerConfigService::class)->entryList($round)['entries'][0]['ballastKg']);
+    }
+
     public function test_cumulative_mode_builds_up_stops_at_the_cap_and_goes_below_zero(): void
     {
         $this->cumulative(['success_ballast_cap' => 8]);

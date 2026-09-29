@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -18,7 +19,7 @@ class UserController extends Controller
 {
     public function index()
     {
-        $rolesOnlyCount = User::whereHas('roles', fn($q) => $q->where('slug', '!=', 'driver'))->count();
+        $rolesOnlyCount = User::whereHas('roles', fn ($q) => $q->where('slug', '!=', 'driver'))->count();
 
         return view('admin.users.index', compact('rolesOnlyCount'));
     }
@@ -29,10 +30,10 @@ class UserController extends Controller
             ->select(['id', 'name', 'email', 'banner', 'platform', 'platform_id', 'team', 'is_supporter', 'is_suspended', 'created_at']);
 
         if ($request->boolean('roles_only')) {
-            $query->whereHas('roles', fn($q) => $q->where('slug', '!=', 'driver'));
+            $query->whereHas('roles', fn ($q) => $q->where('slug', '!=', 'driver'));
         }
 
-        $recordsTotal    = User::count();
+        $recordsTotal = User::count();
         $recordsFiltered = (clone $query)->count();
 
         if ($search = trim((string) $request->input('search.value'))) {
@@ -49,10 +50,10 @@ class UserController extends Controller
         }
 
         $orderableColumns = ['name', 'platform_id', null, null, 'created_at', 'team', null, null];
-        $orderColumn      = $orderableColumns[(int) $request->input('order.0.column', 0)] ?? 'name';
-        $orderDir         = $request->input('order.0.dir') === 'desc' ? 'desc' : 'asc';
+        $orderColumn = $orderableColumns[(int) $request->input('order.0.column', 0)] ?? 'name';
+        $orderDir = $request->input('order.0.dir') === 'desc' ? 'desc' : 'asc';
 
-        $start  = (int) $request->input('start', 0);
+        $start = (int) $request->input('start', 0);
         $length = (int) $request->input('length', 25);
 
         $users = $query->with(['roles', 'connectedAccounts'])
@@ -62,49 +63,49 @@ class UserController extends Controller
             ->get();
 
         return response()->json([
-            'draw'            => (int) $request->input('draw', 1),
-            'recordsTotal'    => $recordsTotal,
+            'draw' => (int) $request->input('draw', 1),
+            'recordsTotal' => $recordsTotal,
             'recordsFiltered' => $recordsFiltered,
-            'data'            => $users->map(fn (User $user) => $this->rowToArray($user))->values(),
+            'data' => $users->map(fn (User $user) => $this->rowToArray($user))->values(),
         ]);
     }
 
     private function rowToArray(User $user): array
     {
         $avatar = $user->banner
-            ? '<img src="' . e($user->avatarUrl()) . '" alt="" class="rounded-circle flex-shrink-0" style="width:32px;height:32px;object-fit:cover">'
-            : '<div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0" style="width:32px;height:32px;font-size:.75rem;background:linear-gradient(135deg,#7c3aed,#db2777)">' . e(strtoupper(substr($user->name, 0, 1))) . '</div>';
+            ? '<img src="'.e($user->avatarUrl()).'" alt="" class="rounded-circle flex-shrink-0" style="width:32px;height:32px;object-fit:cover">'
+            : '<div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black flex-shrink-0" style="width:32px;height:32px;font-size:.75rem;background:linear-gradient(135deg,#7c3aed,#db2777)">'.e(strtoupper(substr($user->name, 0, 1))).'</div>';
 
-        $driver = '<div class="d-flex align-items-center gap-2">' . $avatar
-            . '<div><div class="fw-bold text-dark">' . e($user->name) . '</div>'
-            . '<div class="text-secondary" style="font-size:.72rem">' . e($user->email) . '</div></div></div>';
+        $driver = '<div class="d-flex align-items-center gap-2">'.$avatar
+            .'<div><div class="fw-bold text-dark">'.e($user->name).'</div>'
+            .'<div class="text-secondary" style="font-size:.72rem">'.e($user->email).'</div></div></div>';
 
         $id = $user->platform_id
-            ? '<div class="d-flex align-items-center gap-1"><span class="badge fw-bold" style="background:#f3f4f6;color:#6b7280;font-size:.65rem;padding:2px 6px">' . e(strtoupper($user->platform ?? '?')) . '</span><code style="font-size:.75rem;color:#374151">' . e($user->platform_id) . '</code></div>'
+            ? '<div class="d-flex align-items-center gap-1"><span class="badge fw-bold" style="background:#f3f4f6;color:#6b7280;font-size:.65rem;padding:2px 6px">'.e(strtoupper($user->platform ?? '?')).'</span><code style="font-size:.75rem;color:#374151">'.e($user->platform_id).'</code></div>'
             : '<span class="text-secondary">—</span>';
 
         $discordAccount = $user->connectedAccounts->firstWhere('provider', 'discord');
-        $otherAccounts  = $user->connectedAccounts->reject(fn ($a) => $a->provider === 'discord');
+        $otherAccounts = $user->connectedAccounts->reject(fn ($a) => $a->provider === 'discord');
 
         // Discord's username is shown as plain text, not just an icon+tooltip, so admins/event
         // managers can actually read and copy it straight from the table to tag someone on Discord —
         // the whole point of surfacing it here.
         $discordHtml = $discordAccount
             ? '<div class="d-flex align-items-center gap-1" title="Discord">'
-                . '<span style="color:' . e($discordAccount->providerColor()) . ';font-size:1rem">' . $discordAccount->providerIcon() . '</span>'
-                . '<span style="font-size:.78rem;color:#374151">' . e($discordAccount->username) . '</span>'
-                . '</div>'
+                .'<span style="color:'.e($discordAccount->providerColor()).';font-size:1rem">'.$discordAccount->providerIcon().'</span>'
+                .'<span style="font-size:.78rem;color:#374151">'.e($discordAccount->username).'</span>'
+                .'</div>'
             : '';
 
         $otherIconsHtml = $otherAccounts->isEmpty()
             ? ''
-            : '<div class="d-flex gap-2 align-items-center">' . $otherAccounts->map(
-                fn ($a) => '<span title="' . e($a->providerLabel()) . '" style="color:' . e($a->providerColor()) . ';font-size:1rem">' . $a->providerIcon() . '</span>'
-            )->implode('') . '</div>';
+            : '<div class="d-flex gap-2 align-items-center">'.$otherAccounts->map(
+                fn ($a) => '<span title="'.e($a->providerLabel()).'" style="color:'.e($a->providerColor()).';font-size:1rem">'.$a->providerIcon().'</span>'
+            )->implode('').'</div>';
 
         $connected = ($discordHtml === '' && $otherIconsHtml === '')
             ? '<span class="text-secondary">—</span>'
-            : '<div class="d-flex gap-2 align-items-center">' . $discordHtml . $otherIconsHtml . '</div>';
+            : '<div class="d-flex gap-2 align-items-center">'.$discordHtml.$otherIconsHtml.'</div>';
 
         $status = $user->is_suspended
             ? '<span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:4px;background:#fee2e2;color:#dc2626">Suspended</span>'
@@ -112,18 +113,19 @@ class UserController extends Controller
                 ? '<span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:4px;background:#fef3c7;color:#d97706">★ Supporter</span>'
                 : '<span class="text-secondary">—</span>');
 
-        $joined = '<span style="font-size:.8rem;color:#6b7280">' . e($user->created_at->format('d M Y')) . '</span>';
+        $joined = '<span style="font-size:.8rem;color:#6b7280">'.e($user->created_at->format('d M Y')).'</span>';
 
-        $team = '<span class="text-secondary" style="font-size:.82rem">' . e($user->team ?? '—') . '</span>';
+        $team = '<span class="text-secondary" style="font-size:.82rem">'.e($user->team ?? '—').'</span>';
 
         $roleColors = ['owner' => ['#f3e8ff', '#7c3aed'], 'admin' => ['#fce7f3', '#db2777'], 'moderator' => ['#dbeafe', '#2563eb'], 'event_manager' => ['#fef3c7', '#d97706'], 'steward' => ['#e0f2fe', '#0891b2'], 'driver' => ['#d1fae5', '#059669'], 'broadcaster' => ['#ffe4e6', '#e11d48']];
         $roles = $user->roles->sortBy('sort_order')->map(function ($role) use ($roleColors) {
             $rc = $roleColors[$role->slug] ?? ['#f3f4f6', '#374151'];
-            return '<span class="badge fw-bold" style="background:' . $rc[0] . ';color:' . $rc[1] . ';font-size:.7rem;padding:4px 8px;border-radius:6px">' . e($role->name) . '</span>';
-        })->implode('');
-        $rolesHtml = '<div class="d-flex flex-wrap gap-1">' . $roles . '</div>';
 
-        $actions = '<div class="d-flex gap-2 justify-content-end"><a href="' . e(route('admin.users.edit', $user)) . '" class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.72rem;padding:5px 12px;border-radius:6px">Edit</a></div>';
+            return '<span class="badge fw-bold" style="background:'.$rc[0].';color:'.$rc[1].';font-size:.7rem;padding:4px 8px;border-radius:6px">'.e($role->name).'</span>';
+        })->implode('');
+        $rolesHtml = '<div class="d-flex flex-wrap gap-1">'.$roles.'</div>';
+
+        $actions = '<div class="d-flex gap-2 justify-content-end"><a href="'.e(route('admin.users.edit', $user)).'" class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.72rem;padding:5px 12px;border-radius:6px">Edit</a></div>';
 
         return [$driver, $id, $connected, $status, $joined, $team, $rolesHtml, $actions];
     }
@@ -137,8 +139,8 @@ class UserController extends Controller
         // just that same "who gets access to which league" action surfaced here
         // too, combined with the global role pills above, instead of only being
         // reachable by going to each league's own edit page one at a time.
-        $leagues        = auth()->user()->canManage() ? League::withoutTenantScope()->orderBy('name')->get() : collect();
-        $leagueRoles    = $user->leagueMemberships()->pluck('role', 'league_id');
+        $leagues = auth()->user()->canManage() ? League::withoutTenantScope()->orderBy('name')->get() : collect();
+        $leagueRoles = $user->leagueMemberships()->pluck('role', 'league_id');
 
         return view('admin.users.edit', compact('user', 'roles', 'leagues', 'leagueRoles'));
     }
@@ -146,46 +148,48 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $data = $request->validate([
-            'name'        => 'required|string|max:255',
-            'email'       => ['required', 'email', Rule::unique('users')->ignore($user->id)],
-            'roles'       => 'nullable|array',
-            'roles.*'     => 'exists:roles,slug',
-            'country'     => 'nullable|string|max:100',
-            'platform'    => 'nullable|in:steam,ps5,xbox',
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
+            'roles' => 'nullable|array',
+            'roles.*' => 'exists:roles,slug',
+            'country' => 'nullable|string|max:100',
+            'platform' => 'nullable|in:steam,ps5,xbox',
             'platform_id' => 'nullable|string|max:60',
-            'car_number'  => 'nullable|integer|min:1|max:9999',
-            'car_model'   => 'nullable|string|max:100',
-            'banner'      => 'nullable|string|max:500',
-            'game'                   => 'nullable|in:acc,lmu,iracing',
-            'team'                   => 'nullable|string|max:100',
-            'display_name_preference'=> 'nullable|in:gamertag,name',
-            'is_supporter'           => 'nullable|boolean',
-            'is_suspended'           => 'nullable|boolean',
-            'suspension_reason'      => 'nullable|string|max:500',
-            'suspended_until'        => 'nullable|date|after:now',
-            'elo_acc'     => 'required|integer|min:0',
-            'elo_lmu'     => 'required|integer|min:0',
+            'car_number' => 'nullable|integer|min:1|max:9999',
+            'car_model' => 'nullable|string|max:100',
+            'banner' => 'nullable|string|max:500',
+            'game' => 'nullable|in:acc,lmu,iracing',
+            'team' => 'nullable|string|max:100',
+            'display_name_preference' => ['nullable', Rule::in([User::DISPLAY_GAMERTAG, User::DISPLAY_REAL_NAME])],
+            'first_name' => 'nullable|string|max:50',
+            'last_name' => 'nullable|string|max:50',
+            'is_supporter' => 'nullable|boolean',
+            'is_suspended' => 'nullable|boolean',
+            'suspension_reason' => 'nullable|string|max:500',
+            'suspended_until' => 'nullable|date|after:now',
+            'elo_acc' => 'required|integer|min:0',
+            'elo_lmu' => 'required|integer|min:0',
             'elo_iracing' => 'required|integer|min:0',
-            'sr_acc'      => 'required|numeric|min:0|max:9.99',
-            'sr_lmu'      => 'required|numeric|min:0|max:9.99',
-            'sr_iracing'  => 'required|numeric|min:0|max:9.99',
+            'sr_acc' => 'required|numeric|min:0|max:9.99',
+            'sr_lmu' => 'required|numeric|min:0|max:9.99',
+            'sr_iracing' => 'required|numeric|min:0|max:9.99',
             // Keyed by league id -- 'manager'/'steward'/'' (empty select option = no
             // membership). Not constrained to those two values here: an unrecognized
             // or empty value is simply treated as "remove membership" below, same as
             // an empty <select> option would be.
-            'league_roles'   => 'nullable|array',
+            'league_roles' => 'nullable|array',
             'league_roles.*' => 'nullable|string',
         ]);
 
         $data['is_supporter'] = $request->boolean('is_supporter');
         $data['is_suspended'] = $request->boolean('is_suspended');
 
-        if (!$data['is_suspended']) {
+        if (! $data['is_suspended']) {
             $data['suspended_until'] = null;
             $data['suspension_reason'] = null;
         }
 
-        $user->update(\Illuminate\Support\Arr::except($data, ['roles', 'league_roles']));
+        $user->update(Arr::except($data, ['roles', 'league_roles']));
 
         if ($user->wasChanged(['elo_acc', 'elo_lmu', 'elo_iracing'])) {
             SyncDiscordRankRole::dispatch($user->id);
@@ -212,7 +216,7 @@ class UserController extends Controller
                 }
 
                 $league = League::withoutTenantScope()->find($leagueId);
-                if (!$league) {
+                if (! $league) {
                     continue;
                 }
 
@@ -229,7 +233,7 @@ class UserController extends Controller
         }
 
         return redirect()->route('admin.users.index')
-            ->with('success', 'User "' . $user->name . '" updated successfully.');
+            ->with('success', 'User "'.$user->name.'" updated successfully.');
     }
 
     // Generates a fresh random password for the user and shows it to the admin once —
@@ -240,12 +244,12 @@ class UserController extends Controller
         $password = Str::password(12);
 
         $user->update([
-            'password'          => Hash::make($password),
+            'password' => Hash::make($password),
             'must_set_password' => true,
         ]);
 
         return redirect()->route('admin.users.edit', $user)
-            ->with('success', 'Password reset for "' . $user->name . '".')
+            ->with('success', 'Password reset for "'.$user->name.'".')
             ->with('generated_password', $password);
     }
 
@@ -259,6 +263,6 @@ class UserController extends Controller
         $user->delete();
 
         return redirect()->route('admin.users.index')
-            ->with('success', 'User "' . $name . '" has been deleted.');
+            ->with('success', 'User "'.$name.'" has been deleted.');
     }
 }
