@@ -637,6 +637,12 @@ class AccServerConfigService implements ServerConfigGenerator
 
     private function trackSlug(string $track): string
     {
+        return self::accTrackSlug($track);
+    }
+
+    // Public for code that keys on ACC's internal track name (e.g. Time Trials laps).
+    public static function accTrackSlug(string $track): string
+    {
         $track = trim($track);
 
         return self::TRACK_SLUG_OVERRIDES[$track]

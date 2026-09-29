@@ -143,6 +143,7 @@
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li><a class="xcl-dropdown-item" href="{{ route('drivers.index') }}">LEADERBOARD</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('time-trials.index') }}">TIME TRIAL RECORDS</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('results.index') }}">RESULTS</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('reports.index') }}">REPORTS</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('bop.index') }}">BOP</a></li>

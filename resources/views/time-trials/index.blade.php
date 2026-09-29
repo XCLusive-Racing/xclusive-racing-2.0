@@ -1,0 +1,48 @@
+@extends('layouts.app')
+
+@section('title', 'Time Trials - ' . config('xcl.name'))
+
+@section('content')
+<main class="xcl-page xcl-tt pb-5 px-3">
+    <div class="about-section__topo" style="background-image:url('/topo.png')"></div>
+
+    <div class="container-xl" style="position:relative;z-index:1">
+        <div class="pt-4 mb-4">
+            <h1 class="display-4 fw-black text-uppercase fst-italic about-section__heading mb-3">TIME TRIALS</h1>
+            <div class="section-divider mb-3" style="margin-left:0"></div>
+            <p class="xcl-tt__lead mb-0">All time leaderboards for every track, one row per driver per car.</p>
+        </div>
+
+        @include('time-trials._boards', ['url' => fn ($key) => route('time-trials.index', ['platform' => $key])])
+
+        @include('time-trials._bop-note')
+
+        @if($tracks->isEmpty())
+        <div class="xcl-tt__empty">No {{ $boards[$board]['label'] }} lap times yet.</div>
+        @else
+        <div class="xcl-tt__tracks">
+            @foreach($tracks as $t)
+            <a href="{{ route('time-trials.show', ['track' => $t['key'], 'platform' => $board]) }}" class="xcl-tt__track">
+                <div class="xcl-tt__track-banner">
+                    @if($t['image'])
+                    <img src="{{ $t['image'] }}" alt="" loading="lazy">
+                    @endif
+                </div>
+                <div class="xcl-tt__track-body">
+                    <h2 class="xcl-tt__track-name">{{ $t['name'] }}</h2>
+                    <div class="xcl-tt__track-record">
+                        <span class="xcl-tt__time">{{ \App\Models\TimeTrialLap::formatLap($t['record']->lap_time_ms) }}</span>
+                        <span class="xcl-tt__muted">{{ $t['record']->driver_name }}</span>
+                    </div>
+                    <div class="xcl-tt__muted small">
+                        {{ $t['record']->car?->label() ?? 'Car #' . $t['record']->car_id }}
+                        · {{ number_format($t['drivers']) }} {{ \Illuminate\Support\Str::plural('driver', $t['drivers']) }}
+                    </div>
+                </div>
+            </a>
+            @endforeach
+        </div>
+        @endif
+    </div>
+</main>
+@endsection

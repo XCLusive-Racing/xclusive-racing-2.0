@@ -7473,3 +7473,242 @@ table.dataTable thead th {
         }
     }
 }
+
+// ─── Time Trials (public leaderboards) ───────────────────────────────────────
+// Same dark panels as the public championship pages (#111827 panels, #1f2937
+// rules, #0f172a table heads). Below the sm breakpoint the car, gap, sector and
+// patch columns collapse into sub-lines under the driver and lap time cells,
+// so the table fits a phone without shrinking any text.
+.xcl-tt {
+    &__lead, &__muted { color: #9ca3af; }
+    &__lead { font-size: .95rem; }
+
+    &__back {
+        display: inline-block;
+        margin-bottom: 1rem;
+        color: #9ca3af;
+        font-size: .78rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        text-decoration: none;
+        &:hover { color: #c084fc; }
+    }
+
+    &__boards, &__chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+
+    &__chip {
+        display: inline-flex;
+        align-items: center;
+        padding: .35rem .9rem;
+        border: 1.5px solid rgba(255, 255, 255, .12);
+        border-radius: 20px;
+        background: #1a0a2e;
+        color: #e5e7eb;
+        font-size: .75rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        text-decoration: none;
+        transition: border-color .2s, background .2s;
+        &:hover { border-color: #a855f7; color: #fff; }
+        &--active { border-color: #a855f7; background: #3b0764; color: #fff; }
+    }
+
+    &__filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+    }
+
+    &__car-form {
+        display: flex;
+        gap: .5rem;
+        flex: 0 1 22rem;
+        min-width: 0;
+    }
+
+    &__select {
+        min-width: 0;
+        background-color: #111827;
+        border-color: #1f2937;
+        color: #e5e7eb;
+        &:focus { border-color: #a855f7; box-shadow: none; }
+    }
+
+    &__apply {
+        flex-shrink: 0;
+        background: $primary;
+        color: #fff;
+        font-size: .72rem;
+        &:hover { background: $primary-hover; color: #fff; }
+    }
+
+    &__note {
+        display: flex;
+        gap: .75rem;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        padding: .85rem 1rem;
+        border: 1px solid #1f2937;
+        border-left: 3px solid $primary;
+        border-radius: 10px;
+        background: #111827;
+        color: #9ca3af;
+        font-size: .85rem;
+        i { color: #c084fc; margin-top: .2rem; }
+    }
+
+    &__empty {
+        padding: 3rem 1rem;
+        color: #6b7280;
+        text-align: center;
+        font-weight: 700;
+    }
+
+    // Track index
+    &__tracks {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+        gap: 1.25rem;
+    }
+
+    &__track {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border-radius: 12px;
+        background: #111827;
+        text-decoration: none;
+        transition: transform .2s, box-shadow .2s;
+        &:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0, 0, 0, .4); }
+    }
+
+    &__track-banner {
+        position: relative;
+        height: 110px;
+        background: linear-gradient(135deg, rgba($primary, .25), rgba($secondary, .35));
+        img { width: 100%; height: 100%; object-fit: cover; opacity: .7; }
+        &::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, #111827 0%, transparent 70%);
+        }
+    }
+
+    &__track-body { padding: .25rem 1rem 1rem; }
+
+    &__track-name {
+        margin-bottom: .35rem;
+        color: #fff;
+        font-size: 1.05rem;
+        font-weight: 900;
+        font-style: italic;
+        text-transform: uppercase;
+    }
+
+    &__track-record {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: .5rem;
+        margin-bottom: .2rem;
+    }
+
+    // Track leaderboard
+    &__panel {
+        overflow: hidden;
+        border-radius: 12px;
+        background: #111827;
+    }
+
+    &__table {
+        --bs-table-bg: transparent;
+        --bs-table-color: #e5e7eb;
+        --bs-table-border-color: #1f2937;
+        font-size: .875rem;
+
+        thead th {
+            background: #0f172a;
+            color: #6b7280;
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        td { white-space: nowrap; }
+    }
+
+    &__pos {
+        font-weight: 900;
+        color: #6b7280;
+        &--1 { color: #f59e0b; }
+        &--2 { color: #9ca3af; }
+        &--3 { color: #b45309; }
+    }
+
+    &__driver {
+        color: #fff;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: normal;
+    }
+    a.xcl-tt__driver:hover { color: #c084fc; }
+
+    &__class {
+        margin-left: .35rem;
+        padding: .1rem .4rem;
+        border-radius: 5px;
+        background: rgba($primary, .18);
+        color: #c084fc;
+        font-size: .65rem;
+        font-weight: 700;
+    }
+
+    &__time {
+        color: #c084fc;
+        font-family: monospace;
+        font-weight: 900;
+        font-size: .95rem;
+    }
+
+    &__gap, &__sector { font-family: monospace; color: #9ca3af; }
+
+    &__sub {
+        display: block;
+        color: #6b7280;
+        font-size: .75rem;
+        white-space: normal;
+    }
+
+    &__xs-only { display: none; }
+
+    &__theoretical td {
+        background: rgba($primary, .1);
+        color: #e5e7eb;
+        i { color: #f59e0b; }
+    }
+
+    &__pager {
+        padding: .75rem 1rem;
+        border-top: 1px solid #1f2937;
+        background: #0f172a;
+        .pagination { margin-bottom: 0; flex-wrap: wrap; }
+    }
+
+    @include media-breakpoint-down(sm) {
+        &__col-sm { display: none; }
+        &__xs-only { display: block; }
+        &__table td:nth-child(2) { white-space: normal; }
+        &__car-form { flex-basis: 100%; }
+    }
+}

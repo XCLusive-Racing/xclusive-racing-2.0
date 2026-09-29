@@ -53,6 +53,7 @@ use App\Http\Controllers\RacingTeamController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ResultsController;
 use App\Http\Controllers\TeamApplicationController;
+use App\Http\Controllers\TimeTrialController;
 use App\Models\Race;
 use Illuminate\Support\Facades\Route;
 
@@ -112,6 +113,12 @@ Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
 Route::get('/leaderboard', [DriverController::class, 'index'])->name('drivers.index');
 Route::get('/drivers/{driver}', [DriverController::class, 'show'])->name('drivers.show');
 Route::get('/hotlaps', [HotlapController::class, 'index'])->name('hotlaps.index');
+
+// Time Trials leaderboards - public
+Route::get('/time-trials', [TimeTrialController::class, 'index'])->name('time-trials.index');
+Route::get('/time-trials/{track}', [TimeTrialController::class, 'show'])
+    ->where('track', '[a-z0-9_]+')
+    ->name('time-trials.show');
 
 // Results, BOP & Reports - public
 Route::get('/results', [ResultsController::class, 'index'])->name('results.index');
