@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ChampionshipRegistration extends Model
 {
     protected $fillable = [
-        'championship_id', 'user_id', 'championship_class_id', 'is_spectator', 'racing_team_id',
+        'championship_id', 'user_id', 'championship_class_id', 'driver_class_id', 'is_spectator', 'racing_team_id',
         // Only set when the championship's team_registration_scope is
         // "championship" — a team's car number/model/starting driver, captured
         // once so every round can auto-generate its own RaceTeamEntry from them.
@@ -80,6 +80,17 @@ class ChampionshipRegistration extends Model
     public function championshipClass(): BelongsTo
     {
         return $this->belongsTo(ChampionshipClass::class);
+    }
+
+    public function driverClass(): BelongsTo
+    {
+        return $this->belongsTo(ChampionshipDriverClass::class, 'driver_class_id');
+    }
+
+    // Every driver this entry scores for: a team car's line-up, or the solo driver.
+    public function scoringDriverIds(): array
+    {
+        return $this->racing_team_id ? $this->driverIds() : [$this->user_id];
     }
 
     public function racingTeam(): BelongsTo

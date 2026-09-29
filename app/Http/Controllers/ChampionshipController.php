@@ -86,16 +86,18 @@ class ChampionshipController extends Controller
             'league' => fn ($q) => $q->withoutTenantScope(),
             'classes',
             // Entries still waiting for manual approval aren't entrants yet.
-            'registrations' => fn ($q) => $q->approved()->with('user', 'championshipClass'),
+            'driverClasses',
+            'registrations' => fn ($q) => $q->approved()->with('user', 'championshipClass', 'driverClass'),
         ]);
         $rounds = $championship->rounds()->where('status', '!=', 'draft')->orderBy('round_number')->get();
         $standings = $championship->computeStandings();
         $classStandings = $championship->computeClassStandings();
+        $driverClassStandings = $championship->computeDriverClassStandings();
         $teamStandings = $championship->computeTeamStandings();
         $teamChampionship = $championship->computeTeamChampionship();
         $ballastChart = app(EntryBalanceService::class)->chart($championship);
 
-        return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'teamStandings', 'teamChampionship', 'ballastChart'));
+        return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'driverClassStandings', 'teamStandings', 'teamChampionship', 'ballastChart'));
     }
 
     public function register(Request $request, int $championship)

@@ -8,6 +8,7 @@ use App\Http\Requests\Championship\PublishChampionshipRequest;
 use App\Http\Requests\Championship\SaveChampionshipStepRequest;
 use App\Jobs\PushRoundConfigJob;
 use App\Models\Championship;
+use App\Models\ChampionshipDriverClass;
 use App\Models\ChampionshipRegistration;
 use App\Models\FtpServer;
 use App\Models\League;
@@ -168,6 +169,11 @@ class ChampionshipWizardController extends Controller
 
             foreach ($championship->classes()->get() as $class) {
                 $copy->classes()->create($class->only(['name', 'color', 'car_class', 'max_drivers', 'sr_requirement', 'min_rating', 'sort_order']));
+            }
+
+            // The classes carry over; who is in which class is decided again.
+            foreach ($championship->driverClasses()->get() as $class) {
+                $copy->driverClasses()->create($class->only(['name', 'acc_category', 'max_entries', 'sort_order']));
             }
 
             if ($copyRounds) {
@@ -879,7 +885,46 @@ class ChampionshipWizardController extends Controller
 
         if ($step === 'format') {
             $this->syncChampionshipClasses($championship, $settings['format']['classes'] ?? []);
+
+            if ($request->filled('driver_classes_json')) {
+                $this->syncDriverClasses($championship, $this->decodeList($request->input('driver_classes_json'), ['id', 'name', 'acc_category', 'max_entries']));
+            }
         }
+    }
+
+    // Driver classes are matched by id, not name — renaming "Pro" keeps every
+    // entry already put in it. A class removed from the list takes only its
+    // assignments with it (driver_class_id nulls out), never the registrations.
+    private function syncDriverClasses(Championship $championship, array $rows): void
+    {
+        $existing = $championship->driverClasses()->get()->keyBy('id');
+        $keepIds = [];
+
+        foreach ($rows as $i => $row) {
+            $name = mb_substr(trim((string) ($row['name'] ?? '')), 0, 50);
+            if ($name === '') {
+                continue;
+            }
+
+            $category = $row['acc_category'] ?? null;
+            $maxEntries = $row['max_entries'] ?? null;
+            $attrs = [
+                'name' => $name,
+                'acc_category' => is_numeric($category) && array_key_exists((int) $category, ChampionshipDriverClass::ACC_CATEGORIES) ? (int) $category : null,
+                'max_entries' => is_numeric($maxEntries) && $maxEntries > 0 ? (int) $maxEntries : null,
+                'sort_order' => $i,
+            ];
+
+            $class = $existing->get((int) ($row['id'] ?? 0));
+            if ($class) {
+                $class->update($attrs);
+            } else {
+                $class = $championship->driverClasses()->create($attrs);
+            }
+            $keepIds[] = $class->id;
+        }
+
+        $championship->driverClasses()->whereNotIn('id', $keepIds)->delete();
     }
 
     // Keeps the real ChampionshipClass rows the public registration flow

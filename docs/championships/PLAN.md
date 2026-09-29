@@ -11,6 +11,23 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-09-29 — Driver classes (Pro / Pro-Am / Am, settings v15).** Separate
+  from the car classes (`ChampionshipClass`/multiclass): `ChampionshipDriverClass`
+  rows (name, optional max entries, optional ACC banner `acc_category` 0 red /
+  1 grey / 2 white), switched on by `format.driver_classes_enabled` and edited
+  under that toggle on the Format step (`_driver-classes-builder`, synced by id
+  so a rename keeps its entries). Never picked by the driver — the league puts
+  each entry in a class on the Entries page (`registrations.driver_class_id`,
+  per car for a team car). A class max is optional; without one only the total
+  entry cap applies. Standings: Overall as before, plus one table per driver
+  class scored on the finishing position *within the class*
+  (`computeDriverStandings($onlyUserIds)` re-ranks; pole = class's best
+  qualifier, fastest-lap bonus stays overall). A class banner overrides
+  `User::ratingClass()` in the round and 24h practice entrylists
+  (`Championship::driverCategoryOverrides()`). Duplicate copies the classes, not
+  the assignments. Tests in `ChampionshipDriverClassTest`.
+- **2026-09-29 — ACC PC championships could not be published**: the publish
+  check allowed only acc/lmu; both checks now use `Championship::GAMES`.
 - **2026-09-27 — Duplicate championship (new season).** "Duplicate" on the
   league's Championships list → `ChampionshipWizardController::duplicateForm()/
   duplicate()`: new name/season, a draft copy of every setting, the classes,

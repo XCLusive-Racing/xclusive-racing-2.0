@@ -16,7 +16,7 @@ use Illuminate\Support\Arr;
 // defaults for new keys) once this class gains fields for a new version.
 class ChampionshipSettingsSchema
 {
-    const CURRENT_VERSION = 14;
+    const CURRENT_VERSION = 15;
 
     // A comma-separated list of whole kg values, each -40..40 (ACC's BOP range).
     const KG_LIST_RULE = 'regex:/^\s*-?(40|[1-3]?\d)(\s*,\s*-?(40|[1-3]?\d))*\s*$/';
@@ -112,6 +112,11 @@ class ChampionshipSettingsSchema
                 'label' => 'Car Class', 'help' => 'Same for every round of the championship.'],
             ['group' => 'format', 'key' => 'spectator_slots', 'type' => 'integer', 'nullable' => true, 'default' => 0,
                 'label' => 'Spectator Slots', 'help' => 'Extra slots reserved for spectators, on top of the entry cap.'],
+            // v15: driver classes (Pro / Pro-Am / Am …), independent of car classes.
+            // The classes themselves are ChampionshipDriverClass rows, edited by the
+            // builder under this toggle; entries are put in one on the Entries page.
+            ['group' => 'format', 'key' => 'driver_classes_enabled', 'type' => 'boolean', 'default' => false, 'section' => 'Driver Classes',
+                'label' => 'Driver Classes', 'help' => 'Split drivers into classes such as Pro, Pro-Am and Am, whatever car they drive. Each class gets its own standings next to the overall standings. You put entries in a class on the Entries page.'],
             ['group' => 'format', 'key' => 'driver_swaps_enabled', 'type' => 'boolean', 'default' => false, 'section' => 'Driver Swaps',
                 'label' => 'Driver Swaps', 'help' => 'Allow more than one driver to share a car during a round.'],
             ['group' => 'format', 'key' => 'min_drivers_per_car', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',

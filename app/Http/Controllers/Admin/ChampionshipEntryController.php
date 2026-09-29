@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Championship;
+use App\Models\ChampionshipDriverClass;
 use App\Models\ChampionshipPenalty;
 use App\Models\ChampionshipRegistration;
 use App\Models\League;
@@ -25,7 +26,7 @@ class ChampionshipEntryController extends Controller
         $this->authorizeChampionship($league, $championship);
 
         $entries = $championship->registrations()
-            ->with(['user', 'racingTeam.members', 'championshipClass'])
+            ->with(['user', 'racingTeam.members', 'championshipClass', 'driverClass'])
             ->orderByRaw('approved_at is not null')
             ->orderBy('created_at')
             ->get();
@@ -39,7 +40,11 @@ class ChampionshipEntryController extends Controller
         $penalties = $championship->penalties()->with(['user', 'race'])->latest()->get();
         $rounds = $championship->rounds()->get(['id', 'round_number', 'title']);
 
-        return view('admin.leagues.championships.entries', compact('league', 'championship', 'entries', 'drivers', 'penalties', 'rounds'));
+        $driverClasses = $championship->usesDriverClasses()
+            ? $championship->driverClasses()->withCount('registrations')->get()
+            : collect();
+
+        return view('admin.leagues.championships.entries', compact('league', 'championship', 'entries', 'drivers', 'penalties', 'rounds', 'driverClasses'));
     }
 
     // Points deducted from a driver's championship total (Championship::buildDriverStandings()
@@ -90,6 +95,31 @@ class ChampionshipEntryController extends Controller
         AuditLogger::record($request->user(), $championship, 'championship.entry_approved', ['registration_id' => $registration->id]);
 
         return back()->with('success', $this->entrantName($registration).' approved.');
+    }
+
+    // Driver classes are assigned by the league by hand — a driver never picks one.
+    public function assignDriverClass(Request $request, League $league, Championship $championship, ChampionshipRegistration $registration)
+    {
+        $this->authorizeChampionship($league, $championship, $registration);
+        abort_if($registration->is_spectator, 404);
+
+        $data = $request->validate([
+            'driver_class_id' => ['nullable', Rule::exists('championship_driver_classes', 'id')->where('championship_id', $championship->id)],
+        ]);
+
+        $class = $data['driver_class_id'] ? ChampionshipDriverClass::find($data['driver_class_id']) : null;
+        if ($class?->isFull($registration->id)) {
+            return back()->with('error', $class->name.' is full ('.$class->max_entries.' entries).');
+        }
+
+        $registration->update(['driver_class_id' => $class?->id]);
+
+        AuditLogger::record($request->user(), $championship, 'championship.driver_class_assigned', [
+            'registration_id' => $registration->id,
+            'driver_class_id' => $class?->id,
+        ]);
+
+        return back()->with('success', $this->entrantName($registration).($class ? ' is now in '.$class->name.'.' : ' is no longer in a class.'));
     }
 
     public function reject(Request $request, League $league, Championship $championship, ChampionshipRegistration $registration)

@@ -464,6 +464,7 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/cha
     Route::get('/{championship}/entries', [ChampionshipEntryController::class, 'index'])->name('entries.index');
     Route::post('/{championship}/entries/{registration}/approve', [ChampionshipEntryController::class, 'approve'])->name('entries.approve');
     Route::delete('/{championship}/entries/{registration}', [ChampionshipEntryController::class, 'reject'])->name('entries.reject');
+    Route::put('/{championship}/entries/{registration}/driver-class', [ChampionshipEntryController::class, 'assignDriverClass'])->name('entries.driver-class');
     Route::post('/{championship}/penalties', [ChampionshipEntryController::class, 'storePenalty'])->name('penalties.store');
     Route::delete('/{championship}/penalties/{penalty}', [ChampionshipEntryController::class, 'destroyPenalty'])->name('penalties.destroy');
 });

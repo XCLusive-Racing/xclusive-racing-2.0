@@ -133,15 +133,21 @@
                     $standingsGroups = $championship->is_multiclass && collect($classStandings)->isNotEmpty()
                         ? collect($classStandings)->values()
                         : collect([['class' => null, 'standings' => $standings]]);
+                    // Driver classes (Pro / Am …) come after the overall table, not instead of it.
+                    $standingsGroups = $standingsGroups->concat($driverClassStandings);
                 @endphp
 
                 @foreach($standingsGroups as $group)
                 <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-3 d-flex align-items-center gap-2" style="border-bottom:1px solid #1f2937">
                         <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.85rem;letter-spacing:.08em">
-                            {{ $group['class'] ? $group['class']->name : 'Overall' }} Standings
+                            @if(isset($group['driver_class']))
+                            <span style="display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;background:{{ $group['driver_class']->color() }}"></span>{{ $group['driver_class']->name }} Standings
+                            @else
+                            {{ ($group['class'] ?? null) ? $group['class']->name : 'Overall' }} Standings
+                            @endif
                         </h2>
-                        @if($group['class'])
+                        @if($group['class'] ?? null)
                         <span class="badge fw-bold" style="background:{{ $group['class']->color }}22;color:{{ $group['class']->color }};font-size:.65rem;padding:3px 8px;border-radius:5px">
                             {{ $group['class']->car_class ?? $group['class']->name }}
                         </span>
@@ -350,6 +356,11 @@
                                 @if($championship->is_multiclass && $reg->championshipClass)
                                 <span class="badge ms-1 fw-bold" style="font-size:.6rem;background:{{ $reg->championshipClass->color }}22;color:{{ $reg->championshipClass->color }}">
                                     {{ $reg->championshipClass->name }}
+                                </span>
+                                @endif
+                                @if($championship->usesDriverClasses() && $reg->driverClass)
+                                <span class="badge ms-1 fw-bold" style="font-size:.6rem;background:{{ $reg->driverClass->color() }}22;color:{{ $reg->driverClass->color() }}">
+                                    {{ $reg->driverClass->name }}
                                 </span>
                                 @endif
                             </div>

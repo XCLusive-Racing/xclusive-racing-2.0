@@ -126,6 +126,11 @@
                                             @include('admin.leagues.championships._classes-builder')
                                         </div>
                                         @endif
+                                        @if($step === 'format' && $field['key'] === 'driver_classes_enabled')
+                                        <div class="col-12">
+                                            @include('admin.leagues.championships._driver-classes-builder')
+                                        </div>
+                                        @endif
                                     @endforeach
                                 </div>
                             </div>

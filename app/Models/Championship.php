@@ -199,6 +199,39 @@ class Championship extends Model
         return $this->hasMany(ChampionshipClass::class)->orderBy('sort_order');
     }
 
+    public function driverClasses(): HasMany
+    {
+        return $this->hasMany(ChampionshipDriverClass::class)->orderBy('sort_order');
+    }
+
+    public function usesDriverClasses(): bool
+    {
+        return (bool) ($this->settings->format->driver_classes_enabled ?? false);
+    }
+
+    // user_id => ACC driverCategory for every driver whose driver class sets a
+    // banner; the entrylist falls back to User::ratingClass() for everyone else.
+    public function driverCategoryOverrides(): array
+    {
+        if (! $this->usesDriverClasses()) {
+            return [];
+        }
+
+        $overrides = [];
+        $registrations = $this->registrations()->approved()
+            ->whereHas('driverClass', fn ($q) => $q->whereNotNull('acc_category'))
+            ->with('driverClass', 'racingTeam.members')
+            ->get();
+
+        foreach ($registrations as $registration) {
+            foreach ($registration->scoringDriverIds() as $userId) {
+                $overrides[$userId] = $registration->driverClass->acc_category;
+            }
+        }
+
+        return $overrides;
+    }
+
     public function registrations(): HasMany
     {
         return $this->hasMany(ChampionshipRegistration::class);
@@ -461,6 +494,35 @@ class Championship extends Model
         return $grouped;
     }
 
+    // One standings table per driver class (Pro / Pro-Am / Am …), each scored on
+    // the finishing positions within that class — shown next to, not instead of,
+    // the overall standings. An entry not put in a class yet is in none of them.
+    public function computeDriverClassStandings(): array
+    {
+        if (! $this->usesDriverClasses()) {
+            return [];
+        }
+
+        $registrations = $this->registrations()->approved()
+            ->where('is_spectator', false)
+            ->whereNotNull('driver_class_id')
+            ->with('racingTeam.members')
+            ->get()
+            ->groupBy('driver_class_id');
+
+        return $this->driverClasses->map(function (ChampionshipDriverClass $class) use ($registrations) {
+            $userIds = ($registrations[$class->id] ?? collect())
+                ->flatMap(fn (ChampionshipRegistration $registration) => $registration->scoringDriverIds())
+                ->mapWithKeys(fn ($id) => [$id => true])
+                ->all();
+
+            return [
+                'driver_class' => $class,
+                'standings' => $userIds ? $this->standingsCache['driver_class_'.$class->id] ??= $this->computeDriverStandings($userIds) : [],
+            ];
+        })->all();
+    }
+
     // A separate team classification for a driver-swaps championship where teams
     // register as a unit (Championship::registerTeam() equivalent flow,
     // ChampionshipRegistration.racing_team_id) — settings.scoring.team_points_enabled
@@ -594,7 +656,12 @@ class Championship extends Model
     // for a scored round never move because of this — the scheme's table is
     // itself locked the moment a round is scored (PointsScheme::isLockedByCompletedRounds()),
     // so only the *shape of future rounds* can ever be affected by an edit.
-    private function computeDriverStandings(): array
+    //
+    // $onlyUserIds (user_id => true) scores a driver class on its own: only those
+    // drivers take part, and every race is re-ranked among them — P8 overall and
+    // first of the class scores P1 in the class standings. Pole is the class's
+    // best qualifier; the fastest-lap bonus stays the overall one.
+    private function computeDriverStandings(?array $onlyUserIds = null): array
     {
         $scheme = $this->pointsScheme();
 
@@ -625,6 +692,9 @@ class Championship extends Model
         // to apply to. Matches how a real championship classification still
         // lists a no-show at the back on zero points, rather than omitting them.
         foreach ($this->registrations()->approved()->where('is_spectator', false)->with('user')->get() as $registration) {
+            if ($onlyUserIds !== null && ! isset($onlyUserIds[$registration->user_id])) {
+                continue;
+            }
             if (! isset($driverData[$registration->user_id])) {
                 $driverData[$registration->user_id] = [
                     'user_id' => $registration->user_id,
@@ -636,6 +706,11 @@ class Championship extends Model
 
         foreach ($finishedRounds as $race) {
             $qualiResults = $race->qualiResults;
+            $roundResults = $race->raceResults;
+            if ($onlyUserIds !== null) {
+                $qualiResults = $qualiResults->filter(fn ($result) => isset($onlyUserIds[$result->user_id]));
+                $roundResults = $roundResults->filter(fn ($result) => isset($onlyUserIds[$result->user_id]));
+            }
             $poleUserId = $qualiResults->first()?->user_id;
 
             // A multi-race round scores every race with the same scheme and adds
@@ -644,7 +719,14 @@ class Championship extends Model
             // per round (with race 1).
             $roundEntries = [];
 
-            foreach ($race->raceResults->groupBy('race_number')->sortKeys() as $raceNumber => $raceResults) {
+            foreach ($roundResults->groupBy('race_number')->sortKeys() as $raceNumber => $raceResults) {
+                // Class standings: position among this class's classified finishers.
+                $classPositions = $onlyUserIds === null ? null : $raceResults
+                    ->filter(fn ($result) => ! $result->dnf && $result->position !== null)
+                    ->sortBy('position')
+                    ->values()
+                    ->mapWithKeys(fn ($result, $i) => [$result->user_id => $i + 1]);
+
                 // Percentage-depth schemes resolve their scoring cutoff fresh per
                 // race, against that race's own classified-finisher count —
                 // never the starting grid, so a retirement elsewhere in the field
@@ -663,7 +745,7 @@ class Championship extends Model
                         ];
                     }
 
-                    $pos = $result->dnf ? null : ($result->position ?? null);
+                    $pos = $result->dnf ? null : ($classPositions !== null ? $classPositions[$userId] ?? null : $result->position);
                     $pts = 0;
 
                     if ($pos !== null) {

@@ -150,6 +150,7 @@ class ChampionshipPracticeService
                 ->with(['user.ownedRacingTeams', 'user.racingTeams', 'user.connectedAccounts', 'racingTeam.members'])
                 ->orderBy('id')->get()
             : collect();
+        $categoryOverrides = $championship?->driverCategoryOverrides() ?? [];
 
         $entries = [];
         foreach ($registrations as $registration) {
@@ -171,7 +172,7 @@ class ChampionshipPracticeService
                     'lastName' => AccServerConfigService::entryLastName($user, $tag),
                     'shortName' => mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3)),
                     'playerID' => $user->playerIdFor($round->game),
-                    'driverCategory' => $user->ratingClass($round->game),
+                    'driverCategory' => $categoryOverrides[$user->id] ?? $user->ratingClass($round->game),
                 ])
                 ->values()->all();
 

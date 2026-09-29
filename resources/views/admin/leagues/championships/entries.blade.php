@@ -16,6 +16,13 @@
         <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.9rem">
             Entries <span class="text-secondary fw-bold" style="font-size:.8rem">({{ $entries->count() }})</span>
         </div>
+        @if($driverClasses->isNotEmpty())
+        <span class="text-secondary" style="font-size:.75rem">
+            @foreach($driverClasses as $driverClass)
+            <span class="me-2"><i class="fa-solid fa-square" style="color:{{ $driverClass->color() }};-webkit-text-stroke:1px #d1d5db"></i> {{ $driverClass->name }}: {{ $driverClass->registrations_count }}{{ $driverClass->max_entries ? '/'.$driverClass->max_entries : '' }}</span>
+            @endforeach
+        </span>
+        @endif
         @if($championship->requiresManualApproval())
         <span class="text-secondary" style="font-size:.75rem">Manual approval is on — new entries wait here until you approve them.</span>
         @endif
@@ -30,6 +37,9 @@
                 <tr>
                     <th class="fw-bold text-uppercase ps-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Entrant</th>
                     <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Class</th>
+                    @if($driverClasses->isNotEmpty())
+                    <th class="fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Driver Class</th>
+                    @endif
                     <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Entered</th>
                     <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:110px">Status</th>
                     <th class="fw-bold text-uppercase text-end pe-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:170px">Actions</th>
@@ -48,6 +58,23 @@
                         @endif
                     </td>
                     <td class="d-none d-md-table-cell text-secondary">{{ $entry->championshipClass?->name ?? '—' }}</td>
+                    @if($driverClasses->isNotEmpty())
+                    <td>
+                        @unless($entry->is_spectator)
+                        <form action="{{ route('admin.leagues.championships.entries.driver-class', [$league, $championship, $entry]) }}" method="POST">
+                            @csrf @method('PUT')
+                            <select name="driver_class_id" class="form-select form-select-sm" style="min-width:130px;font-size:.8rem" onchange="this.form.submit()">
+                                <option value="">— No class —</option>
+                                @foreach($driverClasses as $driverClass)
+                                <option value="{{ $driverClass->id }}" @selected($entry->driver_class_id === $driverClass->id)>
+                                    {{ $driverClass->name }}{{ $driverClass->max_entries ? ' ('.$driverClass->registrations_count.'/'.$driverClass->max_entries.')' : '' }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </form>
+                        @endunless
+                    </td>
+                    @endif
                     <td class="d-none d-md-table-cell text-secondary">{{ $entry->created_at->format('j M Y') }}</td>
                     <td class="text-center">
                         @if($entry->is_spectator)

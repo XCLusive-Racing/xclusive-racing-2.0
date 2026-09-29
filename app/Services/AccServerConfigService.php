@@ -29,6 +29,10 @@ class AccServerConfigService implements ServerConfigGenerator
         $entries = [];
         $processedTeamIds = [];
         $balance = app(EntryBalanceService::class);
+        // A championship driver class can set the in-game banner (Pro white, …).
+        $categoryOverrides = $race->championship_id
+            ? Championship::withoutTenantScope()->find($race->championship_id)?->driverCategoryOverrides() ?? []
+            : [];
 
         foreach ($registrations as $reg) {
             if ($reg->team_entry_id !== null) {
@@ -47,7 +51,7 @@ class AccServerConfigService implements ServerConfigGenerator
                     'lastName' => self::entryLastName($tr->user, mb_substr($teamEntry?->team?->name ?? '', 0, self::TEAM_TAG_MAX)),
                     'shortName' => mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $tr->user->name ?? ''), 0, 3)),
                     'playerID' => $tr->user?->playerIdFor($race->game) ?? '',
-                    'driverCategory' => $tr->user->ratingClass($race->game),
+                    'driverCategory' => $categoryOverrides[$tr->user_id] ?? $tr->user->ratingClass($race->game),
                 ])->values()->all();
 
                 [$ballast, $restrictor] = $balance->forEntry($race, $teamRegs->pluck('user')->filter(), $teamEntry?->team?->name);
@@ -74,7 +78,7 @@ class AccServerConfigService implements ServerConfigGenerator
                             'lastName' => self::entryLastName($user),
                             'shortName' => $shortName,
                             'playerID' => $user->playerIdFor($race->game) ?? '',
-                            'driverCategory' => $user->ratingClass($race->game),
+                            'driverCategory' => $categoryOverrides[$user->id] ?? $user->ratingClass($race->game),
                         ],
                     ],
                     'raceNumber' => is_numeric($user->car_number) ? (int) $user->car_number : null,
