@@ -13,7 +13,7 @@ class FtpServer extends Model
     use Tenantable;
 
     protected $fillable = [
-        'name', 'server_number', 'host', 'port', 'username', 'password', 'path', 'cfg_path', 'active',
+        'name', 'ingame_name', 'ingame_password', 'server_number', 'host', 'port', 'username', 'password', 'path', 'cfg_path', 'active',
         'server_type', 'reset_start_hour', 'reset_interval_minutes',
         'settings_defaults', 'eventrules_defaults', 'assistrules_defaults', 'event_defaults',
         'league_id', 'game', 'platform',

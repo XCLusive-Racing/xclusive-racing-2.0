@@ -76,6 +76,8 @@
                     </div>
                 </div>
 
+                @include('admin.servers._ingame-fields', ['server' => $server])
+
                 <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
                     <p class="fw-black text-uppercase fst-italic mb-3" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Connection</p>
 

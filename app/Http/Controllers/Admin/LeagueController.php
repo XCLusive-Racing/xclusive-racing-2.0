@@ -360,6 +360,8 @@ class LeagueController extends Controller
     {
         return [
             'name' => 'required|string|max:150',
+            'ingame_name' => 'nullable|string|max:100',
+            'ingame_password' => 'nullable|string|max:50',
             'server_number' => 'nullable|integer|min:1|max:9',
             'host' => 'required|string|max:255',
             'port' => 'required|integer|min:1|max:65535',

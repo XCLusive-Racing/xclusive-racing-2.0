@@ -57,6 +57,8 @@ class FtpServerController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:150',
+            'ingame_name' => 'nullable|string|max:100',
+            'ingame_password' => 'nullable|string|max:50',
             'server_number' => 'nullable|integer|min:1|max:9',
             'host' => 'required|string|max:255',
             'port' => 'required|integer|min:1|max:65535',
@@ -72,7 +74,7 @@ class FtpServerController extends Controller
         ]);
 
         $server = FtpServer::create(array_merge($request->only(
-            'name', 'server_number', 'host', 'port', 'username', 'password', 'path', 'cfg_path',
+            'name', 'ingame_name', 'ingame_password', 'server_number', 'host', 'port', 'username', 'password', 'path', 'cfg_path',
             'server_type', 'reset_start_hour', 'reset_interval_minutes', 'game', 'platform'
         ), ['league_id' => League::system()->id]));
 
@@ -92,6 +94,8 @@ class FtpServerController extends Controller
     {
         $rules = [
             'name' => 'required|string|max:150',
+            'ingame_name' => 'nullable|string|max:100',
+            'ingame_password' => 'nullable|string|max:50',
             'server_number' => 'nullable|integer|min:1|max:9',
             'host' => 'required|string|max:255',
             'port' => 'required|integer|min:1|max:65535',
@@ -123,7 +127,7 @@ class FtpServerController extends Controller
         $request->validate($rules);
 
         $data = $request->only(
-            'name', 'server_number', 'host', 'port', 'path', 'cfg_path',
+            'name', 'ingame_name', 'ingame_password', 'server_number', 'host', 'port', 'path', 'cfg_path',
             'server_type', 'reset_start_hour', 'reset_interval_minutes', 'game', 'platform'
         );
         $data['active'] = $request->boolean('active');

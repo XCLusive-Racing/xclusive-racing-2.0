@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Bop;
 use App\Models\Championship;
 use App\Models\FtpServer;
+use App\Models\League;
 use App\Models\Race;
 use App\Models\User;
 use App\Services\Contracts\ServerConfigGenerator;
@@ -295,11 +296,22 @@ class AccServerConfigService implements ServerConfigGenerator
 
         $platform = $this->platformLabel($race, $server);
 
+        // The server's own in-game name/password win. Without them XCL's servers keep
+        // the "XCL SERVER n" naming; a league's own server shows its own name rather
+        // than pretending to be XCL's (its password keeps today's value until set).
+        $isXclServer = ! $server || $server->league_id === null
+            || $server->league_id === League::withoutTenantScope()->where('is_system', true)->value('id');
+        $defaultName = match (true) {
+            ! $isXclServer => $server->name,
+            (bool) $n => 'XCL SERVER '.$n.' - '.$platform,
+            default => $base['serverName'] ?? 'XCL SERVER - '.$platform,
+        };
+
         return array_merge($base, [
-            'serverName' => $n
-                ? 'XCL SERVER '.$n.' - '.$platform
-                : ($base['serverName'] ?? 'XCL SERVER - '.$platform),
-            'password' => $n ? $n.'xcl' : ($base['password'] ?? '1xcl'),
+            'serverName' => filled($server?->ingame_name) ? $server->ingame_name : $defaultName,
+            'password' => filled($server?->ingame_password)
+                ? $server->ingame_password
+                : ($n ? $n.'xcl' : ($base['password'] ?? '1xcl')),
             'safetyRatingRequirement' => $this->srRequired($race),
             'racecraftRatingRequirement' => $this->rcRequired($race),
             'maxCarSlots' => $race->max_drivers ?? ($base['maxCarSlots'] ?? 30),
@@ -559,7 +571,9 @@ class AccServerConfigService implements ServerConfigGenerator
         }
 
         // Nordschleife always gets short regardless of format — a full lap takes too long.
-        if ($this->trackSlug($race->track) === 'nurburgring_24h') {
+        // No track yet: Push Defaults (FtpServerController::pushDefaults()) builds
+        // settings from an empty Race.
+        if ($race->track && $this->trackSlug($race->track) === 'nurburgring_24h') {
             return 1;
         }
 

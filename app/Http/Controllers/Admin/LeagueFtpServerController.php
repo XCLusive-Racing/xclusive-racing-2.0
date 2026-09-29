@@ -32,21 +32,23 @@ class LeagueFtpServerController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'league_id'              => 'required|exists:leagues,id',
-            'name'                   => 'required|string|max:150',
-            'host'                   => 'required|string|max:255',
-            'port'                   => 'required|integer|min:1|max:65535',
-            'username'               => 'required|string|max:100',
-            'password'               => 'required|string|max:255',
-            'path'                   => 'required|string|max:255',
-            'cfg_path'               => 'required|string|max:255',
-            'server_type'            => 'required|in:rolling,scheduled',
-            'reset_start_hour'       => 'required_if:server_type,rolling|integer|min:0|max:23',
-            'game'                   => 'required|in:acc,lmu',
+            'league_id' => 'required|exists:leagues,id',
+            'name' => 'required|string|max:150',
+            'ingame_name' => 'nullable|string|max:100',
+            'ingame_password' => 'nullable|string|max:50',
+            'host' => 'required|string|max:255',
+            'port' => 'required|integer|min:1|max:65535',
+            'username' => 'required|string|max:100',
+            'password' => 'required|string|max:255',
+            'path' => 'required|string|max:255',
+            'cfg_path' => 'required|string|max:255',
+            'server_type' => 'required|in:rolling,scheduled',
+            'reset_start_hour' => 'required_if:server_type,rolling|integer|min:0|max:23',
+            'game' => 'required|in:acc,lmu',
             // 'cross' dropped from the option list (user-directed 2026-09) --
             // not accepted here either, so a crafted request can't smuggle it
             // in through a hidden field the form itself no longer offers.
-            'platform'               => 'required|in:pc,console',
+            'platform' => 'required|in:pc,console',
         ]);
 
         $data['active'] = true;
@@ -55,6 +57,6 @@ class LeagueFtpServerController extends Controller
 
         AuditLogger::record($request->user(), $server, 'ftp_server.created', $request->only('name', 'host', 'path', 'server_type', 'league_id'));
 
-        return redirect()->route('admin.league-servers.index')->with('success', $server->name . ' added.');
+        return redirect()->route('admin.league-servers.index')->with('success', $server->name.' added.');
     }
 }
