@@ -98,4 +98,26 @@ class ProfileTeamQuoteTest extends TestCase
 
         $this->assertSame("DeEchteOlle\nVery Long Endurance Team", $lastName);
     }
+
+    // The real name a driver may show on the site never goes in-game: the entrylist
+    // always carries the gamertag (without a Discord-style "#1234" suffix).
+    public function test_entrylist_uses_the_gamertag_even_when_the_site_shows_the_real_name(): void
+    {
+        $race = Race::create([
+            'title' => 'Test Race', 'track' => 'Monza', 'game' => 'acc',
+            'status' => 'open', 'scheduled_at' => now()->addWeek(),
+        ]);
+        $user = User::factory()->create([
+            'name' => 'DeEchteOlle#1234', 'team' => 'Quote', 'platform_id' => 'X-1',
+            'first_name' => 'Olle', 'last_name' => 'Kuiper', 'display_name_preference' => User::DISPLAY_REAL_NAME,
+        ]);
+        RaceRegistration::create(['race_id' => $race->id, 'user_id' => $user->id]);
+
+        $driver = app(AccServerConfigService::class)->entryList($race)['entries'][0]['drivers'][0];
+
+        $this->assertSame('Olle Kuiper', $user->displayName());
+        $this->assertSame('', $driver['firstName']);
+        $this->assertSame("DeEchteOlle\nQuote", $driver['lastName']);
+        $this->assertSame('DEE', $driver['shortName']);
+    }
 }

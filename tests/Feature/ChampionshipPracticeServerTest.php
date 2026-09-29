@@ -140,7 +140,7 @@ class ChampionshipPracticeServerTest extends TestCase
         $this->assertSame(0, $files['eventrules.json']['mandatoryPitstopCount']);
     }
 
-    public function test_the_entrylist_lists_the_entrants_under_their_team_name_without_forcing_it(): void
+    public function test_the_entrylist_lists_the_entrants_with_their_team_or_quote_without_forcing_it(): void
     {
         $server = $this->makeServer();
         $championship = $this->makeChampionship(server: $server);
@@ -165,7 +165,8 @@ class ChampionshipPracticeServerTest extends TestCase
         [$car, $soloEntry] = $entrylist['entries'];
         $this->assertSame(7, $car['raceNumber']);
         $this->assertSame(["Owner\nApex Racing", "Mate\nApex Racing"], array_column($car['drivers'], 'lastName'));
-        $this->assertSame(["Solo\nSolo Squad"], array_column($soloEntry['drivers'], 'lastName'));
+        // A solo entry shows the driver's own Team / Quote, not the team they're in.
+        $this->assertSame(["Solo\nMy quote"], array_column($soloEntry['drivers'], 'lastName'));
         $this->assertNotSame(7, $soloEntry['raceNumber']);
     }
 

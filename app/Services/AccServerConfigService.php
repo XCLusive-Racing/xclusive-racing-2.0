@@ -49,7 +49,7 @@ class AccServerConfigService implements ServerConfigGenerator
                 $drivers = $teamRegs->map(fn ($tr) => [
                     'firstName' => '',
                     'lastName' => self::entryLastName($tr->user, mb_substr($teamEntry?->team?->name ?? '', 0, self::TEAM_TAG_MAX)),
-                    'shortName' => mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $tr->user->name ?? ''), 0, 3)),
+                    'shortName' => self::entryShortName($tr->user),
                     'playerID' => $tr->user?->playerIdFor($race->game) ?? '',
                     'driverCategory' => $categoryOverrides[$tr->user_id] ?? $tr->user->ratingClass($race->game),
                 ])->values()->all();
@@ -68,7 +68,7 @@ class AccServerConfigService implements ServerConfigGenerator
             } else {
                 // Solo driver
                 $user = $reg->user;
-                $shortName = mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3));
+                $shortName = self::entryShortName($user);
                 [$ballast, $restrictor] = $balance->forEntry($race, collect([$user]));
 
                 $entries[] = [
@@ -102,19 +102,25 @@ class AccServerConfigService implements ServerConfigGenerator
 
     public const TEAM_TAG_MAX = 24;
 
-    // A driver's in-game name tag: their name, with a second line under it -- for a
-    // team entry (driver swap / endurance) the team they're racing for, for a solo
-    // driver their own "Team / Quote" profile field ($tag null, already max 16 chars via
-    // the profile form). A team name is cut at TEAM_TAG_MAX (24) chars by the caller.
+    // A driver's in-game name tag: their gamertag, with a second line under it -- for
+    // a team entry (driver swap / endurance) the team they're racing for, for every
+    // other event their own "Team / Quote" profile field ($tag null, already max 16
+    // chars via the profile form). A team name is cut at TEAM_TAG_MAX (24) chars by
+    // the caller. Always the gamertag, never the real name a driver may show on the site.
     // ACC renders the newline inside lastName as two lines; this is the only way to get
     // that second line -- teamName is not an ACC entrylist field (not in the server
     // handbook) and the server ignores it.
     public static function entryLastName(User $user, ?string $tag = null): string
     {
-        $name = $user->name ?? '';
+        $name = $user->gamertag();
         $tag = trim((string) ($tag ?? $user->team));
 
         return $tag !== '' ? $name."\n".$tag : $name;
+    }
+
+    public static function entryShortName(User $user): string
+    {
+        return mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->gamertag()), 0, 3));
     }
 
     // Reverse of entryLastName() for a driver read back from an entrylist or results

@@ -192,7 +192,7 @@ class RaceController extends Controller
 
         $entries = $registrations->map(function ($reg) use ($race) {
             $user = $reg->user;
-            $shortName = mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3));
+            $shortName = AccServerConfigService::entryShortName($user);
 
             return [
                 'drivers' => [

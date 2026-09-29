@@ -136,9 +136,9 @@ class ChampionshipPracticeService
         ];
     }
 
-    // The championship's entrants with their team's name under each driver's name
-    // (AccServerConfigService::entryLastName()) — a team car under its team, a solo
-    // driver under the team they're in (else their own Team / Quote). Never forced:
+    // The championship's entrants with a line under each driver's gamertag
+    // (AccServerConfigService::entryLastName()) — a team car's team name, a solo
+    // driver's own Team / Quote. Never forced:
     // the practice stays open to everyone, and it has to be written anyway — the
     // previous round's forced entry list would otherwise still be on the server,
     // locking everyone else out.
@@ -147,7 +147,7 @@ class ChampionshipPracticeService
         $championship = Championship::withoutTenantScope()->find($round->championship_id);
         $registrations = $championship
             ? $championship->registrations()->approved()->where('is_spectator', false)
-                ->with(['user.ownedRacingTeams', 'user.racingTeams', 'user.connectedAccounts', 'racingTeam.members'])
+                ->with(['user.connectedAccounts', 'racingTeam.members'])
                 ->orderBy('id')->get()
             : collect();
         $categoryOverrides = $championship?->driverCategoryOverrides() ?? [];
@@ -159,7 +159,8 @@ class ChampionshipPracticeService
                 $users = User::with('connectedAccounts')->whereIn('id', $registration->driverIds())->get();
                 $carNumber = $registration->car_number;
             } else {
-                $team = $registration->user?->allRacingTeams()->first();
+                // A solo entry shows the driver's own Team / Quote, same as a race.
+                $team = null;
                 $users = collect([$registration->user])->filter();
                 $carNumber = $registration->user?->car_number;
             }
@@ -170,7 +171,7 @@ class ChampionshipPracticeService
                 ->map(fn (User $user) => [
                     'firstName' => '',
                     'lastName' => AccServerConfigService::entryLastName($user, $tag),
-                    'shortName' => mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $user->name ?? ''), 0, 3)),
+                    'shortName' => AccServerConfigService::entryShortName($user),
                     'playerID' => $user->playerIdFor($round->game),
                     'driverCategory' => $categoryOverrides[$user->id] ?? $user->ratingClass($round->game),
                 ])

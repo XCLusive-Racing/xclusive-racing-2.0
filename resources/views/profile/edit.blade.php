@@ -111,6 +111,10 @@
                                 <input type="text" name="team" value="{{ old('team', $user->team) }}"
                                        class="form-control @error('team') is-invalid @enderror" placeholder="e.g. your team name"
                                        maxlength="16">
+                                <div class="form-text" style="font-size:.72rem">
+                                    Shown in-game under your gamertag. In driver-swap events your car's team from My Team is shown instead.
+                                    The in-game name is always your gamertag, even when the site shows your real name.
+                                </div>
                                 @error('team')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
