@@ -115,37 +115,35 @@ class ChampionshipTeamDriversTest extends TestCase
         $this->assertDatabaseMissing('championship_registrations', ['championship_id' => $championship->id]);
     }
 
-    public function test_per_round_scope_signs_up_per_round_starting_from_the_picked_line_up(): void
+    // "Per round": the round's own page offers the championship sign-up form, and
+    // signing up there enters the team's car — with the picked line-up — into the
+    // round (and every other one).
+    public function test_per_round_scope_signs_up_on_the_round_page_with_the_picked_line_up(): void
     {
         $championship = $this->makeChampionship('per_round');
         $round = $this->makeRound($championship);
 
-        $signUp = fn () => $this->actingAs($this->owner)->post(route('events.register-team', $round), [
+        $this->actingAs($this->owner)->post(route('events.register-team', $round), [
             'car_number' => 7, 'driver_ids' => [$this->anna->id, $this->bob->id], 'starting_driver_id' => $this->bob->id,
-        ]);
-
-        $signUp()->assertSessionHas('error', 'Register your team for the championship first.');
-
-        $this->actingAs($this->owner)->get(route('championships.show', $championship))
-            ->assertOk()
-            ->assertSee('name="driver_ids[]"', false)
-            ->assertSee($this->anna->displayName())
-            ->assertSee('(pick 2)');
-
-        $this->registerTeam($championship, [$this->anna->id, $this->bob->id])->assertSessionHas('success');
-        $this->assertDatabaseMissing('race_team_entries', ['race_id' => $round->id]);
+        ])->assertSessionHas('error', 'Register your team for the championship first.');
 
         $this->actingAs($this->owner)->get(route('events.show', $round))
             ->assertOk()
-            ->assertViewHas('preselectedDriverIds', [$this->anna->id, $this->bob->id])
-            ->assertSee('REGISTER TEAM');
+            ->assertViewHas('championshipSignupForm', true)
+            ->assertSee('name="driver_ids[]"', false)
+            ->assertSee($this->anna->displayName())
+            ->assertSee('(pick 2)')
+            ->assertSee('Signing up for this round enters you into');
 
-        $signUp()->assertSessionMissing('error');
+        $this->registerTeam($championship, [$this->anna->id, $this->bob->id], ['car_number' => 7, 'starting_driver_id' => $this->bob->id])
+            ->assertSessionHas('success');
+
         $this->assertDatabaseHas('race_team_entries', [
-            'race_id' => $round->id, 'racing_team_id' => $this->team->id, 'starting_driver_id' => $this->bob->id,
+            'race_id' => $round->id, 'racing_team_id' => $this->team->id, 'car_number' => 7, 'starting_driver_id' => $this->bob->id,
         ]);
     }
 
+    // "Championship": the round page has no sign-up form, only a link to the championship.
     public function test_championship_scope_rounds_cannot_be_signed_up_for_by_hand(): void
     {
         $championship = $this->makeChampionship('championship');
@@ -153,6 +151,12 @@ class ChampionshipTeamDriversTest extends TestCase
 
         $this->actingAs($this->owner)->post(route('events.register-team', $round), [
             'car_number' => 7, 'driver_ids' => [$this->anna->id, $this->bob->id], 'starting_driver_id' => $this->anna->id,
-        ])->assertSessionHas('error', 'Your team is entered into this round automatically from its championship registration.');
+        ])->assertSessionHas('error', 'Register your team for the championship first.');
+
+        $this->actingAs($this->owner)->get(route('events.show', $round))
+            ->assertOk()
+            ->assertViewHas('championshipSignupForm', false)
+            ->assertSee('every round is entered automatically once your team is in');
+        $this->assertDatabaseMissing('race_team_entries', ['race_id' => $round->id]);
     }
 }

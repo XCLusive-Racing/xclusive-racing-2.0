@@ -160,7 +160,7 @@ class RacingTeamManagerTest extends TestCase
         $championship = $this->makeDriverSwapChampionship();
 
         $this->actingAs($manager)
-            ->post(route('championships.register', $championship), ['racing_team_id' => $team->id, 'driver_ids' => [$owner->id]])
+            ->post(route('championships.register', $championship), ['racing_team_id' => $team->id, 'driver_ids' => [$owner->id], 'car_number' => 7, 'starting_driver_id' => $owner->id])
             ->assertRedirect();
 
         $this->assertDatabaseHas('championship_registrations', [
@@ -186,7 +186,7 @@ class RacingTeamManagerTest extends TestCase
         $championship = $this->makeDriverSwapChampionship();
 
         $this->actingAs($owner)
-            ->post(route('championships.register', $championship), ['racing_team_id' => $team->id, 'driver_ids' => [$owner->id]]);
+            ->post(route('championships.register', $championship), ['racing_team_id' => $team->id, 'driver_ids' => [$owner->id], 'car_number' => 7, 'starting_driver_id' => $owner->id]);
 
         $this->assertDatabaseHas('championship_registrations', ['championship_id' => $championship->id, 'racing_team_id' => $team->id]);
 

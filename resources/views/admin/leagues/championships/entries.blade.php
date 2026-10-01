@@ -31,6 +31,15 @@
         </form>
         @endif
         @endif
+        {{-- Repair: puts every approved entry into every upcoming round it isn't in
+             yet (a round an entry skipped on purpose stays skipped). --}}
+        <form action="{{ route('admin.leagues.championships.entries.sync-rounds', [$league, $championship]) }}" method="POST" class="m-0">
+            @csrf
+            <button type="submit" class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.72rem"
+                    title="Adds every approved entry to every upcoming round it isn't in yet. Rounds a driver or team skipped on purpose stay skipped.">
+                Enter all into upcoming rounds
+            </button>
+        </form>
         @if($championship->requiresManualApproval())
         <span class="text-secondary" style="font-size:.75rem">Manual approval is on — new entries wait here until you approve them.</span>
         @endif

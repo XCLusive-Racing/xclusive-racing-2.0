@@ -9,10 +9,11 @@ use App\Models\ChampionshipPenalty;
 use App\Models\ChampionshipRegistration;
 use App\Models\League;
 use App\Models\Message;
+use App\Models\Race;
 use App\Models\User;
 use App\Services\AccCarCatalog;
 use App\Services\AuditLogger;
-use App\Services\ChampionshipTeamEntryService;
+use App\Services\ChampionshipRoundEntryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -94,10 +95,8 @@ class ChampionshipEntryController extends Controller
 
         $registration->update(['approved_at' => now()]);
 
-        // A "whole championship" team car is only carried into the rounds once it counts.
-        if ($registration->racing_team_id && ($championship->settings->format->team_registration_scope ?? 'per_round') === 'championship') {
-            app(ChampionshipTeamEntryService::class)->syncAllExistingRounds($registration, $championship);
-        }
+        // An entry is only carried into the rounds once it counts.
+        app(ChampionshipRoundEntryService::class)->syncAllExistingRounds($registration, $championship);
 
         $this->notify($registration, $championship, 'approved', 'Your entry for '.$championship->name.' has been approved — see you on track!');
         AuditLogger::record($request->user(), $championship, 'championship.entry_approved', ['registration_id' => $registration->id]);
@@ -146,6 +145,42 @@ class ChampionshipEntryController extends Controller
         AuditLogger::record($request->user(), $championship, 'championship.driver_classes_auto_assigned', ['assigned' => $assigned]);
 
         return back()->with('success', $assigned === 1 ? '1 entry put in a class.' : $assigned.' entries put in a class.');
+    }
+
+    // Repair buttons for a round that was set up wrong (or before people entered):
+    // every counting championship entry into every upcoming round, or into one
+    // round — without waiting for each driver to sign up again. A round an entry
+    // left on its own stays skipped (ChampionshipRoundEntryService).
+    public function syncAllRounds(Request $request, League $league, Championship $championship)
+    {
+        $this->authorizeChampionship($league, $championship);
+
+        $added = app(ChampionshipRoundEntryService::class)->syncChampionship($championship);
+        AuditLogger::record($request->user(), $championship, 'championship.entries_synced_to_rounds', ['added' => $added]);
+
+        return back()->with('success', $this->addedMessage($added, 'every upcoming round'));
+    }
+
+    public function syncRound(Request $request, League $league, Championship $championship, Race $race)
+    {
+        $this->authorizeChampionship($league, $championship);
+        abort_unless($race->championship_id === $championship->id, 404);
+
+        if ($race->status !== 'open' || ! $race->scheduled_at?->isFuture()) {
+            return back()->with('error', 'Entries can only be added to an upcoming round that is still open.');
+        }
+
+        $added = app(ChampionshipRoundEntryService::class)->syncRound($championship, $race);
+        AuditLogger::record($request->user(), $championship, 'championship.entries_synced_to_round', ['race_id' => $race->id, 'added' => $added]);
+
+        return back()->with('success', $this->addedMessage($added, $race->title));
+    }
+
+    private function addedMessage(int $added, string $where): string
+    {
+        return $added === 0
+            ? "Every entry is already in {$where} (or skipped it on purpose)."
+            : ($added === 1 ? '1 entry' : "{$added} entries")." added to {$where}.";
     }
 
     // A solo driver's car and number are locked in at registration

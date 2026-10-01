@@ -471,10 +471,9 @@
 
                         @include('race.partials.add-to-calendar', ['race' => $race])
 
-                        {{-- A championship round only takes as many cars as the team registered for
-                             the championship; "championship"-scope cars are entered automatically
-                             (ChampionshipTeamEntryService), so only per-round teams add them here. --}}
-                        @if($race->registrationOpen() && (!$isChampionshipTeamRound || $canAddChampionshipCar))
+                        {{-- A championship round only takes the team's championship cars, entered
+                             automatically (ChampionshipRoundEntryService) — see the block below. --}}
+                        @if($race->registrationOpen() && !$isChampionshipTeamRound)
                         <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)">
                             <p style="font-size:.78rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Add another car</p>
                             <form action="{{ route('events.register-team', $race) }}" method="POST">
@@ -585,16 +584,8 @@
                             </form>
                         </div>
                         @endif
-                    @elseif($isChampionshipTeamRound && ($championshipTeamScope === 'championship' || !$championshipTeamRegistration))
-                        <p class="xcl-event-card__text mb-0" style="font-size:.82rem">
-                            Register your team for the
-                            <a href="{{ route('championships.show', $race->championship_id) }}" style="color:#e5e7eb;text-decoration:underline">championship</a>
-                            @if($championshipTeamScope === 'championship')
-                            to enter this round — every round is entered automatically once your team is in.
-                            @else
-                            first — after that you sign your team up for each round here.
-                            @endif
-                        </p>
+                    @elseif($isChampionshipTeamRound)
+                        {{-- Championship cars: see the block below. --}}
                     @elseif($race->registrationOpen())
                         <p class="xcl-event-card__text mb-3" style="font-size:.82rem">
                             Register your team <strong style="color:#e5e7eb">{{ $userTeam->name }}</strong>. Select which drivers will participate:
@@ -713,6 +704,10 @@
                     @else
                         <p class="xcl-event-card__text mb-0">Team registration is closed.</p>
                     @endif
+
+                    @if($isChampionshipTeamRound)
+                    @include('race.partials.championship-team-signup')
+                    @endif
                 </div>
                 @endif
                 @endauth
@@ -769,6 +764,14 @@
                             <p class="xcl-event-card__text mt-2 mb-0" style="font-size:.72rem;opacity:.7">
                                 As a broadcaster you join through the spectator slots; the spectator password is sent to your inbox.
                             </p>
+                        @elseif($championshipSignupForm)
+                            @include('championships._register-form', [
+                                'championship' => $roundChampionship,
+                                'accent' => $roundChampionship->league?->primary_color ?? $race->gameColor(),
+                                'discordRequiredHere' => ($roundChampionship->league?->requires_discord_membership) || ($roundChampionship->settings->requirements->discord_membership_required ?? false),
+                                'myTeamCars' => collect(),
+                                'fromRound' => true,
+                            ])
                         @elseif($championshipEntryFailure)
                             <p class="xcl-event-card__text mb-0" style="font-size:.82rem">
                                 {{ $championshipEntryFailure }}
@@ -1037,6 +1040,20 @@
                             @endforeach
                         </div>
                     </div>
+                </div>
+                @endif
+
+                {{-- Championship drivers who took themselves out of this round — every
+                     other championship driver is in it automatically. --}}
+                @if($skippingDrivers->isNotEmpty())
+                <div class="xcl-ev-roster xcl-event-card mb-4">
+                    <h3 class="xcl-event-card__heading">
+                        SKIPPING THIS ROUND
+                        <span class="xcl-event-card__heading-sub">{{ $skippingDrivers->count() }}</span>
+                    </h3>
+                    <p class="xcl-event-card__text mb-0" style="font-size:.82rem">
+                        {{ $skippingDrivers->map->displayName()->join(', ') }}
+                    </p>
                 </div>
                 @endif
                 @endif

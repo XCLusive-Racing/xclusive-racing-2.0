@@ -106,9 +106,10 @@ class ChampionshipWithdrawTest extends TestCase
     public function test_withdrawing_a_car_takes_it_out_of_open_rounds_only(): void
     {
         $championship = $this->makeChampionship();
-        $finished = $this->makeRound($championship, 1, 'finished');
+        $finished = $this->makeRound($championship, 1);
         $open = $this->makeRound($championship, 2);
         $this->registerCar($championship);
+        $finished->update(['status' => 'finished']);
 
         $this->assertSame(1, $open->teamEntries()->count());
         $this->assertSame(2, $open->registrations()->count());

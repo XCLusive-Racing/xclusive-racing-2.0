@@ -33,6 +33,8 @@ class Message extends Model
     {
         return match ($this->type) {
             'event_registration' => 'fa-flag-checkered',
+            // No longer sent (championship entries are entered into every round now);
+            // kept for the reminders already in inboxes.
             'round_signup_reminder' => 'fa-bell',
             'report_confirmation' => 'fa-file-circle-check',
             'report_resolved' => 'fa-gavel',

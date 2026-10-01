@@ -203,7 +203,7 @@ class ChampionshipRegistrationTest extends TestCase
         $team->members()->attach($member->id);
 
         $this->actingAs($owner)
-            ->post(route('championships.register', $championship), ['racing_team_id' => $team->id, 'driver_ids' => [$owner->id, $member->id]])
+            ->post(route('championships.register', $championship), ['racing_team_id' => $team->id, 'driver_ids' => [$owner->id, $member->id], 'car_number' => 7, 'starting_driver_id' => $owner->id])
             ->assertRedirect();
 
         $this->assertDatabaseHas('championship_registrations', [
@@ -418,7 +418,7 @@ class ChampionshipRegistrationTest extends TestCase
         return Race::create([
             'championship_id' => $championship->id, 'round_number' => $roundNumber,
             'title' => 'Round '.$roundNumber, 'track' => 'Monza', 'game' => 'acc',
-            'status' => 'scheduled', 'scheduled_at' => now()->addWeek($roundNumber),
+            'status' => 'open', 'scheduled_at' => now()->addWeek($roundNumber),
         ]);
     }
 
@@ -554,14 +554,15 @@ class ChampionshipRegistrationTest extends TestCase
 
         // A fresh request (the flash "Car #42 has been unregistered" notice from the
         // redirect above is still visible for one more request, so don't assert against
-        // "#42" here) — the empty-state message replaces the entries list.
+        // "#42" here) — the skipped car is offered to be put back.
         $this->actingAs($owner)
             ->get(route('events.show', $r1))
             ->assertOk()
-            ->assertSee('Register your team for the');
+            ->assertSee('Skipping this round')
+            ->assertSee('RE-ENTER');
     }
 
-    public function test_per_round_scope_does_not_auto_create_round_entries(): void
+    public function test_per_round_scope_also_enters_the_team_into_every_round(): void
     {
         $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
@@ -575,10 +576,10 @@ class ChampionshipRegistrationTest extends TestCase
         $race = $this->makeRound($championship, 1);
 
         $this->actingAs($owner)
-            ->post(route('championships.register', $championship), ['racing_team_id' => $team->id, 'driver_ids' => [$owner->id]])
+            ->post(route('championships.register', $championship), ['racing_team_id' => $team->id, 'driver_ids' => [$owner->id], 'car_number' => 7, 'starting_driver_id' => $owner->id])
             ->assertRedirect();
 
         $this->assertDatabaseHas('championship_registrations', ['championship_id' => $championship->id, 'racing_team_id' => $team->id]);
-        $this->assertDatabaseMissing('race_team_entries', ['race_id' => $race->id, 'racing_team_id' => $team->id]);
+        $this->assertDatabaseHas('race_team_entries', ['race_id' => $race->id, 'racing_team_id' => $team->id, 'car_number' => 7]);
     }
 }

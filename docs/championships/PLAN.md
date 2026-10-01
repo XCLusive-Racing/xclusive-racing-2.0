@@ -11,6 +11,27 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-10-01 — Automatic round entry for every championship entry.** Incident:
+  NLRL Test Race R1 (race 533) — the championship list and the round's signups
+  had drifted apart (5 entrants not on the round, 3 round signups not in the
+  championship), fixed by hand. Now `ChampionshipRoundEntryService` (was
+  `ChampionshipTeamEntryService`) enters every approved, non-spectator entry —
+  solo or team car — into every upcoming open round, in both modes; on
+  registration, approval, a new round, and after a withdrawal (waitlist
+  promotion). A round the entrant left on the event page is remembered by its
+  soft-deleted row and never refilled automatically; withdrawing from the
+  championship force-deletes the open-round rows so re-joining enters again.
+  `settings.format.team_registration_scope` keeps its key but is now "Round
+  Registration" for solo and teams: "per round" shows the championship form
+  (`championships/_register-form`) on a round's event page, "championship"
+  only links to the championship page. Team cars always pick number/model/
+  starting driver at championship registration. Solo round signup requires an
+  approved driver entry; a broadcaster without one spectates (no car in the
+  entrylist, spectator password, `Race::spectatorUserIds()`). Repair buttons:
+  "Enter all into upcoming rounds" (Entries page) and "Enter all entries" (per
+  round); `championships:sync-round-entries {--dry-run}` does the same for all
+  championships — run once after deploying. The round sign-up reminder
+  (`championships:remind-round-signups`) is removed.
 - **2026-09-29 — Round type + smaller round/championship fixes.**
   `races.round_type` (Standard / Endurance / Sprint = `Race::ROUND_TYPES`, plus
   a league's own `league_round_types`, added via "+ Add type…" in the round
@@ -68,7 +89,7 @@ up without re-deriving context.
     `championships/{id}/register` → 405 (live on championship 30). The list now
     renders before the form. Withdrawing a "championship"-scope team car also
     takes it out of every still-open round
-    (`ChampionshipTeamEntryService::withdrawFromOpenRounds()`) — before, its
+    (`ChampionshipRoundEntryService::withdrawFromOpenRounds()`) — before, its
     auto-created round entries stayed on the entrylists. Idempotent; tests in
     `ChampionshipWithdrawTest`.
   - Success ballast (`EntryBalanceService`, Sunday League feedback): mode
@@ -951,7 +972,7 @@ up without re-deriving context.
   - **Whole-championship team registration** (`settings.format.team_registration_scope
     = 'championship'`) now lets a team opt out of a single round without
     leaving the championship: the per-round `RaceTeamEntry` auto-created by
-    `ChampionshipTeamEntryService` is a normal, removable entry — the
+    `ChampionshipRoundEntryService` is a normal, removable entry — the
     round's own public page (`race/show.blade.php`) now shows the TEAM ENTRY
     card (with its existing REMOVE button) for a driver-swaps championship
     round too, not just a Custom-Race `is_endurance` event. See
@@ -2127,7 +2148,7 @@ explicit direction on each. Progress so far:
    `car_number`/`car_model`/`starting_driver_id` (same shape as
    `race_team_entries`). When scope is `championship`,
    `ChampionshipController::register()`'s team branch collects those three
-   fields once and `ChampionshipTeamEntryService::syncAllExistingRounds()`
+   fields once and `ChampionshipRoundEntryService::syncAllExistingRounds()`
    auto-creates a `RaceTeamEntry` + one `RaceRegistration` per eligible
    member for every existing round — no more per-round re-registration via
    `RaceController::registerTeam()`. A round added *after* such a team

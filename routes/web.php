@@ -480,6 +480,7 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/cha
     Route::put('/{championship}/rounds/{race}', [ChampionshipWizardController::class, 'updateRound'])->name('rounds.update');
     Route::delete('/{championship}/rounds/{race}', [ChampionshipWizardController::class, 'removeRound'])->name('rounds.destroy');
     Route::post('/{championship}/rounds/{race}/push-config', [ChampionshipWizardController::class, 'pushRoundConfig'])->name('rounds.push-config');
+    Route::post('/{championship}/rounds/{race}/sync-entries', [ChampionshipEntryController::class, 'syncRound'])->name('rounds.sync-entries');
     Route::post('/{championship}/practice/push', [ChampionshipWizardController::class, 'pushPractice'])->name('practice.push');
     Route::post('/{championship}/publish', [ChampionshipWizardController::class, 'publish'])->name('publish');
     Route::post('/{championship}/open-registration', [ChampionshipWizardController::class, 'openRegistration'])->name('open-registration');
@@ -496,6 +497,7 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/cha
     Route::delete('/{championship}/entries/{registration}', [ChampionshipEntryController::class, 'reject'])->name('entries.reject');
     Route::put('/{championship}/entries/{registration}/driver-class', [ChampionshipEntryController::class, 'assignDriverClass'])->name('entries.driver-class');
     Route::post('/{championship}/entries/driver-classes/auto', [ChampionshipEntryController::class, 'autoAssignDriverClasses'])->name('entries.driver-class.auto');
+    Route::post('/{championship}/entries/sync-rounds', [ChampionshipEntryController::class, 'syncAllRounds'])->name('entries.sync-rounds');
     Route::put('/{championship}/entries/{registration}/car', [ChampionshipEntryController::class, 'updateCar'])->name('entries.car');
     Route::post('/{championship}/penalties', [ChampionshipEntryController::class, 'storePenalty'])->name('penalties.store');
     Route::delete('/{championship}/penalties/{penalty}', [ChampionshipEntryController::class, 'destroyPenalty'])->name('penalties.destroy');

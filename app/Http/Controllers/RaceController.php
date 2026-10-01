@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Championship;
 use App\Models\Driver;
 use App\Models\EventTag;
 use App\Models\Message;
@@ -9,7 +10,9 @@ use App\Models\Race;
 use App\Models\RaceClass;
 use App\Models\RaceRegistration;
 use App\Models\RaceTeamEntry;
+use App\Models\RacingTeam;
 use App\Models\User;
+use App\Services\ChampionshipRoundEntryService;
 use App\Services\Contracts\ServerConfigGenerator;
 use App\Services\EntryBalanceService;
 use Illuminate\Http\Request;
@@ -78,7 +81,7 @@ class RaceController extends Controller
         // A driver-swap championship round has no is_endurance flag of its own (that column
         // is Custom-Race-only, see docs/championships/PLAN.md's Phase 4 scope decision) — a
         // team is entered here automatically from the championship-level registration
-        // (ChampionshipTeamEntryService), so this round still needs the same TEAM ENTRY card
+        // (ChampionshipRoundEntryService), so this round still needs the same TEAM ENTRY card
         // (and its per-race unregister) that Custom Race endurance events already get.
         $isTeamRace = (bool) $race->is_endurance;
         $isChampionshipTeamRound = false;
@@ -95,6 +98,7 @@ class RaceController extends Controller
         // A broadcaster not racing in the championship signs up as a spectator —
         // on a driver-swap round too, where the solo registration card is otherwise hidden.
         $spectateOnly = false;
+        $roundChampionship = null;
 
         if (auth()->check()) {
             $roundChampionship = $race->championship_id ? $race->championship()->withoutTenantScope()->first() : null;
@@ -123,21 +127,47 @@ class RaceController extends Controller
             }
         }
 
-        // A "per_round" championship team signs up for each round itself, starting
-        // from the line-up it picked at championship registration; a "championship"
-        // team is entered automatically (ChampionshipTeamEntryService).
-        // A team with several cars signs each one up in turn: the next car not yet in
-        // this round supplies the pre-selected line-up.
-        $championshipTeamScope = null;
-        $championshipTeamRegistration = null;
-        $canAddChampionshipCar = false;
-        if ($isChampionshipTeamRound) {
-            $championshipTeamScope = $championship->settings->format->team_registration_scope ?? 'per_round';
-            $teamCars = $userTeam ? $championship->teamCarRegistrations($userTeam, approvedOnly: true) : collect();
-            $championshipTeamRegistration = $teamCars->get($myTeamEntries->count()) ?? $teamCars->first();
-            $canAddChampionshipCar = $championshipTeamScope === 'per_round' && $myTeamEntries->count() < $teamCars->count();
+        // A championship entry is in every round automatically
+        // (ChampionshipRoundEntryService); a team car it took out of this round can
+        // be put back in. Without an entry, a "per round" championship signs up
+        // right here — the championship form, which enters every round — while a
+        // "championship" one only signs up on the championship page.
+        $championshipTeamCars = collect();
+        $championshipSkippedCars = collect();
+        $championshipTeamPending = false;
+        $championshipSignupForm = false;
+        if ($roundChampionship && $race->registrationOpen() && ! $spectateOnly) {
+            $signsUpHere = ($roundChampionship->settings->format->team_registration_scope ?? 'per_round') === 'per_round'
+                && $roundChampionship->acceptsRegistrations();
+
+            if ($isChampionshipTeamRound) {
+                $allTeamCars = $userTeam ? $roundChampionship->teamCarRegistrations($userTeam) : collect();
+                $championshipTeamCars = $allTeamCars->reject->isPending()->values();
+                $championshipTeamPending = $allTeamCars->isNotEmpty() && $championshipTeamCars->isEmpty();
+                $enteredNumbers = $myTeamEntries->pluck('car_number')->map(fn ($n) => (int) $n)->all();
+                $championshipSkippedCars = $championshipTeamCars
+                    ->filter(fn ($car) => $car->car_number !== null && ! in_array((int) $car->car_number, $enteredNumbers, true))
+                    ->values();
+                $championshipSignupForm = $signsUpHere && $userTeam && $allTeamCars->isEmpty();
+            } elseif (! $isTeamRace) {
+                $championshipSignupForm = $signsUpHere && ! $isRegistered && ! $roundChampionship->isRegistered(auth()->user());
+            }
+
+            if ($championshipSignupForm) {
+                $roundChampionship->load(['classes', 'league' => fn ($q) => $q->withoutTenantScope()]);
+            }
         }
-        $preselectedDriverIds = $championshipTeamRegistration?->driverIds() ?: array_filter([$userTeam?->owner_id]);
+        $preselectedDriverIds = array_filter([$userTeam?->owner_id]);
+
+        // Solo championship drivers not in this open round left it on purpose — every
+        // other entry is in automatically.
+        $skippingDrivers = collect();
+        if ($race->championship_id && ! $isTeamRace && $race->status === 'open') {
+            $skippingDrivers = Championship::withoutTenantScope()->find($race->championship_id)
+                ?->registrations()->approved()->where('is_spectator', false)->whereNull('racing_team_id')
+                ->whereNotIn('user_id', $race->registrations->pluck('user_id'))
+                ->with('user')->get()->pluck('user')->filter()->values() ?? collect();
+        }
 
         // Success ballast this championship round's drivers carry (EntryBalanceService),
         // heaviest first.
@@ -157,8 +187,9 @@ class RaceController extends Controller
 
         return view('race.show', compact(
             'race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries',
-            'isTeamRace', 'isChampionshipTeamRound', 'championshipTeamScope', 'championshipTeamRegistration', 'preselectedDriverIds', 'successBallast', 'successBallastMode',
-            'canAddChampionshipCar', 'championshipEntryFailure', 'spectateOnly'
+            'isTeamRace', 'isChampionshipTeamRound', 'preselectedDriverIds', 'successBallast', 'successBallastMode',
+            'championshipEntryFailure', 'spectateOnly', 'roundChampionship', 'championshipTeamCars', 'championshipSkippedCars',
+            'championshipTeamPending', 'championshipSignupForm', 'skippingDrivers'
         ));
     }
 
@@ -428,6 +459,14 @@ class RaceController extends Controller
             return back()->with('error', 'You do not own or manage a racing team.');
         }
 
+        // A driver-swap championship round only takes the team's championship cars,
+        // each with the line-up it registered (ChampionshipRoundEntryService) — the
+        // only thing to do here is put back a car the team took out of this round.
+        $championship = $race->championship_id ? $race->championship()->withoutTenantScope()->first() : null;
+        if ($championship && ($championship->settings->format->driver_swaps_enabled ?? false)) {
+            return $this->reenterChampionshipCar($request, $race, $championship, $team);
+        }
+
         $validated = $request->validate([
             'car_number' => ['required', 'integer', 'min:0', 'max:999'],
             'car_model' => ['nullable', 'string', 'max:60'],
@@ -449,29 +488,6 @@ class RaceController extends Controller
         $startingDriverId = (int) $validated['starting_driver_id'];
         if (! $selectedIds->contains($startingDriverId)) {
             return back()->with('error', 'The starting driver must be one of the selected drivers.');
-        }
-
-        // A driver-swap championship round: a "championship"-scope team is entered
-        // automatically (ChampionshipTeamEntryService), a "per_round" team signs up
-        // here itself — but only once it's registered for the championship.
-        $championship = $race->championship_id ? $race->championship()->withoutTenantScope()->first() : null;
-        if ($championship && ($championship->settings->format->driver_swaps_enabled ?? false)) {
-            if (($championship->settings->format->team_registration_scope ?? 'per_round') === 'championship') {
-                return back()->with('error', 'Your team is entered into this round automatically from its championship registration.');
-            }
-            // One round entry per car the team registered for the championship.
-            $teamCars = $championship->teamCarRegistrations($team, approvedOnly: true)->count();
-            if ($teamCars === 0) {
-                return back()->with('error', $championship->teamCarRegistrations($team)->isNotEmpty()
-                    ? 'Your team\'s championship entry is still waiting for approval by the league.'
-                    : 'Register your team for the championship first.');
-            }
-            if (RaceTeamEntry::where('race_id', $race->id)->where('racing_team_id', $team->id)->count() >= $teamCars) {
-                return back()->with('error', "Every car your team registered for the championship ({$teamCars}) is already in this round.");
-            }
-            if ($failure = $championship->driverCountFailure($selectedIds->count())) {
-                return back()->with('error', $failure);
-            }
         }
 
         $users = User::whereIn('id', $selectedIds)->get()->keyBy('id');
@@ -571,6 +587,40 @@ class RaceController extends Controller
         }
 
         return back()->with('success', $team->name.' has been registered for '.$race->title.'!');
+    }
+
+    private function reenterChampionshipCar(Request $request, Race $race, Championship $championship, RacingTeam $team)
+    {
+        $teamCars = $championship->teamCarRegistrations($team);
+        if ($teamCars->isEmpty()) {
+            return back()->with('error', 'Register your team for the championship first.');
+        }
+
+        $car = $teamCars->reject->isPending()->firstWhere('id', $request->integer('championship_registration_id'));
+        if (! $car) {
+            return back()->with('error', $teamCars->reject->isPending()->isEmpty()
+                ? 'Your team\'s championship entry is still waiting for approval by the league.'
+                : 'Pick one of your team\'s championship cars.');
+        }
+
+        $carEntries = RaceTeamEntry::withTrashed()->where('race_id', $race->id)
+            ->where('racing_team_id', $team->id)->where('car_number', $car->car_number);
+        if ((clone $carEntries)->exists() && ! (clone $carEntries)->onlyTrashed()->exists()) {
+            return back()->with('error', 'Car #'.$car->car_number.' is already in this round.');
+        }
+
+        DB::transaction(function () use ($race, $car, $carEntries) {
+            Race::where('id', $race->id)->lockForUpdate()->first();
+            // Forget that the car left this round, then enter it like any other round.
+            $carEntries->onlyTrashed()->forceDelete();
+            app(ChampionshipRoundEntryService::class)->syncRoundEntry($car, $race);
+        });
+
+        if (! RaceTeamEntry::where('race_id', $race->id)->where('racing_team_id', $team->id)->where('car_number', $car->car_number)->exists()) {
+            return back()->with('error', 'Car #'.$car->car_number.' is already taken in this round.');
+        }
+
+        return back()->with('success', 'Car #'.$car->car_number.' is back in '.$race->title.'.');
     }
 
     public function unregisterTeam(Race $race, RaceTeamEntry $entry)

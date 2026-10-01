@@ -7,6 +7,7 @@ use App\Models\League;
 use App\Models\Race;
 use App\Models\RacingTeam;
 use App\Models\User;
+use App\Services\ChampionshipRoundEntryService;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -66,13 +67,17 @@ class ChampionshipMultiCarTeamTest extends TestCase
         ]);
     }
 
-    // Car n (0-based) is driven by drivers 2n and 2n+1, starting with the first.
+    private int $nextCarNumber = 11;
+
+    // Car n (0-based) is driven by drivers 2n and 2n+1, starting with the first;
+    // numbered 11, 12, … unless the test picks one.
     private function registerCar(Championship $championship, array $driverIndexes, array $extra = [])
     {
         $ids = array_map(fn ($i) => $this->drivers[$i]->id, $driverIndexes);
 
         return $this->actingAs($this->owner)->post(route('championships.register', $championship), array_merge([
             'racing_team_id' => $this->team->id, 'driver_ids' => $ids, 'starting_driver_id' => $ids[0],
+            'car_number' => $this->nextCarNumber++,
         ], $extra));
     }
 
@@ -119,31 +124,37 @@ class ChampionshipMultiCarTeamTest extends TestCase
             ->assertSessionHas('error', 'Car number #7 is already taken in this championship.');
     }
 
-    public function test_per_round_teams_sign_up_one_round_entry_per_registered_car(): void
+    public function test_per_round_team_cars_go_into_every_round_and_a_skipped_car_can_be_put_back(): void
     {
         $championship = $this->makeChampionship('per_round');
         $round = $this->makeRound($championship);
         $this->registerCar($championship, [0, 1])->assertSessionHas('success');
         $this->registerCar($championship, [2, 3])->assertSessionHas('success');
 
-        $signUp = fn (int $carNumber, array $driverIndexes) => $this->actingAs($this->owner)->post(route('events.register-team', $round), [
-            'car_number' => $carNumber,
-            'driver_ids' => array_map(fn ($i) => $this->drivers[$i]->id, $driverIndexes),
-            'starting_driver_id' => $this->drivers[$driverIndexes[0]]->id,
-        ]);
-
-        $signUp(7, [0, 1])->assertSessionMissing('error');
-
-        // The second car's line-up is the one pre-selected next.
-        $this->actingAs($this->owner)->get(route('events.show', $round))
-            ->assertOk()
-            ->assertViewHas('canAddChampionshipCar', true)
-            ->assertViewHas('preselectedDriverIds', [$this->drivers[2]->id, $this->drivers[3]->id]);
-
-        $signUp(8, [2, 3])->assertSessionMissing('error');
         $this->assertSame(2, $round->teamEntries()->count());
 
-        $this->actingAs($this->owner)->get(route('events.show', $round))->assertViewHas('canAddChampionshipCar', false);
+        // The team takes car #11 out of this round …
+        $entry = $round->teamEntries()->where('car_number', 11)->first();
+        $this->actingAs($this->owner)->delete(route('events.unregister-team', [$round, $entry]))->assertSessionHas('success');
+        $this->assertSame(1, $round->teamEntries()->count());
+
+        $this->actingAs($this->owner)->get(route('events.show', $round))
+            ->assertOk()
+            ->assertViewHas('championshipSkippedCars', fn ($cars) => $cars->pluck('car_number')->all() === [11])
+            ->assertSee('RE-ENTER');
+
+        // … a resync leaves it out …
+        app(ChampionshipRoundEntryService::class)->syncChampionship($championship);
+        $this->assertSame(1, $round->teamEntries()->count());
+
+        // … and only the team puts it back, with its championship line-up.
+        $car = $championship->registrations()->where('car_number', 11)->first();
+        $this->actingAs($this->owner)->post(route('events.register-team', $round), ['championship_registration_id' => $car->id])
+            ->assertSessionHas('success');
+
+        $back = $round->teamEntries()->where('car_number', 11)->first();
+        $this->assertNotNull($back);
+        $this->assertEqualsCanonicalizing([$this->drivers[0]->id, $this->drivers[1]->id], $back->registrations()->pluck('user_id')->all());
     }
 
     public function test_withdrawing_one_car_keeps_the_other(): void
@@ -184,6 +195,6 @@ class ChampionshipMultiCarTeamTest extends TestCase
         $standings = $championship->fresh()->computeTeamStandings();
 
         $this->assertCount(2, $standings);
-        $this->assertSame(['Car 1', 'Car 2'], collect($standings)->pluck('car_label')->sort()->values()->all());
+        $this->assertSame(['#11', '#12'], collect($standings)->pluck('car_label')->sort()->values()->all());
     }
 }

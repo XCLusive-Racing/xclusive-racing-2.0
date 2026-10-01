@@ -112,6 +112,10 @@ class ChampionshipSettingsSchema
                 'label' => 'Car Class', 'help' => 'Same for every round of the championship.'],
             ['group' => 'format', 'key' => 'spectator_slots', 'type' => 'integer', 'nullable' => true, 'default' => 0,
                 'label' => 'Spectator Slots', 'help' => 'Extra slots reserved for spectators, on top of the entry cap.'],
+            // Key kept from when this only covered driver-swap teams; it now decides
+            // round sign-up for solo drivers and teams alike (ChampionshipRoundEntryService).
+            ['group' => 'format', 'key' => 'team_registration_scope', 'type' => 'enum', 'options' => ['per_round', 'championship'], 'default' => 'per_round',
+                'label' => 'Round Registration', 'help' => 'Either way, a championship entry is entered into every round automatically and can skip a round on its event page. "Per round": drivers and teams can also sign up on a round\'s event page, which enters them into the championship too. "Championship": signing up only happens on the championship page.'],
             // v15: driver classes (Pro / Pro-Am / Am …), independent of car classes.
             // The classes themselves are ChampionshipDriverClass rows, edited by the
             // builder under this toggle; entries are put in one on the Entries page.
@@ -127,8 +131,6 @@ class ChampionshipSettingsSchema
             // car is its own registration and scores on its own — never added up.
             ['group' => 'format', 'key' => 'max_cars_per_team', 'type' => 'integer', 'nullable' => true, 'default' => 1, 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',
                 'label' => 'Maximum Cars per Team', 'help' => 'Only used when driver swaps are on. How many cars one team may enter. A driver can only be in one car. Blank = 1.', 'rule' => 'nullable|integer|min:1|max:20'],
-            ['group' => 'format', 'key' => 'team_registration_scope', 'type' => 'enum', 'options' => ['per_round', 'championship'], 'default' => 'per_round', 'section' => 'Driver Swaps', 'depends_on' => 'driver_swaps_enabled',
-                'label' => 'Team Registration', 'help' => 'Only used when driver swaps are on. "Per round" (today\'s behaviour): a team still signs up separately for every round. "Whole championship": a team\'s car number, model and starting driver are captured once and copied into every round automatically — including rounds added later.'],
             // Mirror the race wizard's own in-game swap-enforcement fields
             // (admin/races/form.blade.php, AccServerConfigService::eventRules()) —
             // default here, still overridable per round in Add/Edit Round.

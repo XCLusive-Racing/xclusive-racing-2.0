@@ -42,6 +42,15 @@
                      the same way (gportal:import-results, also global). Status is
                      still surfaced above (config pending/pushed/failed) so a
                      manager can see it, just nothing to click here to force it. --}}
+                @if($round->status === 'open' && $round->scheduled_at->isFuture())
+                <form action="{{ route('admin.leagues.championships.rounds.sync-entries', [$league, $championship, $round]) }}" method="POST" class="m-0">
+                    @csrf
+                    <button type="submit" class="btn btn-sm fw-bold" style="background:transparent;color:#7c3aed;font-size:.72rem"
+                            title="Adds every approved championship entry to this round. Drivers or teams who skipped it on purpose stay out.">
+                        Enter all entries
+                    </button>
+                </form>
+                @endif
                 <a href="{{ route('admin.leagues.championships.rounds.edit', [$league, $championship, $round]) }}"
                    class="btn btn-sm fw-bold" style="background:transparent;color:#374151;font-size:.72rem">
                     Edit

@@ -9,7 +9,6 @@ use App\Http\Requests\Championship\SaveChampionshipStepRequest;
 use App\Jobs\PushRoundConfigJob;
 use App\Models\Championship;
 use App\Models\ChampionshipDriverClass;
-use App\Models\ChampionshipRegistration;
 use App\Models\FtpServer;
 use App\Models\League;
 use App\Models\PointsScheme;
@@ -17,7 +16,7 @@ use App\Models\Race;
 use App\Models\SessionFormat;
 use App\Models\User;
 use App\Services\AuditLogger;
-use App\Services\ChampionshipTeamEntryService;
+use App\Services\ChampionshipRoundEntryService;
 use App\Services\PracticeServer\ChampionshipPracticeService;
 use App\Settings\ChampionshipSettingsSchema;
 use Carbon\Carbon;
@@ -348,7 +347,7 @@ class ChampionshipWizardController extends Controller
         }
 
         $race = Race::create($result);
-        $this->syncTeamEntriesForNewRound($championship, $race);
+        $this->syncEntriesForNewRound($championship, $race);
 
         AuditLogger::record($request->user(), $championship, 'championship.round_added', ['title' => $result['title']]);
 
@@ -451,7 +450,7 @@ class ChampionshipWizardController extends Controller
         DB::transaction(function () use ($rows, $championship) {
             foreach ($rows as $row) {
                 $race = Race::create($row);
-                $this->syncTeamEntriesForNewRound($championship, $race);
+                $this->syncEntriesForNewRound($championship, $race);
             }
         });
 
@@ -461,26 +460,11 @@ class ChampionshipWizardController extends Controller
             ->with('success', count($rows).' rounds added.');
     }
 
-    // "Championship"-scope team registrations (settings.format.team_registration_scope,
-    // see ChampionshipTeamEntryService) carried a car number/model/starting driver
-    // once instead of re-registering every round — a round added after the fact
-    // still needs its own RaceTeamEntry generated from that, which is what this does.
-    private function syncTeamEntriesForNewRound(Championship $championship, Race $race): void
+    // A round added after the fact gets every championship entry entered into it
+    // too (ChampionshipRoundEntryService), same as the rounds that already existed.
+    private function syncEntriesForNewRound(Championship $championship, Race $race): void
     {
-        $registrations = ChampionshipRegistration::where('championship_id', $championship->id)
-            ->approved()
-            ->whereNotNull('racing_team_id')
-            ->whereNotNull('car_number')
-            ->get();
-
-        if ($registrations->isEmpty()) {
-            return;
-        }
-
-        $service = app(ChampionshipTeamEntryService::class);
-        foreach ($registrations as $registration) {
-            $service->syncRoundEntry($registration, $race);
-        }
+        app(ChampionshipRoundEntryService::class)->syncRound($championship, $race);
     }
 
     // The session/weather/server fields every round form shares — Add Round,

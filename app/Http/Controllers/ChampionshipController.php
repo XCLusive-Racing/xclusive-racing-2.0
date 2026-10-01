@@ -9,7 +9,7 @@ use App\Models\League;
 use App\Models\RacingTeam;
 use App\Models\User;
 use App\Services\AccCarCatalog;
-use App\Services\ChampionshipTeamEntryService;
+use App\Services\ChampionshipRoundEntryService;
 use App\Services\DiscordRoleService;
 use App\Services\EntryBalanceService;
 use Illuminate\Http\Request;
@@ -147,7 +147,6 @@ class ChampionshipController extends Controller
         // RaceController::registerTeam() already uses for individual rounds.
         $team = null;
         $entryFields = [];
-        $teamRegistrationScope = $championship->settings->format->team_registration_scope ?? 'per_round';
         if ($championship->settings->format->driver_swaps_enabled ?? false) {
             // A team championship: every driver races as part of a team car, so a
             // solo entry would be a car with nobody to swap with.
@@ -158,9 +157,10 @@ class ChampionshipController extends Controller
             $team = RacingTeam::with('members')->findOrFail($request->integer('racing_team_id'));
             abort_unless($team->canManage($user), 403);
 
-            // The team picks which of its members drive this car, in both scopes:
-            // "championship" enters exactly them into every round, "per_round"
-            // pre-selects them on each round's own team sign-up.
+            // The team picks which of its members drive this car, and its number,
+            // model and starting driver, once — the car is entered into every round
+            // automatically (ChampionshipRoundEntryService), including rounds added
+            // later. Only the league can change it afterwards.
             $request->validate([
                 'driver_ids' => 'required|array|min:1',
                 'driver_ids.*' => 'integer',
@@ -176,36 +176,29 @@ class ChampionshipController extends Controller
                 return back()->with('error', $failure);
             }
 
-            $entryFields = ['driver_ids' => $driverIds->all()];
-
-            // "Whole championship" scope also captures the car/starting driver once
-            // here and auto-creates the per-round RaceTeamEntry for every existing
-            // (and, via ChampionshipWizardController, future) round — see
-            // ChampionshipTeamEntryService.
-            if ($teamRegistrationScope === 'championship') {
-                // ACC cars come from the game's own catalogue (the sign-up form offers
-                // them as a dropdown); other games have no list, so free text.
-                $carRules = ['nullable', 'string', 'max:255'];
-                if (AccCarCatalog::supports($championship->game)) {
-                    $carRules[] = Rule::in(array_keys(AccCarCatalog::namesWithClass($championship->game)));
-                }
-
-                $validated = $request->validate([
-                    'car_number' => 'required|integer|min:0|max:999',
-                    'car_model' => $carRules,
-                    'starting_driver_id' => 'required|integer',
-                ]);
-
-                if (! $driverIds->contains((int) $validated['starting_driver_id'])) {
-                    return back()->with('error', 'The starting driver must be one of the selected drivers.');
-                }
-
-                $entryFields += [
-                    'car_number' => $validated['car_number'],
-                    'car_model' => $validated['car_model'] ?? null,
-                    'starting_driver_id' => $validated['starting_driver_id'],
-                ];
+            // ACC cars come from the game's own catalogue (the sign-up form offers
+            // them as a dropdown); other games have no list, so free text.
+            $carRules = ['nullable', 'string', 'max:255'];
+            if (AccCarCatalog::supports($championship->game)) {
+                $carRules[] = Rule::in(array_keys(AccCarCatalog::namesWithClass($championship->game)));
             }
+
+            $validated = $request->validate([
+                'car_number' => 'required|integer|min:0|max:999',
+                'car_model' => $carRules,
+                'starting_driver_id' => 'required|integer',
+            ]);
+
+            if (! $driverIds->contains((int) $validated['starting_driver_id'])) {
+                return back()->with('error', 'The starting driver must be one of the selected drivers.');
+            }
+
+            $entryFields = [
+                'driver_ids' => $driverIds->all(),
+                'car_number' => $validated['car_number'],
+                'car_model' => $validated['car_model'] ?? null,
+                'starting_driver_id' => $validated['starting_driver_id'],
+            ];
         } elseif (AccCarCatalog::supports($championship->game)) {
             // A solo driver picks their car and number once, for the whole
             // championship: every round's entrylist forces that car
@@ -289,8 +282,10 @@ class ChampionshipController extends Controller
             return back()->withInput()->with('error', $failure);
         }
 
-        if (! $pending && $team && $teamRegistrationScope === 'championship') {
-            app(ChampionshipTeamEntryService::class)->syncAllExistingRounds($registration, $championship);
+        // Into every upcoming round right away — with manual approval only once
+        // the league approves it (Admin\ChampionshipEntryController::approve()).
+        if (! $pending) {
+            app(ChampionshipRoundEntryService::class)->syncAllExistingRounds($registration, $championship);
         }
 
         $message = match (true) {
@@ -445,12 +440,17 @@ class ChampionshipController extends Controller
             $registrations->whereKey(request()->integer('registration_id'));
         }
 
-        DB::transaction(function () use ($registrations, $championship) {
+        $rounds = app(ChampionshipRoundEntryService::class);
+        DB::transaction(function () use ($registrations, $championship, $rounds) {
             foreach ($registrations->get() as $registration) {
-                app(ChampionshipTeamEntryService::class)->withdrawFromOpenRounds($registration, $championship);
+                $rounds->withdrawFromOpenRounds($registration, $championship);
                 $registration->delete();
             }
         });
+
+        // A freed spot moves the next driver off the championship's waiting list
+        // (Championship::isRegistrationWaitlisted() is a rank), into the rounds.
+        $rounds->syncChampionship($championship);
 
         return back()->with('success', request()->filled('registration_id')
             ? 'The car has been withdrawn from the championship.'
