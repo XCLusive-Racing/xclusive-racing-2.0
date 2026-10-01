@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use App\Models\Concerns\Tenantable;
+use App\Services\Contracts\ServerConfigGenerator;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class FtpServer extends Model
 {
@@ -32,6 +35,41 @@ class FtpServer extends Model
         'assistrules_defaults' => 'array',
         'event_defaults' => 'array',
     ];
+
+    // Parses the submitted config-default textareas: blank, or identical to the
+    // built-in default, stores null (so the server keeps following the built-in);
+    // anything else is stored as the decoded override. A field the request doesn't
+    // carry at all is left out, so a partial submit never wipes an override.
+    public static function configDefaultsFromInput(Request $request): array
+    {
+        $generator = app(ServerConfigGenerator::class);
+        $builtInDefaults = [
+            'event_defaults' => $generator->defaultEventConfig(),
+            'settings_defaults' => $generator->defaultSettings(),
+            'eventrules_defaults' => $generator->defaultEventRules(),
+            'assistrules_defaults' => $generator->defaultAssistRules(),
+        ];
+
+        $data = [];
+        foreach ($builtInDefaults as $field => $builtIn) {
+            if (! $request->exists($field)) {
+                continue;
+            }
+            $raw = trim((string) $request->input($field, ''));
+            if ($raw === '') {
+                $data[$field] = null;
+
+                continue;
+            }
+            $decoded = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw ValidationException::withMessages([$field => 'Invalid JSON: '.json_last_error_msg()]);
+            }
+            $data[$field] = ($decoded == $builtIn) ? null : $decoded;
+        }
+
+        return $data;
+    }
 
     public function league(): BelongsTo
     {
@@ -72,6 +110,16 @@ class FtpServer extends Model
     public function listUrl(): string
     {
         return route($this->isXclServer() ? 'admin.servers.index' : 'admin.league-servers.index');
+    }
+
+    // Where "back to this server" goes for this user: XCL staff to Configuration's
+    // edit page, a league manager to their league's own server page (they can't
+    // reach the admin one).
+    public function editUrlFor(User $user): string
+    {
+        return $user->canManage() || $this->isXclServer()
+            ? route('admin.servers.edit', $this)
+            : route('admin.leagues.servers.edit', [$this->league_id, $this]);
     }
 
     // ACC PC and ACC Console builds can't share a server (different car IDs, Steam vs

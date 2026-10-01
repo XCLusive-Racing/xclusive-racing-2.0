@@ -307,17 +307,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/servers/{ftpServer}', [FtpServerController::class, 'update'])->name('servers.update');
     Route::delete('/servers/{ftpServer}', [FtpServerController::class, 'destroy'])->name('servers.destroy');
     Route::post('/servers/{ftpServer}/test', [FtpServerController::class, 'test'])->name('servers.test');
-    Route::post('/servers/{ftpServer}/push', [FtpServerController::class, 'pushDefaults'])->name('servers.push');
-
-    // FTP Browser
-    Route::get('/servers/{ftpServer}/browse', [FtpBrowserController::class, 'index'])->name('servers.browse');
-    Route::get('/servers/{ftpServer}/browse/download', [FtpBrowserController::class, 'download'])->name('servers.browse.download');
-    Route::get('/servers/{ftpServer}/browse/view', [FtpBrowserController::class, 'view'])->name('servers.browse.view');
-    Route::post('/servers/{ftpServer}/browse/upload', [FtpBrowserController::class, 'upload'])->name('servers.browse.upload');
-    Route::post('/servers/{ftpServer}/browse/mkdir', [FtpBrowserController::class, 'mkdir'])->name('servers.browse.mkdir');
-    Route::post('/servers/{ftpServer}/browse/delete', [FtpBrowserController::class, 'delete'])->name('servers.browse.delete');
-    Route::post('/servers/{ftpServer}/browse/rename', [FtpBrowserController::class, 'rename'])->name('servers.browse.rename');
-    Route::post('/servers/{ftpServer}/browse/save', [FtpBrowserController::class, 'save'])->name('servers.browse.save');
 });
 
 // Esports admin — owner + esports_manager only (deliberately narrower than
@@ -424,6 +413,23 @@ Route::middleware(['auth', 'role:owner'])->prefix('admin')->name('admin.')->grou
 
     // Event Formats
     Route::resource('event-formats', EventFormatController::class);
+});
+
+// Pushing a server's config defaults to the box and browsing/editing the files on it
+// (the gPortal JSON) — XCL staff for any server, a league's own manager for their
+// own league's servers (FtpServerPolicy::manage).
+Route::middleware(['auth', 'league.access', 'can:manage,ftpServer'])->prefix('admin')->name('admin.')->group(function () {
+    Route::post('/servers/{ftpServer}/push', [FtpServerController::class, 'pushDefaults'])->name('servers.push');
+
+    // FTP Browser
+    Route::get('/servers/{ftpServer}/browse', [FtpBrowserController::class, 'index'])->name('servers.browse');
+    Route::get('/servers/{ftpServer}/browse/download', [FtpBrowserController::class, 'download'])->name('servers.browse.download');
+    Route::get('/servers/{ftpServer}/browse/view', [FtpBrowserController::class, 'view'])->name('servers.browse.view');
+    Route::post('/servers/{ftpServer}/browse/upload', [FtpBrowserController::class, 'upload'])->name('servers.browse.upload');
+    Route::post('/servers/{ftpServer}/browse/mkdir', [FtpBrowserController::class, 'mkdir'])->name('servers.browse.mkdir');
+    Route::post('/servers/{ftpServer}/browse/delete', [FtpBrowserController::class, 'delete'])->name('servers.browse.delete');
+    Route::post('/servers/{ftpServer}/browse/rename', [FtpBrowserController::class, 'rename'])->name('servers.browse.rename');
+    Route::post('/servers/{ftpServer}/browse/save', [FtpBrowserController::class, 'save'])->name('servers.browse.save');
 });
 
 // Leagues — XCL staff (full access) and League Manager/League Steward (their own

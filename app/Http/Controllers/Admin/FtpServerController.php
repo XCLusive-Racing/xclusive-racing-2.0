@@ -131,28 +131,7 @@ class FtpServerController extends Controller
             'server_type', 'reset_start_hour', 'reset_interval_minutes', 'game', 'platform'
         );
         $data['active'] = $request->boolean('active');
-
-        $configService = app(ServerConfigGenerator::class);
-        $builtInDefaults = [
-            'event_defaults' => $configService->defaultEventConfig(),
-            'settings_defaults' => $configService->defaultSettings(),
-            'eventrules_defaults' => $configService->defaultEventRules(),
-            'assistrules_defaults' => $configService->defaultAssistRules(),
-        ];
-
-        foreach ($builtInDefaults as $field => $builtIn) {
-            $raw = trim($request->input($field, ''));
-            if ($raw === '') {
-                $data[$field] = null;
-
-                continue;
-            }
-            $decoded = json_decode($raw, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return back()->withInput()->withErrors([$field => 'Invalid JSON: '.json_last_error_msg()]);
-            }
-            $data[$field] = ($decoded == $builtIn) ? null : $decoded;
-        }
+        $data += FtpServer::configDefaultsFromInput($request);
 
         $ftpServer->update($data);
 

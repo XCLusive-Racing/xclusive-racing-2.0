@@ -11,6 +11,12 @@
 
 @section('content')
 
+<div class="row g-4 align-items-start">
+    <div class="col-12 col-lg-7">
+        @include('admin.servers._push-config')
+    </div>
+</div>
+
 <form action="{{ route('admin.leagues.servers.update', [$league, $server]) }}" method="POST">
     @csrf @method('PUT')
 
@@ -19,6 +25,7 @@
 
             <div class="admin-card mb-4">
                 @include('admin.servers._add-server-fields', ['editServer' => $server])
+                @include('admin.servers._config-defaults')
             </div>
 
             <div class="d-flex gap-2">

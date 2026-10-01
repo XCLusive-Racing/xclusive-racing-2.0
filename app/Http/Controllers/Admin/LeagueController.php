@@ -344,6 +344,8 @@ class LeagueController extends Controller
             }
         }
 
+        $data += FtpServer::configDefaultsFromInput($request);
+
         $server->update($data);
 
         AuditLogger::record($user, $server, 'league.server_updated', $request->only('name', 'host', 'path', 'server_type'));

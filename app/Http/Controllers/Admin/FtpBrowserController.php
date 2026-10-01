@@ -11,24 +11,24 @@ class FtpBrowserController extends Controller
 {
     public function index(FtpServer $ftpServer, Request $request)
     {
-        $path    = $this->sanitizePath($request->input('path', '/'));
-        $ftp     = new FtpService();
+        $path = $this->sanitizePath($request->input('path', '/'));
+        $ftp = app(FtpService::class);
         $entries = [];
-        $error   = null;
+        $error = null;
 
         if ($ftp->connect($ftpServer)) {
             $entries = $ftp->listDirectory($path);
             $ftp->disconnect();
         } else {
-            $error = 'Could not connect to ' . $ftpServer->host . '.';
+            $error = 'Could not connect to '.$ftpServer->host.'.';
         }
 
         return view('admin.servers.browse', [
-            'server'  => $ftpServer,
-            'path'    => $path,
+            'server' => $ftpServer,
+            'path' => $path,
             'entries' => $entries,
-            'error'   => $error,
-            'crumbs'  => $this->breadcrumbs($path),
+            'error' => $error,
+            'crumbs' => $this->breadcrumbs($path),
         ]);
     }
 
@@ -40,10 +40,10 @@ class FtpBrowserController extends Controller
             abort(400);
         }
 
-        $ftp = new FtpService();
+        $ftp = app(FtpService::class);
 
-        if (!$ftp->connect($ftpServer)) {
-            return response()->json(['error' => 'Could not connect to ' . $ftpServer->host . '.'], 502);
+        if (! $ftp->connect($ftpServer)) {
+            return response()->json(['error' => 'Could not connect to '.$ftpServer->host.'.'], 502);
         }
 
         $content = $ftp->getFileContent($path);
@@ -54,7 +54,7 @@ class FtpBrowserController extends Controller
         }
 
         $decoded = json_decode($content);
-        $pretty  = $decoded !== null
+        $pretty = $decoded !== null
             ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
             : $content;
 
@@ -69,10 +69,10 @@ class FtpBrowserController extends Controller
             abort(400);
         }
 
-        $ftp = new FtpService();
+        $ftp = app(FtpService::class);
 
-        if (!$ftp->connect($ftpServer)) {
-            return back()->with('error', 'Could not connect to ' . $ftpServer->host . '.');
+        if (! $ftp->connect($ftpServer)) {
+            return back()->with('error', 'Could not connect to '.$ftpServer->host.'.');
         }
 
         $content = $ftp->getFileContent($path);
@@ -83,8 +83,8 @@ class FtpBrowserController extends Controller
         }
 
         return response($content, 200, [
-            'Content-Type'        => 'application/octet-stream',
-            'Content-Disposition' => 'attachment; filename="' . basename($path) . '"',
+            'Content-Type' => 'application/octet-stream',
+            'Content-Disposition' => 'attachment; filename="'.basename($path).'"',
         ]);
     }
 
@@ -95,14 +95,14 @@ class FtpBrowserController extends Controller
             'file' => 'required|file|max:51200',
         ]);
 
-        $dir  = $this->sanitizePath($request->input('path'));
+        $dir = $this->sanitizePath($request->input('path'));
         $file = $request->file('file');
-        $dest = rtrim($dir, '/') . '/' . $file->getClientOriginalName();
+        $dest = rtrim($dir, '/').'/'.$file->getClientOriginalName();
 
-        $ftp = new FtpService();
+        $ftp = app(FtpService::class);
 
-        if (!$ftp->connect($ftpServer)) {
-            return back()->with('error', 'Could not connect to ' . $ftpServer->host . '.');
+        if (! $ftp->connect($ftpServer)) {
+            return back()->with('error', 'Could not connect to '.$ftpServer->host.'.');
         }
 
         $ok = $ftp->uploadFile($dest, file_get_contents($file->getRealPath()));
@@ -110,7 +110,7 @@ class FtpBrowserController extends Controller
 
         return redirect()->route('admin.servers.browse', ['ftpServer' => $ftpServer->id, 'path' => $dir])
             ->with($ok ? 'success' : 'error', $ok
-                ? basename($dest) . ' uploaded successfully.'
+                ? basename($dest).' uploaded successfully.'
                 : 'Upload failed.');
     }
 
@@ -122,12 +122,12 @@ class FtpBrowserController extends Controller
         ]);
 
         $parent = $this->sanitizePath($request->input('path'));
-        $newDir = rtrim($parent, '/') . '/' . $request->input('name');
+        $newDir = rtrim($parent, '/').'/'.$request->input('name');
 
-        $ftp = new FtpService();
+        $ftp = app(FtpService::class);
 
-        if (!$ftp->connect($ftpServer)) {
-            return back()->with('error', 'Could not connect to ' . $ftpServer->host . '.');
+        if (! $ftp->connect($ftpServer)) {
+            return back()->with('error', 'Could not connect to '.$ftpServer->host.'.');
         }
 
         $ok = $ftp->makeDirectory($newDir);
@@ -135,7 +135,7 @@ class FtpBrowserController extends Controller
 
         return redirect()->route('admin.servers.browse', ['ftpServer' => $ftpServer->id, 'path' => $parent])
             ->with($ok ? 'success' : 'error', $ok
-                ? 'Directory "' . $request->input('name') . '" created.'
+                ? 'Directory "'.$request->input('name').'" created.'
                 : 'Failed to create directory.');
     }
 
@@ -146,12 +146,12 @@ class FtpBrowserController extends Controller
             'type' => 'required|in:file,dir',
         ]);
 
-        $path   = $this->sanitizePath($request->input('path'));
+        $path = $this->sanitizePath($request->input('path'));
         $parent = $this->parentPath($path);
-        $ftp    = new FtpService();
+        $ftp = app(FtpService::class);
 
-        if (!$ftp->connect($ftpServer)) {
-            return back()->with('error', 'Could not connect to ' . $ftpServer->host . '.');
+        if (! $ftp->connect($ftpServer)) {
+            return back()->with('error', 'Could not connect to '.$ftpServer->host.'.');
         }
 
         $ok = $request->input('type') === 'dir'
@@ -162,22 +162,22 @@ class FtpBrowserController extends Controller
 
         return redirect()->route('admin.servers.browse', ['ftpServer' => $ftpServer->id, 'path' => $parent])
             ->with($ok ? 'success' : 'error', $ok
-                ? '"' . basename($path) . '" deleted.'
+                ? '"'.basename($path).'" deleted.'
                 : 'Delete failed.');
     }
 
     public function save(FtpServer $ftpServer, Request $request)
     {
         $request->validate([
-            'path'    => 'required|string',
+            'path' => 'required|string',
             'content' => 'required|string',
         ]);
 
         $path = $this->sanitizePath($request->input('path'));
-        $ftp  = new FtpService();
+        $ftp = app(FtpService::class);
 
-        if (!$ftp->connect($ftpServer)) {
-            return response()->json(['error' => 'Could not connect to ' . $ftpServer->host . '.'], 502);
+        if (! $ftp->connect($ftpServer)) {
+            return response()->json(['error' => 'Could not connect to '.$ftpServer->host.'.'], 502);
         }
 
         $ok = $ftp->uploadFile($path, $request->input('content'));
@@ -191,17 +191,17 @@ class FtpBrowserController extends Controller
     public function rename(FtpServer $ftpServer, Request $request)
     {
         $request->validate([
-            'path'    => 'required|string',
+            'path' => 'required|string',
             'newname' => ['required', 'string', 'max:255', 'regex:/^[^\\/\\\\:*?"<>|]+$/'],
         ]);
 
-        $from   = $this->sanitizePath($request->input('path'));
+        $from = $this->sanitizePath($request->input('path'));
         $parent = $this->parentPath($from);
-        $to     = rtrim($parent, '/') . '/' . $request->input('newname');
-        $ftp    = new FtpService();
+        $to = rtrim($parent, '/').'/'.$request->input('newname');
+        $ftp = app(FtpService::class);
 
-        if (!$ftp->connect($ftpServer)) {
-            return back()->with('error', 'Could not connect to ' . $ftpServer->host . '.');
+        if (! $ftp->connect($ftpServer)) {
+            return back()->with('error', 'Could not connect to '.$ftpServer->host.'.');
         }
 
         $ok = $ftp->renameFile($from, $to);
@@ -209,13 +209,13 @@ class FtpBrowserController extends Controller
 
         return redirect()->route('admin.servers.browse', ['ftpServer' => $ftpServer->id, 'path' => $parent])
             ->with($ok ? 'success' : 'error', $ok
-                ? 'Renamed to "' . $request->input('newname') . '".'
+                ? 'Renamed to "'.$request->input('newname').'".'
                 : 'Rename failed.');
     }
 
     private function sanitizePath(string $path): string
     {
-        $parts = array_filter(explode('/', $path), fn($p) => $p !== '' && $p !== '.');
+        $parts = array_filter(explode('/', $path), fn ($p) => $p !== '' && $p !== '.');
         $stack = [];
         foreach ($parts as $part) {
             if ($part === '..') {
@@ -224,24 +224,27 @@ class FtpBrowserController extends Controller
                 $stack[] = $part;
             }
         }
-        return '/' . implode('/', $stack);
+
+        return '/'.implode('/', $stack);
     }
 
     private function parentPath(string $path): string
     {
         $dir = dirname($path);
+
         return ($dir === '.' || $dir === '') ? '/' : $dir;
     }
 
     private function breadcrumbs(string $path): array
     {
         $crumbs = [['name' => 'Root', 'path' => '/']];
-        $parts  = array_filter(explode('/', $path), fn($p) => $p !== '');
-        $built  = '';
+        $parts = array_filter(explode('/', $path), fn ($p) => $p !== '');
+        $built = '';
         foreach ($parts as $part) {
-            $built    .= '/' . $part;
+            $built .= '/'.$part;
             $crumbs[] = ['name' => $part, 'path' => $built];
         }
+
         return $crumbs;
     }
 }

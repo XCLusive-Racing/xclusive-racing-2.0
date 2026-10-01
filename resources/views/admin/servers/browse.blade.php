@@ -4,8 +4,8 @@
 @section('page-title', 'FTP Browser')
 
 @section('page-actions')
-    <a href="{{ route('admin.servers.index') }}" class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.78rem">
-        ← Servers
+    <a href="{{ $server->editUrlFor(auth()->user()) }}" class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.78rem">
+        ← Server
     </a>
 @endsection
 
@@ -115,8 +115,8 @@ function ftpFileSize(?int $bytes): string {
 @if($error)
 <div class="admin-card p-4">
     <div class="fw-bold text-danger mb-2" style="font-size:.875rem">{{ $error }}</div>
-    <a href="{{ route('admin.servers.index') }}"
-       class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.75rem">← Back to Servers</a>
+    <a href="{{ $server->editUrlFor(auth()->user()) }}"
+       class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.75rem">← Back to Server</a>
 </div>
 
 {{-- File browser --}}
