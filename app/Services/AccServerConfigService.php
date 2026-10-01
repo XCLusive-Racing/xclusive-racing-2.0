@@ -25,7 +25,7 @@ class AccServerConfigService implements ServerConfigGenerator
             ->orderBy('team_entry_id')
             ->orderBy('created_at')
             ->get()
-            ->reject(fn ($reg) => $race->isRegistrationWaitlisted($reg));
+            ->reject(fn ($reg) => $race->isRegistrationWaitlisted($reg) || $race->isSpectatorRegistration($reg));
 
         $entries = [];
         $processedTeamIds = [];

@@ -137,6 +137,37 @@ class Race extends Model
         return $this->belongsTo(Championship::class);
     }
 
+    private ?array $spectatorUserIds = null;
+
+    // A championship round's broadcaster signups that aren't racing in the championship
+    // (see Championship::soloRoundEntryFailure()) spectate: they join
+    // through the server's spectator slots, so they get no car in the entry list and
+    // take no grid spot.
+    public function spectatorUserIds(): array
+    {
+        if ($this->spectatorUserIds !== null) {
+            return $this->spectatorUserIds;
+        }
+
+        $championship = $this->championship_id
+            ? Championship::withoutTenantScope()->find($this->championship_id)
+            : null;
+        if (! $championship) {
+            return $this->spectatorUserIds = [];
+        }
+
+        return $this->spectatorUserIds = $this->registrations()->whereNull('team_entry_id')
+            ->whereNotIn('user_id', $championship->driverEntrantIds())
+            ->whereHas('user.roles', fn ($q) => $q->where('slug', 'broadcaster'))
+            ->pluck('user_id')->all();
+    }
+
+    public function isSpectatorRegistration(RaceRegistration $registration): bool
+    {
+        return $registration->team_entry_id === null
+            && in_array($registration->user_id, $this->spectatorUserIds());
+    }
+
     // The servers this race may be pushed to / import results from: a championship
     // round only its own league's servers, any other event only XCL's own (system
     // league) servers -- and either way only servers of the race's ACC platform
@@ -343,7 +374,7 @@ class Race extends Model
     // drivers pushed the raw registration count past max_drivers.
     public function isRegistrationWaitlisted(RaceRegistration $registration): bool
     {
-        if ($registration->team_entry_id) {
+        if ($registration->team_entry_id || $this->isSpectatorRegistration($registration)) {
             return false;
         }
 
@@ -365,6 +396,7 @@ class Race extends Model
     public function registrationRank(RaceRegistration $registration): int
     {
         return $this->registrations()
+            ->whereNotIn('user_id', $this->spectatorUserIds())
             ->where(function ($q) use ($registration) {
                 $q->where('created_at', '<', $registration->created_at)
                     ->orWhere(function ($q2) use ($registration) {

@@ -62,7 +62,7 @@ class RaceResultController extends Controller
         $resultPlayerIds = $raceResults->pluck('player_id')->filter()->toArray();
 
         $dnsCandidates = $race->registrations()->with('user')->get()
-            ->filter(fn ($r) => ! in_array($r->user_id, $resultUserIds))
+            ->filter(fn ($r) => ! in_array($r->user_id, $resultUserIds) && ! $race->isSpectatorRegistration($r))
             ->values();
 
         // Entrylist-based DNS candidates (drivers in uploaded entrylist but not in results)

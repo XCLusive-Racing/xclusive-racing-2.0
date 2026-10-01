@@ -5,10 +5,12 @@ namespace Tests\Feature;
 use App\Models\Championship;
 use App\Models\ChampionshipRegistration;
 use App\Models\League;
+use App\Models\Message;
 use App\Models\Race;
 use App\Models\RaceRegistration;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\AccServerConfigService;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -96,14 +98,57 @@ class ChampionshipRoundSoloSignupTest extends TestCase
         $this->assertFalse($this->isOnRound($pending));
     }
 
-    public function test_a_broadcaster_can_sign_up_for_a_round_without_a_championship_entry(): void
+    private function broadcaster(): User
     {
         $broadcaster = User::factory()->create();
         $broadcaster->roles()->attach(Role::firstOrCreate(['slug' => 'broadcaster'], ['name' => 'Broadcaster'])->id);
 
+        return $broadcaster;
+    }
+
+    public function test_a_broadcaster_signs_up_for_a_round_as_a_spectator(): void
+    {
+        $broadcaster = $this->broadcaster();
+
+        $this->actingAs($broadcaster)->get(route('events.show', $this->round))
+            ->assertOk()
+            ->assertSee('REGISTER AS SPECTATOR');
+
         $this->signUp($broadcaster)->assertSessionHas('success');
 
         $this->assertTrue($this->isOnRound($broadcaster));
+        $this->assertSame([$broadcaster->id], $this->round->fresh()->spectatorUserIds());
+        $message = Message::where('user_id', $broadcaster->id)->first();
+        $this->assertSame('Spectating: '.$this->round->title, $message->title);
+        $this->assertStringContainsString('Spectator password:', $message->body);
+    }
+
+    public function test_a_spectator_gets_no_car_in_the_entry_list_and_takes_no_grid_spot(): void
+    {
+        $this->round->update(['max_drivers' => 1]);
+        $broadcaster = $this->broadcaster();
+        $driver = $this->entrant();
+        $this->signUp($broadcaster);
+        $this->signUp($driver);
+
+        $round = $this->round->fresh();
+        $entries = app(AccServerConfigService::class)->entryList($round)['entries'];
+
+        $this->assertCount(1, $entries);
+        $this->assertStringContainsString($driver->name, $entries[0]['drivers'][0]['lastName']);
+        $driverRegistration = RaceRegistration::where('race_id', $round->id)->where('user_id', $driver->id)->first();
+        $this->assertFalse($round->isRegistrationWaitlisted($driverRegistration));
+    }
+
+    public function test_a_broadcaster_racing_in_the_championship_is_a_driver_not_a_spectator(): void
+    {
+        $broadcaster = $this->broadcaster();
+        ChampionshipRegistration::create(['championship_id' => $this->championship->id, 'user_id' => $broadcaster->id]);
+
+        $this->signUp($broadcaster)->assertSessionHas('success');
+
+        $this->assertSame([], $this->round->fresh()->spectatorUserIds());
+        $this->assertCount(1, app(AccServerConfigService::class)->entryList($this->round->fresh())['entries']);
     }
 
     public function test_a_standalone_event_needs_no_championship_entry(): void

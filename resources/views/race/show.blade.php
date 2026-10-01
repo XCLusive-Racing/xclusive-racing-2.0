@@ -717,8 +717,8 @@
                 @endif
                 @endauth
 
-                {{-- Registration (solo — hidden for team races) --}}
-                @if($race->status !== 'finished' && !$isTeamRace)
+                {{-- Registration (solo — hidden for team races, except a broadcaster's spectator signup) --}}
+                @if($race->status !== 'finished' && (!$isTeamRace || $spectateOnly))
                 <div class="xcl-ev-registration xcl-event-card mb-4">
                     <h3 class="xcl-event-card__heading">REGISTRATION</h3>
 
@@ -729,7 +729,9 @@
                                     && $race->isRegistrationWaitlisted($myRegistration);
                             @endphp
                             <div class="xcl-event-reg-status mb-3 {{ $myWaitlisted ? 'xcl-event-reg-status--waitlisted' : 'xcl-event-reg-status--registered' }}">
-                                @if($myWaitlisted)
+                                @if($spectateOnly)
+                                    You are registered as a spectator — join through the server's spectator slots.
+                                @elseif($myWaitlisted)
                                     You're #{{ $race->waitlistPosition($myRegistration) }} on the waiting list for this race.
                                     You'll be moved onto the entry list automatically if a spot opens up.
                                 @else
@@ -756,6 +758,17 @@
                                 <button type="submit" class="xcl-event-unreg-btn w-100">UNREGISTER</button>
                             </form>
                             @endif
+                        @elseif($spectateOnly && $race->registrationOpen())
+                            <form action="{{ route('events.register', $race) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="xcl-event-reg-btn w-100"
+                                        style="background:{{ $race->gameColor() }}">
+                                    REGISTER AS SPECTATOR →
+                                </button>
+                            </form>
+                            <p class="xcl-event-card__text mt-2 mb-0" style="font-size:.72rem;opacity:.7">
+                                As a broadcaster you join through the spectator slots; the spectator password is sent to your inbox.
+                            </p>
                         @elseif($championshipEntryFailure)
                             <p class="xcl-event-card__text mb-0" style="font-size:.82rem">
                                 {{ $championshipEntryFailure }}

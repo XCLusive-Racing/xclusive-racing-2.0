@@ -22,6 +22,10 @@
         <span class="xcl-drivers-grid__class-badge" style="background:#374151;color:#9ca3af;border:1px solid #4b5563">
             {{ $reg->teamEntry->team->name }}
         </span>
+        @elseif($race->isSpectatorRegistration($reg))
+        <span class="xcl-drivers-grid__class-badge" style="background:#0891b222;color:#22d3ee;border:1px solid #0891b244">
+            Spectator
+        </span>
         @elseif($race->is_multiclass && $reg->raceClass)
         <span class="xcl-drivers-grid__class-badge" style="background:{{ $reg->raceClass->color }}22;color:{{ $reg->raceClass->color }};border:1px solid {{ $reg->raceClass->color }}44">
             {{ $reg->raceClass->name }}

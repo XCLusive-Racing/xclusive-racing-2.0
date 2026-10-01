@@ -416,6 +416,17 @@ class Championship extends Model
 
     // Registered directly, or a member of a team that's already registered
     // (driver-swaps-enabled championships register the team, not each driver).
+    // Every user racing in this championship: approved solo entrants plus every
+    // driver of an approved team car — spectator entries excluded.
+    public function driverEntrantIds(): array
+    {
+        return $this->registrations()->approved()->where('is_spectator', false)->get()
+            ->flatMap(fn (ChampionshipRegistration $registration) => $registration->racing_team_id
+                ? $registration->driverIds()
+                : [$registration->user_id])
+            ->unique()->values()->all();
+    }
+
     // Why a driver can't sign up solo for one of this championship's rounds, or null
     // when they can — only an approved, non-spectator championship entrant may
     // (the team path has the same rule in RaceController::registerTeam()). A

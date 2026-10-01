@@ -92,11 +92,18 @@ class RaceController extends Controller
         }
 
         $championshipEntryFailure = null;
+        // A broadcaster not racing in the championship signs up as a spectator —
+        // on a driver-swap round too, where the solo registration card is otherwise hidden.
+        $spectateOnly = false;
 
         if (auth()->check()) {
-            if (! $isTeamRace && $race->championship_id) {
-                $championshipEntryFailure = $race->championship()->withoutTenantScope()->first()
-                    ?->soloRoundEntryFailure(auth()->user());
+            $roundChampionship = $race->championship_id ? $race->championship()->withoutTenantScope()->first() : null;
+            if ($roundChampionship) {
+                $spectateOnly = auth()->user()->isBroadcaster()
+                    && ! in_array(auth()->id(), $roundChampionship->driverEntrantIds());
+                if (! $isTeamRace) {
+                    $championshipEntryFailure = $roundChampionship->soloRoundEntryFailure(auth()->user());
+                }
             }
             $myRegistration = $race->registrations->firstWhere('user_id', auth()->id());
             $isRegistered = $myRegistration !== null;
@@ -151,7 +158,7 @@ class RaceController extends Controller
         return view('race.show', compact(
             'race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries',
             'isTeamRace', 'isChampionshipTeamRound', 'championshipTeamScope', 'championshipTeamRegistration', 'preselectedDriverIds', 'successBallast', 'successBallastMode',
-            'canAddChampionshipCar', 'championshipEntryFailure'
+            'canAddChampionshipCar', 'championshipEntryFailure', 'spectateOnly'
         ));
     }
 
@@ -208,18 +215,23 @@ class RaceController extends Controller
             return back()->with('error', 'You are already registered for this race.');
         }
 
-        if ($failure = auth()->user()->requirementFailure($race->game, $race->sr_requirement, $race->min_rating, $race->max_rating)) {
-            return back()->with('error', $failure);
-        }
-
         $championship = $race->championship_id ? $race->championship()->withoutTenantScope()->first() : null;
         if ($championship && $failure = $championship->soloRoundEntryFailure(auth()->user())) {
             return back()->with('error', $failure);
         }
 
+        // A broadcaster who isn't racing in the championship spectates (see
+        // Race::spectatorUserIds()) — no car, so no class or driver requirements.
+        $asSpectator = $championship && auth()->user()->isBroadcaster()
+            && ! in_array(auth()->id(), $championship->driverEntrantIds());
+
+        if (! $asSpectator && $failure = auth()->user()->requirementFailure($race->game, $race->sr_requirement, $race->min_rating, $race->max_rating)) {
+            return back()->with('error', $failure);
+        }
+
         $raceClassId = null;
 
-        if ($race->is_multiclass && $race->raceClasses->isNotEmpty()) {
+        if (! $asSpectator && $race->is_multiclass && $race->raceClasses->isNotEmpty()) {
             $validated = $request->validate([
                 'race_class_id' => ['required', 'integer'],
             ]);
@@ -244,7 +256,7 @@ class RaceController extends Controller
         $waitlisted = false;
 
         try {
-            DB::transaction(function () use ($race, $raceClassId, &$waitlisted) {
+            DB::transaction(function () use ($race, $raceClassId, $asSpectator, &$waitlisted) {
                 // A full race no longer rejects the signup -- it joins the waiting list
                 // instead (see Race::isRegistrationWaitlisted()). The lock is still
                 // needed so two people registering for the same last spot at the same
@@ -290,6 +302,16 @@ class RaceController extends Controller
                         'user_id' => auth()->id(),
                         'title' => 'Waiting list: '.$race->title,
                         'body' => "{$race->title} is full, so you've been added to the waiting list at position {$position}. You'll be moved onto the entry list automatically (and notified here) if a spot opens up.",
+                        'type' => 'event_registration',
+                        'related_id' => $race->id,
+                        'related_type' => Race::class,
+                    ]);
+                } elseif ($asSpectator) {
+                    $spectatorPassword = $config['spectatorPassword'] ?? 'To be announced';
+                    Message::create([
+                        'user_id' => auth()->id(),
+                        'title' => 'Spectating: '.$race->title,
+                        'body' => "You are registered as a spectator for {$race->title}. Join through the server's spectator slots.\n\nServer: {$serverName}\nSpectator password: {$spectatorPassword}",
                         'type' => 'event_registration',
                         'related_id' => $race->id,
                         'related_type' => Race::class,
