@@ -91,7 +91,13 @@ class RaceController extends Controller
             }
         }
 
+        $championshipEntryFailure = null;
+
         if (auth()->check()) {
+            if (! $isTeamRace && $race->championship_id) {
+                $championshipEntryFailure = $race->championship()->withoutTenantScope()->first()
+                    ?->soloRoundEntryFailure(auth()->user());
+            }
             $myRegistration = $race->registrations->firstWhere('user_id', auth()->id());
             $isRegistered = $myRegistration !== null;
             $myRegisteredAt = $myRegistration?->created_at;
@@ -145,7 +151,7 @@ class RaceController extends Controller
         return view('race.show', compact(
             'race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries',
             'isTeamRace', 'isChampionshipTeamRound', 'championshipTeamScope', 'championshipTeamRegistration', 'preselectedDriverIds', 'successBallast', 'successBallastMode',
-            'canAddChampionshipCar'
+            'canAddChampionshipCar', 'championshipEntryFailure'
         ));
     }
 
@@ -203,6 +209,11 @@ class RaceController extends Controller
         }
 
         if ($failure = auth()->user()->requirementFailure($race->game, $race->sr_requirement, $race->min_rating, $race->max_rating)) {
+            return back()->with('error', $failure);
+        }
+
+        $championship = $race->championship_id ? $race->championship()->withoutTenantScope()->first() : null;
+        if ($championship && $failure = $championship->soloRoundEntryFailure(auth()->user())) {
             return back()->with('error', $failure);
         }
 

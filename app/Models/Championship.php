@@ -416,6 +416,25 @@ class Championship extends Model
 
     // Registered directly, or a member of a team that's already registered
     // (driver-swaps-enabled championships register the team, not each driver).
+    // Why a driver can't sign up solo for one of this championship's rounds, or null
+    // when they can — only an approved, non-spectator championship entrant may
+    // (the team path has the same rule in RaceController::registerTeam()).
+    public function soloRoundEntryFailure(User $user): ?string
+    {
+        $registration = $this->registrations()
+            ->where('user_id', $user->id)
+            ->where('is_spectator', false)
+            ->first();
+
+        if (! $registration) {
+            return 'Register for the championship first.';
+        }
+
+        return $registration->isPending()
+            ? 'Your championship entry is still waiting for approval by the league.'
+            : null;
+    }
+
     public function isRegistered(User $user): bool
     {
         return $this->registrations()

@@ -756,6 +756,11 @@
                                 <button type="submit" class="xcl-event-unreg-btn w-100">UNREGISTER</button>
                             </form>
                             @endif
+                        @elseif($championshipEntryFailure)
+                            <p class="xcl-event-card__text mb-0" style="font-size:.82rem">
+                                {{ $championshipEntryFailure }}
+                                <a href="{{ route('championships.show', $race->championship_id) }}" style="color:#e5e7eb;text-decoration:underline">Go to the championship</a>
+                            </p>
                         @elseif($race->registrationOpen())
                                 @if($race->isFull())
                                 <div class="xcl-event-reg-status xcl-event-reg-status--waitlisted mb-3">
