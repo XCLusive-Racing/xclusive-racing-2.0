@@ -30,6 +30,15 @@
                 {!! nl2br(e($message->body)) !!}
             </div>
 
+            {{-- A message about an event (registration, round sign-up reminder) links to it. --}}
+            @if($message->related_type === \App\Models\Race::class && $message->related_id)
+            <div class="px-4 pb-3">
+                <a href="{{ route('events.show', $message->related_id) }}" class="btn btn-sm fw-black text-uppercase text-white px-4" style="background:#7c3aed">
+                    Go to event &rarr;
+                </a>
+            </div>
+            @endif
+
             {{-- Footer --}}
             <div class="px-4 pb-4">
                 <form method="POST" action="{{ route('messages.destroy', $message) }}"

@@ -32,24 +32,26 @@ class Message extends Model
     public function typeIcon(): string
     {
         return match ($this->type) {
-            'event_registration'  => 'fa-flag-checkered',
+            'event_registration' => 'fa-flag-checkered',
+            'round_signup_reminder' => 'fa-bell',
             'report_confirmation' => 'fa-file-circle-check',
-            'report_resolved'     => 'fa-gavel',
-            'news'                => 'fa-newspaper',
-            'team_invitation'     => 'fa-users',
-            default               => 'fa-envelope',
+            'report_resolved' => 'fa-gavel',
+            'news' => 'fa-newspaper',
+            'team_invitation' => 'fa-users',
+            default => 'fa-envelope',
         };
     }
 
     public function typeColor(): string
     {
         return match ($this->type) {
-            'event_registration'  => '#7c3aed',
+            'event_registration' => '#7c3aed',
+            'round_signup_reminder' => '#f59e0b',
             'report_confirmation' => '#2563eb',
-            'report_resolved'     => '#16a34a',
-            'news'                => '#db2877',
-            'team_invitation'     => '#f59e0b',
-            default               => '#6b7280',
+            'report_resolved' => '#16a34a',
+            'news' => '#db2877',
+            'team_invitation' => '#f59e0b',
+            default => '#6b7280',
         };
     }
 }
