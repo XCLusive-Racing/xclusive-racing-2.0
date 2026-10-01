@@ -33,8 +33,9 @@ export function initEventsFilter() {
         return regions.includes(regionFilter);
     }
 
+    // data-class lists every class the event races (comma-separated for multiclass).
     function matchesClass(classAttr) {
-        return classFilter === 'all' || classAttr === classFilter;
+        return classFilter === 'all' || (classAttr || '').split(',').includes(classFilter);
     }
 
     function matchesRequirement(card) {

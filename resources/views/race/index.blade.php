@@ -245,10 +245,11 @@
                 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
                     @foreach($gameRaces as $race)
                     @php
-                        $titleLower = strtolower($race->title ?? '');
-                        if ($race->is_championship) {
-                            $badge = 'SR5 GRID';
-                        } elseif (str_contains($titleLower, 'multiclass') || str_contains($titleLower, 'endurance')) {
+                        // Shown when the event has no icon of its own. From the event's real
+                        // settings, not its title (an "Endurance" title used to read MULTICLASS).
+                        if ($race->championship_id) {
+                            $badge = strtoupper($race->round_type ?: 'Championship');
+                        } elseif (count($race->displayCarClasses()) > 1) {
                             $badge = 'MULTICLASS';
                         } else {
                             $tagObj = $eventTags->firstWhere('slug', $race->event_tag);
@@ -274,7 +275,7 @@
                          data-tag="{{ $race->event_tag ?? 'daily' }}"
                          data-date="{{ $race->scheduled_at->toIso8601String() }}"
                          data-regions="{{ implode(',', $race->eveningRegions()) }}"
-                         data-class="{{ strtoupper($race->car_class ?? '') }}"
+                         data-class="{{ strtoupper(implode(',', $race->displayCarClasses())) }}"
                          data-sr="{{ $race->sr_requirement ? '1' : '0' }}"
                          data-min-rating="{{ $race->min_rating ?? '' }}"
                          data-max-rating="{{ $race->max_rating ?? '' }}">
@@ -300,11 +301,17 @@
                                     @endif
                                 </div>
 
-                                {{-- Car class — top-left --}}
-                                @if($race->car_class)
-                                @php [$classBg, $classText] = $race->carClassStyle(); @endphp
+                                {{-- Car class(es) + driver swap — top-left --}}
+                                @php $cardClasses = $race->displayCarClasses(); @endphp
+                                @if($cardClasses || $race->isDriverSwap())
                                 <div class="xcl-ec2__top-left-row">
-                                    <div class="xcl-ec2__class-badge" style="background:{{ $classBg }};color:{{ $classText }}">{{ $race->car_class }}</div>
+                                    @foreach($cardClasses as $cardClass)
+                                    @php [$classBg, $classText] = \App\Models\Race::classStyle($cardClass); @endphp
+                                    <div class="xcl-ec2__class-badge" style="background:{{ $classBg }};color:{{ $classText }}">{{ $cardClass }}</div>
+                                    @endforeach
+                                    @if($race->isDriverSwap())
+                                    <div class="xcl-ec2__class-badge" style="background:#7c3aed;color:#fff" title="Drivers share a car"><i class="fa-solid fa-people-arrows me-1"></i>DRIVER SWAP</div>
+                                    @endif
                                 </div>
                                 @endif
 

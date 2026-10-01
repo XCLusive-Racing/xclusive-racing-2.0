@@ -669,7 +669,58 @@ class Race extends Model
     /** Returns [background-hex, text-hex] for the car class badge on event cards. */
     public function carClassStyle(): array
     {
-        return match (strtoupper((string) $this->car_class)) {
+        return self::classStyle((string) $this->car_class);
+    }
+
+    // Every car class this event races, for the event cards: a multiclass race's
+    // classes, else a championship round's (its own championship's classes or
+    // single class), else the race's own car_class. Needs raceClasses and
+    // championship(.classes) loaded — RaceController::index() does.
+    public function displayCarClasses(): array
+    {
+        $championship = $this->publicChampionship();
+
+        $classes = match (true) {
+            $this->is_multiclass && $this->raceClasses->isNotEmpty() => $this->raceClasses->pluck('car_class')->all(),
+            $championship?->is_multiclass && $championship->classes->isNotEmpty() => $championship->classes->pluck('car_class')->all(),
+            default => [$this->car_class ?? $championship?->car_class],
+        };
+
+        return array_values(array_unique(array_filter($classes)));
+    }
+
+    // A team event: drivers share a car (Custom Race endurance, or a championship
+    // with driver swaps).
+    public function isDriverSwap(): bool
+    {
+        if ($this->is_endurance) {
+            return true;
+        }
+
+        $championship = $this->publicChampionship();
+
+        return (bool) ($championship?->settings->format->driver_swaps_enabled ?? false);
+    }
+
+    // The round's championship for public display — Championship's TenantScope
+    // would hide it from a visitor outside its league, so it's loaded without it
+    // unless the caller already eager-loaded it (RaceController::index()).
+    private function publicChampionship(): ?Championship
+    {
+        if (! $this->championship_id) {
+            return null;
+        }
+
+        if (! $this->relationLoaded('championship')) {
+            $this->setRelation('championship', Championship::withoutTenantScope()->with('classes')->find($this->championship_id));
+        }
+
+        return $this->championship;
+    }
+
+    public static function classStyle(string $carClass): array
+    {
+        return match (strtoupper($carClass)) {
             'GT3' => ['#DC2626', '#FFFFFF'],
             'GT4' => ['#2563EB', '#FFFFFF'],
             'GT2' => ['#16A34A', '#FFFFFF'],

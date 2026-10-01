@@ -2322,7 +2322,9 @@ span.flatpickr-weekday {
         align-items: center;
         gap: .4rem;
         flex-wrap: wrap;
-        max-width: calc(100% - 1.2rem);
+        // Room for the sign-up count top-right (__lobby) when a multiclass
+        // event shows several class badges.
+        max-width: calc(100% - 7rem);
     }
 
     // Solid colour-coded box — colour set per car class via carClassStyle()
