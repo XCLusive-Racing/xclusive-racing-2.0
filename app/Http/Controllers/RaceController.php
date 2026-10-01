@@ -161,12 +161,17 @@ class RaceController extends Controller
 
         // Solo championship drivers not in this open round left it on purpose — every
         // other entry is in automatically.
+        // (Someone on the championship's waiting list isn't racing yet, so isn't skipping.)
         $skippingDrivers = collect();
-        if ($race->championship_id && ! $isTeamRace && $race->status === 'open') {
-            $skippingDrivers = Championship::withoutTenantScope()->find($race->championship_id)
-                ?->registrations()->approved()->where('is_spectator', false)->whereNull('racing_team_id')
+        $skippingChampionship = $race->championship_id && ! $isTeamRace && $race->status === 'open'
+            ? Championship::withoutTenantScope()->find($race->championship_id)
+            : null;
+        if ($skippingChampionship) {
+            $skippingDrivers = $skippingChampionship->registrations()->approved()->where('is_spectator', false)->whereNull('racing_team_id')
                 ->whereNotIn('user_id', $race->registrations->pluck('user_id'))
-                ->with('user')->get()->pluck('user')->filter()->values() ?? collect();
+                ->with('user')->get()->pluck('user')->filter()
+                ->reject(fn (User $user) => $skippingChampionship->isRegistrationWaitlisted($user))
+                ->values();
         }
 
         // Success ballast this championship round's drivers carry (EntryBalanceService),
