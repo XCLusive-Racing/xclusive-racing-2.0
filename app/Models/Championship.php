@@ -418,9 +418,14 @@ class Championship extends Model
     // (driver-swaps-enabled championships register the team, not each driver).
     // Why a driver can't sign up solo for one of this championship's rounds, or null
     // when they can — only an approved, non-spectator championship entrant may
-    // (the team path has the same rule in RaceController::registerTeam()).
+    // (the team path has the same rule in RaceController::registerTeam()). A
+    // broadcaster joins any round to spectate without a championship entry.
     public function soloRoundEntryFailure(User $user): ?string
     {
+        if ($user->isBroadcaster()) {
+            return null;
+        }
+
         $registration = $this->registrations()
             ->where('user_id', $user->id)
             ->where('is_spectator', false)

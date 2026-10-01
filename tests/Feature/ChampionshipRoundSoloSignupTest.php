@@ -7,6 +7,7 @@ use App\Models\ChampionshipRegistration;
 use App\Models\League;
 use App\Models\Race;
 use App\Models\RaceRegistration;
+use App\Models\Role;
 use App\Models\User;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -93,6 +94,16 @@ class ChampionshipRoundSoloSignupTest extends TestCase
 
         $this->assertFalse($this->isOnRound($spectator));
         $this->assertFalse($this->isOnRound($pending));
+    }
+
+    public function test_a_broadcaster_can_sign_up_for_a_round_without_a_championship_entry(): void
+    {
+        $broadcaster = User::factory()->create();
+        $broadcaster->roles()->attach(Role::firstOrCreate(['slug' => 'broadcaster'], ['name' => 'Broadcaster'])->id);
+
+        $this->signUp($broadcaster)->assertSessionHas('success');
+
+        $this->assertTrue($this->isOnRound($broadcaster));
     }
 
     public function test_a_standalone_event_needs_no_championship_entry(): void
