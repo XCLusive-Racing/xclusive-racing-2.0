@@ -6,8 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-// A driver class (Pro / Pro-Am / Am …): entries are put in one by the league by
-// hand, independent of the car they drive (car classes are ChampionshipClass).
+// A driver class (Pro / Pro-Am / Am …), independent of the car an entry drives (car
+// classes are ChampionshipClass). An entry lands in one automatically when the
+// class has a rank range (min_rank/max_rank), otherwise the league puts it in by hand.
 class ChampionshipDriverClass extends Model
 {
     // ACC entrylist driverCategory => the in-game number banner it gives.
@@ -17,7 +18,44 @@ class ChampionshipDriverClass extends Model
         0 => ['label' => 'Red', 'color' => '#ef4444'],
     ];
 
-    protected $fillable = ['championship_id', 'name', 'acc_category', 'max_entries', 'sort_order'];
+    protected $fillable = ['championship_id', 'name', 'acc_category', 'max_entries', 'min_rank', 'max_rank', 'sort_order'];
+
+    // Whether a driver of this XCL rank (User::ranks() slug) belongs in this class.
+    // Either bound may be open ("silver and up", "up to bronze"); with neither set
+    // the class covers no rank at all, so it stays manual-only.
+    public function coversRank(string $rank): bool
+    {
+        if ($this->min_rank === null && $this->max_rank === null) {
+            return false;
+        }
+
+        // User::ranks() runs highest first, so a higher rank has a lower index.
+        $order = array_column(User::ranks(), 'slug');
+        $index = array_search($rank, $order, true);
+        if ($index === false) {
+            return false;
+        }
+
+        $minIndex = $this->min_rank !== null ? array_search($this->min_rank, $order, true) : false;
+        $maxIndex = $this->max_rank !== null ? array_search($this->max_rank, $order, true) : false;
+
+        return ($minIndex === false || $index <= $minIndex)
+            && ($maxIndex === false || $index >= $maxIndex);
+    }
+
+    // "Silver+", "Rookie – Bronze", "Up to Bronze" — null when no range is set.
+    public function rankRangeLabel(): ?string
+    {
+        $min = $this->min_rank ? ucfirst($this->min_rank) : null;
+        $max = $this->max_rank ? ucfirst($this->max_rank) : null;
+
+        return match (true) {
+            $min && $max => $min === $max ? $min : $min.' – '.$max,
+            (bool) $min => $min.'+',
+            (bool) $max => 'Up to '.$max,
+            default => null,
+        };
+    }
 
     protected function casts(): array
     {

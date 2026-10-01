@@ -279,6 +279,9 @@ class ChampionshipController extends Controller
                 'approved_at' => $pending ? null : now(),
             ], $entryFields));
 
+            // Inside the lock, so two drivers can't both take a class's last spot.
+            $championship->autoAssignDriverClass($registration);
+
             return null;
         });
 

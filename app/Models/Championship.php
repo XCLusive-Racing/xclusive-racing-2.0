@@ -209,6 +209,40 @@ class Championship extends Model
         return (bool) ($this->settings->format->driver_classes_enabled ?? false);
     }
 
+    // The driver class a solo entry falls in by its driver's XCL rank for this
+    // championship's game (ChampionshipDriverClass::coversRank()), first match in
+    // the league's own class order. Null when no class has a rank range, nothing
+    // matches, or the matching class is already full — the league assigns by hand.
+    public function driverClassFor(User $user, ?int $ignoreRegistrationId = null): ?ChampionshipDriverClass
+    {
+        if (! $this->usesDriverClasses() || ! User::eloColumn($this->game)) {
+            return null;
+        }
+
+        $rank = $user->rank($this->game)['slug'];
+
+        return $this->driverClasses()->get()
+            ->first(fn (ChampionshipDriverClass $class) => $class->coversRank($rank) && ! $class->isFull($ignoreRegistrationId));
+    }
+
+    // Puts a solo entry still without a driver class into the one its rank matches.
+    // Never moves an entry the league already placed. Returns whether it assigned one.
+    public function autoAssignDriverClass(ChampionshipRegistration $registration): bool
+    {
+        if ($registration->driver_class_id || $registration->is_spectator || $registration->racing_team_id || ! $registration->user) {
+            return false;
+        }
+
+        $class = $this->driverClassFor($registration->user, $registration->id);
+        if (! $class) {
+            return false;
+        }
+
+        $registration->update(['driver_class_id' => $class->id]);
+
+        return true;
+    }
+
     // user_id => ACC driverCategory for every driver whose driver class sets a
     // banner; the entrylist falls back to User::ratingClass() for everyone else.
     public function driverCategoryOverrides(): array

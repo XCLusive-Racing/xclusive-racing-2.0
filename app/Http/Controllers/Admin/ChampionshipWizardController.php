@@ -15,6 +15,7 @@ use App\Models\League;
 use App\Models\PointsScheme;
 use App\Models\Race;
 use App\Models\SessionFormat;
+use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\ChampionshipTeamEntryService;
 use App\Services\PracticeServer\ChampionshipPracticeService;
@@ -930,7 +931,7 @@ class ChampionshipWizardController extends Controller
             $this->syncChampionshipClasses($championship, $settings['format']['classes'] ?? []);
 
             if ($request->filled('driver_classes_json')) {
-                $this->syncDriverClasses($championship, $this->decodeList($request->input('driver_classes_json'), ['id', 'name', 'acc_category', 'max_entries']));
+                $this->syncDriverClasses($championship, $this->decodeList($request->input('driver_classes_json'), ['id', 'name', 'acc_category', 'max_entries', 'min_rank', 'max_rank']));
             }
         }
     }
@@ -951,10 +952,23 @@ class ChampionshipWizardController extends Controller
 
             $category = $row['acc_category'] ?? null;
             $maxEntries = $row['max_entries'] ?? null;
+
+            // Rank range, picked From/To in either order — stored lowest-first.
+            $rankSlugs = array_column(User::ranks(), 'slug');
+            [$minRank, $maxRank] = array_map(
+                fn ($rank) => in_array($rank, $rankSlugs, true) ? $rank : null,
+                [$row['min_rank'] ?? null, $row['max_rank'] ?? null]
+            );
+            if ($minRank && $maxRank && array_search($minRank, $rankSlugs, true) < array_search($maxRank, $rankSlugs, true)) {
+                [$minRank, $maxRank] = [$maxRank, $minRank];
+            }
+
             $attrs = [
                 'name' => $name,
                 'acc_category' => is_numeric($category) && array_key_exists((int) $category, ChampionshipDriverClass::ACC_CATEGORIES) ? (int) $category : null,
                 'max_entries' => is_numeric($maxEntries) && $maxEntries > 0 ? (int) $maxEntries : null,
+                'min_rank' => $minRank,
+                'max_rank' => $maxRank,
                 'sort_order' => $i,
             ];
 

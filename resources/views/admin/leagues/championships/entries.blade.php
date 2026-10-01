@@ -19,9 +19,17 @@
         @if($driverClasses->isNotEmpty())
         <span class="text-secondary" style="font-size:.75rem">
             @foreach($driverClasses as $driverClass)
-            <span class="me-2"><i class="fa-solid fa-square" style="color:{{ $driverClass->color() }};-webkit-text-stroke:1px #d1d5db"></i> {{ $driverClass->name }}: {{ $driverClass->registrations_count }}{{ $driverClass->max_entries ? '/'.$driverClass->max_entries : '' }}</span>
+            <span class="me-2"><i class="fa-solid fa-square" style="color:{{ $driverClass->color() }};-webkit-text-stroke:1px #d1d5db"></i> {{ $driverClass->name }}{{ $driverClass->rankRangeLabel() ? ' ('.$driverClass->rankRangeLabel().')' : '' }}: {{ $driverClass->registrations_count }}{{ $driverClass->max_entries ? '/'.$driverClass->max_entries : '' }}</span>
             @endforeach
         </span>
+        {{-- New entries are placed on registration; this catches the ones from before
+             a class got its rank range. Never moves an entry already in a class. --}}
+        @if($driverClasses->contains(fn ($driverClass) => $driverClass->rankRangeLabel() !== null))
+        <form action="{{ route('admin.leagues.championships.entries.driver-class.auto', [$league, $championship]) }}" method="POST" class="m-0">
+            @csrf
+            <button type="submit" class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.72rem">Auto-assign by rating</button>
+        </form>
+        @endif
         @endif
         @if($championship->requiresManualApproval())
         <span class="text-secondary" style="font-size:.75rem">Manual approval is on — new entries wait here until you approve them.</span>

@@ -130,6 +130,24 @@ class ChampionshipEntryController extends Controller
         return back()->with('success', $this->entrantName($registration).($class ? ' is now in '.$class->name.'.' : ' is no longer in a class.'));
     }
 
+    // Puts every solo entry still without a driver class into the one its driver's
+    // XCL rank matches (Championship::autoAssignDriverClass()) — for entries from
+    // before the classes had a rank range. Entries already in a class stay put.
+    public function autoAssignDriverClasses(Request $request, League $league, Championship $championship)
+    {
+        $this->authorizeChampionship($league, $championship);
+
+        $assigned = 0;
+        $championship->registrations()->whereNull('driver_class_id')->orderBy('created_at')->with('user')->get()
+            ->each(function (ChampionshipRegistration $registration) use ($championship, &$assigned) {
+                $assigned += (int) $championship->autoAssignDriverClass($registration);
+            });
+
+        AuditLogger::record($request->user(), $championship, 'championship.driver_classes_auto_assigned', ['assigned' => $assigned]);
+
+        return back()->with('success', $assigned === 1 ? '1 entry put in a class.' : $assigned.' entries put in a class.');
+    }
+
     // A solo driver's car and number are locked in at registration
     // (ChampionshipController::register()); only the league changes them, here.
     public function updateCar(Request $request, League $league, Championship $championship, ChampionshipRegistration $registration)
