@@ -7,6 +7,11 @@ return [
     // One filler shown for every this many real sign-ups (4 → 5, 8 → 10, 12 → 15...).
     'per_real_drivers' => 4,
 
+    // Spots fillers always leave free: once real drivers plus fillers reach the cap minus
+    // this many (45 of 50, 30 of 35), every new real sign-up makes one filler drop out, so
+    // fillers never push anyone onto the waiting list.
+    'free_spot_margin' => 5,
+
     'gamertags' => [
         'ApexHunter_77', 'LateBr4ke03', 'xDriftKing', 'NightStint', 'SamsStreamzZ',
         'Kerb_Crusher', 'GT3_Ghost', 'John2voelta', 'RedMist_R', 'llPitwallPetyll',

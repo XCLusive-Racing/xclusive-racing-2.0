@@ -44,12 +44,33 @@ class GridFillerTest extends TestCase
         }
     }
 
-    public function test_fillers_never_take_more_than_the_free_spots(): void
+    // User-directed 2026-10: fillers always leave 5 spots free, so they start dropping out
+    // at 45 of 50 (30 of 35) instead of only once the grid is full.
+    public function test_fillers_always_leave_five_spots_free(): void
     {
-        // 28 real on a 30 grid: 7 fillers wanted, only 2 spots left.
-        $this->assertSame(2, Race::fillerCountFor(28, 2));
+        // 50 grid: 36 real + 9 fillers = 45. The next real sign-up drops one filler.
+        $this->assertSame(9, Race::fillerCountFor(36, 50 - 36));
+        $this->assertSame(8, Race::fillerCountFor(37, 50 - 37));
+        $this->assertSame(1, Race::fillerCountFor(44, 50 - 44));
+        $this->assertSame(0, Race::fillerCountFor(45, 50 - 45));
+
+        // 35 grid: 24 real + 6 fillers = 30, then one filler less per new sign-up.
+        $this->assertSame(6, Race::fillerCountFor(24, 35 - 24));
+        $this->assertSame(5, Race::fillerCountFor(25, 35 - 25));
+
         // Full grid (a waiting list starts here): no fillers at all.
-        $this->assertSame(0, Race::fillerCountFor(30, 0));
+        $this->assertSame(0, Race::fillerCountFor(50, 0));
+    }
+
+    public function test_the_signup_counter_stays_five_below_the_cap_while_fillers_drop_out(): void
+    {
+        $race = $this->makeRace(['max_drivers' => 50]);
+
+        $this->registerReal($race, 36);
+        $this->assertSame(45, $race->loadCount('registrations')->displayedSignupCount());
+
+        $this->registerReal($race, 1);
+        $this->assertSame(45, $race->loadCount('registrations')->displayedSignupCount());
     }
 
     public function test_event_page_shows_fillers_but_they_are_never_registrations(): void

@@ -259,8 +259,9 @@ class Race extends Model
     // ── Grid fillers ─────────────────────────────────────────────────────────
     // Filler drivers (users.is_filler, see config/fillers.php) are shown on an upcoming
     // standalone event's grid and sign-up counter: one per config('fillers.per_real_drivers')
-    // real sign-ups (4 → 5, 8 → 10, 12 → 15), and never more than the free spots left —
-    // so they drop out as the grid fills and a real driver never waits behind one.
+    // real sign-ups (4 → 5, 8 → 10, 12 → 15), and always leaving config('fillers.free_spot_margin')
+    // spots free (45 of 50): from there every new real sign-up makes one filler drop out,
+    // so a real driver never waits behind one.
     // They're display-only: never stored as registrations, so the server entry list,
     // results, ratings, capacity and the waiting list don't know they exist.
 
@@ -272,12 +273,17 @@ class Race extends Model
             && $this->scheduled_at?->isFuture();
     }
 
-    // How many fillers to show next to $real real drivers, within $freeSpots (null = no cap).
+    // How many fillers to show next to $real real drivers, within $freeSpots (null = no cap)
+    // minus the margin they always leave free.
     public static function fillerCountFor(int $real, ?int $freeSpots): int
     {
         $count = intdiv($real, max(1, (int) config('fillers.per_real_drivers', 4)));
 
-        return $freeSpots === null ? $count : max(0, min($count, $freeSpots));
+        if ($freeSpots === null) {
+            return $count;
+        }
+
+        return max(0, min($count, $freeSpots - (int) config('fillers.free_spot_margin', 5)));
     }
 
     // The public sign-up counter ("12 / 30"): real registrations plus fillers.
