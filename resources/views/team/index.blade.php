@@ -41,7 +41,8 @@
                 ],
                 [
                     'slug'     => 'staff',
-                    'href'     => '#',
+                    'href'     => route('team.staff'),
+                    'cta'      => 'View Staff',
                     'color'    => '#3b82f6',
                     'title'    => 'Staff',
                     'desc'     => 'The team behind the team — organizers, stewards, and community managers keeping it all running.',
@@ -77,7 +78,7 @@
                     <div class="events-platform-card__desc">
                         <p>{{ $cat['desc'] }}</p>
                         <span class="events-platform-card__cta" style="background:{{ $cat['color'] }}">
-                            View Drivers →
+                            {{ $cat['cta'] ?? 'View Drivers' }} →
                         </span>
                     </div>
                 </div>

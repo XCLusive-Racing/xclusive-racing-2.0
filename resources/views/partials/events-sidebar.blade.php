@@ -59,6 +59,11 @@ $sbChamps = \App\Models\Championship::withoutTenantScope()
 
 $sbTeamEvents = TeamEvent::upcoming()->with('participatingDrivers')->limit(2)->get();
 
+// Time Trials tab: this week's event (live, else the next one) and its top 10.
+$sbTimeTrial = \App\Models\TimeTrialEvent::currentOrNext()->with('server')->withCount('registrations')->first();
+$sbTtRows = $sbTimeTrial ? app(\App\Services\TimeTrials\TimeTrialStandings::class)->for($sbTimeTrial)->take(10) : collect();
+$sbTtRegistered = $sbTimeTrial?->isRegistered(auth()->user()) ?? false;
+
 // Sidebar leaderboard — who gained the most XCL-R rating this period, not who simply
 // has the highest total rating (that was the old, always-static behaviour here).
 // Summed straight off race_results.elo_change, the same signed per-race delta
@@ -646,9 +651,11 @@ $sbLeaderboards = [
                                 default   => '/images/home/teams/XCLusive_Placeholder_ACC.png',
                             };
                         @endphp
+                        @php $sbChamp = $sbChamps[$round->championship_id] ?? null; @endphp
                         <div class="xcl-sb-up-card"
                              data-sb-game-card="{{ $round->game }}"
-                             data-countdown="{{ $round->scheduled_at->toIso8601String() }}">
+                             data-countdown="{{ $round->scheduled_at->toIso8601String() }}"
+                             title="{{ $sbChamp?->name ?? $round->title }}">
 
                             <div class="xcl-sb-up-card__img-wrap">
                                 <img src="{{ $round->image_url ?? $roundPlaceholder }}"
@@ -656,15 +663,18 @@ $sbLeaderboards = [
                                      class="xcl-sb-up-card__img">
                                 <div class="xcl-sb-up-card__img-gradient"></div>
 
+                                {{-- The championship's badge says which championship this is, so the
+                                     title below is only the round and track (no name behind the badge). --}}
                                 @if($round->icon_url)
                                 <div class="xcl-sb-up-card__icon-overlay">
-                                    <img src="{{ $round->icon_url }}" alt="{{ $round->title }}">
+                                    <img src="{{ $round->icon_url }}" alt="{{ $sbChamp?->name ?? $round->title }}">
                                 </div>
                                 @endif
 
                                 <div class="xcl-sb-up-card__title">
-                                    @php $sbChamp = $sbChamps[$round->championship_id] ?? null; @endphp
+                                    @unless($round->icon_url)
                                     {{ $sbChamp?->name ?? $round->title }}
+                                    @endunless
                                     <span class="xcl-sb-champ-round">
                                         {{ $sbChamp?->tagline ? mb_strtoupper($sbChamp->tagline).' · ' : '' }}{{ $round->round_number ? 'ROUND '.$round->round_number.' · ' : '' }}{{ $round->track }}
                                     </span>
@@ -697,10 +707,148 @@ $sbLeaderboards = [
 
             {{-- ═══ TIME TRIALS ════════════════════════════════════════════════ --}}
             <div data-sb-tab-panel="timetrials" style="display:none">
-                <div class="xcl-sb-empty">
-                    <p>TIME TRIALS</p>
-                    <p>Hotlap records coming soon</p>
+                @if(! $sbTimeTrial)
+                <div class="xcl-sb-col xcl-sb-col--full">
+                    <div class="xcl-sb-empty">
+                        <p>NO TIME TRIAL</p>
+                        <p>Next week's Time Trial is coming soon</p>
+                    </div>
+                    <a href="{{ route('time-trials.index') }}#records" class="xcl-sb-next__join-btn">ALL TIME RECORDS</a>
                 </div>
+                @else
+                @php
+                    $ttLive = $sbTimeTrial->status() === 'live';
+                    $ttCountdownTo = $ttLive ? $sbTimeTrial->ends_at : $sbTimeTrial->starts_at;
+                @endphp
+                <div class="xcl-sidebar__grid xcl-sidebar__grid--tt">
+
+                    {{-- ─ THIS WEEK'S TIME TRIAL + SIGN UP ─────────────────────── --}}
+                    <div class="xcl-sb-col">
+                        <div class="xcl-sb-title">
+                            <span>THIS </span><span>WEEK</span>
+                        </div>
+
+                        <div class="xcl-sb-next" data-countdown="{{ $ttCountdownTo->toIso8601String() }}">
+                            <div class="xcl-sb-next__hero">
+                                @if($sbTimeTrial->imageUrl())
+                                    <img src="{{ $sbTimeTrial->imageUrl() }}" alt="{{ $sbTimeTrial->trackName() }}" loading="lazy" class="xcl-sb-next__hero-img">
+                                @else
+                                    <div class="xcl-sb-next__hero-placeholder"></div>
+                                @endif
+                                <div class="xcl-sb-next__hero-gradient"></div>
+
+                                <div class="xcl-sb-countdown xcl-sb-countdown--hero">
+                                    <span class="xcl-sb-countdown__label">{{ $ttLive ? 'CLOSES IN' : 'OPENS IN' }}</span>
+                                    <span class="xcl-sb-countdown__time">
+                                        <span data-cd-d>00</span>D&nbsp;<span data-cd-h>00</span>H&nbsp;<span data-cd-m>00</span>M&nbsp;<span data-cd-s>00</span>S
+                                    </span>
+                                </div>
+
+                                <div class="xcl-sb-lobby">
+                                    <x-icon-helmet />
+                                    <span>{{ $sbTimeTrial->registrations_count }}</span>
+                                </div>
+
+                                <div class="xcl-sb-next__hero-platforms">
+                                    <span class="xcl-sb-next__hero-platform-icon"><i class="fa-brands fa-playstation"></i> PS5</span>
+                                    <span class="xcl-sb-next__hero-platform-icon"><i class="fa-brands fa-xbox"></i> Xbox</span>
+                                </div>
+                            </div>
+
+                            <div class="xcl-sb-next__info">
+                                <div class="xcl-sb-next__badges-row">
+                                    <div class="d-flex align-items-center gap-1 flex-wrap">
+                                        <span class="xcl-sb-badge xcl-sb-badge--game">ACC</span>
+                                        @if($ttLive)
+                                            <span class="xcl-sb-badge xcl-sb-badge--open">LIVE</span>
+                                        @else
+                                            <span class="xcl-sb-badge xcl-sb-badge--closed">UPCOMING</span>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="xcl-sb-next__details">
+                                    <div class="xcl-sb-next__detail-item">
+                                        <span class="xcl-sb-next__detail-label">CAR CLASS</span>
+                                        <span class="xcl-sb-next__detail-value">{{ $sbTimeTrial->classLabel() }}</span>
+                                    </div>
+                                    <div class="xcl-sb-next__detail-item">
+                                        <span class="xcl-sb-next__detail-label">TRACK</span>
+                                        <span class="xcl-sb-next__detail-value">{{ $sbTimeTrial->trackName() }}</span>
+                                    </div>
+                                    <div class="xcl-sb-next__detail-item">
+                                        <span class="xcl-sb-next__detail-label">DRIVERS</span>
+                                        <span class="xcl-sb-next__detail-value">{{ $sbTimeTrial->registrations_count }}</span>
+                                    </div>
+                                </div>
+
+                                @if($sbTtRegistered)
+                                    <a href="{{ route('time-trials.events.show', $sbTimeTrial) }}" class="xcl-sb-next__join-btn xcl-sb-tt__signed-up">
+                                        <i class="fa-solid fa-circle-check"></i> SIGNED UP
+                                    </a>
+                                @elseif(auth()->check() && $sbTimeTrial->isOpenForSignup() && auth()->user()->playerIdFor('acc'))
+                                    <form method="POST" action="{{ route('time-trials.events.register', $sbTimeTrial) }}">
+                                        @csrf
+                                        <button type="submit" class="xcl-sb-next__join-btn xcl-sb-tt__button">SIGN UP</button>
+                                    </form>
+                                @else
+                                    {{-- Guests and drivers without a console ID sort it out on the event page. --}}
+                                    <a href="{{ route('time-trials.events.show', $sbTimeTrial) }}" class="xcl-sb-next__join-btn">SIGN UP</a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ─ STANDINGS (top 10) ──────────────────────────────────── --}}
+                    <div class="xcl-sb-col">
+                        <div class="xcl-sb-title">
+                            <span>STAND</span><span>INGS</span>
+                        </div>
+
+                        @if($sbTtRows->isEmpty())
+                        <div class="xcl-sb-empty">
+                            <p>NO TIMES YET</p>
+                            <p>Sign up and set the first lap</p>
+                        </div>
+                        @else
+                        <table class="xcl-sb-lb-table xcl-sb-tt__table">
+                            <colgroup>
+                                <col style="width:28px">
+                                <col>
+                                <col class="xcl-sb-tt__car-col">
+                                <col style="width:78px">
+                                <col style="width:62px">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>DRIVER</th>
+                                    <th class="xcl-sb-tt__car">CAR</th>
+                                    <th style="text-align:right">LAP</th>
+                                    <th style="text-align:right">GAP</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($sbTtRows as $row)
+                                <tr class="{{ $row['position'] <= 3 ? 'top-3' : '' }}">
+                                    <td class="xcl-lb-pos">{{ $row['position'] }}</td>
+                                    <td class="xcl-sb-tt__driver">{{ $row['lap']->driver_name }}</td>
+                                    <td class="xcl-sb-tt__car">{{ $row['lap']->car?->name ?? 'Car #'.$row['lap']->car_id }}</td>
+                                    <td class="xcl-sb-tt__lap">{{ \App\Models\TimeTrialLap::formatLap($row['lap']->lap_time_ms) }}</td>
+                                    <td class="xcl-sb-tt__gap">{{ \App\Models\TimeTrialLap::formatGap($row['gap_ms']) }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                        @endif
+
+                        <div class="xcl-sb-tt__links">
+                            <a href="{{ route('time-trials.events.show', $sbTimeTrial) }}">FULL STANDINGS</a>
+                            <a href="{{ route('time-trials.index') }}#records">ALL TIME RECORDS</a>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
 
         </div>

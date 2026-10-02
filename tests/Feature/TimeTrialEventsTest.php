@@ -360,6 +360,23 @@ class TimeTrialEventsTest extends TestCase
         $this->get(route('time-trials.index'))->assertOk()->assertSee('Spa Week')->assertSee('All Time Records');
     }
 
+    public function test_dashboard_sidebar_shows_this_weeks_event_and_its_standings(): void
+    {
+        $event = $this->event();
+        $alpha = $this->driver('M1', 'AlphaDriver');
+        $this->eventLap($event, $alpha, 35, 135432);
+        $user = $this->driver('M2', 'Visitor');
+
+        $this->actingAs($user)->get(route('calendar'))
+            ->assertOk()
+            ->assertSee(route('time-trials.events.register', $event), false)
+            ->assertSee('AlphaDriver')
+            ->assertSee('2:15.432');
+
+        $event->drivers()->attach($user);
+        $this->actingAs($user)->get(route('calendar'))->assertOk()->assertSee('SIGNED UP');
+    }
+
     public function test_an_unpublished_event_is_hidden(): void
     {
         $event = $this->event(['is_published' => false]);

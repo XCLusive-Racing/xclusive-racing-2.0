@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 // A weekly Time Trial event. See docs/time-trials/PLAN.md for the full flow.
 #[Fillable([
@@ -88,6 +89,14 @@ class TimeTrialEvent extends Model
     public function trackName(): string
     {
         return TimeTrialLap::trackName($this->track);
+    }
+
+    // The track's stock image from the media library, like championship rounds use.
+    public function imageUrl(): ?string
+    {
+        $path = Race::trackImagePath($this->trackName());
+
+        return $path ? Storage::disk('media')->url($path) : null;
     }
 
     public function displayTitle(): string

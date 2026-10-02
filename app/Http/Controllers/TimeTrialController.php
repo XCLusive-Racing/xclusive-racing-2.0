@@ -160,7 +160,7 @@ class TimeTrialController extends Controller
             'timesToBeat' => $timesToBeat,
             'hasPlayerId' => (bool) $playerId,
             'profiles' => $profiles,
-            'trackImage' => $this->trackImage($event->track),
+            'trackImage' => $event->imageUrl(),
         ]);
     }
 

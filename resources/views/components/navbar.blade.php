@@ -143,7 +143,6 @@
                     <ul class="xcl-dropdown" data-dropdown-menu
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li><a class="xcl-dropdown-item" href="{{ route('drivers.index') }}">LEADERBOARD</a></li>
-                        <li><a class="xcl-dropdown-item" href="{{ route('time-trials.index') }}#records">TIME TRIAL RECORDS</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('results.index') }}">RESULTS</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('reports.index') }}">REPORTS</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('bop.index') }}">BOP</a></li>
@@ -168,7 +167,7 @@
                         style="display:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease">
                         <li class="d-xcl-none"><a class="xcl-dropdown-item" href="{{ route('team') }}">OVERVIEW</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('teams.esports.index') }}">ESPORTS</a></li>
-                        <li><a class="xcl-dropdown-item" href="#">STAFF</a></li>
+                        <li><a class="xcl-dropdown-item" href="{{ route('team.staff') }}">STAFF</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('coaching.index') }}">COACHING</a></li>
                         <li><a class="xcl-dropdown-item" href="{{ route('team.join') }}">JOIN THE TEAM</a></li>
                     </ul>

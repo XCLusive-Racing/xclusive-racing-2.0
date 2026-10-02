@@ -60,6 +60,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::view('/team', 'team.index')->name('team');
+Route::view('/team/staff', 'team.staff')->name('team.staff');
 Route::view('/team/join', 'team.join')->name('team.join');
 Route::post('/team/apply', [TeamApplicationController::class, 'store'])->name('team.apply');
 Route::get('/coaching', [CoachingController::class, 'index'])->name('coaching.index');
