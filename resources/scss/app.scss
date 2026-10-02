@@ -5969,9 +5969,9 @@ table.dataTable thead th {
     // Taller card with the badge in its upper part and the title in the lower part, so a
     // long title always sits under the badge, never behind it.
     .xcl-sb-up-card { margin-bottom: 0; }
-    .xcl-sb-up-card__img-wrap { aspect-ratio: 4 / 3; }
+    .xcl-sb-up-card__img-wrap { aspect-ratio: 1 / 1; }
     .xcl-sb-up-card__icon-overlay { top: 40%; }
-    .xcl-sb-up-card__icon-overlay img { width: 110px; height: 110px; }
+    .xcl-sb-up-card__icon-overlay img { width: 165px; height: 165px; }
 
     .xcl-sb-up-card__title {
         font-size: .9rem;
