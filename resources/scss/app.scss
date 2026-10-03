@@ -7939,3 +7939,62 @@ table.dataTable thead th {
         }
     }
 }
+
+// Event page streamers bar (race/show.blade.php) — up to four supporters' stream links
+// between the hero and the event details; one row on desktop, wrapping on phones.
+.xcl-streamers-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .6rem 1rem;
+    padding: .75rem 1rem;
+    background: #1e0c16;
+    border: 1.5px solid rgba(219,39,119,.22);
+    border-radius: 12px;
+
+    &__label {
+        font-size: .72rem;
+        font-weight: 900;
+        letter-spacing: .08em;
+        color: #f87171;
+        white-space: nowrap;
+
+        i { margin-right: 4px; }
+    }
+
+    &__list {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: .5rem;
+        flex: 1 1 0;
+        min-width: 0;
+
+        @media (max-width: 767px) {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            flex-basis: 100%;
+        }
+    }
+}
+
+.xcl-streamer {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    min-width: 0;
+    padding: .45rem .7rem;
+    border-radius: 8px;
+    font-size: .8rem;
+    font-weight: 700;
+    color: #fff;
+    text-decoration: none;
+    transition: filter .15s ease, transform .15s ease;
+
+    &:hover { color: #fff; filter: brightness(1.15); transform: translateY(-1px); }
+
+    i { font-size: 1rem; flex-shrink: 0; }
+
+    &__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    &--twitch  { background: #9146ff; }
+    &--youtube { background: #ff0000; }
+}

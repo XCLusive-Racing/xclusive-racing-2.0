@@ -64,6 +64,7 @@ Route::view('/team/staff', 'team.staff')->name('team.staff');
 Route::view('/team/join', 'team.join')->name('team.join');
 Route::post('/team/apply', [TeamApplicationController::class, 'store'])->name('team.apply');
 Route::get('/coaching', [CoachingController::class, 'index'])->name('coaching.index');
+Route::view('/memberships', 'memberships')->name('memberships');
 Route::get('/faq', [FaqController::class, 'index'])->name('faq');
 Route::view('/privacy', 'privacy')->name('privacy');
 
@@ -202,6 +203,7 @@ Route::middleware('auth')->group(function () {
     // Event registration
     Route::post('/events/{race}/register', [RaceController::class, 'register'])->name('events.register');
     Route::delete('/events/{race}/unregister', [RaceController::class, 'unregister'])->name('events.unregister');
+    Route::put('/events/{race}/stream', [RaceController::class, 'updateStream'])->name('events.stream');
     Route::post('/events/{race}/register-team', [RaceController::class, 'registerTeam'])->name('events.register-team');
     Route::delete('/events/{race}/unregister-team/{entry}', [RaceController::class, 'unregisterTeam'])->name('events.unregister-team');
 

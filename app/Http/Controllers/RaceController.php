@@ -419,6 +419,35 @@ class RaceController extends Controller
         return back()->with('success', 'You have been unregistered from '.$race->title.'.');
     }
 
+    // A supporter's own Twitch/YouTube link for a race they're registered for, shown in
+    // the event page's streamers bar. An empty link removes it.
+    public function updateStream(Request $request, Race $race)
+    {
+        if (! auth()->user()->is_supporter) {
+            return back()->with('error', 'Sharing your stream is a supporter feature.');
+        }
+
+        $registration = RaceRegistration::where('race_id', $race->id)
+            ->where('user_id', auth()->id())
+            ->first();
+
+        if (! $registration) {
+            return back()->with('error', 'You are not registered for this race.');
+        }
+
+        $data = $request->validate([
+            'stream_url' => ['nullable', 'string', 'max:255', function ($attribute, $value, $fail) {
+                if (! RaceRegistration::streamPlatformOf($value)) {
+                    $fail('Use a Twitch or YouTube link (https://twitch.tv/... or https://youtube.com/...).');
+                }
+            }],
+        ]);
+
+        $registration->update(['stream_url' => $data['stream_url'] ?? null]);
+
+        return back()->with('success', $registration->stream_url ? 'Your stream is now shown on this event.' : 'Your stream link has been removed.');
+    }
+
     // A cancelled/soft-deleted registration can free up to two independent slots at
     // once: a class-level one (if that class has its own cap) and a race-wide one
     // (the combined cap across every class, when set) -- see
