@@ -28,7 +28,9 @@ class DiscordRoleService
 
     /**
      * Sync a user's Discord rank role to match their highest XCL rating rank
-     * (see User::highestRank()). No-op if the user has no linked Discord
+     * (see User::highestRank()), and their membership plan roles (plan_roles,
+     * User::hasTier()) — a lapsed plan's roles come off again at the next
+     * xcl:discord:sync-ranks sweep. No-op if the user has no linked Discord
      * account, isn't in the configured guild (anymore), or the bot isn't
      * configured yet — never throws, since this must never block the caller
      * (rating calculation, account linking, admin edits).
@@ -40,15 +42,28 @@ class DiscordRoleService
             return;
         }
 
-        $guildId   = config('services.discord.guild_id');
+        $guildId = config('services.discord.guild_id');
         $rankRoles = array_filter(config('services.discord.rank_roles', []));
+        $planRoles = array_filter(config('services.discord.plan_roles', []));
 
-        if (! $guildId || ! $rankRoles) {
+        if (! $guildId || (! $rankRoles && ! $planRoles)) {
             return;
         }
 
+        // Role ID => should the user have it. Rank: exactly one, their highest rank.
+        // Membership plan: every plan up to and including theirs (User::hasTier()).
+        $wanted = [];
         $targetRoleId = $rankRoles[$user->highestRank()['slug']] ?? null;
-        if (! $targetRoleId) {
+        if ($targetRoleId) {
+            foreach ($rankRoles as $roleId) {
+                $wanted[$roleId] = $roleId === $targetRoleId;
+            }
+        }
+        foreach ($planRoles as $plan => $roleId) {
+            $wanted[$roleId] = $user->hasTier($plan);
+        }
+
+        if (! $wanted) {
             return;
         }
 
@@ -57,8 +72,9 @@ class DiscordRoleService
         } catch (ConnectionException $e) {
             Log::warning('Discord rank sync: could not reach Discord', [
                 'user_id' => $user->id,
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
+
             return;
         }
 
@@ -69,19 +85,21 @@ class DiscordRoleService
         if (! $member->successful()) {
             Log::warning('Discord rank sync: failed to fetch guild member', [
                 'user_id' => $user->id,
-                'status'  => $member->status(),
+                'status' => $member->status(),
             ]);
+
             return;
         }
 
         $currentRoles = $member->json('roles', []);
 
-        foreach ($rankRoles as $roleId) {
+        foreach ($wanted as $roleId => $shouldHave) {
+            $roleId = (string) $roleId;
             $hasRole = in_array($roleId, $currentRoles, true);
 
-            if ($roleId === $targetRoleId && ! $hasRole) {
+            if ($shouldHave && ! $hasRole) {
                 $this->modifyRole($guildId, $discord->provider_id, $roleId, add: true);
-            } elseif ($roleId !== $targetRoleId && $hasRole) {
+            } elseif (! $shouldHave && $hasRole) {
                 $this->modifyRole($guildId, $discord->provider_id, $roleId, add: false);
             }
         }
@@ -106,10 +124,11 @@ class DiscordRoleService
             $member = $this->http()->get("/guilds/{$guildId}/members/{$discordUserId}");
         } catch (ConnectionException $e) {
             Log::warning('Discord membership check: could not reach Discord', [
-                'guild_id'         => $guildId,
-                'discord_user_id'  => $discordUserId,
-                'error'            => $e->getMessage(),
+                'guild_id' => $guildId,
+                'discord_user_id' => $discordUserId,
+                'error' => $e->getMessage(),
             ]);
+
             return null;
         }
 
@@ -120,8 +139,9 @@ class DiscordRoleService
         if (! $member->successful()) {
             Log::warning('Discord membership check: unexpected response', [
                 'guild_id' => $guildId,
-                'status'   => $member->status(),
+                'status' => $member->status(),
             ]);
+
             return null;
         }
 
@@ -166,9 +186,10 @@ class DiscordRoleService
             } catch (ConnectionException $e) {
                 Log::warning('Discord rank sync: could not reach Discord', [
                     'member_id' => $memberId,
-                    'role_id'   => $roleId,
-                    'error'     => $e->getMessage(),
+                    'role_id' => $roleId,
+                    'error' => $e->getMessage(),
                 ]);
+
                 return;
             }
 
@@ -178,15 +199,17 @@ class DiscordRoleService
 
             if ($res->status() === 429 && $attempt < 3) {
                 usleep((int) ((float) ($res->json('retry_after') ?? 1) * 1_000_000) + 100_000);
+
                 continue;
             }
 
             Log::warning('Discord rank sync: role update failed', [
                 'member_id' => $memberId,
-                'role_id'   => $roleId,
-                'add'       => $add,
-                'status'    => $res->status(),
+                'role_id' => $roleId,
+                'add' => $add,
+                'status' => $res->status(),
             ]);
+
             return;
         }
     }

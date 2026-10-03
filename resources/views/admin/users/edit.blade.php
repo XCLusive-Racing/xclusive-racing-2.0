@@ -162,7 +162,7 @@
                         </label>
                     </div>
                     <div class="form-text" style="font-size:.72rem">
-                        Paid supporter. XCL staff roles (admin panel) get the badge automatically while they hold the role{{ $user->isStaffSupporter() ? ' — this user has one' : '' }}.
+                        Free supporter, set by hand. Paid memberships (Mollie) and XCL staff roles get the badge automatically{{ $user->hasPaidMembership() ? ' — this user has a paid membership until '.$user->membership->paid_until->format('j M Y') : ($user->isStaffSupporter() ? ' — this user has a staff role' : '') }}.
                     </div>
                 </div>
                 <div class="col-sm-6">

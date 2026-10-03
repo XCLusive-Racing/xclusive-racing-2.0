@@ -1,5 +1,11 @@
 <?php
 
+use App\Http\Middleware\EnsurePasswordIsSet;
+use App\Http\Middleware\HasRole;
+use App\Http\Middleware\IsAdmin;
+use App\Http\Middleware\IsSuperAdmin;
+use App\Http\Middleware\LeagueAccess;
+use App\Http\Middleware\UpdateLastSeen;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,15 +21,18 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         $middleware->alias([
-            'admin'             => \App\Http\Middleware\IsAdmin::class,
-            'superadmin'        => \App\Http\Middleware\IsSuperAdmin::class,
-            'role'              => \App\Http\Middleware\HasRole::class,
-            'password.setup'    => \App\Http\Middleware\EnsurePasswordIsSet::class,
-            'league.access'     => \App\Http\Middleware\LeagueAccess::class,
+            'admin' => IsAdmin::class,
+            'superadmin' => IsSuperAdmin::class,
+            'role' => HasRole::class,
+            'password.setup' => EnsurePasswordIsSet::class,
+            'league.access' => LeagueAccess::class,
         ]);
 
-        $middleware->appendToGroup('web', \App\Http\Middleware\EnsurePasswordIsSet::class);
-        $middleware->appendToGroup('web', \App\Http\Middleware\UpdateLastSeen::class);
+        // Mollie posts payment updates here without a CSRF token.
+        $middleware->validateCsrfTokens(except: ['webhooks/mollie']);
+
+        $middleware->appendToGroup('web', EnsurePasswordIsSet::class);
+        $middleware->appendToGroup('web', UpdateLastSeen::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -20,3 +20,5 @@ Schedule::command('championships:push-practice')->dailyAt('00:00')->timezone('Eu
 // from the hourly practice sessions, events finalized once they end.
 Schedule::command('time-trials:push-due')->everyFiveMinutes()->onOneServer();
 Schedule::command('time-trials:collect-results')->everyTenMinutes()->onOneServer();
+// XCL Supporter memberships: recurring Mollie payments a webhook missed.
+Schedule::command('memberships:sync')->hourly()->onOneServer();

@@ -125,7 +125,7 @@ class PracticeServerConfigService
     public function entryList(Race $race): PracticeEntryListResult
     {
         $registrations = $race->registrations()
-            ->with(['user.roles', 'user.ownedRacingTeams', 'user.racingTeams', 'user.connectedAccounts', 'teamEntry.team'])
+            ->with(['user.roles', 'user.membership', 'user.ownedRacingTeams', 'user.racingTeams', 'user.connectedAccounts', 'teamEntry.team'])
             ->orderBy('team_entry_id')
             ->orderBy('created_at')
             ->get();

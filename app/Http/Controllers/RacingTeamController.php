@@ -90,6 +90,11 @@ class RacingTeamController extends Controller
             return back()->withErrors(['team' => $user->displayName().' is already a member.']);
         }
 
+        $alreadyInvited = $team->invitations()->where('user_id', $user->id)->exists();
+        if (! $alreadyInvited && $team->freeSeats() === 0) {
+            return back()->withErrors(['team' => 'Your team is full ('.$team->seatLimit().' drivers). A membership plan gives your team more seats.']);
+        }
+
         $invitation = RacingTeamInvitation::firstOrCreate([
             'racing_team_id' => $team->id,
             'user_id' => $user->id,
@@ -110,6 +115,12 @@ class RacingTeamController extends Controller
     public function acceptInvite(RacingTeamInvitation $invitation)
     {
         abort_unless(Auth::id() === $invitation->user_id, 403);
+
+        // The owner's plan may have run out since the invite was sent.
+        $limit = $invitation->team->seatLimit();
+        if ($limit !== null && $invitation->team->driverCount() >= $limit) {
+            return back()->withErrors(['team' => $invitation->team->name.' is full ('.$limit.' drivers), so you can\'t join right now.']);
+        }
 
         $invitation->team->members()->syncWithoutDetaching([$invitation->user_id]);
         $invitation->delete();

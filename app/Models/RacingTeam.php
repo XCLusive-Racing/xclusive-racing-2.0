@@ -58,4 +58,26 @@ class RacingTeam extends Model
     {
         return $this->owner_id === $user->id || $this->isManager($user);
     }
+
+    // Seat limit: the owner's membership plan sets how many drivers the team can have,
+    // owner included (config/memberships.php — 6 without a plan). null = unlimited. A team
+    // that's already over its limit (a plan ran out) keeps everyone, it just can't add more.
+    public function seatLimit(): ?int
+    {
+        return $this->owner->teamSeatLimit();
+    }
+
+    // The owner isn't a member row of their own team.
+    public function driverCount(): int
+    {
+        return 1 + $this->members()->where('users.id', '!=', $this->owner_id)->count();
+    }
+
+    // Seats free for new invites — pending invitations already hold a seat each.
+    public function freeSeats(): ?int
+    {
+        $limit = $this->seatLimit();
+
+        return $limit === null ? null : max(0, $limit - $this->driverCount() - $this->invitations()->count());
+    }
 }

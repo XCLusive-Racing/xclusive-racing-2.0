@@ -89,7 +89,7 @@ class RaceController extends Controller
     public function show(Race $race)
     {
         $race->load([
-            'raceClasses', 'registrations.user.roles', 'registrations.raceClass', 'registrations.teamEntry.team',
+            'raceClasses', 'registrations.user.roles', 'registrations.user.membership', 'registrations.raceClass', 'registrations.teamEntry.team',
             'raceResults.user', 'eventFormat', 'teamEntries',
             // Same tenant-scope bypass as ftpServer above — a guest viewing this page
             // must still see the practice server's name regardless of league.
@@ -425,8 +425,8 @@ class RaceController extends Controller
     public function updateStream(Request $request, Race $race)
     {
         $user = auth()->user();
-        if (! $user->isSupporter()) {
-            return back()->with('error', 'Sharing your stream is a supporter feature.');
+        if (! $user->canShareStream()) {
+            return back()->with('error', 'Sharing your stream is an XCLusive Member feature.');
         }
 
         $registration = RaceRegistration::where('race_id', $race->id)
@@ -443,11 +443,11 @@ class RaceController extends Controller
             return back()->with('success', 'Your stream has been removed from this event.');
         }
 
-        if (! $user->supporterStreamUrl()) {
+        if (! $user->memberStreamUrl()) {
             return back()->with('error', 'Add your stream link to your profile first.');
         }
 
-        $registration->update(['stream_url' => $user->supporterStreamUrl()]);
+        $registration->update(['stream_url' => $user->memberStreamUrl()]);
 
         return back()->with('success', 'Your stream is now shown on this event.');
     }

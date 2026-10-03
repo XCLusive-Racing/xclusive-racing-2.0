@@ -70,9 +70,30 @@
 
                 {{-- Members --}}
                 <h3 class="fw-black text-uppercase fst-italic text-dark mb-1" style="font-size:.85rem;letter-spacing:.05em">Members</h3>
-                <p class="text-secondary mb-3" style="font-size:.78rem">
+                <p class="text-secondary mb-2" style="font-size:.78rem">
                     A manager can sign up and enter the team for events and championships, same as you.
                 </p>
+
+                {{-- Seats (RacingTeam::seatLimit() — set by the owner's membership plan). --}}
+                @php
+                    $seatLimit = $myTeam->seatLimit();
+                    $driverCount = $myTeam->driverCount();
+                    $freeSeats = $myTeam->freeSeats();
+                @endphp
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3" style="font-size:.78rem">
+                    <span class="badge fw-bold" style="background:#7c3aed22;color:#7c3aed;font-size:.72rem">
+                        <i class="fa-solid fa-users me-1"></i>
+                        {{ $driverCount }} / {{ $seatLimit ?? '∞' }} drivers
+                    </span>
+                    @if($myTeam->invitations->isNotEmpty())
+                    <span class="text-secondary">{{ $myTeam->invitations->count() }} pending {{ \Illuminate\Support\Str::plural('invite', $myTeam->invitations->count()) }}</span>
+                    @endif
+                    @if($seatLimit !== null && $freeSeats === 0)
+                    <span style="color:#b45309">Your team is full. <a href="{{ route('memberships') }}" class="fw-bold" style="color:#7c3aed">Get more seats with a membership</a></span>
+                    @elseif($seatLimit !== null && ! auth()->user()->hasTier('vip'))
+                    <a href="{{ route('memberships') }}" style="color:#7c3aed">More seats with a membership</a>
+                    @endif
+                </div>
 
                 @if($myTeam->members->isEmpty() && $myTeam->invitations->isEmpty())
                 <p class="text-secondary mb-3" style="font-size:.82rem">No members yet. Invite your co-driver below.</p>

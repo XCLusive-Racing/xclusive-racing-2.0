@@ -91,7 +91,7 @@ $sbBuildGainBoard = function (\Carbon\Carbon $start, \Carbon\Carbon $end): array
             ->limit(40)
             ->get();
 
-        $gainUsers = User::with('roles')->whereIn('id', $gains->pluck('user_id'))->get()->keyBy('id');
+        $gainUsers = User::with(['roles', 'membership'])->whereIn('id', $gains->pluck('user_id'))->get()->keyBy('id');
 
         $board[$game] = $gains->values()
             ->filter(fn($row) => $gainUsers->has($row->user_id))

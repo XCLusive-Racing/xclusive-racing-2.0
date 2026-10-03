@@ -42,6 +42,13 @@ return [
             'bronze' => env('DISCORD_ROLE_RANK_BRONZE'),
             'rookie' => env('DISCORD_ROLE_RANK_ROOKIE'),
         ],
+        // Membership plan roles (config/memberships.php), cumulative: a Member also gets the
+        // Supporter role, a VIP all three. Synced by DiscordRoleService::syncUser().
+        'plan_roles' => [
+            'supporter' => env('DISCORD_ROLE_PLAN_SUPPORTER'),
+            'member' => env('DISCORD_ROLE_PLAN_MEMBER'),
+            'vip' => env('DISCORD_ROLE_PLAN_VIP'),
+        ],
     ],
 
     'steam' => [
@@ -66,6 +73,10 @@ return [
         // While the lookup is down, PlayStation sign-ups enter their own Account ID.
         // Set PSN_MANUAL_ACCOUNT_ID=false once the lookup works again.
         'manual_account_id' => env('PSN_MANUAL_ACCOUNT_ID', true),
+    ],
+
+    'mollie' => [
+        'key' => env('MOLLIE_KEY'),
     ],
 
 ];

@@ -68,10 +68,13 @@ class ProfileController extends Controller
             }],
         ]);
 
-        // Supporter perks (User::displayTeam()) — a non-supporter's form has them disabled,
-        // and a hand-made request can't set them either.
+        // Plan perks — Team / Quote needs the Supporter plan, the stream link the Member plan.
+        // The form has them disabled otherwise, and a hand-made request can't set them either.
         if (! $user->isSupporter()) {
-            unset($data['team'], $data['stream_url']);
+            unset($data['team']);
+        }
+        if (! $user->canShareStream()) {
+            unset($data['stream_url']);
         }
 
         if ($request->hasFile('avatar')) {

@@ -103,18 +103,37 @@
                                     <option value="1" @selected(old('uses_12_hour_clock', $user->uses_12_hour_clock))>12-hour (8:00 PM)</option>
                                 </select>
                             </div>
-                            {{-- Supporter perks (User::displayTeam(), supporterStreamUrl()) — locked
-                                 for everyone else, with a link to the Memberships page. --}}
-                            @php $isSupporter = $user->isSupporter(); @endphp
-                            @unless($isSupporter)
+                            {{-- Plan perks (User::displayTeam() — Supporter, memberStreamUrl() — Member)
+                                 — locked for everyone else, with a link to the Memberships page. --}}
+                            @php
+                                $isSupporter = $user->isSupporter();
+                                $canStream = $user->canShareStream();
+                            @endphp
+                            @unless($canStream)
                             <div class="col-12">
                                 <div class="d-flex align-items-center gap-2 rounded-2 px-3 py-2" style="background:#f5f3ff;border:1px solid #ddd6fe;font-size:.8rem;color:#5b21b6">
                                     <i class="fa-solid fa-lock"></i>
-                                    <span>Team / Quote and Stream Link are supporter perks.
-                                        <a href="{{ route('memberships') }}" class="fw-bold" style="color:#7c3aed">Become a supporter</a> to unlock them.</span>
+                                    <span>
+                                        @if($isSupporter)
+                                        Stream Link is part of the XCLusive Member plan.
+                                        @else
+                                        Team / Quote comes with the XCL Supporter plan, Stream Link with XCLusive Member.
+                                        @endif
+                                        <a href="{{ route('memberships') }}" class="fw-bold" style="color:#7c3aed">See the plans</a>
+                                    </span>
                                 </div>
                             </div>
                             @endunless
+                            @if($user->hasPaidMembership())
+                            <div class="col-12">
+                                <div class="d-flex flex-wrap align-items-center gap-2 rounded-2 px-3 py-2" style="background:#fffbeb;border:1px solid #fde68a;font-size:.8rem;color:#92400e">
+                                    <i class="fa-solid fa-star" style="color:#f59e0b"></i>
+                                    <span>{{ $user->membership->planName() }} —
+                                        {{ $user->membership->isRenewing() ? 'renews on' : 'active until' }} {{ $user->membership->paid_until->format('j M Y') }}.</span>
+                                    <a href="{{ route('memberships') }}" class="fw-bold ms-auto" style="color:#b45309">Manage membership</a>
+                                </div>
+                            </div>
+                            @endif
                             <div class="col-sm-6">
                                 <label class="form-label fw-bold text-dark" style="font-size:.82rem">
                                     Team / Quote
@@ -132,14 +151,14 @@
                             <div class="col-sm-6">
                                 <label class="form-label fw-bold text-dark" style="font-size:.82rem">
                                     Stream Link
-                                    @unless($isSupporter)<i class="fa-solid fa-lock ms-1 text-secondary" style="font-size:.7rem"></i>@endunless
+                                    @unless($canStream)<i class="fa-solid fa-lock ms-1 text-secondary" style="font-size:.7rem"></i>@endunless
                                     <span class="ms-1 fw-normal text-secondary" style="font-size:.75rem">Twitch or YouTube</span>
                                 </label>
                                 <input type="url" name="stream_url" value="{{ old('stream_url', $user->stream_url) }}"
                                        class="form-control @error('stream_url') is-invalid @enderror" placeholder="https://twitch.tv/yourname"
-                                       maxlength="255" @disabled(! $isSupporter)>
+                                       maxlength="255" @disabled(! $canStream)>
                                 <div class="form-text" style="font-size:.72rem">
-                                    Add it to an event's Watch Live bar with the + Add my stream button on that event.
+                                    Add it to an event's Drivers Streaming bar with the + Add my stream button on that event.
                                 </div>
                                 @error('stream_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>

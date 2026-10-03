@@ -26,7 +26,7 @@ class UserController extends Controller
 
     public function data(Request $request)
     {
-        $query = User::query()->with('roles')
+        $query = User::query()->with(['roles', 'membership'])
             ->select(['id', 'name', 'email', 'banner', 'platform', 'platform_id', 'team', 'is_supporter', 'is_suspended', 'created_at']);
 
         if ($request->boolean('roles_only')) {
@@ -110,7 +110,9 @@ class UserController extends Controller
         $status = $user->is_suspended
             ? '<span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:4px;background:#fee2e2;color:#dc2626">Suspended</span>'
             : ($user->isSupporter()
-                ? '<span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:4px;background:#fef3c7;color:#d97706">★ Supporter'.($user->is_supporter ? '' : ' (staff)').'</span>'
+                ? '<span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:4px;background:#fef3c7;color:#d97706">★ '
+                    .e(config('memberships.plans.'.$user->membershipTier().'.name'))
+                    .($user->hasPaidMembership() ? '' : ($user->is_supporter ? ' (free)' : ' (staff)')).'</span>'
                 : '<span class="text-secondary">—</span>');
 
         $joined = '<span style="font-size:.8rem;color:#6b7280">'.e($user->created_at->format('d M Y')).'</span>';

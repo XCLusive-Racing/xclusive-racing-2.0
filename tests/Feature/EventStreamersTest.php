@@ -2,18 +2,24 @@
 
 namespace Tests\Feature;
 
+use App\Models\Membership;
 use App\Models\Race;
 use App\Models\RaceRegistration;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-// The event page's Watch Live bar: a registered supporter with a stream link on their
-// profile adds it to a race with one button (nothing is added automatically); the bar
-// shows up to eight and is hidden without any.
+// The event page's Drivers Streaming bar: a registered XCLusive Member (or higher) with a
+// stream link on their profile adds it to a race with one button (nothing is added
+// automatically); the bar shows up to eight and is hidden without any.
 class EventStreamersTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function memberPlan(User $user, string $plan = 'member'): void
+    {
+        Membership::create(['user_id' => $user->id, 'plan' => $plan, 'status' => 'active', 'mode' => 'test', 'paid_until' => now()->addMonth()]);
+    }
 
     private function race(): Race
     {
@@ -23,9 +29,12 @@ class EventStreamersTest extends TestCase
         ]);
     }
 
-    private function registered(Race $race, bool $supporter = true, ?string $profileStream = 'https://twitch.tv/xcl', ?string $raceStream = null): User
+    private function registered(Race $race, bool $member = true, ?string $profileStream = 'https://twitch.tv/xcl', ?string $raceStream = null): User
     {
-        $user = User::factory()->create(['is_supporter' => $supporter, 'stream_url' => $profileStream]);
+        $user = User::factory()->create(['stream_url' => $profileStream]);
+        if ($member) {
+            $this->memberPlan($user);
+        }
         RaceRegistration::create(['race_id' => $race->id, 'user_id' => $user->id, 'stream_url' => $raceStream]);
 
         return $user;
@@ -36,7 +45,7 @@ class EventStreamersTest extends TestCase
         return RaceRegistration::where('user_id', $user->id)->value('stream_url');
     }
 
-    public function test_a_supporter_adds_and_removes_their_profile_stream_with_the_button(): void
+    public function test_a_member_adds_and_removes_their_profile_stream_with_the_button(): void
     {
         $race = $this->race();
         $user = $this->registered($race);
@@ -54,7 +63,7 @@ class EventStreamersTest extends TestCase
         $this->assertNull($this->raceStream($user));
     }
 
-    public function test_a_supporter_without_a_profile_link_is_sent_to_their_profile_first(): void
+    public function test_a_member_without_a_profile_link_is_sent_to_their_profile_first(): void
     {
         $race = $this->race();
         $user = $this->registered($race, profileStream: null);
@@ -66,15 +75,15 @@ class EventStreamersTest extends TestCase
         $this->assertNull($this->raceStream($user));
     }
 
-    public function test_a_non_supporter_sees_the_supporter_prompt_at_the_bottom_and_cannot_add(): void
+    public function test_a_non_member_sees_the_plans_prompt_at_the_bottom_and_cannot_add(): void
     {
         $race = $this->race();
-        $user = $this->registered($race, supporter: false);
+        $user = $this->registered($race, member: false);
 
         $html = $this->actingAs($user)->get(route('events.show', $race))->assertOk()
-            ->assertSee('Become a supporter')->assertDontSee('+ Add my stream')->getContent();
+            ->assertSee('See the plans')->assertDontSee('+ Add my stream')->getContent();
         // Under the UNREGISTER button, at the bottom of the Registration card.
-        $this->assertGreaterThan(strpos($html, '>UNREGISTER<'), strpos($html, 'Become a supporter'));
+        $this->assertGreaterThan(strpos($html, '>UNREGISTER<'), strpos($html, 'See the plans'));
 
         $this->actingAs($user)->put(route('events.stream', $race));
         $this->assertNull($this->raceStream($user));
@@ -83,13 +92,14 @@ class EventStreamersTest extends TestCase
     public function test_unregistered_users_cannot_add_a_stream(): void
     {
         $race = $this->race();
-        $user = User::factory()->create(['is_supporter' => true, 'stream_url' => 'https://twitch.tv/xcl']);
+        $user = User::factory()->create(['stream_url' => 'https://twitch.tv/xcl']);
+        $this->memberPlan($user);
 
         $this->actingAs($user)->put(route('events.stream', $race))->assertSessionHas('error');
         $this->assertSame(0, RaceRegistration::count());
     }
 
-    public function test_the_bar_shows_at_most_eight_streamers_and_drops_lapsed_supporters(): void
+    public function test_the_bar_shows_at_most_eight_streamers_and_drops_lapsed_members(): void
     {
         $race = $this->race();
         $this->registered($race, raceStream: null);
@@ -99,11 +109,23 @@ class EventStreamersTest extends TestCase
         foreach (range(1, 9) as $i) {
             $this->registered($race, raceStream: $i % 2 ? "https://twitch.tv/driver{$i}" : "https://youtu.be/driver{$i}");
         }
-        $this->registered($race, supporter: false, raceStream: 'https://twitch.tv/lapsed');
+        $this->registered($race, member: false, raceStream: 'https://twitch.tv/lapsed');
 
         $html = $this->get(route('events.show', $race))->assertOk()->assertSee('DRIVERS STREAMING:')->getContent();
         $this->assertSame(8, substr_count($html, 'class="xcl-streamer xcl-streamer--'));
         $this->assertStringContainsString('xcl-streamer--youtube', $html);
         $this->assertStringNotContainsString('lapsed', $html);
+    }
+
+    public function test_a_supporter_plan_alone_does_not_unlock_streaming(): void
+    {
+        $race = $this->race();
+        $user = $this->registered($race, member: false);
+        $this->memberPlan($user, 'supporter');
+
+        $this->actingAs($user)->get(route('events.show', $race))->assertOk()
+            ->assertSee('See the plans')->assertDontSee('+ Add my stream');
+        $this->actingAs($user)->put(route('events.stream', $race))->assertSessionHas('error');
+        $this->assertNull($this->raceStream($user));
     }
 }

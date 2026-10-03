@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Membership;
 use App\Models\Race;
 use App\Models\RaceRegistration;
 use App\Models\RaceResult;
@@ -21,9 +22,23 @@ class ProfileTeamQuoteTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_a_supporter_can_set_their_team_quote_and_stream_link(): void
+    // Team / Quote comes with the Supporter plan; the stream link needs XCLusive Member.
+    public function test_a_supporter_can_set_their_team_quote_but_not_a_stream_link(): void
     {
         $user = User::factory()->create(['is_supporter' => true, 'team' => null]);
+
+        $this->actingAs($user)
+            ->put(route('profile.update'), ['name' => $user->name, 'team' => 'Night Owls RT', 'stream_url' => 'https://twitch.tv/nightowls'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('Night Owls RT', $user->fresh()->team);
+        $this->assertNull($user->fresh()->stream_url);
+    }
+
+    public function test_a_member_can_set_their_stream_link(): void
+    {
+        $user = User::factory()->create();
+        Membership::create(['user_id' => $user->id, 'plan' => 'member', 'status' => 'active', 'mode' => 'test', 'paid_until' => now()->addMonth()]);
 
         $this->actingAs($user)
             ->put(route('profile.update'), ['name' => $user->name, 'team' => 'Night Owls RT', 'stream_url' => 'https://twitch.tv/nightowls'])
@@ -37,7 +52,7 @@ class ProfileTeamQuoteTest extends TestCase
     {
         $user = User::factory()->create(['is_supporter' => false, 'team' => null]);
 
-        $this->actingAs($user)->get(route('profile.edit'))->assertOk()->assertSee('Become a supporter');
+        $this->actingAs($user)->get(route('profile.edit'))->assertOk()->assertSee('See the plans');
 
         $this->actingAs($user)
             ->put(route('profile.update'), ['name' => $user->name, 'team' => 'Night Owls RT', 'stream_url' => 'https://twitch.tv/nightowls'])
@@ -49,7 +64,8 @@ class ProfileTeamQuoteTest extends TestCase
 
     public function test_the_profile_stream_link_must_be_twitch_or_youtube(): void
     {
-        $user = User::factory()->create(['is_supporter' => true]);
+        $user = User::factory()->create();
+        Membership::create(['user_id' => $user->id, 'plan' => 'member', 'status' => 'active', 'mode' => 'test', 'paid_until' => now()->addMonth()]);
 
         $this->actingAs($user)
             ->put(route('profile.update'), ['name' => $user->name, 'stream_url' => 'https://example.com/live'])

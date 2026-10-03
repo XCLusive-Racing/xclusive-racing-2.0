@@ -33,13 +33,13 @@
         </a>
         @endif
         @if($lastEvent)
-        <p class="xcl-tt__muted small mb-4">
+        <p class="xcl-tt__page-note small mb-4">
             Last week: <a href="{{ route('time-trials.events.show', $lastEvent) }}" class="xcl-tt__link">{{ $lastEvent->displayTitle() }} results</a>
         </p>
         @endif
 
         <h2 id="records" class="xcl-tt__section-title">All Time Records</h2>
-        <p class="xcl-tt__muted mb-3">One row per driver per car. Every counting lap from a weekly Time Trial is added when the week ends.</p>
+        <p class="xcl-tt__page-note mb-3">One row per driver per car. Every counting lap from a weekly Time Trial is added when the week ends.</p>
 
         @include('time-trials._boards', ['url' => fn ($key) => route('time-trials.index', ['platform' => $key]) . '#records'])
 

@@ -7513,13 +7513,16 @@ table.dataTable thead th {
 // patch columns collapse into sub-lines under the driver and lap time cells,
 // so the table fits a phone without shrinking any text.
 .xcl-tt {
-    &__lead, &__muted { color: #9ca3af; }
+    &__muted { color: #9ca3af; }
     &__lead { font-size: .95rem; }
+    // Text straight on the light page background (not inside a dark panel) — the
+    // panels' light gray (#9ca3af) is unreadable on it.
+    &__lead, &__page-note { color: #4b5563; }
 
     &__back {
         display: inline-block;
         margin-bottom: 1rem;
-        color: #9ca3af;
+        color: #4b5563;
         font-size: .78rem;
         font-weight: 700;
         letter-spacing: .04em;
@@ -7758,10 +7761,14 @@ table.dataTable thead th {
         border: 1px solid #1f2937;
         border-left: 4px solid $primary;
         border-radius: 12px;
-        background: linear-gradient(90deg, rgba($primary, .22), #111827 60%);
+        // Opaque dark base under the purple tint: a see-through tint on the light page
+        // came out pale lavender, and the white title/gray text on it was unreadable.
+        background: linear-gradient(90deg, rgba($primary, .35), rgba($primary, 0) 60%), #111827;
         text-decoration: none;
         transition: border-color .2s;
         &:hover { border-color: #a855f7; }
+
+        .xcl-tt__muted { color: #d1d5db; }
     }
 
     &__weekly-title, &__section-title {
@@ -7772,7 +7779,8 @@ table.dataTable thead th {
         text-transform: uppercase;
     }
     &__weekly-title { font-size: clamp(1.2rem, 2.4vw, 1.6rem); }
-    &__section-title { font-size: 1.15rem; margin-top: 1rem; scroll-margin-top: calc(var(--xcl-header-h) + 1rem); }
+    // On the light page itself, not a dark panel.
+    &__section-title { color: #111827; font-size: 1.15rem; margin-top: 1rem; scroll-margin-top: calc(var(--xcl-header-h) + 1rem); }
 
     &__link {
         color: #c084fc;
@@ -8038,3 +8046,144 @@ table.dataTable thead th {
         &:hover { color: #fff; }
     }
 }
+
+// Memberships page plan card (memberships.blade.php).
+.xcl-plan {
+    display: flex;
+    flex-direction: column;
+    background: #111827;
+    border: 1.5px solid rgba(168,85,247,.35);
+    border-radius: 16px;
+    overflow: hidden;
+    color: #e5e7eb;
+
+    &__head {
+        padding: 1.5rem 1.75rem 1.25rem;
+        background: linear-gradient(135deg, rgba(124,58,237,.45), rgba(219,39,119,.25));
+    }
+
+    &__badge {
+        display: inline-block;
+        padding: .2rem .7rem;
+        border-radius: 20px;
+        background: #fbbf24;
+        color: #111827;
+        font-size: .72rem;
+        font-weight: 900;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+
+    &__price {
+        margin: .6rem 0 .35rem;
+        font-size: 2.6rem;
+        font-weight: 900;
+        font-style: italic;
+        line-height: 1;
+        color: #fff;
+
+        span { font-size: 1rem; font-weight: 700; font-style: normal; color: #d1d5db; margin-left: .35rem; }
+    }
+
+    &__sub { font-size: .8rem; color: #d1d5db; }
+
+    &__perks {
+        list-style: none;
+        margin: 0;
+        padding: 1.25rem 1.75rem .5rem;
+
+        li {
+            display: flex;
+            gap: .85rem;
+            margin-bottom: 1rem;
+
+            > i { width: 1.25rem; margin-top: .2rem; color: #c084fc; text-align: center; flex-shrink: 0; }
+            strong { display: block; color: #fff; font-size: .92rem; }
+            span { font-size: .8rem; color: #9ca3af; }
+        }
+    }
+
+    &__action { padding: 0 1.75rem 1.75rem; }
+
+    &__btn {
+        display: block;
+        width: 100%;
+        padding: .75rem 1rem;
+        border: 0;
+        border-radius: 10px;
+        background: #7c3aed;
+        color: #fff;
+        font-weight: 900;
+        font-size: .9rem;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        text-align: center;
+        text-decoration: none;
+        transition: background .2s;
+
+        &:hover { background: #6d28d9; color: #fff; }
+
+        &--ghost {
+            background: transparent;
+            border: 1.5px solid #4b5563;
+            color: #d1d5db;
+
+            &:hover { background: #1f2937; color: #fff; }
+        }
+    }
+
+    &__status {
+        font-size: .85rem;
+        color: #d1d5db;
+        margin-bottom: .85rem;
+
+        &--active { color: #4ade80; }
+    }
+
+    &__fine { margin-top: .6rem; font-size: .72rem; color: #9ca3af; text-align: center; }
+}
+
+.xcl-plan__btn--soon { background: #374151; color: #d1d5db; cursor: default; &:hover { background: #374151; color: #d1d5db; } }
+.xcl-plan__test {
+    margin-bottom: .75rem;
+    padding: .45rem .7rem;
+    border-radius: 8px;
+    background: rgba(251,191,36,.12);
+    border: 1px solid rgba(251,191,36,.35);
+    color: #fcd34d;
+    font-size: .75rem;
+    font-weight: 600;
+
+    i { margin-right: .35rem; }
+}
+
+// Three plan cards side by side (stacked on phones), action buttons lined up at the bottom.
+.xcl-plans {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+    align-items: stretch;
+
+    @media (max-width: 991px) { grid-template-columns: minmax(0, 1fr); max-width: 560px; }
+}
+.xcl-plan__perks { flex: 1; }
+.xcl-plan__perks .xcl-plan__includes > i { color: #fbbf24; }
+.xcl-plan__soon {
+    display: inline-block;
+    margin-left: .35rem;
+    padding: 0 .4rem;
+    border-radius: 4px;
+    background: #374151;
+    color: #d1d5db;
+    font-size: .62rem;
+    font-style: normal;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+.xcl-plan--member { border-color: rgba(219,39,119,.5); }
+.xcl-plan--member .xcl-plan__head { background: linear-gradient(135deg, rgba(219,39,119,.45), rgba(124,58,237,.3)); }
+.xcl-plan--vip { border-color: rgba(251,191,36,.55); }
+.xcl-plan--vip .xcl-plan__head { background: linear-gradient(135deg, rgba(251,191,36,.35), rgba(124,58,237,.35)); }
+.xcl-plan--current { box-shadow: 0 0 0 2px #4ade80; }

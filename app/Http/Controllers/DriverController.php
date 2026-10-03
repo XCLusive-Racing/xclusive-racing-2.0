@@ -26,7 +26,7 @@ class DriverController extends Controller
         $eloCol = $gameInfo['col'];
         $srCol = $gameInfo['sr'];
 
-        $query = User::with('roles')->where($eloCol, '>', 0)->orderByDesc($eloCol);
+        $query = User::with(['roles', 'membership'])->where($eloCol, '>', 0)->orderByDesc($eloCol);
 
         if ($request->filled('q')) {
             $q = $request->q;

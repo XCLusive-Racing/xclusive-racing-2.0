@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -275,12 +276,56 @@ class User extends Authenticatable
     // they're another league's own staff, scoped to that league, not XCL staff.
     public const STAFF_SUPPORTER_ROLES = ['owner', 'admin', 'moderator', 'event_manager', 'steward', 'broadcaster', 'championship_manager', 'esports_manager'];
 
-    // Supporter = a paid supporter (the is_supporter flag, set from the admin panel) or
-    // XCL staff. Computed rather than stored, so removing the last staff role drops the
-    // badge again while a paid supporter keeps it. Eager-load 'roles' for lists.
+    // Supporter = a paid-up XCL Supporter membership (Mollie, MembershipService), a free
+    // supporter set by hand (the is_supporter flag in the admin panel) or XCL staff.
+    // Computed rather than stored, so a membership running out or the last staff role
+    // being removed drops the badge on its own. Eager-load 'roles' and 'membership' for lists.
     public function isSupporter(): bool
     {
-        return (bool) $this->is_supporter || $this->isStaffSupporter();
+        return $this->hasTier('supporter');
+    }
+
+    // The highest membership plan this user has (config/memberships.php 'plans' keys,
+    // lowest to highest): their paid plan, or 'supporter' for a free supporter or XCL
+    // staff. Null = none.
+    public function membershipTier(): ?string
+    {
+        $tiers = array_keys(config('memberships.plans'));
+        $paid = $this->hasPaidMembership() ? $this->membership->plan : null;
+        $free = ($this->is_supporter || $this->isStaffSupporter()) ? 'supporter' : null;
+
+        $levels = array_filter([$paid, $free], fn ($t) => $t !== null && in_array($t, $tiers, true));
+
+        return $levels ? $tiers[max(array_map(fn ($t) => array_search($t, $tiers, true), $levels))] : null;
+    }
+
+    // Every plan includes the plans below it: a Member has the Supporter perks too.
+    public function hasTier(string $tier): bool
+    {
+        $tiers = array_keys(config('memberships.plans'));
+        $current = $this->membershipTier();
+
+        return $current !== null && array_search($current, $tiers, true) >= array_search($tier, $tiers, true);
+    }
+
+    // Drivers allowed in a My Team this user owns (owner included); null = unlimited.
+    public function teamSeatLimit(): ?int
+    {
+        $tier = $this->membershipTier();
+
+        return $tier
+            ? config("memberships.plans.{$tier}.team_seats")
+            : (int) config('memberships.base_team_seats');
+    }
+
+    public function hasPaidMembership(): bool
+    {
+        return (bool) $this->membership?->isPaidUp();
+    }
+
+    public function membership(): HasOne
+    {
+        return $this->hasOne(Membership::class);
     }
 
     public function isStaffSupporter(): bool
@@ -407,17 +452,23 @@ class User extends Authenticatable
         return $realName !== '' ? $realName : null;
     }
 
-    // "Team / Quote" and the stream link are supporter perks: only set and shown (on the
-    // site and in-game) while isSupporter() holds. The stored value is kept, so it comes
-    // back as soon as someone is a supporter again.
+    // "Team / Quote" (Supporter plan) and the stream link (Member plan, canShareStream())
+    // are only set and shown (on the site and in-game) while the user has that plan. The
+    // stored value is kept, so it comes back as soon as they have it again.
     public function displayTeam(): ?string
     {
         return $this->isSupporter() ? $this->team : null;
     }
 
-    public function supporterStreamUrl(): ?string
+    // Sharing a stream on event pages is an XCLusive Member perk (and up).
+    public function canShareStream(): bool
     {
-        return $this->isSupporter() && RaceRegistration::streamPlatformOf($this->stream_url) ? $this->stream_url : null;
+        return $this->hasTier('member');
+    }
+
+    public function memberStreamUrl(): ?string
+    {
+        return $this->canShareStream() && RaceRegistration::streamPlatformOf($this->stream_url) ? $this->stream_url : null;
     }
 
     public function avatarUrl(): ?string

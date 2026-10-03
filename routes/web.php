@@ -46,6 +46,7 @@ use App\Http\Controllers\FaqController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HotlapController;
 use App\Http\Controllers\LiveController;
+use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ProfileController;
@@ -64,7 +65,14 @@ Route::view('/team/staff', 'team.staff')->name('team.staff');
 Route::view('/team/join', 'team.join')->name('team.join');
 Route::post('/team/apply', [TeamApplicationController::class, 'store'])->name('team.apply');
 Route::get('/coaching', [CoachingController::class, 'index'])->name('coaching.index');
-Route::view('/memberships', 'memberships')->name('memberships');
+Route::get('/memberships', [MembershipController::class, 'index'])->name('memberships');
+Route::middleware('auth')->group(function () {
+    Route::post('/memberships/checkout', [MembershipController::class, 'checkout'])->name('memberships.checkout');
+    Route::get('/memberships/return', [MembershipController::class, 'return'])->name('memberships.return');
+    Route::post('/memberships/cancel', [MembershipController::class, 'cancel'])->name('memberships.cancel');
+});
+// Mollie's payment webhook (CSRF-exempt, see bootstrap/app.php).
+Route::post('/webhooks/mollie', [MembershipController::class, 'webhook'])->name('webhooks.mollie');
 Route::get('/faq', [FaqController::class, 'index'])->name('faq');
 Route::view('/privacy', 'privacy')->name('privacy');
 

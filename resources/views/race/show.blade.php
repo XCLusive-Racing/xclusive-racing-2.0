@@ -771,13 +771,13 @@
 
                             @include('race.partials.add-to-calendar', ['race' => $race])
 
-                            {{-- Watch Live (supporters) — one button that adds/removes the stream link
-                                 from their profile to this event's streamers bar (RaceController::updateStream()).
-                                 Non-supporters get their prompt at the bottom of this card instead. --}}
+                            {{-- Drivers Streaming (XCLusive Member plan and up) — one button that adds/removes
+                                 the stream link from their profile to this event's streamers bar
+                                 (RaceController::updateStream()). Everyone else gets a prompt at the bottom of this card. --}}
                             @php $canStreamHere = $myRegistration && !$spectateOnly && $race->status !== 'finished'; @endphp
-                            @if($canStreamHere && auth()->user()->isSupporter())
+                            @if($canStreamHere && auth()->user()->canShareStream())
                             <div class="mb-3">
-                                @if(auth()->user()->supporterStreamUrl())
+                                @if(auth()->user()->memberStreamUrl())
                                 <form action="{{ route('events.stream', $race) }}" method="POST">
                                     @csrf
                                     @method('PUT')
@@ -809,13 +809,13 @@
                             </form>
                             @endif
 
-                            @if($canStreamHere && !auth()->user()->isSupporter())
+                            @if($canStreamHere && !auth()->user()->canShareStream())
                             <div class="xcl-stream-upsell mt-3">
                                 <p class="xcl-event-card__text mb-2" style="font-size:.75rem;opacity:.8">
-                                    <i class="fa-solid fa-video me-1"></i> Streaming this race? Supporters can show their
+                                    <i class="fa-solid fa-video me-1"></i> Streaming this race? With the XCLusive Member plan you can show your
                                     Twitch or YouTube stream at the top of the event page.
                                 </p>
-                                <a href="{{ route('memberships') }}" class="xcl-stream-btn d-block text-center text-decoration-none">Become a supporter</a>
+                                <a href="{{ route('memberships') }}" class="xcl-stream-btn d-block text-center text-decoration-none">See the plans</a>
                             </div>
                             @endif
                         @elseif($spectateOnly && $race->registrationOpen())

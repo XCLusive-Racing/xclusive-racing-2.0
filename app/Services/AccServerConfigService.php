@@ -21,7 +21,7 @@ class AccServerConfigService implements ServerConfigGenerator
         // PracticeServerConfigService::entryList(), which deliberately has no such
         // filter.
         $registrations = $race->registrations()
-            ->with(['user.roles', 'user.ownedRacingTeams', 'user.racingTeams', 'user.connectedAccounts', 'teamEntry'])
+            ->with(['user.roles', 'user.membership', 'user.ownedRacingTeams', 'user.racingTeams', 'user.connectedAccounts', 'teamEntry'])
             ->orderBy('team_entry_id')
             ->orderBy('created_at')
             ->get()
