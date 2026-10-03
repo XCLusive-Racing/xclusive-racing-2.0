@@ -286,6 +286,13 @@ class Race extends Model
         return max(0, min($count, $freeSpots - (int) config('fillers.free_spot_margin', 5)));
     }
 
+    // Real sign-ups only (team entries for an endurance race, no grid fillers) — what the
+    // Events page's Popular Today row ranks by. Needs registrations/teamEntries counts loaded.
+    public function realSignupCount(): int
+    {
+        return (int) ($this->is_endurance ? $this->team_entries_count : $this->registrations_count);
+    }
+
     // The public sign-up counter ("12 / 30"): real registrations plus fillers.
     public function displayedSignupCount(): int
     {

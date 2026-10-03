@@ -2523,6 +2523,14 @@ span.flatpickr-weekday {
     }
 }
 
+// Popular Today row between BACK TO PLATFORMS and the Event Filter bar, with a thin
+// divider under it to separate it from the filters and the full event list.
+.xcl-popular-today {
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid rgba(168, 85, 247, .25);
+}
+
 // The heading swaps to "<Platform> Events" once a platform is picked (e.g.
 // "ACC Console Events" / "Le Mans Ultimate Events") — noticeably longer than
 // the default "XCL EVENTS", so it needs its own smaller mobile size to stay
@@ -5969,7 +5977,7 @@ table.dataTable thead th {
     // Taller card with the badge in its upper part and the title in the lower part, so a
     // long title always sits under the badge, never behind it.
     .xcl-sb-up-card { margin-bottom: 0; }
-    .xcl-sb-up-card__img-wrap { aspect-ratio: 1 / 1; }
+    .xcl-sb-up-card__img-wrap { aspect-ratio: 4 / 3; }
     .xcl-sb-up-card__icon-overlay { top: 40%; }
     .xcl-sb-up-card__icon-overlay img { width: 165px; height: 165px; }
 

@@ -16,6 +16,7 @@ use App\Services\ChampionshipRoundEntryService;
 use App\Services\Contracts\ServerConfigGenerator;
 use App\Services\EntryBalanceService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -60,7 +61,29 @@ class RaceController extends Controller
         // for the public browse page — excluded here rather than deleted.
         $eventTags = EventTag::whereNotIn('slug', ['rookies', 'test-event'])->orderBy('name')->get();
 
-        return view('race.index', compact('races', 'eventTags', 'initialGame'));
+        $popularToday = $this->popularToday($races);
+
+        return view('race.index', compact('races', 'eventTags', 'initialGame', 'popularToday'));
+    }
+
+    // Per game, the "Popular Today" row at the top of its event list: of the events still
+    // to start today (UK time, the site's default display timezone), the three with the
+    // most real sign-ups (team entries for an endurance race; grid fillers don't count),
+    // then shown in start-time order. Ties go to the earlier event.
+    private function popularToday(Collection $races): Collection
+    {
+        $endOfToday = now('Europe/London')->endOfDay();
+
+        return $races
+            ->filter(fn (Race $race) => $race->scheduled_at->isFuture() && $race->scheduled_at->lte($endOfToday))
+            ->groupBy('game')
+            ->map(fn (Collection $gameRaces) => $gameRaces
+                ->filter(fn (Race $race) => $race->realSignupCount() > 0)
+                ->sortByDesc(fn (Race $race) => $race->realSignupCount())
+                ->take(3)
+                ->sortBy('scheduled_at')
+                ->values())
+            ->filter(fn (Collection $popular) => $popular->isNotEmpty());
     }
 
     public function show(Race $race)
