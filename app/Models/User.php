@@ -15,7 +15,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 
-#[Fillable(['name', 'first_name', 'last_name', 'email', 'password', 'must_set_password', 'display_name_preference', 'is_supporter', 'is_suspended', 'suspension_reason', 'suspended_until', 'privacy_accepted_at', 'country', 'timezone', 'uses_12_hour_clock', 'platform', 'platform_id', 'car_number', 'car_model', 'banner', 'game', 'team', 'role', 'flag', 'elo_acc', 'elo_lmu', 'elo_iracing', 'sr_acc', 'sr_lmu', 'sr_iracing', 'legacy_races', 'legacy_wins', 'legacy_podiums', 'last_seen_at'])]
+#[Fillable(['name', 'first_name', 'last_name', 'email', 'password', 'must_set_password', 'display_name_preference', 'is_supporter', 'is_suspended', 'suspension_reason', 'suspended_until', 'privacy_accepted_at', 'country', 'timezone', 'uses_12_hour_clock', 'platform', 'platform_id', 'stream_url', 'car_number', 'car_model', 'banner', 'game', 'team', 'role', 'flag', 'elo_acc', 'elo_lmu', 'elo_iracing', 'sr_acc', 'sr_lmu', 'sr_iracing', 'legacy_races', 'legacy_wins', 'legacy_podiums', 'last_seen_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -270,6 +270,24 @@ class User extends Authenticatable
         return $this->canManageEvents() || $this->isSteward() || $this->isLeagueSteward();
     }
 
+    // XCL staff roles (admin panel access) that carry the supporter badge and perks
+    // automatically, for as long as the role is held. The league_* roles are left out:
+    // they're another league's own staff, scoped to that league, not XCL staff.
+    public const STAFF_SUPPORTER_ROLES = ['owner', 'admin', 'moderator', 'event_manager', 'steward', 'broadcaster', 'championship_manager', 'esports_manager'];
+
+    // Supporter = a paid supporter (the is_supporter flag, set from the admin panel) or
+    // XCL staff. Computed rather than stored, so removing the last staff role drops the
+    // badge again while a paid supporter keeps it. Eager-load 'roles' for lists.
+    public function isSupporter(): bool
+    {
+        return (bool) $this->is_supporter || $this->isStaffSupporter();
+    }
+
+    public function isStaffSupporter(): bool
+    {
+        return $this->hasAnyRole(self::STAFF_SUPPORTER_ROLES);
+    }
+
     public function canAccessAdminPanel(): bool
     {
         return $this->hasAnyRole(['owner', 'admin', 'moderator', 'event_manager', 'steward', 'broadcaster', 'league_manager', 'league_steward', 'championship_manager', 'esports_manager']);
@@ -389,9 +407,17 @@ class User extends Authenticatable
         return $realName !== '' ? $realName : null;
     }
 
+    // "Team / Quote" and the stream link are supporter perks: only set and shown (on the
+    // site and in-game) while isSupporter() holds. The stored value is kept, so it comes
+    // back as soon as someone is a supporter again.
     public function displayTeam(): ?string
     {
-        return $this->team;
+        return $this->isSupporter() ? $this->team : null;
+    }
+
+    public function supporterStreamUrl(): ?string
+    {
+        return $this->isSupporter() && RaceRegistration::streamPlatformOf($this->stream_url) ? $this->stream_url : null;
     }
 
     public function avatarUrl(): ?string

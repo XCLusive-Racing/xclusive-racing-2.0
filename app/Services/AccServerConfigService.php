@@ -21,7 +21,7 @@ class AccServerConfigService implements ServerConfigGenerator
         // PracticeServerConfigService::entryList(), which deliberately has no such
         // filter.
         $registrations = $race->registrations()
-            ->with(['user.ownedRacingTeams', 'user.racingTeams', 'user.connectedAccounts', 'teamEntry'])
+            ->with(['user.roles', 'user.ownedRacingTeams', 'user.racingTeams', 'user.connectedAccounts', 'teamEntry'])
             ->orderBy('team_entry_id')
             ->orderBy('created_at')
             ->get()
@@ -110,7 +110,7 @@ class AccServerConfigService implements ServerConfigGenerator
     // A driver's in-game name tag: their gamertag, with a second line under it -- for
     // a team entry (driver swap / endurance) the team they're racing for, for every
     // other event their own "Team / Quote" profile field ($tag null, already max 16
-    // chars via the profile form). A team name is cut at TEAM_TAG_MAX (24) chars by
+    // chars via the profile form; supporters only, User::displayTeam()). A team name is cut at TEAM_TAG_MAX (24) chars by
     // the caller. The name follows the driver's site choice (entryName()).
     // ACC renders the newline inside lastName as two lines; this is the only way to get
     // that second line -- teamName is not an ACC entrylist field (not in the server
@@ -118,7 +118,7 @@ class AccServerConfigService implements ServerConfigGenerator
     public static function entryLastName(User $user, ?string $tag = null): string
     {
         $name = self::entryName($user);
-        $tag = trim((string) ($tag ?? $user->team));
+        $tag = trim((string) ($tag ?? $user->displayTeam()));
 
         return $tag !== '' ? $name."\n".$tag : $name;
     }

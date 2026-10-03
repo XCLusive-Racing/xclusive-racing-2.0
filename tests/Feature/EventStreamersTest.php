@@ -8,8 +8,9 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-// Supporters can add a Twitch/YouTube link to a race they're registered for; the event
-// page shows up to four of them in a streamers bar, and no bar at all without any.
+// The event page's Watch Live bar: a registered supporter with a stream link on their
+// profile adds it to a race with one button (nothing is added automatically); the bar
+// shows up to eight and is hidden without any.
 class EventStreamersTest extends TestCase
 {
     use RefreshDatabase;
@@ -22,75 +23,87 @@ class EventStreamersTest extends TestCase
         ]);
     }
 
-    private function registered(Race $race, bool $supporter = true, ?string $stream = null): User
+    private function registered(Race $race, bool $supporter = true, ?string $profileStream = 'https://twitch.tv/xcl', ?string $raceStream = null): User
     {
-        $user = User::factory()->create(['is_supporter' => $supporter]);
-        RaceRegistration::create(['race_id' => $race->id, 'user_id' => $user->id, 'stream_url' => $stream]);
+        $user = User::factory()->create(['is_supporter' => $supporter, 'stream_url' => $profileStream]);
+        RaceRegistration::create(['race_id' => $race->id, 'user_id' => $user->id, 'stream_url' => $raceStream]);
 
         return $user;
     }
 
-    public function test_a_supporter_can_add_and_remove_a_stream_link(): void
+    private function raceStream(User $user): ?string
+    {
+        return RaceRegistration::where('user_id', $user->id)->value('stream_url');
+    }
+
+    public function test_a_supporter_adds_and_removes_their_profile_stream_with_the_button(): void
     {
         $race = $this->race();
         $user = $this->registered($race);
 
-        $this->actingAs($user)->put(route('events.stream', $race), ['stream_url' => 'https://www.twitch.tv/xcl'])
-            ->assertSessionHasNoErrors();
-        $this->assertSame('https://www.twitch.tv/xcl', RaceRegistration::where('user_id', $user->id)->value('stream_url'));
+        // Having a profile link alone doesn't put them in the bar.
+        $this->actingAs($user)->get(route('events.show', $race))->assertOk()
+            ->assertSee('+ Add my stream')->assertDontSee('xcl-streamers-bar', false);
 
-        $this->actingAs($user)->put(route('events.stream', $race), ['stream_url' => '']);
-        $this->assertNull(RaceRegistration::where('user_id', $user->id)->value('stream_url'));
+        $this->actingAs($user)->put(route('events.stream', $race))->assertSessionHas('success');
+        $this->assertSame('https://twitch.tv/xcl', $this->raceStream($user));
+        $this->actingAs($user)->get(route('events.show', $race))->assertOk()
+            ->assertSee('xcl-streamers-bar', false)->assertSee('Remove');
+
+        $this->actingAs($user)->put(route('events.stream', $race), ['remove' => 1]);
+        $this->assertNull($this->raceStream($user));
     }
 
-    public function test_only_twitch_or_youtube_links_are_accepted(): void
+    public function test_a_supporter_without_a_profile_link_is_sent_to_their_profile_first(): void
     {
         $race = $this->race();
-        $user = $this->registered($race);
+        $user = $this->registered($race, profileStream: null);
 
-        foreach (['https://example.com/live', 'javascript:alert(1)', 'twitch.tv/xcl'] as $bad) {
-            $this->actingAs($user)->put(route('events.stream', $race), ['stream_url' => $bad])
-                ->assertSessionHasErrors('stream_url');
-        }
-        $this->assertNull(RaceRegistration::where('user_id', $user->id)->value('stream_url'));
+        $this->actingAs($user)->get(route('events.show', $race))->assertOk()
+            ->assertSee('Add your stream link to')->assertDontSee('+ Add my stream');
+
+        $this->actingAs($user)->put(route('events.stream', $race))->assertSessionHas('error');
+        $this->assertNull($this->raceStream($user));
     }
 
-    public function test_non_supporters_and_unregistered_users_cannot_add_a_link(): void
+    public function test_a_non_supporter_sees_the_supporter_prompt_at_the_bottom_and_cannot_add(): void
     {
         $race = $this->race();
-        $nonSupporter = $this->registered($race, supporter: false);
-        $unregistered = User::factory()->create(['is_supporter' => true]);
+        $user = $this->registered($race, supporter: false);
 
-        $this->actingAs($nonSupporter)->put(route('events.stream', $race), ['stream_url' => 'https://youtube.com/@xcl']);
-        $this->actingAs($unregistered)->put(route('events.stream', $race), ['stream_url' => 'https://youtube.com/@xcl']);
+        $html = $this->actingAs($user)->get(route('events.show', $race))->assertOk()
+            ->assertSee('Become a supporter')->assertDontSee('+ Add my stream')->getContent();
+        // Under the UNREGISTER button, at the bottom of the Registration card.
+        $this->assertGreaterThan(strpos($html, '>UNREGISTER<'), strpos($html, 'Become a supporter'));
 
-        $this->assertSame(0, RaceRegistration::whereNotNull('stream_url')->count());
+        $this->actingAs($user)->put(route('events.stream', $race));
+        $this->assertNull($this->raceStream($user));
     }
 
-    public function test_the_bar_shows_at_most_four_streamers_and_is_hidden_without_any(): void
+    public function test_unregistered_users_cannot_add_a_stream(): void
     {
         $race = $this->race();
-        $this->registered($race);
+        $user = User::factory()->create(['is_supporter' => true, 'stream_url' => 'https://twitch.tv/xcl']);
+
+        $this->actingAs($user)->put(route('events.stream', $race))->assertSessionHas('error');
+        $this->assertSame(0, RaceRegistration::count());
+    }
+
+    public function test_the_bar_shows_at_most_eight_streamers_and_drops_lapsed_supporters(): void
+    {
+        $race = $this->race();
+        $this->registered($race, raceStream: null);
 
         $this->get(route('events.show', $race))->assertOk()->assertDontSee('xcl-streamers-bar', false);
 
-        foreach (range(1, 5) as $i) {
-            $this->registered($race, stream: $i % 2 ? "https://twitch.tv/driver{$i}" : "https://youtu.be/driver{$i}");
+        foreach (range(1, 9) as $i) {
+            $this->registered($race, raceStream: $i % 2 ? "https://twitch.tv/driver{$i}" : "https://youtu.be/driver{$i}");
         }
+        $this->registered($race, supporter: false, raceStream: 'https://twitch.tv/lapsed');
 
-        $html = $this->get(route('events.show', $race))->assertOk()->assertSee('WATCH LIVE')->getContent();
-        $this->assertSame(4, substr_count($html, 'class="xcl-streamer xcl-streamer--'));
+        $html = $this->get(route('events.show', $race))->assertOk()->assertSee('DRIVERS STREAMING:')->getContent();
+        $this->assertSame(8, substr_count($html, 'class="xcl-streamer xcl-streamer--'));
         $this->assertStringContainsString('xcl-streamer--youtube', $html);
-    }
-
-    public function test_registered_drivers_see_the_stream_form_or_the_supporter_prompt(): void
-    {
-        $race = $this->race();
-
-        $this->actingAs($this->registered($race))->get(route('events.show', $race))
-            ->assertOk()->assertSee('Streaming this race?')->assertSee('name="stream_url"', false);
-
-        $this->actingAs($this->registered($race, supporter: false))->get(route('events.show', $race))
-            ->assertOk()->assertSee('Become a supporter')->assertDontSee('name="stream_url"', false);
+        $this->assertStringNotContainsString('lapsed', $html);
     }
 }

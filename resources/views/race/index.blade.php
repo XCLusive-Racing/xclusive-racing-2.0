@@ -113,8 +113,8 @@
                     BACK TO PLATFORMS
                 </button>
 
-                {{-- Popular Today — the selected game's three most-signed-up events still
-                     to start today, in start-time order (RaceController::popularToday()).
+                {{-- Popular Today — the selected game's three most-signed-up events starting in
+                     the next 24 hours, in start-time order (RaceController::popularToday()).
                      Shown/hidden with the game's event list (data-game-section); its cards
                      have no data-event-card, so the filters below don't hide them. Phones show
                      only the most-signed-up one, tablets in portrait (md, 2 per row) the top
@@ -126,7 +126,7 @@
                     $rankClasses = ['', 'd-none d-md-block', 'd-none d-lg-block'];
                 @endphp
                 <div data-game-section="{{ $game }}" class="xcl-popular-today" style="display:none">
-                    <div class="xcl-filters__categories-label fw-bold text-uppercase mb-2">
+                    <div class="xcl-popular-today__title fw-bold text-uppercase mb-2">
                         <i class="fa-solid fa-fire me-1"></i>Popular Today
                     </div>
                     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">

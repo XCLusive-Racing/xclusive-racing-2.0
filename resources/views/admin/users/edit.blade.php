@@ -161,6 +161,9 @@
                             Supporter badge
                         </label>
                     </div>
+                    <div class="form-text" style="font-size:.72rem">
+                        Paid supporter. XCL staff roles (admin panel) get the badge automatically while they hold the role{{ $user->isStaffSupporter() ? ' — this user has one' : '' }}.
+                    </div>
                 </div>
                 <div class="col-sm-6">
                     <label class="form-label d-block">

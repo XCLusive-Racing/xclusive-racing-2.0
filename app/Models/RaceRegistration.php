@@ -34,9 +34,21 @@ class RaceRegistration extends Model
         return null;
     }
 
+    // The link shown in the event's streamers bar: the one the driver added to this race
+    // (a copy of their profile link, RaceController::updateStream()) — only while they're
+    // a supporter. A profile link alone doesn't put anyone in the bar.
+    public function effectiveStreamUrl(): ?string
+    {
+        if (! $this->user?->isSupporter()) {
+            return null;
+        }
+
+        return self::streamPlatformOf($this->stream_url) ? $this->stream_url : null;
+    }
+
     public function streamPlatform(): ?string
     {
-        return self::streamPlatformOf($this->stream_url);
+        return self::streamPlatformOf($this->effectiveStreamUrl());
     }
 
     public function race(): BelongsTo

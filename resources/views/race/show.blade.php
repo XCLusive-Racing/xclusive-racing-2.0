@@ -107,22 +107,22 @@
             </div>
         </div>
 
-        {{-- Streamers bar — up to four supporters' Twitch/YouTube links for this race
+        {{-- Streamers bar — up to eight supporters' Twitch/YouTube links for this race
              (RaceController::updateStream()); not shown until someone has added one. --}}
         @php
             $streamers = $race->registrations
                 ->filter(fn ($r) => $r->user && $r->streamPlatform())
-                ->take(4);
+                ->take(8);
         @endphp
         @if($streamers->isNotEmpty())
         <div class="xcl-streamers-bar mb-4">
             <div class="xcl-streamers-bar__label">
-                <i class="fa-solid fa-video"></i> WATCH LIVE
+                <i class="fa-solid fa-video"></i> DRIVERS STREAMING:
             </div>
             <div class="xcl-streamers-bar__list">
                 @foreach($streamers as $streamer)
                 @php $streamPlatform = $streamer->streamPlatform(); @endphp
-                <a href="{{ $streamer->stream_url }}" target="_blank" rel="noopener nofollow"
+                <a href="{{ $streamer->effectiveStreamUrl() }}" target="_blank" rel="noopener nofollow"
                    class="xcl-streamer xcl-streamer--{{ $streamPlatform }}">
                     <i class="fa-brands {{ $streamPlatform === 'twitch' ? 'fa-twitch' : 'fa-youtube' }}"></i>
                     <span class="xcl-streamer__name">{{ $streamer->user->displayName() }}</span>
@@ -771,33 +771,31 @@
 
                             @include('race.partials.add-to-calendar', ['race' => $race])
 
-                            {{-- Stream link (supporters only) — shown in the streamers bar at the top. --}}
-                            @if($myRegistration && !$spectateOnly && $race->status !== 'finished')
-                            <div class="xcl-stream-form mb-3">
-                                <label for="stream_url" class="xcl-event-card__text mb-1 d-block" style="font-size:.82rem">
-                                    <i class="fa-solid fa-video me-1"></i> Streaming this race?
-                                </label>
-                                @if(auth()->user()->is_supporter)
-                                <form action="{{ route('events.stream', $race) }}" method="POST" class="d-flex gap-2">
+                            {{-- Watch Live (supporters) — one button that adds/removes the stream link
+                                 from their profile to this event's streamers bar (RaceController::updateStream()).
+                                 Non-supporters get their prompt at the bottom of this card instead. --}}
+                            @php $canStreamHere = $myRegistration && !$spectateOnly && $race->status !== 'finished'; @endphp
+                            @if($canStreamHere && auth()->user()->isSupporter())
+                            <div class="mb-3">
+                                @if(auth()->user()->supporterStreamUrl())
+                                <form action="{{ route('events.stream', $race) }}" method="POST">
                                     @csrf
                                     @method('PUT')
-                                    <input type="url" name="stream_url" id="stream_url" maxlength="255"
-                                           value="{{ old('stream_url', $myRegistration->stream_url) }}"
-                                           placeholder="https://twitch.tv/yourname"
-                                           class="form-control form-control-sm"
-                                           style="background:#1f2937;border-color:#374151;color:#e5e7eb">
-                                    <button type="submit" class="xcl-event-unreg-btn px-3">SAVE</button>
+                                    @if($myRegistration->stream_url)
+                                    <input type="hidden" name="remove" value="1">
+                                    <button type="submit" class="xcl-stream-btn xcl-stream-btn--active w-100">
+                                        <i class="fa-solid fa-video me-1"></i> Your stream is shown — Remove
+                                    </button>
+                                    @else
+                                    <button type="submit" class="xcl-stream-btn w-100">
+                                        <i class="fa-solid fa-video me-1"></i> + Add my stream
+                                    </button>
+                                    @endif
                                 </form>
-                                @error('stream_url')
-                                <p class="mt-1 mb-0" style="font-size:.75rem;color:#f87171">{{ $message }}</p>
-                                @enderror
-                                <p class="xcl-event-card__text mt-1 mb-0" style="font-size:.72rem;opacity:.7">
-                                    Twitch or YouTube link — it's shown at the top of this event page. Leave empty to remove it.
-                                </p>
                                 @else
                                 <p class="xcl-event-card__text mb-0" style="font-size:.75rem;opacity:.8">
-                                    Supporters can share their Twitch or YouTube stream at the top of this event.
-                                    <a href="{{ route('memberships') }}" style="color:#c084fc">Become a supporter</a>
+                                    <i class="fa-solid fa-video me-1"></i> Streaming this race? Add your stream link to
+                                    <a href="{{ route('profile.edit') }}" style="color:#c084fc">your profile</a> first.
                                 </p>
                                 @endif
                             </div>
@@ -809,6 +807,16 @@
                                 @method('DELETE')
                                 <button type="submit" class="xcl-event-unreg-btn w-100">UNREGISTER</button>
                             </form>
+                            @endif
+
+                            @if($canStreamHere && !auth()->user()->isSupporter())
+                            <div class="xcl-stream-upsell mt-3">
+                                <p class="xcl-event-card__text mb-2" style="font-size:.75rem;opacity:.8">
+                                    <i class="fa-solid fa-video me-1"></i> Streaming this race? Supporters can show their
+                                    Twitch or YouTube stream at the top of the event page.
+                                </p>
+                                <a href="{{ route('memberships') }}" class="xcl-stream-btn d-block text-center text-decoration-none">Become a supporter</a>
+                            </div>
                             @endif
                         @elseif($spectateOnly && $race->registrationOpen())
                             <form action="{{ route('events.register', $race) }}" method="POST">

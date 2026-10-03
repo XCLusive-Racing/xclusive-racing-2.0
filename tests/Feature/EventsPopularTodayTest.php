@@ -9,8 +9,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
-// The Events page's "Popular Today" row: per game, the three events still to start
-// today with the most sign-ups, shown in start-time order.
+// The Events page's "Popular Today" row: per game, the three events starting in the next
+// 24 hours (rolling, not the calendar day) with the most sign-ups, in start-time order.
 class EventsPopularTodayTest extends TestCase
 {
     use RefreshDatabase;
@@ -25,7 +25,8 @@ class EventsPopularTodayTest extends TestCase
     {
         $race = Race::create([
             'title' => $title, 'track' => 'Monza', 'game' => $game, 'status' => 'open',
-            'scheduled_at' => Carbon::parse("2026-10-03 {$time}", 'Europe/London'),
+            // $time is a time today ("21:00") or a full date-time.
+            'scheduled_at' => Carbon::parse(strlen($time) > 5 ? $time : "2026-10-03 {$time}", 'Europe/London'),
         ]);
         for ($i = 0; $i < $signups; $i++) {
             RaceRegistration::create(['race_id' => $race->id, 'user_id' => User::factory()->create()->id]);
@@ -42,7 +43,7 @@ class EventsPopularTodayTest extends TestCase
         return $popular->map(fn ($races) => $races->pluck('title')->all())->all();
     }
 
-    public function test_the_three_most_signed_up_events_today_are_shown_in_time_order(): void
+    public function test_the_three_most_signed_up_events_in_the_next_24_hours_are_shown_in_time_order(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-10-03 12:00', 'Europe/London'));
 
@@ -53,13 +54,12 @@ class EventsPopularTodayTest extends TestCase
         $this->race('Late mid', '23:00', 12);
         $this->race('Empty', '16:00', 0);
         $this->race('LMU only', '18:00', 30, 'lmu');
-        Race::create([
-            'title' => 'Tomorrow huge', 'track' => 'Spa', 'game' => 'acc', 'status' => 'open',
-            'scheduled_at' => Carbon::parse('2026-10-04 13:00', 'Europe/London'),
-        ]);
+        // Tomorrow morning is inside the next 24 hours; tomorrow after 12:00 isn't.
+        $this->race('Tomorrow morning', '2026-10-04 09:00', 15);
+        $this->race('Tomorrow afternoon huge', '2026-10-04 13:00', 99);
 
         $this->assertSame([
-            'acc' => ['Afternoon mid', 'Evening big', 'Late mid'],
+            'acc' => ['Evening big', 'Late mid', 'Tomorrow morning'],
             'lmu' => ['LMU only'],
         ], $this->popularTitles());
     }

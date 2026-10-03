@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Race;
+use App\Models\RaceRegistration;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -60,7 +61,18 @@ class ProfileController extends Controller
             'car_model' => 'nullable|string|max:100',
             'game' => 'nullable|in:acc,lmu,iracing',
             'avatar' => 'nullable|image|max:4096',
+            'stream_url' => ['nullable', 'string', 'max:255', function ($attribute, $value, $fail) {
+                if (! RaceRegistration::streamPlatformOf($value)) {
+                    $fail('Use a Twitch or YouTube link (https://twitch.tv/... or https://youtube.com/...).');
+                }
+            }],
         ]);
+
+        // Supporter perks (User::displayTeam()) — a non-supporter's form has them disabled,
+        // and a hand-made request can't set them either.
+        if (! $user->isSupporter()) {
+            unset($data['team'], $data['stream_url']);
+        }
 
         if ($request->hasFile('avatar')) {
             // Delete old avatar

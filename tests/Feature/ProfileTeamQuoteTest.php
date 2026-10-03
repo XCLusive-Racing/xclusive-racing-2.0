@@ -13,27 +13,67 @@ use App\Services\AccServerConfigService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-// User-directed 2026-09-24: the "Team / Quote" profile field -- shown in-game on a second
-// line under a solo driver's name (AccServerConfigService::entryLastName()) -- used to be a
-// supporter-only perk. It's now open to everyone, still capped at 16 characters.
+// The "Team / Quote" profile field -- shown in-game on a second line under a solo
+// driver's name (AccServerConfigService::entryLastName()), capped at 16 characters.
+// User-directed 2026-09-24 it was opened to everyone; 2026-10-03 it's a supporter perk
+// again (part of the membership), together with the profile stream link.
 class ProfileTeamQuoteTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_a_non_supporter_can_set_their_team_quote(): void
+    public function test_a_supporter_can_set_their_team_quote_and_stream_link(): void
     {
-        $user = User::factory()->create(['is_supporter' => false, 'team' => null]);
+        $user = User::factory()->create(['is_supporter' => true, 'team' => null]);
 
         $this->actingAs($user)
-            ->put(route('profile.update'), ['name' => $user->name, 'team' => 'Night Owls RT'])
+            ->put(route('profile.update'), ['name' => $user->name, 'team' => 'Night Owls RT', 'stream_url' => 'https://twitch.tv/nightowls'])
             ->assertSessionHasNoErrors();
 
         $this->assertSame('Night Owls RT', $user->fresh()->team);
+        $this->assertSame('https://twitch.tv/nightowls', $user->fresh()->stream_url);
+    }
+
+    public function test_a_non_supporter_cannot_set_team_quote_or_stream_link(): void
+    {
+        $user = User::factory()->create(['is_supporter' => false, 'team' => null]);
+
+        $this->actingAs($user)->get(route('profile.edit'))->assertOk()->assertSee('Become a supporter');
+
+        $this->actingAs($user)
+            ->put(route('profile.update'), ['name' => $user->name, 'team' => 'Night Owls RT', 'stream_url' => 'https://twitch.tv/nightowls'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertNull($user->fresh()->team);
+        $this->assertNull($user->fresh()->stream_url);
+    }
+
+    public function test_the_profile_stream_link_must_be_twitch_or_youtube(): void
+    {
+        $user = User::factory()->create(['is_supporter' => true]);
+
+        $this->actingAs($user)
+            ->put(route('profile.update'), ['name' => $user->name, 'stream_url' => 'https://example.com/live'])
+            ->assertSessionHasErrors('stream_url');
+    }
+
+    // A lapsed supporter keeps the stored quote, but it's no longer shown in-game.
+    public function test_a_non_supporters_stored_quote_is_not_shown_in_game(): void
+    {
+        $race = Race::create([
+            'title' => 'Test Race', 'track' => 'Monza', 'game' => 'acc',
+            'status' => 'open', 'scheduled_at' => now()->addWeek(),
+        ]);
+        $user = User::factory()->create(['name' => 'Lapsed', 'team' => 'Old Quote', 'platform_id' => 'X-1', 'is_supporter' => false]);
+        RaceRegistration::create(['race_id' => $race->id, 'user_id' => $user->id]);
+
+        $lastName = app(AccServerConfigService::class)->entryList($race)['entries'][0]['drivers'][0]['lastName'];
+
+        $this->assertSame('Lapsed', $lastName);
     }
 
     public function test_team_quote_is_capped_at_16_characters(): void
     {
-        $user = User::factory()->create(['team' => 'Old']);
+        $user = User::factory()->create(['team' => 'Old', 'is_supporter' => true]);
 
         $this->actingAs($user)
             ->put(route('profile.update'), ['name' => $user->name, 'team' => str_repeat('x', 17)])
@@ -51,7 +91,7 @@ class ProfileTeamQuoteTest extends TestCase
             'title' => 'Test Race', 'track' => 'Monza', 'game' => 'acc',
             'status' => 'open', 'scheduled_at' => now()->addWeek(),
         ]);
-        $withQuote = User::factory()->create(['name' => 'DeEchteOlle', 'team' => 'XCLusive Developer', 'platform_id' => 'X-1']);
+        $withQuote = User::factory()->create(['name' => 'DeEchteOlle', 'team' => 'XCLusive Developer', 'platform_id' => 'X-1', 'is_supporter' => true]);
         $noQuote = User::factory()->create(['name' => 'Plain', 'team' => null, 'platform_id' => 'X-2']);
         RaceRegistration::create(['race_id' => $race->id, 'user_id' => $withQuote->id]);
         RaceRegistration::create(['race_id' => $race->id, 'user_id' => $noQuote->id]);
@@ -91,7 +131,7 @@ class ProfileTeamQuoteTest extends TestCase
             'race_id' => $race->id, 'racing_team_id' => $team->id,
             'car_number' => 1, 'starting_driver_id' => $owner->id,
         ]);
-        $driver = User::factory()->create(['name' => 'DeEchteOlle', 'team' => 'XCLusive Developer', 'platform_id' => 'X-1']);
+        $driver = User::factory()->create(['name' => 'DeEchteOlle', 'team' => 'XCLusive Developer', 'platform_id' => 'X-1', 'is_supporter' => true]);
         RaceRegistration::create(['race_id' => $race->id, 'user_id' => $driver->id, 'team_entry_id' => $entry->id]);
 
         $lastName = app(AccServerConfigService::class)->entryList($race)['entries'][0]['drivers'][0]['lastName'];
@@ -109,7 +149,7 @@ class ProfileTeamQuoteTest extends TestCase
             'status' => 'open', 'scheduled_at' => now()->addWeek(),
         ]);
         $realName = User::factory()->create([
-            'name' => 'FastGuy', 'team' => 'Quote', 'platform_id' => 'X-1',
+            'name' => 'FastGuy', 'team' => 'Quote', 'platform_id' => 'X-1', 'is_supporter' => true,
             'first_name' => 'jan', 'last_name' => 'Jansen', 'display_name_preference' => User::DISPLAY_REAL_NAME,
         ]);
         $gamertag = User::factory()->create([

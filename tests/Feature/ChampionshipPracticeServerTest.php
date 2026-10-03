@@ -146,7 +146,7 @@ class ChampionshipPracticeServerTest extends TestCase
         $championship = $this->makeChampionship(server: $server);
         $round = $this->makeRound($championship, 1, 'monza', '2026-10-05 20:00');
 
-        $driver = fn (string $name, string $id) => User::factory()->create(['name' => $name, 'platform' => 'xbox', 'platform_id' => $id, 'team' => 'My quote']);
+        $driver = fn (string $name, string $id) => User::factory()->create(['name' => $name, 'platform' => 'xbox', 'platform_id' => $id, 'team' => 'My quote', 'is_supporter' => true]);
         [$owner, $mate, $solo, $pending] = [$driver('Owner', 'M1'), $driver('Mate', 'M2'), $driver('Solo', 'M3'), $driver('Pending', 'M4')];
 
         $team = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);

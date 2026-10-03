@@ -172,13 +172,6 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label small fw-bold text-uppercase text-white-50 mb-1">Team <span style="color:rgba(255,255,255,.3);">(Optional)</span></label>
-                    <input type="text" name="team" placeholder="Your team"
-                           value="{{ old('team') }}"
-                           class="form-control xcl-auth-input">
-                </div>
-
-                <div class="mb-4">
                     <label class="d-flex align-items-start gap-2" style="cursor:pointer">
                         <input type="checkbox" name="privacy_accepted" value="1" required
                                {{ old('privacy_accepted') ? 'checked' : '' }}

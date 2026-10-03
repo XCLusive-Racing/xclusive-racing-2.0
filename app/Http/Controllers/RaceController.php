@@ -66,16 +66,16 @@ class RaceController extends Controller
         return view('race.index', compact('races', 'eventTags', 'initialGame', 'popularToday'));
     }
 
-    // Per game, the "Popular Today" row at the top of its event list: of the events still
-    // to start today (UK time, the site's default display timezone), the three with the
+    // Per game, the "Popular Today" row at the top of its event list: of the events starting
+    // in the next 24 hours (a rolling window, not the calendar day), the three with the
     // most real sign-ups (team entries for an endurance race; grid fillers don't count),
     // then shown in start-time order. Ties go to the earlier event.
     private function popularToday(Collection $races): Collection
     {
-        $endOfToday = now('Europe/London')->endOfDay();
+        $windowEnd = now()->addDay();
 
         return $races
-            ->filter(fn (Race $race) => $race->scheduled_at->isFuture() && $race->scheduled_at->lte($endOfToday))
+            ->filter(fn (Race $race) => $race->scheduled_at->isFuture() && $race->scheduled_at->lte($windowEnd))
             ->groupBy('game')
             ->map(fn (Collection $gameRaces) => $gameRaces
                 ->filter(fn (Race $race) => $race->realSignupCount() > 0)
@@ -89,7 +89,7 @@ class RaceController extends Controller
     public function show(Race $race)
     {
         $race->load([
-            'raceClasses', 'registrations.user', 'registrations.raceClass', 'registrations.teamEntry.team',
+            'raceClasses', 'registrations.user.roles', 'registrations.raceClass', 'registrations.teamEntry.team',
             'raceResults.user', 'eventFormat', 'teamEntries',
             // Same tenant-scope bypass as ftpServer above — a guest viewing this page
             // must still see the practice server's name regardless of league.
@@ -419,33 +419,37 @@ class RaceController extends Controller
         return back()->with('success', 'You have been unregistered from '.$race->title.'.');
     }
 
-    // A supporter's own Twitch/YouTube link for a race they're registered for, shown in
-    // the event page's streamers bar. An empty link removes it.
+    // The Add my stream / Remove button in the event's Registration card: copies a
+    // supporter's profile stream link onto their registration for this race (shown in the
+    // streamers bar), or clears it again. Nothing is added automatically.
     public function updateStream(Request $request, Race $race)
     {
-        if (! auth()->user()->is_supporter) {
+        $user = auth()->user();
+        if (! $user->isSupporter()) {
             return back()->with('error', 'Sharing your stream is a supporter feature.');
         }
 
         $registration = RaceRegistration::where('race_id', $race->id)
-            ->where('user_id', auth()->id())
+            ->where('user_id', $user->id)
             ->first();
 
         if (! $registration) {
             return back()->with('error', 'You are not registered for this race.');
         }
 
-        $data = $request->validate([
-            'stream_url' => ['nullable', 'string', 'max:255', function ($attribute, $value, $fail) {
-                if (! RaceRegistration::streamPlatformOf($value)) {
-                    $fail('Use a Twitch or YouTube link (https://twitch.tv/... or https://youtube.com/...).');
-                }
-            }],
-        ]);
+        if ($request->boolean('remove')) {
+            $registration->update(['stream_url' => null]);
 
-        $registration->update(['stream_url' => $data['stream_url'] ?? null]);
+            return back()->with('success', 'Your stream has been removed from this event.');
+        }
 
-        return back()->with('success', $registration->stream_url ? 'Your stream is now shown on this event.' : 'Your stream link has been removed.');
+        if (! $user->supporterStreamUrl()) {
+            return back()->with('error', 'Add your stream link to your profile first.');
+        }
+
+        $registration->update(['stream_url' => $user->supporterStreamUrl()]);
+
+        return back()->with('success', 'Your stream is now shown on this event.');
     }
 
     // A cancelled/soft-deleted registration can free up to two independent slots at

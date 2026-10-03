@@ -26,7 +26,7 @@ class DriverController extends Controller
         $eloCol = $gameInfo['col'];
         $srCol = $gameInfo['sr'];
 
-        $query = User::where($eloCol, '>', 0)->orderByDesc($eloCol);
+        $query = User::with('roles')->where($eloCol, '>', 0)->orderByDesc($eloCol);
 
         if ($request->filled('q')) {
             $q = $request->q;
@@ -58,7 +58,7 @@ class DriverController extends Controller
         $trackTimes = $driver->trackTimes->sortBy('track')->values();
 
         $linkedUser = User::where('platform_id', $driver->xuid_psid)->first();
-        $isSupporter = $linkedUser->is_supporter ?? false;
+        $isSupporter = (bool) $linkedUser?->isSupporter();
 
         $avgRating = RaceResult::where('player_id', $driver->xuid_psid)
             ->where('session_type', 'race')

@@ -91,7 +91,7 @@ $sbBuildGainBoard = function (\Carbon\Carbon $start, \Carbon\Carbon $end): array
             ->limit(40)
             ->get();
 
-        $gainUsers = User::whereIn('id', $gains->pluck('user_id'))->get()->keyBy('id');
+        $gainUsers = User::with('roles')->whereIn('id', $gains->pluck('user_id'))->get()->keyBy('id');
 
         $board[$game] = $gains->values()
             ->filter(fn($row) => $gainUsers->has($row->user_id))
@@ -101,7 +101,7 @@ $sbBuildGainBoard = function (\Carbon\Carbon $start, \Carbon\Carbon $end): array
                 'name'      => $gainUsers[$row->user_id]->displayName(),
                 'country'   => strtoupper($gainUsers[$row->user_id]->country ?? 'XX'),
                 'gain'      => (int) round($row->period_gain),
-                'supporter' => (bool) $gainUsers[$row->user_id]->is_supporter,
+                'supporter' => $gainUsers[$row->user_id]->isSupporter(),
             ]);
     }
     return $board;

@@ -34,7 +34,6 @@ class RegisterController extends Controller
             'password' => 'required|min:8|confirmed',
             'country' => 'required|string|max:100',
             'platform' => 'required|in:steam,ps5,xbox',
-            'team' => 'nullable|string|max:255',
             'privacy_accepted' => 'accepted',
         ];
 
@@ -116,7 +115,6 @@ class RegisterController extends Controller
                     'email' => $request->email,
                     'password' => Hash::make($request->password),
                     'country' => $request->country,
-                    'team' => $request->team ?? $existing->team,
                     'must_set_password' => false,
                     'privacy_accepted_at' => now(),
                 ]);
@@ -140,7 +138,6 @@ class RegisterController extends Controller
             'country' => $request->country,
             'platform' => $request->platform,
             'platform_id' => $profile['platform_id'],
-            'team' => $request->team,
             'elo_acc' => $driver->xcl_rating ?? 1500,
             'elo_lmu' => 1500,
             'elo_iracing' => 1500,

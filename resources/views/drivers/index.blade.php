@@ -110,7 +110,7 @@ $classMeta = [
                                     @else
                                     <span class="fw-bold text-dark" style="font-size:.9rem">{{ $user->displayName() }}</span>
                                     @endif
-                                    @if($user->is_supporter)
+                                    @if($user->isSupporter())
                                     <span title="Supporter" style="font-size:.75rem;color:#f59e0b;line-height:1">★</span>
                                     @endif
                                     @if($user->car_number)

@@ -103,18 +103,45 @@
                                     <option value="1" @selected(old('uses_12_hour_clock', $user->uses_12_hour_clock))>12-hour (8:00 PM)</option>
                                 </select>
                             </div>
+                            {{-- Supporter perks (User::displayTeam(), supporterStreamUrl()) — locked
+                                 for everyone else, with a link to the Memberships page. --}}
+                            @php $isSupporter = $user->isSupporter(); @endphp
+                            @unless($isSupporter)
                             <div class="col-12">
+                                <div class="d-flex align-items-center gap-2 rounded-2 px-3 py-2" style="background:#f5f3ff;border:1px solid #ddd6fe;font-size:.8rem;color:#5b21b6">
+                                    <i class="fa-solid fa-lock"></i>
+                                    <span>Team / Quote and Stream Link are supporter perks.
+                                        <a href="{{ route('memberships') }}" class="fw-bold" style="color:#7c3aed">Become a supporter</a> to unlock them.</span>
+                                </div>
+                            </div>
+                            @endunless
+                            <div class="col-sm-6">
                                 <label class="form-label fw-bold text-dark" style="font-size:.82rem">
                                     Team / Quote
+                                    @unless($isSupporter)<i class="fa-solid fa-lock ms-1 text-secondary" style="font-size:.7rem"></i>@endunless
                                     <span class="ms-1 fw-normal text-secondary" style="font-size:.75rem">max 16 characters</span>
                                 </label>
                                 <input type="text" name="team" value="{{ old('team', $user->team) }}"
                                        class="form-control @error('team') is-invalid @enderror" placeholder="e.g. your team name"
-                                       maxlength="16">
+                                       maxlength="16" @disabled(! $isSupporter)>
                                 <div class="form-text" style="font-size:.72rem">
                                     Shown in-game under your name. In driver-swap events your car's team from My Team is shown instead.
                                 </div>
                                 @error('team')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-bold text-dark" style="font-size:.82rem">
+                                    Stream Link
+                                    @unless($isSupporter)<i class="fa-solid fa-lock ms-1 text-secondary" style="font-size:.7rem"></i>@endunless
+                                    <span class="ms-1 fw-normal text-secondary" style="font-size:.75rem">Twitch or YouTube</span>
+                                </label>
+                                <input type="url" name="stream_url" value="{{ old('stream_url', $user->stream_url) }}"
+                                       class="form-control @error('stream_url') is-invalid @enderror" placeholder="https://twitch.tv/yourname"
+                                       maxlength="255" @disabled(! $isSupporter)>
+                                <div class="form-text" style="font-size:.72rem">
+                                    Add it to an event's Watch Live bar with the + Add my stream button on that event.
+                                </div>
+                                @error('stream_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
                     </div>

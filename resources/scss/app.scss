@@ -2529,6 +2529,16 @@ span.flatpickr-weekday {
     padding-bottom: 1.25rem;
     margin-bottom: 1.25rem;
     border-bottom: 1px solid rgba(168, 85, 247, .25);
+
+    // Same purple label look as the filter labels below, but larger — it heads the row.
+    &__title {
+        font-size: 1.05rem;
+        font-weight: 900;
+        letter-spacing: .06em;
+        color: #a855f7;
+
+        @media (max-width: 767px) { font-size: .95rem; }
+    }
 }
 
 // The heading swaps to "<Platform> Events" once a platform is picked (e.g.
@@ -7940,8 +7950,9 @@ table.dataTable thead th {
     }
 }
 
-// Event page streamers bar (race/show.blade.php) — up to four supporters' stream links
-// between the hero and the event details; one row on desktop, wrapping on phones.
+// Event page streamers bar (race/show.blade.php) — up to eight supporters' stream links
+// between the hero and the event details; four per row on desktop (two rows when full),
+// two per row on phones.
 .xcl-streamers-bar {
     display: flex;
     align-items: center;
@@ -7997,4 +8008,33 @@ table.dataTable thead th {
 
     &--twitch  { background: #9146ff; }
     &--youtube { background: #ff0000; }
+}
+
+// Add my stream / Become a supporter button in the event Registration card — same
+// look as the + Add to Calendar button above it.
+.xcl-stream-btn {
+    display: block;
+    border: 1.5px solid rgba(124,58,237,.4);
+    border-radius: 8px;
+    background: rgba(124,58,237,.08);
+    color: #a78bfa;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 800;
+    font-size: .85rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    text-align: center;
+    padding: .5rem 1rem;
+    cursor: pointer;
+    transition: background .2s;
+
+    &:hover { background: rgba(124,58,237,.16); color: #a78bfa; }
+
+    &--active {
+        border-color: rgba(145,70,255,.7);
+        background: rgba(145,70,255,.2);
+        color: #fff;
+
+        &:hover { color: #fff; }
+    }
 }
