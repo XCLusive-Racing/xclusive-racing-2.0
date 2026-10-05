@@ -31,8 +31,9 @@ class RaceController extends Controller
         $races = Race::select(['id', 'title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'duration_key', 'image', 'icon', 'description', 'sr_requirement', 'min_rating', 'max_rating', 'car_class', 'weather', 'event_format_id', 'is_endurance', 'is_multiclass', 'championship_id', 'round_type'])
             ->with([
                 'eventFormat:id,race1_mins,race2_mins',
-                // The card's class badges (Race::displayCarClasses(), isDriverSwap()).
-                'raceClasses:id,race_id,car_class,sort_order',
+                // The card's class badges (Race::displayCarClasses(), isDriverSwap()) and the
+                // sign-up counter's per-class fillers (caps + requirements, Race::fillerPlan()).
+                'raceClasses:id,race_id,name,car_class,sort_order,max_drivers,sr_requirement,min_rating',
             ])
             ->withIconOwners()
             // After withIconOwners(), which loads championship with only id/league_id/icon

@@ -293,7 +293,9 @@ class Race extends Model
         return (int) ($this->is_endurance ? $this->team_entries_count : $this->registrations_count);
     }
 
-    // The public sign-up counter ("12 / 30"): real registrations plus fillers.
+    // The public sign-up counter ("12 / 30"): real registrations plus fillers — exactly the
+    // fillers the event page's grid boxes show (fillerPlan()), so a multiclass race's
+    // counter adds up to its class boxes.
     public function displayedSignupCount(): int
     {
         $real = (int) ($this->registrations_count ?? $this->registrations()->count());
@@ -301,7 +303,56 @@ class Race extends Model
             return $real;
         }
 
-        return $real + self::fillerCountFor($real, $this->max_drivers !== null ? $this->max_drivers - $real : null);
+        if (! $this->hasClassBoxes()) {
+            return $real + self::fillerCountFor($real, $this->max_drivers !== null ? $this->max_drivers - $real : null);
+        }
+
+        // Drivers per class, without the waiting list (beyond the class's own cap).
+        $perClass = $this->registrations()->whereNotNull('race_class_id')
+            ->selectRaw('race_class_id, count(*) as c')->groupBy('race_class_id')->pluck('c', 'race_class_id');
+        $active = $this->raceClasses->mapWithKeys(function (RaceClass $cls) use ($perClass) {
+            $count = (int) ($perClass[$cls->id] ?? 0);
+            $cap = $cls->effectiveCap();
+
+            return [$cls->id => $cap !== null ? min($count, $cap) : $count];
+        })->all();
+
+        return $real + collect($this->fillerPlan($active))->sum(fn (Collection $fillers) => $fillers->count());
+    }
+
+    // A multiclass race with classes gets one grid box per class; otherwise one box.
+    public function hasClassBoxes(): bool
+    {
+        return $this->is_multiclass && $this->raceClasses->isNotEmpty();
+    }
+
+    // The fillers for each grid box on the event page: [class id => fillers] for a race with
+    // class boxes, ['' => fillers] for a single box. $active = the real, non-waitlisted
+    // drivers in each box, keyed the same way. Each box gets fillers for its own drivers
+    // within its own cap and the race-wide one (filling earlier boxes first), and never
+    // the same filler twice.
+    public function fillerPlan(array $active): array
+    {
+        // RaceClass::effectiveCap() reads the race back — this one, not a fresh query.
+        $this->raceClasses->each->setRelation('race', $this);
+        $boxes = $this->hasClassBoxes() ? $this->raceClasses->all() : [null];
+        $raceFree = $this->max_drivers !== null ? $this->max_drivers - array_sum($active) : null;
+        $used = [];
+        $plan = [];
+
+        foreach ($boxes as $cls) {
+            $key = $cls?->id ?? '';
+            $real = (int) ($active[$key] ?? 0);
+            $cap = $cls ? $cls->effectiveCap() : $this->max_drivers;
+            $free = collect([$cap !== null ? $cap - $real : null, $raceFree])->filter(fn ($v) => $v !== null)->min();
+
+            $fillers = $this->fillerRegistrations($real, $free, $cls, $used);
+            $used = array_merge($used, $fillers->map(fn ($r) => $r->user->id)->all());
+            $raceFree = $raceFree !== null ? $raceFree - $fillers->count() : null;
+            $plan[$key] = $fillers;
+        }
+
+        return $plan;
     }
 
     // Unsaved RaceRegistration stand-ins for the fillers in one grid box ($cls = null for
@@ -322,7 +373,7 @@ class Race extends Model
             return collect();
         }
 
-        $pool = once(fn () => User::where('is_filler', true)->get());
+        $pool = self::fillerPool();
 
         return $pool
             ->reject(fn (User $u) => in_array($u->id, $exclude, true))
@@ -338,6 +389,12 @@ class Race extends Model
                 return $reg;
             })
             ->values();
+    }
+
+    // Every filler user, loaded once per request (not once per race on a list page).
+    private static function fillerPool(): Collection
+    {
+        return once(fn () => User::where('is_filler', true)->get());
     }
 
     private function fillerMeetsRequirements(User $filler, ?RaceClass $cls): bool

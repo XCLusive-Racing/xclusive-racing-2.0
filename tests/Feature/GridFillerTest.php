@@ -162,4 +162,31 @@ class GridFillerTest extends TestCase
             $this->assertNull($filler->platform_id);
         }
     }
+
+    // Bug 2026-10-05 (race #549): the Events-page counter said 35 (28 real + 7 fillers worked
+    // out for the whole race), but the class boxes showed GT3 13 + GT4 17 = 30 — GT4 (17 of
+    // its 20) had no room for fillers within its own cap. The counter now adds up exactly
+    // the fillers the class boxes show.
+    public function test_a_multiclass_counter_adds_up_to_its_class_boxes(): void
+    {
+        $this->seedFillers();
+        $race = $this->makeRace(['title' => 'Multiclass', 'max_drivers' => 40, 'is_multiclass' => true]);
+        $gt3 = RaceClass::create(['race_id' => $race->id, 'name' => 'GT3', 'car_class' => 'GT3', 'sort_order' => 0, 'max_drivers' => 20]);
+        $gt4 = RaceClass::create(['race_id' => $race->id, 'name' => 'GT4', 'car_class' => 'GT4', 'sort_order' => 1, 'max_drivers' => 20]);
+        foreach ([[$gt3, 11], [$gt4, 17]] as [$cls, $count]) {
+            foreach (User::factory()->count($count)->create() as $user) {
+                RaceRegistration::create(['race_id' => $race->id, 'user_id' => $user->id, 'race_class_id' => $cls->id]);
+            }
+        }
+
+        $html = $this->get(route('events.show', $race))->assertOk()->getContent();
+        preg_match_all('#<h3 class="xcl-event-card__heading">\s*(GT3|GT4)\s*<span[^>]*>\s*(\d+)/20#', $html, $m);
+        $boxes = array_combine($m[1], array_map('intval', $m[2]));
+
+        $this->assertSame(['GT3' => 13, 'GT4' => 17], $boxes);
+
+        $counted = Race::withCount('registrations')->with('raceClasses')->find($race->id)->displayedSignupCount();
+        $this->assertSame(array_sum($boxes), $counted);
+        $this->get(route('events.platform', 'acc-console'))->assertOk()->assertSee('30 / 40');
+    }
 }

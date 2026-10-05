@@ -987,15 +987,16 @@
                      from these boxes -- they get their own WAITING LIST box below. --}}
                 @php
                     $eloCol = \App\Models\User::eloColumn($race->game);
-                    $classSections = ($race->is_multiclass && $race->raceClasses->isNotEmpty())
+                    $classSections = $race->hasClassBoxes()
                         ? $race->raceClasses
                         : collect([null]);
-                    // Grid fillers (Race::fillerRegistrations()) fill each box on top of its
-                    // real drivers, within both the box's own cap and the race-wide one.
-                    $fillerRaceFree = $race->max_drivers !== null
-                        ? $race->max_drivers - $race->registrations->filter(fn ($r) => $r->user && ! $race->isRegistrationWaitlisted($r))->count()
-                        : null;
-                    $fillerUsed = [];
+                    // Real (non-waitlisted) drivers per box, then the grid fillers on top of
+                    // them — Race::fillerPlan(), the same numbers the sign-up counter adds up.
+                    $boxActive = $classSections->mapWithKeys(fn ($cls) => [
+                        $cls?->id ?? '' => ($cls ? $race->registrations->where('race_class_id', $cls->id) : $race->registrations)
+                            ->filter(fn ($r) => $r->user && ! $race->isRegistrationWaitlisted($r))->count(),
+                    ])->all();
+                    $fillerPlan = $race->fillerPlan($boxActive);
                 @endphp
 
                 @foreach($classSections as $cls)
@@ -1012,11 +1013,7 @@
                         ->sortByDesc(fn ($r) => $eloCol ? ($r->user->{$eloCol} ?? 0) : 0)
                         ->values();
                     $cap = $cls ? $cls->effectiveCap() : $race->max_drivers;
-                    $fillerFree = collect([$cap !== null ? $cap - $activeRegs->count() : null, $fillerRaceFree])->filter(fn ($v) => $v !== null)->min();
-                    $fillers = $race->fillerRegistrations($activeRegs->count(), $fillerFree, $cls, $fillerUsed);
-                    $fillerUsed = array_merge($fillerUsed, $fillers->map(fn ($r) => $r->user->id)->all());
-                    $fillerRaceFree = $fillerRaceFree !== null ? $fillerRaceFree - $fillers->count() : null;
-                    $activeRegs = $activeRegs->concat($fillers)
+                    $activeRegs = $activeRegs->concat($fillerPlan[$cls?->id ?? ''])
                         ->sortByDesc(fn ($r) => $eloCol ? ($r->user->{$eloCol} ?? 0) : 0)
                         ->values();
                     $sofRatings = $eloCol
