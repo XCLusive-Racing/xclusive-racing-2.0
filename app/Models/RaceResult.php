@@ -14,7 +14,7 @@ class RaceResult extends Model
         'player_id', 'driver_name', 'car_number', 'vehicle', 'car_class',
         'position', 'best_lap', 'lap_count', 'laps_led', 'total_time', 'time_penalty_ms', 'consistency',
         'fastest_lap', 'dnf', 'dns', 'dsq', 'dc',
-        'rating_before', 'rating_after', 'elo_change', 'sof', 'sr_change',
+        'rating_before', 'rating_after', 'elo_change', 'sof', 'sr_change', 'sr_after',
     ];
 
     protected function casts(): array
@@ -97,15 +97,31 @@ class RaceResult extends Model
      * DNF keeps its imported position since it still counts toward classification (see
      * User::raceStats()).
      *
+     * With $carKey (a team/driver swap race, where co-drivers each have a row), positions
+     * are counted per car instead of per row: co-drivers share their car's position
+     * (P1, P1, P2, P2...), which is also how RatingService rates them.
+     *
      * @param  Collection<int, self>  $results
+     * @param  (\Closure(self): mixed)|null  $carKey
      * @return Collection<int, int>
      */
-    public static function classifiedPositions(Collection $results): Collection
+    public static function classifiedPositions(Collection $results, ?\Closure $carKey = null): Collection
     {
-        return $results->where('dns', false)->where('dsq', false)
-            ->sortBy('position')
-            ->values()
-            ->mapWithKeys(fn (self $r, int $i) => [$r->id => $i + 1]);
+        $classified = $results->where('dns', false)->where('dsq', false)->sortBy('position')->values();
+
+        if (! $carKey) {
+            return $classified->mapWithKeys(fn (self $r, int $i) => [$r->id => $i + 1]);
+        }
+
+        $carPos = $classified->map($carKey)->unique()->values()->flip()->map(fn (int $i) => $i + 1);
+
+        return $classified->mapWithKeys(fn (self $r) => [$r->id => $carPos[$carKey($r)]]);
+    }
+
+    // Co-drivers of one car: the car number, or the row itself when it has none.
+    public static function carNumberKey(): \Closure
+    {
+        return fn (self $r) => $r->car_number ?? 'row_'.$r->id;
     }
 
     /**

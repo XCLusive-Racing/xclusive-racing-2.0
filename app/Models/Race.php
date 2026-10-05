@@ -227,6 +227,12 @@ class Race extends Model
         return $this->hasMany(RaceResult::class)->orderBy('dns')->orderBy('dsq')->orderBy('dnf')->orderBy('position');
     }
 
+    // The raw results file of each race session, for the detailed stats (RaceSessionFile).
+    public function sessionFiles(): HasMany
+    {
+        return $this->hasMany(RaceSessionFile::class);
+    }
+
     public function raceResults(): HasMany
     {
         return $this->hasMany(RaceResult::class)

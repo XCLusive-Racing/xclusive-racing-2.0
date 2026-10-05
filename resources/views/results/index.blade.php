@@ -358,6 +358,9 @@
                         <div data-tab-panel="rating" style="display:none">
                             @php
                                 $ratingGroups = collect();
+                                // Driver swap: co-drivers share their car's position (P1, P1, P2, P2...), the
+                                // same as their rating and the admin panel.
+                                $ratingCarKey = $selected->isDriverSwap() ? \App\Models\RaceResult::carNumberKey() : null;
 
                                 if ($selected->is_multiclass && $selected->raceClasses->isNotEmpty()) {
                                     $minNeeded = (new \App\Services\XclRating())->MIN_DRIVERS;
@@ -367,7 +370,7 @@
                                             fn($r) => $r->car_class && $cls->car_class && strtoupper($r->car_class) === strtoupper($cls->car_class)
                                         );
                                         $rated = $classRows->filter(fn($r) => $r->elo_change !== null);
-                                        $positions = \App\Models\RaceResult::classifiedPositions($classRows);
+                                        $positions = \App\Models\RaceResult::classifiedPositions($classRows, $ratingCarKey);
                                         $driverCount = $classRows->whereNotNull('user_id')->count();
 
                                         $ratingGroups->push((object) [
@@ -379,7 +382,7 @@
                                     $rows = $raceResults->filter(fn($r) => $r->elo_change !== null);
                                     $ratingGroups->push((object) [
                                         'label' => null, 'color' => null, 'rows' => $rows,
-                                        'positions' => \App\Models\RaceResult::classifiedPositions($raceResults), 'driverCount' => null, 'minNeeded' => null,
+                                        'positions' => \App\Models\RaceResult::classifiedPositions($raceResults, $ratingCarKey),'driverCount' => null, 'minNeeded' => null,
                                     ]);
                                 }
                             @endphp
@@ -402,7 +405,8 @@
                                             <th class="fw-bold text-uppercase text-secondary py-3" style="font-size:.7rem;letter-spacing:.06em">Driver</th>
                                             <th class="fw-bold text-uppercase text-secondary py-3 text-end" style="font-size:.7rem;letter-spacing:.06em">Before</th>
                                             <th class="fw-bold text-uppercase text-secondary py-3 text-end" style="font-size:.7rem;letter-spacing:.06em">Change</th>
-                                            <th class="fw-bold text-uppercase text-secondary py-3 text-end pe-4" style="font-size:.7rem;letter-spacing:.06em">After</th>
+                                            <th class="fw-bold text-uppercase text-secondary py-3 text-end" style="font-size:.7rem;letter-spacing:.06em">After</th>
+                                            <th class="fw-bold text-uppercase text-secondary py-3 text-end pe-4" style="font-size:.7rem;letter-spacing:.06em">SR</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -420,8 +424,23 @@
                                             <td class="text-end fw-black" style="font-size:.9rem;font-variant-numeric:tabular-nums;color:{{ $change >= 0 ? '#10b981' : '#ef4444' }}">
                                                 {{ $change >= 0 ? '+' : '' }}{{ $change }}
                                             </td>
-                                            <td class="text-end pe-4 fw-black" style="font-size:.9rem;font-variant-numeric:tabular-nums;color:#111827">
+                                            <td class="text-end fw-black" style="font-size:.9rem;font-variant-numeric:tabular-nums;color:#111827">
                                                 {{ number_format((float)$result->rating_after) }}
+                                            </td>
+                                            {{-- Safety Rating after this race (sr_after) with its change; results
+                                                 rated before sr_after existed only have the change. --}}
+                                            @php $srChange = $result->sr_change !== null ? (float) $result->sr_change : null; @endphp
+                                            <td class="text-end pe-4" style="font-size:.85rem;font-variant-numeric:tabular-nums;white-space:nowrap">
+                                                @if($result->sr_after !== null)
+                                                <span class="fw-black" style="color:#111827">{{ number_format((float) $result->sr_after, 2) }}</span>
+                                                @endif
+                                                @if($srChange !== null)
+                                                <span class="fw-bold ms-1" style="font-size:.75rem;color:{{ $srChange > 0 ? '#10b981' : ($srChange < 0 ? '#ef4444' : '#9ca3af') }}">
+                                                    {{ $srChange > 0 ? '+' : '' }}{{ number_format($srChange, 2) }}
+                                                </span>
+                                                @elseif($result->sr_after === null)
+                                                <span class="text-secondary">—</span>
+                                                @endif
                                             </td>
                                         </tr>
                                         @endforeach
@@ -434,6 +453,31 @@
 
                     </div>
                 </div>
+
+                {{-- Detailed stats are a membership perk (ResultsController): a locked preview
+                     for everyone else when this race has them. --}}
+                @if($statsAvailable && ! $canSeeStats)
+                <div class="xcl-stats-locked bg-white rounded-3 shadow-sm overflow-hidden mt-3">
+                    <div class="d-flex flex-wrap border-bottom" style="background:#fafafa">
+                        @foreach(['Best Laps', 'Sectors', 'Consistency', 'Lap by Lap', 'Penalties'] as $tab)
+                        <span class="px-4 py-3 fw-bold text-secondary" style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;opacity:.55">
+                            <i class="fa-solid fa-lock me-1" style="font-size:.65rem"></i>{{ $tab }}
+                        </span>
+                        @endforeach
+                    </div>
+                    <div class="text-center px-4 py-5">
+                        <div class="fw-black text-uppercase fst-italic text-dark mb-2" style="font-size:1.05rem">Detailed race stats</div>
+                        <p class="text-secondary mx-auto mb-3" style="font-size:.85rem;max-width:460px">
+                            Every lap time, sector splits, consistency and penalties for this race —
+                            available to XCL Supporters and up.
+                        </p>
+                        <a href="{{ auth()->check() ? route('memberships') : route('login') }}"
+                           class="btn fw-black text-uppercase text-white" style="background:#7c3aed;font-size:.8rem;padding:.55rem 1.4rem">
+                            {{ auth()->check() ? 'Unlock with a membership' : 'Log in to see the stats' }}
+                        </a>
+                    </div>
+                </div>
+                @endif
 
                 {{-- Detailed stats — from the raw ACC session JSON, when one was captured on import --}}
                 @if($stats && $stats['leaderboard'])

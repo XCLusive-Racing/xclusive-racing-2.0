@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Race;
 use App\Models\RaceRegistration;
+use App\Models\RaceSessionFile;
 use App\Models\User;
 use App\Services\AccResultImportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -61,8 +62,9 @@ class ResultsJsonPersistedTest extends TestCase
 
         $race->refresh();
         $this->assertSame('race-results/'.$race->id.'.json', $race->results_json_path);
-        Storage::disk('local')->assertExists('race-results/'.$race->id.'.json');
-        $this->assertSame($content, Storage::disk('local')->get('race-results/'.$race->id.'.json'));
+        // Kept in the database (2026-10): the server's local disk is wiped on every deploy.
+        $this->assertSame($content, RaceSessionFile::jsonFor($race));
+        Storage::disk('local')->assertMissing('race-results/'.$race->id.'.json');
     }
 
     public function test_a_qualifying_only_session_does_not_write_a_results_json(): void

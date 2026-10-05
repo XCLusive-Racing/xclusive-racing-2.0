@@ -7,7 +7,6 @@ use App\Models\Race;
 use App\Models\RaceRegistration;
 use App\Models\RaceResult;
 use App\Models\User;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class RatingService
@@ -86,7 +85,7 @@ class RatingService
             // a shared car as one entry, so ranking each co-driver's row separately (P1+P2 for
             // the winning car, ...) pushed the bottom half of a team race to positions beyond
             // the field size and a flat max loss (bug, Driver Swap Event 2026-10-04).
-            $positions = $this->carPositions($classResults, $fieldKey);
+            $positions = RaceResult::classifiedPositions($classResults, $fieldKey);
 
             $entries = $classResults->map(function (RaceResult $r) use ($ratingField, $positions, $fieldKey) {
                 // Undo this result's own previously-applied elo_change (if any) so recalculating
@@ -197,17 +196,6 @@ class RatingService
         $user->update($updates);
     }
 
-    // Result id => finishing position, counted per car: the classified rows in finishing
-    // order (RaceResult::classifiedPositions()'s rules), each car taking the next position
-    // once, at its best-placed row. A solo race has one row per car, so it's unchanged there.
-    private function carPositions(Collection $results, \Closure $fieldKey): Collection
-    {
-        $classified = $results->where('dns', false)->where('dsq', false)->sortBy('position')->values();
-        $carPos = $classified->map($fieldKey)->unique()->values()->flip()->map(fn ($i) => $i + 1);
-
-        return $classified->mapWithKeys(fn (RaceResult $r) => [$r->id => $carPos[$fieldKey($r)]]);
-    }
-
     private function ratingField(string $game): ?string
     {
         return User::eloColumn($game);
@@ -240,7 +228,7 @@ class RatingService
 
         $change = round($newSr - $baseline, 4);
 
-        $result->update(['sr_change' => $change]);
+        $result->update(['sr_change' => $change, 'sr_after' => round($newSr, 2)]);
         User::where('id', $result->user_id)->update([$srField => round($newSr, 2)]);
     }
 }

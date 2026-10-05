@@ -8,6 +8,7 @@ use App\Models\PointsScheme;
 use App\Models\Race;
 use App\Models\RaceRegistration;
 use App\Models\RaceResult;
+use App\Models\RaceSessionFile;
 use App\Models\User;
 use App\Services\AccResultImportService;
 use App\Services\AccServerConfigService;
@@ -107,8 +108,8 @@ class MultiRaceRoundTest extends TestCase
         $this->assertSame(1, RaceResult::where(['race_id' => $race->id, 'race_number' => 2, 'user_id' => $b->id])->value('position'));
         $this->assertSame(4, RaceResult::where('race_id', $race->id)->where('session_type', 'race')->count());
 
-        Storage::disk('local')->assertExists('race-results/'.$race->id.'.json');
-        Storage::disk('local')->assertExists('race-results/'.$race->id.'-race2.json');
+        $this->assertNotNull(RaceSessionFile::jsonFor($race, 1));
+        $this->assertNotNull(RaceSessionFile::jsonFor($race, 2));
 
         // Re-importing race 2's file is idempotent.
         $importer->processSessions($this->raceSession([$b->platform_id, $a->platform_id], 3), $race, 'r2.json');

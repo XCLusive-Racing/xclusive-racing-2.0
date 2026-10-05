@@ -60,4 +60,35 @@ class TeamRaceRatingTest extends TestCase
         rsort($sorted);
         $this->assertSame($sorted, $changes);
     }
+
+    // The public results page's Ratings tab numbers co-drivers the same way: P1, P1, P2, P2...
+    public function test_the_public_ratings_tab_shows_co_drivers_sharing_their_cars_position(): void
+    {
+        $race = $this->teamRace(10);
+        app(RatingService::class)->processRace($race);
+
+        $html = $this->get(route('results.index', ['race' => $race->id]))->assertOk()->getContent();
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($html);
+        $cells = (new \DOMXPath($dom))->query('//th[normalize-space()="Change"]/ancestor::table//tbody/tr/td[1]');
+        $positions = collect(iterator_to_array($cells))->map(fn ($td) => trim($td->textContent))->all();
+
+        $this->assertSame(['1', '1', '2', '2', '3', '3', '4', '4', '5', '5', '6', '6', '7', '7', '8', '8', '9', '9', '10', '10'], $positions);
+    }
+
+    // The Ratings tab shows each driver's Safety Rating after the race next to its change.
+    public function test_the_ratings_tab_shows_the_sr_after_the_race(): void
+    {
+        $race = $this->teamRace(10);
+        app(RatingService::class)->processRace($race);
+
+        $result = RaceResult::where('race_id', $race->id)->orderBy('id')->first();
+        $this->assertNotNull($result->sr_after);
+        $this->assertEquals((float) $result->user->fresh()->sr_acc, (float) $result->sr_after);
+
+        $this->get(route('results.index', ['race' => $race->id]))->assertOk()
+            ->assertSee(number_format((float) $result->sr_after, 2))
+            ->assertSee('+'.number_format((float) $result->sr_change, 2));
+    }
 }

@@ -21,8 +21,13 @@ class AccResultsParser
             return $this->empty();
         }
 
-        $content = file_get_contents($path);
-        [$decoded, $error] = $this->importService->decodeContent($content, basename($path));
+        return $this->parseContent(file_get_contents($path), $game, basename($path));
+    }
+
+    // The same, from the file's content (RaceSessionFile keeps it in the database).
+    public function parseContent(string $content, string $game = 'acc', string $name = 'results.json'): array
+    {
+        [$decoded, $error] = $this->importService->decodeContent($content, $name);
 
         if ($error) {
             return $this->empty();

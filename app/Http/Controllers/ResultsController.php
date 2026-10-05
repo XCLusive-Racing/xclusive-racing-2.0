@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Race;
+use App\Models\RaceSessionFile;
 use App\Services\AccResultsParser;
 use Illuminate\Support\Facades\Storage;
 
@@ -26,12 +27,24 @@ class ResultsController extends Controller
         $raceResults = $selected?->raceResults()->where('race_number', $raceNumber)->with('user')->get() ?? collect();
         $qualiResults = $selected?->qualiResults()->with('user')->get() ?? collect();
 
+        // Detailed stats (laps, sectors, consistency...) from the race's raw results file —
+        // in the database (RaceSessionFile), or a local file left from before that. They're a
+        // membership perk: only built for a supporter, everyone else gets the teaser.
         $stats = null;
-        $statsPath = $raceNumber > 1 ? $selected?->resultsJsonPath($raceNumber) : $selected?->results_json_path;
-        if ($statsPath && Storage::disk('local')->exists($statsPath)) {
-            $stats = (new AccResultsParser)->parse(Storage::disk('local')->path($statsPath), $selected->game);
+        $statsAvailable = false;
+        $canSeeStats = (bool) auth()->user()?->hasTier('supporter');
+        if ($selected) {
+            $json = RaceSessionFile::jsonFor($selected, $raceNumber);
+            $legacyPath = $raceNumber > 1 ? $selected->resultsJsonPath($raceNumber) : $selected->results_json_path;
+            if ($json === null && $legacyPath && Storage::disk('local')->exists($legacyPath)) {
+                $json = Storage::disk('local')->get($legacyPath);
+            }
+            $statsAvailable = $json !== null;
+            if ($statsAvailable && $canSeeStats) {
+                $stats = (new AccResultsParser)->parseContent($json, $selected->game);
+            }
         }
 
-        return view('results.index', compact('races', 'selected', 'raceResults', 'qualiResults', 'stats', 'raceNumbers', 'raceNumber'));
+        return view('results.index', compact('races', 'selected', 'raceResults', 'qualiResults', 'stats', 'statsAvailable', 'canSeeStats', 'raceNumbers', 'raceNumber'));
     }
 }

@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Models\Race;
 use App\Models\RaceResult;
+use App\Models\RaceSessionFile;
 use App\Models\User;
-use Illuminate\Support\Facades\Storage;
 
 class AccResultImportService
 {
@@ -88,6 +88,28 @@ class AccResultImportService
         return [$counts, $errors];
     }
 
+    // Stores a results file's raw JSON for the stats without importing any results — for
+    // putting back the stats of races imported before they were kept in the database
+    // (results:restore-stats). Returns the race numbers it stored.
+    public function storeStatsOnly(string $content, Race $race): array
+    {
+        $data = json_decode($content, true);
+        $sessions = $data['sessions'] ?? (isset($data[0]) ? $data : [$data]);
+
+        $raceNumbers = [];
+        foreach ($sessions as $session) {
+            if (($session['sessionType'] ?? null) === 'R' && ! empty($session['sessionResult']['leaderBoardLines'])) {
+                $raceNumbers[] = $this->raceNumber($session, $race);
+            }
+        }
+
+        foreach (array_unique($raceNumbers) as $raceNumber) {
+            $this->storeResultsJson($race, $content, $raceNumber);
+        }
+
+        return array_values(array_unique($raceNumbers));
+    }
+
     // Which race of the round an R session is. ACC's sessionIndex is the session's
     // position in the event's sessions list, which AccServerConfigService builds as
     // [P?] [Q?] R R… — so it's the index past practice/quali, 1-based. A results
@@ -113,10 +135,14 @@ class AccResultImportService
     // ImportGportalResults — the scheduled every-minute importer that brings in
     // practically every real race — calls processSessions() directly and never knew to,
     // so those races silently got no stats panel at all.
+    //
+    // Kept in the database (RaceSessionFile), not on the server's local disk: that disk is
+    // wiped on every deploy, so the stats used to disappear within hours of each import.
+    // results_json_path stays as the "this race has stats" marker.
     private function storeResultsJson(Race $race, string $content, int $raceNumber = 1): void
     {
         $path = $race->resultsJsonPath($raceNumber);
-        Storage::disk('local')->put($path, $content);
+        RaceSessionFile::put($race, $raceNumber, $content);
 
         if ($raceNumber === 1) {
             $race->update(['results_json_path' => $path]);
