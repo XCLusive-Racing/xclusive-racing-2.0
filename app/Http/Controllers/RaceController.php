@@ -427,7 +427,7 @@ class RaceController extends Controller
     {
         $user = auth()->user();
         if (! $user->canShareStream()) {
-            return back()->with('error', 'Sharing your stream is an XCLusive Member feature.');
+            return back()->with('error', 'Sharing your stream is a supporter perk.');
         }
 
         $registration = RaceRegistration::where('race_id', $race->id)

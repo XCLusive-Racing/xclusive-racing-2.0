@@ -26,15 +26,15 @@ use RuntimeException;
 //   4. cancel(): stops the subscription; the paid period still runs out.
 // The webhook is only a "something changed" ping — every payment is fetched back from
 // Mollie, never trusted from the request. Nothing here grants anything directly: the
-// perks follow User::hasTier(), which reads Membership::isPaidUp().
+// perks follow User::isSupporter(), which reads Membership::isPaidUp().
 class MembershipService
 {
     private const API = 'https://api.mollie.com/v2/';
 
-    public function checkout(User $user, string $plan = 'supporter'): string
+    public function checkout(User $user, string $plan = 'monthly'): string
     {
-        if (! array_key_exists($plan, config('memberships.plans')) || ! Membership::isPurchasable($plan)) {
-            throw new InvalidArgumentException("Plan [{$plan}] can't be bought.");
+        if (! Membership::isBillingOption($plan)) {
+            throw new InvalidArgumentException("Billing option [{$plan}] doesn't exist.");
         }
 
         $membership = Membership::firstOrCreate(['user_id' => $user->id]);
@@ -60,7 +60,7 @@ class MembershipService
 
         $payment = $this->api()->post('payments', array_filter([
             'amount' => $this->amount($plan),
-            'description' => config("memberships.plans.{$plan}.name").' — first '.config('memberships.interval'),
+            'description' => config('memberships.name').' — '.strtolower(config("memberships.billing.{$plan}.label")).', first payment',
             'customerId' => $membership->mollie_customer_id,
             'sequenceType' => 'first',
             'redirectUrl' => route('memberships.return'),
@@ -93,13 +93,14 @@ class MembershipService
             }
 
             $membership = Membership::whereKey($membership->id)->lockForUpdate()->first();
-            $interval = CarbonInterval::make(config('memberships.interval'));
+            $interval = CarbonInterval::make(config('memberships.billing.'.($record->sequence_type === 'first' ? $record->plan : $membership->billing()).'.interval'));
             $stillPaid = $membership->paid_until && $membership->paid_until->isFuture();
 
             if ($record->sequence_type === 'first') {
-                // Same plan again (restarting after a cancel): the new period follows on from
-                // what's left. Another plan: it starts now and replaces the old subscription.
-                $from = $stillPaid && $membership->plan === $record->plan ? $membership->paid_until : now();
+                // Restarting after a cancel or switching monthly <-> yearly: the perks are the
+                // same, so the new period follows on from what's still paid, and the new
+                // subscription replaces the old one.
+                $from = $stillPaid ? $membership->paid_until : now();
                 $oldSubscription = $membership->mollie_subscription_id;
 
                 $membership->fill([
@@ -177,8 +178,8 @@ class MembershipService
     private function startSubscription(Membership $membership, Carbon $firstChargeAt): string
     {
         $subscription = $this->api()->post("customers/{$membership->mollie_customer_id}/subscriptions", array_filter([
-            'amount' => $this->amount($membership->plan),
-            'interval' => config('memberships.interval'),
+            'amount' => $this->amount($membership->billing()),
+            'interval' => $membership->interval(),
             'startDate' => $firstChargeAt->toDateString(),
             // Mollie wants a description that's unique per customer.
             'description' => $membership->planName().' (since '.now()->format('Y-m-d H:i:s').')',
@@ -222,7 +223,7 @@ class MembershipService
 
     private function amount(string $plan): array
     {
-        return ['currency' => config('memberships.currency'), 'value' => config("memberships.plans.{$plan}.price")];
+        return ['currency' => config('memberships.currency'), 'value' => config("memberships.billing.{$plan}.price")];
     }
 
     // Mollie refuses a webhook it can't reach, so a local install (localhost / 127.0.0.1)

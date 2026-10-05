@@ -92,7 +92,7 @@ class RacingTeamController extends Controller
 
         $alreadyInvited = $team->invitations()->where('user_id', $user->id)->exists();
         if (! $alreadyInvited && $team->freeSeats() === 0) {
-            return back()->withErrors(['team' => 'Your team is full ('.$team->seatLimit().' drivers). A membership plan gives your team more seats.']);
+            return back()->withErrors(['team' => 'Your team is full ('.$team->seatLimit().' drivers). A membership gives your team unlimited drivers.']);
         }
 
         $invitation = RacingTeamInvitation::firstOrCreate([

@@ -52,7 +52,7 @@ class RaceStatsTest extends TestCase
         $driver = User::factory()->create();
         $this->actingAs($driver)->get($url)->assertSee('Unlock with a membership')->assertDontSee('data-tab-btn="stats-consistency"', false);
 
-        Membership::create(['user_id' => $driver->id, 'plan' => 'supporter', 'status' => 'active', 'mode' => 'test', 'paid_until' => now()->addMonth()]);
+        Membership::create(['user_id' => $driver->id, 'plan' => 'monthly', 'status' => 'active', 'mode' => 'test', 'paid_until' => now()->addMonth()]);
         $this->actingAs($driver->fresh())->get($url)->assertSee('data-tab-btn="stats-consistency"', false)->assertDontSee('Unlock with a membership');
     }
 

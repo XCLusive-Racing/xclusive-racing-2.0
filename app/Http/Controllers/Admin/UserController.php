@@ -111,7 +111,7 @@ class UserController extends Controller
             ? '<span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:4px;background:#fee2e2;color:#dc2626">Suspended</span>'
             : ($user->isSupporter()
                 ? '<span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:4px;background:#fef3c7;color:#d97706">★ '
-                    .e(config('memberships.plans.'.$user->membershipTier().'.name'))
+                    .e(config('memberships.name'))
                     .($user->hasPaidMembership() ? '' : ($user->is_supporter ? ' (free)' : ' (staff)')).'</span>'
                 : '<span class="text-secondary">—</span>');
 

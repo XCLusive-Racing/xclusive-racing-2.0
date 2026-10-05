@@ -8157,17 +8157,9 @@ table.dataTable thead th {
     i { margin-right: .35rem; }
 }
 
-// Three plan cards side by side (stacked on phones), action buttons lined up at the bottom.
-.xcl-plans {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1.25rem;
-    align-items: stretch;
-
-    @media (max-width: 991px) { grid-template-columns: minmax(0, 1fr); max-width: 560px; }
-}
+// The single XCL Supporter card: perks, then the monthly and yearly buttons.
+.xcl-plan--single { max-width: 620px; }
 .xcl-plan__perks { flex: 1; }
-.xcl-plan__perks .xcl-plan__includes > i { color: #fbbf24; }
 .xcl-plan__soon {
     display: inline-block;
     margin-left: .35rem;
@@ -8182,8 +8174,27 @@ table.dataTable thead th {
     text-transform: uppercase;
     vertical-align: middle;
 }
-.xcl-plan--member { border-color: rgba(219,39,119,.5); }
-.xcl-plan--member .xcl-plan__head { background: linear-gradient(135deg, rgba(219,39,119,.45), rgba(124,58,237,.3)); }
-.xcl-plan--vip { border-color: rgba(251,191,36,.55); }
-.xcl-plan--vip .xcl-plan__head { background: linear-gradient(135deg, rgba(251,191,36,.35), rgba(124,58,237,.35)); }
 .xcl-plan--current { box-shadow: 0 0 0 2px #4ade80; }
+.xcl-plan__options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem;
+
+    form { position: relative; }
+
+    @media (max-width: 575px) { grid-template-columns: minmax(0, 1fr); }
+}
+.xcl-plan__btn--yearly { background: #db2777; &:hover { background: #be185d; } }
+.xcl-plan__save {
+    position: absolute;
+    top: -.55rem;
+    right: .6rem;
+    padding: .05rem .45rem;
+    border-radius: 20px;
+    background: #fbbf24;
+    color: #111827;
+    font-size: .62rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}

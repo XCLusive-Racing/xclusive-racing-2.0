@@ -9,14 +9,14 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-// The event page's Drivers Streaming bar: a registered XCLusive Member (or higher) with a
+// The event page's Drivers Streaming bar: a registered supporter with a
 // stream link on their profile adds it to a race with one button (nothing is added
 // automatically); the bar shows up to eight and is hidden without any.
 class EventStreamersTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function memberPlan(User $user, string $plan = 'member'): void
+    private function memberPlan(User $user, string $plan = 'monthly'): void
     {
         Membership::create(['user_id' => $user->id, 'plan' => $plan, 'status' => 'active', 'mode' => 'test', 'paid_until' => now()->addMonth()]);
     }
@@ -81,9 +81,9 @@ class EventStreamersTest extends TestCase
         $user = $this->registered($race, member: false);
 
         $html = $this->actingAs($user)->get(route('events.show', $race))->assertOk()
-            ->assertSee('See the plans')->assertDontSee('+ Add my stream')->getContent();
+            ->assertSee('Become a supporter')->assertDontSee('+ Add my stream')->getContent();
         // Under the UNREGISTER button, at the bottom of the Registration card.
-        $this->assertGreaterThan(strpos($html, '>UNREGISTER<'), strpos($html, 'See the plans'));
+        $this->assertGreaterThan(strpos($html, '>UNREGISTER<'), strpos($html, 'Become a supporter'));
 
         $this->actingAs($user)->put(route('events.stream', $race));
         $this->assertNull($this->raceStream($user));
@@ -115,17 +115,5 @@ class EventStreamersTest extends TestCase
         $this->assertSame(8, substr_count($html, 'class="xcl-streamer xcl-streamer--'));
         $this->assertStringContainsString('xcl-streamer--youtube', $html);
         $this->assertStringNotContainsString('lapsed', $html);
-    }
-
-    public function test_a_supporter_plan_alone_does_not_unlock_streaming(): void
-    {
-        $race = $this->race();
-        $user = $this->registered($race, member: false);
-        $this->memberPlan($user, 'supporter');
-
-        $this->actingAs($user)->get(route('events.show', $race))->assertOk()
-            ->assertSee('See the plans')->assertDontSee('+ Add my stream');
-        $this->actingAs($user)->put(route('events.stream', $race))->assertSessionHas('error');
-        $this->assertNull($this->raceStream($user));
     }
 }

@@ -16,7 +16,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 
-#[Fillable(['name', 'first_name', 'last_name', 'email', 'password', 'must_set_password', 'display_name_preference', 'is_supporter', 'is_suspended', 'suspension_reason', 'suspended_until', 'privacy_accepted_at', 'country', 'timezone', 'uses_12_hour_clock', 'platform', 'platform_id', 'stream_url', 'car_number', 'car_model', 'banner', 'game', 'team', 'role', 'flag', 'elo_acc', 'elo_lmu', 'elo_iracing', 'sr_acc', 'sr_lmu', 'sr_iracing', 'legacy_races', 'legacy_wins', 'legacy_podiums', 'last_seen_at'])]
+#[Fillable(['name', 'first_name', 'last_name', 'email', 'password', 'must_set_password', 'display_name_preference', 'is_supporter', 'is_suspended', 'suspension_reason', 'suspended_until', 'privacy_accepted_at', 'country', 'timezone', 'uses_12_hour_clock', 'platform', 'platform_id', 'stream_url', 'short_name', 'car_number', 'car_model', 'banner', 'game', 'team', 'role', 'flag', 'elo_acc', 'elo_lmu', 'elo_iracing', 'sr_acc', 'sr_lmu', 'sr_iracing', 'legacy_races', 'legacy_wins', 'legacy_podiums', 'last_seen_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -280,42 +280,16 @@ class User extends Authenticatable
     // supporter set by hand (the is_supporter flag in the admin panel) or XCL staff.
     // Computed rather than stored, so a membership running out or the last staff role
     // being removed drops the badge on its own. Eager-load 'roles' and 'membership' for lists.
+    // One plan (config/memberships.php) with every perk: a supporter gets them all.
     public function isSupporter(): bool
     {
-        return $this->hasTier('supporter');
-    }
-
-    // The highest membership plan this user has (config/memberships.php 'plans' keys,
-    // lowest to highest): their paid plan, or 'supporter' for a free supporter or XCL
-    // staff. Null = none.
-    public function membershipTier(): ?string
-    {
-        $tiers = array_keys(config('memberships.plans'));
-        $paid = $this->hasPaidMembership() ? $this->membership->plan : null;
-        $free = ($this->is_supporter || $this->isStaffSupporter()) ? 'supporter' : null;
-
-        $levels = array_filter([$paid, $free], fn ($t) => $t !== null && in_array($t, $tiers, true));
-
-        return $levels ? $tiers[max(array_map(fn ($t) => array_search($t, $tiers, true), $levels))] : null;
-    }
-
-    // Every plan includes the plans below it: a Member has the Supporter perks too.
-    public function hasTier(string $tier): bool
-    {
-        $tiers = array_keys(config('memberships.plans'));
-        $current = $this->membershipTier();
-
-        return $current !== null && array_search($current, $tiers, true) >= array_search($tier, $tiers, true);
+        return (bool) $this->is_supporter || $this->hasPaidMembership() || $this->isStaffSupporter();
     }
 
     // Drivers allowed in a My Team this user owns (owner included); null = unlimited.
     public function teamSeatLimit(): ?int
     {
-        $tier = $this->membershipTier();
-
-        return $tier
-            ? config("memberships.plans.{$tier}.team_seats")
-            : (int) config('memberships.base_team_seats');
+        return $this->isSupporter() ? null : (int) config('memberships.base_team_seats');
     }
 
     public function hasPaidMembership(): bool
@@ -452,18 +426,23 @@ class User extends Authenticatable
         return $realName !== '' ? $realName : null;
     }
 
-    // "Team / Quote" (Supporter plan) and the stream link (Member plan, canShareStream())
-    // are only set and shown (on the site and in-game) while the user has that plan. The
-    // stored value is kept, so it comes back as soon as they have it again.
+    // "Team / Quote" and the stream link are supporter perks: only set and shown (on the site
+    // and in-game) while the user is a supporter. The stored value is kept, so it comes back
+    // as soon as they are one again.
     public function displayTeam(): ?string
     {
         return $this->isSupporter() ? $this->team : null;
     }
 
-    // Sharing a stream on event pages is an XCLusive Member perk (and up).
+    // A supporter's own in-game abbreviation; null = the standard "XCL".
+    public function displayShortName(): ?string
+    {
+        return $this->isSupporter() && filled($this->short_name) ? mb_strtoupper($this->short_name) : null;
+    }
+
     public function canShareStream(): bool
     {
-        return $this->hasTier('member');
+        return $this->isSupporter();
     }
 
     public function memberStreamUrl(): ?string

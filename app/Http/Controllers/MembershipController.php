@@ -19,7 +19,8 @@ class MembershipController extends Controller
             'membership' => $membership,
             'checkoutOpen' => Membership::checkoutOpenFor(auth()->user()),
             'testMode' => Membership::currentMode() === 'test',
-            'plans' => config('memberships.plans'),
+            'billing' => config('memberships.billing'),
+            'perks' => config('memberships.perks'),
         ]);
     }
 
@@ -29,12 +30,12 @@ class MembershipController extends Controller
             return redirect()->route('memberships')->with('error', 'Memberships are launching soon.');
         }
 
-        $plan = (string) $request->input('plan', 'supporter');
-        if (! array_key_exists($plan, config('memberships.plans')) || ! Membership::isPurchasable($plan)) {
-            return redirect()->route('memberships')->with('error', 'That plan is not available yet.');
+        $plan = (string) $request->input('plan', 'monthly'); // billing option: monthly / yearly
+        if (! Membership::isBillingOption($plan)) {
+            return redirect()->route('memberships')->with('error', 'That payment option is not available.');
         }
 
-        // Already on this plan and renewing. Another plan is a new checkout (a switch).
+        // Already paying this way and renewing. The other option is a new checkout (a switch).
         $membership = Membership::where('user_id', auth()->id())->first();
         if ($membership?->isRenewing() && $membership->isPaidUp() && $membership->plan === $plan) {
             return redirect()->route('memberships')->with('success', 'You already have '.$membership->planName().'.');
@@ -60,7 +61,7 @@ class MembershipController extends Controller
         }
 
         return match ($payment?->status) {
-            'paid' => redirect()->route('memberships')->with('success', 'Thank you for supporting XCL! Your '.config("memberships.plans.{$payment->plan}.name").' perks are now active.'),
+            'paid' => redirect()->route('memberships')->with('success', 'Thank you for supporting XCL! Your '.config('memberships.name').' perks are now active.'),
             'open', 'pending', 'authorized' => redirect()->route('memberships')->with('success', 'Your payment is being processed. Your perks unlock as soon as it is confirmed.'),
             default => redirect()->route('memberships')->with('error', 'The payment was not completed. You have not been charged.'),
         };

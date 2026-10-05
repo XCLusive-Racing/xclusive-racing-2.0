@@ -34,7 +34,7 @@ class SeedFillerDrivers extends Command
                 'must_set_password' => false,
                 'platform' => Arr::random(['ps5', 'ps5', 'xbox']),
                 'platform_id' => null,
-                'country' => Arr::random(['NL', 'NL', 'BE', 'DE', 'GB', 'FR', 'ES', 'IT', 'DK', 'SE', 'PL', 'US']),
+                'country' => $this->countryFromName($gamertag) ?? Arr::random(self::COUNTRIES),
                 'role' => 'driver',
                 'elo_acc' => $this->rating(),
                 'elo_lmu' => $this->rating(),
@@ -57,6 +57,15 @@ class SeedFillerDrivers extends Command
         $this->info(($this->option('dry-run') ? 'Would create ' : 'Created ').$created.' filler driver(s).');
 
         return self::SUCCESS;
+    }
+
+    private const COUNTRIES = ['NL', 'NL', 'BE', 'DE', 'GB', 'FR', 'ES', 'IT', 'DK', 'SE', 'PL', 'US'];
+
+    // A name ending in a country code — JoseG_ES, fallutNL, SjevsjamGB — gets that country,
+    // so its flag matches the name. Only codes from COUNTRIES, upper case.
+    private function countryFromName(string $gamertag): ?string
+    {
+        return preg_match('/(?:_|[a-z0-9])('.implode('|', array_unique(self::COUNTRIES)).')$/', $gamertag, $m) ? $m[1] : null;
     }
 
     // 1000-4000, mostly 1000-2000: 75% in 1000-1999, 20% in 2000-2999, 5% in 3000-4000.

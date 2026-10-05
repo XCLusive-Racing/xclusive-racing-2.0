@@ -28,8 +28,8 @@ class DiscordRoleService
 
     /**
      * Sync a user's Discord rank role to match their highest XCL rating rank
-     * (see User::highestRank()), and their membership plan roles (plan_roles,
-     * User::hasTier()) — a lapsed plan's roles come off again at the next
+     * (see User::highestRank()), and the supporter role (supporter_role_id,
+     * User::isSupporter()) — a lapsed membership's role comes off again at the next
      * xcl:discord:sync-ranks sweep. No-op if the user has no linked Discord
      * account, isn't in the configured guild (anymore), or the bot isn't
      * configured yet — never throws, since this must never block the caller
@@ -44,14 +44,14 @@ class DiscordRoleService
 
         $guildId = config('services.discord.guild_id');
         $rankRoles = array_filter(config('services.discord.rank_roles', []));
-        $planRoles = array_filter(config('services.discord.plan_roles', []));
+        $supporterRoleId = config('services.discord.supporter_role_id');
 
-        if (! $guildId || (! $rankRoles && ! $planRoles)) {
+        if (! $guildId || (! $rankRoles && ! $supporterRoleId)) {
             return;
         }
 
         // Role ID => should the user have it. Rank: exactly one, their highest rank.
-        // Membership plan: every plan up to and including theirs (User::hasTier()).
+        // Supporter role: while they're a supporter (User::isSupporter()).
         $wanted = [];
         $targetRoleId = $rankRoles[$user->highestRank()['slug']] ?? null;
         if ($targetRoleId) {
@@ -59,8 +59,8 @@ class DiscordRoleService
                 $wanted[$roleId] = $roleId === $targetRoleId;
             }
         }
-        foreach ($planRoles as $plan => $roleId) {
-            $wanted[$roleId] = $user->hasTier($plan);
+        if ($supporterRoleId) {
+            $wanted[$supporterRoleId] = $user->isSupporter();
         }
 
         if (! $wanted) {

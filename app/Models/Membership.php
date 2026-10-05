@@ -31,15 +31,28 @@ class Membership extends Model
             && ($this->mode === null || $this->mode === self::currentMode());
     }
 
-    public function planName(): string
+    // 'plan' holds the billing choice (config memberships.billing: monthly / yearly). Rows
+    // from the earlier three-plan test period hold a plan name instead and count as monthly.
+    public function billing(): string
     {
-        return config("memberships.plans.{$this->plan}.name", 'XCL Membership');
+        return array_key_exists((string) $this->plan, config('memberships.billing')) ? $this->plan : 'monthly';
     }
 
-    // A plan can be bought once it has a price (VIP has none until MEMBERSHIP_VIP_PRICE is set).
-    public static function isPurchasable(string $plan): bool
+    public function interval(): string
     {
-        return filled(config("memberships.plans.{$plan}.price"));
+        return config('memberships.billing.'.$this->billing().'.interval');
+    }
+
+    // "XCL Supporter (yearly)"
+    public function planName(): string
+    {
+        return config('memberships.name').' ('.strtolower(config('memberships.billing.'.$this->billing().'.label')).')';
+    }
+
+    public static function isBillingOption(string $billing): bool
+    {
+        return array_key_exists($billing, config('memberships.billing'))
+            && filled(config("memberships.billing.{$billing}.price"));
     }
 
     // 'live' with a live_ MOLLIE_KEY, 'test' otherwise.

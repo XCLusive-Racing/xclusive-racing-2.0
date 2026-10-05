@@ -89,9 +89,9 @@
                     <span class="text-secondary">{{ $myTeam->invitations->count() }} pending {{ \Illuminate\Support\Str::plural('invite', $myTeam->invitations->count()) }}</span>
                     @endif
                     @if($seatLimit !== null && $freeSeats === 0)
-                    <span style="color:#b45309">Your team is full. <a href="{{ route('memberships') }}" class="fw-bold" style="color:#7c3aed">Get more seats with a membership</a></span>
-                    @elseif($seatLimit !== null && ! auth()->user()->hasTier('vip'))
-                    <a href="{{ route('memberships') }}" style="color:#7c3aed">More seats with a membership</a>
+                    <span style="color:#b45309">Your team is full. <a href="{{ route('memberships') }}" class="fw-bold" style="color:#7c3aed">Unlimited drivers with a membership</a></span>
+                    @elseif($seatLimit !== null)
+                    <a href="{{ route('memberships') }}" style="color:#7c3aed">Unlimited drivers with a membership</a>
                     @endif
                 </div>
 

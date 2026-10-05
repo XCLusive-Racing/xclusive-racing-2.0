@@ -114,12 +114,8 @@
                                 <div class="d-flex align-items-center gap-2 rounded-2 px-3 py-2" style="background:#f5f3ff;border:1px solid #ddd6fe;font-size:.8rem;color:#5b21b6">
                                     <i class="fa-solid fa-lock"></i>
                                     <span>
-                                        @if($isSupporter)
-                                        Stream Link is part of the XCLusive Member plan.
-                                        @else
-                                        Team / Quote comes with the XCL Supporter plan, Stream Link with XCLusive Member.
-                                        @endif
-                                        <a href="{{ route('memberships') }}" class="fw-bold" style="color:#7c3aed">See the plans</a>
+                                        Team / Quote, Stream Link and your own in-game abbreviation come with the XCL Supporter membership.
+                                        <a href="{{ route('memberships') }}" class="fw-bold" style="color:#7c3aed">Become a supporter</a>
                                     </span>
                                 </div>
                             </div>
@@ -161,6 +157,21 @@
                                     Add it to an event's Drivers Streaming bar with the + Add my stream button on that event.
                                 </div>
                                 @error('stream_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            {{-- In-game abbreviation (AccServerConfigService::entryShortName()). --}}
+                            <div class="col-sm-6">
+                                <label class="form-label fw-bold text-dark" style="font-size:.82rem">
+                                    In-game Abbreviation
+                                    @unless($isSupporter)<i class="fa-solid fa-lock ms-1 text-secondary" style="font-size:.7rem"></i>@endunless
+                                    <span class="ms-1 fw-normal text-secondary" style="font-size:.75rem">3 letters or digits</span>
+                                </label>
+                                <input type="text" name="short_name" value="{{ old('short_name', $user->short_name) }}"
+                                       class="form-control text-uppercase @error('short_name') is-invalid @enderror" placeholder="XCL"
+                                       maxlength="3" pattern="[A-Za-z0-9]{3}" style="max-width:120px" @disabled(! $isSupporter)>
+                                <div class="form-text" style="font-size:.72rem">
+                                    Shown next to your position on the in-game leaderboard. Empty = the standard XCL.
+                                </div>
+                                @error('short_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
                     </div>

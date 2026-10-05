@@ -35,7 +35,7 @@ class ResultsController extends Controller
         // membership perk: only built for a supporter, everyone else gets the teaser.
         $stats = null;
         $statsAvailable = false;
-        $canSeeStats = (bool) auth()->user()?->hasTier('supporter');
+        $canSeeStats = (bool) auth()->user()?->isSupporter();
         if ($selected) {
             $json = RaceSessionFile::jsonFor($selected, $raceNumber);
             $legacyPath = $raceNumber > 1 ? $selected->resultsJsonPath($raceNumber) : $selected->results_json_path;

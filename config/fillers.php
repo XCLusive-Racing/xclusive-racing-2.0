@@ -21,6 +21,21 @@ return [
         'Paddie-Pixie', 'CarbonCorsa', 'MuleLuca', 'GripLevelZero', 'Stev0car',
         'Biazed0387', 'ThijsBNL', 'MidnightMonza', 'CopseCorner', 'NordzGHsleifer',
         'quickerquicks1956', 'SvnSevn777', 'StintKing_DK', 'GravelTrapGary', 'FlatearthN1',
+
+        // 2026-10: ordinary gamertags, nothing racing-themed, so fillers don't stand out.
+        // A name ending in a country code (JoseG_ES, fallutNL) gets that country.
+        'JoseG_ES', 'KihikiWhat', 'Noneed48B', 'AryIs01_BE', 'GreatGr4nd4d',
+        'IKik67', 'th3Outerkid', 'SnipzsCopper', 'Brodonewhut778', 'hisname_DK',
+        'ultimaterides456', 'Sabrina991Fluxi', 'Pixtarminton44', 'fallutNL', 'f3nux43',
+        'Agnt74tie', 'Orybambooz', 'cred1tar3', 'SjevsjamGB', 'Jammeryk',
+        'MarcoV_IT', 'lukaszB_PL', 'Tobbe_SE', 'RenzoK77', 'nightowl_vince',
+        'Kevkev2003', 'DaanvD_NL', 'jorisgamer88', 'Mikkel_DK', 'Frenchie_Loic',
+        'Bastiii98', 'PedroMtz_ES', 'Sven1987', 'quirkyjoe', 'Lennert_BE',
+        'xXwolfieXx', 'Zebbe04', 'Kuba_PL', 'TheRealDennis', 'Mattiee_FR',
+        'rubenzz12', 'olliebear_GB', 'Jakeyy_US', 'Fl0rian_DE', 'ghostlyfin',
+        'Noahh_NL', 'Kristof91', 'mrPotato33', 'Emilia_SE', 'HugoDLC',
+        'thijsvh', 'Yannick_BE', 'brokenheadset', 'SilentMika', 'LeoTheLion09',
+        'Arjen1976', 'Willemsz', 'CoffeeAndChill', 'Rico_IT', 'TomaszK21',
     ],
 
 ];

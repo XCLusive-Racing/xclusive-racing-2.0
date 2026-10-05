@@ -22,8 +22,8 @@ class ProfileTeamQuoteTest extends TestCase
 {
     use RefreshDatabase;
 
-    // Team / Quote comes with the Supporter plan; the stream link needs XCLusive Member.
-    public function test_a_supporter_can_set_their_team_quote_but_not_a_stream_link(): void
+    // A free supporter (set by hand in the admin panel) gets the same perks as a paying one.
+    public function test_a_free_supporter_can_set_their_team_quote_and_stream_link(): void
     {
         $user = User::factory()->create(['is_supporter' => true, 'team' => null]);
 
@@ -32,13 +32,13 @@ class ProfileTeamQuoteTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->assertSame('Night Owls RT', $user->fresh()->team);
-        $this->assertNull($user->fresh()->stream_url);
+        $this->assertSame('https://twitch.tv/nightowls', $user->fresh()->stream_url);
     }
 
-    public function test_a_member_can_set_their_stream_link(): void
+    public function test_a_paying_supporter_can_set_their_stream_link(): void
     {
         $user = User::factory()->create();
-        Membership::create(['user_id' => $user->id, 'plan' => 'member', 'status' => 'active', 'mode' => 'test', 'paid_until' => now()->addMonth()]);
+        Membership::create(['user_id' => $user->id, 'plan' => 'monthly', 'status' => 'active', 'mode' => 'test', 'paid_until' => now()->addMonth()]);
 
         $this->actingAs($user)
             ->put(route('profile.update'), ['name' => $user->name, 'team' => 'Night Owls RT', 'stream_url' => 'https://twitch.tv/nightowls'])
@@ -52,7 +52,7 @@ class ProfileTeamQuoteTest extends TestCase
     {
         $user = User::factory()->create(['is_supporter' => false, 'team' => null]);
 
-        $this->actingAs($user)->get(route('profile.edit'))->assertOk()->assertSee('See the plans');
+        $this->actingAs($user)->get(route('profile.edit'))->assertOk()->assertSee('Become a supporter');
 
         $this->actingAs($user)
             ->put(route('profile.update'), ['name' => $user->name, 'team' => 'Night Owls RT', 'stream_url' => 'https://twitch.tv/nightowls'])
@@ -65,7 +65,7 @@ class ProfileTeamQuoteTest extends TestCase
     public function test_the_profile_stream_link_must_be_twitch_or_youtube(): void
     {
         $user = User::factory()->create();
-        Membership::create(['user_id' => $user->id, 'plan' => 'member', 'status' => 'active', 'mode' => 'test', 'paid_until' => now()->addMonth()]);
+        Membership::create(['user_id' => $user->id, 'plan' => 'monthly', 'status' => 'active', 'mode' => 'test', 'paid_until' => now()->addMonth()]);
 
         $this->actingAs($user)
             ->put(route('profile.update'), ['name' => $user->name, 'stream_url' => 'https://example.com/live'])
@@ -156,7 +156,7 @@ class ProfileTeamQuoteTest extends TestCase
     }
 
     // In-game the name follows the driver's site choice: the real name shortened
-    // ("Jan Jansen" -> "J. Jansen", leaderboard letters from the last name), else the
+    // ("Jan Jansen" -> "J. Jansen"), else the
     // gamertag without a Discord-style "#1234" suffix.
     public function test_entrylist_name_follows_the_real_name_choice_shortened(): void
     {
@@ -180,9 +180,38 @@ class ProfileTeamQuoteTest extends TestCase
 
         $this->assertSame('', $drivers['X-1']['firstName']);
         $this->assertSame("J. Jansen\nQuote", $drivers['X-1']['lastName']);
-        $this->assertSame('JAN', $drivers['X-1']['shortName']);
+        $this->assertSame('XCL', $drivers['X-1']['shortName']); // the standard abbreviation (2026-10)
 
         $this->assertSame('SlowGuy', $drivers['X-2']['lastName']);
-        $this->assertSame('SLO', $drivers['X-2']['shortName']);
+        $this->assertSame('XCL', $drivers['X-2']['shortName']);
+    }
+
+    // 2026-10: everyone's in-game abbreviation is XCL; a supporter can pick their own three
+    // letters on the profile. A lapsed supporter's choice is kept but shows as XCL again.
+    public function test_a_supporter_picks_their_own_in_game_abbreviation(): void
+    {
+        $race = Race::create([
+            'title' => 'Test Race', 'track' => 'Monza', 'game' => 'acc',
+            'status' => 'open', 'scheduled_at' => now()->addWeek(),
+        ]);
+        $supporter = User::factory()->create(['is_supporter' => true, 'platform_id' => 'X-1']);
+        $driver = User::factory()->create(['platform_id' => 'X-2']);
+
+        $this->actingAs($supporter)->put(route('profile.update'), ['name' => $supporter->name, 'short_name' => 'jj7'])->assertSessionHasNoErrors();
+        $this->actingAs($supporter)->put(route('profile.update'), ['name' => $supporter->name, 'short_name' => 'TOOLONG'])->assertSessionHasErrors('short_name');
+        $this->actingAs($driver)->put(route('profile.update'), ['name' => $driver->name, 'short_name' => 'ABC'])->assertSessionHasNoErrors();
+
+        $this->assertSame('JJ7', $supporter->fresh()->short_name);
+        $this->assertNull($driver->fresh()->short_name);
+
+        RaceRegistration::create(['race_id' => $race->id, 'user_id' => $supporter->id]);
+        RaceRegistration::create(['race_id' => $race->id, 'user_id' => $driver->id]);
+        $shortNames = fn () => collect(app(AccServerConfigService::class)->entryList($race)['entries'])
+            ->flatMap(fn ($e) => $e['drivers'])->pluck('shortName', 'playerID')->all();
+
+        $this->assertSame(['X-1' => 'JJ7', 'X-2' => 'XCL'], $shortNames());
+
+        $supporter->update(['is_supporter' => false]);
+        $this->assertSame(['X-1' => 'XCL', 'X-2' => 'XCL'], $shortNames());
     }
 }

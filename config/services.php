@@ -42,13 +42,9 @@ return [
             'bronze' => env('DISCORD_ROLE_RANK_BRONZE'),
             'rookie' => env('DISCORD_ROLE_RANK_ROOKIE'),
         ],
-        // Membership plan roles (config/memberships.php), cumulative: a Member also gets the
-        // Supporter role, a VIP all three. Synced by DiscordRoleService::syncUser().
-        'plan_roles' => [
-            'supporter' => env('DISCORD_ROLE_PLAN_SUPPORTER'),
-            'member' => env('DISCORD_ROLE_PLAN_MEMBER'),
-            'vip' => env('DISCORD_ROLE_PLAN_VIP'),
-        ],
+        // Given to every supporter (User::isSupporter()) and taken off again when that ends.
+        // Synced by DiscordRoleService::syncUser().
+        'supporter_role_id' => env('DISCORD_ROLE_SUPPORTER'),
     ],
 
     'steam' => [

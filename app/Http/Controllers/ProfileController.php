@@ -57,6 +57,8 @@ class ProfileController extends Controller
             'timezone' => 'nullable|timezone:all',
             'uses_12_hour_clock' => 'nullable|boolean',
             'team' => 'nullable|string|max:16',
+            // In-game abbreviation: exactly three letters or digits (empty = the standard XCL).
+            'short_name' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{3}$/'],
             'car_number' => 'nullable|integer|min:1|max:9999',
             'car_model' => 'nullable|string|max:100',
             'game' => 'nullable|in:acc,lmu,iracing',
@@ -68,13 +70,10 @@ class ProfileController extends Controller
             }],
         ]);
 
-        // Plan perks — Team / Quote needs the Supporter plan, the stream link the Member plan.
-        // The form has them disabled otherwise, and a hand-made request can't set them either.
+        // Supporter perks (Team / Quote, stream link, abbreviation): the form has them disabled otherwise,
+        // and a hand-made request can't set them either.
         if (! $user->isSupporter()) {
-            unset($data['team']);
-        }
-        if (! $user->canShareStream()) {
-            unset($data['stream_url']);
+            unset($data['team'], $data['stream_url'], $data['short_name']);
         }
 
         if ($request->hasFile('avatar')) {
@@ -101,6 +100,10 @@ class ProfileController extends Controller
         }
 
         unset($data['avatar']);
+
+        if (isset($data['short_name'])) {
+            $data['short_name'] = strtoupper($data['short_name']);
+        }
 
         $user->update($data);
 

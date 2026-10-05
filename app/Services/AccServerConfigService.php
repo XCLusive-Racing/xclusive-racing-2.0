@@ -140,14 +140,13 @@ class AccServerConfigService implements ServerConfigGenerator
         };
     }
 
-    // Three letters for the leaderboard: the last name's when the real name is shown.
+    // Three letters for the leaderboard: "XCL" for everyone, or a supporter's own choice
+    // (users.short_name, set on the profile — a supporter perk, User::displayShortName()).
+    public const DEFAULT_SHORT_NAME = 'XCL';
+
     public static function entryShortName(User $user): string
     {
-        $source = self::usesRealName($user) && trim((string) $user->last_name) !== ''
-            ? $user->last_name
-            : self::entryName($user);
-
-        return mb_strtoupper(mb_substr(preg_replace('/\s+/', '', $source), 0, 3));
+        return $user->displayShortName() ?? self::DEFAULT_SHORT_NAME;
     }
 
     private static function usesRealName(User $user): bool

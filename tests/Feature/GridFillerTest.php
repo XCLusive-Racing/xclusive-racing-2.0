@@ -189,4 +189,15 @@ class GridFillerTest extends TestCase
         $this->assertSame(array_sum($boxes), $counted);
         $this->get(route('events.platform', 'acc-console'))->assertOk()->assertSee('30 / 40');
     }
+
+    // 2026-10: a filler named with a country code at the end gets that country's flag.
+    public function test_a_country_code_in_the_name_sets_the_fillers_country(): void
+    {
+        $this->seedFillers();
+
+        $countries = User::where('is_filler', true)->whereIn('name', ['JoseG_ES', 'fallutNL', 'SjevsjamGB', 'hisname_DK'])->pluck('country', 'name')->all();
+
+        $this->assertSame(['JoseG_ES' => 'ES', 'fallutNL' => 'NL', 'SjevsjamGB' => 'GB', 'hisname_DK' => 'DK'], array_merge(['JoseG_ES' => null, 'fallutNL' => null, 'SjevsjamGB' => null, 'hisname_DK' => null], $countries));
+        $this->assertSame(100, User::where('is_filler', true)->count());
+    }
 }
