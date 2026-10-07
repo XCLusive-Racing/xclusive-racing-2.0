@@ -103,6 +103,38 @@ class Report extends Model
         return $decided ? ($this->user->displayName() ?? 'Unknown') : 'Anonymous';
     }
 
+    /**
+     * The reported driver gets the full outcome — the stewards' verdict and the incident
+     * clips — once the report is decided, unless the reporter chose to hide their name
+     * (then they only see the final penalty, as before).
+     */
+    public function showsDetailsToReportedDriver(): bool
+    {
+        return ! $this->hide_reporter_name && in_array($this->status, ['resolved', 'dismissed'], true);
+    }
+
+    /** "Causing a Collision (CAC)" for the final penalty code, or null without one. */
+    public function finalPenaltyLabel(): ?string
+    {
+        if (! $this->final_penalty) {
+            return null;
+        }
+        $label = config("penalty_codes.{$this->final_penalty}.label");
+
+        return $label ? "{$label} ({$this->final_penalty})" : $this->final_penalty;
+    }
+
+    /** The incident clips as label => URL, only real http(s) links. */
+    public function clipLinks(): array
+    {
+        return collect([
+            'Video' => $this->video_url,
+            'Clip 1' => $this->clip_good_driver_url,
+            'Clip 2' => $this->clip_bad_driver_url,
+            'Clip 3' => $this->clip_heli_url,
+        ])->filter(fn ($url) => is_string($url) && preg_match('#^https?://#i', $url))->all();
+    }
+
     // --- Relationships ---
 
     public function user(): BelongsTo

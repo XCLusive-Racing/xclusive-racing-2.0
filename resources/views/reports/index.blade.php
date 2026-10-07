@@ -196,9 +196,54 @@
                                 <div class="text-secondary" style="font-size:.75rem">
                                     {{ ($report->race?->scheduledAtUk() ?? $report->created_at)->format('d M Y') }}
                                 </div>
-                                @if($report->status === 'resolved' && $report->final_penalty)
+                                @if($report->showsDetailsToReportedDriver())
+                                {{-- Decided and the reporter didn't hide their name: the full verdict
+                                     and the clips (Report::showsDetailsToReportedDriver()). --}}
+                                <div class="mt-2 p-3 rounded-2" style="background:#f9fafb;font-size:.78rem;color:#374151;border:1px solid #f3f4f6">
+                                    <div class="fw-bold text-uppercase mb-1" style="font-size:.65rem;letter-spacing:.05em;color:#9ca3af">Steward verdict</div>
+                                    @if($report->status === 'dismissed')
+                                    <div class="fw-bold">Dismissed{{ $report->finalPenaltyLabel() ? ' — '.$report->finalPenaltyLabel() : '' }}</div>
+                                    @if($report->dismissal_reason)
+                                    <div class="mt-1">{{ $report->dismissal_reason }}</div>
+                                    @endif
+                                    @else
+                                    <div class="fw-bold">
+                                        {{ $report->finalPenaltyLabel() ?? 'Penalty applied' }}
+                                        @if($report->final_multiplier && (float) $report->final_multiplier !== 1.0) &times;{{ rtrim(rtrim((string) $report->final_multiplier, '0'), '.') }} @endif
+                                    </div>
+                                    @if((float) $report->xcl_rating_deduction > 0 || (float) $report->sr_deduction > 0)
+                                    <div class="mt-1 text-secondary">
+                                        @if((float) $report->xcl_rating_deduction > 0) XCL Rating −{{ number_format((float) $report->xcl_rating_deduction, 0) }} @endif
+                                        @if((float) $report->xcl_rating_deduction > 0 && (float) $report->sr_deduction > 0) &middot; @endif
+                                        @if((float) $report->sr_deduction > 0) SR −{{ number_format((float) $report->sr_deduction, 2) }} @endif
+                                    </div>
+                                    @endif
+                                    @endif
+                                    @if($report->admin_notes)
+                                    <div class="mt-2"><span class="fw-bold">Steward note:</span> {{ $report->admin_notes }}</div>
+                                    @endif
+                                    @if($report->lap_number || $report->incident_corner)
+                                    <div class="mt-2 text-secondary">
+                                        Incident: @if($report->lap_number) Lap {{ $report->lap_number }} @endif
+                                        @if($report->lap_number && $report->incident_corner) &middot; @endif
+                                        {{ $report->incident_corner }}
+                                    </div>
+                                    @endif
+                                    @if($clips = $report->clipLinks())
+                                    <div class="d-flex flex-wrap gap-2 mt-2">
+                                        @foreach($clips as $label => $url)
+                                        <a href="{{ $url }}" target="_blank" rel="noopener nofollow" class="btn btn-sm fw-bold"
+                                           style="font-size:.72rem;background:#f3f0ff;color:#7c3aed;border:1px solid #ddd6fe">
+                                            <i class="fa-solid fa-play me-1"></i>{{ $label }}
+                                        </a>
+                                        @endforeach
+                                    </div>
+                                    @endif
+                                </div>
+                                @elseif($report->status === 'resolved' && $report->final_penalty)
                                 <div class="mt-2 p-2 rounded-2" style="background:#f9fafb;font-size:.78rem;color:#374151;border:1px solid #f3f4f6">
                                     Final penalty: <strong>{{ $report->final_penalty }}</strong>
+                                    <div class="text-secondary mt-1" style="font-size:.72rem">The reporter chose to stay anonymous, so the verdict details and clips aren't shared.</div>
                                 </div>
                                 @elseif($report->status === 'dismissed')
                                 <div class="mt-2 p-2 rounded-2" style="background:#f9fafb;font-size:.78rem;color:#6b7280;border:1px solid #f3f4f6">
