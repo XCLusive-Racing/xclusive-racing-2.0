@@ -113,27 +113,27 @@
                     BACK TO PLATFORMS
                 </button>
 
-                {{-- Popular Today — the selected game's three most-signed-up events starting in
-                     the next 24 hours, in start-time order (RaceController::popularToday()).
-                     Shown/hidden with the game's event list (data-game-section); its cards
-                     have no data-event-card, so the filters below don't hide them. Phones show
-                     only the most-signed-up one, tablets in portrait (md, 2 per row) the top
-                     two, desktop all three (earlier event first on a tie). --}}
-                @foreach($popularToday as $game => $popularRaces)
-                @php
-                    // Popularity rank of each card (0 = most signed up) -> the breakpoint it shows from.
-                    $popularRank = $popularRaces->sortByDesc(fn ($r) => $r->realSignupCount())->pluck('id')->flip();
-                    $rankClasses = ['', 'd-none d-md-block', 'd-none d-lg-block'];
-                @endphp
-                <div data-game-section="{{ $game }}" class="xcl-popular-today" style="display:none">
-                    <div class="xcl-popular-today__title fw-bold text-uppercase mb-2">
-                        <i class="fa-solid fa-fire me-1"></i>Popular Today
-                    </div>
+                {{-- Featured — the selected game's Popular Today / Weekly Event / Special Event
+                     picks (RaceController::featured()), in a framed panel so they read apart
+                     from the regular list below. Shown/hidden with the game's event list
+                     (data-game-section); its cards have no data-event-card, so the filters
+                     below don't hide them. An empty slot is left out. --}}
+                @foreach($featured as $game => $picks)
+                <div data-game-section="{{ $game }}" class="xcl-featured" style="display:none">
                     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-                        @foreach($popularRaces as $race)
-                        <div class="col {{ $rankClasses[$popularRank[$race->id]] }}" data-popular-card>
+                        @foreach([
+                            ['popular', 'Popular Today', 'fa-solid fa-fire',          '#f97316'],
+                            ['weekly',  'Weekly Event',  'fa-solid fa-calendar-week', '#3b82f6'],
+                            ['special', 'Special Event', 'fa-solid fa-star',          '#eab308'],
+                        ] as [$slot, $label, $icon, $color])
+                        @if($race = $picks[$slot])
+                        <div class="col" data-featured-card="{{ $slot }}" style="--featured-color:{{ $color }}">
+                            <div class="xcl-featured__label fw-bold text-uppercase">
+                                <i class="{{ $icon }} me-1"></i>{{ $label }}
+                            </div>
                             @include('race.partials.event-card')
                         </div>
+                        @endif
                         @endforeach
                     </div>
                 </div>

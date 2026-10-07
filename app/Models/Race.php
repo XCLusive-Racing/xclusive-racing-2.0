@@ -292,8 +292,38 @@ class Race extends Model
         return max(0, min($count, $freeSpots - (int) config('fillers.free_spot_margin', 5)));
     }
 
+    // The weekly event the Events page features: the European one, Saturdays at 19:00 UK time.
+    public const WEEKLY_EVENT_DAY = Carbon::SATURDAY;
+
+    public const WEEKLY_EVENT_TIME = '19:00';
+
+    // A special event (Admin > Events > Special Events): a Custom Race (no format) or an
+    // endurance race — never a championship round, those live under Championships.
+    public function scopeSpecialEvents(Builder $query): Builder
+    {
+        return $query->whereNull('championship_id')
+            ->where('is_championship', false)
+            ->where(fn ($q) => $q->where('is_endurance', true)->orWhereNull('event_format_id'));
+    }
+
+    public function isSpecialEvent(): bool
+    {
+        return ! $this->championship_id && ! $this->is_championship
+            && ($this->is_endurance || ! $this->event_format_id);
+    }
+
+    // A regular (non-special, non-championship) race in the weekly event's slot.
+    public function isWeeklyEvent(): bool
+    {
+        $uk = $this->scheduledAtUk();
+
+        return ! $this->championship_id && ! $this->is_championship && ! $this->isSpecialEvent()
+            && $uk->dayOfWeek === self::WEEKLY_EVENT_DAY
+            && $uk->format('H:i') === self::WEEKLY_EVENT_TIME;
+    }
+
     // Real sign-ups only (team entries for an endurance race, no grid fillers) — what the
-    // Events page's Popular Today row ranks by. Needs registrations/teamEntries counts loaded.
+    // Events page's Popular Today pick ranks by. Needs registrations/teamEntries counts loaded.
     public function realSignupCount(): int
     {
         return (int) ($this->is_endurance ? $this->team_entries_count : $this->registrations_count);

@@ -2523,21 +2523,35 @@ span.flatpickr-weekday {
     }
 }
 
-// Popular Today row between BACK TO PLATFORMS and the Event Filter bar, with a thin
-// divider under it to separate it from the filters and the full event list.
-.xcl-popular-today {
-    padding-bottom: 1.25rem;
-    margin-bottom: 1.25rem;
-    border-bottom: 1px solid rgba(168, 85, 247, .25);
+// Featured row (Popular Today / Weekly Event / Special Event) between BACK TO PLATFORMS
+// and the Event Filter bar: a framed, softly lit panel so the three picks read as set
+// apart from the regular list, each slot headed by a label in its own accent color
+// (--featured-color) with a matching underline.
+.xcl-featured {
+    position: relative;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+    border: 2px solid rgba(168, 85, 247, .45);
+    border-radius: 14px;
+    background:
+        radial-gradient(120% 140% at 0% 0%, rgba(168, 85, 247, .16) 0%, transparent 55%),
+        linear-gradient(180deg, rgba(255, 255, 255, .04) 0%, rgba(255, 255, 255, .01) 100%);
+    box-shadow: 0 0 28px rgba(168, 85, 247, .18), inset 0 1px 0 rgba(255, 255, 255, .06);
 
-    // Same purple label look as the filter labels below, but larger — it heads the row.
-    &__title {
-        font-size: 1.05rem;
+    @media (max-width: 767px) { padding: 1rem .75rem; }
+
+    &__label {
+        display: flex;
+        align-items: center;
+        margin-bottom: .6rem;
+        padding-bottom: .35rem;
+        font-size: 1rem;
         font-weight: 900;
         letter-spacing: .06em;
-        color: #a855f7;
+        color: var(--featured-color);
+        border-bottom: 2px solid var(--featured-color);
 
-        @media (max-width: 767px) { font-size: .95rem; }
+        @media (max-width: 767px) { font-size: .9rem; }
     }
 }
 

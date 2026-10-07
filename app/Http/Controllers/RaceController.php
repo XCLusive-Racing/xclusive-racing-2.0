@@ -62,29 +62,35 @@ class RaceController extends Controller
         // for the public browse page — excluded here rather than deleted.
         $eventTags = EventTag::whereNotIn('slug', ['rookies', 'test-event'])->orderBy('name')->get();
 
-        $popularToday = $this->popularToday($races);
+        $featured = $races->groupBy('game')
+            ->map(fn (Collection $gameRaces) => $this->featured($gameRaces))
+            ->filter(fn (array $picks) => array_filter($picks));
 
-        return view('race.index', compact('races', 'eventTags', 'initialGame', 'popularToday'));
+        return view('race.index', compact('races', 'eventTags', 'initialGame', 'featured'));
     }
 
-    // Per game, the "Popular Today" row at the top of its event list: of the events starting
-    // in the next 24 hours (a rolling window, not the calendar day), the three with the
-    // most real sign-ups (team entries for an endurance race; grid fillers don't count),
-    // then shown in start-time order. Ties go to the earlier event.
-    private function popularToday(Collection $races): Collection
+    // One game's featured row at the top of its event list (each slot null when nothing fits):
+    // - weekly:  the next weekly event (Race::isWeeklyEvent()); it stays until it's finished,
+    //            then the next week's takes over.
+    // - special: the next special event (Race::isSpecialEvent()), likewise until finished.
+    // - popular: of the other events starting in the next 24 hours (a rolling window), the one
+    //            with the most real sign-ups (grid fillers don't count); ties go to the earlier.
+    // $gameRaces is already non-finished and in start-time order.
+    private function featured(Collection $gameRaces): array
     {
+        $weekly = $gameRaces->first(fn (Race $race) => $race->isWeeklyEvent());
+        $special = $gameRaces->first(fn (Race $race) => $race->isSpecialEvent());
+        $taken = array_filter([$weekly?->id, $special?->id]);
         $windowEnd = now()->addDay();
 
-        return $races
-            ->filter(fn (Race $race) => $race->scheduled_at->isFuture() && $race->scheduled_at->lte($windowEnd))
-            ->groupBy('game')
-            ->map(fn (Collection $gameRaces) => $gameRaces
-                ->filter(fn (Race $race) => $race->realSignupCount() > 0)
-                ->sortByDesc(fn (Race $race) => $race->realSignupCount())
-                ->take(3)
-                ->sortBy('scheduled_at')
-                ->values())
-            ->filter(fn (Collection $popular) => $popular->isNotEmpty());
+        $popular = $gameRaces
+            ->filter(fn (Race $race) => ! in_array($race->id, $taken, true)
+                && $race->scheduled_at->isFuture() && $race->scheduled_at->lte($windowEnd)
+                && $race->realSignupCount() > 0)
+            ->sortByDesc(fn (Race $race) => $race->realSignupCount())
+            ->first();
+
+        return ['popular' => $popular, 'weekly' => $weekly, 'special' => $special];
     }
 
     public function show(Race $race)

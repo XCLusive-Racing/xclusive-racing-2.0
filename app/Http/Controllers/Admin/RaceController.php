@@ -61,6 +61,9 @@ class RaceController extends Controller
         $races = Race::select(['id', 'title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'duration_key', 'is_endurance', 'event_format_id'])
             ->where('is_endurance', false)
             ->whereNotNull('event_format_id')
+            // Championship rounds are managed under Championships, not with the dailies.
+            ->whereNull('championship_id')
+            ->where('is_championship', false)
             ->with('eventFormat:id,name,sort_order,default_event_tag')
             ->orderBy('scheduled_at', 'asc')
             ->get();
@@ -77,7 +80,7 @@ class RaceController extends Controller
     public function specialIndex()
     {
         $races = Race::select(['id', 'title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'duration_key', 'event_format_id', 'is_endurance'])
-            ->where(fn ($q) => $q->where('is_endurance', true)->orWhereNull('event_format_id'))
+            ->specialEvents()
             ->orderBy('scheduled_at', 'desc')
             ->get();
         $races->loadCount(['registrations', 'teamEntries']);
