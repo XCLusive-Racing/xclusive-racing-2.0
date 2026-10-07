@@ -117,24 +117,49 @@
                      picks (RaceController::featured()), in a framed panel so they read apart
                      from the regular list below. Shown/hidden with the game's event list
                      (data-game-section); its cards have no data-event-card, so the filters
-                     below don't hide them. An empty slot is left out. --}}
+                     below don't hide them. An empty slot is left out.
+                     Below desktop width it's a carousel instead (featured-carousel.js): one card
+                     at a time on phones, two on tablets, Popular Today first, with the titles
+                     as buttons above it and arrows at the sides; swiping works too. --}}
                 @foreach($featured as $game => $picks)
-                <div data-game-section="{{ $game }}" class="xcl-featured" style="display:none">
-                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-                        @foreach([
-                            ['popular', 'Popular Today', 'fa-solid fa-fire',          '#f97316'],
-                            ['weekly',  'Weekly Event',  'fa-solid fa-calendar-week', '#3b82f6'],
-                            ['special', 'Special Event', 'fa-solid fa-star',          '#eab308'],
-                        ] as [$slot, $label, $icon, $color])
-                        @if($race = $picks[$slot])
-                        <div class="col" data-featured-card="{{ $slot }}" style="--featured-color:{{ $color }}">
-                            <div class="xcl-featured__label fw-bold text-uppercase">
-                                <i class="{{ $icon }} me-1"></i>{{ $label }}
-                            </div>
-                            @include('race.partials.event-card')
-                        </div>
-                        @endif
+                @php
+                    $slots = collect([
+                        ['popular', 'Popular Today', 'fa-solid fa-fire',          '#f97316'],
+                        ['weekly',  'Weekly Event',  'fa-solid fa-calendar-week', '#3b82f6'],
+                        ['special', 'Special Event', 'fa-solid fa-star',          '#eab308'],
+                    ])->filter(fn ($slot) => $picks[$slot[0]]);
+                @endphp
+                <div data-game-section="{{ $game }}" class="xcl-featured" data-featured-carousel style="display:none">
+                    <div class="xcl-featured__tabs d-lg-none">
+                        @foreach($slots as [$slot, $label, $icon, $color])
+                        <button type="button" data-featured-tab="{{ $loop->index }}" style="--featured-color:{{ $color }}"
+                                class="xcl-featured__tab fw-bold text-uppercase {{ $loop->first ? 'xcl-featured__tab--active' : '' }}">
+                            <i class="{{ $icon }}"></i><span>{{ $label }}</span>
+                        </button>
                         @endforeach
+                    </div>
+                    <div class="xcl-featured__viewport">
+                        @if($slots->count() > 1)
+                        <button type="button" class="xcl-featured__arrow xcl-featured__arrow--prev d-lg-none" data-featured-prev aria-label="Previous event" disabled>
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        @endif
+                        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 xcl-featured__track" data-featured-track>
+                            @foreach($slots as [$slot, $label, $icon, $color])
+                            @php $race = $picks[$slot]; @endphp
+                            <div class="col" data-featured-card="{{ $slot }}" style="--featured-color:{{ $color }}">
+                                <div class="xcl-featured__label fw-bold text-uppercase d-none d-lg-flex">
+                                    <i class="{{ $icon }} me-1"></i>{{ $label }}
+                                </div>
+                                @include('race.partials.event-card')
+                            </div>
+                            @endforeach
+                        </div>
+                        @if($slots->count() > 1)
+                        <button type="button" class="xcl-featured__arrow xcl-featured__arrow--next d-lg-none" data-featured-next aria-label="Next event">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                        @endif
                     </div>
                 </div>
                 @endforeach

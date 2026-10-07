@@ -144,6 +144,24 @@ class EventsFeaturedTest extends TestCase
         $this->get(route('events.platform', 'acc-console'))->assertDontSee('Popular Today');
     }
 
+    public function test_phone_carousel_buttons_follow_the_slots_with_popular_today_first(): void
+    {
+        $this->race('Weekly', '19:00', 2);
+        $this->race('Evening', '21:00', 3);
+        $this->special('Special', '2026-10-25 19:00');
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($this->get(route('events.platform', 'acc-console'))->getContent());
+        $xpath = new \DOMXPath($dom);
+
+        $tabs = array_map(fn ($tab) => trim($tab->textContent), iterator_to_array($xpath->query('//*[@data-featured-tab]')));
+        $cards = array_map(fn ($card) => $card->getAttribute('data-featured-card'), iterator_to_array($xpath->query('//*[@data-featured-card]')));
+
+        $this->assertSame(['Popular Today', 'Weekly Event', 'Special Event'], $tabs);
+        $this->assertSame(['popular', 'weekly', 'special'], $cards);
+        $this->assertSame(1, $xpath->query('//*[@data-featured-next]')->length);
+    }
+
     public function test_admin_special_events_tab_leaves_out_championship_rounds(): void
     {
         $admin = User::factory()->create();

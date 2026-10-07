@@ -37,6 +37,7 @@ import { init as initAdminLayout } from './pages/admin/layout.js';
 import { initNavbar } from './pages/navbar.js';
 import { initHeaderHeight } from './components/header-height.js';
 import { initEventsFilter } from './components/events-filter.js';
+import { initFeaturedCarousel } from './components/featured-carousel.js';
 import { initEventTags } from './components/event-tags.js';
 import { initCountdownTimers } from './components/countdown-timer.js';
 import { initLocalTimes } from './components/local-time.js';
@@ -92,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initNavbar();
     initHeaderHeight();
     initEventsFilter();
+    initFeaturedCarousel();
     initCountdownTimers();
     initLocalTimes();
     initPasswordToggles();
