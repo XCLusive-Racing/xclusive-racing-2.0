@@ -36,6 +36,7 @@ class Message extends Model
             // No longer sent (championship entries are entered into every round now);
             // kept for the reminders already in inboxes.
             'round_signup_reminder' => 'fa-bell',
+            'championship_entry' => 'fa-trophy',
             'report_confirmation' => 'fa-file-circle-check',
             'report_resolved' => 'fa-gavel',
             'news' => 'fa-newspaper',
@@ -49,6 +50,7 @@ class Message extends Model
         return match ($this->type) {
             'event_registration' => '#7c3aed',
             'round_signup_reminder' => '#f59e0b',
+            'championship_entry' => '#7c3aed',
             'report_confirmation' => '#2563eb',
             'report_resolved' => '#16a34a',
             'news' => '#db2877',

@@ -13,6 +13,7 @@ use App\Models\Race;
 use App\Models\User;
 use App\Services\AccCarCatalog;
 use App\Services\AuditLogger;
+use App\Services\ChampionshipEntryMessage;
 use App\Services\ChampionshipRoundEntryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -98,7 +99,9 @@ class ChampionshipEntryController extends Controller
         // An entry is only carried into the rounds once it counts.
         app(ChampionshipRoundEntryService::class)->syncAllExistingRounds($registration, $championship);
 
-        $this->notify($registration, $championship, 'approved', 'Your entry for '.$championship->name.' has been approved — see you on track!');
+        // The full welcome message (rounds, servers, passwords) a driver gets straight
+        // away without manual approval.
+        app(ChampionshipEntryMessage::class)->send($registration, $championship, 'Championship entry approved');
         AuditLogger::record($request->user(), $championship, 'championship.entry_approved', ['registration_id' => $registration->id]);
 
         return back()->with('success', $this->entrantName($registration).' approved.');

@@ -9,6 +9,7 @@ use App\Models\League;
 use App\Models\RacingTeam;
 use App\Models\User;
 use App\Services\AccCarCatalog;
+use App\Services\ChampionshipEntryMessage;
 use App\Services\ChampionshipRoundEntryService;
 use App\Services\DiscordRoleService;
 use App\Services\EntryBalanceService;
@@ -121,7 +122,8 @@ class ChampionshipController extends Controller
         // against max_drivers, and skip the driver-only checks below entirely —
         // they aren't racing, so an SR/rating requirement doesn't apply to them.
         if ($request->boolean('is_spectator')) {
-            $failure = $this->createUnderLock($championship, function () use ($championship, $user) {
+            $spectator = null;
+            $failure = $this->createUnderLock($championship, function () use ($championship, $user, &$spectator) {
                 if ($championship->isRegistered($user)) {
                     return self::ERR_ALREADY_REGISTERED;
                 }
@@ -129,7 +131,7 @@ class ChampionshipController extends Controller
                     return 'There are no spectator slots left.';
                 }
 
-                ChampionshipRegistration::create([
+                $spectator = ChampionshipRegistration::create([
                     'championship_id' => $championship->id,
                     'user_id' => $user->id,
                     'is_spectator' => true,
@@ -138,7 +140,13 @@ class ChampionshipController extends Controller
                 return null;
             });
 
-            return $failure ? back()->with('error', $failure) : back()->with('success', 'You have been registered as a spectator!');
+            if ($failure) {
+                return back()->with('error', $failure);
+            }
+
+            app(ChampionshipEntryMessage::class)->send($spectator, $championship, 'Spectating');
+
+            return back()->with('success', 'You have been registered as a spectator! Server details are in your inbox.');
         }
 
         // Driver-swaps-enabled championships register a team (one row, one of its
@@ -284,15 +292,18 @@ class ChampionshipController extends Controller
 
         // Into every upcoming round right away — with manual approval only once
         // the league approves it (Admin\ChampionshipEntryController::approve()).
+        // With the welcome message (rounds, servers, passwords) — for a manual-approval
+        // entry that comes with the approval instead.
         if (! $pending) {
             app(ChampionshipRoundEntryService::class)->syncAllExistingRounds($registration, $championship);
+            app(ChampionshipEntryMessage::class)->send($registration, $championship, 'Registered');
         }
 
         $message = match (true) {
             $pending => 'Your entry has been received — the league will review it before it is confirmed.',
             $championship->isRegistrationWaitlisted($user) => 'The championship is full — you have been added to the waiting list.',
-            (bool) $team => 'Your team has been registered for the championship!',
-            default => 'You have been registered for the championship!',
+            (bool) $team => 'Your team has been registered for the championship! Rounds and server details are in your inbox.',
+            default => 'You have been registered for the championship! Rounds and server details are in your inbox.',
         };
 
         return back()->with('success', $message);

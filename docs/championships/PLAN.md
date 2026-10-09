@@ -11,6 +11,17 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-10-09 — Championship welcome message.** Because rounds are entered
+  automatically, nobody got a round's server details any more. Now an entry that
+  counts (registered without manual approval, or approved — replaces the short
+  "approved" note) gets one `championship_entry` inbox message
+  (`App\Services\ChampionshipEntryMessage`): the entry (car, number, class, team +
+  drivers), how automatic round entry / skipping a round works, and every upcoming
+  open round with its server name and password (spectator password for a
+  spectator; "To be announced" without a server). A team car's message goes to
+  every driver of the car. Waitlisted: a short note, no servers. Not sent yet when
+  someone is promoted off the championship waiting list (promotion is implicit in
+  `syncChampionship()`).
 - **2026-10-01 — Automatic round entry for every championship entry.** Incident:
   NLRL Test Race R1 (race 533) — the championship list and the round's signups
   had drifted apart (5 entrants not on the round, 3 round signups not in the
