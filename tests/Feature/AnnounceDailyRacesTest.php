@@ -45,7 +45,7 @@ class AnnounceDailyRacesTest extends TestCase
         return $race;
     }
 
-    /** @return array{0: string, 1: list<string>} description and field names of the posted embed */
+    /** @return array{0: string, 1: list<string>, 2: list<string>} description, field names and field values of the posted embed */
     private function posted(): array
     {
         $this->artisan('races:announce-daily')->assertSuccessful();
@@ -57,7 +57,21 @@ class AnnounceDailyRacesTest extends TestCase
             return true;
         });
 
-        return [$embed['description'], array_column($embed['fields'], 'name')];
+        return [$embed['description'], array_column($embed['fields'], 'name'), array_column($embed['fields'], 'value')];
+    }
+
+    // UK time with the zone that's actually in effect: BST in summer, GMT in winter.
+    public function test_start_times_follow_uk_summer_and_winter_time(): void
+    {
+        $this->race('Sprint Race', 'Zolder', '2026-10-06 17:00', 1);
+        [, , $values] = $this->posted();
+        $this->assertStringContainsString('🕐 6:00PM BST', $values[0]);
+
+        Carbon::setTestNow('2026-11-02 11:00:00');
+        Http::fake(['*' => Http::response(null, 204)]);
+        $this->race('Sprint Race', 'Spa', '2026-11-02 17:00', 1);
+        $this->artisan('races:announce-daily', ['--force' => true])->assertSuccessful();
+        Http::assertSent(fn (Request $r) => str_contains($r['embeds'][0]['fields'][0]['value'] ?? '', '🕐 5:00PM GMT'));
     }
 
     public function test_only_the_three_most_popular_races_and_busy_ones_are_announced(): void

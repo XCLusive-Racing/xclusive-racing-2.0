@@ -56,8 +56,9 @@ class EventsFeaturedTest extends TestCase
 
         $race = Race::create($attributes + [
             'title' => $title, 'track' => 'Monza', 'game' => 'acc', 'status' => 'open',
-            // $when is a time today ("21:00") or a full date-time.
-            'scheduled_at' => Carbon::parse(strlen($when) > 5 ? $when : "2026-10-03 {$when}", 'Europe/London'),
+            // $when is a UK time today ("21:00") or a full UK date-time. Stored as UTC, like
+            // the admin form does — Eloquent writes a Carbon's wall-clock time as it is.
+            'scheduled_at' => Carbon::parse(strlen($when) > 5 ? $when : "2026-10-03 {$when}", 'Europe/London')->utc(),
             'event_format_id' => $this->format->id,
         ]);
         for ($i = 0; $i < $signups; $i++) {

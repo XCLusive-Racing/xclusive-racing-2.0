@@ -107,7 +107,7 @@ class AnnounceDailyRaces extends Command
         }
 
         foreach ($highlighted as $race) {
-            $bits = ['🕐 '.$race->scheduledAtUk()->format('g:iA').' BST', '🎮 '.$this->gameLabel($race->game)];
+            $bits = ['🕐 '.$race->scheduledAtUk()->format('g:iA T'), '🎮 '.$this->gameLabel($race->game)];
 
             if ($race->sr_requirement) {
                 $bits[] = '🛡️ SR '.$race->sr_requirement.'.0+';
@@ -127,7 +127,7 @@ class AnnounceDailyRaces extends Command
 
         foreach ($teamEvents as $event) {
             $name = $event->subtitle ? "⭐ {$event->title} — {$event->subtitle}" : "⭐ {$event->title}";
-            $bits = ['🕐 '.$event->starts_at->timezone('Europe/London')->format('g:iA').' BST'];
+            $bits = ['🕐 '.$event->starts_at->timezone('Europe/London')->format('g:iA T')];
 
             $driverCount = $event->participatingDrivers()->count();
             if ($driverCount > 0) {
