@@ -439,7 +439,8 @@
                             @endif
                         </p>
                         @endif
-                        @if($myTeamCars->count() > 1)
+                        {{-- A team's cars, each with Edit (reserve driver) and Withdraw. --}}
+                        @if($myTeamCars->isNotEmpty())
                         @include('championships._team-cars', ['ownedTeam' => $myOwnedTeam])
                         @elseif($ownRegistration)
                         <form method="POST" action="{{ route('championships.unregister', $championship) }}" onsubmit="return confirm('Unregister from this championship?')">

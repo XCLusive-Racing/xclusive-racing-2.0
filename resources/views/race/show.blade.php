@@ -492,6 +492,30 @@
                             </form>
                             @endif
                         </div>
+                        {{-- A championship car's drivers this round, each swappable for whoever of
+                             its line-up + reserve sits out (RaceController::swapTeamDriver()). --}}
+                        @if($isChampionshipTeamRound)
+                        <div style="margin:0 0 12px 48px">
+                            @foreach($myTeamEntry->registrations->filter(fn ($r) => $r->user) as $seat)
+                            <div class="d-flex align-items-center justify-content-between gap-2" style="font-size:.78rem;color:#e5e7eb;padding:3px 0">
+                                <span>
+                                    {{ $seat->user->displayName() }}
+                                    @if((int) $myTeamEntry->starting_driver_id === $seat->user_id)<span style="color:#9ca3af"> · starts</span>@endif
+                                </span>
+                                @foreach($benchDrivers[$myTeamEntry->id] ?? [] as $benchDriver)
+                                <form action="{{ route('events.swap-team-driver', [$race, $myTeamEntry]) }}" method="POST" class="flex-shrink-0">
+                                    @csrf
+                                    <input type="hidden" name="driver_id" value="{{ $seat->user_id }}">
+                                    <input type="hidden" name="with_id" value="{{ $benchDriver->id }}">
+                                    <button type="submit" class="btn btn-sm fw-bold" style="background:#374151;border:1px solid #4b5563;color:#e5e7eb;font-size:.65rem;padding:2px 8px">
+                                        <i class="fa-solid fa-right-left me-1"></i>Swap with {{ $benchDriver->displayName() }}
+                                    </button>
+                                </form>
+                                @endforeach
+                            </div>
+                            @endforeach
+                        </div>
+                        @endif
                         @endforeach
 
                         @include('race.partials.add-to-calendar', ['race' => $race])

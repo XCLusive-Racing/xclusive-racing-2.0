@@ -189,6 +189,20 @@ class RaceController extends Controller
         }
         $preselectedDriverIds = array_filter([$userTeam?->owner_id]);
 
+        // Per car of the manager's team: who of its line-up + reserve sits out this round
+        // — they can swap in for a driver here (swapTeamDriver()).
+        $benchDrivers = collect();
+        if ($isChampionshipTeamRound && $roundChampionship && $race->registrationOpen()) {
+            $rounds = app(ChampionshipRoundEntryService::class);
+            foreach ($myTeamEntries as $entry) {
+                $car = $rounds->carRegistrationFor($entry, $roundChampionship);
+                $bench = $car ? User::whereIn('id', $rounds->benchDriverIds($entry, $car))->get() : collect();
+                if ($bench->isNotEmpty()) {
+                    $benchDrivers[$entry->id] = $bench;
+                }
+            }
+        }
+
         // Solo championship drivers not in this open round left it on purpose — every
         // other entry is in automatically.
         // (Someone on the championship's waiting list isn't racing yet, so isn't skipping.)
@@ -224,7 +238,7 @@ class RaceController extends Controller
             'race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries',
             'isTeamRace', 'isChampionshipTeamRound', 'preselectedDriverIds', 'successBallast', 'successBallastMode',
             'championshipEntryFailure', 'spectateOnly', 'roundChampionship', 'championshipTeamCars', 'championshipSkippedCars',
-            'championshipTeamPending', 'championshipSignupForm', 'skippingDrivers'
+            'championshipTeamPending', 'championshipSignupForm', 'skippingDrivers', 'benchDrivers'
         ));
     }
 
@@ -712,5 +726,38 @@ class RaceController extends Controller
         });
 
         return back()->with('success', 'Car #'.$entry->car_number.' has been unregistered from '.$race->title.'.');
+    }
+
+    // "Swap with …" next to a driver of a championship team car: for this round only,
+    // the car's reserve (or the driver they replaced earlier) takes that driver's seat
+    // (ChampionshipRoundEntryService::swapDriver()).
+    public function swapTeamDriver(Request $request, Race $race, RaceTeamEntry $entry)
+    {
+        $team = auth()->user()->manageableRacingTeam();
+        if (! $team || $entry->race_id !== $race->id || $entry->racing_team_id !== $team->id) {
+            return back()->with('error', 'This entry does not belong to your team.');
+        }
+        if (! $race->registrationOpen()) {
+            return back()->with('error', 'Drivers can only be swapped until shortly before the round starts.');
+        }
+
+        $championship = $race->championship_id ? Championship::withoutTenantScope()->find($race->championship_id) : null;
+        $rounds = app(ChampionshipRoundEntryService::class);
+        $car = $championship ? $rounds->carRegistrationFor($entry, $championship) : null;
+        if (! $car) {
+            return back()->with('error', 'This car has no championship line-up to swap from.');
+        }
+
+        $outId = $request->integer('driver_id');
+        $inId = $request->integer('with_id');
+        if (! $entry->registrations()->where('user_id', $outId)->exists() || ! in_array($inId, $rounds->benchDriverIds($entry, $car), true)) {
+            return back()->with('error', 'That swap is not possible for this car.');
+        }
+
+        $rounds->swapDriver($entry, $outId, $inId);
+
+        $names = User::whereIn('id', [$outId, $inId])->get()->keyBy('id');
+
+        return back()->with('success', $names[$inId]->displayName().' drives car #'.$entry->car_number.' instead of '.$names[$outId]->displayName().' in '.$race->title.'.');
     }
 }

@@ -7,6 +7,7 @@ use App\Models\ChampionshipRegistration;
 use App\Models\Race;
 use App\Models\RaceRegistration;
 use App\Models\RaceTeamEntry;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 // A championship entry is entered into every upcoming round automatically — a
@@ -107,6 +108,50 @@ class ChampionshipRoundEntryService
                 $entry->registrations()->withTrashed()->forceDelete();
                 $entry->forceDelete();
             });
+    }
+
+    // The championship car a round's team entry stands for (same team, same number).
+    public function carRegistrationFor(RaceTeamEntry $entry, Championship $championship): ?ChampionshipRegistration
+    {
+        if ($entry->car_number === null) {
+            return null;
+        }
+
+        return $championship->registrations()->approved()
+            ->where('racing_team_id', $entry->racing_team_id)
+            ->where('car_number', $entry->car_number)
+            ->first();
+    }
+
+    // Who of the car's line-up + reserve isn't driving this round's entry — the
+    // driver a "Swap with …" button brings in. Normally the reserve; after a swap,
+    // the driver they replaced.
+    public function benchDriverIds(RaceTeamEntry $entry, ChampionshipRegistration $car): array
+    {
+        $inCar = $entry->registrations()->pluck('user_id')->all();
+
+        return array_values(array_diff($car->carDriverIds(), $inCar));
+    }
+
+    // One round only: $outId leaves the car, $inId (from the bench) takes their seat,
+    // and the starting spot when they had it. The championship line-up is untouched,
+    // so later rounds still get the regular drivers.
+    public function swapDriver(RaceTeamEntry $entry, int $outId, int $inId): void
+    {
+        DB::transaction(function () use ($entry, $outId, $inId) {
+            RaceRegistration::where('race_id', $entry->race_id)->where('user_id', $outId)
+                ->where('team_entry_id', $entry->id)->forceDelete();
+
+            $seat = RaceRegistration::withTrashed()->firstOrNew(['race_id' => $entry->race_id, 'user_id' => $inId]);
+            $seat->team_entry_id = $entry->id;
+            $seat->race_class_id = null;
+            $seat->deleted_at = null;
+            $seat->save();
+
+            if ((int) $entry->starting_driver_id === $outId) {
+                $entry->update(['starting_driver_id' => $inId]);
+            }
+        });
     }
 
     private function syncSoloEntry(ChampionshipRegistration $registration, Race $race): bool

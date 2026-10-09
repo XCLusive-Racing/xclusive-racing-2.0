@@ -371,12 +371,12 @@ class Championship extends Model
             ->orderBy('id')->get();
     }
 
-    // Every driver already in a car of this championship (any team) — a driver
-    // can only be in one car.
+    // Every driver already in a car of this championship (any team), its reserve
+    // included — a driver can only be in one car.
     public function driverIdsInCars(): Collection
     {
         return $this->registrations()->whereNotNull('racing_team_id')->with('racingTeam.members')->get()
-            ->flatMap(fn (ChampionshipRegistration $registration) => $registration->driverIds())
+            ->flatMap(fn (ChampionshipRegistration $registration) => $registration->carDriverIds())
             ->unique()->values();
     }
 
@@ -422,7 +422,7 @@ class Championship extends Model
     {
         return $this->registrations()->approved()->where('is_spectator', false)->get()
             ->flatMap(fn (ChampionshipRegistration $registration) => $registration->racing_team_id
-                ? $registration->driverIds()
+                ? $registration->carDriverIds()
                 : [$registration->user_id])
             ->unique()->values()->all();
     }
@@ -717,7 +717,8 @@ class Championship extends Model
                 default => null,
             };
 
-            $rounds = collect($registration->driverIds())
+            // The reserve too: a round they swapped in for counts for the car.
+            $rounds = collect($registration->carDriverIds())
                 ->flatMap(fn ($id) => $driverStandings->get($id)['rounds'] ?? [])
                 ->groupBy('race_id')
                 ->map(fn ($roundEntries) => $roundEntries->max('points'));

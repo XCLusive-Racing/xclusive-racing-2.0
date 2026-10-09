@@ -11,6 +11,19 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-10-09 — Reserve driver per team car (MTSS feedback).** Line-ups stay
+  fixed (e.g. 2 per car); each car can get one reserve afterwards: "Edit" next to
+  Withdraw on the championship page (`ChampionshipController::updateReserve()`,
+  `championship_registrations.reserve_driver_id` — migration
+  `2026_10_09_000000`, must run on prod). The reserve must be a team member in no
+  car of the championship, meets the requirements, and is never entered into
+  rounds itself. On a round's event page every driver of the car gets "Swap with
+  <reserve>" (`RaceController::swapTeamDriver()` →
+  `ChampionshipRoundEntryService::swapDriver()`), this round only, until the
+  round closes; the starting spot moves along, and swapping back works the same
+  way. The reserve scores for the car (`carDriverIds()` in `scoringDriverIds()`,
+  car standings, `driverIdsInCars()`, `driverEntrantIds()`). Changing/clearing the
+  reserve doesn't undo a swap already made in an upcoming round.
 - **2026-10-09 — League feedback batch.** (1) A Steam-primary driver on an ACC
   console event (console = cross) is entered and matched by their linked Xbox
   (else PSN) account (`User::playerIdFor()` / `keyedByPlayerIds()`), no need to

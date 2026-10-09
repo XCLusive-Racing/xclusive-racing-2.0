@@ -92,6 +92,9 @@ class ChampionshipEntryMessage
             if ($registration->startingDriver) {
                 $lines[] = 'Starting driver: '.$registration->startingDriver->displayName();
             }
+            if ($registration->reserveDriver) {
+                $lines[] = 'Reserve: '.$registration->reserveDriver->displayName();
+            }
         }
 
         $car = trim(($registration->car_number !== null ? '#'.$registration->car_number.' ' : '').($registration->car_model ?? ''));

@@ -428,6 +428,44 @@ class ChampionshipController extends Controller
         return "Couldn't verify your Discord membership right now — please try again in a moment.";
     }
 
+    // The Edit button next to a team car's Withdraw: pick (or clear) the car's reserve —
+    // a third team member, not in any car of this championship, who can swap in for one
+    // of the car's drivers in a single round (RaceController::swapTeamDriver()).
+    public function updateReserve(Request $request, int $championship, int $registration)
+    {
+        $championship = $this->findChampionship($championship);
+        $car = $championship->registrations()->whereKey($registration)->whereNotNull('racing_team_id')->firstOrFail();
+        $team = RacingTeam::with('members')->findOrFail($car->racing_team_id);
+        abort_unless($team->canManage($request->user()), 403);
+
+        $reserveId = $request->integer('reserve_driver_id') ?: null;
+
+        if ($reserveId !== null) {
+            $teamDriverIds = $team->members->pluck('id')->push($team->owner_id);
+            if (! $teamDriverIds->contains($reserveId)) {
+                return back()->with('error', 'The reserve must be a member of your team.');
+            }
+            if ($championship->driverIdsInCars()->diff([$car->reserve_driver_id])->contains($reserveId)) {
+                return back()->with('error', 'That driver is already in a car of this championship.');
+            }
+
+            $reserve = User::findOrFail($reserveId);
+            $thresholds = $championship->requirementThresholds();
+            $class = $car->championshipClass;
+            $failure = $reserve->requirementFailure($championship->game, $thresholds['sr'], $thresholds['min'], $thresholds['max'])
+                ?? ($class ? $reserve->requirementFailure($championship->game, $class->sr_requirement, $class->min_rating) : null);
+            if ($failure) {
+                return back()->with('error', $reserve->displayName().': '.$failure);
+            }
+        }
+
+        $car->update(['reserve_driver_id' => $reserveId]);
+
+        return back()->with('success', $reserveId
+            ? User::find($reserveId)->displayName().' is now the reserve of '.($car->car_number !== null ? '#'.$car->car_number : 'your car').'.'
+            : 'The reserve has been removed.');
+    }
+
     public function unregister(int $championship)
     {
         $championship = $this->findChampionship($championship);

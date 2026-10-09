@@ -18,6 +18,10 @@ class ChampionshipRegistration extends Model
         // the ones entered into every round; in "per_round" scope they're the
         // pre-selected line-up on each round's team sign-up. Null = whole team.
         'driver_ids',
+        // A team car's reserve: a third team member who can swap in for one of
+        // driver_ids in a single round (RaceController::swapTeamDriver()). Never
+        // entered into rounds on its own.
+        'reserve_driver_id',
         // Null while waiting for the league to approve the entry
         // (settings.requirements.manual_approval_required).
         'approved_at',
@@ -87,10 +91,22 @@ class ChampionshipRegistration extends Model
         return $this->belongsTo(ChampionshipDriverClass::class, 'driver_class_id');
     }
 
-    // Every driver this entry scores for: a team car's line-up, or the solo driver.
+    // Every driver this entry scores for: a team car's line-up (and its reserve, for the
+    // rounds they swapped in), or the solo driver.
     public function scoringDriverIds(): array
     {
-        return $this->racing_team_id ? $this->driverIds() : [$this->user_id];
+        return $this->racing_team_id ? $this->carDriverIds() : [$this->user_id];
+    }
+
+    // A team car's line-up plus its reserve — everyone who may drive this car.
+    public function carDriverIds(): array
+    {
+        return array_values(array_unique(array_filter([...$this->driverIds(), $this->reserve_driver_id])));
+    }
+
+    public function reserveDriver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reserve_driver_id');
     }
 
     public function racingTeam(): BelongsTo

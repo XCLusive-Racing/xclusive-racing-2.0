@@ -100,6 +100,7 @@ Route::get('/championships', [ChampionshipController::class, 'index'])->name('ch
 Route::get('/championships/{championship}', [ChampionshipController::class, 'show'])->name('championships.show');
 Route::post('/championships/{championship}/register', [ChampionshipController::class, 'register'])->name('championships.register')->middleware('auth');
 Route::delete('/championships/{championship}/unregister', [ChampionshipController::class, 'unregister'])->name('championships.unregister')->middleware('auth');
+Route::put('/championships/{championship}/cars/{registration}/reserve', [ChampionshipController::class, 'updateReserve'])->name('championships.cars.reserve')->middleware('auth');
 
 // News - public
 Route::get('/news', [NewsController::class, 'index'])->name('news.index');
@@ -214,6 +215,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/events/{race}/stream', [RaceController::class, 'updateStream'])->name('events.stream');
     Route::post('/events/{race}/register-team', [RaceController::class, 'registerTeam'])->name('events.register-team');
     Route::delete('/events/{race}/unregister-team/{entry}', [RaceController::class, 'unregisterTeam'])->name('events.unregister-team');
+    Route::post('/events/{race}/team-entries/{entry}/swap', [RaceController::class, 'swapTeamDriver'])->name('events.swap-team-driver');
 
     // Inbox
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
