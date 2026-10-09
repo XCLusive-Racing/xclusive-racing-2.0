@@ -140,4 +140,26 @@ class ChampionshipSoloCarTest extends TestCase
             ->assertSee(self::GT3_CAR)
             ->assertDontSee(self::GT4_CAR);
     }
+
+    // League feedback (2026-10): in a multiclass championship the class is picked first
+    // (the car dropdown opens after it), and a class at its cap can't be picked.
+    public function test_multiclass_form_asks_for_the_class_before_the_car_and_closes_full_classes(): void
+    {
+        $this->championship->update(['is_multiclass' => true, 'car_class' => null]);
+        $gt3 = $this->championship->classes()->create(['name' => 'GT3', 'car_class' => 'GT3', 'max_drivers' => 1, 'sort_order' => 0]);
+        $this->championship->classes()->create(['name' => 'GT4', 'car_class' => 'GT4', 'max_drivers' => null, 'sort_order' => 1]);
+
+        $this->actingAs(User::factory()->create())->get(route('championships.show', $this->championship))
+            ->assertOk()
+            ->assertSeeInOrder(['name="championship_class_id"', 'name="car_model"'], false)
+            ->assertSee('— Select a class first —');
+
+        $this->register(User::factory()->create(), ['championship_class_id' => $gt3->id, 'car_model' => self::GT3_CAR, 'car_number' => 3])
+            ->assertSessionHas('success');
+        $this->register(User::factory()->create(), ['championship_class_id' => $gt3->id, 'car_model' => self::GT3_CAR, 'car_number' => 4])
+            ->assertSessionHas('error', 'The selected class is full.');
+
+        $this->actingAs(User::factory()->create())->get(route('championships.show', $this->championship))
+            ->assertSee('GT3 — full');
+    }
 }

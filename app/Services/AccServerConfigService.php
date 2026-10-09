@@ -64,7 +64,9 @@ class AccServerConfigService implements ServerConfigGenerator
                     'defaultGridPosition' => -1,
                     'ballastKg' => $ballast,
                     'restrictor' => $restrictor,
-                    'forcedCarModel' => -1,
+                    // A car picked for the team entry is locked in, same as a solo
+                    // championship car; without one the drivers choose in-game.
+                    'forcedCarModel' => $teamEntry?->car_model ? (AccCarCatalog::id($teamEntry->car_model, $race->game) ?? -1) : -1,
                     'overrideDriverInfo' => 1,
                 ];
             } else {

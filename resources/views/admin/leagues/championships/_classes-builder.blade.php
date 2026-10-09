@@ -10,7 +10,7 @@
 
 <div class="mt-2 mb-3" data-classes-builder style="{{ ($championship->settings->format->multiclass_enabled ?? false) ? '' : 'display:none' }}">
     <label class="form-label">Classes</label>
-    <div class="form-text mb-2" style="font-size:.72rem;color:#9ca3af">Pick which classes race in this championship, and an optional entry cap per class.</div>
+    <div class="form-text mb-2" style="font-size:.72rem;color:#9ca3af">Pick which classes race in this championship, and an optional entry cap per class (empty = no max).</div>
 
     <div data-class-rows>
         @foreach($classes as $i => $class)
@@ -21,7 +21,7 @@
                 <option value="{{ $option }}" {{ $selectedClass === $option ? 'selected' : '' }}>{{ $option }}</option>
                 @endforeach
             </select>
-            <input type="number" placeholder="Max" value="{{ $class['max_entries'] ?? '' }}" data-class-max class="form-control form-control-sm" style="max-width:90px">
+            <input type="number" placeholder="No max" min="1" title="Max entries in this class — empty = no max" value="{{ $class['max_entries'] ?? '' }}" data-class-max class="form-control form-control-sm" style="max-width:90px">
             <button type="button" class="btn btn-sm btn-outline-secondary" data-remove-class>×</button>
         </div>
         @endforeach
@@ -54,7 +54,7 @@
 
         row.innerHTML =
             '<select data-class-name class="form-select form-select-sm" style="max-width:150px">' + optionsHtml + '</select>' +
-            '<input type="number" placeholder="Max" data-class-max class="form-control form-control-sm" style="max-width:90px">' +
+            '<input type="number" placeholder="No max" min="1" title="Max entries in this class — empty = no max" data-class-max class="form-control form-control-sm" style="max-width:90px">' +
             '<button type="button" class="btn btn-sm btn-outline-secondary" data-remove-class>×</button>';
         if (name) row.querySelector('[data-class-name]').value = name;
         row.querySelector('[data-class-max]').value = max || '';

@@ -53,8 +53,45 @@
         Registering <strong>[{{ $ownedTeam->tag }}] {{ $ownedTeam->name }}</strong>
     </p>
     @endif
+    @endif
 
-    @if($ownedTeam)
+    {{-- The class comes first: the car dropdown below only opens once one is picked,
+         and then only offers that class's cars (server-side checked on submit). --}}
+    @if($championship->is_multiclass && $championship->classes->isNotEmpty())
+    <div class="mb-3">
+        <label class="form-label text-white" style="font-size:.82rem">Select Class</label>
+        <select name="championship_class_id" data-class-select class="form-select form-select-sm" required
+                style="background:#1f2937;border-color:#374151;color:#e5e7eb">
+            <option value="">Choose your class...</option>
+            @foreach($championship->classes as $cls)
+            <option value="{{ $cls->id }}" data-car-class="{{ $cls->car_class }}" {{ (string) old('championship_class_id') === (string) $cls->id ? 'selected' : '' }} @disabled($cls->isFull())>{{ $cls->name }}{{ $cls->car_class && $cls->car_class !== $cls->name ? ' (' . $cls->car_class . ')' : '' }}{{ $cls->isFull() ? ' — full' : '' }}</option>
+            @endforeach
+        </select>
+    </div>
+    <script>
+    // No car until a class is picked; then only that class's cars. Runs once the
+    // page is parsed: the car dropdown comes after this script.
+    document.addEventListener('DOMContentLoaded', function () {
+        var classSelect = document.querySelector('[data-class-select]');
+        var carSelect   = document.querySelector('[data-car-select]');
+        if (!classSelect || !carSelect) return;
+        var placeholder = carSelect.options[0];
+        function sync() {
+            var wanted = classSelect.selectedOptions[0]?.dataset.carClass || '';
+            carSelect.disabled = !classSelect.value;
+            placeholder.textContent = classSelect.value ? '— Select car —' : '— Select a class first —';
+            Array.from(carSelect.options).forEach(function (o) {
+                o.hidden = o.disabled = !!(o.value && wanted && o.dataset.carClass !== wanted);
+            });
+            if (carSelect.selectedOptions[0]?.disabled) carSelect.value = '';
+        }
+        classSelect.addEventListener('change', sync);
+        sync();
+    });
+    </script>
+    @endif
+
+    @if($driverSwaps && $ownedTeam)
     @php
         $teamDrivers = collect([$ownedTeam->owner])->concat($ownedTeam->members)->filter()->unique('id');
         $minDrivers  = (int) ($championship->settings->format->min_drivers_per_car ?? 0);
@@ -98,8 +135,8 @@
             <label class="form-label text-white" style="font-size:.78rem">Car Model</label>
             @php
                 // ACC's own car catalogue for the championship's platform, narrowed
-                // to its single car class; with multiclass the class picker below
-                // narrows it further client-side (and server-side on submit).
+                // to its single car class; with multiclass the class picker
+                // narrows it further client-side (picked above) (and server-side on submit).
                 $carOptions = collect(\App\Services\AccCarCatalog::namesWithClass($championship->game))
                     ->when(!$championship->is_multiclass && $championship->car_class,
                         fn ($cars) => $cars->filter(fn ($class) => $class === $championship->car_class));
@@ -145,38 +182,6 @@
         boxes.forEach(function (b) { b.addEventListener('change', sync); });
         sync();
     })();
-    </script>
-    @endif
-    @endif
-
-    @if($championship->is_multiclass && $championship->classes->isNotEmpty())
-    <div class="mb-3">
-        <label class="form-label text-white" style="font-size:.82rem">Select Class</label>
-        <select name="championship_class_id" data-class-select class="form-select form-select-sm" required
-                style="background:#1f2937;border-color:#374151;color:#e5e7eb">
-            <option value="">Choose your class...</option>
-            @foreach($championship->classes as $cls)
-            <option value="{{ $cls->id }}" data-car-class="{{ $cls->car_class }}" {{ (string) old('championship_class_id') === (string) $cls->id ? 'selected' : '' }}>{{ $cls->name }}{{ $cls->car_class && $cls->car_class !== $cls->name ? ' (' . $cls->car_class . ')' : '' }}</option>
-            @endforeach
-        </select>
-    </div>
-    <script>
-    // The car dropdown only offers cars of the picked class. Runs once the
-    // page is parsed: a solo entry's car dropdown comes after this script.
-    document.addEventListener('DOMContentLoaded', function () {
-        var classSelect = document.querySelector('[data-class-select]');
-        var carSelect   = document.querySelector('[data-car-select]');
-        if (!classSelect || !carSelect) return;
-        function sync() {
-            var wanted = classSelect.selectedOptions[0]?.dataset.carClass || '';
-            Array.from(carSelect.options).forEach(function (o) {
-                o.hidden = o.disabled = !!(o.value && wanted && o.dataset.carClass !== wanted);
-            });
-            if (carSelect.selectedOptions[0]?.disabled) carSelect.value = '';
-        }
-        classSelect.addEventListener('change', sync);
-        sync();
-    });
     </script>
     @endif
 

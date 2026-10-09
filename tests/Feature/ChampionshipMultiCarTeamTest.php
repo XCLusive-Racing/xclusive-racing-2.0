@@ -7,6 +7,8 @@ use App\Models\League;
 use App\Models\Race;
 use App\Models\RacingTeam;
 use App\Models\User;
+use App\Services\AccCarCatalog;
+use App\Services\AccServerConfigService;
 use App\Services\ChampionshipRoundEntryService;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -94,6 +96,21 @@ class ChampionshipMultiCarTeamTest extends TestCase
 
         $this->registerCar($championship, [0, 1], ['car_number' => 9])
             ->assertSessionHas('error', 'Your team already has the maximum of 2 cars in this championship.');
+    }
+
+    // League feedback (2026-10): a car picked for a team car is forced in-game, like a
+    // solo championship car; a car without a model leaves the choice to the drivers.
+    public function test_a_team_cars_picked_model_is_forced_in_the_entrylist(): void
+    {
+        $championship = $this->makeChampionship('championship');
+        $round = $this->makeRound($championship);
+        $this->registerCar($championship, [0, 1], ['car_number' => 7, 'car_model' => 'Ferrari 296 GT3 (2023)'])->assertSessionHas('success');
+        $this->registerCar($championship, [2, 3], ['car_number' => 8])->assertSessionHas('success');
+
+        $forced = collect(app(AccServerConfigService::class)->entryList($round)['entries'])->pluck('forcedCarModel', 'raceNumber');
+
+        $this->assertSame(AccCarCatalog::id('Ferrari 296 GT3 (2023)', 'acc'), $forced[7]);
+        $this->assertSame(-1, $forced[8]);
     }
 
     public function test_the_default_of_one_car_keeps_the_old_message(): void
