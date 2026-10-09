@@ -65,18 +65,31 @@ class User extends Authenticatable
     // servers use the console platform ID -- so a console-registered driver racing a PC
     // event is identified by the Steam account linked on their profile instead. Every
     // other game keeps using platform_id as before.
+    //
+    // The other way round too: a Steam-primary driver on an ACC console event (console and
+    // cross servers are the same: PS5 + Xbox) is identified by their linked Xbox or PSN
+    // account, so nobody has to switch their primary platform in their account settings.
     public function playerIdFor(string $game): ?string
     {
-        if ($game !== 'ac' || $this->platform === 'steam') {
-            return $this->platform_id ?: null;
+        if ($game === 'ac' && $this->platform !== 'steam') {
+            return $this->connectedAccounts->firstWhere('provider', 'steam')?->provider_id;
         }
 
-        return $this->connectedAccounts->firstWhere('provider', 'steam')?->provider_id;
+        if ($game === 'acc' && $this->platform === 'steam') {
+            $console = $this->connectedAccounts->firstWhere('provider', 'xbox')
+                ?? $this->connectedAccounts->firstWhere('provider', 'psn');
+            if ($console?->provider_id) {
+                return $console->provider_id;
+            }
+        }
+
+        return $this->platform_id ?: null;
     }
 
     // Reverse of playerIdFor(): resolves server-side player IDs (from an entrylist or a
     // results file) back to users, keyed by that player ID. A primary platform_id match
-    // wins; a linked Steam account only fills in IDs nobody has as their primary ID.
+    // wins; a linked Steam, Xbox or PSN account only fills in IDs nobody has as their
+    // primary ID.
     public static function keyedByPlayerIds(array $playerIds): Collection
     {
         $playerIds = array_values(array_unique(array_filter($playerIds)));
@@ -84,7 +97,7 @@ class User extends Authenticatable
         $users = static::whereIn('platform_id', $playerIds)->get()->keyBy('platform_id');
 
         ConnectedAccount::with('user')
-            ->where('provider', 'steam')
+            ->whereIn('provider', ['steam', 'xbox', 'psn'])
             ->whereIn('provider_id', $playerIds)
             ->get()
             ->each(function (ConnectedAccount $account) use ($users) {

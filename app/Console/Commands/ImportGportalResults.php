@@ -9,6 +9,7 @@ use App\Services\AccResultImportService;
 use App\Services\FtpService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class ImportGportalResults extends Command
@@ -144,6 +145,13 @@ class ImportGportalResults extends Command
                 Log::info('gportal:import-results: imported', [
                     'race_id' => $race->id, 'file' => $filename,
                     'race_rows' => $counts['race'], 'quali_rows' => $counts['quali'],
+                ]);
+            } elseif (Cache::add('gportal-import-empty:'.$filename, true, now()->addDay())) {
+                // Matched a race but nothing in it belongs to a registered driver (or it
+                // holds no Q/R session). It's retried every minute until the race finishes —
+                // logged once instead of failing silently (race 533's races, 2026-10-01).
+                Log::warning('gportal:import-results: file matched a race but imported no rows', [
+                    'race_id' => $race->id, 'file' => $filename,
                 ]);
             }
         } catch (\Throwable $e) {

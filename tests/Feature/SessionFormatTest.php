@@ -55,6 +55,24 @@ class SessionFormatTest extends TestCase
         ], $overrides));
     }
 
+    // League feedback (2026-10): Race Formats in the admin nav, below Points Schemes.
+    public function test_the_nav_link_goes_to_the_managers_league_or_a_league_pick(): void
+    {
+        $this->actingAs($this->manager)->get(route('admin.leagues.session-formats.select'))
+            ->assertRedirect(route('admin.leagues.session-formats.index', $this->league));
+
+        $this->actingAs($this->manager)->get(route('admin.leagues.session-formats.index', $this->league))
+            ->assertOk()->assertSeeInOrder(['Points Schemes', 'Race Formats']);
+
+        $other = $this->makeLeague('other');
+        LeagueUser::create(['league_id' => $other->id, 'user_id' => $this->manager->id, 'role' => 'manager']);
+
+        $this->actingAs($this->manager->refresh())->get(route('admin.leagues.session-formats.select'))
+            ->assertOk()
+            ->assertSee(route('admin.leagues.session-formats.index', $this->league), false)
+            ->assertSee(route('admin.leagues.session-formats.index', $other), false);
+    }
+
     public function test_a_league_manager_creates_and_edits_a_format(): void
     {
         $this->actingAs($this->manager)

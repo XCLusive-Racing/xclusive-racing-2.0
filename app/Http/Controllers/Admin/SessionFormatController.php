@@ -15,6 +15,29 @@ use Illuminate\Http\Request;
 // round that already used it.
 class SessionFormatController extends Controller
 {
+    // The Leagues nav's "Race Formats" link: straight to the one league a manager runs,
+    // or a pick of the leagues they may manage formats for.
+    public function selectLeague(Request $request)
+    {
+        $user = $request->user();
+        $leagues = ($user->canManage() ? League::withoutTenantScope() : League::query())
+            ->orderBy('name')->get()
+            ->filter(fn (League $league) => $user->canManage() || $user->managesLeague($league))
+            ->values();
+
+        if ($leagues->count() === 1) {
+            return redirect()->route('admin.leagues.session-formats.index', $leagues->first());
+        }
+
+        return view('admin.leagues.championships.select', [
+            'leagues' => $leagues,
+            'title' => 'Race Formats',
+            'intro' => 'Pick which league you\'re managing race formats for.',
+            'targetRoute' => 'admin.leagues.session-formats.index',
+            'linkLabel' => 'Race formats →',
+        ]);
+    }
+
     public function index(Request $request, League $league)
     {
         $this->authorizeLeague($request, $league);

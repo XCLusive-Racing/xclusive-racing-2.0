@@ -527,6 +527,10 @@ Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/poi
     Route::delete('/{scheme}', [PointsSchemeController::class, 'destroy'])->name('destroy');
 });
 
+// Entry point for the Leagues nav's "Race Formats" link — picks (or auto-picks) the league.
+Route::middleware(['auth', 'league.access'])->get('admin/leagues/session-formats', [SessionFormatController::class, 'selectLeague'])
+    ->name('admin.leagues.session-formats.select');
+
 // Race formats — a league's own reusable session setups, picked per round.
 Route::middleware(['auth', 'league.access'])->prefix('admin/leagues/{league}/session-formats')->name('admin.leagues.session-formats.')->group(function () {
     Route::get('/', [SessionFormatController::class, 'index'])->name('index');

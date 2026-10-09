@@ -131,6 +131,35 @@ class AccPcPlayerIdTest extends TestCase
             ->assertSessionHas('success');
     }
 
+    // The other way round (league feedback 2026-10): a Steam-primary driver with a linked
+    // Xbox account races a console event as that Xbox account, entrylist and results both,
+    // without switching their primary platform in their account settings.
+    public function test_console_event_uses_a_steam_drivers_linked_console_account(): void
+    {
+        $race = $this->makeRace('acc');
+        $user = User::factory()->create(['platform' => 'steam', 'platform_id' => 'S76561198000000004']);
+        $user->connectedAccounts()->create([
+            'provider' => 'xbox', 'provider_id' => 'XUID-4', 'username' => 'XboxName', 'connected_at' => now(),
+        ]);
+        $this->register($race, $user);
+        $steamOnly = User::factory()->create(['platform' => 'steam', 'platform_id' => 'S76561198000000005']);
+        $this->register($race, $steamOnly);
+
+        $this->assertSame(['XUID-4', 'S76561198000000005'], $this->entryListPlayerIds(app(AccServerConfigService::class)->entryList($race)));
+        $this->assertSame('S76561198000000004', $user->fresh()->playerIdFor('ac'));
+
+        $content = json_encode([
+            'sessionType' => 'Q',
+            'sessionResult' => ['bestlap' => 100000, 'leaderBoardLines' => [[
+                'car' => ['raceNumber' => 7, 'carModel' => 32, 'drivers' => [['playerId' => 'XUID-4', 'lastName' => 'Driver']]],
+                'timing' => ['bestLap' => 100000, 'lapCount' => 5, 'totalTime' => 500000],
+            ]]],
+        ]);
+        app(AccResultImportService::class)->processSessions($content, $race, 'test.json');
+
+        $this->assertSame($user->id, RaceResult::where('race_id', $race->id)->sole()->user_id);
+    }
+
     public function test_primary_platform_id_wins_over_a_linked_account(): void
     {
         $owner = User::factory()->create(['platform' => 'steam', 'platform_id' => 'S76561198000000003']);

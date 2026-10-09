@@ -11,6 +11,16 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-10-09 — League feedback batch.** (1) A Steam-primary driver on an ACC
+  console event (console = cross) is entered and matched by their linked Xbox
+  (else PSN) account (`User::playerIdFor()` / `keyedByPlayerIds()`), no need to
+  switch platform in account settings. (2) A multi-race round's races each start an
+  in-game hour after the last (`AccServerConfigService::configuration()`).
+  (3) "Race Formats" in the admin nav below Points Schemes (league pick, or straight
+  to the only league). (4) Race 533's races never imported — only its Q file was
+  ever matched; no code bug found, the FTP listing has to be checked on the live
+  server. `gportal:import-results` now logs (once a day per file) a file that
+  matches a race but imports no rows, instead of retrying silently.
 - **2026-10-09 — Championship welcome message.** Because rounds are entered
   automatically, nobody got a round's server details any more. Now an entry that
   counts (registered without manual approval, or approved — replaces the short

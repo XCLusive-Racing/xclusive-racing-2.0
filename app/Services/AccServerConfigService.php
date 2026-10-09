@@ -243,10 +243,11 @@ class AccServerConfigService implements ServerConfigGenerator
 
         // One R session per race — a multi-race round (race_durations) runs them back
         // to back in the same server event; the result import tells them apart by
-        // ACC's sessionIndex (AccResultImportService::raceNumber()).
-        foreach ($race->raceLengths() as $minutes) {
+        // ACC's sessionIndex (AccResultImportService::raceNumber()). Each race starts an
+        // in-game hour after the one before, so a race weekend runs on into the evening.
+        foreach (array_values($race->raceLengths()) as $i => $minutes) {
             $sessions[] = [
-                'hourOfDay' => $hour,
+                'hourOfDay' => min($hour + $i, 23),
                 'dayOfWeekend' => 3,
                 'timeMultiplier' => (int) ($race->race_time_multiplier ?: 1),
                 'sessionType' => 'R',

@@ -1,7 +1,15 @@
 @extends('layouts.admin')
 
-@section('title', 'Championships')
-@section('page-title', 'Championships')
+{{-- Shared league picker: Championships (default) and Race Formats (SessionFormatController::selectLeague()). --}}
+@php
+    $title ??= 'Championships';
+    $intro ??= "Pick which league you're creating or managing championships for.";
+    $targetRoute ??= 'admin.leagues.championships.index';
+    $linkLabel ??= 'Championships →';
+@endphp
+
+@section('title', $title)
+@section('page-title', $title)
 
 @section('content')
 
@@ -9,7 +17,7 @@
     <div class="admin-card-header">
         <div>
             <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:1.05rem">Select a league</div>
-            <div class="text-secondary mt-1" style="font-size:.8rem">Pick which league you're creating or managing championships for.</div>
+            <div class="text-secondary mt-1" style="font-size:.8rem">{{ $intro }}</div>
         </div>
         <span class="badge" style="background:#f3e8ff;color:#7c3aed;font-size:.72rem;padding:5px 10px;border-radius:6px;font-weight:700">
             {{ $leagues->count() }} {{ Str::plural('league', $leagues->count()) }}
@@ -29,14 +37,14 @@
                 @foreach($leagues as $league)
                 <tr>
                     <td class="ps-4">
-                        <a href="{{ route('admin.leagues.championships.index', $league) }}" class="d-flex align-items-center gap-2 text-decoration-none py-2">
+                        <a href="{{ route($targetRoute, $league) }}" class="d-flex align-items-center gap-2 text-decoration-none py-2">
                             <span style="width:10px;height:10px;border-radius:50%;background:{{ $league->primary_color }};flex-shrink:0"></span>
                             <span class="fw-bold text-dark">{{ $league->name }}</span>
                         </a>
                     </td>
                     <td class="text-end pe-4">
-                        <a href="{{ route('admin.leagues.championships.index', $league) }}" class="fw-bold" style="color:#7c3aed;font-size:.8rem">
-                            Championships →
+                        <a href="{{ route($targetRoute, $league) }}" class="fw-bold" style="color:#7c3aed;font-size:.8rem">
+                            {{ $linkLabel }}
                         </a>
                     </td>
                 </tr>

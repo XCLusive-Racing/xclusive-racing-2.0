@@ -72,6 +72,15 @@ class MultiRaceRoundTest extends TestCase
         $this->assertSame(['P', 'Q', 'R'], array_column($single, 'sessionType'));
     }
 
+    // League feedback (2026-10): each race an in-game hour after the last, into the evening.
+    public function test_each_race_starts_an_in_game_hour_after_the_last(): void
+    {
+        $sessions = app(AccServerConfigService::class)->configuration($this->makeRound(['race_durations' => [25, 20, 15]]))['sessions'];
+        $raceHours = array_column(array_filter($sessions, fn ($s) => $s['sessionType'] === 'R'), 'hourOfDay');
+
+        $this->assertSame([$raceHours[0], $raceHours[0] + 1, $raceHours[0] + 2], array_values($raceHours));
+    }
+
     // The event page's Session Schedule used to show only the first race.
     public function test_the_session_schedule_lists_every_race(): void
     {
