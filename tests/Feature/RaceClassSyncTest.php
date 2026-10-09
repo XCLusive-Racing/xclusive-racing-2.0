@@ -123,4 +123,32 @@ class RaceClassSyncTest extends TestCase
         $this->assertSame($gt3->id, $registration->race_class_id);
         $this->assertSame(2, RaceClass::where('race_id', $race->id)->count());
     }
+
+    // User-directed 2026-10-09: race 598 had GT3 and GT4 opened to 25 each, but the race
+    // total stayed at the track's 40, so GT3 drivers still waited with GT3 at 20/25.
+    public function test_class_limits_set_the_race_total(): void
+    {
+        $race = $this->makeMulticlassRace();
+        $payload = $this->updatePayload($race, [
+            ['name' => 'GT3', 'car_class' => 'GT3', 'color' => '#7c3aed', 'max_drivers' => 25],
+            ['name' => 'GT4', 'car_class' => 'GT4', 'color' => '#2563eb', 'max_drivers' => 25],
+        ], ['max_drivers' => 10]);
+
+        $this->actingAs($this->makeAdmin())->put(route('admin.races.update', $race), $payload)->assertRedirect();
+
+        $this->assertSame(50, $race->fresh()->max_drivers);
+    }
+
+    public function test_an_uncapped_class_keeps_the_race_total(): void
+    {
+        $race = $this->makeMulticlassRace();
+        $payload = $this->updatePayload($race, [
+            ['name' => 'GT3', 'car_class' => 'GT3', 'color' => '#7c3aed', 'max_drivers' => 25],
+            ['name' => 'GT4', 'car_class' => 'GT4', 'color' => '#2563eb', 'max_drivers' => null],
+        ], ['max_drivers' => 10]);
+
+        $this->actingAs($this->makeAdmin())->put(route('admin.races.update', $race), $payload)->assertRedirect();
+
+        $this->assertSame(10, $race->fresh()->max_drivers);
+    }
 }

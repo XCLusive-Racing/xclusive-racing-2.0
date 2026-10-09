@@ -1486,6 +1486,16 @@ class RaceController extends Controller
         }
 
         $race->raceClasses()->whereNotIn('id', $keptIds)->delete();
+
+        // The class limits are the event manager's own numbers (the track's max only
+        // seeds the even split), so the race's total follows them: opening GT3 and GT4
+        // to 25 each makes it a 50-driver race -- the waiting list, the sign-up counter
+        // and the server's car slots all read max_drivers. Only when every class has a
+        // limit; an uncapped class keeps the race total as the overall ceiling.
+        $caps = array_map(fn ($class) => (int) ($class['max_drivers'] ?? 0), $classes);
+        if (min($caps) > 0) {
+            $race->update(['max_drivers' => array_sum($caps)]);
+        }
     }
 
     private function resolveMedia(Request $request): ?string
