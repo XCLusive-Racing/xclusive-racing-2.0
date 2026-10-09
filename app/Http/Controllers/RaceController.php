@@ -432,10 +432,10 @@ class RaceController extends Controller
             return back()->with('error', 'You are not registered for this race.');
         }
 
-        $raceClassId = $registration->race_class_id;
+        $waitingBefore = $this->waitlistedRegistrations($race)->keys();
         $registration->delete();
 
-        $this->promoteNextWaitlisted($race, $raceClassId);
+        $this->notifyPromotedDrivers($race, $waitingBefore);
 
         return back()->with('success', 'You have been unregistered from '.$race->title.'.');
     }
@@ -473,40 +473,26 @@ class RaceController extends Controller
         return back()->with('success', 'Your stream is now shown on this event.');
     }
 
-    // A cancelled/soft-deleted registration can free up to two independent slots at
-    // once: a class-level one (if that class has its own cap) and a race-wide one
-    // (the combined cap across every class, when set) -- see
-    // Race::isRegistrationWaitlisted() for why both apply. Since "waitlisted" is a
-    // live rank rather than a stored flag, nothing needs to be moved: this only needs
-    // to find and notify whichever driver(s) just crossed into the cap, the same way a
-    // fresh registration is confirmed, so they actually know to show up.
-    private function promoteNextWaitlisted(Race $race, ?int $raceClassId): void
+    // Registrations currently on the race's waiting list, keyed by id.
+    private function waitlistedRegistrations(Race $race)
     {
-        $notifiedUserIds = [];
+        return $race->registrations()->whereNull('team_entry_id')->get()
+            ->filter(fn (RaceRegistration $r) => $race->isRegistrationWaitlisted($r))
+            ->keyBy('id');
+    }
 
-        if ($raceClassId !== null) {
-            $raceClass = RaceClass::find($raceClassId);
-            if ($raceClass && $raceClass->max_drivers !== null) {
-                // The registration now sitting in the last active slot (0-indexed
-                // position cap - 1) is the one that just moved from waitlisted to active.
-                $promoted = $raceClass->registrations()->orderBy('created_at')->orderBy('id')
-                    ->skip($raceClass->max_drivers - 1)->first();
+    // A cancelled/soft-deleted registration can free a class seat, a race-wide seat, or
+    // both -- and in a multiclass race a freed race-wide seat can go to a driver in a
+    // different class. Since "waitlisted" is a live rank rather than a stored flag,
+    // nothing needs to be moved: this compares the waiting list before and after and
+    // notifies everyone who came off it, the same way a fresh registration is
+    // confirmed, so they actually know to show up.
+    private function notifyPromotedDrivers(Race $race, $waitingBefore): void
+    {
+        $waitingAfter = $this->waitlistedRegistrations($race)->keys();
 
-                if ($promoted) {
-                    $this->notifyPromotedDriver($race, $promoted);
-                    $notifiedUserIds[] = $promoted->user_id;
-                }
-            }
-        }
-
-        if ($race->max_drivers !== null) {
-            $promoted = $race->registrations()->orderBy('created_at')->orderBy('id')
-                ->skip($race->max_drivers - 1)->first();
-
-            if ($promoted && ! in_array($promoted->user_id, $notifiedUserIds, true)) {
-                $this->notifyPromotedDriver($race, $promoted);
-            }
-        }
+        $race->registrations()->whereIn('id', $waitingBefore->diff($waitingAfter))->get()
+            ->each(fn (RaceRegistration $promoted) => $this->notifyPromotedDriver($race, $promoted));
     }
 
     private function notifyPromotedDriver(Race $race, RaceRegistration $promoted): void

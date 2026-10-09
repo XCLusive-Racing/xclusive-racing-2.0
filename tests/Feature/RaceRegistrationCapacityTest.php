@@ -121,6 +121,56 @@ class RaceRegistrationCapacityTest extends TestCase
         $this->assertFalse($race->isRegistrationWaitlisted($gt4FirstReg));
     }
 
+    // Regression (race 598, 2026-10-09): GT3 18/20, GT4 20/20 with 2 more GT4 drivers on
+    // its waiting list, race-wide max 40. The next GT3 driver was put on the waiting list
+    // because the race-wide cap counted the 2 waiting GT4 drivers as taking seats.
+    public function test_another_class_waiting_list_does_not_take_race_wide_seats(): void
+    {
+        $race = $this->makeRace(['is_multiclass' => true, 'max_drivers' => 4]);
+        $gt3 = RaceClass::create(['race_id' => $race->id, 'name' => 'GT3', 'max_drivers' => null, 'sort_order' => 1]);
+        $gt4 = RaceClass::create(['race_id' => $race->id, 'name' => 'GT4', 'max_drivers' => null, 'sort_order' => 2]);
+
+        $this->actingAs(User::factory()->create())->post(route('events.register', $race), ['race_class_id' => $gt3->id]);
+        foreach (range(1, 4) as $i) {
+            $this->actingAs(User::factory()->create())->post(route('events.register', $race), ['race_class_id' => $gt4->id]);
+        }
+
+        $this->assertFalse($race->fresh()->isFull(), 'GT3 still has a seat and only 3 of the 4 race seats are taken.');
+
+        $gt3Driver = User::factory()->create();
+        $this->actingAs($gt3Driver)->post(route('events.register', $race), ['race_class_id' => $gt3->id]);
+
+        $reg = RaceRegistration::where('user_id', $gt3Driver->id)->first();
+        $this->assertFalse($race->fresh()->isRegistrationWaitlisted($reg));
+        $this->assertDatabaseHas('messages', ['user_id' => $gt3Driver->id, 'title' => 'Registered: '.$race->title]);
+        $this->assertSame(2, $race->fresh()->waitlistCount(), 'Only the 2 GT4 overflow drivers wait.');
+    }
+
+    // When a race-wide seat frees up in a multiclass race, it can go to a driver in a
+    // different class than the one who left -- they get the "You're in" message too.
+    public function test_freed_race_wide_seat_promotes_and_notifies_a_driver_in_another_class(): void
+    {
+        $race = $this->makeRace(['is_multiclass' => true, 'max_drivers' => 2]);
+        $gt3 = RaceClass::create(['race_id' => $race->id, 'name' => 'GT3', 'max_drivers' => 2, 'sort_order' => 1]);
+        $gt4 = RaceClass::create(['race_id' => $race->id, 'name' => 'GT4', 'max_drivers' => 2, 'sort_order' => 2]);
+
+        $gt3First = User::factory()->create();
+        $gt3Second = User::factory()->create();
+        $gt4Waiting = User::factory()->create();
+
+        $this->actingAs($gt3First)->post(route('events.register', $race), ['race_class_id' => $gt3->id]);
+        $this->actingAs($gt3Second)->post(route('events.register', $race), ['race_class_id' => $gt3->id]);
+        $this->actingAs($gt4Waiting)->post(route('events.register', $race), ['race_class_id' => $gt4->id]);
+
+        $gt4Reg = RaceRegistration::where('user_id', $gt4Waiting->id)->first();
+        $this->assertTrue($race->fresh()->isRegistrationWaitlisted($gt4Reg));
+
+        $this->actingAs($gt3First)->delete(route('events.unregister', $race));
+
+        $this->assertFalse($race->fresh()->isRegistrationWaitlisted($gt4Reg->fresh()));
+        $this->assertDatabaseHas('messages', ['user_id' => $gt4Waiting->id, 'title' => "You're in: ".$race->title]);
+    }
+
     // User-directed: the event page must show a per-class threshold (not the race's raw
     // total) and split sign-ups into one box per class. A 10-driver race with 2 classes
     // and no per-class caps set should split into 5/5, not leave both classes uncapped.

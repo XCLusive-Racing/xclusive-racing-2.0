@@ -453,7 +453,7 @@ class Race extends Model
             // A class with no cap of its own (max_drivers null) never reports full on
             // its own -- but the race-wide max_drivers, when set, is still a combined
             // ceiling across every class's registrations, not just a display number.
-            return $this->max_drivers !== null && $this->registrations()->count() >= $this->max_drivers;
+            return $this->atOverallCap();
         }
 
         if ($this->max_drivers === null) {
@@ -498,10 +498,13 @@ class Race extends Model
         return $this->registrationRank($registration) >= $this->max_drivers;
     }
 
-    /** FIFO rank across every registration in the race, regardless of class. */
+    // FIFO rank across every registration in the race, regardless of class. In a race
+    // with class boxes only the drivers holding a seat in their own class count: a
+    // driver on GT4's waiting list doesn't take up one of the race's seats, so a full
+    // GT4 queue can't push a GT3 driver onto the waiting list while GT3 has room.
     public function registrationRank(RaceRegistration $registration): int
     {
-        return $this->registrations()
+        $earlier = $this->registrations()
             ->whereNotIn('user_id', $this->spectatorUserIds())
             ->where(function ($q) use ($registration) {
                 $q->where('created_at', '<', $registration->created_at)
@@ -509,8 +512,55 @@ class Race extends Model
                         $q2->where('created_at', $registration->created_at)
                             ->where('id', '<', $registration->id);
                     });
+            });
+
+        if (! $this->hasClassBoxes()) {
+            return $earlier->count();
+        }
+
+        return $earlier->pluck('id')->intersect($this->classSeatedIds())->count();
+    }
+
+    // Whether the race-wide max_drivers is reached by the drivers actually holding a seat
+    // (see registrationRank()) -- not by the raw sign-up count, which includes the
+    // waiting lists of full classes.
+    public function atOverallCap(): bool
+    {
+        if ($this->max_drivers === null) {
+            return false;
+        }
+
+        $seated = $this->hasClassBoxes()
+            ? count($this->classSeatedIds())
+            : $this->registrations()->whereNotIn('user_id', $this->spectatorUserIds())->count();
+
+        return $seated >= $this->max_drivers;
+    }
+
+    // IDs of the driver registrations within their own class's cap, in FIFO order.
+    // Registrations without a (known or capped) class always hold their seat.
+    private function classSeatedIds(): array
+    {
+        // RaceClass::effectiveCap() reads the race back — this one, not a fresh query.
+        $this->raceClasses->each->setRelation('race', $this);
+        $caps = $this->raceClasses->mapWithKeys(fn (RaceClass $cls) => [$cls->id => $cls->effectiveCap()]);
+        $taken = [];
+
+        return $this->registrations()
+            ->whereNotIn('user_id', $this->spectatorUserIds())
+            ->orderBy('created_at')->orderBy('id')
+            ->get(['id', 'race_class_id'])
+            ->filter(function (RaceRegistration $r) use ($caps, &$taken) {
+                $cap = $caps->get($r->race_class_id);
+                if ($cap === null) {
+                    return true;
+                }
+                $taken[$r->race_class_id] = ($taken[$r->race_class_id] ?? 0) + 1;
+
+                return $taken[$r->race_class_id] <= $cap;
             })
-            ->count();
+            ->pluck('id')
+            ->all();
     }
 
     /** 1-indexed position on the waiting list (only meaningful when isRegistrationWaitlisted() is true). */

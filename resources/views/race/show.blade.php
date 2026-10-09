@@ -881,7 +881,7 @@
                                         <select name="race_class_id" class="form-select form-select-sm" required
                                                 style="background:#1f2937;border-color:#374151;color:#e5e7eb">
                                             <option value="">Choose your class...</option>
-                                            @php $raceAtOverallCap = $race->max_drivers !== null && $race->registrations->count() >= $race->max_drivers; @endphp
+                                            @php $raceAtOverallCap = $race->atOverallCap(); @endphp
                                             @foreach($race->raceClasses as $cls)
                                             @php
                                                 $clsReqs = array_filter([
