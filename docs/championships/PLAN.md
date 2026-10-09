@@ -17,9 +17,11 @@ up without re-deriving context.
   switch platform in account settings. (2) A multi-race round's races each start an
   in-game hour after the last (`AccServerConfigService::configuration()`).
   (3) "Race Formats" in the admin nav below Points Schemes (league pick, or straight
-  to the only league). (4) Race 533's races never imported — only its Q file was
-  ever matched; no code bug found, the FTP listing has to be checked on the live
-  server. `gportal:import-results` now logs (once a day per file) a file that
+  to the only league). (4) Race 533's races never imported: ACC writes a multi-race
+  weekend's races as R1/R2 (`…_R1.json`, sessionType "R1"), and only a bare "R" was
+  accepted — `AccResultImportService::sessionKind()` now takes R/R1/R2…/Q, and the
+  number picks the race. Race 533 still needs its R1/R2 files imported by hand
+  (admin FTP import) once this is live. `gportal:import-results` now also logs (once a day per file) a file that
   matches a race but imports no rows, instead of retrying silently.
 - **2026-10-09 — Championship welcome message.** Because rounds are entered
   automatically, nobody got a round's server details any more. Now an entry that

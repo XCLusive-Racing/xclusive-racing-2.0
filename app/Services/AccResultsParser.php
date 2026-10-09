@@ -91,7 +91,7 @@ class AccResultsParser
         }
 
         foreach ($sessions as $session) {
-            if (($session['sessionType'] ?? null) === 'R') {
+            if (AccResultImportService::sessionKind($session['sessionType'] ?? null) === 'race') {
                 return $session;
             }
         }

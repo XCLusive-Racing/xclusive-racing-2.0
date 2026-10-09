@@ -453,8 +453,8 @@ class FtpService
                 }
             }
 
-            if ($typePart === 'R') {
-                $session = 'Race';
+            if (preg_match('/^R(\d*)$/', $typePart, $m)) {
+                $session = $m[1] !== '' ? 'Race '.$m[1] : 'Race'; // R1, R2… on a multi-race weekend
             } elseif ($typePart === 'Q') {
                 $session = 'Qualifying';
             }

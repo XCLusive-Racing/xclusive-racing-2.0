@@ -228,12 +228,16 @@ class RaceResultController extends Controller
         $filename = basename($request->filename);
         $imported = FtpImportedFile::where('race_id', $race->id)->where('filename', $filename)->firstOrFail();
 
-        // Determine session type from filename (Q = quali, R = race)
+        // Determine session type from filename (Q = quali, R = race, R1/R2… = that race
+        // of a multi-race weekend only)
         $parts = explode('_', pathinfo($filename, PATHINFO_FILENAME));
         $typeChar = strtoupper($parts[2] ?? '');
         $sessionType = $typeChar === 'Q' ? 'quali' : 'race';
+        $raceNumber = preg_match('/^R(\d+)$/', $typeChar, $m) ? (int) $m[1] : null;
 
-        $deleted = RaceResult::where('race_id', $race->id)->where('session_type', $sessionType)->delete();
+        $deleted = RaceResult::where('race_id', $race->id)->where('session_type', $sessionType)
+            ->when($raceNumber, fn ($q) => $q->where('race_number', $raceNumber))
+            ->delete();
         $imported->delete();
 
         return back()->with('success', "{$deleted} {$sessionType} results cleared — ready to re-import.");

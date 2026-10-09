@@ -56,11 +56,11 @@ class AccResultImportService
         $raceNumbers = [];
 
         foreach ($sessions as $session) {
-            if (! in_array($session['sessionType'] ?? null, ['Q', 'R'], true)) {
+            $type = self::sessionKind($session['sessionType'] ?? null);
+            if (! $type) {
                 continue;
             }
 
-            $type = $session['sessionType'] === 'Q' ? 'quali' : 'race';
             $raceNumber = $type === 'race' ? $this->raceNumber($session, $race) : 1;
             $saved = $this->parseSession($session, $race, $type, $raceNumber);
             $counts[$type] += $saved;
@@ -98,7 +98,7 @@ class AccResultImportService
 
         $raceNumbers = [];
         foreach ($sessions as $session) {
-            if (($session['sessionType'] ?? null) === 'R' && ! empty($session['sessionResult']['leaderBoardLines'])) {
+            if (self::sessionKind($session['sessionType'] ?? null) === 'race' && ! empty($session['sessionResult']['leaderBoardLines'])) {
                 $raceNumbers[] = $this->raceNumber($session, $race);
             }
         }
@@ -110,13 +110,36 @@ class AccResultImportService
         return array_values(array_unique($raceNumbers));
     }
 
+    // 'quali' / 'race' for an ACC session type, null for anything else (practice). ACC
+    // numbers the sessions of a multi-race weekend: "R1", "R2"… — only accepting a bare
+    // "R" silently skipped every race of race 533 (NLRL Test Race, 2026-10-01).
+    public static function sessionKind(?string $sessionType): ?string
+    {
+        return match (true) {
+            (bool) preg_match('/^Q\d*$/i', (string) $sessionType) => 'quali',
+            (bool) preg_match('/^R\d*$/i', (string) $sessionType) => 'race',
+            default => null,
+        };
+    }
+
     // Which race of the round an R session is. ACC's sessionIndex is the session's
     // position in the event's sessions list, which AccServerConfigService builds as
     // [P?] [Q?] R R… — so it's the index past practice/quali, 1-based. A results
     // file without a sessionIndex (older/hand-built uploads) counts as race 1.
+    //
+    // A multi-race weekend's race sessions come as "R1", "R2"… (file and sessionType
+    // alike) — that number wins when there is one.
     public function raceNumber(array $session, Race $race): int
     {
-        if (! isset($session['sessionIndex']) || $race->raceCount() === 1) {
+        if ($race->raceCount() === 1) {
+            return 1;
+        }
+
+        if (preg_match('/^R(\d+)$/i', (string) ($session['sessionType'] ?? ''), $m)) {
+            return max(1, min($race->raceCount(), (int) $m[1]));
+        }
+
+        if (! isset($session['sessionIndex'])) {
             return 1;
         }
 

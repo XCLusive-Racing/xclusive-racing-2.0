@@ -12,6 +12,7 @@ use App\Models\RaceSessionFile;
 use App\Models\User;
 use App\Services\AccResultImportService;
 use App\Services\AccServerConfigService;
+use App\Services\FtpService;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -123,6 +124,28 @@ class MultiRaceRoundTest extends TestCase
         // Re-importing race 2's file is idempotent.
         $importer->processSessions($this->raceSession([$b->platform_id, $a->platform_id], 3), $race, 'r2.json');
         $this->assertSame(4, RaceResult::where('race_id', $race->id)->where('session_type', 'race')->count());
+    }
+
+    // Race 533 (NLRL Test Race, 2026-10-01): ACC writes a multi-race weekend's races as
+    // "R1" and "R2" sessions (…_R1.json, …_R2.json). Only a bare "R" was accepted, so both
+    // races silently imported nothing and the round only ever showed qualifying.
+    public function test_numbered_r1_and_r2_sessions_import_as_race_1_and_2(): void
+    {
+        $race = $this->makeRound();
+        [$a, $b] = $this->drivers($race, 2);
+        $importer = new AccResultImportService;
+        $session = fn (array $order, string $type) => json_encode(array_merge(
+            json_decode($this->raceSession($order, 0), true), ['sessionType' => $type],
+        ));
+
+        [$counts] = $importer->processSessions($session([$a->platform_id, $b->platform_id], 'R1'), $race, '261001_204012_R1.json');
+        $this->assertSame(2, $counts['race']);
+        $importer->processSessions($session([$b->platform_id, $a->platform_id], 'R2'), $race, '261001_212530_R2.json');
+
+        $this->assertSame(1, RaceResult::where(['race_id' => $race->id, 'race_number' => 1, 'user_id' => $a->id])->value('position'));
+        $this->assertSame(1, RaceResult::where(['race_id' => $race->id, 'race_number' => 2, 'user_id' => $b->id])->value('position'));
+        $this->assertSame('finished', $race->fresh()->status);
+        $this->assertSame('Race 2', FtpService::parseFilename('261001_212530_R2.json')['session']);
     }
 
     public function test_standings_add_up_every_race_of_a_round(): void
