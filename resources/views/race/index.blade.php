@@ -124,9 +124,9 @@
                 @foreach($featured as $game => $picks)
                 @php
                     $slots = collect([
-                        ['popular', 'Popular Today', 'fa-solid fa-fire',          '#f97316'],
-                        ['weekly',  'Weekly Event',  'fa-solid fa-calendar-week', '#3b82f6'],
-                        ['special', 'Special Event', 'fa-solid fa-star',          '#eab308'],
+                        ['popular', 'Popular Today', 'fa-solid fa-fire',          '#f472b6'],
+                        ['weekly',  'Weekly Event',  'fa-solid fa-calendar-week', '#a78bfa'],
+                        ['special', 'Special Event', 'fa-solid fa-star',          '#fcd34d'],
                     ])->filter(fn ($slot) => $picks[$slot[0]]);
                 @endphp
                 <div data-game-section="{{ $game }}" class="xcl-featured" data-featured-carousel style="display:none">

@@ -87,28 +87,40 @@
                         <a href="{{ route('login') }}" class="xcl-plan__btn">Log in to become a supporter</a>
                     @else
                         {{-- Both ways to pay; the one already renewing is left out. Switching
-                             follows on from the period that's already paid. --}}
-                        <div class="xcl-plan__options">
-                            @foreach($billing as $key => $option)
-                            @continue($renewing && $current === $key)
-                            <form method="POST" action="{{ route('memberships.checkout') }}">
-                                @csrf
-                                <input type="hidden" name="plan" value="{{ $key }}">
-                                <button type="submit" class="xcl-plan__btn {{ $key === 'yearly' ? 'xcl-plan__btn--yearly' : '' }}">
-                                    @if($renewing)
-                                    Switch to {{ strtolower($option['label']) }} — {{ $euro($option['price']) }} / {{ $option['per'] }}
-                                    @elseif($current)
-                                    Restart {{ strtolower($option['label']) }} — {{ $euro($option['price']) }} / {{ $option['per'] }}
-                                    @else
-                                    {{ $option['label'] }} — {{ $euro($option['price']) }} / {{ $option['per'] }}
+                             follows on from the period that's already paid. One form: the
+                             pressed button sends its plan, and the Terms / withdrawal consent
+                             (EU consumer law) has to be ticked first — checked again server-side. --}}
+                        <form method="POST" action="{{ route('memberships.checkout') }}">
+                            @csrf
+                            <label class="xcl-plan__consent">
+                                <input type="checkbox" name="accept_terms" value="1" required>
+                                <span>
+                                    I agree to the <a href="{{ route('terms') }}" target="_blank">Terms of Service</a> and the
+                                    <a href="{{ route('refund-policy') }}" target="_blank">Cancellation &amp; Refund Policy</a>, and understand
+                                    that my membership renews automatically until I cancel. I want my perks to start right away; I can still
+                                    withdraw within 14 days of my first payment for a full refund.
+                                </span>
+                            </label>
+                            <div class="xcl-plan__options">
+                                @foreach($billing as $key => $option)
+                                @continue($renewing && $current === $key)
+                                <div>
+                                    <button type="submit" name="plan" value="{{ $key }}" class="xcl-plan__btn {{ $key === 'yearly' ? 'xcl-plan__btn--yearly' : '' }}">
+                                        @if($renewing)
+                                        Switch to {{ strtolower($option['label']) }} — pay {{ $euro($option['price']) }} / {{ $option['per'] }}
+                                        @elseif($current)
+                                        Restart {{ strtolower($option['label']) }} — pay {{ $euro($option['price']) }} / {{ $option['per'] }}
+                                        @else
+                                        Pay {{ strtolower($option['label']) }} — {{ $euro($option['price']) }} / {{ $option['per'] }}
+                                        @endif
+                                    </button>
+                                    @if($key === 'yearly' && ! $current)
+                                    <span class="xcl-plan__save">Save {{ $yearlySaving }}%</span>
                                     @endif
-                                </button>
-                                @if($key === 'yearly' && ! $current)
-                                <span class="xcl-plan__save">Save {{ $yearlySaving }}%</span>
-                                @endif
-                            </form>
-                            @endforeach
-                        </div>
+                                </div>
+                                @endforeach
+                            </div>
+                        </form>
                         @if($current)
                         <p class="xcl-plan__fine mb-0">You pay now, and the new period is added after your current one ends on {{ $membership->paid_until->format('j M Y') }}, so no days are lost.</p>
                         @endif
@@ -125,8 +137,10 @@
             </div>
 
             <p class="xcl-plan__fine mt-3 mb-0" style="text-align:left">
-                Secure payment through Mollie (iDEAL, card, Bancontact and more). Renews automatically;
+                Prices include VAT. Secure payment through Mollie (iDEAL, card, Bancontact and more). Renews automatically;
                 cancel any time and your perks stay until the end of the period you paid for.
+                See our <a href="{{ route('terms') }}">Terms</a>, <a href="{{ route('refund-policy') }}">Cancellation &amp; Refund Policy</a>
+                and <a href="{{ route('privacy') }}">Privacy Policy</a>, or <a href="{{ route('contact') }}">contact us</a>.
             </p>
         </div>
     </section>

@@ -75,6 +75,9 @@ Route::middleware('auth')->group(function () {
 Route::post('/webhooks/mollie', [MembershipController::class, 'webhook'])->name('webhooks.mollie');
 Route::get('/faq', [FaqController::class, 'index'])->name('faq');
 Route::view('/privacy', 'privacy')->name('privacy');
+Route::view('/terms', 'legal.terms')->name('terms');
+Route::view('/refund-policy', 'legal.refund-policy')->name('refund-policy');
+Route::view('/contact', 'legal.contact')->name('contact');
 
 // Confidential — not linked from any menu, share the URL directly
 Route::get('/b4p-proposal', function () {

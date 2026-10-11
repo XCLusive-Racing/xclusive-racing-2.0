@@ -35,6 +35,12 @@ class MembershipController extends Controller
             return redirect()->route('memberships')->with('error', 'That payment option is not available.');
         }
 
+        // Terms + automatic renewal + immediate start (EU consumer law): the checkbox on the
+        // page is required by the browser too, this is the check that counts.
+        if (! $request->boolean('accept_terms')) {
+            return redirect()->route('memberships')->with('error', 'Please accept the Terms of Service and the Cancellation & Refund Policy to continue.');
+        }
+
         // Already paying this way and renewing. The other option is a new checkout (a switch).
         $membership = Membership::where('user_id', auth()->id())->first();
         if ($membership?->isRenewing() && $membership->isPaidUp() && $membership->plan === $plan) {

@@ -163,8 +163,7 @@
                         <a href="{{ route('events.index') }}" class="footer-link">Events</a>
                         <a href="{{ route('calendar') }}" class="footer-link">Calendar</a>
                         <a href="{{ route('home') }}#partners" class="footer-link">Partners</a>
-                        {{-- TODO: no "contact" route exists --}}
-                        <a href="#" class="footer-link">Contact</a>
+                        <a href="{{ route('contact') }}" class="footer-link">Contact</a>
                     </div>
                 </div>
 
@@ -241,12 +240,15 @@
     <div style="border-top:1px solid rgba(255,255,255,.06);padding:1.25rem 1.5rem">
         <div class="container-xl d-flex align-items-center justify-content-between flex-wrap gap-2">
             <span style="color:#4b5563;font-size:.78rem">
-                &copy; {{ date('Y') }} XCLusive Gaming Events. All rights reserved.
+                &copy; {{ date('Y') }} {{ config('xcl.legal.company') }}. All rights reserved.
                 &nbsp;&middot;&nbsp;
                 <a href="{{ route('privacy') }}" class="text-decoration-none" style="color:#6b7280">Privacy Policy</a>
                 &nbsp;&middot;&nbsp;
-                {{-- TODO: no terms of service route or view exists --}}
-                <a href="#" class="text-decoration-none" style="color:#6b7280">Terms of Service</a>
+                <a href="{{ route('terms') }}" class="text-decoration-none" style="color:#6b7280">Terms of Service</a>
+                &nbsp;&middot;&nbsp;
+                <a href="{{ route('refund-policy') }}" class="text-decoration-none" style="color:#6b7280">Refund Policy</a>
+                &nbsp;&middot;&nbsp;
+                <a href="{{ route('contact') }}" class="text-decoration-none" style="color:#6b7280">Contact</a>
             </span>
             <span class="fw-black text-uppercase fst-italic" style="font-size:.72rem;color:#4b5563;letter-spacing:.06em">
                 THE LION IS BORN TO DOMINATE

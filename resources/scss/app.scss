@@ -2533,9 +2533,8 @@ span.flatpickr-weekday {
     margin-bottom: 2rem;
     border: 2px solid rgba(168, 85, 247, .45);
     border-radius: 14px;
-    background:
-        radial-gradient(120% 140% at 0% 0%, rgba(168, 85, 247, .16) 0%, transparent 55%),
-        linear-gradient(180deg, rgba(255, 255, 255, .04) 0%, rgba(255, 255, 255, .01) 100%);
+    // Same dark purple gradient as the topbar (.xcl-topbar).
+    background: linear-gradient(to right, #24003d, #6b0d47);
     box-shadow: 0 0 28px rgba(168, 85, 247, .18), inset 0 1px 0 rgba(255, 255, 255, .06);
 
     @media (max-width: 767px) { padding: 1rem .75rem; }
@@ -8280,11 +8279,33 @@ table.dataTable thead th {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: .75rem;
 
-    form { position: relative; }
+    > div { position: relative; }
 
     @media (max-width: 575px) { grid-template-columns: minmax(0, 1fr); }
 }
 .xcl-plan__btn--yearly { background: #db2777; &:hover { background: #be185d; } }
+// "I agree to the Terms…" above the pay buttons (required before checkout).
+.xcl-plan__consent {
+    display: flex;
+    gap: .6rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    font-size: .8rem;
+    color: #d1d5db;
+    cursor: pointer;
+
+    input { margin-top: .2rem; flex-shrink: 0; accent-color: #7c3aed; width: 1rem; height: 1rem; }
+    a { color: #c084fc; }
+}
+
+// Legal pages (layouts/legal.blade.php).
+.xcl-legal__body {
+    line-height: 1.8;
+
+    ul { padding-left: 1.25rem; line-height: 1.9; }
+    a { color: #7c3aed; font-weight: 700; text-decoration: none; }
+    a.xcl-plan__btn { color: #fff; }
+}
 .xcl-plan__save {
     position: absolute;
     top: -.55rem;

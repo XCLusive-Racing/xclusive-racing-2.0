@@ -78,7 +78,7 @@ class MembershipCheckoutTest extends TestCase
 
     private function startCheckout(User $user, string $billing = 'monthly'): void
     {
-        $this->actingAs($user)->post(route('memberships.checkout'), ['plan' => $billing])
+        $this->actingAs($user)->post(route('memberships.checkout'), ['plan' => $billing, 'accept_terms' => '1'])
             ->assertRedirect('https://www.mollie.com/checkout/test');
     }
 
@@ -86,7 +86,7 @@ class MembershipCheckoutTest extends TestCase
     {
         $user = User::factory()->create(['is_supporter' => false]);
         $this->actingAs($user)->get(route('memberships'))->assertOk()
-            ->assertSee('Monthly — €2,99 / month')->assertSee('Yearly — €29,99 / year')->assertSee('Save 16%')
+            ->assertSee('Pay monthly — €2,99 / month')->assertSee('Pay yearly — €29,99 / year')->assertSee('Save 16%')
             ->assertSee('Your own in-game abbreviation')->assertSee('Event voting')->assertSee('Rivals');
 
         // Checkout started, not paid yet: no perks.
@@ -207,8 +207,22 @@ class MembershipCheckoutTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->post(route('memberships.checkout'), ['plan' => 'vip'])->assertSessionHas('error');
+        $this->actingAs($user)->post(route('memberships.checkout'), ['plan' => 'vip', 'accept_terms' => '1'])->assertSessionHas('error');
         Http::assertNothingSent();
+    }
+
+    public function test_checkout_needs_the_terms_accepted_and_sends_the_consent_to_mollie(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('memberships.checkout'), ['plan' => 'monthly'])
+            ->assertRedirect(route('memberships'))->assertSessionHas('error');
+        Http::assertNothingSent();
+
+        $this->startCheckout($user);
+        Http::assertSent(fn (Request $r) => $r->url() === 'https://api.mollie.com/v2/payments'
+            && $r['metadata']['terms_accepted_at'] === now()->toIso8601String()
+            && $r['metadata']['terms_version'] === config('xcl.legal.updated'));
     }
 
     public function test_the_webhook_ignores_unknown_and_malformed_ids(): void
@@ -229,7 +243,7 @@ class MembershipCheckoutTest extends TestCase
         $user = User::factory()->create();
 
         $this->get(route('memberships'))->assertOk()->assertSee('Launching soon')->assertSee('2,99');
-        $this->actingAs($user)->get(route('memberships'))->assertSee('Launching soon')->assertDontSee('Monthly — €2,99');
+        $this->actingAs($user)->get(route('memberships'))->assertSee('Launching soon')->assertDontSee('Pay monthly — €2,99');
         $this->actingAs($user)->post(route('memberships.checkout'))->assertSessionHas('error');
         Http::assertNothingSent();
 

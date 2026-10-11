@@ -65,7 +65,12 @@ class MembershipService
             'sequenceType' => 'first',
             'redirectUrl' => route('memberships.return'),
             'webhookUrl' => $this->webhookUrl(),
-            'metadata' => ['user_id' => $user->id, 'plan' => $plan],
+            // Proof of the Terms consent the checkout required (MembershipController), kept
+            // with the payment at Mollie: when, and which version of the legal pages.
+            'metadata' => [
+                'user_id' => $user->id, 'plan' => $plan,
+                'terms_accepted_at' => now()->toIso8601String(), 'terms_version' => config('xcl.legal.updated'),
+            ],
         ]))->throw()->json();
 
         $this->record($user->id, $payment, $plan);
