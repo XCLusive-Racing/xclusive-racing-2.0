@@ -327,15 +327,20 @@ class RaceResultController extends Controller
         $linked = $results->count();
         $minNeeded = (new XclRating)->MIN_DRIVERS;
 
-        if ($linked < $minNeeded) {
+        if ($linked === 0) {
             return back()->with('error',
-                "Cannot calculate ratings: need {$minNeeded} linked drivers, have {$linked}. ".
+                'Cannot calculate ratings: no linked drivers. '.
                 'Make sure drivers have accounts and are matched to their platform ID.'
             );
         }
 
         try {
             (new RatingService(new XclRating))->processRace($race);
+
+            // A small field still earns Safety Rating (RatingService::MIN_SR_DRIVERS).
+            if ($linked < $minNeeded) {
+                return back()->with('success', "Safety Rating recalculated for {$linked} linked drivers. XCL Rating needs {$minNeeded} linked drivers.");
+            }
 
             return back()->with('success', "Ratings recalculated for {$linked} linked drivers.");
         } catch (\Throwable $e) {

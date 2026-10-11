@@ -61,7 +61,7 @@
 
                             @if($races->isEmpty())
                             <div class="alert alert-warning py-2 px-3 mb-0" style="font-size:.8rem">
-                                You have no completed races to report from yet. Races appear here once they've finished
+                                You have no completed races from the last {{ \App\Models\Report::RACE_WINDOW_DAYS }} days to report from. Races appear here once they've finished
                                 and results &amp; ratings have been processed.
                             </div>
                             @else

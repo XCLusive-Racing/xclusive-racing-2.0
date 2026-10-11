@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Report extends Model
 {
+    // A driver can report an incident from a race of the last this-many days only.
+    public const RACE_WINDOW_DAYS = 7;
+
     protected $fillable = [
         'user_id', 'race_id', 'reported_driver_name', 'reported_user_id', 'reporter_driver_name',
         'hide_reporter_name',
@@ -233,6 +236,23 @@ class Report extends Model
     // --- Rating field / driver resolution ---
 
     /** elo_{game} / sr_{game} column name for this report's race, or null if the game isn't rated. */
+    // Whether this report's penalty changes XCL Rating / SR at all. A league championship
+    // chooses what a steward-issued penalty touches (settings.penalties.affects), but that
+    // can never turn on real rating changes by itself: xcl_rating_enabled (an
+    // XCL-admin-only approval) gates rating regardless, and with XCL stewarding switched
+    // off a penalty changes nothing. A race with no championship always applies rating.
+    public function appliesRating(): bool
+    {
+        $championship = $this->race?->championship;
+        if (! $championship) {
+            return true;
+        }
+
+        $affects = $championship->usesXclStewarding() ? ($championship->settings->penalties->affects ?? 'none') : 'none';
+
+        return in_array($affects, ['rating', 'both'], true) && (bool) $championship->xcl_rating_enabled;
+    }
+
     public function ratingFields(): ?array
     {
         $game = $this->race?->game;

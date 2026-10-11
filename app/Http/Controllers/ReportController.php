@@ -22,8 +22,10 @@ class ReportController extends Controller
 
         // Rounds of a championship that doesn't use XCL stewarding can't be reported.
         // Tenant scope bypassed: a driver isn't a member of the championship's league.
+        // Only the last Report::RACE_WINDOW_DAYS days of races can be reported.
         $races = Race::whereHas('registrations', fn ($q) => $q->where('user_id', $userId))
             ->where('status', 'finished')
+            ->where('scheduled_at', '>=', now()->subDays(Report::RACE_WINDOW_DAYS))
             ->with(['eventFormat', 'championship' => fn ($q) => $q->withoutTenantScope()])
             ->orderBy('scheduled_at', 'desc')
             ->get()
@@ -96,7 +98,12 @@ class ReportController extends Controller
             return back()->withErrors(['reported_user_id' => 'You cannot report yourself.'])->withInput();
         }
 
-        $championship = Race::find($data['race_id'])->championship()->withoutTenantScope()->first();
+        $race = Race::find($data['race_id']);
+        if ($race->scheduled_at->lt(now()->subDays(Report::RACE_WINDOW_DAYS))) {
+            return back()->withErrors(['race_id' => 'Incidents can only be reported within '.Report::RACE_WINDOW_DAYS.' days of the race.'])->withInput();
+        }
+
+        $championship = $race->championship()->withoutTenantScope()->first();
         if ($championship && ! $championship->usesXclStewarding()) {
             return back()->withErrors(['race_id' => 'This championship doesn\'t use XCL stewarding — contact the league about incidents.'])->withInput();
         }

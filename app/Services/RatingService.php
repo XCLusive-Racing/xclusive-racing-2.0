@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\DB;
 
 class RatingService
 {
+    // Safety Rating is earned in any race with at least this many drivers on track — a
+    // driver alone in a lobby gains nothing. XCL Rating has its own, higher minimum
+    // (XclRating::MIN_DRIVERS).
+    public const MIN_SR_DRIVERS = 2;
+
     public function __construct(private XclRating $calculator) {}
 
     /**
@@ -20,7 +25,8 @@ class RatingService
      * instead of one mixed grid — a GT4 class win shouldn't be scored as "6th out of 16"
      * just because five GT3 cars finished ahead. A class that doesn't reach MIN_DRIVERS
      * finishers is skipped on its own, same as a whole small race is skipped today; the rest
-     * of the race's classes still get rated.
+     * of the race's classes still get rated. Safety Rating doesn't depend on any of that:
+     * every linked driver gets it as soon as the race had MIN_SR_DRIVERS drivers on track.
      */
     public function processRace(Race $race): void
     {
@@ -134,32 +140,34 @@ class RatingService
             $calculated = $calculated->merge($classCalculated);
         }
 
-        if ($calculated->isEmpty()) {
-            return;
-        }
-
         $byUserId = $calculated->keyBy('driver_id');
         $srField = $this->srField($race->game);
 
-        DB::transaction(function () use ($results, $byUserId, $ratingField, $srField) {
+        // Everyone who was on track, with or without an account (a DNS never joined).
+        $onTrack = RaceResult::where('race_id', $race->id)
+            ->where('session_type', 'race')
+            ->where('race_number', $raceNumber)
+            ->where('dns', false)
+            ->count();
+        $earnsSr = $srField && $onTrack >= self::MIN_SR_DRIVERS;
+
+        DB::transaction(function () use ($results, $byUserId, $ratingField, $srField, $earnsSr) {
             foreach ($results as $result) {
                 $calc = $byUserId->get($result->user_id);
 
-                if (! $calc) {
-                    continue;
+                if ($calc) {
+                    $result->update([
+                        'rating_before' => $calc['rating_before'],
+                        'rating_after' => $calc['rating_after'],
+                        'elo_change' => $calc['elo_change'],
+                        'sof' => $calc['sof'],
+                    ]);
+
+                    User::where('id', $result->user_id)
+                        ->update([$ratingField => $calc['rating_after']]);
                 }
 
-                $result->update([
-                    'rating_before' => $calc['rating_before'],
-                    'rating_after' => $calc['rating_after'],
-                    'elo_change' => $calc['elo_change'],
-                    'sof' => $calc['sof'],
-                ]);
-
-                User::where('id', $result->user_id)
-                    ->update([$ratingField => $calc['rating_after']]);
-
-                if ($srField) {
+                if ($earnsSr) {
                     $this->applySrChange($result, $srField);
                 }
             }

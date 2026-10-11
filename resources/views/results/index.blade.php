@@ -369,7 +369,7 @@
                                         $classRows = $raceResults->filter(
                                             fn($r) => $r->car_class && $cls->car_class && strtoupper($r->car_class) === strtoupper($cls->car_class)
                                         );
-                                        $rated = $classRows->filter(fn($r) => $r->elo_change !== null);
+                                        $rated = $classRows->filter(fn($r) => $r->elo_change !== null || $r->sr_change !== null);
                                         $positions = \App\Models\RaceResult::classifiedPositions($classRows, $ratingCarKey);
                                         $driverCount = $classRows->whereNotNull('user_id')->count();
 
@@ -379,7 +379,7 @@
                                         ]);
                                     }
                                 } else {
-                                    $rows = $raceResults->filter(fn($r) => $r->elo_change !== null);
+                                    $rows = $raceResults->filter(fn($r) => $r->elo_change !== null || $r->sr_change !== null);
                                     $ratingGroups->push((object) [
                                         'label' => null, 'color' => null, 'rows' => $rows,
                                         'positions' => \App\Models\RaceResult::classifiedPositions($raceResults, $ratingCarKey),'driverCount' => null, 'minNeeded' => null,
@@ -397,6 +397,11 @@
                                 <p class="text-secondary text-center py-5" style="font-size:.85rem">No rating data available for this race.</p>
                                 @endif
                             @else
+                            {{-- A small field earns Safety Rating only (RatingService::MIN_SR_DRIVERS);
+                                 XCL Rating needs XclRating::MIN_DRIVERS drivers. --}}
+                            @if($group->rows->every(fn($r) => $r->elo_change === null))
+                            <p class="text-secondary px-4 pt-3 mb-2" style="font-size:.82rem">Fewer than {{ (new \App\Services\XclRating())->MIN_DRIVERS }} drivers took part, so no XCL Rating was calculated. Safety Rating still counts.</p>
+                            @endif
                             <div class="table-responsive">
                                 <table class="table align-middle mb-0" style="font-size:.875rem">
                                     <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
@@ -412,7 +417,7 @@
                                     <tbody>
                                         @foreach($group->rows as $result)
                                         @php
-                                            $change = round((float) $result->elo_change);
+                                            $change = $result->elo_change !== null ? round((float) $result->elo_change) : null;
                                             $pos    = $group->positions->get($result->id);
                                         @endphp
                                         <tr style="border-bottom:1px solid #f9fafb">
@@ -420,6 +425,11 @@
                                                 {{ $result->dsq ? 'DSQ' : ($result->dc ? 'DC' : ($result->dns ? 'DNS' : ($result->dnf ? 'DNF' : $pos))) }}
                                             </td>
                                             <td class="fw-bold text-dark" style="font-size:.88rem">{{ $result->displayName() }}</td>
+                                            @if($change === null)
+                                            <td class="text-end text-secondary">—</td>
+                                            <td class="text-end text-secondary">—</td>
+                                            <td class="text-end text-secondary">—</td>
+                                            @else
                                             <td class="text-end text-secondary" style="font-size:.85rem;font-variant-numeric:tabular-nums">{{ number_format((float)$result->rating_before) }}</td>
                                             <td class="text-end fw-black" style="font-size:.9rem;font-variant-numeric:tabular-nums;color:{{ $change >= 0 ? '#10b981' : '#ef4444' }}">
                                                 {{ $change >= 0 ? '+' : '' }}{{ $change }}
@@ -427,6 +437,7 @@
                                             <td class="text-end fw-black" style="font-size:.9rem;font-variant-numeric:tabular-nums;color:#111827">
                                                 {{ number_format((float)$result->rating_after) }}
                                             </td>
+                                            @endif
                                             {{-- Safety Rating after this race (sr_after) with its change; results
                                                  rated before sr_after existed only have the change. --}}
                                             @php $srChange = $result->sr_change !== null ? (float) $result->sr_change : null; @endphp

@@ -320,9 +320,7 @@ class ReportController extends Controller
             $affects = $championship
                 ? ($championship->usesXclStewarding() ? ($championship->settings->penalties->affects ?? 'none') : 'none')
                 : 'both';
-            $applyRating = $championship
-                ? (in_array($affects, ['rating', 'both'], true) && $championship->xcl_rating_enabled)
-                : true;
+            $applyRating = $report->appliesRating();
             $applyPoints = $championship && in_array($affects, ['points', 'both'], true);
 
             if (! $noPenalty && $reportedUser && $ratingFields && $applyRating) {

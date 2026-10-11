@@ -748,8 +748,8 @@
             <div>
                 @if($linkedDrivers < $minRatingDrivers)
                 <span style="font-size:.78rem;color:#dc2626;font-weight:700">
-                    ⚠ Need {{ $minRatingDrivers }} linked drivers — have {{ $linkedDrivers }}.
-                    Make sure drivers have accounts matched to their platform ID.
+                    ⚠ XCL Rating needs {{ $minRatingDrivers }} linked drivers — have {{ $linkedDrivers }}.
+                    Make sure drivers have accounts matched to their platform ID. Safety Rating is still earned from {{ \App\Services\RatingService::MIN_SR_DRIVERS }} drivers.
                 </span>
                 @else
                 <span style="font-size:.78rem;color:#6b7280">{{ $linkedDrivers }} linked drivers</span>
