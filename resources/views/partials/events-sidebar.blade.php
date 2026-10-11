@@ -57,7 +57,9 @@ $sbChamps = \App\Models\Championship::withoutTenantScope()
     ->get(['id', 'name', 'tagline'])
     ->keyBy('id');
 
-$sbTeamEvents = TeamEvent::upcoming()->with('participatingDrivers')->limit(2)->get();
+$sbFeatured = app(\App\Services\DashboardFeaturedEvents::class)->picks();
+
+$sbTeamEvents = TeamEvent::upcoming()->with('participatingDrivers')->limit(3)->get();
 
 // Time Trials tab: this week's event (live, else the next one) and its top 10.
 $sbTimeTrial = \App\Models\TimeTrialEvent::currentOrNext()->with('server')->withCount('registrations')->first();
@@ -261,8 +263,22 @@ $sbLeaderboards = [
         <div class="xcl-sidebar__content">
 
             {{-- ═══ DAILY EVENTS ══════════════════════════════════════════════ --}}
-            <div data-sb-tab-panel="daily">
+            {{-- On phones (.xcl-sb-daily) this panel is a column of: the Next Event / Upcoming
+                 Events carousel, the Featured Events carousel, the leaderboard, the team event. --}}
+            <div data-sb-tab-panel="daily" class="xcl-sb-daily">
                 <div class="xcl-sidebar__grid">
+
+                    {{-- Phones: Next Event and Upcoming Events side by side as a carousel — swipe
+                         or use the arrows (featured-carousel.js). On desktop the wrapper and its
+                         track don't exist for layout (display:contents), so the two columns are
+                         plain grid columns next to the leaderboard. --}}
+                    <div class="xcl-sb-carousel xcl-sb-carousel--events" data-featured-carousel>                    <button type="button" class="xcl-featured__arrow xcl-featured__arrow--prev xcl-sb-carousel__arrow" data-featured-prev aria-label="Previous events" disabled>
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <button type="button" class="xcl-featured__arrow xcl-featured__arrow--next xcl-sb-carousel__arrow" data-featured-next aria-label="Next events">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                    <div class="xcl-sb-carousel__track" data-featured-track>
 
                     {{-- ─ COLUMN 1: NEXT EVENT ──────────────────────────────── --}}
                     <div class="xcl-sb-col">
@@ -403,60 +419,7 @@ $sbLeaderboards = [
 
                         <div class="xcl-sb-up-list">
                         @forelse($sbUpcoming as $event)
-                        @php
-                            $upPlatLabel = match($event->game) {
-                                'acc'             => 'PS5 / XBOX',
-                                'lmu','iracing','ac' => 'PC / STEAM',
-                                default           => 'PC',
-                            };
-                            $upGameLabel = match($event->game) {
-                                'acc' => 'ACC', 'lmu' => 'LMU',
-                                'iracing' => 'iRACING', 'ac' => 'ACC PC',
-                                default => strtoupper($event->game),
-                            };
-                        @endphp
-                        <div class="xcl-sb-up-card"
-                             data-sb-game-card="{{ $event->game }}"
-                             data-countdown="{{ $event->scheduled_at->toIso8601String() }}">
-
-                            <div class="xcl-sb-up-card__img-wrap">
-                                @php
-                                    $upPlaceholder = match($event->game) {
-                                        'lmu'     => '/images/home/teams/XCLusive_Placeholder_lmu.png',
-                                        'iracing' => '/images/home/teams/XCLusive_Placeholder_iRacing.png',
-                                        default   => '/images/home/teams/XCLusive_Placeholder_ACC.png',
-                                    };
-                                @endphp
-                                <img src="{{ $event->image_url ?? $upPlaceholder }}"
-                                     alt="{{ $event->title }}" loading="lazy"
-                                     class="xcl-sb-up-card__img">
-                                <div class="xcl-sb-up-card__img-gradient"></div>
-
-                                @if($event->icon_url)
-                                <div class="xcl-sb-up-card__icon-overlay">
-                                    <img src="{{ $event->icon_url }}" alt="{{ $event->title }}">
-                                </div>
-                                @endif
-
-                                <div class="xcl-sb-up-card__meta-row">
-                                    <div class="xcl-sb-countdown xcl-sb-countdown--small">
-                                        <span data-cd-d>00</span>D&nbsp;<span data-cd-h>00</span>H&nbsp;<span data-cd-m>00</span>M
-                                    </div>
-                                    <div class="xcl-sb-lobby xcl-sb-lobby--small">
-                                        <x-icon-helmet />
-                                        <span>{{ $event->is_endurance ? $event->team_entries_count : $event->displayedSignupCount() }} / {{ $event->max_drivers ?? '∞' }}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="xcl-sb-up-card__footer">
-                                <div class="d-flex gap-1 flex-wrap align-items-center">
-                                    <span class="xcl-sb-badge xcl-sb-badge--platform">{{ $upPlatLabel }}</span>
-                                    <span class="xcl-sb-badge xcl-sb-badge--game">{{ $upGameLabel }}</span>
-                                </div>
-                                <a href="{{ route('events.show', $event) }}" class="xcl-sb-up-card__join">JOIN EVENT</a>
-                            </div>
-                        </div>
+                        @include('partials.events-sidebar-card')
                         @empty
                         <p style="color:#8B9BB4;font-size:.8rem;padding:.5rem 0">No further events scheduled</p>
                         @endforelse
@@ -464,6 +427,10 @@ $sbLeaderboards = [
 
                     </div>
                     {{-- end col 2 --}}
+
+                    </div>
+                    </div>
+                    {{-- end Next Event / Upcoming Events carousel --}}
 
                     {{-- ─ COLUMN 3: LEADERBOARD ────────────────────────────── --}}
                     <div class="xcl-sb-col">
@@ -513,8 +480,48 @@ $sbLeaderboards = [
 
                 </div>
 
+                {{-- ── Featured events: the Events page's featured picks, across all games
+                     (DashboardFeaturedEvents) — most popular in the next 24 hours, the weekly
+                     event and the monthly (special) event, under the three columns above. --}}
+                <div class="xcl-sb-exclusive-events xcl-sb-daily__featured" data-featured-carousel>
+                    <div style="display:flex;align-items:center;gap:.75rem;padding:.9rem 0 .75rem">
+                        <div class="xcl-sb-title" style="margin:0;padding-bottom:0;border-bottom:none;white-space:nowrap">
+                            <span>FEATURED </span><span>EVENTS</span>
+                        </div>
+                        <div style="flex:1;height:1px;background:rgba(255,255,255,0.07)"></div>
+                    </div>
+
+                    {{-- Phones: a carousel, one event at a time. --}}
+                    <div class="xcl-sb-carousel">                    <button type="button" class="xcl-featured__arrow xcl-featured__arrow--prev xcl-sb-carousel__arrow" data-featured-prev aria-label="Previous featured event" disabled>
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <button type="button" class="xcl-featured__arrow xcl-featured__arrow--next xcl-sb-carousel__arrow" data-featured-next aria-label="Next featured event">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                    <div class="xcl-sb-featured-row" data-featured-track>
+                        @foreach([
+                            ['popular', 'Popular Today', 'fa-solid fa-fire',          '#f472b6', 'No popular event in the next 24 hours'],
+                            ['weekly',  'Weekly Event',  'fa-solid fa-calendar-week', '#a78bfa', 'No weekly event scheduled'],
+                            ['monthly', 'Monthly Event', 'fa-solid fa-star',          '#fcd34d', 'No monthly event scheduled'],
+                        ] as [$slot, $label, $icon, $color, $emptyText])
+                        @php $event = $sbFeatured[$slot]; @endphp
+                        <div class="xcl-sb-featured-row__slot" data-sb-featured="{{ $slot }}">
+                            <div class="xcl-sb-featured-row__label" style="color:{{ $color }}">
+                                <i class="{{ $icon }}"></i> {{ $label }}
+                            </div>
+                            @if($event)
+                            @include('partials.events-sidebar-card')
+                            @else
+                            <div class="xcl-sb-featured-row__empty">{{ $emptyText }}</div>
+                            @endif
+                        </div>
+                        @endforeach
+                    </div>
+                    </div>
+                </div>
+
                 {{-- ── Separator + Full-width Real-World Racing ────────────── --}}
-                <div style="border-top:1px solid rgba(255,255,255,0.08);margin-left:1.5rem;margin-right:1.5rem;padding:0 .25rem">
+                <div class="xcl-sb-exclusive-events xcl-sb-daily__team">
                     <div style="display:flex;align-items:center;gap:.75rem;padding:.9rem 0 .75rem">
                         <div class="xcl-sb-title" style="margin:0;padding-bottom:0;border-bottom:none;white-space:nowrap">
                             <span>XCLUSIVE TEAM </span><span>EVENTS</span>
@@ -523,7 +530,8 @@ $sbLeaderboards = [
                     </div>
 
                     <div class="xcl-sb-exclusive-events-row">
-                        @foreach([0, 1] as $slot)
+                        {{-- Three slots, lined up with the three columns above; phones show the first only. --}}
+                        @foreach([0, 1, 2] as $slot)
                         @php $te = $sbTeamEvents->get($slot); @endphp
 
                         @if($te)

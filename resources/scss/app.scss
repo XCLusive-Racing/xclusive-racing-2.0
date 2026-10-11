@@ -6334,25 +6334,148 @@ table.dataTable thead th {
     }
 }
 
+// The strip under the three dashboard columns. Its side margin and the row's gap
+// match .xcl-sb-col's padding, so each of the three cards sits exactly under the
+// content of the column above it.
+.xcl-sb-exclusive-events {
+    border-top: 1px solid rgba(255, 255, 255, .08);
+    margin: 0 1.25rem;
+
+    @media (max-width: 768px) { margin: 0 1rem; }
+}
+
 .xcl-sb-exclusive-events-row {
-    display: flex;
-    gap: 1rem;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2.5rem;
     align-items: stretch;
     padding-bottom: .25rem;
 
-    > .xcl-sb-up-card,
-    > .xcl-sb-exclusive-events-row__empty {
-        flex: 1;
-        min-width: 0;
+    > .xcl-sb-up-card { margin-bottom: 0; }
+
+    // Phones: one event only, the next one.
+    @media (max-width: 768px) {
+        grid-template-columns: minmax(0, 1fr);
+
+        > :nth-child(n + 2) { display: none; }
+    }
+}
+
+// Featured Events (dashboard): popular / weekly / monthly, each under the column above it
+// like the team events strip. Phones stack all three.
+.xcl-sb-featured-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2.5rem;
+    padding-bottom: 1rem;
+
+    // Phones: a carousel (featured-carousel.js), one event per view.
+    @media (max-width: 768px) {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar { display: none; }
+
+        > * {
+            flex: 0 0 100%;
+            scroll-snap-align: start;
+        }
     }
 
-    @media (max-width: 767px) {
+    &__slot { min-width: 0; }
+
+    &__label {
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 700;
+        font-size: .75rem;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        margin-bottom: .4rem;
+    }
+
+    .xcl-sb-up-card { margin-bottom: 0; }
+
+    &__empty {
+        aspect-ratio: 16 / 7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 1rem;
+        text-align: center;
+        border: 1px dashed rgba(255, 255, 255, .1);
+        border-radius: 5px;
+        background: rgba(255, 255, 255, .02);
+        color: #4b5563;
+        font-size: .7rem;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+}
+
+// ── Dashboard on phones ─────────────────────────────────────────────────────────
+// Instead of everything stacked: Next Event + Upcoming Events as one carousel, then the
+// Featured Events carousel, then the leaderboard, then the team event. The daily grid
+// dissolves (display:contents) so its parts can be put in that order.
+.xcl-sb-carousel { position: relative; }
+
+// Desktop: the Next Event / Upcoming Events wrapper and its track take no part in the
+// layout — their two columns are direct grid columns of .xcl-sidebar__grid.
+.xcl-sb-carousel--events,
+.xcl-sb-carousel--events > .xcl-sb-carousel__track { display: contents; }
+
+// The carousel arrows (the Events page's .xcl-featured__arrow): phones only, and inside
+// the edges — the dashboard clips anything hanging outside it.
+.xcl-sb-carousel__arrow {
+    display: none;
+
+    &.xcl-featured__arrow--prev { left: .25rem; }
+    &.xcl-featured__arrow--next { right: .25rem; }
+}
+
+@media (max-width: 768px) {
+    .xcl-sb-daily {
+        display: flex;
         flex-direction: column;
 
-        > .xcl-sb-up-card,
-        > .xcl-sb-exclusive-events-row__empty {
-            flex: none;
+        > .xcl-sidebar__grid { display: contents; }
+        .xcl-sb-carousel--events { order: 1; }
+        .xcl-sb-daily__featured { order: 2; }
+        .xcl-sidebar__grid > .xcl-sb-col { order: 3; }
+        .xcl-sb-daily__team { order: 4; }
+    }
+
+    .xcl-sb-carousel__arrow { display: flex; }
+
+    .xcl-sb-carousel--events {
+        display: block;
+        border-bottom: 1px solid #1F2937;
+
+        > .xcl-sb-carousel__track {
+            display: flex;
+            align-items: flex-start;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            scrollbar-width: none;
+
+            &::-webkit-scrollbar { display: none; }
+
+            > .xcl-sb-col {
+                flex: 0 0 100%;
+                scroll-snap-align: start;
+                border-bottom: none;
+            }
         }
+    }
+
+    .xcl-sb-daily__featured {
+        border-top: none;
+        border-bottom: 1px solid #1F2937;
     }
 }
 
