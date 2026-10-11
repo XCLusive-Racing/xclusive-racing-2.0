@@ -2340,6 +2340,34 @@ span.flatpickr-weekday {
         box-shadow: 0 2px 8px rgba(0,0,0,.35);
     }
 
+    // LIVE — first in the top-left row, only while the event is running (.xcl-ec2--live,
+    // set by the server and kept up to date by events-filter.js).
+    &__live {
+        display: none;
+        align-items: center;
+        gap: .35rem;
+        border-radius: 4px;
+        padding: .3rem .65rem;
+        background: #dc2626;
+        color: #fff;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 800;
+        font-size: .7rem;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        box-shadow: 0 2px 8px rgba(0,0,0,.35);
+
+        &::before {
+            content: '';
+            width: .45rem;
+            height: .45rem;
+            border-radius: 50%;
+            background: #fff;
+            animation: xcl-live-pulse 1.4s ease-in-out infinite;
+        }
+    }
+    &--live &__live { display: inline-flex; }
+
     // Game + SR + open/closed badges, grouped next to each other
     &__badges-row {
         display: flex;
@@ -4447,6 +4475,7 @@ body.admin-body {
     &.status-open     { background: #d1fae5; color: #065f46; }
     &.status-closed   { background: #fee2e2; color: #991b1b; }
     &.status-finished { background: #f3f4f6; color: #374151; }
+    &.status-live     { background: #dc2626; color: #fff; }
 }
 
 // Admin tab buttons (results page)
@@ -5395,6 +5424,10 @@ body.admin-body {
 @keyframes xcl-ring-shimmer {
     0%   { transform: translateX(-200%) skewX(-20deg); }
     100% { transform: translateX(400%) skewX(-20deg); }
+}
+@keyframes xcl-live-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: .25; }
 }
 @keyframes xcl-spin {
     from { transform: rotate(0deg); }

@@ -98,15 +98,16 @@ class EventsFeaturedTest extends TestCase
         ]], $this->featuredTitles());
     }
 
-    public function test_the_weekly_event_stays_until_it_is_finished_then_the_next_one_takes_over(): void
+    // A started event stays listed for Race::LIVE_LISTING_MINUTES, marked LIVE.
+    public function test_the_weekly_event_stays_while_it_is_live_then_the_next_one_takes_over(): void
     {
-        Carbon::setTestNow(Carbon::parse('2026-10-03 20:00', 'Europe/London'));
-        $weekly = $this->race('Weekly', '19:00', 0, ['status' => 'closed']);
+        Carbon::setTestNow(Carbon::parse('2026-10-03 19:20', 'Europe/London'));
+        $this->race('Weekly', '19:00', 0, ['status' => 'closed']);
         $this->race('Next weekly', '2026-10-10 19:00');
 
         $this->assertSame('Weekly', $this->featuredTitles()['acc']['weekly']);
 
-        $weekly->update(['status' => 'finished']);
+        Carbon::setTestNow(Carbon::parse('2026-10-03 19:31', 'Europe/London'));
         $this->assertSame('Next weekly', $this->featuredTitles()['acc']['weekly']);
     }
 

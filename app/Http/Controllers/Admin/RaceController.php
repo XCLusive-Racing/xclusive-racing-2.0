@@ -58,7 +58,8 @@ class RaceController extends Controller
             ->where('scheduled_at', '<', now())
             ->update(['status' => 'closed']);
 
-        $races = Race::select(['id', 'title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'duration_key', 'is_endurance', 'event_format_id'])
+        // The session durations are for Race::isLive() (the list's Upcoming / Past split).
+        $races = Race::select(['id', 'title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'event_tag', 'max_drivers', 'duration_key', 'is_endurance', 'event_format_id', 'practice_duration', 'qualifying_duration', 'race_duration'])
             ->where('is_endurance', false)
             ->whereNotNull('event_format_id')
             // Championship rounds are managed under Championships, not with the dailies.

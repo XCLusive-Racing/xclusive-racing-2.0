@@ -130,7 +130,8 @@
             </thead>
             <tbody>
                 @foreach($races as $race)
-                <tr data-format="{{ $race->eventFormat?->name }}">
+                {{-- data-when: the Status filter's Upcoming (still to come, or running now) / Past split. --}}
+                <tr data-format="{{ $race->eventFormat?->name }}" data-when="{{ $race->isUpcomingOrLive() ? 'upcoming' : 'past' }}">
                     <td class="ps-4">
                         <input type="checkbox" class="race-checkbox" value="{{ $race->id }}"
                                style="width:15px;height:15px;cursor:pointer;accent-color:#7c3aed">
@@ -161,12 +162,19 @@
                         {{ $race->is_endurance ? $race->team_entries_count : $race->registrations_count }}{{ $race->max_drivers ? ' / ' . $race->max_drivers : '' }}
                     </td>
                     <td class="text-center">
+                        @if($race->isLive())
+                        <span class="status-badge status-live">
+                            <svg width="7" height="7" viewBox="0 0 8 8" fill="currentColor"><circle cx="4" cy="4" r="4"/></svg>
+                            Live
+                        </span>
+                        @else
                         <span class="status-badge status-{{ $race->status }}">
                             @if($race->status === 'open')
                                 <svg width="7" height="7" viewBox="0 0 8 8" fill="currentColor"><circle cx="4" cy="4" r="4"/></svg>
                             @endif
                             {{ ucfirst($race->status) }}
                         </span>
+                        @endif
                     </td>
                     <td class="pe-4">
                         <div class="d-flex gap-1 gap-md-2 justify-content-end align-items-center flex-wrap">
@@ -340,14 +348,17 @@
 
         const statusFilterIds = { upcoming: 'status-upcoming', past: 'status-past' };
 
+        // Status filter — by each row's data-when (Race::isUpcomingOrLive()), not its status
+        // text: a race that has been run but never got results stays "Closed", and is past.
+        let statusMode = 'upcoming';
+        $.fn.dataTable.ext.search.push((settings, data, index) => {
+            if (settings.nTable.id !== 'races-table') return true;
+            return settings.aoData[index].nTr.dataset.when === statusMode;
+        });
+
         function filterStatus(mode) {
-            if (mode === 'past') {
-                table.column(5).search('Finished', false, false);
-                table.order([3, 'desc']);
-            } else {
-                table.column(5).search('^(?!.*Finished).*$', true, false);
-                table.order([3, 'asc']);
-            }
+            statusMode = mode;
+            table.order([3, mode === 'past' ? 'desc' : 'asc']);
             table.draw();
 
             Object.entries(statusFilterIds).forEach(([key, id]) => {

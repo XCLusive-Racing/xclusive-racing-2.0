@@ -5,6 +5,7 @@
 @section('content')
 <main class="events-page xcl-page pb-5 px-3" data-events-filter
       data-events-url="{{ route('events.index') }}"
+      data-live-minutes="{{ \App\Models\Race::LIVE_LISTING_MINUTES }}"
       data-initial-platform="{{ $initialGame ?? '' }}">
     <div class="about-section__topo" style="background-image:url('/topo.png')"></div>
 

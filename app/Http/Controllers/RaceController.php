@@ -40,6 +40,9 @@ class RaceController extends Controller
             // — the class badges need its is_multiclass, car_class, settings and classes.
             ->with(['championship' => fn ($q) => $q->withoutTenantScope()->with('classes')])
             ->where('status', '!=', 'finished')
+            // Upcoming events, plus the ones that started in the last half hour: those
+            // stay on the page marked LIVE (Race::isListedLive()), then drop off.
+            ->where('scheduled_at', '>', now()->subMinutes(Race::LIVE_LISTING_MINUTES))
             // A championship round is only a public event once its own championship
             // is (Championship::PUBLIC_STATUSES + not hidden) -- a draft
             // championship's rounds, or a published-but-hidden one's, shouldn't leak
@@ -70,12 +73,12 @@ class RaceController extends Controller
     }
 
     // One game's featured row at the top of its event list (each slot null when nothing fits):
-    // - weekly:  the next weekly event (Race::isWeeklyEvent()); it stays until it's finished,
-    //            then the next week's takes over.
-    // - special: the next special event (Race::isSpecialEvent()), likewise until finished.
+    // - weekly:  the next weekly event (Race::isWeeklyEvent()); it stays while it's listed
+    //            (until Race::LIVE_LISTING_MINUTES after its start), then the next week's takes over.
+    // - special: the next special event (Race::isSpecialEvent()), likewise.
     // - popular: of the other events starting in the next 24 hours (a rolling window), the one
     //            with the most real sign-ups (grid fillers don't count); ties go to the earlier.
-    // $gameRaces is already non-finished and in start-time order.
+    // $gameRaces is already non-finished, still listed and in start-time order.
     private function featured(Collection $gameRaces): array
     {
         $weekly = $gameRaces->first(fn (Race $race) => $race->isWeeklyEvent());

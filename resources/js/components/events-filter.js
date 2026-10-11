@@ -20,11 +20,22 @@ export function initEventsFilter() {
     const categoryBtns     = wrap.querySelectorAll('[data-filter-category]');
     const filterGroups     = wrap.querySelectorAll('[data-filter-group]');
 
+    // A started event stays listed (marked LIVE) for this long — Race::LIVE_LISTING_MINUTES.
+    const liveMs = (parseInt(wrap.dataset.liveMinutes, 10) || 0) * 60000;
+
     function matchesEventFilter(tag, dateStr) {
-        const now = new Date();
-        const d   = new Date(dateStr);
-        if (d < now) return false;
+        const d = new Date(dateStr);
+        if (d.getTime() + liveMs <= Date.now()) return false;
         return eventFilter === 'all' || tag === eventFilter;
+    }
+
+    // LIVE badge on every card (featured ones too) whose event has started.
+    function markLive() {
+        const now = Date.now();
+        wrap.querySelectorAll('.xcl-ec2[data-live-from]').forEach(card => {
+            const start = new Date(card.dataset.liveFrom).getTime();
+            card.classList.toggle('xcl-ec2--live', start <= now && now < start + liveMs);
+        });
     }
 
     function matchesRegion(regionsAttr) {
@@ -139,6 +150,8 @@ export function initEventsFilter() {
                 && matchesRequirement(card);
             card.style.display = visible ? '' : 'none';
         });
+
+        markLive();
     }
 
     // Each game has its own URL (/events/acc-console etc., see Race::PLATFORM_SLUGS)
@@ -231,4 +244,7 @@ export function initEventsFilter() {
 
     history.replaceState({ platform: wrap.dataset.initialPlatform || null }, '');
     selectPlatform(wrap.dataset.initialPlatform);
+
+    // A page left open: events go LIVE at their start time and drop off afterwards.
+    setInterval(apply, 30000);
 }

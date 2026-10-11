@@ -25,7 +25,9 @@
         default   => [['fa-solid fa-desktop', 'PC']],
     };
 @endphp
-<div class="xcl-ec2">
+{{-- xcl-ec2--live shows the LIVE badge; data-live-from lets events-filter.js switch it on
+     when the start time passes on a page that's left open. --}}
+<div class="xcl-ec2 {{ $race->isListedLive() ? 'xcl-ec2--live' : '' }}" data-live-from="{{ $race->scheduled_at->toIso8601String() }}">
     <div class="xcl-ec2__img-wrap">
         {{-- Track image: full-bleed background --}}
         @if($race->image_url)
@@ -47,10 +49,10 @@
             @endif
         </div>
 
-        {{-- Car class(es) + driver swap — top-left --}}
+        {{-- LIVE + car class(es) + driver swap — top-left --}}
         @php $cardClasses = $race->displayCarClasses(); @endphp
-        @if($cardClasses || $race->isDriverSwap())
         <div class="xcl-ec2__top-left-row">
+            <div class="xcl-ec2__live">Live</div>
             @foreach($cardClasses as $cardClass)
             @php [$classBg, $classText] = \App\Models\Race::classStyle($cardClass); @endphp
             <div class="xcl-ec2__class-badge" style="background:{{ $classBg }};color:{{ $classText }}">{{ $cardClass }}</div>
@@ -59,7 +61,6 @@
             <div class="xcl-ec2__class-badge" style="background:#7c3aed;color:#fff" title="Drivers share a car"><i class="fa-solid fa-people-arrows me-1"></i>DRIVER SWAP</div>
             @endif
         </div>
-        @endif
 
         {{-- Registrations count — top-right --}}
         <div class="xcl-ec2__lobby">

@@ -257,6 +257,30 @@ class Race extends Model
         return $this->scheduled_at->isPast();
     }
 
+    // How long a started event stays on the public Events page, marked LIVE, so drivers
+    // can still open it for its specs during the session. After that it drops off and the
+    // next event takes its place (also in events-filter.js, for a page left open).
+    public const LIVE_LISTING_MINUTES = 30;
+
+    public function isListedLive(): bool
+    {
+        return $this->scheduled_at->isPast()
+            && $this->scheduled_at->gt(now()->subMinutes(self::LIVE_LISTING_MINUTES));
+    }
+
+    // Its sessions are running right now: started, and not past the end of
+    // practice + qualifying + race (calendarWindow()).
+    public function isLive(): bool
+    {
+        return $this->status !== 'finished' && $this->scheduled_at->isPast() && $this->calendarWindow()[1]->isFuture();
+    }
+
+    // Still to come or running now — the admin lists' "Upcoming"; everything else is past.
+    public function isUpcomingOrLive(): bool
+    {
+        return $this->status !== 'finished' && ($this->scheduled_at->isFuture() || $this->isLive());
+    }
+
     public function registrationOpen(): bool
     {
         return $this->status === 'open' && $this->scheduled_at->gt(now()->addMinutes(5));

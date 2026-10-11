@@ -33,6 +33,6 @@ class AdminRacesTypeFilterTest extends TestCase
         $this->actingAs($admin)->get(route('admin.races.index'))
             ->assertOk()
             ->assertSee('data-type-filter="'.e($format->name).'"', false)
-            ->assertSee('<tr data-format="'.e($format->name).'">', false);
+            ->assertSee('<tr data-format="'.e($format->name).'" data-when="upcoming">', false);
     }
 }
