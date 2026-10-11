@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Race;
 use App\Models\RaceRegistration;
 use App\Models\User;
+use App\Services\RatingHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -33,7 +34,9 @@ class ProfileController extends Controller
             ->take(6)
             ->get();
 
-        return view('profile.show', compact('user', 'results', 'stats', 'myEvents'));
+        $ratingHistory = app(RatingHistory::class)->for($user);
+
+        return view('profile.show', compact('user', 'results', 'stats', 'myEvents', 'ratingHistory'));
     }
 
     public function edit()

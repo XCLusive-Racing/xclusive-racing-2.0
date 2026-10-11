@@ -159,8 +159,20 @@
             </div>
         </div>
 
-        {{-- Race history --}}
-        <div class="bg-white rounded-3 shadow-sm p-4">
+        {{-- Race history / Rating changes, as tabs (tabs.js) --}}
+        <div class="bg-white rounded-3 shadow-sm overflow-hidden" data-tabs data-default-tab="races">
+            <div class="d-flex border-bottom" style="background:#fafafa">
+                @foreach(['races' => 'Race History', 'rating' => 'Rating Changes'] as $tab => $label)
+                <button class="px-4 py-3 border-0 bg-transparent fw-bold text-secondary"
+                        data-tab-btn="{{ $tab }}"
+                        data-tab-active-class="results-tab-active"
+                        style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;cursor:pointer">
+                    {{ $label }}
+                </button>
+                @endforeach
+            </div>
+
+            <div data-tab-panel="races" class="p-4">
             <h2 class="fs-2 fw-black text-uppercase fst-italic text-dark mb-4">RACE HISTORY</h2>
 
             @if($results->isEmpty())
@@ -238,6 +250,73 @@
                 </table>
             </div>
             @endif
+            </div>
+
+            {{-- Rating changes: every XCL Rating / SR gain and loss, from races, steward
+                 penalties, rating returned after a report, and Time Trials (RatingHistory). --}}
+            <div data-tab-panel="rating" class="p-4" style="display:none">
+            <h2 class="fs-2 fw-black text-uppercase fst-italic text-dark mb-4">RATING CHANGES</h2>
+
+            @if($ratingHistory->isEmpty())
+            <div class="text-center py-4">
+                <p class="text-secondary mb-0">No rating changes yet. They appear here after your first rated race.</p>
+            </div>
+            @else
+            @php
+                $historyTypes = [
+                    'race'       => ['Race',       '#f3f4f6', '#374151'],
+                    'penalty'    => ['Penalty',    '#fef2f2', '#dc2626'],
+                    'return'     => ['Returned',   '#f0fdf4', '#16a34a'],
+                    'time_trial' => ['Time Trial', '#ede9fe', '#6d28d9'],
+                ];
+            @endphp
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" style="font-size:.875rem">
+                    <thead style="border-bottom:2px solid #f3f4f6">
+                        <tr>
+                            <th class="fw-bold text-uppercase text-secondary pb-2" style="font-size:.72rem;letter-spacing:.06em;width:110px">Date</th>
+                            <th class="fw-bold text-uppercase text-secondary pb-2 d-none d-sm-table-cell" style="font-size:.72rem;letter-spacing:.06em;width:105px">Type</th>
+                            <th class="fw-bold text-uppercase text-secondary pb-2" style="font-size:.72rem;letter-spacing:.06em">Event</th>
+                            <th class="fw-bold text-uppercase text-secondary pb-2 text-end" style="font-size:.72rem;letter-spacing:.06em;width:100px">XCL Rating</th>
+                            <th class="fw-bold text-uppercase text-secondary pb-2 text-end" style="font-size:.72rem;letter-spacing:.06em;width:80px">SR</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($ratingHistory as $entry)
+                        @php
+                            [$typeLabel, $typeBg, $typeColor] = $historyTypes[$entry['type']];
+                            $elo = $entry['elo'] !== null ? (int) round($entry['elo']) : null;
+                            $sr  = $entry['sr'] !== null ? round($entry['sr'], 2) : null;
+                        @endphp
+                        <tr style="border-bottom:1px solid #f9fafb" data-rating-entry="{{ $entry['type'] }}">
+                            <td class="text-secondary" style="font-size:.8rem;white-space:nowrap">
+                                {{ $entry['at']?->timezone('Europe/London')->format('d M Y') ?? '—' }}
+                            </td>
+                            <td class="d-none d-sm-table-cell">
+                                <span class="badge" style="background:{{ $typeBg }};color:{{ $typeColor }};font-size:.7rem;padding:3px 8px;border-radius:5px;font-weight:700">{{ $typeLabel }}</span>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark" style="font-size:.85rem">{{ $entry['title'] }}</div>
+                                <div class="text-secondary" style="font-size:.72rem">
+                                    <span class="d-sm-none fw-bold" style="color:{{ $typeColor }}">{{ $typeLabel }} · </span>{{ $entry['detail'] }}
+                                    @if($entry['game'])
+                                    <x-game-badge :game="$entry['game']" class="ms-1" />
+                                    @endif
+                                </div>
+                            </td>
+                            <td class="text-end fw-black" style="font-variant-numeric:tabular-nums;color:{{ $elo === null || $elo === 0 ? '#9ca3af' : ($elo > 0 ? '#10b981' : '#ef4444') }}">
+                                {{ $elo === null ? '—' : ($elo > 0 ? '+' : '').$elo }}
+                            </td>
+                            <td class="text-end fw-black" style="font-variant-numeric:tabular-nums;color:{{ $sr === null || $sr == 0 ? '#9ca3af' : ($sr > 0 ? '#10b981' : '#ef4444') }}">
+                                {{ $sr === null ? '—' : ($sr > 0 ? '+' : '').number_format($sr, 2) }}
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @endif
+            </div>
         </div>
     </div>
 </main>
