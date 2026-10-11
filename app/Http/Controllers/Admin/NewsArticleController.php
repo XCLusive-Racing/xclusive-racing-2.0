@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\AnnounceNewsArticleToDiscord;
 use App\Models\Announcement;
 use App\Models\Media;
 use App\Models\NewsArticle;
@@ -94,6 +95,7 @@ class NewsArticleController extends Controller
                 'body'            => $article->excerpt ?? $article->title,
                 'news_article_id' => $article->id,
             ]);
+            AnnounceNewsArticleToDiscord::dispatchFor($article);
         }
 
         return redirect()->route('admin.news.index')
@@ -154,6 +156,7 @@ class NewsArticleController extends Controller
                 'body'            => $newsArticle->excerpt ?? $newsArticle->title,
                 'news_article_id' => $newsArticle->id,
             ]);
+            AnnounceNewsArticleToDiscord::dispatchFor($newsArticle);
         }
 
         return redirect()->route('admin.news.index')

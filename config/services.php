@@ -33,6 +33,8 @@ return [
         'announcer_webhook' => env('DISCORD_ANNOUNCER_WEBHOOK'),
         'xcl_member_role_id' => env('DISCORD_XCL_MEMBER_ROLE_ID'),
         'penalty_webhook' => env('DISCORD_PENALTY_WEBHOOK'),
+        // The news channel: every newly published article is posted here (AnnounceNewsArticleToDiscord).
+        'news_webhook' => env('DISCORD_NEWS_WEBHOOK'),
         'steward_role_id' => env('DISCORD_STEWARD_ROLE_ID'),
         'rank_roles' => [
             'alien' => env('DISCORD_ROLE_RANK_ALIEN'),
