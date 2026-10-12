@@ -6,6 +6,7 @@ use App\Models\Race;
 use App\Models\RaceRegistration;
 use App\Models\User;
 use App\Services\RatingHistory;
+use App\Services\XpPreview;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -36,7 +37,11 @@ class ProfileController extends Controller
 
         $ratingHistory = app(RatingHistory::class)->for($user);
 
-        return view('profile.show', compact('user', 'results', 'stats', 'myEvents', 'ratingHistory'));
+        // Design preview of the XP reveal with example data (docs/xp-achievements/PLAN.md) —
+        // staff only, so no driver ever sees made-up XP.
+        $xpPreview = request()->boolean('xp_preview') && $user->canAccessAdminPanel() ? XpPreview::sample() : null;
+
+        return view('profile.show', compact('user', 'results', 'stats', 'myEvents', 'ratingHistory', 'xpPreview'));
     }
 
     public function edit()

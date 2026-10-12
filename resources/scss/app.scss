@@ -8475,3 +8475,248 @@ table.dataTable thead th {
     letter-spacing: .04em;
     text-transform: uppercase;
 }
+
+// ── XP rank + post-race reveal (profile) ───────────────────────────────────────
+// Design preview for docs/xp-achievements/PLAN.md. XP has its own colour (cyan) so it
+// never reads as XCL Rating (purple / tier colours) or Safety Rating.
+$xp-color: #06b6d4;
+$xp-color-light: #67e8f9;
+
+.xp-card {
+    position: relative;
+    border-top: 4px solid $xp-color;
+
+    &__preview {
+        position: absolute;
+        top: -.7rem;
+        right: 1rem;
+        padding: .1rem .6rem;
+        border-radius: 999px;
+        background: #111827;
+        color: #fde68a;
+        font-size: .62rem;
+        font-weight: 800;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+}
+
+// The rank as a hexagon badge.
+.xp-badge {
+    flex-shrink: 0;
+    width: 76px;
+    height: 84px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background: linear-gradient(160deg, $xp-color-light, #0e7490);
+    clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+
+    &__label { font-size: .58rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; opacity: .85; }
+    &__num   { font-size: 1.9rem; font-weight: 900; font-style: italic; line-height: 1; }
+
+    &--lg {
+        width: 104px;
+        height: 116px;
+
+        .xp-badge__num { font-size: 2.7rem; }
+    }
+
+    &.is-up { animation: xp-badge-pop .7s ease-out; }
+}
+
+.xp-bar {
+    height: 10px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    overflow: hidden;
+
+    &--dark { height: 12px; background: rgba(255, 255, 255, .12); }
+
+    &__fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #0e7490, $xp-color-light);
+        box-shadow: 0 0 12px rgba(103, 232, 249, .55);
+    }
+}
+
+.xp-reveal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(5, 3, 12, .86);
+    backdrop-filter: blur(6px);
+    animation: xp-fade .25s ease-out;
+
+    &[hidden] { display: none; }
+
+    &__panel {
+        position: relative;
+        width: 100%;
+        max-width: 560px;
+        max-height: calc(100vh - 2rem);
+        overflow-y: auto;
+        padding: 1.75rem 1.5rem 1.25rem;
+        color: #fff;
+        background: linear-gradient(160deg, #1b0b2e 0%, #12011a 55%, #06202a 100%);
+        border: 1px solid rgba(103, 232, 249, .35);
+        border-radius: 16px;
+        box-shadow: 0 0 60px rgba(6, 182, 212, .25);
+        animation: xp-rise .4s ease-out;
+
+        @media (max-width: 575px) { padding: 1.5rem 1rem 1rem; }
+    }
+
+    &__close {
+        position: absolute;
+        top: .5rem;
+        right: .75rem;
+        border: 0;
+        background: none;
+        color: #9ca3af;
+        font-size: 1.6rem;
+        line-height: 1;
+    }
+
+    &__eyebrow { color: $xp-color-light; font-size: .7rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+    &__title   { margin: .15rem 0 .1rem; font-size: 1.5rem; font-weight: 900; font-style: italic; text-transform: uppercase; }
+    &__sub     { color: #9ca3af; font-size: .85rem; }
+
+    &__rank {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin: 1.25rem 0 1rem;
+    }
+
+    &__rankup {
+        height: 1.2rem;
+        margin-bottom: .3rem;
+        color: #fde68a;
+        font-size: .8rem;
+        font-weight: 900;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        opacity: 0;
+
+        &.is-up { animation: xp-rankup 1.6s ease-out; }
+    }
+
+    &__progress { margin-top: .35rem; color: #9ca3af; font-size: .75rem; font-variant-numeric: tabular-nums; }
+
+    &__lines { list-style: none; margin: 0; padding: 0; }
+
+    &__line {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .32rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, .06);
+        font-size: .85rem;
+        opacity: 0;
+        transform: translateX(-10px);
+        transition: opacity .25s, transform .25s;
+
+        small { margin-left: .4rem; color: #6b7280; }
+        &.is-in { opacity: 1; transform: none; }
+    }
+
+    &__xp { color: $xp-color-light; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+    &__section {
+        margin: 1.1rem 0 .5rem;
+        color: #fde68a;
+        font-size: .7rem;
+        font-weight: 800;
+        letter-spacing: .18em;
+        text-transform: uppercase;
+        opacity: 0;
+        transition: opacity .3s;
+
+        &.is-in { opacity: 1; }
+    }
+
+    &__achievements { display: grid; gap: .5rem; }
+
+    &__footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-top: 1.25rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, .1);
+    }
+
+    &__total { font-size: 1.7rem; font-weight: 900; font-style: italic; color: $xp-color-light; font-variant-numeric: tabular-nums; }
+    &__note  { color: #6b7280; font-size: .7rem; }
+
+    &__btn {
+        padding: .55rem 1.4rem;
+        border: 0;
+        border-radius: 8px;
+        background: $xp-color;
+        color: #04121a;
+        font-weight: 900;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+}
+
+// One unlocked achievement in the reveal.
+.xp-ach {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .6rem .75rem;
+    border: 1px solid rgba(253, 230, 138, .3);
+    border-radius: 10px;
+    background: rgba(253, 230, 138, .06);
+    opacity: 0;
+    transform: scale(.92);
+    transition: opacity .3s, transform .3s cubic-bezier(.2, 1.4, .4, 1);
+
+    &.is-in { opacity: 1; transform: none; }
+
+    &__icon {
+        flex-shrink: 0;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: linear-gradient(160deg, #fde68a, #d97706);
+        color: #1f1300;
+    }
+
+    &__body { flex: 1; min-width: 0; }
+    &__name { font-weight: 800; font-size: .9rem; }
+    &__desc { color: #9ca3af; font-size: .74rem; }
+}
+
+@keyframes xp-fade { from { opacity: 0; } }
+@keyframes xp-rise { from { opacity: 0; transform: translateY(18px) scale(.98); } }
+@keyframes xp-badge-pop {
+    0%   { transform: scale(1); filter: brightness(1); }
+    35%  { transform: scale(1.22); filter: brightness(1.6); }
+    100% { transform: scale(1); filter: brightness(1); }
+}
+@keyframes xp-rankup {
+    0%   { opacity: 0; transform: translateY(6px); }
+    15%  { opacity: 1; transform: none; }
+    75%  { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .xp-reveal, .xp-reveal__panel, .xp-badge.is-up, .xp-reveal__rankup.is-up { animation: none; }
+    .xp-reveal__line, .xp-ach, .xp-reveal__section { transition: none; }
+}

@@ -61,6 +61,8 @@
             </div>
         </div>
 
+        @includeWhen($xpPreview, 'profile.partials.xp-preview')
+
         {{-- ELO ratings --}}
         @php
             $srAcc     = $user->srGrade('acc');
