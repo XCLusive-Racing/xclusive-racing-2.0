@@ -1,0 +1,41 @@
+"XCL XP AND ACHIEVEMENTS"
+
+"399 achievements across 15 categories, worth 1,239,360 XP in total."
+
+"ONE XP TOTAL ACROSS EVERY TITLE"
+"A driver has one XP total and one rank, whatever they race. ACC on console, ACC on PC, Le Mans Ultimate and iRacing all feed the same number."
+"The game column says what an achievement counts. all means progress in every title adds up, so a win in LMU counts the same as a win in ACC."
+"A specific title means it only counts progress in that title. The Nordschleife family is ACC only because the circuit is not in the other games."
+"Rank 150 is defined by the title agnostic achievements alone. A driver who only races ACC can still reach it."
+"Title specific achievements are a head start on the climb from 150 to 250, never a gate on reaching 150."
+
+"THE THREE NUMBERS"
+"XCL-R is skill. It goes up and down with race results and says how fast you are."
+"SR is behaviour. It goes up and down with clean driving and gates which races you can enter."
+"XP is time served. It only ever goes up and says how much you have done, not how good you are."
+"Keep that distinction visible everywhere, or XP will be mistaken for a skill measure and devalue XCL-R."
+
+"THE CURVE"
+"Rank 1 to 250. Rank 1 to 2 costs 100 XP, rank 249 to 250 costs 23,650."
+"Every title agnostic achievement adds up to exactly rank 150."
+"Ranks 150 to 250 need 1.9 million XP. Title specific achievements cover 168,000 of it and racing covers the rest, roughly 1,150 races."
+"That split is deliberate. If XP came only from achievements, the fastest members would finish the system and XP would die for them."
+
+"THE FIRST SESSION"
+"A driver who completes one clean race and fills in their profile earns about 1,125 XP and lands at rank 5."
+"Five rank ups in one sitting is the hook. The curve is built so this happens by design, not by accident."
+
+"WHAT TO CHECK BEFORE BUILDING"
+"Every metric column must map to something the site can already count, or the achievement cannot be awarded."
+"Metrics marked referrals, months_member, supporter_months, coaching_sessions and merch depend on systems that are not built yet."
+"There is no VIP subscription yet, so no achievement references one. Add it to the catalogue when the tier exists."
+"Safety rating achievements start at 4.50 because every new driver begins at 4.00."
+"Decide whether historical races count. Awarding 298 achievements retroactively to 11,000 members in one night is a large job and a loud one."
+
+TUNING
+"Change any XP value in the Achievements sheet and the curve no longer lands on rank 150. Recalculate when you do."
+"Prefer adding achievements over inflating existing ones. More small wins beats fewer big ones."
+
+"ADDING A TITLE"
+"A new title needs its own short ladder in the Per Title category and nothing else. The title agnostic catalogue already covers it."
+"Adding title specific achievements does not move rank 150, because the curve is fitted to the title agnostic pool only."

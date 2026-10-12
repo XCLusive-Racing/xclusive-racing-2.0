@@ -1,0 +1,22 @@
+source,xp,note
+"Race completed",600,"Base award for taking the flag"
+"Race entered but retired",200,"Still rewards showing up"
+"Per lap completed",25,"Scales XP with race length"
+"Clean race, no penalties",400,"The behaviour we most want to reward"
+"All laps valid",300,"Within the lines"
+"Finished on lead lap",100,
+"Position bonus, win",1000,
+"Position bonus, P2",700,
+"Position bonus, P3",500,
+"Position bonus, P4 to P5",300,
+"Position bonus, P6 to P10",200,
+"Position bonus, P11 to P25",100,
+"Pole position",400,
+"Fastest lap",400,
+"Positions gained",25,"Per position gained from grid to flag"
+"First race of the day",300,"Encourages daily return, like Battlefield"
+"Endurance format multiplier",1.5x,"Applied to the whole race total"
+"Championship round multiplier",1.25x,"Applied to the whole race total"
+"Supporter tier bonus",1.1x,"Member tier 1.15x"
+"Nordschleife multiplier",1.5x,"Applied to the whole race total"
+"New title first race",1000,"One off, the first race in a title the driver has not run before"
