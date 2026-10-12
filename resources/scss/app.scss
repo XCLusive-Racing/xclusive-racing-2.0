@@ -8534,6 +8534,7 @@ $xp-color-light: #67e8f9;
     overflow: hidden;
 
     &--dark { height: 12px; background: rgba(255, 255, 255, .12); }
+    &--thin { height: 6px; .xp-bar__fill { box-shadow: none; } }
 
     &__fill {
         height: 100%;
@@ -8719,4 +8720,90 @@ $xp-color-light: #67e8f9;
 @media (prefers-reduced-motion: reduce) {
     .xp-reveal, .xp-reveal__panel, .xp-badge.is-up, .xp-reveal__rankup.is-up { animation: none; }
     .xp-reveal__line, .xp-ach, .xp-reveal__section { transition: none; }
+}
+
+// The achievement collection on the profile: categories, each a grid of families.
+.xp-cat {
+    & + & { margin-top: 1.75rem; }
+
+    &__head {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        margin-bottom: .75rem;
+        padding-bottom: .5rem;
+        border-bottom: 1px solid #e5e7eb;
+        color: #111827;
+        font-size: .8rem;
+        font-weight: 900;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+
+        i { color: $xp-color; }
+    }
+
+    &__count { margin-left: auto; color: #6b7280; font-weight: 700; font-variant-numeric: tabular-nums; }
+}
+
+.xp-fams {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem;
+
+    @media (max-width: 767.98px) { grid-template-columns: minmax(0, 1fr); }
+}
+
+.xp-fam {
+    display: flex;
+    gap: .75rem;
+    padding: .75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: .6rem;
+    background: #fafafa;
+
+    &__icon {
+        flex-shrink: 0;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: #e5e7eb;
+        color: #9ca3af;
+    }
+
+    &__body { flex: 1; min-width: 0; }
+    &__top  { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+    &__name { color: #111827; font-size: .88rem; font-weight: 800; }
+    &__xp   { margin-left: auto; color: #0891b2; font-size: .72rem; font-weight: 800; white-space: nowrap; }
+    &__desc { margin: .1rem 0 .5rem; color: #6b7280; font-size: .76rem; }
+
+    &__foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: .35rem;
+        color: #6b7280;
+        font-size: .7rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+    }
+
+    &__tiers {
+        display: flex;
+        gap: 3px;
+
+        i { width: 7px; height: 7px; border-radius: 50%; background: #d1d5db; }
+        i.is-held { background: $xp-color; }
+    }
+
+    &--started { background: #fff; .xp-fam__icon { background: #cffafe; color: #0891b2; } }
+
+    &--complete {
+        background: #ecfeff;
+        border-color: #a5f3fc;
+
+        .xp-fam__icon { background: $xp-color; color: #fff; }
+    }
 }

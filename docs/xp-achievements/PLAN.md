@@ -16,6 +16,15 @@ completed last, so the next session can pick up without re-deriving context.
   Phase 1 tasks are still open (unticked below): the stored championship classification,
   the restart/star data, late account linking, and the nightly reconcile. Do not start
   Phase 2 until those are done or deliberately moved.
+- **2026-10-12 — XP is live and Phase 2 has started.** Migrations ran on production and
+  `XP_ENABLED` / `XP_LAUNCH_AT` are set there. On the driver's own profile
+  (`App\Xp\DriverXp`): the Driver Level card with the bar to the next level under the
+  three rating columns, an Achievements tab (families as one item, progress, hidden when
+  not earnable, decision 26), and the reveal of unseen XP, marked seen by
+  `POST /profile/xp/seen`. The example-data preview is removed. Still open in Phase 2:
+  the public driver page, entry lists, the XP leaderboard, the per-title breakdown, the
+  star and restart. Note: rating and SR milestones read the driver's current value, so an
+  established driver unlocks all of them at their first race after the launch.
 - **2026-10-12 — open questions answered** (decisions 18 to 29). Two of the answers still ask
   for engine work that is **not built yet** (top-up and climbs). **The launch is
   2026-10-12** (decided that day): set `XP_LAUNCH_AT` and `XP_ENABLED` on production.

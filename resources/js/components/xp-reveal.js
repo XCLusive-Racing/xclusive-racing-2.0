@@ -1,5 +1,6 @@
-// The post-race XP reveal on the profile page: the race's XP lines tick in one by one while
-// the bar fills and the rank steps up, then the unlocked achievements, then the total.
+// The XP reveal on the profile page, shown when there is XP the driver has not seen yet:
+// the XP lines tick in one by one while the bar fills and the level steps up, then the
+// unlocked achievements, then the total. Once it has opened, the server is told it was seen.
 // "Skip" (or Esc, or the backdrop) jumps to the end; a second press closes it.
 // Everything it shows comes from the element's data-xp-reveal JSON.
 export function initXpReveal() {
@@ -19,18 +20,19 @@ export function initXpReveal() {
     let skipped = false;
     let shownRank = null;
 
-    // Rank, XP into it and XP it takes, for a total on the curve.
+    // Level, XP into it and XP it takes (null at the maximum), for a total on the curve.
     function position(xp) {
         let rank = ranks[0];
-        ranks.forEach(r => { if (xp >= data.curve[r] && data.curve[r + 1] !== undefined) rank = r; });
-        return [rank, xp - data.curve[rank], data.curve[rank + 1] - data.curve[rank]];
+        ranks.forEach(r => { if (xp >= data.curve[r]) rank = r; });
+        const next = data.curve[rank + 1];
+        return [rank, xp - data.curve[rank], next === undefined ? null : next - data.curve[rank]];
     }
 
     function show(xp, gained) {
         const [rank, into, needed] = position(xp);
-        q('[data-xp-fill]').style.width = `${Math.min(100, (into / needed) * 100)}%`;
+        q('[data-xp-fill]').style.width = needed ? `${Math.min(100, (into / needed) * 100)}%` : '100%';
         q('[data-xp-into]').textContent = fmt(into);
-        q('[data-xp-needed]').textContent = fmt(needed);
+        q('[data-xp-needed]').textContent = needed ? fmt(needed) : 'max';
         q('[data-xp-total]').textContent = fmt(gained);
         q('[data-xp-rank]').textContent = rank;
 
@@ -127,7 +129,14 @@ export function initXpReveal() {
     q('[data-xp-close]').addEventListener('click', close);
     root.addEventListener('click', e => { if (e.target === root) advance(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && !root.hidden) close(); });
-    document.querySelector('[data-xp-reveal-replay]')?.addEventListener('click', play);
-
     play();
+
+    // Shown once: tell the server, so the next visit opens without it.
+    if (root.dataset.xpSeenUrl) {
+        fetch(root.dataset.xpSeenUrl, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin',
+        }).catch(() => {});
+    }
 }

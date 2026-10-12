@@ -6,7 +6,7 @@ use App\Models\Race;
 use App\Models\RaceRegistration;
 use App\Models\User;
 use App\Services\RatingHistory;
-use App\Services\XpPreview;
+use App\Xp\DriverXp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -37,11 +37,21 @@ class ProfileController extends Controller
 
         $ratingHistory = app(RatingHistory::class)->for($user);
 
-        // Design preview of the XP reveal with example data (docs/xp-achievements/PLAN.md) —
-        // staff only, so no driver ever sees made-up XP.
-        $xpPreview = request()->boolean('xp_preview') && $user->canAccessAdminPanel() ? XpPreview::sample() : null;
+        // Driver Level, the achievement collection, and the reveal of XP not seen yet.
+        $driverXp = app(DriverXp::class);
+        $xp = $driverXp->summary($user);
+        $xpCollection = $driverXp->collection($user);
+        $xpReveal = $driverXp->reveal($user);
 
-        return view('profile.show', compact('user', 'results', 'stats', 'myEvents', 'ratingHistory', 'xpPreview'));
+        return view('profile.show', compact('user', 'results', 'stats', 'myEvents', 'ratingHistory', 'xp', 'xpCollection', 'xpReveal'));
+    }
+
+    // The reveal has played: what it showed is not new any more.
+    public function xpSeen(DriverXp $driverXp)
+    {
+        $driverXp->markSeen(Auth::user());
+
+        return response()->noContent();
     }
 
     public function edit()

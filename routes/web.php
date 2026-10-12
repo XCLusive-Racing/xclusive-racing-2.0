@@ -195,6 +195,7 @@ Route::middleware('auth')->group(function () {
 // Protected
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+    Route::post('/profile/xp/seen', [ProfileController::class, 'xpSeen'])->name('profile.xp.seen');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/email', [ProfileController::class, 'updateEmail'])->name('profile.email');

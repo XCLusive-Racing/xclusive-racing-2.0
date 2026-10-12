@@ -61,8 +61,6 @@
             </div>
         </div>
 
-        @includeWhen($xpPreview, 'profile.partials.xp-preview')
-
         {{-- ELO ratings --}}
         @php
             $srAcc     = $user->srGrade('acc');
@@ -104,6 +102,8 @@
                 </div>
             </div>
         </div>
+
+        @include('profile.partials.xp-card')
 
         {{-- My registered events --}}
         <div class="bg-white rounded-3 shadow-sm p-4 mb-4">
@@ -161,10 +161,10 @@
             </div>
         </div>
 
-        {{-- Race history / Rating changes, as tabs (tabs.js) --}}
+        {{-- Race history / Rating changes / Achievements, as tabs (tabs.js) --}}
         <div class="bg-white rounded-3 shadow-sm overflow-hidden" data-tabs data-default-tab="races">
             <div class="d-flex border-bottom" style="background:#fafafa">
-                @foreach(['races' => 'Race History', 'rating' => 'Rating Changes'] as $tab => $label)
+                @foreach(['races' => 'Race History', 'rating' => 'Rating Changes', 'achievements' => 'Achievements'] as $tab => $label)
                 <button class="px-4 py-3 border-0 bg-transparent fw-bold text-secondary"
                         data-tab-btn="{{ $tab }}"
                         data-tab-active-class="results-tab-active"
@@ -319,7 +319,13 @@
             </div>
             @endif
             </div>
+
+            <div data-tab-panel="achievements" class="p-4" style="display:none">
+                @include('profile.partials.xp-achievements')
+            </div>
         </div>
+
+        @includeWhen($xpReveal, 'profile.partials.xp-reveal')
     </div>
 </main>
 @endsection
