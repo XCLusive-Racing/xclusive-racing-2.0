@@ -5,8 +5,9 @@ return [
     // Off until launch: with this off no race awards anything, whatever is deployed.
     'enabled' => env('XP_ENABLED', false),
 
-    // Everybody starts from zero at this moment (UK time, e.g. "2026-11-01 00:00"). Nothing
-    // from before it earns XP or counts towards an achievement. Not set: nothing counts.
+    // Racing XP starts at this moment (UK time, e.g. "2026-11-01 00:00"). An older race earns
+    // no racing XP, but a driver's whole history counts towards achievements. Not set: no
+    // race awards anything.
     'launch_at' => env('XP_LAUNCH_AT'),
 
     // Racing XP, from the "XP per race" sheet. Every line is added up, then the

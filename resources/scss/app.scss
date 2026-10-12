@@ -8536,6 +8536,8 @@ $xp-color-light: #67e8f9;
     &--dark { height: 12px; background: rgba(255, 255, 255, .12); }
     &--thin { height: 6px; .xp-bar__fill { box-shadow: none; } }
 
+    .xp-card & .xp-bar__fill { transition: width 1.6s cubic-bezier(.2, .8, .2, 1); }
+
     &__fill {
         height: 100%;
         border-radius: 999px;
@@ -8719,7 +8721,17 @@ $xp-color-light: #67e8f9;
 
 @media (prefers-reduced-motion: reduce) {
     .xp-reveal, .xp-reveal__panel, .xp-badge.is-up, .xp-reveal__rankup.is-up { animation: none; }
-    .xp-reveal__line, .xp-ach, .xp-reveal__section { transition: none; }
+    .xp-reveal__line, .xp-ach, .xp-reveal__section, .xp-card .xp-bar__fill { transition: none; }
+}
+
+// Replay and View achievements: stacked beside the bar, side by side below it on phones.
+.xp-card__actions {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    flex-shrink: 0;
+
+    @media (max-width: 767.98px) { flex-direction: row; flex-wrap: wrap; width: 100%; }
 }
 
 // The achievement collection on the profile: categories, each a grid of families.

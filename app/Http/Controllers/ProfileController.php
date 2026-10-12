@@ -41,7 +41,7 @@ class ProfileController extends Controller
         $driverXp = app(DriverXp::class);
         $xp = $driverXp->summary($user);
         $xpCollection = $driverXp->collection($user);
-        $xpReveal = $driverXp->reveal($user);
+        $xpReveal = $driverXp->reveal($user, request()->boolean('xp_replay'));
 
         return view('profile.show', compact('user', 'results', 'stats', 'myEvents', 'ratingHistory', 'xp', 'xpCollection', 'xpReveal'));
     }

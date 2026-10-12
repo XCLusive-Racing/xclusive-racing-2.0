@@ -286,7 +286,7 @@ class XpAwardingTest extends TestCase
         $entry->delete();
     }
 
-    public function test_everybody_starts_from_zero_at_the_launch(): void
+    public function test_a_race_from_before_the_launch_earns_no_racing_xp_but_counts_as_history(): void
     {
         Bus::fake();
         $user = $this->driver();
@@ -295,19 +295,46 @@ class XpAwardingTest extends TestCase
         $after = $this->race($user, 'acc', 1, ['scheduled_at' => now()->subDays(5)]);
         config(['xp.launch_at' => now()->subDays(10)->toDateTimeString()]);
 
-        // A race from before the launch: no job, no XP, and it is not counted either.
+        // The old race: no job and no racing XP.
         $this->assertSame(0, AwardRaceXp::dispatchForRace($before));
         $this->assertSame(0, $this->process($user, $before)['race_xp']);
         $this->assertSame(0, XpLedgerEntry::count());
 
-        // The first race after it is the driver's first: one win, new title bonus and all.
+        // The race after the launch earns racing XP, and the old win counts with it.
         $this->assertSame(3, AwardRaceXp::dispatchForRace($after));
         $this->assertSame(3250, $this->process($user, $after)['race_xp']);
-        $this->assertSame(1.0, (float) UserMetric::where(['user_id' => $user->id, 'metric_key' => 'wins', 'scope' => 'all'])->value('value'));
-        $this->assertFalse(AchievementAward::where('achievement_id', $wins->id)->exists());
-
-        $this->process($user, $this->race($user, 'acc', 1, ['scheduled_at' => now()->subDays(3)]));
+        $this->assertSame(2.0, (float) UserMetric::where(['user_id' => $user->id, 'metric_key' => 'wins', 'scope' => 'all'])->value('value'));
         $this->assertTrue(AchievementAward::where('achievement_id', $wins->id)->exists());
+    }
+
+    public function test_history_is_awarded_as_achievements_only_and_only_once(): void
+    {
+        $veteran = $this->driver();
+        $veteran->update(['legacy_races' => 40, 'legacy_wins' => 4, 'legacy_podiums' => 9]);
+        $newcomer = $this->driver();
+        $this->race($veteran, 'acc', 1, ['scheduled_at' => now()->subYears(2)]);
+        $races = $this->achievement('races_entered', 25, 'all', 300);
+        $wins = $this->achievement('wins', 5, 'all', 400);
+        $accWins = $this->achievement('wins', 5, 'acc', 900);
+        $podiums = $this->achievement('podiums', 10, 'all', 250);
+
+        // A dry run writes nothing.
+        $this->artisan('xp:award-history', ['--dry-run' => true])->assertSuccessful();
+        $this->assertSame(0, AchievementAward::count());
+        $this->assertSame(0, XpLedgerEntry::count());
+
+        $this->artisan('xp:award-history')->assertSuccessful();
+
+        // 40 + 1 races, 4 + 1 wins, 9 + 1 podiums. The old totals carry no title.
+        $held = AchievementAward::where('user_id', $veteran->id)->pluck('achievement_id')->all();
+        $this->assertEqualsCanonicalizing([$races->id, $wins->id, $podiums->id], $held);
+        $this->assertNotContains($accWins->id, $held);
+        $this->assertSame(950, $veteran->fresh()->xp_total);
+        $this->assertSame(0, XpLedgerEntry::where('source', 'race')->count());
+        $this->assertSame(0, AchievementAward::where('user_id', $newcomer->id)->count());
+
+        $this->artisan('xp:award-history')->assertSuccessful();
+        $this->assertSame(950, $veteran->fresh()->xp_total);
     }
 
     public function test_a_driver_alone_on_track_earns_nothing(): void

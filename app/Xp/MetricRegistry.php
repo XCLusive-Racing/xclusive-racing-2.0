@@ -56,13 +56,16 @@ class MetricRegistry
     {
         $started = fn (Collection $rows) => $rows->where('started', true);
         $done = fn (Collection $rows) => $rows->where('completed', true);
-        $top = fn (int $n) => fn (Collection $rows) => $done($rows)->where('position', '<=', $n)->count();
+        // The totals from before the website (users.legacy_*: races, wins, podiums) are added
+        // in the all titles scope: they carry no title, date, track or car.
+        $legacy = fn (User $user, string $scope, string $column) => $scope === 'all' ? (int) $user->{$column} : 0;
+        $top = fn (int $n, string $column = 'legacy_podiums') => fn (Collection $rows, User $user, string $scope) => $done($rows)->where('position', '<=', $n)->count() + $legacy($user, $scope, $column);
         $flag = fn (bool $value) => $value ? 1 : 0;
 
         return [
-            new RaceMetric('races_entered', 'Races entered', fn ($rows) => $started($rows)->count()),
-            new RaceMetric('races_completed', 'Races completed', fn ($rows) => $done($rows)->count()),
-            new RaceMetric('wins', 'Race wins', $top(1)),
+            new RaceMetric('races_entered', 'Races entered', fn ($rows, User $user, string $scope) => $started($rows)->count() + $legacy($user, $scope, 'legacy_races')),
+            new RaceMetric('races_completed', 'Races completed', fn ($rows, User $user, string $scope) => $done($rows)->count() + $legacy($user, $scope, 'legacy_races')),
+            new RaceMetric('wins', 'Race wins', $top(1, 'legacy_wins')),
             new RaceMetric('podiums', 'Podium finishes', $top(3)),
             new RaceMetric('top5', 'Top five finishes', $top(5)),
             new RaceMetric('top10', 'Top ten finishes', $top(10)),
@@ -173,20 +176,17 @@ class MetricRegistry
     }
 
     // ── Counted from anything else ───────────────────────────────────────────────
-    // What a driver did (reports, time trials, championship entries) counts since the
-    // launch. What a driver is (a linked account, a team, the membership) is read as it stands.
 
     private function factMetrics(): array
     {
         $flag = fn (bool $value) => $value ? 1 : 0;
-        $since = Launch::since();
-        $ttResults = fn (User $user) => TimeTrialEventResult::where('user_id', $user->id)->where('created_at', '>=', $since);
-        $reports = fn (User $user) => Report::where('user_id', $user->id)->where('created_at', '>=', $since);
+        $ttResults = fn (User $user) => TimeTrialEventResult::where('user_id', $user->id);
+        $reports = fn (User $user) => Report::where('user_id', $user->id);
         $nordsEvents = fn () => TimeTrialEvent::where('track', 'nurburgring_24h')->pluck('id');
 
         return [
             new FactMetric('championships_entered', 'Championships entered', fn (User $user, DriverHistory $h, string $scope) => ChampionshipRegistration::approved()
-                ->where('user_id', $user->id)->where('is_spectator', false)->where('created_at', '>=', $since)->pluck('championship_id')->unique()
+                ->where('user_id', $user->id)->where('is_spectator', false)->pluck('championship_id')->unique()
                 ->pipe(fn ($ids) => Championship::withoutTenantScope()->whereIn('id', $ids)->pluck('game'))
                 ->filter(fn ($game) => $scope === 'all' || Titles::game($game) === $scope)->count()),
 
@@ -211,7 +211,7 @@ class MetricRegistry
             new FactMetric('tt_top10', 'Time trial events finished in the top ten', fn (User $user) => $ttResults($user)->where('position', '<=', 10)->count(), 'acc'),
             new FactMetric('tt_win', 'Weekly time trial events won', fn (User $user) => $ttResults($user)->where('position', 1)->count(), 'acc'),
             new FactMetric('nords_tt', 'Time trial lap set at the Nordschleife',
-                fn (User $user) => $flag(TimeTrialLap::where('user_id', $user->id)->where('track', 'nurburgring_24h')->where('created_at', '>=', $since)->exists()), 'acc'),
+                fn (User $user) => $flag(TimeTrialLap::where('user_id', $user->id)->where('track', 'nurburgring_24h')->exists()), 'acc'),
             new FactMetric('nords_tt_top10', 'Nordschleife time trial finished in the top ten',
                 fn (User $user) => $ttResults($user)->whereIn('time_trial_event_id', $nordsEvents())->where('position', '<=', 10)->count(), 'acc'),
         ];

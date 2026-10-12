@@ -1,6 +1,6 @@
 {{-- The reveal: plays when the profile opens with XP the driver has not seen yet
      (App\Xp\DriverXp::reveal, xp-reveal.js). Once shown it is marked as seen. --}}
-<div class="xp-reveal" data-xp-reveal='@json($xpReveal)' data-xp-seen-url="{{ route('profile.xp.seen') }}"
+<div class="xp-reveal" data-xp-reveal='@json($xpReveal)' @unless($xpReveal['replay']) data-xp-seen-url="{{ route('profile.xp.seen') }}" @endunless
      role="dialog" aria-modal="true" aria-label="XP earned" hidden>
     <div class="xp-reveal__panel">
         <button type="button" class="xp-reveal__close" data-xp-close aria-label="Close">&times;</button>

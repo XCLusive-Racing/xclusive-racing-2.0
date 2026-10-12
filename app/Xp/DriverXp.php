@@ -63,7 +63,10 @@ class DriverXp
 
     public function summary(User $user): array
     {
-        return $this->position((int) $user->xp_total);
+        return $this->position((int) $user->xp_total) + [
+            // There is XP to show in a reveal: the last one seen can be played again.
+            'replay' => XpLedgerEntry::where('user_id', $user->id)->exists(),
+        ];
     }
 
     // The collection: what the driver can earn today, by category, each tiered family as
@@ -130,9 +133,19 @@ class DriverXp
 
     // Everything earned since the driver last looked, shaped for the reveal (xp-reveal.js):
     // null when there is nothing new. One race shows its own lines; several show a line each.
-    public function reveal(User $user): ?array
+    // With $replay and nothing new, the last reveal the driver saw is shown again.
+    public function reveal(User $user, bool $replay = false): ?array
     {
         $entries = XpLedgerEntry::where('user_id', $user->id)->whereNull('seen_at')->orderBy('id')->get();
+        $replayed = false;
+
+        if ($entries->isEmpty() && $replay) {
+            // What was marked seen together was revealed together.
+            $last = XpLedgerEntry::where('user_id', $user->id)->max('seen_at');
+            $entries = $last ? XpLedgerEntry::where('user_id', $user->id)->where('seen_at', $last)->orderBy('id')->get() : $entries;
+            $replayed = true;
+        }
+
         if ($entries->isEmpty()) {
             return null;
         }
@@ -185,13 +198,14 @@ class DriverXp
         $to = min($this->curve->maxRank(), $this->curve->rankFor($after) + 1);
 
         return [
-            'title' => $races->count() === 1 ? $races->first()->reason : ($races->count() > 1 ? $races->count().' races' : 'XP earned'),
-            'eyebrow' => $races->isEmpty() ? 'New XP' : ($races->count() === 1 ? 'Race complete' : 'Since your last visit'),
+            'title' => $races->count() === 1 ? $races->first()->reason : ($races->count() > 1 ? $races->count().' races' : ($achievements ? 'Your history at XCL' : 'XP earned')),
+            'eyebrow' => $races->isEmpty() ? ($achievements ? 'Achievements unlocked' : 'New XP') : ($races->count() === 1 ? 'Race complete' : 'Since your last visit'),
             'lines' => $lines,
             'achievements' => $achievements,
             'before' => $before,
             'after' => $after,
             'gained' => $gained,
+            'replay' => $replayed,
             // The part of the curve the reveal moves through: level => XP it starts at.
             'curve' => $this->curve->levels()->toBase()->only(range($from, $to))->map(fn ($level) => (int) $level->cumulative_xp)->all(),
         ];

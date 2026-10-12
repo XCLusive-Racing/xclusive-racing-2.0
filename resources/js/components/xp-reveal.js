@@ -5,7 +5,22 @@
 // Everything it shows comes from the element's data-xp-reveal JSON.
 export function initXpReveal() {
     const root = document.querySelector('[data-xp-reveal]');
-    if (!root) return;
+
+    // The Driver Level bar on the profile runs up to its value: straight away, or once the
+    // reveal has been closed.
+    const cardFill = document.querySelector('[data-xp-card-fill]');
+    const fillCard = () => {
+        if (cardFill) requestAnimationFrame(() => requestAnimationFrame(() => { cardFill.style.width = `${cardFill.dataset.xpCardFill}%`; }));
+    };
+
+    // "View achievements" on the card opens that tab further down and scrolls to it.
+    document.querySelector('[data-xp-show-achievements]')?.addEventListener('click', () => {
+        const tab = document.querySelector('[data-tab-btn="achievements"]');
+        tab?.click();
+        tab?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    if (!root) return fillCard();
 
     const data   = JSON.parse(root.dataset.xpReveal);
     const ranks  = Object.keys(data.curve).map(Number).sort((a, b) => a - b);
@@ -15,6 +30,9 @@ export function initXpReveal() {
     const button = q('[data-xp-continue]');
     const fmt    = n => Math.round(n).toLocaleString('en-GB');
     const calm   = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // A long list (a whole history unlocked at once) runs through quickly.
+    const quick = cards.length > 10;
 
     let run = 0;        // which playthrough is current (a replay cancels the previous one)
     let skipped = false;
@@ -59,7 +77,7 @@ export function initXpReveal() {
 
     // Counts the total from one value to the next, bar and rank following along.
     async function count(from, to, id) {
-        const steps = 24;
+        const steps = quick ? 6 : 24;
         for (let i = 1; i <= steps; i++) {
             if (skipped || id !== run) break;
             show(from + ((to - from) * i) / steps, from + ((to - from) * i) / steps - data.before);
@@ -106,7 +124,7 @@ export function initXpReveal() {
             card.classList.add('is-in');
             await count(xp, xp + data.achievements[i].xp, id);
             xp += data.achievements[i].xp;
-            await wait(420, id);
+            await wait(quick ? 60 : 420, id);
         }
 
         if (id === run) finish();
@@ -116,6 +134,7 @@ export function initXpReveal() {
         run++;
         root.hidden = true;
         document.body.style.overflow = '';
+        fillCard();
     }
 
     // First press ends the animation, the next one closes.

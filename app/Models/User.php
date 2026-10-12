@@ -538,6 +538,8 @@ class User extends Authenticatable
             'podiums' => $podiums,
             'top5s' => $classified->where('position', '<=', 5)->count(),
             'top10s' => $classified->where('position', '<=', 10)->count(),
+            // Fastest in qualifying, counted once per race.
+            'poles' => $this->raceResults()->where('session_type', 'quali')->where('position', 1)->distinct()->count('race_id'),
             'fastest_race_laps' => $started->where('fastest_lap', true)->count(),
             'win_rate' => $totalRaces > 0 ? round(($wins / $totalRaces) * 100) : 0,
         ];

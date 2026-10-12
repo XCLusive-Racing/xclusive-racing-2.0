@@ -70,7 +70,7 @@
         <div class="row g-3 mb-4">
             <div class="col-md-4">
                 <div class="bg-white rounded-3 shadow-sm p-4 elo-card elo-acc">
-                    <div class="small fw-bold text-secondary text-uppercase tracking-wide mb-2">ACC CONSOLE</div>
+                    <div class="small fw-bold text-secondary text-uppercase tracking-wide mb-2">ACC</div>
                     <div class="elo-value">{{ $user->elo_acc }}</div>
                     <p class="text-secondary small mb-1">Current Rating</p>
                     <div>
@@ -148,6 +148,7 @@
                     ['label' => 'Podiums',     'value' => $stats['podiums']],
                     ['label' => 'Top 5s',      'value' => $stats['top5s']],
                     ['label' => 'Top 10s',     'value' => $stats['top10s']],
+                    ['label' => 'Poles',       'value' => $stats['poles']],
                     ['label' => 'Fastest Laps','value' => $stats['fastest_race_laps']],
                     ['label' => 'Win Rate',    'value' => $stats['win_rate'] . '%'],
                 ] as $stat)

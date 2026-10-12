@@ -32,7 +32,7 @@ class XpAwarder
     /** @return array{race_xp: int, awards: int, rank_before: int, rank_after: int} */
     public function processRace(User $user, Race $race): array
     {
-        // A race from before the launch earns nothing and moves nothing.
+        // A race from before the launch earns no racing XP (its results still count as history).
         if (! Launch::counts($race->scheduled_at)) {
             return ['race_xp' => 0, 'awards' => 0, 'rank_before' => (int) $user->xp_rank, 'rank_after' => (int) $user->xp_rank];
         }

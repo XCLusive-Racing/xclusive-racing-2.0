@@ -10,8 +10,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 // A driver's race history, loaded once and shaped for the metrics: one plain row per race
-// session they have a result in since the launch (App\Xp\Launch), oldest first, each
-// carrying its XP title and platform. Races from before the launch are not in it.
+// session they have a result in, oldest first, each carrying its XP title and platform.
+// The whole history counts towards achievements, races from before the XP launch too.
 // rows($scope) is the one place a title scope is applied.
 class DriverHistory
 {
@@ -48,14 +48,8 @@ class DriverHistory
 
     private function load(): Collection
     {
-        $launch = Launch::at();
-        if (! $launch) {
-            return collect();
-        }
-
         $results = RaceResult::where('user_id', $this->user->id)
             ->where('session_type', 'race')
-            ->where('race_scheduled_at', '>=', $launch)
             ->orderBy('race_scheduled_at')->orderBy('race_number')->orderBy('id')
             ->get();
 

@@ -131,7 +131,12 @@ class XpProfileTest extends TestCase
         $this->assertSame(0, XpLedgerEntry::where('user_id', $user->id)->whereNull('seen_at')->count());
         $this->assertSame(0, AchievementAward::where('user_id', $user->id)->whereNull('seen_at')->count());
         $this->assertSame($total, (int) XpLedgerEntry::where('user_id', $user->id)->sum('xp'));
-        $this->actingAs($user->fresh())->get(route('profile'))->assertOk()->assertDontSee('data-xp-reveal', false);
+        $this->actingAs($user->fresh())->get(route('profile'))->assertOk()->assertDontSee('data-xp-reveal', false)->assertSee('Replay progress')->assertSee('View achievements');
+
+        // It can be played again, and that marks nothing.
+        $again = $this->actingAs($user->fresh())->get(route('profile', ['xp_replay' => 1]))->assertOk()
+            ->assertSee('data-xp-reveal', false)->assertDontSee('data-xp-seen-url', false)->viewData('xpReveal');
+        $this->assertSame([$reveal['before'], $reveal['after'], $reveal['lines']], [$again['before'], $again['after'], $again['lines']]);
     }
 
     public function test_several_races_are_revealed_as_a_line_each(): void

@@ -16,6 +16,10 @@ completed last, so the next session can pick up without re-deriving context.
   Phase 1 tasks are still open (unticked below): the stored championship classification,
   the restart/star data, late account linking, and the nightly reconcile. Do not start
   Phase 2 until those are done or deliberately moved.
+- **2026-10-12 — decision 18 revised: history counts towards achievements.** Built:
+  the metrics read the whole history plus the legacy totals, and `xp:award-history`
+  (`--dry-run`, `--user=`) awards what is already met. It has **not been run on
+  production yet**; run the dry run first. The launch date now gates racing XP only.
 - **2026-10-12 — XP is live and Phase 2 has started.** Migrations ran on production and
   `XP_ENABLED` / `XP_LAUNCH_AT` are set there. On the driver's own profile
   (`App\Xp\DriverXp`): the Driver Level card with the bar to the next level under the
@@ -553,12 +557,18 @@ interface Metric {
     - title-specific achievements for a title are added to the catalogue when that title
       starts (LMU's own ladder when LMU launches), not before. Until then nothing scoped
       to a title without results is shown to drivers.
-18. **Everybody starts at zero on launch day** (decided 2026-10-12). Races driven before
-    the launch date earn no XP and count towards no achievement, and the pre-website
-    totals (`users.legacy_*`) count for nothing. There is no backfill and no welcome
-    screen. The launch date is one stored value; every race metric counts from it. Facts
-    that are not races are read as they stand: current Safety Rating and XCL Rating,
-    months since the account was created, a linked Discord account.
+18. **A driver's history counts towards achievements; racing XP starts at the launch**
+    (revised 2026-10-12, later the same day; it replaces "everybody starts at zero").
+    Drivers already hold things the catalogue rewards (rating tiers, a 9.50 Safety Rating),
+    so those cannot sensibly be withheld. What follows:
+    - every metric counts the whole history: results on the site, reports, time trials,
+      and the pre-website totals (`users.legacy_races / legacy_wins / legacy_podiums`,
+      added in the all-titles scope, because they carry no title, date, track or car);
+    - `xp:award-history` awards every driver the achievements that history already meets,
+      with a dry run; it is repeatable, so it is run again after more old stats are
+      imported (`xcl:import:legacystats`);
+    - **racing XP is not paid for old races.** `XP_LAUNCH_AT` gates racing XP only.
+    - a driver sees the backfilled achievements once, as one reveal ("Your history at XCL").
 19. **Awards are made straight after the race and never taken back** (decided
     2026-10-12). No grace period. A later penalty or DSQ removes nothing (decision 1). If
     a correction makes the result better, the difference in racing XP is added as a

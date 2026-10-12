@@ -5,9 +5,9 @@ namespace App\Xp;
 use DateTimeInterface;
 use Illuminate\Support\Carbon;
 
-// The moment XP starts (config xp.launch_at, UK time). Everybody starts from zero: a race,
-// a report or a time trial from before it earns nothing and counts towards nothing. With
-// no launch date set, nothing counts at all.
+// The moment racing XP starts (config xp.launch_at, UK time). A race from before it earns
+// no racing XP; it does count towards achievements, like the rest of a driver's history
+// (xp:award-history). With no launch date set, no race awards anything.
 class Launch
 {
     public static function at(): ?Carbon
