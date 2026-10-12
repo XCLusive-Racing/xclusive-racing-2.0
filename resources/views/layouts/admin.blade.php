@@ -290,6 +290,33 @@
         </div>
         @endif
 
+        @if(auth()->user()->isOwner() || auth()->user()->isAdmin())
+        {{-- XP & Achievements --}}
+        <div class="admin-nav-section-header" data-section="xp">
+            <span>XP &amp; Achievements</span>
+            <svg data-section-arrow width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="transition:transform .2s">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </div>
+        <div class="admin-nav-section-divider" style="display:none"></div>
+
+        <div data-section-content="xp">
+            @foreach([
+                ['admin.xp.achievements.index', 'admin.xp.achievements.*', 'Achievements', 'M5 3h14v4a7 7 0 01-14 0V3zM9 21h6M12 14v7'],
+                ['admin.xp.curve', 'admin.xp.curve', 'Rank curve', 'M3 17l6-6 4 4 8-8M14 7h7v7'],
+                ['admin.xp.games.index', 'admin.xp.games.*', 'Games', 'M6 12h4M8 10v4M15 13h.01M18 11h.01M4 8h16a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2v-6a2 2 0 012-2z'],
+                ['admin.xp.adjustments.index', 'admin.xp.adjustments.*', 'Adjustments', 'M12 5v14M5 12h14'],
+            ] as [$xpRoute, $xpPattern, $xpLabel, $xpIcon])
+            <a href="{{ route($xpRoute) }}" class="admin-nav-link {{ request()->routeIs($xpPattern) ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="{{ $xpIcon }}"/>
+                </svg>
+                <span>{{ $xpLabel }}</span>
+            </a>
+            @endforeach
+        </div>
+        @endif
+
         @if(auth()->user()->canManage() || auth()->user()->isLeagueManager() || auth()->user()->isChampionshipManager())
         {{-- Leagues --}}
         <div class="admin-nav-section-header" data-section="leagues">

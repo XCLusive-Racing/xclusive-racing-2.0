@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AchievementController;
 use App\Http\Controllers\Admin\ApplicationController as AdminApplicationController;
 use App\Http\Controllers\Admin\BopController as AdminBopController;
 use App\Http\Controllers\Admin\BroadcastController;
@@ -27,6 +28,8 @@ use App\Http\Controllers\Admin\SessionFormatController;
 use App\Http\Controllers\Admin\TeamEventController as AdminTeamEventController;
 use App\Http\Controllers\Admin\TimeTrialEventController as AdminTimeTrialEventController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\XpAdjustmentController;
+use App\Http\Controllers\Admin\XpGameController;
 use App\Http\Controllers\Auth\DiscordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
@@ -364,6 +367,27 @@ Route::middleware(['auth', 'role:owner,admin,steward,league_steward'])->prefix('
 // Penalty processing — owner, admin only
 Route::middleware(['auth', 'role:owner,admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::post('/reports/{report}/process', [AdminReportController::class, 'process'])->name('reports.process');
+});
+
+// XP & Achievements (docs/xp-achievements/PLAN.md) — owner + admin
+Route::middleware(['auth', 'role:owner,admin'])->prefix('admin/xp')->name('admin.xp.')->group(function () {
+    Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
+    Route::get('/achievements/create', [AchievementController::class, 'create'])->name('achievements.create');
+    Route::post('/achievements', [AchievementController::class, 'store'])->name('achievements.store');
+    Route::get('/achievements/{achievement}/edit', [AchievementController::class, 'edit'])->name('achievements.edit');
+    Route::put('/achievements/{achievement}', [AchievementController::class, 'update'])->name('achievements.update');
+    // No delete route on purpose: archiving is the only removal.
+    Route::post('/achievements/{achievement}/archive', [AchievementController::class, 'archive'])->name('achievements.archive');
+
+    Route::get('/curve', [AchievementController::class, 'curve'])->name('curve');
+    Route::post('/curve/refit', [AchievementController::class, 'refitCurve'])->name('curve.refit');
+
+    Route::get('/games', [XpGameController::class, 'index'])->name('games.index');
+    Route::post('/games', [XpGameController::class, 'store'])->name('games.store');
+    Route::put('/games/{game}', [XpGameController::class, 'update'])->name('games.update');
+
+    Route::get('/adjustments', [XpAdjustmentController::class, 'index'])->name('adjustments.index');
+    Route::post('/adjustments', [XpAdjustmentController::class, 'store'])->name('adjustments.store');
 });
 
 // Owner + moderator + event_manager — Users

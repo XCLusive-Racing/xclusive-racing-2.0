@@ -1,0 +1,400 @@
+category,game,code,name,description,xp,metric,threshold,family
+Championship,all,champ_completed_1,"Full Season 1","Complete 1 full championship seasons",600,championships_completed,1,champ_completed
+Championship,all,champ_completed_3,"Full Season 3","Complete 3 full championship seasons",1500,championships_completed,3,champ_completed
+Championship,all,champ_completed_5,"Full Season 5","Complete 5 full championship seasons",2500,championships_completed,5,champ_completed
+Championship,all,champ_completed_10,"Full Season 10","Complete 10 full championship seasons",5000,championships_completed,10,champ_completed
+Championship,all,champ_completed_25,"Full Season 25","Complete 25 full championship seasons",12000,championships_completed,25,champ_completed
+Championship,all,champ_entered_1,"Contender 1","Enter 1 championships",300,championships_entered,1,champ_entered
+Championship,all,champ_entered_3,"Contender 3","Enter 3 championships",800,championships_entered,3,champ_entered
+Championship,all,champ_entered_5,"Contender 5","Enter 5 championships",1500,championships_entered,5,champ_entered
+Championship,all,champ_entered_10,"Contender 10","Enter 10 championships",3000,championships_entered,10,champ_entered
+Championship,all,champ_entered_25,"Contender 25","Enter 25 championships",7000,championships_entered,25,champ_entered
+Championship,all,champ_runner_up,"So Close","Finish a championship in second place",1500,champ_runner_up,1,champ_runner_up
+Championship,all,champ_team_title,"Team Champion","Win a team championship title",4000,champ_team_title,1,champ_team_title
+Championship,all,champ_titles_1,"Champion 1","Win 1 championship titles",3000,championship_titles,1,champ_titles
+Championship,all,champ_titles_2,"Champion 2","Win 2 championship titles",5000,championship_titles,2,champ_titles
+Championship,all,champ_titles_3,"Champion 3","Win 3 championship titles",8000,championship_titles,3,champ_titles
+Championship,all,champ_titles_5,"Champion 5","Win 5 championship titles",15000,championship_titles,5,champ_titles
+Championship,all,champ_titles_10,"Champion 10","Win 10 championship titles",30000,championship_titles,10,champ_titles
+"Clean Driving",all,clean_race_1,"Clean Race 1","Finish 1 races without a single penalty",75,clean_races,1,clean_race
+"Clean Driving",all,clean_race_5,"Clean Race 5","Finish 5 races without a single penalty",150,clean_races,5,clean_race
+"Clean Driving",all,clean_race_10,"Clean Race 10","Finish 10 races without a single penalty",250,clean_races,10,clean_race
+"Clean Driving",all,clean_race_25,"Clean Race 25","Finish 25 races without a single penalty",500,clean_races,25,clean_race
+"Clean Driving",all,clean_race_50,"Clean Race 50","Finish 50 races without a single penalty",800,clean_races,50,clean_race
+"Clean Driving",all,clean_race_100,"Clean Race 100","Finish 100 races without a single penalty",1500,clean_races,100,clean_race
+"Clean Driving",all,clean_race_250,"Clean Race 250","Finish 250 races without a single penalty",3500,clean_races,250,clean_race
+"Clean Driving",all,clean_race_500,"Clean Race 500","Finish 500 races without a single penalty",8000,clean_races,500,clean_race
+"Clean Driving",all,clean_streak_3,"Unblemished 3","Complete 3 races in a row without a penalty",300,clean_race_streak,3,clean_streak
+"Clean Driving",all,clean_streak_5,"Unblemished 5","Complete 5 races in a row without a penalty",600,clean_race_streak,5,clean_streak
+"Clean Driving",all,clean_streak_10,"Unblemished 10","Complete 10 races in a row without a penalty",1200,clean_race_streak,10,clean_streak
+"Clean Driving",all,clean_streak_25,"Unblemished 25","Complete 25 races in a row without a penalty",3000,clean_race_streak,25,clean_streak
+"Clean Driving",all,clean_streak_50,"Unblemished 50","Complete 50 races in a row without a penalty",6000,clean_race_streak,50,clean_streak
+"Clean Driving",all,no_contact_1,"No Contact 1","Finish 1 races with no reported contact",100,no_contact_races,1,no_contact
+"Clean Driving",all,no_contact_5,"No Contact 5","Finish 5 races with no reported contact",200,no_contact_races,5,no_contact
+"Clean Driving",all,no_contact_10,"No Contact 10","Finish 10 races with no reported contact",350,no_contact_races,10,no_contact
+"Clean Driving",all,no_contact_25,"No Contact 25","Finish 25 races with no reported contact",700,no_contact_races,25,no_contact
+"Clean Driving",all,no_contact_50,"No Contact 50","Finish 50 races with no reported contact",1200,no_contact_races,50,no_contact
+"Clean Driving",all,no_contact_100,"No Contact 100","Finish 100 races with no reported contact",2500,no_contact_races,100,no_contact
+"Clean Driving",all,redemption,Redemption,"Climb back to safety rating 5.00 after dropping below 3.00",1500,redemption,1,redemption
+"Clean Driving",all,spotless_season,Spotless,"Complete a full championship season without a penalty",4000,spotless_season,1,spotless_season
+"Clean Driving",all,sr_max,Untouchable,"Reach a safety rating of 9.50 or higher",10000,sr_max,1,sr_max
+"Clean Driving",all,sr_milestone_4.5,"Safety Rating 4.5","Reach a safety rating of 4.5",200,safety_rating,4.5,sr_milestone
+"Clean Driving",all,sr_milestone_5,"Safety Rating 5","Reach a safety rating of 5",350,safety_rating,5,sr_milestone
+"Clean Driving",all,sr_milestone_5.5,"Safety Rating 5.5","Reach a safety rating of 5.5",500,safety_rating,5.5,sr_milestone
+"Clean Driving",all,sr_milestone_6,"Safety Rating 6","Reach a safety rating of 6",700,safety_rating,6,sr_milestone
+"Clean Driving",all,sr_milestone_6.5,"Safety Rating 6.5","Reach a safety rating of 6.5",950,safety_rating,6.5,sr_milestone
+"Clean Driving",all,sr_milestone_7,"Safety Rating 7","Reach a safety rating of 7",1300,safety_rating,7,sr_milestone
+"Clean Driving",all,sr_milestone_7.5,"Safety Rating 7.5","Reach a safety rating of 7.5",1800,safety_rating,7.5,sr_milestone
+"Clean Driving",all,sr_milestone_8,"Safety Rating 8","Reach a safety rating of 8",2600,safety_rating,8,sr_milestone
+"Clean Driving",all,sr_milestone_8.5,"Safety Rating 8.5","Reach a safety rating of 8.5",4000,safety_rating,8.5,sr_milestone
+"Clean Driving",all,sr_milestone_9,"Safety Rating 9","Reach a safety rating of 9",6000,safety_rating,9,sr_milestone
+"Clean Driving",all,within_lines_1,"Within The Lines 1","Finish 1 races with every lap valid",75,valid_lap_races,1,within_lines
+"Clean Driving",all,within_lines_5,"Within The Lines 5","Finish 5 races with every lap valid",150,valid_lap_races,5,within_lines
+"Clean Driving",all,within_lines_10,"Within The Lines 10","Finish 10 races with every lap valid",250,valid_lap_races,10,within_lines
+"Clean Driving",all,within_lines_25,"Within The Lines 25","Finish 25 races with every lap valid",500,valid_lap_races,25,within_lines
+"Clean Driving",all,within_lines_50,"Within The Lines 50","Finish 50 races with every lap valid",800,valid_lap_races,50,within_lines
+"Clean Driving",all,within_lines_100,"Within The Lines 100","Finish 100 races with every lap valid",1500,valid_lap_races,100,within_lines
+"Clean Driving",all,within_lines_250,"Within The Lines 250","Finish 250 races with every lap valid",3500,valid_lap_races,250,within_lines
+"Clean Driving",all,within_lines_500,"Within The Lines 500","Finish 500 races with every lap valid",8000,valid_lap_races,500,within_lines
+Coaching,all,coaching_first,Student,"Complete your first coaching session",1500,coaching_first,1,coaching_first
+Coaching,all,coaching_improve,"Lesson Learned","Improve a personal best within a week of a coaching session",2000,coaching_improve,1,coaching_improve
+Coaching,all,coaching_sessions_1,"Coached 1","Complete 1 coaching sessions",800,coaching_sessions,1,coaching_sessions
+Coaching,all,coaching_sessions_3,"Coached 3","Complete 3 coaching sessions",2000,coaching_sessions,3,coaching_sessions
+Coaching,all,coaching_sessions_5,"Coached 5","Complete 5 coaching sessions",3500,coaching_sessions,5,coaching_sessions
+Coaching,all,coaching_sessions_10,"Coached 10","Complete 10 coaching sessions",7000,coaching_sessions,10,coaching_sessions
+Coaching,all,setup_download,"Tuned In","Download a setup from the setup library",300,setup_download,1,setup_download
+Community,all,discord_linked,"On Comms","Link your Discord account",200,discord_linked,1,discord_linked
+Community,all,first_team,"Squad Member","Join a racing team",500,first_team,1,first_team
+Community,all,livery_upload,"Painted Up","Upload a custom livery",500,livery_upload,1,livery_upload
+Community,all,profile_complete,"Suited Up","Complete your profile with an avatar and platform linked",200,profile_complete,1,profile_complete
+Community,all,referrals_1,"Recruiter 1","Refer 1 drivers who complete a race",500,referrals,1,referrals
+Community,all,referrals_3,"Recruiter 3","Refer 3 drivers who complete a race",1200,referrals,3,referrals
+Community,all,referrals_5,"Recruiter 5","Refer 5 drivers who complete a race",2000,referrals,5,referrals
+Community,all,referrals_10,"Recruiter 10","Refer 10 drivers who complete a race",4000,referrals,10,referrals
+Community,all,referrals_25,"Recruiter 25","Refer 25 drivers who complete a race",9000,referrals,25,referrals
+Community,all,seasons_member_1,"Veteran 1","Be a member for 1 months",100,months_member,1,seasons_member
+Community,all,seasons_member_3,"Veteran 3","Be a member for 3 months",300,months_member,3,seasons_member
+Community,all,seasons_member_6,"Veteran 6","Be a member for 6 months",700,months_member,6,seasons_member
+Community,all,seasons_member_12,"Veteran 12","Be a member for 12 months",1500,months_member,12,seasons_member
+Community,all,seasons_member_24,"Veteran 24","Be a member for 24 months",4000,months_member,24,seasons_member
+Community,all,seasons_member_36,"Veteran 36","Be a member for 36 months",9000,months_member,36,seasons_member
+Community,all,team_founder,"Team Principal","Found a racing team",1000,team_founder,1,team_founder
+Consistency,all,finish_streak_3,"Reliable 3","Finish 3 races in a row",200,finish_streak,3,finish_streak
+Consistency,all,finish_streak_5,"Reliable 5","Finish 5 races in a row",400,finish_streak,5,finish_streak
+Consistency,all,finish_streak_10,"Reliable 10","Finish 10 races in a row",800,finish_streak,10,finish_streak
+Consistency,all,finish_streak_25,"Reliable 25","Finish 25 races in a row",2000,finish_streak,25,finish_streak
+Consistency,all,finish_streak_50,"Reliable 50","Finish 50 races in a row",4000,finish_streak,50,finish_streak
+Consistency,all,finish_streak_100,"Reliable 100","Finish 100 races in a row",8000,finish_streak,100,finish_streak
+Consistency,all,iron_man,"Iron Man","Race in all three timezone blocks within one week",1500,iron_man,1,iron_man
+Consistency,all,metronome,Metronome,"Complete a race where every lap is within one second of your average",1200,metronome,1,metronome
+Consistency,all,night_shift,"Night Shift","Complete ten races starting between midnight and 6am your local time",1000,night_shift,1,night_shift
+Consistency,all,podium_streak_2,"On A Roll 2","Finish on the podium 2 races in a row",500,podium_streak,2,podium_streak
+Consistency,all,podium_streak_3,"On A Roll 3","Finish on the podium 3 races in a row",900,podium_streak,3,podium_streak
+Consistency,all,podium_streak_5,"On A Roll 5","Finish on the podium 5 races in a row",2000,podium_streak,5,podium_streak
+Consistency,all,podium_streak_10,"On A Roll 10","Finish on the podium 10 races in a row",5000,podium_streak,10,podium_streak
+Consistency,all,weeks_active_2,"Regular 2","Race in 2 different weeks",150,weeks_active,2,weeks_active
+Consistency,all,weeks_active_4,"Regular 4","Race in 4 different weeks",300,weeks_active,4,weeks_active
+Consistency,all,weeks_active_8,"Regular 8","Race in 8 different weeks",600,weeks_active,8,weeks_active
+Consistency,all,weeks_active_12,"Regular 12","Race in 12 different weeks",1000,weeks_active,12,weeks_active
+Consistency,all,weeks_active_26,"Regular 26","Race in 26 different weeks",2500,weeks_active,26,weeks_active
+Consistency,all,weeks_active_52,"Regular 52","Race in 52 different weeks",6000,weeks_active,52,weeks_active
+Consistency,all,weeks_active_104,"Regular 104","Race in 104 different weeks",14000,weeks_active,104,weeks_active
+"Cross Title",all,cross_platform,"No Boundaries","Race on both console and PC",2000,cross_platform,1,cross_platform
+"Cross Title",all,titles_clean,"Clean Everywhere","Finish a clean race in three different titles",4000,titles_clean,1,titles_clean
+"Cross Title",all,titles_raced_2,"Multi Discipline 2","Complete a race in 2 different titles",1500,unique_titles,2,titles_raced
+"Cross Title",all,titles_raced_3,"Multi Discipline 3","Complete a race in 3 different titles",4000,unique_titles,3,titles_raced
+"Cross Title",all,titles_raced_4,"Multi Discipline 4","Complete a race in 4 different titles",9000,unique_titles,4,titles_raced
+"Cross Title",all,titles_races_50,"Across The Board 50","Complete 50 races counting every title together",800,races_completed,50,titles_races
+"Cross Title",all,titles_races_100,"Across The Board 100","Complete 100 races counting every title together",1500,races_completed,100,titles_races
+"Cross Title",all,titles_races_250,"Across The Board 250","Complete 250 races counting every title together",3500,races_completed,250,titles_races
+"Cross Title",all,titles_races_500,"Across The Board 500","Complete 500 races counting every title together",7000,races_completed,500,titles_races
+"Cross Title",all,titles_races_1000,"Across The Board 1000","Complete 1000 races counting every title together",15000,races_completed,1000,titles_races
+"Cross Title",all,titles_week,"Busy Week","Race in three different titles within one week",2500,titles_week,1,titles_week
+"Cross Title",all,titles_won_2,"Winner Everywhere 2","Win a race in 2 different titles",3000,unique_titles_won,2,titles_won
+"Cross Title",all,titles_won_3,"Winner Everywhere 3","Win a race in 3 different titles",8000,unique_titles_won,3,titles_won
+"Cross Title",all,titles_won_4,"Winner Everywhere 4","Win a race in 4 different titles",18000,unique_titles_won,4,titles_won
+Nordschleife,acc,nords_clean_race,"Survived The Ring","Finish a Nordschleife race with every lap valid and no penalty",3000,nords_clean_race,1,nords_clean_race
+Nordschleife,acc,nords_endurance,"The Long Lap","Complete an endurance race at the Nordschleife",4000,nords_endurance,1,nords_endurance
+Nordschleife,acc,nords_first,"Green Hell","Complete your first race at the Nordschleife",1000,nords_first,1,nords_first
+Nordschleife,acc,nords_laps_1,"Round The Ring 1","Complete 1 laps of the Nordschleife",300,nords_laps,1,nords_laps
+Nordschleife,acc,nords_laps_5,"Round The Ring 5","Complete 5 laps of the Nordschleife",600,nords_laps,5,nords_laps
+Nordschleife,acc,nords_laps_10,"Round The Ring 10","Complete 10 laps of the Nordschleife",1000,nords_laps,10,nords_laps
+Nordschleife,acc,nords_laps_25,"Round The Ring 25","Complete 25 laps of the Nordschleife",1800,nords_laps,25,nords_laps
+Nordschleife,acc,nords_laps_50,"Round The Ring 50","Complete 50 laps of the Nordschleife",3000,nords_laps,50,nords_laps
+Nordschleife,acc,nords_laps_100,"Round The Ring 100","Complete 100 laps of the Nordschleife",5500,nords_laps,100,nords_laps
+Nordschleife,acc,nords_laps_250,"Round The Ring 250","Complete 250 laps of the Nordschleife",12000,nords_laps,250,nords_laps
+Nordschleife,acc,nords_laps_500,"Round The Ring 500","Complete 500 laps of the Nordschleife",24000,nords_laps,500,nords_laps
+Nordschleife,acc,nords_night,"Into The Dark","Complete a Nordschleife lap at night",1500,nords_night,1,nords_night
+Nordschleife,acc,nords_races_1,"Nordschleife 1","Complete 1 races at the Nordschleife",500,nords_races,1,nords_races
+Nordschleife,acc,nords_races_3,"Nordschleife 3","Complete 3 races at the Nordschleife",1000,nords_races,3,nords_races
+Nordschleife,acc,nords_races_5,"Nordschleife 5","Complete 5 races at the Nordschleife",1800,nords_races,5,nords_races
+Nordschleife,acc,nords_races_10,"Nordschleife 10","Complete 10 races at the Nordschleife",3200,nords_races,10,nords_races
+Nordschleife,acc,nords_races_25,"Nordschleife 25","Complete 25 races at the Nordschleife",7000,nords_races,25,nords_races
+Nordschleife,acc,nords_races_50,"Nordschleife 50","Complete 50 races at the Nordschleife",14000,nords_races,50,nords_races
+Nordschleife,all,nords_sub_7:30,"Under 7:30","Set a Nordschleife lap under 7:30",18000,nords_best_lap,7:30,nords_sub
+Nordschleife,all,nords_sub_7:45,"Under 7:45","Set a Nordschleife lap under 7:45",9000,nords_best_lap,7:45,nords_sub
+Nordschleife,all,nords_sub_8:00,"Under 8:00","Set a Nordschleife lap under 8:00",4500,nords_best_lap,8:00,nords_sub
+Nordschleife,all,nords_sub_8:15,"Under 8:15","Set a Nordschleife lap under 8:15",2500,nords_best_lap,8:15,nords_sub
+Nordschleife,all,nords_sub_8:30,"Under 8:30","Set a Nordschleife lap under 8:30",1500,nords_best_lap,8:30,nords_sub
+Nordschleife,acc,nords_tt,"Ring Specialist","Set a time trial lap at the Nordschleife",1000,nords_tt,1,nords_tt
+Nordschleife,acc,nords_tt_top10,"Ring Master","Finish a Nordschleife time trial in the top ten",4000,nords_tt_top10,1,nords_tt_top10
+Nordschleife,all,nords_valid_laps_1,"Clean Through 1","Complete 1 valid laps of the Nordschleife in a row",400,nords_valid_streak,1,nords_valid_laps
+Nordschleife,all,nords_valid_laps_3,"Clean Through 3","Complete 3 valid laps of the Nordschleife in a row",900,nords_valid_streak,3,nords_valid_laps
+Nordschleife,all,nords_valid_laps_5,"Clean Through 5","Complete 5 valid laps of the Nordschleife in a row",1500,nords_valid_streak,5,nords_valid_laps
+Nordschleife,all,nords_valid_laps_10,"Clean Through 10","Complete 10 valid laps of the Nordschleife in a row",2800,nords_valid_streak,10,nords_valid_laps
+Nordschleife,all,nords_valid_laps_25,"Clean Through 25","Complete 25 valid laps of the Nordschleife in a row",6500,nords_valid_streak,25,nords_valid_laps
+Nordschleife,all,nords_valid_laps_50,"Clean Through 50","Complete 50 valid laps of the Nordschleife in a row",13000,nords_valid_streak,50,nords_valid_laps
+Nordschleife,acc,nords_wet,"Rain Master","Complete a Nordschleife lap in the wet",1500,nords_wet,1,nords_wet
+Participation,all,hours_raced_1,"Seat Time 1","Spend 1 hours in a race session",75,hours_raced,1,hours_raced
+Participation,all,hours_raced_5,"Seat Time 5","Spend 5 hours in a race session",150,hours_raced,5,hours_raced
+Participation,all,hours_raced_10,"Seat Time 10","Spend 10 hours in a race session",300,hours_raced,10,hours_raced
+Participation,all,hours_raced_25,"Seat Time 25","Spend 25 hours in a race session",600,hours_raced,25,hours_raced
+Participation,all,hours_raced_50,"Seat Time 50","Spend 50 hours in a race session",1000,hours_raced,50,hours_raced
+Participation,all,hours_raced_100,"Seat Time 100","Spend 100 hours in a race session",2000,hours_raced,100,hours_raced
+Participation,all,hours_raced_250,"Seat Time 250","Spend 250 hours in a race session",4500,hours_raced,250,hours_raced
+Participation,all,hours_raced_500,"Seat Time 500","Spend 500 hours in a race session",9000,hours_raced,500,hours_raced
+Participation,all,km_driven_100,"Odometer 100","Drive 100 km in competition",50,km_driven,100,km_driven
+Participation,all,km_driven_500,"Odometer 500","Drive 500 km in competition",150,km_driven,500,km_driven
+Participation,all,km_driven_1000,"Odometer 1000","Drive 1000 km in competition",300,km_driven,1000,km_driven
+Participation,all,km_driven_2500,"Odometer 2500","Drive 2500 km in competition",600,km_driven,2500,km_driven
+Participation,all,km_driven_5000,"Odometer 5000","Drive 5000 km in competition",1000,km_driven,5000,km_driven
+Participation,all,km_driven_10000,"Odometer 10000","Drive 10000 km in competition",2000,km_driven,10000,km_driven
+Participation,all,km_driven_25000,"Odometer 25000","Drive 25000 km in competition",4500,km_driven,25000,km_driven
+Participation,all,km_driven_50000,"Odometer 50000","Drive 50000 km in competition",9000,km_driven,50000,km_driven
+Participation,all,laps_completed_10,"Distance 10","Complete 10 racing laps",50,laps_completed,10,laps_completed
+Participation,all,laps_completed_50,"Distance 50","Complete 50 racing laps",100,laps_completed,50,laps_completed
+Participation,all,laps_completed_100,"Distance 100","Complete 100 racing laps",200,laps_completed,100,laps_completed
+Participation,all,laps_completed_250,"Distance 250","Complete 250 racing laps",400,laps_completed,250,laps_completed
+Participation,all,laps_completed_500,"Distance 500","Complete 500 racing laps",700,laps_completed,500,laps_completed
+Participation,all,laps_completed_1000,"Distance 1000","Complete 1000 racing laps",1200,laps_completed,1000,laps_completed
+Participation,all,laps_completed_2500,"Distance 2500","Complete 2500 racing laps",2500,laps_completed,2500,laps_completed
+Participation,all,laps_completed_5000,"Distance 5000","Complete 5000 racing laps",5000,laps_completed,5000,laps_completed
+Participation,all,laps_completed_10000,"Distance 10000","Complete 10000 racing laps",9000,laps_completed,10000,laps_completed
+Participation,all,laps_completed_25000,"Distance 25000","Complete 25000 racing laps",18000,laps_completed,25000,laps_completed
+Participation,all,races_completed_1,"Chequered Flag 1","Complete 1 races",50,races_completed,1,races_completed
+Participation,all,races_completed_5,"Chequered Flag 5","Complete 5 races",100,races_completed,5,races_completed
+Participation,all,races_completed_10,"Chequered Flag 10","Complete 10 races",150,races_completed,10,races_completed
+Participation,all,races_completed_25,"Chequered Flag 25","Complete 25 races",300,races_completed,25,races_completed
+Participation,all,races_completed_50,"Chequered Flag 50","Complete 50 races",500,races_completed,50,races_completed
+Participation,all,races_completed_75,"Chequered Flag 75","Complete 75 races",700,races_completed,75,races_completed
+Participation,all,races_completed_100,"Chequered Flag 100","Complete 100 races",1000,races_completed,100,races_completed
+Participation,all,races_completed_150,"Chequered Flag 150","Complete 150 races",1500,races_completed,150,races_completed
+Participation,all,races_completed_250,"Chequered Flag 250","Complete 250 races",2500,races_completed,250,races_completed
+Participation,all,races_completed_500,"Chequered Flag 500","Complete 500 races",5000,races_completed,500,races_completed
+Participation,all,races_completed_1000,"Chequered Flag 1000","Complete 1000 races",12000,races_completed,1000,races_completed
+Participation,all,races_entered_1,"Lights Out 1","Enter 1 races",50,races_entered,1,races_entered
+Participation,all,races_entered_2,"Lights Out 2","Enter 2 races",60,races_entered,2,races_entered
+Participation,all,races_entered_3,"Lights Out 3","Enter 3 races",75,races_entered,3,races_entered
+Participation,all,races_entered_5,"Lights Out 5","Enter 5 races",100,races_entered,5,races_entered
+Participation,all,races_entered_10,"Lights Out 10","Enter 10 races",150,races_entered,10,races_entered
+Participation,all,races_entered_15,"Lights Out 15","Enter 15 races",200,races_entered,15,races_entered
+Participation,all,races_entered_20,"Lights Out 20","Enter 20 races",250,races_entered,20,races_entered
+Participation,all,races_entered_25,"Lights Out 25","Enter 25 races",300,races_entered,25,races_entered
+Participation,all,races_entered_40,"Lights Out 40","Enter 40 races",400,races_entered,40,races_entered
+Participation,all,races_entered_50,"Lights Out 50","Enter 50 races",500,races_entered,50,races_entered
+Participation,all,races_entered_75,"Lights Out 75","Enter 75 races",700,races_entered,75,races_entered
+Participation,all,races_entered_100,"Lights Out 100","Enter 100 races",1000,races_entered,100,races_entered
+Participation,all,races_entered_150,"Lights Out 150","Enter 150 races",1400,races_entered,150,races_entered
+Participation,all,races_entered_200,"Lights Out 200","Enter 200 races",1900,races_entered,200,races_entered
+Participation,all,races_entered_250,"Lights Out 250","Enter 250 races",2500,races_entered,250,races_entered
+Participation,all,races_entered_350,"Lights Out 350","Enter 350 races",3400,races_entered,350,races_entered
+Participation,all,races_entered_500,"Lights Out 500","Enter 500 races",5000,races_entered,500,races_entered
+Participation,all,races_entered_750,"Lights Out 750","Enter 750 races",7500,races_entered,750,races_entered
+Participation,all,races_entered_1000,"Lights Out 1000","Enter 1000 races",12000,races_entered,1000,races_entered
+Participation,all,races_entered_1500,"Lights Out 1500","Enter 1500 races",20000,races_entered,1500,races_entered
+Participation,all,races_entered_2000,"Lights Out 2000","Enter 2000 races",32000,races_entered,2000,races_entered
+"Per Title",acc,acc_clean_10,"Assetto Corsa Competizione Clean Ten","Finish ten clean races in Assetto Corsa Competizione",1500,clean_races,10,acc_clean_10
+"Per Title",acc,acc_races_1,"Assetto Corsa Competizione 1","Complete 1 races in Assetto Corsa Competizione",300,races_completed,1,acc_races
+"Per Title",acc,acc_races_10,"Assetto Corsa Competizione 10","Complete 10 races in Assetto Corsa Competizione",700,races_completed,10,acc_races
+"Per Title",acc,acc_races_50,"Assetto Corsa Competizione 50","Complete 50 races in Assetto Corsa Competizione",1800,races_completed,50,acc_races
+"Per Title",acc,acc_races_100,"Assetto Corsa Competizione 100","Complete 100 races in Assetto Corsa Competizione",3500,races_completed,100,acc_races
+"Per Title",acc,acc_races_250,"Assetto Corsa Competizione 250","Complete 250 races in Assetto Corsa Competizione",8000,races_completed,250,acc_races
+"Per Title",acc,acc_wins_1,"Assetto Corsa Competizione Winner 1","Win 1 races in Assetto Corsa Competizione",800,wins,1,acc_wins
+"Per Title",acc,acc_wins_5,"Assetto Corsa Competizione Winner 5","Win 5 races in Assetto Corsa Competizione",2000,wins,5,acc_wins
+"Per Title",acc,acc_wins_25,"Assetto Corsa Competizione Winner 25","Win 25 races in Assetto Corsa Competizione",6000,wins,25,acc_wins
+"Per Title",iracing,iracing_clean_10,"iRacing Clean Ten","Finish ten clean races in iRacing",1500,clean_races,10,iracing_clean_10
+"Per Title",iracing,iracing_races_1,"iRacing 1","Complete 1 races in iRacing",300,races_completed,1,iracing_races
+"Per Title",iracing,iracing_races_10,"iRacing 10","Complete 10 races in iRacing",700,races_completed,10,iracing_races
+"Per Title",iracing,iracing_races_50,"iRacing 50","Complete 50 races in iRacing",1800,races_completed,50,iracing_races
+"Per Title",iracing,iracing_races_100,"iRacing 100","Complete 100 races in iRacing",3500,races_completed,100,iracing_races
+"Per Title",iracing,iracing_races_250,"iRacing 250","Complete 250 races in iRacing",8000,races_completed,250,iracing_races
+"Per Title",iracing,iracing_wins_1,"iRacing Winner 1","Win 1 races in iRacing",800,wins,1,iracing_wins
+"Per Title",iracing,iracing_wins_5,"iRacing Winner 5","Win 5 races in iRacing",2000,wins,5,iracing_wins
+"Per Title",iracing,iracing_wins_25,"iRacing Winner 25","Win 25 races in iRacing",6000,wins,25,iracing_wins
+"Per Title",lmu,lmu_clean_10,"Le Mans Ultimate Clean Ten","Finish ten clean races in Le Mans Ultimate",1500,clean_races,10,lmu_clean_10
+"Per Title",lmu,lmu_races_1,"Le Mans Ultimate 1","Complete 1 races in Le Mans Ultimate",300,races_completed,1,lmu_races
+"Per Title",lmu,lmu_races_10,"Le Mans Ultimate 10","Complete 10 races in Le Mans Ultimate",700,races_completed,10,lmu_races
+"Per Title",lmu,lmu_races_50,"Le Mans Ultimate 50","Complete 50 races in Le Mans Ultimate",1800,races_completed,50,lmu_races
+"Per Title",lmu,lmu_races_100,"Le Mans Ultimate 100","Complete 100 races in Le Mans Ultimate",3500,races_completed,100,lmu_races
+"Per Title",lmu,lmu_races_250,"Le Mans Ultimate 250","Complete 250 races in Le Mans Ultimate",8000,races_completed,250,lmu_races
+"Per Title",lmu,lmu_wins_1,"Le Mans Ultimate Winner 1","Win 1 races in Le Mans Ultimate",800,wins,1,lmu_wins
+"Per Title",lmu,lmu_wins_5,"Le Mans Ultimate Winner 5","Win 5 races in Le Mans Ultimate",2000,wins,5,lmu_wins
+"Per Title",lmu,lmu_wins_25,"Le Mans Ultimate Winner 25","Win 25 races in Le Mans Ultimate",6000,wins,25,lmu_wins
+Rating,all,xclr_climb_1000,"Rising Star","Gain 1000 XCL Rating from your starting point",4000,xclr_climb_1000,1,xclr_climb_1000
+Rating,all,xclr_climb_500,Climbing,"Gain 500 XCL Rating from your starting point",1500,xclr_climb_500,1,xclr_climb_500
+Rating,all,xclr_milestone_1600,"XCL Rating 1600","Reach an XCL Rating of 1600",150,xcl_rating,1600,xclr_milestone
+Rating,all,xclr_milestone_1700,"XCL Rating 1700","Reach an XCL Rating of 1700",250,xcl_rating,1700,xclr_milestone
+Rating,all,xclr_milestone_1800,"XCL Rating 1800","Reach an XCL Rating of 1800",350,xcl_rating,1800,xclr_milestone
+Rating,all,xclr_milestone_1900,"XCL Rating 1900","Reach an XCL Rating of 1900",500,xcl_rating,1900,xclr_milestone
+Rating,all,xclr_milestone_2000,"XCL Rating 2000","Reach an XCL Rating of 2000",700,xcl_rating,2000,xclr_milestone
+Rating,all,xclr_milestone_2200,"XCL Rating 2200","Reach an XCL Rating of 2200",1000,xcl_rating,2200,xclr_milestone
+Rating,all,xclr_milestone_2400,"XCL Rating 2400","Reach an XCL Rating of 2400",1300,xcl_rating,2400,xclr_milestone
+Rating,all,xclr_milestone_2600,"XCL Rating 2600","Reach an XCL Rating of 2600",1700,xcl_rating,2600,xclr_milestone
+Rating,all,xclr_milestone_2800,"XCL Rating 2800","Reach an XCL Rating of 2800",2200,xcl_rating,2800,xclr_milestone
+Rating,all,xclr_milestone_3000,"XCL Rating 3000","Reach an XCL Rating of 3000",2800,xcl_rating,3000,xclr_milestone
+Rating,all,xclr_milestone_3250,"XCL Rating 3250","Reach an XCL Rating of 3250",3500,xcl_rating,3250,xclr_milestone
+Rating,all,xclr_milestone_3500,"XCL Rating 3500","Reach an XCL Rating of 3500",4300,xcl_rating,3500,xclr_milestone
+Rating,all,xclr_milestone_3750,"XCL Rating 3750","Reach an XCL Rating of 3750",5200,xcl_rating,3750,xclr_milestone
+Rating,all,xclr_milestone_4000,"XCL Rating 4000","Reach an XCL Rating of 4000",6200,xcl_rating,4000,xclr_milestone
+Rating,all,xclr_milestone_4500,"XCL Rating 4500","Reach an XCL Rating of 4500",8500,xcl_rating,4500,xclr_milestone
+Rating,all,xclr_milestone_5000,"XCL Rating 5000","Reach an XCL Rating of 5000",11000,xcl_rating,5000,xclr_milestone
+Rating,all,xclr_milestone_5500,"XCL Rating 5500","Reach an XCL Rating of 5500",14000,xcl_rating,5500,xclr_milestone
+Rating,all,xclr_milestone_6000,"XCL Rating 6000","Reach an XCL Rating of 6000",18000,xcl_rating,6000,xclr_milestone
+Rating,all,xclr_milestone_7000,"XCL Rating 7000","Reach an XCL Rating of 7000",26000,xcl_rating,7000,xclr_milestone
+Rating,all,xclr_number_one,"Number One","Reach first place on the XCL Rating leaderboard",30000,xclr_number_one,1,xclr_number_one
+Rating,all,xclr_peak,"Personal Peak","Set a new career high XCL Rating",500,xclr_peak,1,xclr_peak
+Rating,all,xclr_top10,"Top Ten","Reach the top ten of the XCL Rating leaderboard",15000,xclr_top10,1,xclr_top10
+Rating,all,xclr_top100,"Top One Hundred","Reach the top one hundred of the XCL Rating leaderboard",5000,xclr_top100,1,xclr_top100
+Results,all,comeback_kid,"Comeback Kid","Finish ten or more positions ahead of where you started",800,comeback_kid,1,comeback_kid
+Results,all,fastest_laps_1,"Fastest Lap 1","Set 1 race fastest laps",75,fastest_laps,1,fastest_laps
+Results,all,fastest_laps_5,"Fastest Lap 5","Set 5 race fastest laps",150,fastest_laps,5,fastest_laps
+Results,all,fastest_laps_10,"Fastest Lap 10","Set 10 race fastest laps",250,fastest_laps,10,fastest_laps
+Results,all,fastest_laps_25,"Fastest Lap 25","Set 25 race fastest laps",500,fastest_laps,25,fastest_laps
+Results,all,fastest_laps_50,"Fastest Lap 50","Set 50 race fastest laps",800,fastest_laps,50,fastest_laps
+Results,all,fastest_laps_100,"Fastest Lap 100","Set 100 race fastest laps",1500,fastest_laps,100,fastest_laps
+Results,all,fastest_laps_250,"Fastest Lap 250","Set 250 race fastest laps",3500,fastest_laps,250,fastest_laps
+Results,all,fastest_laps_500,"Fastest Lap 500","Set 500 race fastest laps",8000,fastest_laps,500,fastest_laps
+Results,all,grand_slam,"Grand Slam","Pole, fastest lap, win and lead every lap of a race",3000,grand_slam,1,grand_slam
+Results,all,hat_trick,"Hat Trick","Take pole, fastest lap and the win in the same race",1500,hat_trick,1,hat_trick
+Results,all,last_to_points,"Against The Odds","Start last and finish in the top ten",1000,last_to_points,1,last_to_points
+Results,all,lights_to_flag,"Lights To Flag","Lead every lap of a race from pole",1200,lights_to_flag,1,lights_to_flag
+Results,all,photo_finish,"Photo Finish","Win a race by less than one tenth of a second",1500,photo_finish,1,photo_finish
+Results,all,podiums_1,"Podium 1","Finish on the podium 1 times",75,podiums,1,podiums
+Results,all,podiums_5,"Podium 5","Finish on the podium 5 times",150,podiums,5,podiums
+Results,all,podiums_10,"Podium 10","Finish on the podium 10 times",250,podiums,10,podiums
+Results,all,podiums_25,"Podium 25","Finish on the podium 25 times",500,podiums,25,podiums
+Results,all,podiums_50,"Podium 50","Finish on the podium 50 times",800,podiums,50,podiums
+Results,all,podiums_100,"Podium 100","Finish on the podium 100 times",1500,podiums,100,podiums
+Results,all,podiums_250,"Podium 250","Finish on the podium 250 times",3500,podiums,250,podiums
+Results,all,podiums_500,"Podium 500","Finish on the podium 500 times",8000,podiums,500,podiums
+Results,all,poles_1,"Pole Position 1","Take 1 pole positions",75,poles,1,poles
+Results,all,poles_5,"Pole Position 5","Take 5 pole positions",150,poles,5,poles
+Results,all,poles_10,"Pole Position 10","Take 10 pole positions",250,poles,10,poles
+Results,all,poles_25,"Pole Position 25","Take 25 pole positions",500,poles,25,poles
+Results,all,poles_50,"Pole Position 50","Take 50 pole positions",800,poles,50,poles
+Results,all,poles_100,"Pole Position 100","Take 100 pole positions",1500,poles,100,poles
+Results,all,poles_250,"Pole Position 250","Take 250 pole positions",3500,poles,250,poles
+Results,all,poles_500,"Pole Position 500","Take 500 pole positions",8000,poles,500,poles
+Results,all,top10_1,"Top Ten 1","Finish in the top ten 1 times",50,top10,1,top10
+Results,all,top10_5,"Top Ten 5","Finish in the top ten 5 times",100,top10,5,top10
+Results,all,top10_10,"Top Ten 10","Finish in the top ten 10 times",150,top10,10,top10
+Results,all,top10_25,"Top Ten 25","Finish in the top ten 25 times",300,top10,25,top10
+Results,all,top10_50,"Top Ten 50","Finish in the top ten 50 times",500,top10,50,top10
+Results,all,top10_75,"Top Ten 75","Finish in the top ten 75 times",700,top10,75,top10
+Results,all,top10_100,"Top Ten 100","Finish in the top ten 100 times",1000,top10,100,top10
+Results,all,top10_150,"Top Ten 150","Finish in the top ten 150 times",1500,top10,150,top10
+Results,all,top10_250,"Top Ten 250","Finish in the top ten 250 times",2500,top10,250,top10
+Results,all,top10_500,"Top Ten 500","Finish in the top ten 500 times",5000,top10,500,top10
+Results,all,top10_1000,"Top Ten 1000","Finish in the top ten 1000 times",12000,top10,1000,top10
+Results,all,top25_1,"Top Twenty Five 1","Finish in the top twenty five 1 times",50,top25,1,top25
+Results,all,top25_5,"Top Twenty Five 5","Finish in the top twenty five 5 times",100,top25,5,top25
+Results,all,top25_10,"Top Twenty Five 10","Finish in the top twenty five 10 times",150,top25,10,top25
+Results,all,top25_25,"Top Twenty Five 25","Finish in the top twenty five 25 times",300,top25,25,top25
+Results,all,top25_50,"Top Twenty Five 50","Finish in the top twenty five 50 times",500,top25,50,top25
+Results,all,top25_75,"Top Twenty Five 75","Finish in the top twenty five 75 times",700,top25,75,top25
+Results,all,top25_100,"Top Twenty Five 100","Finish in the top twenty five 100 times",1000,top25,100,top25
+Results,all,top25_150,"Top Twenty Five 150","Finish in the top twenty five 150 times",1500,top25,150,top25
+Results,all,top25_250,"Top Twenty Five 250","Finish in the top twenty five 250 times",2500,top25,250,top25
+Results,all,top25_500,"Top Twenty Five 500","Finish in the top twenty five 500 times",5000,top25,500,top25
+Results,all,top25_1000,"Top Twenty Five 1000","Finish in the top twenty five 1000 times",12000,top25,1000,top25
+Results,all,top5_1,"Top Five 1","Finish in the top five 1 times",75,top5,1,top5
+Results,all,top5_5,"Top Five 5","Finish in the top five 5 times",150,top5,5,top5
+Results,all,top5_10,"Top Five 10","Finish in the top five 10 times",250,top5,10,top5
+Results,all,top5_25,"Top Five 25","Finish in the top five 25 times",500,top5,25,top5
+Results,all,top5_50,"Top Five 50","Finish in the top five 50 times",800,top5,50,top5
+Results,all,top5_100,"Top Five 100","Finish in the top five 100 times",1500,top5,100,top5
+Results,all,top5_250,"Top Five 250","Finish in the top five 250 times",3500,top5,250,top5
+Results,all,top5_500,"Top Five 500","Finish in the top five 500 times",8000,top5,500,top5
+Results,all,top50_1,"Top Fifty 1","Finish in the top fifty 1 times",50,top50,1,top50
+Results,all,top50_5,"Top Fifty 5","Finish in the top fifty 5 times",100,top50,5,top50
+Results,all,top50_10,"Top Fifty 10","Finish in the top fifty 10 times",150,top50,10,top50
+Results,all,top50_25,"Top Fifty 25","Finish in the top fifty 25 times",300,top50,25,top50
+Results,all,top50_50,"Top Fifty 50","Finish in the top fifty 50 times",500,top50,50,top50
+Results,all,top50_75,"Top Fifty 75","Finish in the top fifty 75 times",700,top50,75,top50
+Results,all,top50_100,"Top Fifty 100","Finish in the top fifty 100 times",1000,top50,100,top50
+Results,all,top50_150,"Top Fifty 150","Finish in the top fifty 150 times",1500,top50,150,top50
+Results,all,top50_250,"Top Fifty 250","Finish in the top fifty 250 times",2500,top50,250,top50
+Results,all,top50_500,"Top Fifty 500","Finish in the top fifty 500 times",5000,top50,500,top50
+Results,all,top50_1000,"Top Fifty 1000","Finish in the top fifty 1000 times",12000,top50,1000,top50
+Results,all,wins_1,"Winner 1","Win 1 races",75,wins,1,wins
+Results,all,wins_5,"Winner 5","Win 5 races",150,wins,5,wins
+Results,all,wins_10,"Winner 10","Win 10 races",250,wins,10,wins
+Results,all,wins_25,"Winner 25","Win 25 races",500,wins,25,wins
+Results,all,wins_50,"Winner 50","Win 50 races",800,wins,50,wins
+Results,all,wins_100,"Winner 100","Win 100 races",1500,wins,100,wins
+Results,all,wins_250,"Winner 250","Win 250 races",3500,wins,250,wins
+Results,all,wins_500,"Winner 500","Win 500 races",8000,wins,500,wins
+Results,all,wire_to_wire,"Never Headed","Lead a race from the first corner to the flag",1000,wire_to_wire,1,wire_to_wire
+Stewarding,all,clean_sheet,"Clean Sheet","Complete 25 races with no reports filed against you",2500,clean_sheet,1,clean_sheet
+Stewarding,all,first_report,"Due Process","Submit your first incident report",300,first_report,1,first_report
+Stewarding,all,reports_upheld_1,"Fair Call 1","Have 1 incident reports upheld",400,reports_upheld,1,reports_upheld
+Stewarding,all,reports_upheld_3,"Fair Call 3","Have 3 incident reports upheld",1000,reports_upheld,3,reports_upheld
+Stewarding,all,reports_upheld_5,"Fair Call 5","Have 5 incident reports upheld",1800,reports_upheld,5,reports_upheld
+Stewarding,all,reports_upheld_10,"Fair Call 10","Have 10 incident reports upheld",3500,reports_upheld,10,reports_upheld
+Stewarding,all,reports_upheld_25,"Fair Call 25","Have 25 incident reports upheld",8000,reports_upheld,25,reports_upheld
+Supporter,all,member_tier,"XCLusive Member","Hold an XCLusive Member subscription",2000,member_tier,1,member_tier
+Supporter,all,merch,"Wear The Purple","Buy something from the merchandise store",1000,merch,1,merch
+Supporter,all,supporter_first,"Backing The Pride","Support XCLusive Racing for the first time",1000,supporter_first,1,supporter_first
+Supporter,all,supporter_months_1,"Supporter 1","Support XCLusive Racing for 1 months",500,supporter_months,1,supporter_months
+Supporter,all,supporter_months_3,"Supporter 3","Support XCLusive Racing for 3 months",1200,supporter_months,3,supporter_months
+Supporter,all,supporter_months_6,"Supporter 6","Support XCLusive Racing for 6 months",2500,supporter_months,6,supporter_months
+Supporter,all,supporter_months_12,"Supporter 12","Support XCLusive Racing for 12 months",5000,supporter_months,12,supporter_months
+Supporter,all,supporter_months_24,"Supporter 24","Support XCLusive Racing for 24 months",12000,supporter_months,24,supporter_months
+Supporter,all,supporter_months_36,"Supporter 36","Support XCLusive Racing for 36 months",25000,supporter_months,36,supporter_months
+"Time Trial",all,tt_all_tracks,"Lap Record Hunter","Set a time trial lap on every circuit",6000,tt_all_tracks,1,tt_all_tracks
+"Time Trial",all,tt_entered_1,"Hotlap 1","Set a time in 1 time trial events",75,tt_events,1,tt_entered
+"Time Trial",all,tt_entered_5,"Hotlap 5","Set a time in 5 time trial events",150,tt_events,5,tt_entered
+"Time Trial",all,tt_entered_10,"Hotlap 10","Set a time in 10 time trial events",250,tt_events,10,tt_entered
+"Time Trial",all,tt_entered_25,"Hotlap 25","Set a time in 25 time trial events",500,tt_events,25,tt_entered
+"Time Trial",all,tt_entered_50,"Hotlap 50","Set a time in 50 time trial events",800,tt_events,50,tt_entered
+"Time Trial",all,tt_entered_100,"Hotlap 100","Set a time in 100 time trial events",1500,tt_events,100,tt_entered
+"Time Trial",all,tt_entered_250,"Hotlap 250","Set a time in 250 time trial events",3500,tt_events,250,tt_entered
+"Time Trial",all,tt_entered_500,"Hotlap 500","Set a time in 500 time trial events",8000,tt_events,500,tt_entered
+"Time Trial",all,tt_pb_1,"Personal Best 1","Beat your own personal best 1 times",100,tt_pbs,1,tt_pb
+"Time Trial",all,tt_pb_5,"Personal Best 5","Beat your own personal best 5 times",200,tt_pbs,5,tt_pb
+"Time Trial",all,tt_pb_10,"Personal Best 10","Beat your own personal best 10 times",350,tt_pbs,10,tt_pb
+"Time Trial",all,tt_pb_25,"Personal Best 25","Beat your own personal best 25 times",700,tt_pbs,25,tt_pb
+"Time Trial",all,tt_pb_50,"Personal Best 50","Beat your own personal best 50 times",1200,tt_pbs,50,tt_pb
+"Time Trial",all,tt_pb_100,"Personal Best 100","Beat your own personal best 100 times",2500,tt_pbs,100,tt_pb
+"Time Trial",all,tt_theoretical,"Perfect Lap","Set a lap within one tenth of your theoretical best",1500,tt_theoretical,1,tt_theoretical
+"Time Trial",all,tt_top10_1,"Hotlap Top Ten 1","Finish a time trial event in the top ten 1 times",100,tt_top10,1,tt_top10
+"Time Trial",all,tt_top10_5,"Hotlap Top Ten 5","Finish a time trial event in the top ten 5 times",250,tt_top10,5,tt_top10
+"Time Trial",all,tt_top10_10,"Hotlap Top Ten 10","Finish a time trial event in the top ten 10 times",450,tt_top10,10,tt_top10
+"Time Trial",all,tt_top10_25,"Hotlap Top Ten 25","Finish a time trial event in the top ten 25 times",900,tt_top10,25,tt_top10
+"Time Trial",all,tt_top10_50,"Hotlap Top Ten 50","Finish a time trial event in the top ten 50 times",1800,tt_top10,50,tt_top10
+"Time Trial",all,tt_win,"Time Trial Champion","Win a weekly time trial event",2000,tt_win,1,tt_win
+Variety,acc,all_classes,"Jack Of All Classes","Race in GT3, GT4, GT2, GTC and TCX",2500,all_classes,1,all_classes
+Variety,all,cars_raced_3,"Garage 3","Race 3 different cars",150,unique_cars,3,cars_raced
+Variety,all,cars_raced_5,"Garage 5","Race 5 different cars",300,unique_cars,5,cars_raced
+Variety,all,cars_raced_10,"Garage 10","Race 10 different cars",700,unique_cars,10,cars_raced
+Variety,all,cars_raced_15,"Garage 15","Race 15 different cars",1200,unique_cars,15,cars_raced
+Variety,all,cars_raced_20,"Garage 20","Race 20 different cars",2000,unique_cars,20,cars_raced
+Variety,all,cars_raced_30,"Garage 30","Race 30 different cars",4000,unique_cars,30,cars_raced
+Variety,all,driver_swap,"Team Effort","Complete a race with a driver swap",1200,driver_swap,1,driver_swap
+Variety,all,endurance_debut,"The Long Game","Complete your first endurance race",1000,endurance_debut,1,endurance_debut
+Variety,all,enduros_1,"Endurance 1","Complete 1 endurance races",500,endurance_races,1,enduros
+Variety,all,enduros_3,"Endurance 3","Complete 3 endurance races",1200,endurance_races,3,enduros
+Variety,all,enduros_5,"Endurance 5","Complete 5 endurance races",2000,endurance_races,5,enduros
+Variety,all,enduros_10,"Endurance 10","Complete 10 endurance races",4000,endurance_races,10,enduros
+Variety,all,enduros_25,"Endurance 25","Complete 25 endurance races",9000,endurance_races,25,enduros
+Variety,all,formats_raced_3,"All Formats 3","Compete in 3 different event formats",300,unique_formats,3,formats_raced
+Variety,all,formats_raced_5,"All Formats 5","Compete in 5 different event formats",700,unique_formats,5,formats_raced
+Variety,all,formats_raced_8,"All Formats 8","Compete in 8 different event formats",1500,unique_formats,8,formats_raced
+Variety,all,formats_raced_10,"All Formats 10","Compete in 10 different event formats",3000,unique_formats,10,formats_raced
+Variety,all,multiclass_debut,"Mixed Traffic","Complete your first multiclass race",600,multiclass_debut,1,multiclass_debut
+Variety,all,tracks_raced_3,"Globetrotter 3","Race on 3 different circuits",150,unique_tracks,3,tracks_raced
+Variety,all,tracks_raced_5,"Globetrotter 5","Race on 5 different circuits",300,unique_tracks,5,tracks_raced
+Variety,all,tracks_raced_10,"Globetrotter 10","Race on 10 different circuits",700,unique_tracks,10,tracks_raced
+Variety,all,tracks_raced_15,"Globetrotter 15","Race on 15 different circuits",1200,unique_tracks,15,tracks_raced
+Variety,all,tracks_raced_20,"Globetrotter 20","Race on 20 different circuits",2000,unique_tracks,20,tracks_raced
+Variety,all,tracks_raced_25,"Globetrotter 25","Race on 25 different circuits",4000,unique_tracks,25,tracks_raced

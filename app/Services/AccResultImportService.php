@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\AwardRaceXp;
 use App\Models\Race;
 use App\Models\RaceResult;
 use App\Models\RaceSessionFile;
@@ -83,6 +84,9 @@ class AccResultImportService
             }
 
             (new RatingService(new XclRating))->processRace($race);
+
+            // XP and achievements, queued, once the ratings are in (no-op while xp.enabled is off).
+            AwardRaceXp::dispatchForRace($race);
         }
 
         return [$counts, $errors];

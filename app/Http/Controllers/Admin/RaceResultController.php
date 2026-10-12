@@ -336,6 +336,7 @@ class RaceResultController extends Controller
 
         try {
             (new RatingService(new XclRating))->processRace($race);
+            AwardRaceXp::dispatchForRace($race); // safe to repeat: awards nothing twice
 
             // A small field still earns Safety Rating (RatingService::MIN_SR_DRIVERS).
             if ($linked < $minNeeded) {
