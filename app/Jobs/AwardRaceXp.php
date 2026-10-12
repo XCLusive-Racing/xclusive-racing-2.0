@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Race;
 use App\Models\RaceResult;
 use App\Models\User;
+use App\Xp\Launch;
 use App\Xp\XpAwarder;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -26,10 +27,10 @@ class AwardRaceXp implements ShouldQueue
     public function __construct(public int $raceId, public int $userId) {}
 
     // One job per driver with a linked result in the race. Does nothing while XP is
-    // switched off (config xp.enabled).
+    // switched off (config xp.enabled), or for a race from before the launch.
     public static function dispatchForRace(Race $race): int
     {
-        if (! config('xp.enabled')) {
+        if (! config('xp.enabled') || ! Launch::counts($race->scheduled_at)) {
             return 0;
         }
 

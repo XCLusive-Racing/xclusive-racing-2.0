@@ -28,7 +28,7 @@ class XpAwardingTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['xp.enabled' => true]);
+        config(['xp.enabled' => true, 'xp.launch_at' => now()->subYear()->toDateTimeString()]);
 
         // Each test works with its own achievements, not the 399 seeded ones.
         Achievement::query()->update(['is_archived' => true]);
@@ -284,6 +284,59 @@ class XpAwardingTest extends TestCase
 
         $this->expectException(LogicException::class);
         $entry->delete();
+    }
+
+    public function test_everybody_starts_from_zero_at_the_launch(): void
+    {
+        Bus::fake();
+        $user = $this->driver();
+        $wins = $this->achievement('wins', 2);
+        $before = $this->race($user, 'acc', 1, ['scheduled_at' => now()->subDays(20)]);
+        $after = $this->race($user, 'acc', 1, ['scheduled_at' => now()->subDays(5)]);
+        config(['xp.launch_at' => now()->subDays(10)->toDateTimeString()]);
+
+        // A race from before the launch: no job, no XP, and it is not counted either.
+        $this->assertSame(0, AwardRaceXp::dispatchForRace($before));
+        $this->assertSame(0, $this->process($user, $before)['race_xp']);
+        $this->assertSame(0, XpLedgerEntry::count());
+
+        // The first race after it is the driver's first: one win, new title bonus and all.
+        $this->assertSame(3, AwardRaceXp::dispatchForRace($after));
+        $this->assertSame(3250, $this->process($user, $after)['race_xp']);
+        $this->assertSame(1.0, (float) UserMetric::where(['user_id' => $user->id, 'metric_key' => 'wins', 'scope' => 'all'])->value('value'));
+        $this->assertFalse(AchievementAward::where('achievement_id', $wins->id)->exists());
+
+        $this->process($user, $this->race($user, 'acc', 1, ['scheduled_at' => now()->subDays(3)]));
+        $this->assertTrue(AchievementAward::where('achievement_id', $wins->id)->exists());
+    }
+
+    public function test_a_driver_alone_on_track_earns_nothing(): void
+    {
+        $user = $this->driver();
+        $entered = $this->achievement('races_entered', 1);
+        $race = $this->race($user);
+        RaceResult::where('race_id', $race->id)->where('user_id', '!=', $user->id)->update(['dns' => true]);
+
+        $this->assertSame(0, $this->process($user, $race)['race_xp']);
+        $this->assertSame(0, XpLedgerEntry::count());
+        $this->assertFalse(AchievementAward::where('achievement_id', $entered->id)->exists());
+
+        // Two drivers on track is a race.
+        $this->assertGreaterThan(0, $this->process($user, $this->race($user))['race_xp']);
+        $this->assertTrue(AchievementAward::where('achievement_id', $entered->id)->exists());
+    }
+
+    public function test_without_a_launch_date_nothing_is_awarded(): void
+    {
+        Bus::fake();
+        config(['xp.launch_at' => null]);
+        $user = $this->driver();
+        $race = $this->race($user);
+
+        $this->assertSame(0, AwardRaceXp::dispatchForRace($race));
+        $this->assertSame(0, $this->process($user, $race)['race_xp']);
+        $this->assertSame(0, XpLedgerEntry::count());
+        $this->assertSame(0, $user->fresh()->xp_total);
     }
 
     public function test_jobs_are_queued_per_linked_driver_and_only_while_xp_is_enabled(): void

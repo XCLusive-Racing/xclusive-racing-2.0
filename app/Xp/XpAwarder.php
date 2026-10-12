@@ -32,6 +32,11 @@ class XpAwarder
     /** @return array{race_xp: int, awards: int, rank_before: int, rank_after: int} */
     public function processRace(User $user, Race $race): array
     {
+        // A race from before the launch earns nothing and moves nothing.
+        if (! Launch::counts($race->scheduled_at)) {
+            return ['race_xp' => 0, 'awards' => 0, 'rank_before' => (int) $user->xp_rank, 'rank_after' => (int) $user->xp_rank];
+        }
+
         return DB::transaction(function () use ($user, $race) {
             $driver = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
             $rankBefore = (int) $driver->xp_rank;

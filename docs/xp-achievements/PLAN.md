@@ -16,13 +16,17 @@ completed last, so the next session can pick up without re-deriving context.
   Phase 1 tasks are still open (unticked below): the stored championship classification,
   the restart/star data, late account linking, and the nightly reconcile. Do not start
   Phase 2 until those are done or deliberately moved.
-- **2026-10-12 — open questions answered** (decisions 18 to 29). Four of the answers ask
-  for engine work that is **not built yet**; do these before the engine is switched on:
-  1. *Launch date* (decision 18): nothing before it counts. `DriverHistory` reads a
-     driver's whole history today, so it needs a `xp.launch_at` cutoff, and Phase 3 is no
-     longer a backfill.
-  2. *Two drivers on track* (decision 24): a race with fewer than two starters awards
-     nothing. `RacingXp` and the race metrics have no floor today.
+- **2026-10-12 — open questions answered** (decisions 18 to 29). Two of the answers still ask
+  for engine work that is **not built yet** (top-up and climbs). **The launch is
+  2026-10-12** (decided that day): set `XP_LAUNCH_AT` and `XP_ENABLED` on production.
+  1. ~~*Launch date* (decision 18).~~ **Built 2026-10-12**: `XP_LAUNCH_AT` (UK time,
+     `App\Xp\Launch`). A race from before it queues no job, earns nothing and is not in
+     `DriverHistory`; reports, time trials and championship entries count from it too.
+     What a driver *is* (linked account, team, membership, account age) is read as it
+     stands. With no launch date set nothing is awarded, even with `XP_ENABLED` on.
+     The admin screens show a notice instead of an error while the tables do not exist.
+  2. ~~*Two drivers on track* (decision 24).~~ **Built 2026-10-12**: a race session in
+     which nobody else started earns no racing XP and is left out of `DriverHistory`.
   3. *Top-up on an improved result* (decision 19): the racing XP row is written once
      today and a re-run never adds the difference.
   4. *Climbs* (decision 28): achievements can be earned again after a restart, so an award

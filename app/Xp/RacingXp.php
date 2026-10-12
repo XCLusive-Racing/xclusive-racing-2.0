@@ -14,10 +14,10 @@ use App\Models\XpRaceFact;
 // reveal can show where the XP came from.
 class RacingXp
 {
-    /** @return array{xp: int, breakdown: array}|null null for a driver who never started */
+    /** @return array{xp: int, breakdown: array}|null null for a driver who never started, or who was alone on track */
     public function for(User $user, Race $race, RaceResult $result): ?array
     {
-        if ($result->dns) {
+        if ($result->dns || ! $this->contested($race, $result)) {
             return null;
         }
 
@@ -105,6 +105,13 @@ class RacingXp
         ];
     }
 
+    // A race counts from two drivers on track, as Safety Rating does: alone in a lobby earns nothing.
+    private function contested(Race $race, RaceResult $result): bool
+    {
+        return RaceResult::where('race_id', $race->id)->where('session_type', 'race')
+            ->where('race_number', $result->race_number)->where('id', '!=', $result->id)->where('dns', false)->exists();
+    }
+
     // The driver's earliest race start of that UK day (the first race of a multi-race round).
     private function firstRaceOfTheDay(User $user, Race $race, RaceResult $result): bool
     {
@@ -112,7 +119,7 @@ class RacingXp
             return false;
         }
 
-        $dayStart = $race->scheduledAtUk()->startOfDay()->utc();
+        $dayStart = $race->scheduledAtUk()->startOfDay()->utc()->max(Launch::since());
 
         return ! RaceResult::where('user_id', $user->id)->where('session_type', 'race')->where('dns', false)
             ->where('race_id', '!=', $race->id)

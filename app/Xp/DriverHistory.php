@@ -10,7 +10,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 // A driver's race history, loaded once and shaped for the metrics: one plain row per race
-// session they have a result in, oldest first, each carrying its XP title and platform.
+// session they have a result in since the launch (App\Xp\Launch), oldest first, each
+// carrying its XP title and platform. Races from before the launch are not in it.
 // rows($scope) is the one place a title scope is applied.
 class DriverHistory
 {
@@ -47,8 +48,14 @@ class DriverHistory
 
     private function load(): Collection
     {
+        $launch = Launch::at();
+        if (! $launch) {
+            return collect();
+        }
+
         $results = RaceResult::where('user_id', $this->user->id)
             ->where('session_type', 'race')
+            ->where('race_scheduled_at', '>=', $launch)
             ->orderBy('race_scheduled_at')->orderBy('race_number')->orderBy('id')
             ->get();
 
@@ -73,7 +80,10 @@ class DriverHistory
         // Cars shared with another driver (a team entry), and the runner-up's time in races won.
         $others = RaceResult::where('session_type', 'race')->whereIn('race_id', $raceIds)
             ->where(fn ($q) => $q->where('user_id', '!=', $this->user->id)->orWhereNull('user_id'))
-            ->get(['race_id', 'race_number', 'car_number', 'position', 'total_time', 'lap_count', 'player_id']);
+            ->get(['race_id', 'race_number', 'car_number', 'position', 'total_time', 'lap_count', 'player_id', 'dns']);
+        // A race counts from two drivers on track: one where nobody else started is left out.
+        $contested = $others->where('dns', false)->mapWithKeys(fn ($r) => [$r->race_id.'|'.$r->race_number => true]);
+        $results = $results->filter(fn (RaceResult $r) => isset($contested[$r->race_id.'|'.$r->race_number]))->values();
         $sharedCars = $others->filter(fn ($r) => $r->car_number !== null)
             ->mapWithKeys(fn ($r) => [$r->race_id.'|'.$r->race_number.'|'.$r->car_number => true]);
         $runnerUp = $others->where('position', 2)

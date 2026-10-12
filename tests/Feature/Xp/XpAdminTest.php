@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\XpLedgerEntry;
 use App\Xp\RankCurve;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 // Admin > XP & Achievements (docs/xp-achievements/PLAN.md, phase one).
@@ -42,6 +43,28 @@ class XpAdminTest extends TestCase
             $this->actingAs($this->admin())->get(route($route))->assertOk();
             $this->actingAs($driver)->get(route($route))->assertStatus(403);
         }
+    }
+
+    public function test_the_screens_show_a_notice_while_the_xp_tables_do_not_exist(): void
+    {
+        Schema::disableForeignKeyConstraints();
+        Schema::drop('rank_levels');
+
+        $this->actingAs($this->admin())->get(route('admin.xp.curve'))
+            ->assertStatus(503)->assertSee('Not installed yet')->assertSee('php artisan migrate');
+    }
+
+    public function test_the_screens_say_from_when_xp_counts(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->get(route('admin.xp.games.index'))->assertSee('XP is switched off');
+
+        config(['xp.enabled' => true]);
+        $this->actingAs($admin)->get(route('admin.xp.games.index'))->assertSee('No launch date is set');
+
+        config(['xp.launch_at' => '2026-11-01 00:00']);
+        $this->actingAs($admin)->get(route('admin.xp.games.index'))->assertSee('Everything counts from 1 Nov 2026, 00:00 UK time');
     }
 
     public function test_the_list_filters_and_shows_how_many_drivers_hold_each_achievement(): void

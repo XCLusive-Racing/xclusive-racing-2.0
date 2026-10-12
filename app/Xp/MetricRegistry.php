@@ -173,21 +173,25 @@ class MetricRegistry
     }
 
     // ── Counted from anything else ───────────────────────────────────────────────
+    // What a driver did (reports, time trials, championship entries) counts since the
+    // launch. What a driver is (a linked account, a team, the membership) is read as it stands.
 
     private function factMetrics(): array
     {
         $flag = fn (bool $value) => $value ? 1 : 0;
-        $ttResults = fn (User $user) => TimeTrialEventResult::where('user_id', $user->id);
+        $since = Launch::since();
+        $ttResults = fn (User $user) => TimeTrialEventResult::where('user_id', $user->id)->where('created_at', '>=', $since);
+        $reports = fn (User $user) => Report::where('user_id', $user->id)->where('created_at', '>=', $since);
         $nordsEvents = fn () => TimeTrialEvent::where('track', 'nurburgring_24h')->pluck('id');
 
         return [
             new FactMetric('championships_entered', 'Championships entered', fn (User $user, DriverHistory $h, string $scope) => ChampionshipRegistration::approved()
-                ->where('user_id', $user->id)->where('is_spectator', false)->pluck('championship_id')->unique()
+                ->where('user_id', $user->id)->where('is_spectator', false)->where('created_at', '>=', $since)->pluck('championship_id')->unique()
                 ->pipe(fn ($ids) => Championship::withoutTenantScope()->whereIn('id', $ids)->pluck('game'))
                 ->filter(fn ($game) => $scope === 'all' || Titles::game($game) === $scope)->count()),
 
-            new FactMetric('first_report', 'Incident reports submitted', fn (User $user) => Report::where('user_id', $user->id)->where('status', '!=', 'retracted')->count()),
-            new FactMetric('reports_upheld', 'Incident reports upheld', fn (User $user) => Report::where('user_id', $user->id)->where('status', 'resolved')->count()),
+            new FactMetric('first_report', 'Incident reports submitted', fn (User $user) => $reports($user)->where('status', '!=', 'retracted')->count()),
+            new FactMetric('reports_upheld', 'Incident reports upheld', fn (User $user) => $reports($user)->where('status', 'resolved')->count()),
 
             new FactMetric('discord_linked', 'Discord account linked', fn (User $user) => $flag($user->connectedAccounts()->where('provider', 'discord')->exists())),
             new FactMetric('profile_complete', 'Profile with an avatar and a platform linked', fn (User $user) => $flag(filled($user->banner) && filled($user->platform_id))),
@@ -207,7 +211,7 @@ class MetricRegistry
             new FactMetric('tt_top10', 'Time trial events finished in the top ten', fn (User $user) => $ttResults($user)->where('position', '<=', 10)->count(), 'acc'),
             new FactMetric('tt_win', 'Weekly time trial events won', fn (User $user) => $ttResults($user)->where('position', 1)->count(), 'acc'),
             new FactMetric('nords_tt', 'Time trial lap set at the Nordschleife',
-                fn (User $user) => $flag(TimeTrialLap::where('user_id', $user->id)->where('track', 'nurburgring_24h')->exists()), 'acc'),
+                fn (User $user) => $flag(TimeTrialLap::where('user_id', $user->id)->where('track', 'nurburgring_24h')->where('created_at', '>=', $since)->exists()), 'acc'),
             new FactMetric('nords_tt_top10', 'Nordschleife time trial finished in the top ten',
                 fn (User $user) => $ttResults($user)->whereIn('time_trial_event_id', $nordsEvents())->where('position', '<=', 10)->count(), 'acc'),
         ];

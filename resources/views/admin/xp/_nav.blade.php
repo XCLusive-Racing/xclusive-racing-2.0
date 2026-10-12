@@ -14,10 +14,15 @@
             {{ $label }}
         </a>
         @endforeach
-        @unless(config('xp.enabled'))
-        <span class="ms-auto fw-bold" style="font-size:.72rem;color:#b45309">
+        @php $xpLaunch = \App\Xp\Launch::at(); @endphp
+        <span class="ms-auto fw-bold" style="font-size:.72rem;color:{{ config('xp.enabled') && $xpLaunch ? '#15803d' : '#b45309' }}">
+            @if(! config('xp.enabled'))
             XP is switched off (XP_ENABLED): races award nothing yet.
+            @elseif(! $xpLaunch)
+            No launch date is set (XP_LAUNCH_AT): races award nothing yet.
+            @else
+            XP is on. Everything counts from {{ $xpLaunch->timezone('Europe/London')->format('j M Y, H:i') }} UK time.
+            @endif
         </span>
-        @endunless
     </div>
 </div>

@@ -59,6 +59,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ResultsController;
 use App\Http\Controllers\TeamApplicationController;
 use App\Http\Controllers\TimeTrialController;
+use App\Http\Middleware\EnsureXpIsInstalled;
 use App\Models\Race;
 use Illuminate\Support\Facades\Route;
 
@@ -370,7 +371,7 @@ Route::middleware(['auth', 'role:owner,admin'])->prefix('admin')->name('admin.')
 });
 
 // XP & Achievements (docs/xp-achievements/PLAN.md) — owner + admin
-Route::middleware(['auth', 'role:owner,admin'])->prefix('admin/xp')->name('admin.xp.')->group(function () {
+Route::middleware(['auth', 'role:owner,admin', EnsureXpIsInstalled::class])->prefix('admin/xp')->name('admin.xp.')->group(function () {
     Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
     Route::get('/achievements/create', [AchievementController::class, 'create'])->name('achievements.create');
     Route::post('/achievements', [AchievementController::class, 'store'])->name('achievements.store');
