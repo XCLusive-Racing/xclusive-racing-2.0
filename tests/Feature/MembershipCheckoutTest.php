@@ -30,6 +30,24 @@ class MembershipCheckoutTest extends TestCase
 
     private bool $subscriptionsDown = false;
 
+    // Mollie creates the subscription, but its reply never reaches us.
+    private bool $subscriptionReplyLost = false;
+
+    /** @var array<string, array> subscriptions as Mollie lists them */
+    private array $mollieSubscriptions = [];
+
+    private function createSubscription()
+    {
+        if ($this->subscriptionsDown) {
+            return Http::response(['detail' => 'Mollie unavailable'], 503);
+        }
+
+        $id = 'sub_'.(++$this->subscriptions);
+        $this->mollieSubscriptions[$id] = ['id' => $id, 'status' => 'active', 'createdAt' => now()->toIso8601String()];
+
+        return $this->subscriptionReplyLost ? Http::response(['detail' => 'timeout'], 504) : Http::response(['id' => $id]);
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -50,9 +68,8 @@ class MembershipCheckoutTest extends TestCase
                     'amount' => $request['amount'],
                     '_links' => ['checkout' => ['href' => 'https://www.mollie.com/checkout/test']],
                 ]),
-                $request->method() === 'POST' && $path === 'customers/cst_1/subscriptions' => $this->subscriptionsDown
-                    ? Http::response(['detail' => 'Mollie unavailable'], 503)
-                    : Http::response(['id' => 'sub_'.(++$this->subscriptions)]),
+                $request->method() === 'POST' && $path === 'customers/cst_1/subscriptions' => $this->createSubscription(),
+                $request->method() === 'GET' && str_starts_with($path, 'customers/cst_1/subscriptions?') => Http::response(['_embedded' => ['subscriptions' => array_values($this->mollieSubscriptions)]]),
                 $request->method() === 'DELETE' && str_starts_with($path, 'customers/cst_1/subscriptions/') => Http::response(['status' => 'canceled']),
                 $request->method() === 'GET' && preg_match('#^customers/cst_1/subscriptions/(sub_\d+)/payments#', $path, $m) === 1 => Http::response(['_embedded' => ['payments' => array_values(array_filter($this->payments, fn ($p) => ($p['subscriptionId'] ?? null) === $m[1]))]]),
                 $request->method() === 'GET' && str_starts_with($path, 'payments/') => Http::response($this->payments[substr($path, 9)]),
@@ -158,6 +175,59 @@ class MembershipCheckoutTest extends TestCase
         $this->assertSame('2026-11-03 12:00:00', $membership->paid_until->toDateTimeString());
         $this->assertNotNull(MembershipPayment::where('mollie_payment_id', 'tr_first')->sole()->applied_at);
         $this->assertTrue($user->fresh()->isSupporter());
+        $this->assertNull($membership->mollie_subscription_id);
+
+        // The hourly sync sets the subscription up once Mollie is back, charging from
+        // the end of the paid month.
+        $this->subscriptionsDown = false;
+        $this->artisan('memberships:sync')->assertSuccessful();
+        $this->assertSame('sub_1', $membership->fresh()->mollie_subscription_id);
+        Http::assertSent(fn (Request $r) => $r->method() === 'POST' && str_ends_with($r->url(), '/subscriptions') && $r['startDate'] === '2026-11-03');
+
+        // Nothing left to restore: no second subscription.
+        $this->artisan('memberships:sync')->assertSuccessful();
+        $this->assertSame(1, $this->subscriptions);
+    }
+
+    // The subscription was created at Mollie but the reply was lost: the sync takes that
+    // one over instead of starting a second, so the customer isn't charged twice.
+    public function test_a_subscription_whose_reply_was_lost_is_taken_over_not_doubled(): void
+    {
+        $user = User::factory()->create(['is_supporter' => false]);
+        $this->startCheckout($user);
+        $this->pay('tr_first');
+        $this->subscriptionReplyLost = true;
+
+        try {
+            app(MembershipService::class)->handlePayment('tr_first');
+        } catch (RequestException) {
+        }
+        $this->assertNull(Membership::sole()->mollie_subscription_id);
+
+        $this->subscriptionReplyLost = false;
+        $this->artisan('memberships:sync')->assertSuccessful();
+
+        $this->assertSame('sub_1', Membership::sole()->mollie_subscription_id);
+        $this->assertSame(1, $this->subscriptions);
+    }
+
+    public function test_a_canceled_membership_gets_no_subscription_back(): void
+    {
+        $user = User::factory()->create(['is_supporter' => false]);
+        $this->startCheckout($user);
+        $this->pay('tr_first');
+        $this->subscriptionsDown = true;
+        try {
+            app(MembershipService::class)->handlePayment('tr_first');
+        } catch (RequestException) {
+        }
+        Membership::sole()->update(['status' => 'canceled', 'canceled_at' => now()]);
+
+        $this->subscriptionsDown = false;
+        $this->artisan('memberships:sync')->assertSuccessful();
+
+        $this->assertNull(Membership::sole()->mollie_subscription_id);
+        $this->assertSame(0, $this->subscriptions);
     }
 
     // Jan's review: the webhook had no throttle, and every call costs a Mollie lookup.

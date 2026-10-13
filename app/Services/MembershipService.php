@@ -141,13 +141,16 @@ class MembershipService
         if ($replaceSubscription !== null) {
             $membership->refresh();
             try {
+                // Only forgotten once Mollie confirms it stopped, so a still-running old
+                // subscription is never lost track of.
                 if ($replaceSubscription['old']) {
                     $this->stopSubscription($membership->mollie_customer_id, $replaceSubscription['old']);
+                    $membership->update(['mollie_subscription_id' => null]);
                 }
                 $membership->update(['mollie_subscription_id' => $this->startSubscription($membership, $membership->paid_until)]);
             } catch (\Throwable $e) {
-                // Paid and saved, but no (new) subscription: renewals won't come until
-                // it's set up, so this needs a look rather than a silent retry.
+                // Paid and saved, but no (new) subscription: memberships:sync sets it up
+                // on its next run (restoreSubscription()).
                 Log::error('Membership paid but its Mollie subscription could not be replaced', [
                     'membership_id' => $membership->id, 'payment_id' => $record->mollie_payment_id, 'error' => $e->getMessage(),
                 ]);
@@ -201,6 +204,40 @@ class MembershipService
         }
 
         return count($payments);
+    }
+
+    /**
+     * A paid-up, renewing membership left without a subscription (its creation failed
+     * after the payment, see handlePayment()) gets one again. A subscription Mollie did
+     * create but whose reply never reached us is taken over instead of doubled, so the
+     * customer is never charged twice. Returns the subscription id, null when not needed.
+     */
+    public function restoreSubscription(Membership $membership): ?string
+    {
+        if (! self::missesSubscription($membership)) {
+            return null;
+        }
+
+        $running = collect($this->api()->get("customers/{$membership->mollie_customer_id}/subscriptions", ['limit' => 250])
+            ->throw()->json('_embedded.subscriptions', []))
+            ->filter(fn (array $subscription) => in_array($subscription['status'] ?? null, ['active', 'pending'], true))
+            ->sortByDesc('createdAt')
+            ->first();
+
+        $id = $running['id'] ?? $this->startSubscription($membership, $membership->paid_until);
+        $membership->update(['mollie_subscription_id' => $id]);
+
+        Log::info('Membership subscription restored', ['membership_id' => $membership->id, 'subscription' => $id, 'taken_over' => $running !== null]);
+
+        return $id;
+    }
+
+    // Active (not canceled), paid up and with a mandate to charge, but nothing renewing it.
+    public static function missesSubscription(Membership $membership): bool
+    {
+        return $membership->status === 'active' && ! $membership->mollie_subscription_id
+            && $membership->mollie_customer_id && $membership->mollie_mandate_id
+            && $membership->paid_until?->isFuture() && $membership->mode === Membership::currentMode();
     }
 
     private function startSubscription(Membership $membership, Carbon $firstChargeAt): string

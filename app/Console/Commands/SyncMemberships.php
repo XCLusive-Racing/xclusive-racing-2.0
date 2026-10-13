@@ -9,7 +9,7 @@ use Throwable;
 
 // Picks up recurring membership payments a webhook didn't deliver (and every renewal on
 // a local install, which Mollie can't reach): checks each running subscription that is
-// due — paid up for less than another day.
+// due — paid up for less than another day. Also restores a missing subscription.
 class SyncMemberships extends Command
 {
     protected $signature = 'memberships:sync {--all : Check every running subscription, not just the ones due}';
@@ -31,6 +31,21 @@ class SyncMemberships extends Command
                 $this->line("User {$membership->user_id}: {$count} payment(s) checked, paid until ".($membership->fresh()->paid_until?->toDateTimeString() ?? '-'));
             } catch (Throwable $e) {
                 $this->error("User {$membership->user_id}: {$e->getMessage()}");
+            }
+        }
+
+        // Paid up but left without a subscription (its creation failed after the payment):
+        // set it up again, or nothing renews it at the end of the paid period.
+        $missing = Membership::where('status', 'active')->whereNull('mollie_subscription_id')
+            ->where('mode', Membership::currentMode())->where('paid_until', '>', now())->get()
+            ->filter(fn (Membership $membership) => MembershipService::missesSubscription($membership));
+
+        foreach ($missing as $membership) {
+            try {
+                $id = $memberships->restoreSubscription($membership);
+                $this->line("User {$membership->user_id}: subscription restored ({$id})");
+            } catch (Throwable $e) {
+                $this->error("User {$membership->user_id}: subscription still missing: {$e->getMessage()}");
             }
         }
 
