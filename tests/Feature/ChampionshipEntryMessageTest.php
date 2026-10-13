@@ -127,4 +127,27 @@ class ChampionshipEntryMessageTest extends TestCase
         $this->assertStringContainsString('Spectator password:', $body);
         $this->assertStringNotContainsString('sunday42', $body);
     }
+
+    // Backlog 2026-10-09: moving up off the waiting list sent nothing, so the driver never
+    // got the rounds' servers and passwords.
+    public function test_moving_off_the_waiting_list_sends_the_welcome_message(): void
+    {
+        $championship = $this->makeChampionship(['requirements' => ['waitlist_enabled' => true]]);
+        $championship->update(['max_drivers' => 1]);
+        $this->makeRound($championship, 1, $this->server());
+        [$first, $waiting] = User::factory()->count(2)->create()->all();
+
+        $this->actingAs($first)->post(route('championships.register', $championship), $this->soloEntry());
+        $this->travel(1)->seconds();
+        $this->actingAs($waiting)->post(route('championships.register', $championship), ['car_number' => 78] + $this->soloEntry());
+
+        $this->assertStringContainsString('waiting list', Message::where('user_id', $waiting->id)->sole()->body);
+
+        $this->actingAs($first)->delete(route('championships.unregister', $championship))->assertSessionHas('success');
+
+        $message = Message::where('user_id', $waiting->id)->latest('id')->first();
+        $this->assertSame('Off the waiting list: Sunday Cup', $message->title);
+        $this->assertStringContainsString("Server: NLRL Sunday Server\nPassword: sunday42", $message->body);
+        $this->assertSame(0, Message::where('user_id', $first->id)->where('title', 'like', 'Off the waiting list%')->count());
+    }
 }

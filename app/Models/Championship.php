@@ -503,6 +503,19 @@ class Championship extends Model
         return $rank >= $this->max_drivers;
     }
 
+    // The same rank as isRegistrationWaitlisted(), per registration: every entry past
+    // the first max_drivers, oldest first.
+    public function waitlistedRegistrationIds(): array
+    {
+        if (! $this->waitlistEnabled() || $this->max_drivers === null) {
+            return [];
+        }
+
+        return $this->registrations()->where('is_spectator', false)
+            ->orderBy('created_at')->orderBy('id')
+            ->pluck('id')->slice($this->max_drivers)->values()->all();
+    }
+
     public function waitlistCount(): int
     {
         if (! $this->waitlistEnabled() || $this->max_drivers === null) {

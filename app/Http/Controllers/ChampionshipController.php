@@ -494,6 +494,7 @@ class ChampionshipController extends Controller
         }
 
         $rounds = app(ChampionshipRoundEntryService::class);
+        $waitingBefore = $championship->waitlistedRegistrationIds();
         DB::transaction(function () use ($registrations, $championship, $rounds) {
             foreach ($registrations->get() as $registration) {
                 $rounds->withdrawFromOpenRounds($registration, $championship);
@@ -504,6 +505,13 @@ class ChampionshipController extends Controller
         // A freed spot moves the next driver off the championship's waiting list
         // (Championship::isRegistrationWaitlisted() is a rank), into the rounds.
         $rounds->syncChampionship($championship);
+
+        // ...and they get the same welcome message (rounds, servers, passwords) as a
+        // direct entry. A still-pending entry hears nothing until the league approves it.
+        $promoted = array_diff($waitingBefore, $championship->waitlistedRegistrationIds());
+        $championship->registrations()->whereIn('id', $promoted)->approved()->get()
+            ->each(fn (ChampionshipRegistration $registration) => app(ChampionshipEntryMessage::class)
+                ->send($registration, $championship, 'Off the waiting list'));
 
         return back()->with('success', request()->filled('registration_id')
             ? 'The car has been withdrawn from the championship.'
