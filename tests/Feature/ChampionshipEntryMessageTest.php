@@ -150,4 +150,33 @@ class ChampionshipEntryMessageTest extends TestCase
         $this->assertStringContainsString("Server: NLRL Sunday Server\nPassword: sunday42", $message->body);
         $this->assertSame(0, Message::where('user_id', $first->id)->where('title', 'like', 'Off the waiting list%')->count());
     }
+
+    // A league raising the max in the wizard moves the waiting list up too: into the
+    // rounds and the welcome message, not only after someone presses "sync rounds".
+    public function test_raising_the_max_in_the_wizard_moves_the_waiting_list_up(): void
+    {
+        $championship = $this->makeChampionship(['requirements' => ['waitlist_enabled' => true], 'format' => ['max_entries' => 1]]);
+        $championship->update(['max_drivers' => 1]);
+        $round = $this->makeRound($championship, 1, $this->server());
+        [$first, $waiting] = User::factory()->count(2)->create()->all();
+
+        $this->actingAs($first)->post(route('championships.register', $championship), $this->soloEntry());
+        $this->travel(1)->seconds();
+        $this->actingAs($waiting)->post(route('championships.register', $championship), ['car_number' => 78] + $this->soloEntry());
+        $this->assertFalse($round->registrations()->where('user_id', $waiting->id)->exists());
+
+        $manager = User::factory()->leagueManager()->create();
+        LeagueUser::create(['league_id' => $this->league->id, 'user_id' => $manager->id, 'role' => 'manager']);
+        $manager->syncLeagueRoleFlags();
+
+        $this->actingAs($manager->refresh())
+            ->put(route('admin.leagues.championships.wizard.update', [$this->league, $championship, 'format']), [
+                'settings' => ['format' => ['max_entries' => 2]],
+            ])->assertSessionHasNoErrors();
+
+        $this->assertSame(2, $championship->fresh()->max_drivers);
+        $this->assertTrue($round->registrations()->where('user_id', $waiting->id)->exists());
+        $this->assertSame('Off the waiting list: Sunday Cup', Message::where('user_id', $waiting->id)->latest('id')->first()->title);
+        $this->assertSame(1, Message::where('user_id', $first->id)->count());
+    }
 }

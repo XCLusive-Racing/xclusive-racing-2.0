@@ -506,12 +506,8 @@ class ChampionshipController extends Controller
         // (Championship::isRegistrationWaitlisted() is a rank), into the rounds.
         $rounds->syncChampionship($championship);
 
-        // ...and they get the same welcome message (rounds, servers, passwords) as a
-        // direct entry. A still-pending entry hears nothing until the league approves it.
-        $promoted = array_diff($waitingBefore, $championship->waitlistedRegistrationIds());
-        $championship->registrations()->whereIn('id', $promoted)->approved()->get()
-            ->each(fn (ChampionshipRegistration $registration) => app(ChampionshipEntryMessage::class)
-                ->send($registration, $championship, 'Off the waiting list'));
+        // ...and they get the same welcome message (rounds, servers, passwords) as a direct entry.
+        app(ChampionshipEntryMessage::class)->sendToPromoted($championship, $waitingBefore);
 
         return back()->with('success', request()->filled('registration_id')
             ? 'The car has been withdrawn from the championship.'

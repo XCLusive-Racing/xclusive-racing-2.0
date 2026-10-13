@@ -16,6 +16,7 @@ use App\Models\Race;
 use App\Models\SessionFormat;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\ChampionshipEntryMessage;
 use App\Services\ChampionshipRoundEntryService;
 use App\Services\PracticeServer\ChampionshipPracticeService;
 use App\Settings\ChampionshipSettingsSchema;
@@ -893,6 +894,9 @@ class ChampionshipWizardController extends Controller
             $settings['balance']['adjustments'] = $this->decodeList($request->input('adjustments_json'), ['scope', 'target', 'ballast_kg', 'restrictor_percent']);
         }
 
+        // A higher max or the waiting list switched off moves entries off it (see below).
+        $waitingBefore = $step === 'format' ? $championship->waitlistedRegistrationIds() : [];
+
         $championship->settings = $settings;
 
         // Car class and driver cap are championship-wide and set once here — every
@@ -916,6 +920,13 @@ class ChampionshipWizardController extends Controller
 
             if ($request->filled('driver_classes_json')) {
                 $this->syncDriverClasses($championship, $this->decodeList($request->input('driver_classes_json'), ['id', 'name', 'acc_category', 'max_entries', 'min_rank', 'max_rank']));
+            }
+
+            // Entries that moved off the waiting list go into the upcoming rounds and get
+            // the welcome message, the same as when a withdrawal frees a spot.
+            if (array_diff($waitingBefore, $championship->waitlistedRegistrationIds())) {
+                app(ChampionshipRoundEntryService::class)->syncChampionship($championship);
+                app(ChampionshipEntryMessage::class)->sendToPromoted($championship, $waitingBefore);
             }
         }
     }

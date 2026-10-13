@@ -39,6 +39,22 @@ class ChampionshipEntryMessage
         }
     }
 
+    /**
+     * Entries that just moved off the waiting list (a withdrawal, a higher max, the
+     * waiting list switched off): the same welcome message as a direct entry.
+     * $waitingBefore = Championship::waitlistedRegistrationIds() from before the change.
+     * A still-pending entry hears nothing until the league approves it.
+     */
+    public function sendToPromoted(Championship $championship, array $waitingBefore): int
+    {
+        $promoted = array_diff($waitingBefore, $championship->waitlistedRegistrationIds());
+
+        $registrations = $championship->registrations()->whereIn('id', $promoted)->approved()->get();
+        $registrations->each(fn (ChampionshipRegistration $registration) => $this->send($registration, $championship, 'Off the waiting list'));
+
+        return $registrations->count();
+    }
+
     public function body(ChampionshipRegistration $registration, Championship $championship): string
     {
         if (! $registration->is_spectator && $registration->user && $championship->isRegistrationWaitlisted($registration->user)) {
