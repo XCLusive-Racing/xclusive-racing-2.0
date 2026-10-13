@@ -48,10 +48,8 @@ class DashboardFeaturedEvents
             ->withIconOwners()
             ->withCount(['registrations', 'teamEntries'])
             ->where('status', '!=', 'finished')
-            ->where('status', '!=', 'draft')
+            ->publiclyListed()
             ->where('scheduled_at', '>', now()->subMinutes(Race::LIVE_LISTING_MINUTES))
-            ->where(fn ($q) => $q->whereNull('championship_id')
-                ->orWhereHas('championship', fn ($cq) => $cq->withoutTenantScope()->publiclyVisible()))
             ->orderBy('scheduled_at');
     }
 

@@ -36,6 +36,7 @@ class AnnounceDailyRaces extends Command
         $races = Race::where('scheduled_at', '>=', $start)
             ->where('scheduled_at', '<', $end)
             ->where('status', '!=', 'finished')
+            ->publiclyListed()
             ->withCount(['registrations', 'teamEntries'])
             ->orderBy('scheduled_at')
             ->get();
@@ -102,6 +103,7 @@ class AnnounceDailyRaces extends Command
         $upcoming = fn (int $days) => Race::where('scheduled_at', '>=', $from)
             ->where('scheduled_at', '<', $from->copy()->addDays($days))
             ->where('status', '!=', 'finished')
+            ->publiclyListed()
             ->withCount(['registrations', 'teamEntries'])
             ->orderBy('scheduled_at');
 

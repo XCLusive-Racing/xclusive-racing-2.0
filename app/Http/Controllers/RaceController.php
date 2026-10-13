@@ -43,19 +43,8 @@ class RaceController extends Controller
             // Upcoming events, plus the ones that started in the last half hour: those
             // stay on the page marked LIVE (Race::isListedLive()), then drop off.
             ->where('scheduled_at', '>', now()->subMinutes(Race::LIVE_LISTING_MINUTES))
-            // A championship round is only a public event once its own championship
-            // is (Championship::PUBLIC_STATUSES + not hidden) -- a draft
-            // championship's rounds, or a published-but-hidden one's, shouldn't leak
-            // onto the public Events page just because the Race row itself is open.
-            // withoutTenantScope() here because Championship carries TenantScope
-            // (league-owned data) and this page has no league context to filter by
-            // -- an anonymous visitor has none, which would otherwise hide every
-            // championship round from every public visitor (TenantScope::apply()
-            // resolves an empty league list to "matches nothing").
-            ->where(function ($q) {
-                $q->whereNull('championship_id')
-                    ->orWhereHas('championship', fn ($cq) => $cq->withoutTenantScope()->publiclyVisible());
-            })
+            // No draft rounds, nor rounds of a draft or hidden championship.
+            ->publiclyListed()
             ->orderBy('scheduled_at')
             ->get();
         $races->loadCount(['registrations', 'teamEntries']);

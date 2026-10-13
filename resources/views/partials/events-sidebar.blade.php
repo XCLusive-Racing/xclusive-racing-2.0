@@ -12,14 +12,8 @@ $tickerArticles = NewsArticle::published()
     ->limit(5)
     ->get();
 
-// Only what the public may see: a championship round only once its championship is
-// public (same rule as the Events page, RaceController::index()) and the round itself
-// isn't a draft. withoutTenantScope(): an anonymous visitor has no league context,
-// which would otherwise hide every championship.
-$sbPublicRaces = fn($q) => $q
-    ->where('status', '!=', 'draft')
-    ->where(fn($q) => $q->whereNull('championship_id')
-        ->orWhereHas('championship', fn($cq) => $cq->withoutTenantScope()->publiclyVisible()));
+// Only what the public may see (Race::scopePubliclyListed(), same as the Events page).
+$sbPublicRaces = fn($q) => $q->publiclyListed();
 
 $sbNextEvent = Race::where('scheduled_at', '>', $now)
     ->where($sbPublicRaces)

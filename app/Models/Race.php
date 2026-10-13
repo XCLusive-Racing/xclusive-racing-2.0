@@ -328,6 +328,16 @@ class Race extends Model
 
     public const WEEKLY_EVENT_TIME = '19:00';
 
+    // What the public may see listed (Events page, calendar): no draft round, and a
+    // championship round only once its championship is public (published and not hidden).
+    // Championship carries TenantScope and a visitor has no league, hence withoutTenantScope().
+    public function scopePubliclyListed(Builder $query): Builder
+    {
+        return $query->where('status', '!=', 'draft')
+            ->where(fn ($q) => $q->whereNull('championship_id')
+                ->orWhereHas('championship', fn ($cq) => $cq->withoutTenantScope()->publiclyVisible()));
+    }
+
     // A special event (Admin > Events > Special Events): a Custom Race (no format) or an
     // endurance race — never a championship round, those live under Championships.
     public function scopeSpecialEvents(Builder $query): Builder

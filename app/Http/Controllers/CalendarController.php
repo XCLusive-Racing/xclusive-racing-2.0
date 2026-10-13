@@ -10,22 +10,24 @@ class CalendarController extends Controller
 {
     public function index(Request $request)
     {
-        $year  = $request->integer('year',  now()->year);
+        $year = $request->integer('year', now()->year);
         $month = $request->integer('month', now()->month);
 
         $current = Carbon::createFromDate($year, $month, 1)->startOfMonth();
 
-        $races = Race::select(['id','title','game','track','scheduled_at','status','is_championship','max_drivers','championship_id'])
+        $races = Race::select(['id', 'title', 'game', 'track', 'scheduled_at', 'status', 'is_championship', 'max_drivers', 'championship_id'])
             ->whereBetween('scheduled_at', [
                 $current->copy()->startOfMonth()->startOfWeek(Carbon::MONDAY),
                 $current->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY),
             ])
+            // No draft rounds, nor rounds of a draft or hidden championship.
+            ->publiclyListed()
             ->orderBy('scheduled_at')
             ->get();
 
         $races->loadCount(['registrations', 'teamEntries']);
 
-        $grouped = $races->groupBy(fn($r) => $r->scheduledAtUk()->format('Y-m-d'));
+        $grouped = $races->groupBy(fn ($r) => $r->scheduledAtUk()->format('Y-m-d'));
 
         $myRaceIds = auth()->check()
             ? auth()->user()->raceRegistrations()->pluck('race_id')->flip()
