@@ -6,6 +6,7 @@ use App\Models\TimeTrialEvent;
 use App\Models\TimeTrialEventLap;
 use App\Models\TimeTrialLap;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 // A weekly event's classification: each driver's fastest counting lap, fastest first.
 //
@@ -33,6 +34,19 @@ class TimeTrialStandings
             'gap_ms' => $lap->lap_time_ms - $leader,
             'points' => TimeTrialRating::points($i + 1, $best->count()),
         ]);
+    }
+
+    /**
+     * The top of the classification for the events sidebar, which is on every page:
+     * cached until the event gets another lap (the key follows its lap count and newest
+     * lap), and at most a few minutes so the all-time records behind it catch up too.
+     */
+    public function top(TimeTrialEvent $event, int $limit = 10): Collection
+    {
+        $laps = $event->laps()->reorder()->selectRaw('count(*) as lap_count, max(id) as last_id')->first();
+        $key = "tt-standings-top:{$event->id}:{$limit}:{$laps?->lap_count}:{$laps?->last_id}";
+
+        return Cache::remember($key, now()->addMinutes(5), fn () => $this->for($event)->take($limit)->values());
     }
 
     public function counts(TimeTrialEvent $event, TimeTrialEventLap $lap, array $records): bool

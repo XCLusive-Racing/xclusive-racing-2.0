@@ -11,6 +11,7 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -89,7 +90,13 @@ class MembershipService
             return null; // not one of ours
         }
 
-        $record = DB::transaction(function () use ($payment, $membership) {
+        // The Mollie subscription calls for a first payment happen after the commit, never
+        // inside it: a rollback can't undo a subscription Mollie already created (the
+        // customer would be charged for a membership we never saved), and the row locks
+        // shouldn't be held while waiting on Mollie.
+        $replaceSubscription = null;
+
+        $record = DB::transaction(function () use ($payment, $membership, &$replaceSubscription) {
             $record = $this->record($membership->user_id, $payment, $membership->plan);
             $record = MembershipPayment::whereKey($record->id)->lockForUpdate()->first();
 
@@ -106,7 +113,7 @@ class MembershipService
                 // same, so the new period follows on from what's still paid, and the new
                 // subscription replaces the old one.
                 $from = $stillPaid ? $membership->paid_until : now();
-                $oldSubscription = $membership->mollie_subscription_id;
+                $replaceSubscription = ['old' => $membership->mollie_subscription_id];
 
                 $membership->fill([
                     'plan' => $record->plan,
@@ -116,10 +123,6 @@ class MembershipService
                     'mollie_mandate_id' => $payment['mandateId'] ?? $membership->mollie_mandate_id,
                     'paid_until' => $from->copy()->add($interval),
                 ]);
-                if ($oldSubscription) {
-                    $this->stopSubscription($membership->mollie_customer_id, $oldSubscription);
-                }
-                $membership->mollie_subscription_id = $this->startSubscription($membership, $membership->paid_until);
             } elseif (($payment['subscriptionId'] ?? null) === $membership->mollie_subscription_id) {
                 $from = $stillPaid ? $membership->paid_until : now();
                 $membership->paid_until = $from->copy()->add($interval);
@@ -132,6 +135,26 @@ class MembershipService
 
             return $record;
         });
+
+        // The new subscription replaces the old one, charging from the end of the period
+        // just paid for.
+        if ($replaceSubscription !== null) {
+            $membership->refresh();
+            try {
+                if ($replaceSubscription['old']) {
+                    $this->stopSubscription($membership->mollie_customer_id, $replaceSubscription['old']);
+                }
+                $membership->update(['mollie_subscription_id' => $this->startSubscription($membership, $membership->paid_until)]);
+            } catch (\Throwable $e) {
+                // Paid and saved, but no (new) subscription: renewals won't come until
+                // it's set up, so this needs a look rather than a silent retry.
+                Log::error('Membership paid but its Mollie subscription could not be replaced', [
+                    'membership_id' => $membership->id, 'payment_id' => $record->mollie_payment_id, 'error' => $e->getMessage(),
+                ]);
+
+                throw $e;
+            }
+        }
 
         // The plan's Discord roles follow right away instead of at the next sweep.
         if ($record->applied_at && $record->wasChanged('applied_at')) {

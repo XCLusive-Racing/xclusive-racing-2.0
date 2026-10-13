@@ -6,8 +6,10 @@ use App\Models\Membership;
 use App\Models\MembershipPayment;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\MembershipService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -25,6 +27,8 @@ class MembershipCheckoutTest extends TestCase
     private int $checkouts = 0;
 
     private int $subscriptions = 0;
+
+    private bool $subscriptionsDown = false;
 
     protected function setUp(): void
     {
@@ -46,7 +50,9 @@ class MembershipCheckoutTest extends TestCase
                     'amount' => $request['amount'],
                     '_links' => ['checkout' => ['href' => 'https://www.mollie.com/checkout/test']],
                 ]),
-                $request->method() === 'POST' && $path === 'customers/cst_1/subscriptions' => Http::response(['id' => 'sub_'.(++$this->subscriptions)]),
+                $request->method() === 'POST' && $path === 'customers/cst_1/subscriptions' => $this->subscriptionsDown
+                    ? Http::response(['detail' => 'Mollie unavailable'], 503)
+                    : Http::response(['id' => 'sub_'.(++$this->subscriptions)]),
                 $request->method() === 'DELETE' && str_starts_with($path, 'customers/cst_1/subscriptions/') => Http::response(['status' => 'canceled']),
                 $request->method() === 'GET' && preg_match('#^customers/cst_1/subscriptions/(sub_\d+)/payments#', $path, $m) === 1 => Http::response(['_embedded' => ['payments' => array_values(array_filter($this->payments, fn ($p) => ($p['subscriptionId'] ?? null) === $m[1]))]]),
                 $request->method() === 'GET' && str_starts_with($path, 'payments/') => Http::response($this->payments[substr($path, 9)]),
@@ -129,6 +135,39 @@ class MembershipCheckoutTest extends TestCase
 
         Carbon::setTestNow('2026-12-03 12:00:01');
         $this->assertFalse($user->fresh()->isSupporter());
+    }
+
+    // Jan's review: the subscription calls ran inside the DB transaction, so a failure
+    // there rolled back a payment the customer had made. Now the payment and the paid
+    // period are saved first; a failed subscription call is logged and rethrown.
+    public function test_a_failing_subscription_call_keeps_the_paid_period(): void
+    {
+        $user = User::factory()->create(['is_supporter' => false]);
+        $this->startCheckout($user);
+        $this->pay('tr_first');
+        $this->subscriptionsDown = true;
+
+        try {
+            app(MembershipService::class)->handlePayment('tr_first');
+            $this->fail('The failed subscription call should surface.');
+        } catch (RequestException) {
+        }
+
+        $membership = Membership::where('user_id', $user->id)->sole();
+        $this->assertSame('active', $membership->status);
+        $this->assertSame('2026-11-03 12:00:00', $membership->paid_until->toDateTimeString());
+        $this->assertNotNull(MembershipPayment::where('mollie_payment_id', 'tr_first')->sole()->applied_at);
+        $this->assertTrue($user->fresh()->isSupporter());
+    }
+
+    // Jan's review: the webhook had no throttle, and every call costs a Mollie lookup.
+    public function test_the_webhook_is_throttled(): void
+    {
+        for ($i = 0; $i < 60; $i++) {
+            $this->post(route('webhooks.mollie'), ['id' => 'not-a-payment'])->assertOk();
+        }
+
+        $this->post(route('webhooks.mollie'), ['id' => 'not-a-payment'])->assertStatus(429);
     }
 
     public function test_yearly_charges_29_99_for_twelve_months(): void

@@ -75,8 +75,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/memberships/return', [MembershipController::class, 'return'])->name('memberships.return');
     Route::post('/memberships/cancel', [MembershipController::class, 'cancel'])->name('memberships.cancel');
 });
-// Mollie's payment webhook (CSRF-exempt, see bootstrap/app.php).
-Route::post('/webhooks/mollie', [MembershipController::class, 'webhook'])->name('webhooks.mollie');
+// Mollie's payment webhook (CSRF-exempt, see bootstrap/app.php). Every call costs a
+// Mollie API lookup, so a flood of made-up ids is cut off; Mollie itself sends a few
+// calls per payment and retries a 429 later.
+Route::post('/webhooks/mollie', [MembershipController::class, 'webhook'])->name('webhooks.mollie')->middleware('throttle:60,1');
 Route::get('/faq', [FaqController::class, 'index'])->name('faq');
 Route::view('/privacy', 'privacy')->name('privacy');
 Route::view('/terms', 'legal.terms')->name('terms');

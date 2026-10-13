@@ -453,6 +453,8 @@ class User extends Authenticatable
         return $this->isSupporter() && filled($this->short_name) ? mb_strtoupper($this->short_name) : null;
     }
 
+    // The stream link perk. With one Supporter plan (no more tiers) it's the same check
+    // as isSupporter(); kept as its own name so the callers say which perk they gate.
     public function canShareStream(): bool
     {
         return $this->isSupporter();

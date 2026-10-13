@@ -63,7 +63,7 @@ $sbTeamEvents = TeamEvent::upcoming()->with('participatingDrivers')->limit(3)->g
 
 // Time Trials tab: this week's event (live, else the next one) and its top 10.
 $sbTimeTrial = \App\Models\TimeTrialEvent::currentOrNext()->with('server')->withCount('registrations')->first();
-$sbTtRows = $sbTimeTrial ? app(\App\Services\TimeTrials\TimeTrialStandings::class)->for($sbTimeTrial)->take(10) : collect();
+$sbTtRows = $sbTimeTrial ? app(\App\Services\TimeTrials\TimeTrialStandings::class)->top($sbTimeTrial) : collect();
 $sbTtRegistered = $sbTimeTrial?->isRegistered(auth()->user()) ?? false;
 
 // Sidebar leaderboard — who gained the most XCL-R rating this period, not who simply

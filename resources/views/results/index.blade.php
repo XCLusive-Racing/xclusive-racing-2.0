@@ -480,7 +480,7 @@
                             <div class="fw-black text-uppercase fst-italic text-dark mb-2" style="font-size:1.05rem">Detailed race stats</div>
                             <p class="text-secondary mx-auto mb-3" style="font-size:.85rem;max-width:460px">
                                 Every lap time, sector splits, consistency and penalties for this race,
-                                available to XCL Supporters and up.
+                                available to XCL Supporters.
                             </p>
                             <a href="{{ auth()->check() ? route('memberships') : route('login') }}"
                                class="btn fw-black text-uppercase text-white" style="background:#7c3aed;font-size:.8rem;padding:.55rem 1.4rem">

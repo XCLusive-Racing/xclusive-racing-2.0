@@ -58,6 +58,27 @@ class TimeTrialEventsTest extends TestCase
         ], $overrides));
     }
 
+    // Jan's review: the events sidebar (on every page) rebuilt the whole classification
+    // per page view. top() is cached until the event gets another lap.
+    public function test_the_sidebar_top_ten_is_cached_until_a_new_lap_comes_in(): void
+    {
+        $event = $this->event();
+        $slow = $this->driver('M1', 'Slow');
+        $fast = $this->driver('M2', 'Fast');
+        $this->eventLap($event, $slow, 32, 140000);
+        $standings = app(TimeTrialStandings::class);
+
+        $this->assertSame(['Slow'], $standings->top($event)->map(fn ($row) => $row['lap']->driver_name)->all());
+
+        \DB::enableQueryLog();
+        $standings->top($event);
+        $this->assertCount(1, \DB::getQueryLog(), 'A cached top ten only checks the lap count.');
+        \DB::disableQueryLog();
+
+        $this->eventLap($event, $fast, 32, 139000);
+        $this->assertSame(['Fast', 'Slow'], $standings->top($event)->map(fn ($row) => $row['lap']->driver_name)->all());
+    }
+
     private function driver(string $playerId, string $name = 'Driver'): User
     {
         return User::factory()->create(['name' => $name, 'platform' => 'xbox', 'platform_id' => $playerId]);
