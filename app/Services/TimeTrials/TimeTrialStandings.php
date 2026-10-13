@@ -40,13 +40,24 @@ class TimeTrialStandings
      * The top of the classification for the events sidebar, which is on every page:
      * cached until the event gets another lap (the key follows its lap count and newest
      * lap), and at most a few minutes so the all-time records behind it catch up too.
+     * Only plain values go in the cache (it unserializes no classes, config/cache.php),
+     * the laps themselves are loaded again in one query.
      */
     public function top(TimeTrialEvent $event, int $limit = 10): Collection
     {
         $laps = $event->laps()->reorder()->selectRaw('count(*) as lap_count, max(id) as last_id')->first();
-        $key = "tt-standings-top:{$event->id}:{$limit}:{$laps?->lap_count}:{$laps?->last_id}";
+        $key = "tt-standings-top-v2:{$event->id}:{$limit}:{$laps?->lap_count}:{$laps?->last_id}";
 
-        return Cache::remember($key, now()->addMinutes(5), fn () => $this->for($event)->take($limit)->values());
+        $rows = Cache::remember($key, now()->addMinutes(5), fn () => $this->for($event)->take($limit)
+            ->map(fn (array $row) => ['lap_id' => $row['lap']->id] + array_diff_key($row, ['lap' => true]))
+            ->values()->all());
+
+        $lapsById = TimeTrialEventLap::with('car')->whereKey(array_column($rows, 'lap_id'))->get()->keyBy('id');
+
+        return collect($rows)
+            ->filter(fn (array $row) => $lapsById->has($row['lap_id']))
+            ->map(fn (array $row) => ['position' => $row['position'], 'lap' => $lapsById[$row['lap_id']], 'gap_ms' => $row['gap_ms'], 'points' => $row['points']])
+            ->values();
     }
 
     public function counts(TimeTrialEvent $event, TimeTrialEventLap $lap, array $records): bool

@@ -18,6 +18,7 @@ use App\Services\TimeTrials\TimeTrialServerService;
 use App\Services\TimeTrials\TimeTrialStandings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Mockery\MockInterface;
 use Tests\TestCase;
 
@@ -62,6 +63,11 @@ class TimeTrialEventsTest extends TestCase
     // per page view. top() is cached until the event gets another lap.
     public function test_the_sidebar_top_ten_is_cached_until_a_new_lap_comes_in(): void
     {
+        // Like production: the cache serializes and unserializes no classes, so a
+        // cached model would come back as __PHP_Incomplete_Class.
+        config(['cache.stores.array.serialize' => true, 'cache.serializable_classes' => false]);
+        Cache::forgetDriver('array');
+
         $event = $this->event();
         $slow = $this->driver('M1', 'Slow');
         $fast = $this->driver('M2', 'Fast');
@@ -72,7 +78,8 @@ class TimeTrialEventsTest extends TestCase
 
         \DB::enableQueryLog();
         $standings->top($event);
-        $this->assertCount(1, \DB::getQueryLog(), 'A cached top ten only checks the lap count.');
+        // The lap count check, the top laps and their cars: no rebuild of the classification.
+        $this->assertCount(3, \DB::getQueryLog());
         \DB::disableQueryLog();
 
         $this->eventLap($event, $fast, 32, 139000);
