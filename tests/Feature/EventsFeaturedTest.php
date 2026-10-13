@@ -132,18 +132,38 @@ class EventsFeaturedTest extends TestCase
         $this->assertSame(0, Race::specialEvents()->count());
     }
 
+    // The Events page's own featured row. The events sidebar (on every page) has a
+    // Featured Events row of its own with the same labels and carousel arrows, so the
+    // assertions look inside the page's row only.
+    private const ROW = "//*[contains(concat(' ', normalize-space(@class), ' '), ' xcl-featured ')]";
+
+    private function eventsPage(): \DOMXPath
+    {
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($this->get(route('events.platform', 'acc-console'))->assertOk()->getContent());
+
+        return new \DOMXPath($dom);
+    }
+
+    private function rowText(\DOMXPath $xpath): string
+    {
+        return implode(' ', array_map(fn ($row) => $row->textContent, iterator_to_array($xpath->query(self::ROW))));
+    }
+
     public function test_the_row_shows_each_slots_title_and_is_left_out_when_all_are_empty(): void
     {
         $this->race('Evening', '21:00', 3);
         $this->special('Special', '2026-10-25 19:00');
 
-        $this->get(route('events.platform', 'acc-console'))
-            ->assertSee('Popular Today')->assertSee('Special Event')->assertDontSee('Weekly Event');
+        $row = $this->rowText($this->eventsPage());
+        $this->assertStringContainsString('Popular Today', $row);
+        $this->assertStringContainsString('Special Event', $row);
+        $this->assertStringNotContainsString('Weekly Event', $row);
 
         Race::query()->delete();
         $this->race('Quiet', '20:00');
         $this->assertSame([], $this->featuredTitles());
-        $this->get(route('events.platform', 'acc-console'))->assertDontSee('Popular Today');
+        $this->assertSame(0, $this->eventsPage()->query(self::ROW)->length);
     }
 
     public function test_phone_carousel_buttons_follow_the_slots_with_popular_today_first(): void
@@ -152,16 +172,14 @@ class EventsFeaturedTest extends TestCase
         $this->race('Evening', '21:00', 3);
         $this->special('Special', '2026-10-25 19:00');
 
-        $dom = new \DOMDocument;
-        @$dom->loadHTML($this->get(route('events.platform', 'acc-console'))->getContent());
-        $xpath = new \DOMXPath($dom);
+        $xpath = $this->eventsPage();
 
-        $tabs = array_map(fn ($tab) => trim($tab->textContent), iterator_to_array($xpath->query('//*[@data-featured-tab]')));
-        $cards = array_map(fn ($card) => $card->getAttribute('data-featured-card'), iterator_to_array($xpath->query('//*[@data-featured-card]')));
+        $tabs = array_map(fn ($tab) => trim($tab->textContent), iterator_to_array($xpath->query(self::ROW.'//*[@data-featured-tab]')));
+        $cards = array_map(fn ($card) => $card->getAttribute('data-featured-card'), iterator_to_array($xpath->query(self::ROW.'//*[@data-featured-card]')));
 
         $this->assertSame(['Popular Today', 'Weekly Event', 'Special Event'], $tabs);
         $this->assertSame(['popular', 'weekly', 'special'], $cards);
-        $this->assertSame(1, $xpath->query('//*[@data-featured-next]')->length);
+        $this->assertSame(1, $xpath->query(self::ROW.'//*[@data-featured-next]')->length);
     }
 
     public function test_admin_special_events_tab_leaves_out_championship_rounds(): void
