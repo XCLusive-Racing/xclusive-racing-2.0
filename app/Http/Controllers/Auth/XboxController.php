@@ -135,7 +135,7 @@ class XboxController extends Controller
 
         if ($existing) {
             auth()->login($existing);
-            return redirect()->route('profile');
+            return redirect()->intended(route('profile'));
         }
 
         session([
