@@ -159,4 +159,26 @@ class ChampionshipReserveDriverTest extends TestCase
         $this->assertContains($this->drivers[2]->id, $this->car()->scoringDriverIds());
         $this->assertNotContains($this->drivers[2]->id, $this->car()->driverIds());
     }
+
+    // League feedback 2026-10-13: every car a team manager entered showed the manager's
+    // name in the Drivers list instead of who drives it.
+    public function test_the_drivers_list_shows_each_cars_line_up_not_the_manager(): void
+    {
+        $this->owner->update(['name' => 'Team Manager']);
+        $this->drivers[0]->update(['name' => 'First Driver']);
+        $this->drivers[1]->update(['name' => 'Second Driver']);
+        $this->drivers[2]->update(['name' => 'Bench Driver']);
+        $this->car()->update(['reserve_driver_id' => $this->drivers[2]->id]);
+
+        $html = $this->get(route('championships.show', $this->championship))->assertOk()->getContent();
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($html);
+        $panel = (new \DOMXPath($dom))->query('//*[@data-tab-panel="drivers"]')->item(0)->textContent;
+
+        $this->assertStringContainsString('Apex Racing #11', $panel);
+        $this->assertStringContainsString('First Driver, Second Driver', $panel);
+        $this->assertStringContainsString('Reserve: Bench Driver', $panel);
+        $this->assertStringNotContainsString('Team Manager', $panel);
+    }
 }

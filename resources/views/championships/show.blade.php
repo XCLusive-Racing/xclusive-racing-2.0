@@ -360,13 +360,24 @@
                     @else
                     <div class="px-4 py-2">
                         @foreach($championship->registrations as $reg)
+                        @php
+                            // A team car: its team and number, with the line-up that drives it
+                            // (the registration's user is only the manager who entered it).
+                            $entryName = $reg->racingTeam
+                                ? $reg->racingTeam->name.($reg->car_number !== null ? ' #'.$reg->car_number : '')
+                                : $reg->user?->displayName();
+                            $lineUp = $reg->racingTeam
+                                ? collect($reg->driverIds())->map(fn ($id) => $carDrivers[$id] ?? null)->filter()
+                                : collect();
+                            $reserve = $reg->reserve_driver_id ? ($carDrivers[$reg->reserve_driver_id] ?? null) : null;
+                        @endphp
                         <div class="d-flex align-items-center gap-2 py-2" style="border-bottom:1px solid #1f2937">
                             <div class="rounded-circle d-flex align-items-center justify-content-center fw-black text-white flex-shrink-0"
                                  style="width:28px;height:28px;font-size:.65rem;background:linear-gradient(135deg,#374151,#6b7280)">
-                                {{ strtoupper(substr($reg->user?->displayName() ?? '?', 0, 1)) }}
+                                {{ strtoupper(substr($entryName ?? '?', 0, 1)) }}
                             </div>
                             <div class="flex-grow-1">
-                                <span class="text-white fw-bold" style="font-size:.82rem">{{ $reg->user?->displayName() }}</span>
+                                <span class="text-white fw-bold" style="font-size:.82rem">{{ $entryName }}</span>
                                 @if($reg->is_spectator)
                                 <span class="badge ms-1 fw-bold" style="font-size:.6rem;background:#0891b222;color:#22d3ee">Spectator</span>
                                 @endif
@@ -380,7 +391,14 @@
                                     {{ $reg->driverClass->name }}
                                 </span>
                                 @endif
-                                @if(!$reg->racing_team_id && $reg->car_model)
+                                @if($reg->racingTeam)
+                                <div style="color:#d1d5db;font-size:.75rem">
+                                    {{ $lineUp->map->displayName()->implode(', ') }}@if($reserve)<span style="color:#6b7280"> · Reserve: {{ $reserve->displayName() }}</span>@endif
+                                </div>
+                                @if($reg->car_model)
+                                <div style="color:#6b7280;font-size:.72rem">{{ $reg->car_model }}</div>
+                                @endif
+                                @elseif($reg->car_model)
                                 <div style="color:#6b7280;font-size:.72rem">{{ $reg->car_number !== null ? '#'.$reg->car_number.' · ' : '' }}{{ $reg->car_model }}</div>
                                 @endif
                             </div>
@@ -516,7 +534,12 @@
                 @php
                     $eloCol = \App\Models\User::eloColumn($championship->game);
                     $sofRatings = $eloCol
-                        ? $championship->registrations->pluck('user')->filter()
+                        // Everyone who races: a team car's line-up, not the manager who entered it.
+                        ? $championship->registrations
+                            ->flatMap(fn ($reg) => $reg->racingTeam
+                                ? collect($reg->driverIds())->map(fn ($id) => $carDrivers[$id] ?? null)
+                                : [$reg->user])
+                            ->filter()
                             ->map(fn($u) => (int) ($u->{$eloCol} ?? 0))
                             ->filter(fn($r) => $r > 0)
                         : collect();

@@ -88,8 +88,12 @@ class ChampionshipController extends Controller
             'classes',
             // Entries still waiting for manual approval aren't entrants yet.
             'driverClasses',
-            'registrations' => fn ($q) => $q->approved()->with('user', 'championshipClass', 'driverClass'),
+            'registrations' => fn ($q) => $q->approved()->with('user', 'championshipClass', 'driverClass', 'racingTeam'),
         ]);
+        // A team car is entered by its team manager (user_id), not by who drives it —
+        // the Drivers list shows the car's own line-up and reserve instead.
+        $carDrivers = User::whereIn('id', $championship->registrations->whereNotNull('racing_team_id')->flatMap->carDriverIds()->unique())
+            ->get()->keyBy('id');
         $rounds = $championship->rounds()->where('status', '!=', 'draft')->orderBy('round_number')->get();
         $standings = $championship->computeStandings();
         $classStandings = $championship->computeClassStandings();
@@ -98,7 +102,7 @@ class ChampionshipController extends Controller
         $teamChampionship = $championship->computeTeamChampionship();
         $ballastChart = app(EntryBalanceService::class)->chart($championship);
 
-        return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'driverClassStandings', 'teamStandings', 'teamChampionship', 'ballastChart'));
+        return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'driverClassStandings', 'teamStandings', 'teamChampionship', 'ballastChart', 'carDrivers'));
     }
 
     public function register(Request $request, int $championship)
