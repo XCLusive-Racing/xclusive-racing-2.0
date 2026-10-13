@@ -56,7 +56,13 @@
                 @if($selected)
                 <style>
                     .results-tab-active { color: #111827 !important; border-bottom: 2px solid #7c3aed !important; }
-                    .results-tabbar { overflow-x: auto; white-space: nowrap; scrollbar-width: thin; }
+                    .results-tabbar-wrap { position: relative; background: #fafafa; }
+                    .results-tabbar { overflow-x: auto; white-space: nowrap; scrollbar-width: none; scroll-behavior: smooth; }
+                    .results-tabbar::-webkit-scrollbar { display: none; }
+                    .results-tabbar-arrow { position: absolute; top: 0; bottom: 0; z-index: 2; width: 2.5rem; border: 0; color: #7c3aed; cursor: pointer; }
+                    .results-tabbar-arrow.prev { left: 0; background: linear-gradient(to right, #fafafa 60%, rgba(250,250,250,0)); text-align: left; padding-left: .6rem; }
+                    .results-tabbar-arrow.next { right: 0; background: linear-gradient(to left, #fafafa 60%, rgba(250,250,250,0)); text-align: right; padding-right: .6rem; }
+                    .results-tabbar-arrow[hidden] { display: none; }
                     .results-tabbar button { flex-shrink: 0; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; cursor: pointer; }
                     .results-tabbar-sep { flex-shrink: 0; width: 1px; margin: .7rem .25rem; background: #e5e7eb; }
                     .results-race-switch { display: inline-flex; padding: 2px; border-radius: 8px; background: #f3f4f6; }
@@ -163,7 +169,9 @@
                         $lockStats  = $statsAvailable && ! $canSeeStats;
                     @endphp
                     <div class="bg-white rounded-3 shadow-sm overflow-hidden">
-                        <div class="results-tabbar d-flex border-bottom" style="background:#fafafa">
+                        <div class="results-tabbar-wrap border-bottom" data-tabbar>
+                        <button type="button" class="results-tabbar-arrow prev" data-tabbar-scroll="-1" aria-label="Previous tabs" hidden><i class="fa-solid fa-chevron-left"></i></button>
+                        <div class="results-tabbar d-flex">
                             @foreach(['race' => 'Race', 'quali' => 'Qualifying', 'rating' => 'Rating'] as $tabId => $tabLabel)
                             <button class="px-4 py-3 border-0 bg-transparent fw-bold text-secondary" data-tab-btn="{{ $tabId }}" data-tab-active-class="results-tab-active">{{ $tabLabel }}</button>
                             @endforeach
@@ -175,6 +183,8 @@
                             </button>
                             @endforeach
                             @endif
+                        </div>
+                        <button type="button" class="results-tabbar-arrow next" data-tabbar-scroll="1" aria-label="More tabs" hidden><i class="fa-solid fa-chevron-right"></i></button>
                         </div>
 
                         {{-- Race results --}}
@@ -717,5 +727,27 @@
             });
         });
     })();
+
+    // Tab bar too wide for the screen (phones): arrows instead of a scrollbar, each
+    // one only shown while there are more tabs that way.
+    document.querySelectorAll('[data-tabbar]').forEach(function (wrap) {
+        var bar  = wrap.querySelector('.results-tabbar');
+        var prev = wrap.querySelector('[data-tabbar-scroll="-1"]');
+        var next = wrap.querySelector('[data-tabbar-scroll="1"]');
+
+        function update() {
+            prev.hidden = bar.scrollLeft <= 1;
+            next.hidden = bar.scrollLeft + bar.clientWidth >= bar.scrollWidth - 1;
+        }
+
+        [prev, next].forEach(function (arrow) {
+            arrow.addEventListener('click', function () {
+                bar.scrollBy({ left: arrow.dataset.tabbarScroll * bar.clientWidth * 0.7 });
+            });
+        });
+        bar.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+        update();
+    });
 </script>
 @endpush
