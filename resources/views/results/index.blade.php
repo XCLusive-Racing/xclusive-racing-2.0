@@ -469,7 +469,7 @@
                         <div data-tab-panel="{{ $tabId }}" class="xcl-stats-locked text-center px-4 py-5" style="display:none">
                             <div class="fw-black text-uppercase fst-italic text-dark mb-2" style="font-size:1.05rem">Detailed race stats</div>
                             <p class="text-secondary mx-auto mb-3" style="font-size:.85rem;max-width:460px">
-                                Every lap time, sector splits, consistency and penalties for this race —
+                                Every lap time, sector splits, consistency and penalties for this race,
                                 available to XCL Supporters and up.
                             </p>
                             <a href="{{ auth()->check() ? route('memberships') : route('login') }}"
