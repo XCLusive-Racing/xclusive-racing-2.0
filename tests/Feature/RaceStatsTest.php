@@ -47,13 +47,13 @@ class RaceStatsTest extends TestCase
         RaceSessionFile::put($race, 1, $this->resultsFile());
         $url = route('results.index', ['race' => $race->id]);
 
-        $this->get($url)->assertOk()->assertSee('Log in to see the stats')->assertDontSee('data-tab-btn="stats-consistency"', false);
+        $this->get($url)->assertOk()->assertSee('Log in to see the stats')->assertDontSee('Theoretical Best');
 
         $driver = User::factory()->create();
-        $this->actingAs($driver)->get($url)->assertSee('Unlock with a membership')->assertDontSee('data-tab-btn="stats-consistency"', false);
+        $this->actingAs($driver)->get($url)->assertSee('Unlock with a membership')->assertDontSee('Theoretical Best');
 
         Membership::create(['user_id' => $driver->id, 'plan' => 'monthly', 'status' => 'active', 'mode' => 'test', 'paid_until' => now()->addMonth()]);
-        $this->actingAs($driver->fresh())->get($url)->assertSee('data-tab-btn="stats-consistency"', false)->assertDontSee('Unlock with a membership');
+        $this->actingAs($driver->fresh())->get($url)->assertSee('Theoretical Best')->assertDontSee('Unlock with a membership');
     }
 
     public function test_a_race_without_stats_shows_no_preview(): void

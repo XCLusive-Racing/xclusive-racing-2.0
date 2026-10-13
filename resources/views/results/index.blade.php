@@ -56,6 +56,12 @@
                 @if($selected)
                 <style>
                     .results-tab-active { color: #111827 !important; border-bottom: 2px solid #7c3aed !important; }
+                    .results-tabbar { overflow-x: auto; white-space: nowrap; scrollbar-width: thin; }
+                    .results-tabbar button { flex-shrink: 0; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; cursor: pointer; }
+                    .results-tabbar-sep { flex-shrink: 0; width: 1px; margin: .7rem .25rem; background: #e5e7eb; }
+                    .results-race-switch { display: inline-flex; padding: 2px; border-radius: 8px; background: #f3f4f6; }
+                    .results-race-switch a { padding: .25rem .8rem; border-radius: 6px; font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #6b7280; text-decoration: none; }
+                    .results-race-switch a.active { background: #7c3aed; color: #fff; }
                 </style>
                 @php
                     $fmt       = $selected->eventFormat;
@@ -100,21 +106,8 @@
                 @endphp
                 <div data-tabs data-default-tab="race">
 
-                    {{-- Multi-race round: one race at a time --}}
-                    @if($raceNumbers->count() > 1)
-                    <div class="d-flex gap-2 mb-3">
-                        @foreach($raceNumbers as $n)
-                        <a href="{{ route('results.index', ['race' => $selected->id, 'race_number' => $n]) }}"
-                           class="btn btn-sm fw-bold text-uppercase {{ $n === $raceNumber ? 'text-white' : 'btn-light' }}"
-                           style="font-size:.75rem;letter-spacing:.05em;{{ $n === $raceNumber ? 'background:#7c3aed' : '' }}">
-                            Race {{ $n }}
-                        </a>
-                        @endforeach
-                    </div>
-                    @endif
-
                     {{-- Event header --}}
-                    <div class="bg-white rounded-3 shadow-sm mb-3 p-3 d-flex align-items-center gap-3">
+                    <div class="bg-white rounded-3 shadow-sm mb-3 p-3 d-flex align-items-center gap-3 flex-wrap">
                         @if($selected->icon_url)
                         <img src="{{ $selected->icon_url }}" alt="" width="40" height="40" style="object-fit:contain;border-radius:6px">
                         @endif
@@ -125,6 +118,15 @@
                             <div class="text-secondary" style="font-size:.78rem">
                                 {{ $selected->track }} &middot; {{ $selected->scheduledAtUk()->format('d M Y') }}
                             </div>
+                            {{-- Multi-race round: one race at a time; the tabs below all follow it --}}
+                            @if($raceNumbers->count() > 1)
+                            <div class="results-race-switch mt-2">
+                                @foreach($raceNumbers as $n)
+                                <a href="{{ route('results.index', ['race' => $selected->id, 'race_number' => $n]) }}"
+                                   class="{{ $n === $raceNumber ? 'active' : '' }}">Race {{ $n }}</a>
+                                @endforeach
+                            </div>
+                            @endif
                         </div>
                         @if($headerSof !== null || $headerSofByClass->isNotEmpty() || $fmt)
                         <div class="ms-auto d-flex align-items-center gap-4">
@@ -153,27 +155,26 @@
                         @endif
                     </div>
 
-                    {{-- Tabs --}}
+                    {{-- Tabs: results for everyone, then the detailed stats — a membership perk
+                         (ResultsController), so locked tabs with a teaser for everyone else. --}}
+                    @php
+                        $statsTabs = ['stats-best-laps' => 'Best Laps', 'stats-sectors' => 'Sectors', 'stats-consistency' => 'Consistency', 'stats-lap-by-lap' => 'Lap by Lap', 'stats-penalties' => 'Penalties'];
+                        $showStats  = $stats && $stats['leaderboard'];
+                        $lockStats  = $statsAvailable && ! $canSeeStats;
+                    @endphp
                     <div class="bg-white rounded-3 shadow-sm overflow-hidden">
-                        <div class="d-flex border-bottom" style="background:#fafafa">
-                            <button class="px-4 py-3 border-0 bg-transparent fw-bold text-secondary"
-                                    data-tab-btn="race"
-                                    data-tab-active-class="results-tab-active"
-                                    style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;cursor:pointer">
-                                Race
+                        <div class="results-tabbar d-flex border-bottom" style="background:#fafafa">
+                            @foreach(['race' => 'Race', 'quali' => 'Qualifying', 'rating' => 'Rating'] as $tabId => $tabLabel)
+                            <button class="px-4 py-3 border-0 bg-transparent fw-bold text-secondary" data-tab-btn="{{ $tabId }}" data-tab-active-class="results-tab-active">{{ $tabLabel }}</button>
+                            @endforeach
+                            @if($showStats || $lockStats)
+                            <span class="results-tabbar-sep"></span>
+                            @foreach($statsTabs as $tabId => $tabLabel)
+                            <button class="px-4 py-3 border-0 bg-transparent fw-bold text-secondary" data-tab-btn="{{ $tabId }}" data-tab-active-class="results-tab-active">
+                                @if($lockStats)<i class="fa-solid fa-lock me-1" style="font-size:.65rem"></i>@endif{{ $tabLabel }}
                             </button>
-                            <button class="px-4 py-3 border-0 bg-transparent fw-bold text-secondary"
-                                    data-tab-btn="quali"
-                                    data-tab-active-class="results-tab-active"
-                                    style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;cursor:pointer">
-                                Qualifying
-                            </button>
-                            <button class="px-4 py-3 border-0 bg-transparent fw-bold text-secondary"
-                                    data-tab-btn="rating"
-                                    data-tab-active-class="results-tab-active"
-                                    style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;cursor:pointer">
-                                Rating
-                            </button>
+                            @endforeach
+                            @endif
                         </div>
 
                         {{-- Race results --}}
@@ -462,289 +463,231 @@
                             @endforeach
                         </div>
 
-                    </div>
-                </div>
-
-                {{-- Detailed stats are a membership perk (ResultsController): a locked preview
-                     for everyone else when this race has them. --}}
-                @if($statsAvailable && ! $canSeeStats)
-                <div class="xcl-stats-locked bg-white rounded-3 shadow-sm overflow-hidden mt-3">
-                    <div class="d-flex flex-wrap border-bottom" style="background:#fafafa">
-                        @foreach(['Best Laps', 'Sectors', 'Consistency', 'Lap by Lap', 'Penalties'] as $tab)
-                        <span class="px-4 py-3 fw-bold text-secondary" style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;opacity:.55">
-                            <i class="fa-solid fa-lock me-1" style="font-size:.65rem"></i>{{ $tab }}
-                        </span>
+                        {{-- Detailed stats locked: each tab shows the membership teaser --}}
+                        @if($lockStats)
+                        @foreach($statsTabs as $tabId => $tabLabel)
+                        <div data-tab-panel="{{ $tabId }}" class="xcl-stats-locked text-center px-4 py-5" style="display:none">
+                            <div class="fw-black text-uppercase fst-italic text-dark mb-2" style="font-size:1.05rem">Detailed race stats</div>
+                            <p class="text-secondary mx-auto mb-3" style="font-size:.85rem;max-width:460px">
+                                Every lap time, sector splits, consistency and penalties for this race —
+                                available to XCL Supporters and up.
+                            </p>
+                            <a href="{{ auth()->check() ? route('memberships') : route('login') }}"
+                               class="btn fw-black text-uppercase text-white" style="background:#7c3aed;font-size:.8rem;padding:.55rem 1.4rem">
+                                {{ auth()->check() ? 'Unlock with a membership' : 'Log in to see the stats' }}
+                            </a>
+                        </div>
                         @endforeach
-                    </div>
-                    <div class="text-center px-4 py-5">
-                        <div class="fw-black text-uppercase fst-italic text-dark mb-2" style="font-size:1.05rem">Detailed race stats</div>
-                        <p class="text-secondary mx-auto mb-3" style="font-size:.85rem;max-width:460px">
-                            Every lap time, sector splits, consistency and penalties for this race —
-                            available to XCL Supporters and up.
-                        </p>
-                        <a href="{{ auth()->check() ? route('memberships') : route('login') }}"
-                           class="btn fw-black text-uppercase text-white" style="background:#7c3aed;font-size:.8rem;padding:.55rem 1.4rem">
-                            {{ auth()->check() ? 'Unlock with a membership' : 'Log in to see the stats' }}
-                        </a>
-                    </div>
-                </div>
-                @endif
+                        @endif
 
-                {{-- Detailed stats — from the raw ACC session JSON, when one was captured on import --}}
-                @if($stats && $stats['leaderboard'])
-                @php
-                    $driverLabel = fn($row) => trim(($row['firstName'] ?? '') . ' ' . ($row['lastName'] ?? '')) ?: ($row['shortName'] ?: 'Unknown');
-                    $purple      = 'background:#7c3aed;color:#fff;font-weight:700;padding:2px 8px;border-radius:4px;display:inline-block';
-                @endphp
-                <div class="bg-white rounded-3 shadow-sm overflow-hidden mt-3" data-tabs data-default-tab="stats-results">
-                    <div class="d-flex flex-wrap border-bottom" style="background:#fafafa">
-                        <button class="px-4 py-3 border-0 bg-transparent fw-bold text-secondary" data-tab-btn="stats-results" data-tab-active-class="results-tab-active" style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;cursor:pointer">Results</button>
-                        <button class="px-4 py-3 border-0 bg-transparent fw-bold text-secondary" data-tab-btn="stats-best-laps" data-tab-active-class="results-tab-active" style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;cursor:pointer">Best Laps</button>
-                        <button class="px-4 py-3 border-0 bg-transparent fw-bold text-secondary" data-tab-btn="stats-sectors" data-tab-active-class="results-tab-active" style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;cursor:pointer">Sectors</button>
-                        <button class="px-4 py-3 border-0 bg-transparent fw-bold text-secondary" data-tab-btn="stats-consistency" data-tab-active-class="results-tab-active" style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;cursor:pointer">Consistency</button>
-                        <button class="px-4 py-3 border-0 bg-transparent fw-bold text-secondary" data-tab-btn="stats-lap-by-lap" data-tab-active-class="results-tab-active" style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;cursor:pointer">Lap by Lap</button>
-                        <button class="px-4 py-3 border-0 bg-transparent fw-bold text-secondary" data-tab-btn="stats-penalties" data-tab-active-class="results-tab-active" style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;cursor:pointer">Penalties</button>
-                    </div>
+                        {{-- Detailed stats — from the raw ACC session JSON, when one was captured on import --}}
+                        @if($showStats)
+                        @php
+                            $driverLabel = fn($row) => trim(($row['firstName'] ?? '') . ' ' . ($row['lastName'] ?? '')) ?: ($row['shortName'] ?: 'Unknown');
+                            $purple      = 'background:#7c3aed;color:#fff;font-weight:700;padding:2px 8px;border-radius:4px;display:inline-block';
+                        @endphp
 
-                    {{-- Results --}}
-                    <div data-tab-panel="stats-results">
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0" style="font-size:.875rem">
-                                <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
-                                    <tr>
-                                        <th class="ps-4 py-3 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Pos</th>
-                                        <th class="py-3 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Driver</th>
-                                        <th class="py-3 fw-bold text-uppercase text-secondary d-none d-md-table-cell" style="font-size:.7rem;letter-spacing:.06em">Car</th>
-                                        <th class="py-3 text-center fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Laps</th>
-                                        <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Best Lap</th>
-                                        <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Total Time</th>
-                                        <th class="py-3 text-end pe-4 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Gap</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($stats['leaderboard'] as $row)
-                                    <tr style="border-bottom:1px solid #f9fafb">
-                                        <td class="ps-4 fw-bold" style="font-size:.9rem">{{ $row['position'] }}</td>
-                                        <td class="fw-bold text-dark" style="font-size:.88rem">{{ $driverLabel($row) }}</td>
-                                        <td class="text-secondary d-none d-md-table-cell" style="font-size:.8rem">{{ $row['carName'] }}</td>
-                                        <td class="text-center text-secondary" style="font-size:.85rem">{{ $row['lapCount'] }}</td>
-                                        <td class="text-end fw-bold" style="font-size:.85rem;font-variant-numeric:tabular-nums">{{ \App\Services\AccResultsParser::formatLaptime($row['bestLap']) }}</td>
-                                        <td class="text-end fw-bold" style="font-size:.85rem;font-variant-numeric:tabular-nums">{{ \App\Services\AccResultsParser::formatDuration($row['totalTime']) }}</td>
-                                        <td class="text-end pe-4 fw-bold" style="font-size:.82rem;font-variant-numeric:tabular-nums;color:#6b7280">
-                                            @if($row['position'] === 1)
-                                                LEADER
-                                            @elseif($row['lapCount'] !== $stats['leaderLapCount'])
-                                                +{{ $stats['leaderLapCount'] - $row['lapCount'] }} {{ ($stats['leaderLapCount'] - $row['lapCount']) === 1 ? 'lap' : 'laps' }}
-                                            @else
-                                                +{{ \App\Services\AccResultsParser::formatLaptime($row['gap']) }}
-                                            @endif
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    {{-- Best Laps --}}
-                    @php $byBestLap = collect($stats['leaderboard'])->filter(fn($r) => $r['bestLap'])->sortBy('bestLap')->values(); @endphp
-                    <div data-tab-panel="stats-best-laps" style="display:none">
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0" style="font-size:.875rem">
-                                <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
-                                    <tr>
-                                        <th class="ps-4 py-3 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Pos</th>
-                                        <th class="py-3 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Driver</th>
-                                        <th class="py-3 fw-bold text-uppercase text-secondary d-none d-md-table-cell" style="font-size:.7rem;letter-spacing:.06em">Car</th>
-                                        <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Best Lap</th>
-                                        <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">S1</th>
-                                        <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">S2</th>
-                                        <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">S3</th>
-                                        <th class="py-3 text-end pe-4 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Gap to Fastest</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($byBestLap as $i => $row)
-                                    <tr style="border-bottom:1px solid #f9fafb;{{ $i === 0 ? 'background:#7c3aed0d' : '' }}">
-                                        <td class="ps-4 fw-bold" style="font-size:.9rem">{{ $i + 1 }}</td>
-                                        <td class="fw-bold text-dark" style="font-size:.88rem">{{ $driverLabel($row) }}</td>
-                                        <td class="text-secondary d-none d-md-table-cell" style="font-size:.8rem">{{ $row['carName'] }}</td>
-                                        <td class="text-end" style="font-size:.85rem;font-variant-numeric:tabular-nums">
-                                            <span style="{{ $i === 0 ? $purple : 'font-weight:700' }}">{{ \App\Services\AccResultsParser::formatLaptime($row['bestLap']) }}</span>
-                                        </td>
-                                        @foreach([0,1,2] as $s)
-                                        <td class="text-end" style="font-size:.82rem;font-variant-numeric:tabular-nums">
-                                            <span style="{{ ($row['purpleSectors'][$s] ?? false) ? $purple : '' }}">{{ \App\Services\AccResultsParser::formatLaptime($row['bestSplits'][$s] ?? null) }}</span>
-                                        </td>
+                        {{-- Best Laps --}}
+                        @php $byBestLap = collect($stats['leaderboard'])->filter(fn($r) => $r['bestLap'])->sortBy('bestLap')->values(); @endphp
+                        <div data-tab-panel="stats-best-laps" style="display:none">
+                            <div class="table-responsive">
+                                <table class="table align-middle mb-0" style="font-size:.875rem">
+                                    <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
+                                        <tr>
+                                            <th class="ps-4 py-3 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Pos</th>
+                                            <th class="py-3 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Driver</th>
+                                            <th class="py-3 fw-bold text-uppercase text-secondary d-none d-md-table-cell" style="font-size:.7rem;letter-spacing:.06em">Car</th>
+                                            <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Best Lap</th>
+                                            <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">S1</th>
+                                            <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">S2</th>
+                                            <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">S3</th>
+                                            <th class="py-3 text-end pe-4 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Gap to Fastest</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($byBestLap as $i => $row)
+                                        <tr style="border-bottom:1px solid #f9fafb;{{ $i === 0 ? 'background:#7c3aed0d' : '' }}">
+                                            <td class="ps-4 fw-bold" style="font-size:.9rem">{{ $i + 1 }}</td>
+                                            <td class="fw-bold text-dark" style="font-size:.88rem">{{ $driverLabel($row) }}</td>
+                                            <td class="text-secondary d-none d-md-table-cell" style="font-size:.8rem">{{ $row['carName'] }}</td>
+                                            <td class="text-end" style="font-size:.85rem;font-variant-numeric:tabular-nums">
+                                                <span style="{{ $i === 0 ? $purple : 'font-weight:700' }}">{{ \App\Services\AccResultsParser::formatLaptime($row['bestLap']) }}</span>
+                                            </td>
+                                            @foreach([0,1,2] as $s)
+                                            <td class="text-end" style="font-size:.82rem;font-variant-numeric:tabular-nums">
+                                                <span style="{{ ($row['purpleSectors'][$s] ?? false) ? $purple : '' }}">{{ \App\Services\AccResultsParser::formatLaptime($row['bestSplits'][$s] ?? null) }}</span>
+                                            </td>
+                                            @endforeach
+                                            <td class="text-end pe-4 text-secondary" style="font-size:.82rem;font-variant-numeric:tabular-nums">
+                                                {{ $i === 0 ? '—' : '+' . \App\Services\AccResultsParser::formatLaptime($row['bestLap'] - $byBestLap[0]['bestLap']) }}
+                                            </td>
+                                        </tr>
                                         @endforeach
-                                        <td class="text-end pe-4 text-secondary" style="font-size:.82rem;font-variant-numeric:tabular-nums">
-                                            {{ $i === 0 ? '—' : '+' . \App\Services\AccResultsParser::formatLaptime($row['bestLap'] - $byBestLap[0]['bestLap']) }}
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
 
-                    {{-- Sectors --}}
-                    <div data-tab-panel="stats-sectors" style="display:none">
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0" style="font-size:.875rem">
-                                <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
-                                    <tr>
-                                        <th class="ps-4 py-3 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Driver</th>
-                                        <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Best S1</th>
-                                        <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Best S2</th>
-                                        <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Best S3</th>
-                                        <th class="py-3 text-end pe-4 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Theoretical Best</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($stats['leaderboard'] as $row)
-                                    <tr style="border-bottom:1px solid #f9fafb">
-                                        <td class="ps-4 fw-bold text-dark" style="font-size:.88rem">{{ $driverLabel($row) }}</td>
-                                        @foreach([0,1,2] as $s)
-                                        <td class="text-end" style="font-size:.82rem;font-variant-numeric:tabular-nums">
-                                            <span style="{{ ($row['purpleSectors'][$s] ?? false) ? $purple : '' }}">{{ \App\Services\AccResultsParser::formatLaptime($row['bestSplits'][$s] ?? null) }}</span>
-                                        </td>
+                        {{-- Sectors --}}
+                        <div data-tab-panel="stats-sectors" style="display:none">
+                            <div class="table-responsive">
+                                <table class="table align-middle mb-0" style="font-size:.875rem">
+                                    <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
+                                        <tr>
+                                            <th class="ps-4 py-3 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Driver</th>
+                                            <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Best S1</th>
+                                            <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Best S2</th>
+                                            <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Best S3</th>
+                                            <th class="py-3 text-end pe-4 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Theoretical Best</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($stats['leaderboard'] as $row)
+                                        <tr style="border-bottom:1px solid #f9fafb">
+                                            <td class="ps-4 fw-bold text-dark" style="font-size:.88rem">{{ $driverLabel($row) }}</td>
+                                            @foreach([0,1,2] as $s)
+                                            <td class="text-end" style="font-size:.82rem;font-variant-numeric:tabular-nums">
+                                                <span style="{{ ($row['purpleSectors'][$s] ?? false) ? $purple : '' }}">{{ \App\Services\AccResultsParser::formatLaptime($row['bestSplits'][$s] ?? null) }}</span>
+                                            </td>
+                                            @endforeach
+                                            <td class="text-end pe-4 fw-bold" style="font-size:.85rem;font-variant-numeric:tabular-nums;color:#7c3aed">
+                                                {{ \App\Services\AccResultsParser::formatLaptime($row['theoreticalBest']) }}
+                                            </td>
+                                        </tr>
                                         @endforeach
-                                        <td class="text-end pe-4 fw-bold" style="font-size:.85rem;font-variant-numeric:tabular-nums;color:#7c3aed">
-                                            {{ \App\Services\AccResultsParser::formatLaptime($row['theoreticalBest']) }}
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
 
-                    {{-- Consistency --}}
-                    @php $byConsistency = collect($stats['leaderboard'])->filter(fn($r) => $r['consistency'])->sortBy(fn($r) => $r['consistency']['delta'])->values(); @endphp
-                    <div data-tab-panel="stats-consistency" style="display:none">
-                        @if($byConsistency->isEmpty())
-                        <p class="text-secondary text-center py-5" style="font-size:.85rem">No valid laps to calculate consistency.</p>
-                        @else
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0" style="font-size:.875rem">
-                                <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
-                                    <tr>
-                                        <th class="ps-4 py-3 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Driver</th>
-                                        <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Best Lap</th>
-                                        <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Avg Lap</th>
-                                        <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Worst Lap</th>
-                                        <th class="py-3 text-center fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Delta%</th>
-                                        <th class="py-3 text-center pe-4 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Valid Laps</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($byConsistency as $row)
-                                    @php
-                                        $delta      = $row['consistency']['delta'];
-                                        $badgeColor = $delta < 1 ? '#16a34a' : ($delta <= 2 ? '#d97706' : '#dc2626');
-                                    @endphp
-                                    <tr style="border-bottom:1px solid #f9fafb">
-                                        <td class="ps-4 fw-bold text-dark" style="font-size:.88rem">{{ $driverLabel($row) }}</td>
-                                        <td class="text-end fw-bold" style="font-size:.85rem;font-variant-numeric:tabular-nums">{{ \App\Services\AccResultsParser::formatLaptime($row['consistency']['bestLap']) }}</td>
-                                        <td class="text-end text-secondary" style="font-size:.82rem;font-variant-numeric:tabular-nums">{{ \App\Services\AccResultsParser::formatLaptime($row['consistency']['avgLap']) }}</td>
-                                        <td class="text-end text-secondary" style="font-size:.82rem;font-variant-numeric:tabular-nums">{{ \App\Services\AccResultsParser::formatLaptime($row['consistency']['worstLap']) }}</td>
-                                        <td class="text-center">
-                                            <span class="badge" style="background:{{ $badgeColor }}20;color:{{ $badgeColor }};border:1px solid {{ $badgeColor }}40;font-size:.72rem">{{ number_format($delta, 2) }}%</span>
-                                        </td>
-                                        <td class="text-center pe-4 text-secondary" style="font-size:.82rem">{{ $row['consistency']['validLapCount'] }}</td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                        {{-- Consistency --}}
+                        @php $byConsistency = collect($stats['leaderboard'])->filter(fn($r) => $r['consistency'])->sortBy(fn($r) => $r['consistency']['delta'])->values(); @endphp
+                        <div data-tab-panel="stats-consistency" style="display:none">
+                            @if($byConsistency->isEmpty())
+                            <p class="text-secondary text-center py-5" style="font-size:.85rem">No valid laps to calculate consistency.</p>
+                            @else
+                            <div class="table-responsive">
+                                <table class="table align-middle mb-0" style="font-size:.875rem">
+                                    <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
+                                        <tr>
+                                            <th class="ps-4 py-3 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Driver</th>
+                                            <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Best Lap</th>
+                                            <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Avg Lap</th>
+                                            <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Worst Lap</th>
+                                            <th class="py-3 text-center fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Delta%</th>
+                                            <th class="py-3 text-center pe-4 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Valid Laps</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($byConsistency as $row)
+                                        @php
+                                            $delta      = $row['consistency']['delta'];
+                                            $badgeColor = $delta < 1 ? '#16a34a' : ($delta <= 2 ? '#d97706' : '#dc2626');
+                                        @endphp
+                                        <tr style="border-bottom:1px solid #f9fafb">
+                                            <td class="ps-4 fw-bold text-dark" style="font-size:.88rem">{{ $driverLabel($row) }}</td>
+                                            <td class="text-end fw-bold" style="font-size:.85rem;font-variant-numeric:tabular-nums">{{ \App\Services\AccResultsParser::formatLaptime($row['consistency']['bestLap']) }}</td>
+                                            <td class="text-end text-secondary" style="font-size:.82rem;font-variant-numeric:tabular-nums">{{ \App\Services\AccResultsParser::formatLaptime($row['consistency']['avgLap']) }}</td>
+                                            <td class="text-end text-secondary" style="font-size:.82rem;font-variant-numeric:tabular-nums">{{ \App\Services\AccResultsParser::formatLaptime($row['consistency']['worstLap']) }}</td>
+                                            <td class="text-center">
+                                                <span class="badge" style="background:{{ $badgeColor }}20;color:{{ $badgeColor }};border:1px solid {{ $badgeColor }}40;font-size:.72rem">{{ number_format($delta, 2) }}%</span>
+                                            </td>
+                                            <td class="text-center pe-4 text-secondary" style="font-size:.82rem">{{ $row['consistency']['validLapCount'] }}</td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            @endif
+                        </div>
+
+                        {{-- Lap by Lap --}}
+                        @php
+                            $maxLap = collect($stats['leaderboard'])->max('lapCount') ?: 0;
+                        @endphp
+                        <div data-tab-panel="stats-lap-by-lap" style="display:none">
+                            <div class="table-responsive">
+                                <table class="table align-middle mb-0" style="font-size:.8rem">
+                                    <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
+                                        <tr>
+                                            <th class="ps-4 py-3 fw-bold text-uppercase text-secondary" style="font-size:.68rem;letter-spacing:.06em">Lap</th>
+                                            @foreach($stats['leaderboard'] as $row)
+                                            <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.68rem;letter-spacing:.06em;white-space:nowrap">{{ $driverLabel($row) }}</th>
+                                            @endforeach
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @for($lapNum = 1; $lapNum <= $maxLap; $lapNum++)
+                                        @php
+                                            $lapByCarId = [];
+                                            foreach ($stats['leaderboard'] as $row) {
+                                                $lapByCarId[$row['carId']] = collect($row['allLaps'])->values()->get($lapNum - 1);
+                                            }
+                                            $fastestThisLap = collect($lapByCarId)
+                                                ->filter(fn($l) => $l && ($l['isValidForBest'] ?? false))
+                                                ->map(fn($l) => (int) $l['laptime'])
+                                                ->sort()
+                                                ->first();
+                                        @endphp
+                                        <tr style="border-bottom:1px solid #f9fafb">
+                                            <td class="ps-4 fw-bold text-secondary" style="font-size:.78rem">{{ $lapNum }}</td>
+                                            @foreach($stats['leaderboard'] as $row)
+                                            @php $lap = $lapByCarId[$row['carId']] ?? null; @endphp
+                                            <td class="text-end" style="font-size:.78rem;font-variant-numeric:tabular-nums">
+                                                @if(!$lap)
+                                                    <span class="text-secondary">—</span>
+                                                @elseif(!($lap['isValidForBest'] ?? false))
+                                                    <span class="text-secondary fst-italic">{{ \App\Services\AccResultsParser::formatLaptime((int) ($lap['laptime'] ?? 0)) }}</span>
+                                                @elseif($fastestThisLap !== null && (int) $lap['laptime'] === $fastestThisLap)
+                                                    <span style="{{ $purple }}">{{ \App\Services\AccResultsParser::formatLaptime((int) $lap['laptime']) }}</span>
+                                                @else
+                                                    {{ \App\Services\AccResultsParser::formatLaptime((int) $lap['laptime']) }}
+                                                @endif
+                                            </td>
+                                            @endforeach
+                                        </tr>
+                                        @endfor
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {{-- Penalties --}}
+                        @php $allPenalties = array_merge($stats['penalties'], $stats['post_race_penalties']); @endphp
+                        <div data-tab-panel="stats-penalties" style="display:none">
+                            @if(empty($allPenalties))
+                            <p class="text-secondary text-center py-5" style="font-size:.85rem">No penalties recorded</p>
+                            @else
+                            <div class="table-responsive">
+                                <table class="table align-middle mb-0" style="font-size:.875rem">
+                                    <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
+                                        <tr>
+                                            <th class="ps-4 py-3 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Driver</th>
+                                            <th class="py-3 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Penalty Type</th>
+                                            <th class="py-3 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Reason</th>
+                                            <th class="py-3 text-center fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Violation Lap</th>
+                                            <th class="py-3 text-center pe-4 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Cleared Lap</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($allPenalties as $p)
+                                        <tr style="border-bottom:1px solid #f9fafb">
+                                            <td class="ps-4 fw-bold text-dark" style="font-size:.85rem">{{ $p['driverName'] }}</td>
+                                            <td class="text-secondary" style="font-size:.82rem">{{ $p['penalty'] ?? '—' }}</td>
+                                            <td class="text-secondary" style="font-size:.82rem">{{ $p['reason'] ?? '—' }}</td>
+                                            <td class="text-center text-secondary" style="font-size:.82rem">{{ $p['violationInLap'] ?? '—' }}</td>
+                                            <td class="text-center pe-4 text-secondary" style="font-size:.82rem">{{ $p['clearedInLap'] ?? '—' }}</td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            @endif
                         </div>
                         @endif
-                    </div>
 
-                    {{-- Lap by Lap --}}
-                    @php
-                        $maxLap = collect($stats['leaderboard'])->max('lapCount') ?: 0;
-                    @endphp
-                    <div data-tab-panel="stats-lap-by-lap" style="display:none">
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0" style="font-size:.8rem">
-                                <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
-                                    <tr>
-                                        <th class="ps-4 py-3 fw-bold text-uppercase text-secondary" style="font-size:.68rem;letter-spacing:.06em">Lap</th>
-                                        @foreach($stats['leaderboard'] as $row)
-                                        <th class="py-3 text-end fw-bold text-uppercase text-secondary" style="font-size:.68rem;letter-spacing:.06em;white-space:nowrap">{{ $driverLabel($row) }}</th>
-                                        @endforeach
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @for($lapNum = 1; $lapNum <= $maxLap; $lapNum++)
-                                    @php
-                                        $lapByCarId = [];
-                                        foreach ($stats['leaderboard'] as $row) {
-                                            $lapByCarId[$row['carId']] = collect($row['allLaps'])->values()->get($lapNum - 1);
-                                        }
-                                        $fastestThisLap = collect($lapByCarId)
-                                            ->filter(fn($l) => $l && ($l['isValidForBest'] ?? false))
-                                            ->map(fn($l) => (int) $l['laptime'])
-                                            ->sort()
-                                            ->first();
-                                    @endphp
-                                    <tr style="border-bottom:1px solid #f9fafb">
-                                        <td class="ps-4 fw-bold text-secondary" style="font-size:.78rem">{{ $lapNum }}</td>
-                                        @foreach($stats['leaderboard'] as $row)
-                                        @php $lap = $lapByCarId[$row['carId']] ?? null; @endphp
-                                        <td class="text-end" style="font-size:.78rem;font-variant-numeric:tabular-nums">
-                                            @if(!$lap)
-                                                <span class="text-secondary">—</span>
-                                            @elseif(!($lap['isValidForBest'] ?? false))
-                                                <span class="text-secondary fst-italic">{{ \App\Services\AccResultsParser::formatLaptime((int) ($lap['laptime'] ?? 0)) }}</span>
-                                            @elseif($fastestThisLap !== null && (int) $lap['laptime'] === $fastestThisLap)
-                                                <span style="{{ $purple }}">{{ \App\Services\AccResultsParser::formatLaptime((int) $lap['laptime']) }}</span>
-                                            @else
-                                                {{ \App\Services\AccResultsParser::formatLaptime((int) $lap['laptime']) }}
-                                            @endif
-                                        </td>
-                                        @endforeach
-                                    </tr>
-                                    @endfor
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    {{-- Penalties --}}
-                    @php $allPenalties = array_merge($stats['penalties'], $stats['post_race_penalties']); @endphp
-                    <div data-tab-panel="stats-penalties" style="display:none">
-                        @if(empty($allPenalties))
-                        <p class="text-secondary text-center py-5" style="font-size:.85rem">No penalties recorded</p>
-                        @else
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0" style="font-size:.875rem">
-                                <thead style="background:#fafafa;border-bottom:2px solid #f3f4f6">
-                                    <tr>
-                                        <th class="ps-4 py-3 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Driver</th>
-                                        <th class="py-3 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Penalty Type</th>
-                                        <th class="py-3 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Reason</th>
-                                        <th class="py-3 text-center fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Violation Lap</th>
-                                        <th class="py-3 text-center pe-4 fw-bold text-uppercase text-secondary" style="font-size:.7rem;letter-spacing:.06em">Cleared Lap</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($allPenalties as $p)
-                                    <tr style="border-bottom:1px solid #f9fafb">
-                                        <td class="ps-4 fw-bold text-dark" style="font-size:.85rem">{{ $p['driverName'] }}</td>
-                                        <td class="text-secondary" style="font-size:.82rem">{{ $p['penalty'] ?? '—' }}</td>
-                                        <td class="text-secondary" style="font-size:.82rem">{{ $p['reason'] ?? '—' }}</td>
-                                        <td class="text-center text-secondary" style="font-size:.82rem">{{ $p['violationInLap'] ?? '—' }}</td>
-                                        <td class="text-center pe-4 text-secondary" style="font-size:.82rem">{{ $p['clearedInLap'] ?? '—' }}</td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        @endif
                     </div>
                 </div>
-                @endif
                 @endif
             </div>
 
