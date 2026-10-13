@@ -69,7 +69,7 @@
                                     class="form-select form-select-sm @error('race_id') is-invalid @enderror">
                                 <option value="">— Select a race —</option>
                                 @foreach($races as $race)
-                                <option value="{{ $race->id }}" {{ (string) old('race_id') === (string) $race->id ? 'selected' : '' }}>
+                                <option value="{{ $race->id }}" data-race-numbers="{{ json_encode($raceNumbers[$race->id] ?? []) }}" {{ (string) old('race_id') === (string) $race->id ? 'selected' : '' }}>
                                     {{ $race->eventFormat->name ?? $race->gameLabel() }} — {{ $race->track }} — {{ $race->scheduledAtUk()->format('D j M Y') }}
                                 </option>
                                 @endforeach

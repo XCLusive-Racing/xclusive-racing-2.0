@@ -14,7 +14,7 @@ class Report extends Model
     protected $fillable = [
         'user_id', 'race_id', 'reported_driver_name', 'reported_user_id', 'reporter_driver_name',
         'hide_reporter_name',
-        'lap_number', 'incident_corner', 'description', 'session_type',
+        'lap_number', 'incident_corner', 'description', 'session_type', 'race_number',
         'video_url', 'clip_good_driver_url', 'clip_bad_driver_url', 'clip_heli_url',
         'status', 'admin_notes', 'reviewed_by',
         'steward_1_id', 'steward_1_verdict', 'steward_1_penalty', 'steward_1_multiplier', 'steward_1_notes', 'steward_1_red_flag',
@@ -85,8 +85,13 @@ class Report extends Model
         return self::statuses()[$this->status] ?? ['label' => ucfirst($this->status), 'color' => '#6b7280'];
     }
 
+    // "Race 2" for an incident in one race of a multi-race round.
     public function sessionLabel(): string
     {
+        if ($this->session_type === 'R' && $this->race_number) {
+            return 'Race '.$this->race_number;
+        }
+
         return self::sessionTypes()[$this->session_type] ?? '—';
     }
 

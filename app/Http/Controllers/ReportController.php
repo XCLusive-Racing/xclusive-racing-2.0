@@ -6,6 +6,7 @@ use App\Models\Driver;
 use App\Models\Message;
 use App\Models\Race;
 use App\Models\RaceRegistration;
+use App\Models\RaceResult;
 use App\Models\Report;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
+    private const ERR_PICK_RACE_NUMBER = 'This round had more than one race. Pick the race the incident happened in.';
+
     public function index()
     {
         $user = auth()->user();
@@ -31,6 +34,11 @@ class ReportController extends Controller
             ->get()
             ->reject(fn (Race $race) => $race->championship && ! $race->championship->usesXclStewarding())
             ->values();
+
+        // Race numbers per race, so a multi-race round asks which race (R1/R2) it was.
+        $raceNumbers = RaceResult::whereIn('race_id', $races->pluck('id'))->where('session_type', 'race')
+            ->distinct()->orderBy('race_number')->get(['race_id', 'race_number'])
+            ->groupBy('race_id')->map(fn ($rows) => $rows->pluck('race_number')->map(fn ($n) => (int) $n)->all());
 
         $reportsMade = Report::where('user_id', $userId)
             ->with('race.eventFormat')
@@ -53,7 +61,7 @@ class ReportController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('reports.index', compact('races', 'reportsMade', 'reportsAgainst'));
+        return view('reports.index', compact('races', 'raceNumbers', 'reportsMade', 'reportsAgainst'));
     }
 
     /** GET /api/race/{race}/participants — drives the "Submitted against" dropdown. */
@@ -101,6 +109,11 @@ class ReportController extends Controller
         $race = Race::find($data['race_id']);
         if ($race->scheduled_at->lt(now()->subDays(Report::RACE_WINDOW_DAYS))) {
             return back()->withErrors(['race_id' => 'Incidents can only be reported within '.Report::RACE_WINDOW_DAYS.' days of the race.'])->withInput();
+        }
+
+        $data['race_number'] = $this->raceNumberFor($request, $race, $data['session_type']);
+        if ($data['race_number'] === false) {
+            return back()->withErrors(['race_number' => self::ERR_PICK_RACE_NUMBER])->withInput();
         }
 
         $championship = $race->championship()->withoutTenantScope()->first();
@@ -172,6 +185,11 @@ class ReportController extends Controller
         ]);
         $data['hide_reporter_name'] = $request->boolean('hide_reporter_name');
 
+        $data['race_number'] = $report->race ? $this->raceNumberFor($request, $report->race, $data['session_type']) : null;
+        if ($data['race_number'] === false) {
+            return back()->withErrors(['race_number' => self::ERR_PICK_RACE_NUMBER])->withInput();
+        }
+
         $saved = DB::transaction(function () use ($report, $data) {
             // Re-check under a row lock: a steward may have picked it up since the form loaded.
             $fresh = Report::lockForUpdate()->find($report->id);
@@ -209,6 +227,23 @@ class ReportController extends Controller
         }
 
         return redirect()->route('reports.index')->with('success', 'Your report has been retracted.');
+    }
+
+    /**
+     * Which race of a multi-race round (R1/R2) a race-session incident was in: null when
+     * the round had one race or it's a qualifying/practice incident, false when a
+     * multi-race round's race incident names none (or one that wasn't run).
+     */
+    private function raceNumberFor(Request $request, Race $race, string $sessionType): int|false|null
+    {
+        $raceNumbers = $race->resultRaceNumbers();
+        if ($sessionType !== 'R' || count($raceNumbers) < 2) {
+            return null;
+        }
+
+        $raceNumber = (int) $request->input('race_number');
+
+        return in_array($raceNumber, $raceNumbers, true) ? $raceNumber : false;
     }
 
     private function lockedMessage(): string

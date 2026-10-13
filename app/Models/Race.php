@@ -233,6 +233,13 @@ class Race extends Model
         return $this->hasMany(RaceSessionFile::class);
     }
 
+    // [1, 2] for a multi-race round (R1/R2), [1] for one race, [] before any results.
+    public function resultRaceNumbers(): array
+    {
+        return $this->raceResults()->reorder()->distinct()->orderBy('race_number')
+            ->pluck('race_number')->map(fn ($n) => (int) $n)->all();
+    }
+
     public function raceResults(): HasMany
     {
         return $this->hasMany(RaceResult::class)
