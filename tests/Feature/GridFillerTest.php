@@ -17,6 +17,27 @@ class GridFillerTest extends TestCase
 {
     use RefreshDatabase;
 
+    // Fillers are switched off by default (config/fillers.php 'enabled'); these tests
+    // cover the system itself, so they switch it on.
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['fillers.enabled' => true]);
+    }
+
+    // User-directed 2026-10-16: the switch turns fillers off everywhere.
+    public function test_no_fillers_anywhere_while_switched_off(): void
+    {
+        config(['fillers.enabled' => false]);
+        $this->seedFillers();
+        $race = $this->makeRace();
+        $this->registerReal($race, 12);
+
+        $this->assertFalse($race->usesGridFillers());
+        $this->assertCount(0, $race->fillerRegistrations(12, null));
+        $this->assertSame(12, $race->fresh()->displayedSignupCount());
+    }
+
     private function makeRace(array $attributes = []): Race
     {
         return Race::create(array_merge([
