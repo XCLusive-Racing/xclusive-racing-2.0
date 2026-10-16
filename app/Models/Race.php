@@ -304,7 +304,8 @@ class Race extends Model
 
     public function usesGridFillers(): bool
     {
-        return ! $this->is_endurance
+        return config('fillers.enabled')
+            && ! $this->is_endurance
             && ! $this->is_championship
             && $this->championship_id === null
             && $this->scheduled_at?->isFuture();

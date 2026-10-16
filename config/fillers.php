@@ -4,6 +4,10 @@
 // gamertag below that doesn't exist yet; removing a name here doesn't delete its user.
 return [
 
+    // Master switch: off shows no fillers on any grid or sign-up counter (the filler users
+    // stay in the database and on the rating list). User-directed 2026-10-16: off for now.
+    'enabled' => (bool) env('FILLERS_ENABLED', false),
+
     // One filler shown for every this many real sign-ups (4 → 5, 8 → 10, 12 → 15...).
     'per_real_drivers' => 4,
 
