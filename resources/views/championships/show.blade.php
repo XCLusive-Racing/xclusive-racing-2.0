@@ -88,12 +88,12 @@
              the league's colours: primary edge, active tab in the highlight colour. --}}
         <div class="mb-4 d-flex gap-4 xcl-champ__nav">
             @php
-                // Teams tab: a team championship's tables (team cars), or a solo
-                // championship's team standings — only with team points switched on.
+                // The Teams tab lists who drives for which team (no points); a team championship's
+                // standings (team cars), or a solo championship's, sit under Standings.
                 $teamTables = array_filter(!empty($teamChampionship)
                     ? ['Team Championship' => $teamChampionship, 'Car Standings' => $teamStandings]
                     : ['Team Standings' => $teamStandings ?: $soloTeamStandings]);
-                $hasTeamsTab = ($championship->settings->scoring->team_points_enabled ?? false);
+                $hasTeamsTab = !empty($teamRoster);
             @endphp
             @foreach(array_filter([
                 'about'     => 'About',
@@ -217,22 +217,9 @@
                 </div>
                 @endforeach
 
-                @if($ballastChart)
-                @include('championships._ballast-chart')
-                @endif
-
-                </div>{{-- /standings panel --}}
-
-                {{-- Teams — with a team championship (settings.scoring.team_scoring_cars)
-                     the per-car table sits below it as "Car Standings"; a solo
-                     championship lists each team with its drivers. --}}
-                @if($hasTeamsTab)
-                <div data-tab-panel="teams" style="display:none">
-                @if(empty($teamTables))
-                <div style="background:#111827;border-radius:12px;overflow:hidden">
-                    <div class="px-4 py-4 text-center" style="color:#6b7280;font-size:.875rem">No teams entered yet.</div>
-                </div>
-                @endif
+                {{-- Team Standings — with a team championship (settings.scoring.team_scoring_cars)
+                     the per-car table sits below it as "Car Standings"; a solo championship
+                     scores each team from its drivers (computeSoloTeamStandings()). --}}
                 @foreach($teamTables as $tableTitle => $tableRows)
                 <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
@@ -282,6 +269,59 @@
                                 @endforeach
                             </tbody>
                         </table>
+                    </div>
+                </div>
+                @endforeach
+
+                @if($ballastChart)
+                @include('championships._ballast-chart')
+                @endif
+
+                </div>{{-- /standings panel --}}
+
+                {{-- Teams — every team with an entry and who drives for it (Championship::teamRoster()). --}}
+                @if($hasTeamsTab)
+                <div data-tab-panel="teams" style="display:none">
+                @foreach($teamRoster as $teamRow)
+                @php $team = $teamRow['team']; @endphp
+                <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden" data-team-card>
+                    <div class="px-4 py-3 d-flex align-items-center gap-3" style="border-bottom:1px solid #1f2937">
+                        @if($team->logoUrl())
+                        <img src="{{ $team->logoUrl() }}" alt="" style="width:40px;height:40px;object-fit:contain;border-radius:8px">
+                        @else
+                        <div class="rounded-2 d-flex align-items-center justify-content-center fw-black text-white flex-shrink-0"
+                             style="width:40px;height:40px;font-size:.75rem;background:linear-gradient(135deg,#374151,#6b7280)">
+                            {{ strtoupper(mb_substr($team->tag ?: $team->name, 0, 3)) }}
+                        </div>
+                        @endif
+                        <div class="flex-grow-1">
+                            <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.9rem;letter-spacing:.06em">{{ $team->name }}</h2>
+                            <div style="color:#6b7280;font-size:.75rem">
+                                @if($team->tag){{ $team->tag }} · @endif{{ $teamRow['driver_count'] }} {{ \Illuminate\Support\Str::plural('driver', $teamRow['driver_count']) }}
+                                @php $carCount = $teamRow['entries']->where('is_car', true)->count(); @endphp
+                                @if($carCount)
+                                · {{ $carCount }} {{ \Illuminate\Support\Str::plural('car', $carCount) }}
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-4 py-2">
+                        @foreach($teamRow['entries'] as $row)
+                        <div class="d-flex align-items-center gap-2 py-2" style="{{ $loop->last ? '' : 'border-bottom:1px solid #1f2937' }}">
+                            @if($row['car_number'] !== null)
+                            <span class="fw-black flex-shrink-0" style="width:2.6rem;color:#9ca3af;font-size:.8rem">#{{ $row['car_number'] }}</span>
+                            @endif
+                            <div class="flex-grow-1">
+                                <span class="text-white fw-bold" style="font-size:.82rem">{{ $row['drivers']->map->displayName()->implode(', ') }}</span>
+                                @if($row['reserve'])
+                                <span style="color:#6b7280;font-size:.75rem"> · Reserve: {{ $row['reserve']->displayName() }}</span>
+                                @endif
+                            </div>
+                            @if($championship->is_multiclass && $row['class'])
+                            <span class="badge fw-bold" style="font-size:.6rem;background:{{ $row['class']->color }}22;color:{{ $row['class']->color }}">{{ $row['class']->name }}</span>
+                            @endif
+                        </div>
+                        @endforeach
                     </div>
                 </div>
                 @endforeach

@@ -101,9 +101,10 @@ class ChampionshipController extends Controller
         $teamStandings = $championship->computeTeamStandings();
         $teamChampionship = $championship->computeTeamChampionship();
         $soloTeamStandings = $championship->computeSoloTeamStandings();
+        $teamRoster = $championship->teamRoster();
         $ballastChart = app(EntryBalanceService::class)->chart($championship);
 
-        return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'driverClassStandings', 'teamStandings', 'teamChampionship', 'soloTeamStandings', 'ballastChart', 'carDrivers'));
+        return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'driverClassStandings', 'teamStandings', 'teamChampionship', 'soloTeamStandings', 'teamRoster', 'ballastChart', 'carDrivers'));
     }
 
     public function register(Request $request, int $championship)

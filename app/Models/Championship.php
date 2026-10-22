@@ -715,6 +715,45 @@ class Championship extends Model
             ->values();
     }
 
+    // The public Teams tab: every team with an entry and who drives for it, no points.
+    // A team car is one row with its line-up (and reserve); in a solo championship each
+    // driver in a team (User::primaryRacingTeam()) is a row of their own. Biggest team first.
+    public function teamRoster(): array
+    {
+        $registrations = $this->registrations()->approved()->where('is_spectator', false)
+            ->with('racingTeam', 'championshipClass', 'user.ownedRacingTeams', 'user.racingTeams')
+            ->orderBy('car_number')
+            ->get();
+        $cars = $registrations->whereNotNull('racing_team_id');
+        $drivers = User::whereIn('id', $cars->flatMap->carDriverIds()->unique())->get()->keyBy('id');
+
+        $rows = $cars->filter(fn ($car) => $car->racingTeam)->map(fn (ChampionshipRegistration $car) => [
+            'team' => $car->racingTeam,
+            'is_car' => true,
+            'car_number' => $car->car_number,
+            'class' => $car->championshipClass,
+            'drivers' => collect($car->driverIds())->map(fn ($id) => $drivers[$id] ?? null)->filter()->values(),
+            'reserve' => $car->reserve_driver_id ? ($drivers[$car->reserve_driver_id] ?? null) : null,
+        ])->concat($registrations->whereNull('racing_team_id')->map(fn (ChampionshipRegistration $entry) => [
+            'team' => $entry->user?->primaryRacingTeam(),
+            'is_car' => false,
+            'car_number' => $entry->car_number,
+            'class' => $entry->championshipClass,
+            'drivers' => collect([$entry->user]),
+            'reserve' => null,
+        ])->filter(fn (array $row) => $row['team']));
+
+        return $rows->groupBy(fn (array $row) => $row['team']->id)
+            ->map(fn (Collection $teamRows) => [
+                'team' => $teamRows->first()['team'],
+                'entries' => $teamRows->values(),
+                'driver_count' => $teamRows->sum(fn (array $row) => $row['drivers']->count()),
+            ])
+            ->sortBy(fn (array $team) => [-$team['driver_count'], $team['team']->name])
+            ->values()
+            ->all();
+    }
+
     // Standings are computed live from results, but the public page asks for them
     // up to five ways (drivers, classes, cars, team championship) in one request —
     // each built on the same driver standings. Computed once per instance;

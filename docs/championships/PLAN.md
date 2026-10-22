@@ -17,9 +17,11 @@ up without re-deriving context.
   driver-swap round's event page shows one TEAMS box per championship class (each
   car's class from its championship entry, `RaceController::show()`
   `$teamClassBoxes`), plus a "No class" box when needed. (3) A **Teams** tab on the
-  championship page whenever team points are on; the Team Championship / Car
-  Standings tables moved there from Standings. A solo championship with team
-  points now scores per team (`computeSoloTeamStandings()`): each driver for their
+  championship page whenever a team has an entry: each team (logo, tag, driver/car
+  count) with its cars or drivers, number, class, reserve — no points
+  (`Championship::teamRoster()`). Team standings stay a section under Standings. A
+  solo championship with team points now scores per team
+  (`computeSoloTeamStandings()`): each driver for their
   current team (`User::primaryRacingTeam()`: owned team, else first joined), best
   `team_scoring_cars` drivers per round, every team listed at 0 before results.
   Live, not stored: a driver changing team takes their points along — storing the
