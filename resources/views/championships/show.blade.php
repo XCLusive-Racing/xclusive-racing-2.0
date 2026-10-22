@@ -306,6 +306,7 @@
                 {{-- Teams — every team with an entry and who drives for it (Championship::teamRoster()). --}}
                 @if($hasTeamsTab)
                 <div data-tab-panel="teams" style="display:none">
+                <div class="xcl-champ__teams-scroll">
                 @foreach($teamRoster as $teamRow)
                 @php $team = $teamRow['team']; @endphp
                 <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden" data-team-card>
@@ -349,6 +350,7 @@
                     </div>
                 </div>
                 @endforeach
+                </div>
                 </div>{{-- /teams panel --}}
                 @endif
 
