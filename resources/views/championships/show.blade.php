@@ -87,13 +87,22 @@
              the pro driver profile's year-switcher already uses. A solid dark bar in
              the league's colours: primary edge, active tab in the highlight colour. --}}
         <div class="mb-4 d-flex gap-4 xcl-champ__nav">
-            @foreach([
+            @php
+                // Teams tab: a team championship's tables (team cars), or a solo
+                // championship's team standings — only with team points switched on.
+                $teamTables = array_filter(!empty($teamChampionship)
+                    ? ['Team Championship' => $teamChampionship, 'Car Standings' => $teamStandings]
+                    : ['Team Standings' => $teamStandings ?: $soloTeamStandings]);
+                $hasTeamsTab = ($championship->settings->scoring->team_points_enabled ?? false);
+            @endphp
+            @foreach(array_filter([
                 'about'     => 'About',
                 'standings' => 'Standings',
+                'teams'     => $hasTeamsTab ? 'Teams' : null,
                 'rounds'    => 'Rounds',
                 'rules'     => 'Rules',
                 'drivers'   => 'Drivers',
-            ] as $tabKey => $tabLabel)
+            ]) as $tabKey => $tabLabel)
             <button data-tab-btn="{{ $tabKey }}" data-tab-color="{{ $highlight }}"
                     class="fw-black text-uppercase bg-transparent pb-2 flex-shrink-0"
                     style="font-size:.8rem;letter-spacing:.05em;white-space:nowrap;border:none;border-bottom:2px solid transparent;cursor:pointer">
@@ -208,19 +217,36 @@
                 </div>
                 @endforeach
 
-                {{-- Team Standings — with a team championship (settings.scoring.team_scoring_cars)
-                     the per-car table sits below it as "Car Standings". --}}
-                @php
-                    $teamTables = array_filter(!empty($teamChampionship)
-                        ? ['Team Championship' => $teamChampionship, 'Car Standings' => $teamStandings]
-                        : ['Team Standings' => $teamStandings]);
-                @endphp
+                @if($ballastChart)
+                @include('championships._ballast-chart')
+                @endif
+
+                </div>{{-- /standings panel --}}
+
+                {{-- Teams — with a team championship (settings.scoring.team_scoring_cars)
+                     the per-car table sits below it as "Car Standings"; a solo
+                     championship lists each team with its drivers. --}}
+                @if($hasTeamsTab)
+                <div data-tab-panel="teams" style="display:none">
+                @if(empty($teamTables))
+                <div style="background:#111827;border-radius:12px;overflow:hidden">
+                    <div class="px-4 py-4 text-center" style="color:#6b7280;font-size:.875rem">No teams entered yet.</div>
+                </div>
+                @endif
                 @foreach($teamTables as $tableTitle => $tableRows)
                 <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
                     <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
                         <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.85rem;letter-spacing:.08em">{{ $tableTitle }}</h2>
                         @if($tableTitle === 'Team Championship')
                         <p class="mb-0 mt-1" style="color:#6b7280;font-size:.72rem">Each round, a team's best {{ $championship->settings->scoring->team_scoring_cars }} {{ \Illuminate\Support\Str::plural('car', $championship->settings->scoring->team_scoring_cars) }} score for the team.</p>
+                        @elseif(!empty($soloTeamStandings))
+                        <p class="mb-0 mt-1" style="color:#6b7280;font-size:.72rem">
+                            @if($championship->settings->scoring->team_scoring_cars)
+                            Each round, a team's best {{ $championship->settings->scoring->team_scoring_cars }} {{ \Illuminate\Support\Str::plural('driver', $championship->settings->scoring->team_scoring_cars) }} score for the team.
+                            @else
+                            Every driver's points count for their team.
+                            @endif
+                        </p>
                         @endif
                     </div>
                     <div class="table-responsive">
@@ -247,6 +273,9 @@
                                             <span style="color:#9ca3af;font-size:.8rem">{{ $entry['car_label'] }}</span>
                                             @endif
                                         </div>
+                                        @if(isset($entry['drivers']))
+                                        <div style="color:#6b7280;font-size:.75rem">{{ $entry['drivers']->map->displayName()->implode(', ') }}</div>
+                                        @endif
                                     </td>
                                     <td class="text-center pe-4 fw-black" style="color:#db2777;font-size:1rem">{{ $entry['total_points'] }}</td>
                                 </tr>
@@ -256,12 +285,8 @@
                     </div>
                 </div>
                 @endforeach
-
-                @if($ballastChart)
-                @include('championships._ballast-chart')
+                </div>{{-- /teams panel --}}
                 @endif
-
-                </div>{{-- /standings panel --}}
 
                 {{-- Rounds --}}
                 <div data-tab-panel="rounds" style="display:none">

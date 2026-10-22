@@ -225,4 +225,82 @@ class TeamStandingsTest extends TestCase
             ->assertSee('Team Standings')
             ->assertSee('Apex Racing');
     }
+
+    // --- A solo championship: drivers score for the team they're in ---
+
+    private function soloChampionship(?int $scoringDrivers): Championship
+    {
+        $championship = $this->makeChampionship($this->makeLeague('nlrl'));
+        $championship->settings = array_replace_recursive($championship->settings->toArray(), [
+            'format' => ['driver_swaps_enabled' => false],
+            'scoring' => ['points_scheme_id' => null, 'team_scoring_cars' => $scoringDrivers],
+        ]);
+        $championship->points_system = [25, 18, 15, 12];
+        $championship->save();
+
+        return $championship;
+    }
+
+    private function soloDriverIn(Championship $championship, ?RacingTeam $team, string $name): User
+    {
+        $driver = User::factory()->create(['name' => $name]);
+        $team?->members()->attach($driver->id);
+        ChampionshipRegistration::create(['championship_id' => $championship->id, 'user_id' => $driver->id]);
+
+        return $driver;
+    }
+
+    public function test_solo_drivers_score_for_their_team_best_drivers_per_round(): void
+    {
+        $championship = $this->soloChampionship(2);
+        $apex = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => User::factory()->create()->id]);
+        $blue = RacingTeam::create(['name' => 'Blue Motorsport', 'tag' => 'BLU', 'owner_id' => User::factory()->create()->id]);
+        $a1 = $this->soloDriverIn($championship, $apex, 'Jan Jansen');
+        $a2 = $this->soloDriverIn($championship, $apex, 'Piet Pietersen');
+        $a3 = $this->soloDriverIn($championship, $apex, 'Kees de Vries');
+        $b1 = $this->soloDriverIn($championship, $blue, 'Henk Bakker');
+        $this->soloDriverIn($championship, null, 'Klaas Visser');
+
+        $r1 = $this->finishedRound($championship, 1);
+        $this->makeResult($r1, $b1, 1);
+        $this->makeResult($r1, $a1, 2);
+        $this->makeResult($r1, $a2, 3);
+        $this->makeResult($r1, $a3, 4);
+
+        $standings = $championship->computeSoloTeamStandings();
+
+        // Apex: best 2 of 18 + 15 + 12 = 33; Blue: 25. The driver without a team isn't listed.
+        $this->assertSame(['Apex Racing', 'Blue Motorsport'], array_map(fn ($row) => $row['team']->name, $standings));
+        $this->assertSame([33, 25], array_column($standings, 'total_points'));
+        $this->assertSame(['Jan Jansen', 'Kees de Vries', 'Piet Pietersen'], $standings[0]['drivers']->map->displayName()->all());
+    }
+
+    public function test_the_teams_tab_lists_every_team_at_zero_before_any_round(): void
+    {
+        $championship = $this->soloChampionship(3);
+        $apex = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => User::factory()->create()->id]);
+        $this->soloDriverIn($championship, $apex, 'Jan Jansen');
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($this->get(route('championships.show', $championship->id))->assertOk()->getContent());
+        $xpath = new \DOMXPath($dom);
+        $panel = $xpath->query('//*[@data-tab-panel="teams"]')->item(0)?->textContent;
+
+        $this->assertSame(1, $xpath->query('//*[@data-tab-btn="teams"]')->length);
+        $this->assertNotNull($panel);
+        $this->assertStringContainsString('Team Standings', $panel);
+        $this->assertStringContainsString('Apex Racing', $panel);
+        $this->assertStringContainsString('Jan Jansen', $panel);
+        $this->assertStringContainsString('best 3 drivers score for the team', preg_replace('/\s+/', ' ', $panel));
+    }
+
+    public function test_no_teams_tab_without_team_points(): void
+    {
+        $championship = $this->makeChampionship($this->makeLeague('nlrl'), teamPointsEnabled: false);
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($this->get(route('championships.show', $championship->id))->assertOk()->getContent());
+
+        $this->assertSame(0, (new \DOMXPath($dom))->query('//*[@data-tab-btn="teams"]')->length);
+    }
 }

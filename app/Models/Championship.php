@@ -666,6 +666,55 @@ class Championship extends Model
         return $teams;
     }
 
+    // A solo championship with team points (no team cars): every solo driver scores for
+    // the team they're in now, a team owned before one only joined. Each round a team scores
+    // its best settings.scoring.team_scoring_cars drivers (blank = all of them). Every team
+    // with a driver in is listed, at 0 until a round is scored.
+    public function computeSoloTeamStandings(): array
+    {
+        if (! ($this->settings->scoring->team_points_enabled ?? false)
+            || $this->registrations()->whereNotNull('racing_team_id')->exists()) {
+            return [];
+        }
+
+        $scoringDrivers = (int) ($this->settings->scoring->team_scoring_cars ?? 0) ?: PHP_INT_MAX;
+        $driverStandings = collect($this->buildDriverStandings())->keyBy('user_id');
+
+        $teams = $this->soloDriverTeams()
+            ->groupBy(fn (array $row) => $row['team']->id)
+            ->map(function (Collection $rows) use ($driverStandings, $scoringDrivers) {
+                $total = $rows->flatMap(fn (array $row) => $driverStandings->get($row['user']->id)['rounds'] ?? [])
+                    ->groupBy('race_id')
+                    ->sum(fn (Collection $round) => $round->pluck('points')->sortDesc()->take($scoringDrivers)->sum());
+
+                return [
+                    'team' => $rows->first()['team'],
+                    'drivers' => $rows->pluck('user')->sortBy(fn (User $user) => $user->displayName())->values(),
+                    'total_points' => $total,
+                ];
+            })
+            ->sortBy(fn (array $row) => $row['team']->name)
+            ->values()
+            ->all();
+
+        usort($teams, fn ($a, $b) => $b['total_points'] <=> $a['total_points']);
+
+        return $teams;
+    }
+
+    // [user, team] for every approved solo driver who is in a team — see computeSoloTeamStandings().
+    public function soloDriverTeams(): Collection
+    {
+        return $this->registrations()->approved()->where('is_spectator', false)->whereNull('racing_team_id')
+            ->with('user.ownedRacingTeams', 'user.racingTeams')
+            ->get()
+            ->map(fn (ChampionshipRegistration $registration) => $registration->user
+                ? ['user' => $registration->user, 'team' => $registration->user->allRacingTeams()->first()]
+                : null)
+            ->filter(fn (?array $row) => $row && $row['team'])
+            ->values();
+    }
+
     // Standings are computed live from results, but the public page asks for them
     // up to five ways (drivers, classes, cars, team championship) in one request —
     // each built on the same driver standings. Computed once per instance;
