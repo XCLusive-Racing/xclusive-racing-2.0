@@ -195,6 +195,28 @@ class RaceController extends Controller
             }
         }
 
+        // A multiclass championship's team round has no race classes of its own — each car's
+        // class sits on its championship entry (same team + number). One TEAMS box per class
+        // then, like a multiclass event's class boxes; a car without a class gets its own box.
+        $teamClassBoxes = collect();
+        $teamRoundChampionship = $isChampionshipTeamRound
+            ? Championship::withoutTenantScope()->with('classes')->find($race->championship_id)
+            : null;
+        if ($teamRoundChampionship?->is_multiclass && $teamRoundChampionship->classes->isNotEmpty()) {
+            $classByCar = $teamRoundChampionship->registrations()->approved()->whereNotNull('racing_team_id')->get()
+                ->mapWithKeys(fn ($car) => [$car->racing_team_id.'#'.$car->car_number => $car->championship_class_id]);
+            $classOf = fn ($reg) => $reg->teamEntry
+                ? ($classByCar[$reg->teamEntry->racing_team_id.'#'.$reg->teamEntry->car_number] ?? null)
+                : null;
+            $regsByClass = $race->registrations->filter(fn ($r) => $r->user)->groupBy(fn ($r) => $classOf($r) ?? '');
+
+            $teamClassBoxes = $teamRoundChampionship->classes
+                ->map(fn ($class) => ['class' => $class, 'registrations' => $regsByClass[$class->id] ?? collect()])
+                ->push(['class' => null, 'registrations' => $regsByClass[''] ?? collect()])
+                ->filter(fn ($box) => $box['class'] || $box['registrations']->isNotEmpty())
+                ->values();
+        }
+
         // Solo championship drivers not in this open round left it on purpose — every
         // other entry is in automatically.
         // (Someone on the championship's waiting list isn't racing yet, so isn't skipping.)
@@ -230,7 +252,7 @@ class RaceController extends Controller
             'race', 'isRegistered', 'myRegistration', 'myRegisteredAt', 'driverMap', 'userTeam', 'myTeamEntries',
             'isTeamRace', 'isChampionshipTeamRound', 'preselectedDriverIds', 'successBallast', 'successBallastMode',
             'championshipEntryFailure', 'spectateOnly', 'roundChampionship', 'championshipTeamCars', 'championshipSkippedCars',
-            'championshipTeamPending', 'championshipSignupForm', 'skippingDrivers', 'benchDrivers'
+            'championshipTeamPending', 'championshipSignupForm', 'skippingDrivers', 'benchDrivers', 'teamClassBoxes'
         ));
     }
 

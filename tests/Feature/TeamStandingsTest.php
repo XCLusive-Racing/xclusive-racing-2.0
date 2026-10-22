@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Championship;
 use App\Models\ChampionshipRegistration;
 use App\Models\League;
+use App\Models\LeagueUser;
 use App\Models\Race;
 use App\Models\RaceResult;
 use App\Models\RacingTeam;
@@ -224,5 +225,176 @@ class TeamStandingsTest extends TestCase
             ->assertOk()
             ->assertSee('Team Standings')
             ->assertSee('Apex Racing');
+    }
+
+    // --- A solo championship: drivers score for the team they're in ---
+
+    private function soloChampionship(?int $scoringDrivers): Championship
+    {
+        $championship = $this->makeChampionship($this->makeLeague('nlrl'));
+        $championship->settings = array_replace_recursive($championship->settings->toArray(), [
+            'format' => ['driver_swaps_enabled' => false],
+            'scoring' => ['points_scheme_id' => null, 'team_scoring_cars' => $scoringDrivers],
+        ]);
+        $championship->points_system = [25, 18, 15, 12];
+        $championship->save();
+
+        return $championship;
+    }
+
+    private function soloDriverIn(Championship $championship, ?RacingTeam $team, string $name): User
+    {
+        $driver = User::factory()->create(['name' => $name]);
+        $team?->members()->attach($driver->id);
+        ChampionshipRegistration::create(['championship_id' => $championship->id, 'user_id' => $driver->id]);
+
+        return $driver;
+    }
+
+    public function test_solo_drivers_score_for_their_team_best_drivers_per_round(): void
+    {
+        $championship = $this->soloChampionship(2);
+        $apex = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => User::factory()->create()->id]);
+        $blue = RacingTeam::create(['name' => 'Blue Motorsport', 'tag' => 'BLU', 'owner_id' => User::factory()->create()->id]);
+        $a1 = $this->soloDriverIn($championship, $apex, 'Jan Jansen');
+        $a2 = $this->soloDriverIn($championship, $apex, 'Piet Pietersen');
+        $a3 = $this->soloDriverIn($championship, $apex, 'Kees de Vries');
+        $b1 = $this->soloDriverIn($championship, $blue, 'Henk Bakker');
+        $this->soloDriverIn($championship, null, 'Klaas Visser');
+
+        $r1 = $this->finishedRound($championship, 1);
+        $this->makeResult($r1, $b1, 1);
+        $this->makeResult($r1, $a1, 2);
+        $this->makeResult($r1, $a2, 3);
+        $this->makeResult($r1, $a3, 4);
+
+        $standings = $championship->computeSoloTeamStandings();
+
+        // Apex: best 2 of 18 + 15 + 12 = 33; Blue: 25. The driver without a team isn't listed.
+        $this->assertSame(['Apex Racing', 'Blue Motorsport'], array_map(fn ($row) => $row['team']->name, $standings));
+        $this->assertSame([33, 25], array_column($standings, 'total_points'));
+        $this->assertSame(['Jan Jansen', 'Kees de Vries', 'Piet Pietersen'], $standings[0]['drivers']->map->displayName()->all());
+    }
+
+    private function panelText(Championship $championship, string $panel): ?string
+    {
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($this->get(route('championships.show', $championship->id))->assertOk()->getContent());
+        $node = (new \DOMXPath($dom))->query('//*[@data-tab-panel="'.$panel.'"]')->item(0);
+
+        return $node ? preg_replace('/\s+/', ' ', $node->textContent) : null;
+    }
+
+    // Standings: a Team Standings table under the drivers, every team at 0 before any round.
+    public function test_the_standings_tab_has_team_standings_before_any_round(): void
+    {
+        $championship = $this->soloChampionship(3);
+        $apex = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => User::factory()->create()->id]);
+        $this->soloDriverIn($championship, $apex, 'Jan Jansen');
+
+        $standings = $this->panelText($championship, 'standings');
+
+        $this->assertStringContainsString('Team Standings', $standings);
+        $this->assertStringContainsString('Apex Racing', $standings);
+        $this->assertStringContainsString('best 3 drivers score for the team', $standings);
+    }
+
+    // One sub-tab per standings table inside Standings, each table its own panel.
+    public function test_standings_tables_each_get_a_sub_tab(): void
+    {
+        $championship = $this->soloChampionship(3);
+        $apex = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => User::factory()->create()->id]);
+        $this->soloDriverIn($championship, $apex, 'Jan Jansen');
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($this->get(route('championships.show', $championship->id))->assertOk()->getContent());
+        $xpath = new \DOMXPath($dom);
+        $standings = $xpath->query('//*[@data-tab-panel="standings"]')->item(0);
+
+        $labels = [];
+        foreach ($xpath->query('.//*[@data-tabs]//button[@data-tab-btn]', $standings) as $button) {
+            $labels[$button->getAttribute('data-tab-btn')] = trim($button->textContent);
+        }
+        $this->assertSame(['st-0' => 'Overall', 'st-1' => 'Teams'], $labels);
+        $this->assertStringContainsString('Overall Standings', $xpath->query('.//*[@data-tab-panel="st-0"]', $standings)->item(0)->textContent);
+        $this->assertStringContainsString('Team Standings', $xpath->query('.//*[@data-tab-panel="st-1"]', $standings)->item(0)->textContent);
+    }
+
+    // Teams: who drives for which team, no points.
+    public function test_the_teams_tab_lists_each_team_with_its_drivers_and_no_points(): void
+    {
+        $championship = $this->soloChampionship(3);
+        $apex = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => User::factory()->create()->id]);
+        $blue = RacingTeam::create(['name' => 'Blue Motorsport', 'tag' => 'BLU', 'owner_id' => User::factory()->create()->id]);
+        $this->soloDriverIn($championship, $apex, 'Jan Jansen');
+        $this->soloDriverIn($championship, $apex, 'Piet Pietersen');
+        $this->soloDriverIn($championship, $blue, 'Henk Bakker');
+        $this->soloDriverIn($championship, null, 'Klaas Visser');
+
+        $teams = $this->panelText($championship, 'teams');
+
+        $this->assertNotNull($teams);
+        $this->assertStringContainsString('Apex Racing', $teams);
+        $this->assertStringContainsString('APX · 2 drivers', $teams);
+        $this->assertStringContainsString('Jan Jansen', $teams);
+        $this->assertStringContainsString('Henk Bakker', $teams);
+        $this->assertStringNotContainsString('Klaas Visser', $teams);
+        $this->assertStringNotContainsString('PTS', $teams);
+        $this->assertStringNotContainsString('Team Standings', $teams);
+        // Biggest team first.
+        $this->assertLessThan(strpos($teams, 'Blue Motorsport'), strpos($teams, 'Apex Racing'));
+    }
+
+    public function test_the_teams_tab_shows_a_team_cars_line_up_and_reserve(): void
+    {
+        $championship = $this->makeChampionship($this->makeLeague('nlrl'));
+        $owner = User::factory()->create(['name' => 'Team Manager']);
+        $team = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => $owner->id]);
+        [$d1, $d2, $reserve] = [User::factory()->create(['name' => 'Jan Jansen']), User::factory()->create(['name' => 'Piet Pietersen']), User::factory()->create(['name' => 'Kees de Vries'])];
+        ChampionshipRegistration::create([
+            'championship_id' => $championship->id, 'user_id' => $owner->id, 'racing_team_id' => $team->id,
+            'car_number' => 11, 'driver_ids' => [$d1->id, $d2->id], 'reserve_driver_id' => $reserve->id,
+        ]);
+
+        $teams = $this->panelText($championship, 'teams');
+
+        $this->assertStringContainsString('2 drivers · 1 car', $teams);
+        $this->assertStringContainsString('#11', $teams);
+        $this->assertStringContainsString('Jan Jansen, Piet Pietersen', $teams);
+        $this->assertStringContainsString('Reserve: Kees de Vries', $teams);
+        $this->assertStringNotContainsString('Team Manager', $teams);
+    }
+
+    public function test_a_solo_drivers_team_shows_in_the_drivers_tab_and_the_admin_entries(): void
+    {
+        $championship = $this->soloChampionship(null);
+        $apex = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => User::factory()->create()->id]);
+        $this->soloDriverIn($championship, $apex, 'Jan Jansen');
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($this->get(route('championships.show', $championship->id))->assertOk()->getContent());
+        $drivers = (new \DOMXPath($dom))->query('//*[@data-tab-panel="drivers"]')->item(0)->textContent;
+        $this->assertStringContainsString('Apex Racing', $drivers);
+
+        $manager = User::factory()->leagueManager()->create();
+        LeagueUser::create(['league_id' => $championship->league_id, 'user_id' => $manager->id, 'role' => 'manager']);
+        $manager->syncLeagueRoleFlags();
+
+        $this->actingAs($manager->refresh())
+            ->get(route('admin.leagues.championships.entries.index', [$championship->league_id, $championship]))
+            ->assertOk()
+            ->assertSee('Jan Jansen')
+            ->assertSee('Apex Racing');
+    }
+
+    public function test_no_teams_tab_without_any_team(): void
+    {
+        $championship = $this->soloChampionship(null);
+        $this->soloDriverIn($championship, null, 'Klaas Visser');
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($this->get(route('championships.show', $championship->id))->assertOk()->getContent());
+
+        $this->assertSame(0, (new \DOMXPath($dom))->query('//*[@data-tab-btn="teams"]')->length);
     }
 }

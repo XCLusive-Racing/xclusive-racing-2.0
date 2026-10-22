@@ -87,13 +87,22 @@
              the pro driver profile's year-switcher already uses. A solid dark bar in
              the league's colours: primary edge, active tab in the highlight colour. --}}
         <div class="mb-4 d-flex gap-4 xcl-champ__nav">
-            @foreach([
+            @php
+                // The Teams tab lists who drives for which team (no points); a team championship's
+                // standings (team cars), or a solo championship's, sit under Standings.
+                $teamTables = array_filter(!empty($teamChampionship)
+                    ? ['Team Championship' => $teamChampionship, 'Car Standings' => $teamStandings]
+                    : ['Team Standings' => $teamStandings ?: $soloTeamStandings]);
+                $hasTeamsTab = !empty($teamRoster);
+            @endphp
+            @foreach(array_filter([
                 'about'     => 'About',
                 'standings' => 'Standings',
+                'teams'     => $hasTeamsTab ? 'Teams' : null,
                 'rounds'    => 'Rounds',
                 'rules'     => 'Rules',
                 'drivers'   => 'Drivers',
-            ] as $tabKey => $tabLabel)
+            ]) as $tabKey => $tabLabel)
             <button data-tab-btn="{{ $tabKey }}" data-tab-color="{{ $highlight }}"
                     class="fw-black text-uppercase bg-transparent pb-2 flex-shrink-0"
                     style="font-size:.8rem;letter-spacing:.05em;white-space:nowrap;border:none;border-bottom:2px solid transparent;cursor:pointer">
@@ -135,10 +144,33 @@
                         : collect([['class' => null, 'standings' => $standings]]);
                     // Driver classes (Pro / Am …) come after the overall table, not instead of it.
                     $standingsGroups = $standingsGroups->concat($driverClassStandings);
+
+                    // One sub-tab per table — drivers (overall/car class/driver class), then teams —
+                    // so only one table shows at a time. Same tabs.js component, nested [data-tabs].
+                    $standingsTabs = $standingsGroups->map(fn ($group) => isset($group['driver_class'])
+                        ? $group['driver_class']->name
+                        : (($group['class'] ?? null) ? $group['class']->name : 'Overall'))
+                        ->concat(array_map(fn ($title) => $title === 'Car Standings' ? 'Cars' : 'Teams', array_keys($teamTables)))
+                        ->values();
+                    // tabs.js swaps the whole style attribute, so both carry the full pill style.
+                    $pillOn = "background:{$highlight};color:#fff;border:1px solid {$highlight};font-size:.72rem;letter-spacing:.05em";
+                    $pillOff = 'background:transparent;color:#9ca3af;border:1px solid #374151;font-size:.72rem;letter-spacing:.05em';
                 @endphp
 
+                <div data-tabs data-default-tab="st-0">
+                <div class="d-flex flex-wrap gap-2 mb-3" @if($standingsTabs->count() < 2) style="display:none !important" @endif>
+                    @foreach($standingsTabs as $i => $tabLabel)
+                    <button type="button" data-tab-btn="st-{{ $i }}"
+                            data-tab-active-style="{{ $pillOn }}" data-tab-inactive-style="{{ $pillOff }}"
+                            class="btn btn-sm fw-bold text-uppercase rounded-pill px-3"
+                            style="{{ $pillOff }}">
+                        {{ $tabLabel }}
+                    </button>
+                    @endforeach
+                </div>
+
                 @foreach($standingsGroups as $group)
-                <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
+                <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden" data-tab-panel="st-{{ $loop->index }}">
                     <div class="px-4 py-3 d-flex align-items-center gap-2" style="border-bottom:1px solid #1f2937">
                         <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.85rem;letter-spacing:.08em">
                             @if(isset($group['driver_class']))
@@ -209,18 +241,22 @@
                 @endforeach
 
                 {{-- Team Standings — with a team championship (settings.scoring.team_scoring_cars)
-                     the per-car table sits below it as "Car Standings". --}}
-                @php
-                    $teamTables = array_filter(!empty($teamChampionship)
-                        ? ['Team Championship' => $teamChampionship, 'Car Standings' => $teamStandings]
-                        : ['Team Standings' => $teamStandings]);
-                @endphp
+                     the per-car table sits below it as "Car Standings"; a solo championship
+                     scores each team from its drivers (computeSoloTeamStandings()). --}}
                 @foreach($teamTables as $tableTitle => $tableRows)
-                <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
+                <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden" data-tab-panel="st-{{ $standingsGroups->count() + $loop->index }}">
                     <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
                         <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.85rem;letter-spacing:.08em">{{ $tableTitle }}</h2>
                         @if($tableTitle === 'Team Championship')
                         <p class="mb-0 mt-1" style="color:#6b7280;font-size:.72rem">Each round, a team's best {{ $championship->settings->scoring->team_scoring_cars }} {{ \Illuminate\Support\Str::plural('car', $championship->settings->scoring->team_scoring_cars) }} score for the team.</p>
+                        @elseif(!empty($soloTeamStandings))
+                        <p class="mb-0 mt-1" style="color:#6b7280;font-size:.72rem">
+                            @if($championship->settings->scoring->team_scoring_cars)
+                            Each round, a team's best {{ $championship->settings->scoring->team_scoring_cars }} {{ \Illuminate\Support\Str::plural('driver', $championship->settings->scoring->team_scoring_cars) }} score for the team.
+                            @else
+                            Every driver's points count for their team.
+                            @endif
+                        </p>
                         @endif
                     </div>
                     <div class="table-responsive">
@@ -247,6 +283,9 @@
                                             <span style="color:#9ca3af;font-size:.8rem">{{ $entry['car_label'] }}</span>
                                             @endif
                                         </div>
+                                        @if(isset($entry['drivers']))
+                                        <div style="color:#6b7280;font-size:.75rem">{{ $entry['drivers']->map->displayName()->implode(', ') }}</div>
+                                        @endif
                                     </td>
                                     <td class="text-center pe-4 fw-black" style="color:#db2777;font-size:1rem">{{ $entry['total_points'] }}</td>
                                 </tr>
@@ -256,12 +295,64 @@
                     </div>
                 </div>
                 @endforeach
+                </div>{{-- /standings sub-tabs --}}
 
                 @if($ballastChart)
                 @include('championships._ballast-chart')
                 @endif
 
                 </div>{{-- /standings panel --}}
+
+                {{-- Teams — every team with an entry and who drives for it (Championship::teamRoster()). --}}
+                @if($hasTeamsTab)
+                <div data-tab-panel="teams" style="display:none">
+                <div class="xcl-champ__teams-scroll">
+                @foreach($teamRoster as $teamRow)
+                @php $team = $teamRow['team']; @endphp
+                <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden" data-team-card>
+                    <div class="px-4 py-3 d-flex align-items-center gap-3" style="border-bottom:1px solid #1f2937">
+                        @if($team->logoUrl())
+                        <img src="{{ $team->logoUrl() }}" alt="" style="width:40px;height:40px;object-fit:contain;border-radius:8px">
+                        @else
+                        <div class="rounded-2 d-flex align-items-center justify-content-center fw-black text-white flex-shrink-0"
+                             style="width:40px;height:40px;font-size:.75rem;background:linear-gradient(135deg,#374151,#6b7280)">
+                            {{ strtoupper(mb_substr($team->tag ?: $team->name, 0, 3)) }}
+                        </div>
+                        @endif
+                        <div class="flex-grow-1">
+                            <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.9rem;letter-spacing:.06em">{{ $team->name }}</h2>
+                            <div style="color:#6b7280;font-size:.75rem">
+                                @if($team->tag){{ $team->tag }} · @endif{{ $teamRow['driver_count'] }} {{ \Illuminate\Support\Str::plural('driver', $teamRow['driver_count']) }}
+                                @php $carCount = $teamRow['entries']->where('is_car', true)->count(); @endphp
+                                @if($carCount)
+                                · {{ $carCount }} {{ \Illuminate\Support\Str::plural('car', $carCount) }}
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-4 py-2">
+                        @foreach($teamRow['entries'] as $row)
+                        <div class="d-flex align-items-center gap-2 py-2" style="{{ $loop->last ? '' : 'border-bottom:1px solid #1f2937' }}">
+                            @if($row['car_number'] !== null)
+                            <span class="fw-black flex-shrink-0" style="width:2.6rem;color:#9ca3af;font-size:.8rem">#{{ $row['car_number'] }}</span>
+                            @endif
+                            <div class="flex-grow-1">
+                                <span class="text-white fw-bold" style="font-size:.82rem">{{ $row['drivers']->map->displayName()->implode(', ') }}</span>
+                                @if($row['reserve'])
+                                <span style="color:#6b7280;font-size:.75rem"> · Reserve: {{ $row['reserve']->displayName() }}</span>
+                                @endif
+                            </div>
+                            @if($championship->is_multiclass && $row['class'])
+                            <span class="badge fw-bold" style="font-size:.6rem;background:{{ $row['class']->color }}22;color:{{ $row['class']->color }}">{{ $row['class']->name }}</span>
+                            @endif
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endforeach
+                </div>
+                </div>{{-- /teams panel --}}
+                @endif
 
                 {{-- Rounds --}}
                 <div data-tab-panel="rounds" style="display:none">
@@ -391,6 +482,9 @@
                                     {{ $reg->driverClass->name }}
                                 </span>
                                 @endif
+                                @if(!$reg->racingTeam && !$reg->is_spectator && ($soloTeam = $reg->user?->primaryRacingTeam()))
+                                <div style="color:#9ca3af;font-size:.75rem"><i class="fa-solid fa-users me-1"></i>{{ $soloTeam->name }}</div>
+                                @endif
                                 @if($reg->racingTeam)
                                 <div style="color:#d1d5db;font-size:.75rem">
                                     {{ $lineUp->map->displayName()->implode(', ') }}@if($reserve)<span style="color:#6b7280"> · Reserve: {{ $reserve->displayName() }}</span>@endif
@@ -470,6 +564,9 @@
                         @else
                         <p style="color:#6b7280;font-size:.78rem" class="mb-0">Your team's owner or a manager registered you — only they can unregister the team.</p>
                         @endif
+
+                        @elseif($championship->visibility === 'unlisted')
+                        <p style="color:#6b7280;font-size:.875rem">Registration opens once this championship is public.</p>
 
                         @elseif(! $championship->acceptsRegistrations())
                         <p style="color:#6b7280;font-size:.875rem">Registration is currently closed.</p>

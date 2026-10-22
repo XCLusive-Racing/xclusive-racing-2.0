@@ -975,27 +975,40 @@
                 </div>
                 @endif
 
-                {{-- Teams (unchanged: still one combined box) --}}
+                {{-- Teams -- one box per class in a multiclass championship round
+                     ($teamClassBoxes, from each car's championship entry), else one box. --}}
                 @if($isTeamRace)
-                <div class="xcl-ev-roster xcl-event-card">
+                @php
+                    $eloCol = \App\Models\User::eloColumn($race->game);
+                    $teamBoxes = $teamClassBoxes->isNotEmpty()
+                        ? $teamClassBoxes
+                        : collect([['class' => null, 'registrations' => $race->registrations->filter(fn ($r) => $r->user)]]);
+                @endphp
+                @foreach($teamBoxes as $box)
+                @php
+                    $cls = $box['class'];
+                    $sortedRegs = $box['registrations']
+                        ->sortByDesc(fn ($r) => $eloCol ? ($r->user->{$eloCol} ?? 0) : 0)
+                        ->values();
+                    $driverCount = $sortedRegs->count();
+                    // Counted in cars: a box with class boxes counts its own cars only.
+                    $carCount = $teamClassBoxes->isNotEmpty()
+                        ? $sortedRegs->pluck('team_entry_id')->filter()->unique()->count()
+                        : $race->teamEntries->count();
+                    $cap = $teamClassBoxes->isNotEmpty() ? $cls?->max_drivers : $race->max_drivers;
+                    $heading = $teamClassBoxes->isEmpty() ? 'TEAMS' : ($cls ? strtoupper($cls->name) : 'NO CLASS');
+                @endphp
+                <div class="xcl-ev-roster xcl-event-card {{ $loop->last ? '' : 'mb-4' }}">
                     <h3 class="xcl-event-card__heading">
-                        TEAMS
-                        <span class="xcl-event-card__heading-sub">
-                            {{ $race->teamEntries->count() }}{{ $race->max_drivers ? '/' . $race->max_drivers : '' }}
+                        {{ $heading }}
+                        <span class="xcl-event-card__heading-sub" @if($cls?->color) style="color:{{ $cls->color }}" @endif>
+                            {{ $carCount }}{{ $cap ? '/' . $cap : '' }}
                         </span>
                     </h3>
 
-                    @php $eloCol = \App\Models\User::eloColumn($race->game); @endphp
-                    @if($race->registrations->isEmpty())
+                    @if($sortedRegs->isEmpty())
                         <p class="xcl-event-card__text mb-0">No drivers registered yet. Be the first!</p>
                     @else
-                        @php
-                            $sortedRegs = $race->registrations
-                                ->filter(fn($r) => $r->user)
-                                ->sortByDesc(fn($r) => $eloCol ? ($r->user->{$eloCol} ?? 0) : 0)
-                                ->values();
-                            $driverCount = $sortedRegs->count();
-                        @endphp
                         <div class="xcl-drivers-grid-wrap {{ $driverCount <= 8 ? 'no-overflow' : '' }}">
                             <div class="xcl-drivers-grid">
                                 @foreach($sortedRegs as $reg)
@@ -1005,6 +1018,7 @@
                         </div>
                     @endif
                 </div>
+                @endforeach
                 @else
                 {{-- Drivers -- one box per class in a multiclass race (each with its own
                      count/cap), or a single box otherwise. Waitlisted entries are excluded

@@ -2005,6 +2005,21 @@ span.flatpickr-weekday {
     }
 
     &__heading { color: var(--ch-highlight); }
+
+    // Teams tab: the team cards scroll inside the panel instead of growing the page.
+    &__teams-scroll {
+        max-height: 70vh;
+        overflow-y: auto;
+        padding-right: 4px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--ch-highlight) transparent;
+
+        &::-webkit-scrollbar { width: 4px; }
+        &::-webkit-scrollbar-track { background: transparent; }
+        &::-webkit-scrollbar-thumb { background: var(--ch-highlight); border-radius: 2px; }
+
+        > :last-child { margin-bottom: 0 !important; }
+    }
 }
 
 .about-stats-card {

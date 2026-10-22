@@ -502,6 +502,13 @@ class User extends Authenticatable
         return $this->ownedRacingTeams->merge($this->racingTeams);
     }
 
+    // The one team a solo championship driver races for (team standings, entry lists):
+    // a team they own, else the first they joined.
+    public function primaryRacingTeam(): ?RacingTeam
+    {
+        return $this->allRacingTeams()->first();
+    }
+
     // The team this user is trusted to register/enter for an event or championship on
     // behalf of: the team they own, or otherwise the first team they've been promoted
     // to manager of. A plain member (no manager role, no owned team) gets null here,

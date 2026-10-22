@@ -527,10 +527,12 @@ class Championship extends Model
 
     // The one answer to "can someone sign up right now?" — used by both
     // ChampionshipController::register() and the public page, which used to each
-    // combine the three pieces of state below themselves.
+    // combine the three pieces of state below themselves. An unlisted championship
+    // takes no sign-ups, not even through a shared link, until it's public again.
     public function acceptsRegistrations(): bool
     {
-        return in_array($this->status, ['active', 'registration_open'], true)
+        return $this->visibility !== 'unlisted'
+            && in_array($this->status, ['active', 'registration_open'], true)
             && $this->registration_open
             && $this->registrationIsOpen();
     }
@@ -662,6 +664,94 @@ class Championship extends Model
         usort($teams, fn ($a, $b) => $b['total_points'] <=> $a['total_points']);
 
         return $teams;
+    }
+
+    // A solo championship with team points (no team cars): every solo driver scores for
+    // the team they're in now (User::primaryRacingTeam()). Each round a team scores
+    // its best settings.scoring.team_scoring_cars drivers (blank = all of them). Every team
+    // with a driver in is listed, at 0 until a round is scored.
+    public function computeSoloTeamStandings(): array
+    {
+        if (! ($this->settings->scoring->team_points_enabled ?? false)
+            || $this->registrations()->whereNotNull('racing_team_id')->exists()) {
+            return [];
+        }
+
+        $scoringDrivers = (int) ($this->settings->scoring->team_scoring_cars ?? 0) ?: PHP_INT_MAX;
+        $driverStandings = collect($this->buildDriverStandings())->keyBy('user_id');
+
+        $teams = $this->soloDriverTeams()
+            ->groupBy(fn (array $row) => $row['team']->id)
+            ->map(function (Collection $rows) use ($driverStandings, $scoringDrivers) {
+                $total = $rows->flatMap(fn (array $row) => $driverStandings->get($row['user']->id)['rounds'] ?? [])
+                    ->groupBy('race_id')
+                    ->sum(fn (Collection $round) => $round->pluck('points')->sortDesc()->take($scoringDrivers)->sum());
+
+                return [
+                    'team' => $rows->first()['team'],
+                    'drivers' => $rows->pluck('user')->sortBy(fn (User $user) => $user->displayName())->values(),
+                    'total_points' => $total,
+                ];
+            })
+            ->sortBy(fn (array $row) => $row['team']->name)
+            ->values()
+            ->all();
+
+        usort($teams, fn ($a, $b) => $b['total_points'] <=> $a['total_points']);
+
+        return $teams;
+    }
+
+    // [user, team] for every approved solo driver who is in a team — see computeSoloTeamStandings().
+    public function soloDriverTeams(): Collection
+    {
+        return $this->registrations()->approved()->where('is_spectator', false)->whereNull('racing_team_id')
+            ->with('user.ownedRacingTeams', 'user.racingTeams')
+            ->get()
+            ->map(fn (ChampionshipRegistration $registration) => $registration->user
+                ? ['user' => $registration->user, 'team' => $registration->user->primaryRacingTeam()]
+                : null)
+            ->filter(fn (?array $row) => $row && $row['team'])
+            ->values();
+    }
+
+    // The public Teams tab: every team with an entry and who drives for it, no points.
+    // A team car is one row with its line-up (and reserve); in a solo championship each
+    // driver in a team (User::primaryRacingTeam()) is a row of their own. Biggest team first.
+    public function teamRoster(): array
+    {
+        $registrations = $this->registrations()->approved()->where('is_spectator', false)
+            ->with('racingTeam', 'championshipClass', 'user.ownedRacingTeams', 'user.racingTeams')
+            ->orderBy('car_number')
+            ->get();
+        $cars = $registrations->whereNotNull('racing_team_id');
+        $drivers = User::whereIn('id', $cars->flatMap->carDriverIds()->unique())->get()->keyBy('id');
+
+        $rows = $cars->filter(fn ($car) => $car->racingTeam)->map(fn (ChampionshipRegistration $car) => [
+            'team' => $car->racingTeam,
+            'is_car' => true,
+            'car_number' => $car->car_number,
+            'class' => $car->championshipClass,
+            'drivers' => collect($car->driverIds())->map(fn ($id) => $drivers[$id] ?? null)->filter()->values(),
+            'reserve' => $car->reserve_driver_id ? ($drivers[$car->reserve_driver_id] ?? null) : null,
+        ])->concat($registrations->whereNull('racing_team_id')->map(fn (ChampionshipRegistration $entry) => [
+            'team' => $entry->user?->primaryRacingTeam(),
+            'is_car' => false,
+            'car_number' => $entry->car_number,
+            'class' => $entry->championshipClass,
+            'drivers' => collect([$entry->user]),
+            'reserve' => null,
+        ])->filter(fn (array $row) => $row['team']));
+
+        return $rows->groupBy(fn (array $row) => $row['team']->id)
+            ->map(fn (Collection $teamRows) => [
+                'team' => $teamRows->first()['team'],
+                'entries' => $teamRows->values(),
+                'driver_count' => $teamRows->sum(fn (array $row) => $row['drivers']->count()),
+            ])
+            ->sortBy(fn (array $team) => [-$team['driver_count'], $team['team']->name])
+            ->values()
+            ->all();
     }
 
     // Standings are computed live from results, but the public page asks for them

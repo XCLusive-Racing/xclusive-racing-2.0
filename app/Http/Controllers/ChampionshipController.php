@@ -88,7 +88,7 @@ class ChampionshipController extends Controller
             'classes',
             // Entries still waiting for manual approval aren't entrants yet.
             'driverClasses',
-            'registrations' => fn ($q) => $q->approved()->with('user', 'championshipClass', 'driverClass', 'racingTeam'),
+            'registrations' => fn ($q) => $q->approved()->with('user.ownedRacingTeams', 'user.racingTeams', 'championshipClass', 'driverClass', 'racingTeam'),
         ]);
         // A team car is entered by its team manager (user_id), not by who drives it —
         // the Drivers list shows the car's own line-up and reserve instead.
@@ -100,9 +100,11 @@ class ChampionshipController extends Controller
         $driverClassStandings = $championship->computeDriverClassStandings();
         $teamStandings = $championship->computeTeamStandings();
         $teamChampionship = $championship->computeTeamChampionship();
+        $soloTeamStandings = $championship->computeSoloTeamStandings();
+        $teamRoster = $championship->teamRoster();
         $ballastChart = app(EntryBalanceService::class)->chart($championship);
 
-        return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'driverClassStandings', 'teamStandings', 'teamChampionship', 'ballastChart', 'carDrivers'));
+        return view('championships.show', compact('championship', 'rounds', 'standings', 'classStandings', 'driverClassStandings', 'teamStandings', 'teamChampionship', 'soloTeamStandings', 'teamRoster', 'ballastChart', 'carDrivers'));
     }
 
     public function register(Request $request, int $championship)

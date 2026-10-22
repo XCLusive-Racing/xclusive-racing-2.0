@@ -11,6 +11,22 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-10-22 — NLRL feedback (Sunday League / MTSS).** (1) An unlisted
+  championship takes no registrations, not even by direct link
+  (`acceptsRegistrations()`), until it's public again. (2) A multiclass
+  driver-swap round's event page shows one TEAMS box per championship class (each
+  car's class from its championship entry, `RaceController::show()`
+  `$teamClassBoxes`), plus a "No class" box when needed. (3) A **Teams** tab on the
+  championship page whenever a team has an entry: each team (logo, tag, driver/car
+  count) with its cars or drivers, number, class, reserve — no points
+  (`Championship::teamRoster()`). Team standings stay a section under Standings. A
+  solo championship with team points now scores per team
+  (`computeSoloTeamStandings()`): each driver for their
+  current team (`User::primaryRacingTeam()`: owned team, else first joined), best
+  `team_scoring_cars` drivers per round, every team listed at 0 before results.
+  Live, not stored: a driver changing team takes their points along — storing the
+  team on the solo registration is the fallback if that becomes a problem.
+  (4) That team shows under a solo driver on the Drivers tab and admin Entries page.
 - **2026-10-09 — Reserve driver per team car (MTSS feedback).** Line-ups stay
   fixed (e.g. 2 per car); each car can get one reserve afterwards: "Edit" next to
   Withdraw on the championship page (`ChampionshipController::updateReserve()`,

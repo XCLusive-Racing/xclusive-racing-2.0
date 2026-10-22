@@ -165,6 +165,31 @@ class ChampionshipRegistrationTest extends TestCase
         $this->assertTrue($championship->fresh()->isFull());
     }
 
+    // An unlisted championship is reachable by link, but nobody can sign up until it's public.
+    public function test_an_unlisted_championship_takes_no_registrations_until_it_is_public(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league, ['visibility' => 'unlisted']);
+        $driver = User::factory()->create();
+
+        $this->actingAs($driver)
+            ->get(route('championships.show', $championship))
+            ->assertOk()
+            ->assertSee('Registration opens once this championship is public.');
+
+        $this->actingAs($driver)
+            ->post(route('championships.register', $championship), $this->soloEntry())
+            ->assertSessionHas('error', 'Registration is not open.');
+        $this->assertFalse($championship->fresh()->isRegistered($driver));
+
+        $championship->update(['visibility' => 'public']);
+
+        $this->actingAs($driver)
+            ->post(route('championships.register', $championship), $this->soloEntry())
+            ->assertRedirect();
+        $this->assertTrue($championship->fresh()->isRegistered($driver));
+    }
+
     public function test_spectator_registration_is_rejected_once_spectator_slots_are_full(): void
     {
         $league = $this->makeLeague('nlrl');
