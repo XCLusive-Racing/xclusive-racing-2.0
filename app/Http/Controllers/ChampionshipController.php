@@ -88,7 +88,7 @@ class ChampionshipController extends Controller
             'classes',
             // Entries still waiting for manual approval aren't entrants yet.
             'driverClasses',
-            'registrations' => fn ($q) => $q->approved()->with('user', 'championshipClass', 'driverClass', 'racingTeam'),
+            'registrations' => fn ($q) => $q->approved()->with('user.ownedRacingTeams', 'user.racingTeams', 'championshipClass', 'driverClass', 'racingTeam'),
         ]);
         // A team car is entered by its team manager (user_id), not by who drives it —
         // the Drivers list shows the car's own line-up and reserve instead.

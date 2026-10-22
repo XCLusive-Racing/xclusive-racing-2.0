@@ -29,7 +29,7 @@ class ChampionshipEntryController extends Controller
         $this->authorizeChampionship($league, $championship);
 
         $entries = $championship->registrations()
-            ->with(['user', 'racingTeam.members', 'championshipClass', 'driverClass'])
+            ->with(['user.ownedRacingTeams', 'user.racingTeams', 'racingTeam.members', 'championshipClass', 'driverClass'])
             ->orderByRaw('approved_at is not null')
             ->orderBy('created_at')
             ->get();

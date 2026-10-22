@@ -72,6 +72,8 @@
                         </div>
                         @if($entry->racingTeam)
                         <div class="text-secondary" style="font-size:.75rem">Entered by {{ $entry->user?->displayName() }}</div>
+                        @elseif($soloTeam = $entry->user?->primaryRacingTeam())
+                        <div class="text-secondary" style="font-size:.75rem"><i class="fa-solid fa-users me-1"></i>{{ $soloTeam->name }}</div>
                         @endif
                         {{-- A solo driver can't change their own car once registered — the league can, here. --}}
                         @if(!$entry->racingTeam && !$entry->is_spectator && $carOptions->isNotEmpty())

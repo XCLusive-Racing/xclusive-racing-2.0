@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Championship;
 use App\Models\ChampionshipRegistration;
 use App\Models\League;
+use App\Models\LeagueUser;
 use App\Models\Race;
 use App\Models\RaceResult;
 use App\Models\RacingTeam;
@@ -292,6 +293,28 @@ class TeamStandingsTest extends TestCase
         $this->assertStringContainsString('Apex Racing', $panel);
         $this->assertStringContainsString('Jan Jansen', $panel);
         $this->assertStringContainsString('best 3 drivers score for the team', preg_replace('/\s+/', ' ', $panel));
+    }
+
+    public function test_a_solo_drivers_team_shows_in_the_drivers_tab_and_the_admin_entries(): void
+    {
+        $championship = $this->soloChampionship(null);
+        $apex = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => User::factory()->create()->id]);
+        $this->soloDriverIn($championship, $apex, 'Jan Jansen');
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($this->get(route('championships.show', $championship->id))->assertOk()->getContent());
+        $drivers = (new \DOMXPath($dom))->query('//*[@data-tab-panel="drivers"]')->item(0)->textContent;
+        $this->assertStringContainsString('Apex Racing', $drivers);
+
+        $manager = User::factory()->leagueManager()->create();
+        LeagueUser::create(['league_id' => $championship->league_id, 'user_id' => $manager->id, 'role' => 'manager']);
+        $manager->syncLeagueRoleFlags();
+
+        $this->actingAs($manager->refresh())
+            ->get(route('admin.leagues.championships.entries.index', [$championship->league_id, $championship]))
+            ->assertOk()
+            ->assertSee('Jan Jansen')
+            ->assertSee('Apex Racing');
     }
 
     public function test_no_teams_tab_without_team_points(): void

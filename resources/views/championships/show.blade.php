@@ -416,6 +416,9 @@
                                     {{ $reg->driverClass->name }}
                                 </span>
                                 @endif
+                                @if(!$reg->racingTeam && !$reg->is_spectator && ($soloTeam = $reg->user?->primaryRacingTeam()))
+                                <div style="color:#9ca3af;font-size:.75rem"><i class="fa-solid fa-users me-1"></i>{{ $soloTeam->name }}</div>
+                                @endif
                                 @if($reg->racingTeam)
                                 <div style="color:#d1d5db;font-size:.75rem">
                                     {{ $lineUp->map->displayName()->implode(', ') }}@if($reserve)<span style="color:#6b7280"> · Reserve: {{ $reserve->displayName() }}</span>@endif

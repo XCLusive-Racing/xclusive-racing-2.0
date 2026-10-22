@@ -667,7 +667,7 @@ class Championship extends Model
     }
 
     // A solo championship with team points (no team cars): every solo driver scores for
-    // the team they're in now, a team owned before one only joined. Each round a team scores
+    // the team they're in now (User::primaryRacingTeam()). Each round a team scores
     // its best settings.scoring.team_scoring_cars drivers (blank = all of them). Every team
     // with a driver in is listed, at 0 until a round is scored.
     public function computeSoloTeamStandings(): array
@@ -709,7 +709,7 @@ class Championship extends Model
             ->with('user.ownedRacingTeams', 'user.racingTeams')
             ->get()
             ->map(fn (ChampionshipRegistration $registration) => $registration->user
-                ? ['user' => $registration->user, 'team' => $registration->user->allRacingTeams()->first()]
+                ? ['user' => $registration->user, 'team' => $registration->user->primaryRacingTeam()]
                 : null)
             ->filter(fn (?array $row) => $row && $row['team'])
             ->values();
