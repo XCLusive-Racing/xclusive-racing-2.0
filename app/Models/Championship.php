@@ -527,10 +527,12 @@ class Championship extends Model
 
     // The one answer to "can someone sign up right now?" — used by both
     // ChampionshipController::register() and the public page, which used to each
-    // combine the three pieces of state below themselves.
+    // combine the three pieces of state below themselves. An unlisted championship
+    // takes no sign-ups, not even through a shared link, until it's public again.
     public function acceptsRegistrations(): bool
     {
-        return in_array($this->status, ['active', 'registration_open'], true)
+        return $this->visibility !== 'unlisted'
+            && in_array($this->status, ['active', 'registration_open'], true)
             && $this->registration_open
             && $this->registrationIsOpen();
     }

@@ -471,6 +471,9 @@
                         <p style="color:#6b7280;font-size:.78rem" class="mb-0">Your team's owner or a manager registered you — only they can unregister the team.</p>
                         @endif
 
+                        @elseif($championship->visibility === 'unlisted')
+                        <p style="color:#6b7280;font-size:.875rem">Registration opens once this championship is public.</p>
+
                         @elseif(! $championship->acceptsRegistrations())
                         <p style="color:#6b7280;font-size:.875rem">Registration is currently closed.</p>
 

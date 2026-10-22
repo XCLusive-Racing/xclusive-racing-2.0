@@ -780,7 +780,7 @@ class ChampionshipWizardController extends Controller
 
         AuditLogger::record($request->user(), $championship, 'championship.hidden');
 
-        return back()->with('success', $championship->name.' is now hidden from public listings.');
+        return back()->with('success', $championship->name.' is now hidden from public listings and takes no new registrations.');
     }
 
     public function unhide(Request $request, League $league, Championship $championship)
