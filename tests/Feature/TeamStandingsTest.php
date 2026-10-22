@@ -299,6 +299,27 @@ class TeamStandingsTest extends TestCase
         $this->assertStringContainsString('best 3 drivers score for the team', $standings);
     }
 
+    // One sub-tab per standings table inside Standings, each table its own panel.
+    public function test_standings_tables_each_get_a_sub_tab(): void
+    {
+        $championship = $this->soloChampionship(3);
+        $apex = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => User::factory()->create()->id]);
+        $this->soloDriverIn($championship, $apex, 'Jan Jansen');
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($this->get(route('championships.show', $championship->id))->assertOk()->getContent());
+        $xpath = new \DOMXPath($dom);
+        $standings = $xpath->query('//*[@data-tab-panel="standings"]')->item(0);
+
+        $labels = [];
+        foreach ($xpath->query('.//*[@data-tabs]//button[@data-tab-btn]', $standings) as $button) {
+            $labels[$button->getAttribute('data-tab-btn')] = trim($button->textContent);
+        }
+        $this->assertSame(['st-0' => 'Overall', 'st-1' => 'Teams'], $labels);
+        $this->assertStringContainsString('Overall Standings', $xpath->query('.//*[@data-tab-panel="st-0"]', $standings)->item(0)->textContent);
+        $this->assertStringContainsString('Team Standings', $xpath->query('.//*[@data-tab-panel="st-1"]', $standings)->item(0)->textContent);
+    }
+
     // Teams: who drives for which team, no points.
     public function test_the_teams_tab_lists_each_team_with_its_drivers_and_no_points(): void
     {

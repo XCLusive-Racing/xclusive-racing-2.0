@@ -144,10 +144,33 @@
                         : collect([['class' => null, 'standings' => $standings]]);
                     // Driver classes (Pro / Am …) come after the overall table, not instead of it.
                     $standingsGroups = $standingsGroups->concat($driverClassStandings);
+
+                    // One sub-tab per table — drivers (overall/car class/driver class), then teams —
+                    // so only one table shows at a time. Same tabs.js component, nested [data-tabs].
+                    $standingsTabs = $standingsGroups->map(fn ($group) => isset($group['driver_class'])
+                        ? $group['driver_class']->name
+                        : (($group['class'] ?? null) ? $group['class']->name : 'Overall'))
+                        ->concat(array_map(fn ($title) => $title === 'Car Standings' ? 'Cars' : 'Teams', array_keys($teamTables)))
+                        ->values();
+                    // tabs.js swaps the whole style attribute, so both carry the full pill style.
+                    $pillOn = "background:{$highlight};color:#fff;border:1px solid {$highlight};font-size:.72rem;letter-spacing:.05em";
+                    $pillOff = 'background:transparent;color:#9ca3af;border:1px solid #374151;font-size:.72rem;letter-spacing:.05em';
                 @endphp
 
+                <div data-tabs data-default-tab="st-0">
+                <div class="d-flex flex-wrap gap-2 mb-3" @if($standingsTabs->count() < 2) style="display:none !important" @endif>
+                    @foreach($standingsTabs as $i => $tabLabel)
+                    <button type="button" data-tab-btn="st-{{ $i }}"
+                            data-tab-active-style="{{ $pillOn }}" data-tab-inactive-style="{{ $pillOff }}"
+                            class="btn btn-sm fw-bold text-uppercase rounded-pill px-3"
+                            style="{{ $pillOff }}">
+                        {{ $tabLabel }}
+                    </button>
+                    @endforeach
+                </div>
+
                 @foreach($standingsGroups as $group)
-                <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
+                <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden" data-tab-panel="st-{{ $loop->index }}">
                     <div class="px-4 py-3 d-flex align-items-center gap-2" style="border-bottom:1px solid #1f2937">
                         <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.85rem;letter-spacing:.08em">
                             @if(isset($group['driver_class']))
@@ -221,7 +244,7 @@
                      the per-car table sits below it as "Car Standings"; a solo championship
                      scores each team from its drivers (computeSoloTeamStandings()). --}}
                 @foreach($teamTables as $tableTitle => $tableRows)
-                <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden">
+                <div class="mb-4" style="background:#111827;border-radius:12px;overflow:hidden" data-tab-panel="st-{{ $standingsGroups->count() + $loop->index }}">
                     <div class="px-4 py-3" style="border-bottom:1px solid #1f2937">
                         <h2 class="fw-black text-uppercase mb-0 xcl-champ__heading" style="font-size:.85rem;letter-spacing:.08em">{{ $tableTitle }}</h2>
                         @if($tableTitle === 'Team Championship')
@@ -272,6 +295,7 @@
                     </div>
                 </div>
                 @endforeach
+                </div>{{-- /standings sub-tabs --}}
 
                 @if($ballastChart)
                 @include('championships._ballast-chart')
