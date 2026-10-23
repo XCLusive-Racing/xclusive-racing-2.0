@@ -17,8 +17,7 @@ class GridFillerTest extends TestCase
 {
     use RefreshDatabase;
 
-    // Fillers are switched off by default (config/fillers.php 'enabled'); these tests
-    // cover the system itself, so they switch it on.
+    // Pin the switch on (config/fillers.php 'enabled') so these tests don't depend on its default.
     protected function setUp(): void
     {
         parent::setUp();
