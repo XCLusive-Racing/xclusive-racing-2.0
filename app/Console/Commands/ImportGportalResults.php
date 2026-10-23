@@ -18,11 +18,6 @@ class ImportGportalResults extends Command
 
     protected $description = 'Auto-close overdue races, auto-import their results from gPortal FTP once available, and auto-finish stale closed races with no results';
 
-    // How long after scheduled_at before we start looking for a results file —
-    // covers even the shortest sprint format, and we just retry every run until
-    // a matching file shows up (harmless no-op otherwise).
-    private const RESULT_WAIT_MINUTES = 30;
-
     // How far past a race's slot_time a result file's own timestamp may be and
     // still count as "this race's file" — generous enough to cover endurance races.
     private const MATCH_WINDOW_HOURS = 6;
@@ -54,9 +49,14 @@ class ImportGportalResults extends Command
             Log::info("gportal:import-results: auto-finished {$staleFinished} stale closed race(s) with no results");
         }
 
+        // Every race that has started counts as a candidate, so a file always goes to the
+        // closest slot before it. This used to wait 30 minutes past scheduled_at: a 22:00
+        // race's quali file lands ~22:25, while that race wasn't a candidate yet, so it went
+        // to the same server's 18:00 race (still unfinished) and was never retried for the
+        // right one (race 725's quali ended up on race 723, 2026-10-18).
         $races = Race::whereNotNull('ftp_server_id')
             ->where('status', '!=', 'finished')
-            ->where('scheduled_at', '<', now()->subMinutes(self::RESULT_WAIT_MINUTES))
+            ->where('scheduled_at', '<', now())
             ->with(['ftpServer' => fn ($q) => $q->withoutTenantScope()])
             ->get()
             ->groupBy('ftp_server_id');

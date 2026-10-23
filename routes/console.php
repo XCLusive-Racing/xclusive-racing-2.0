@@ -9,7 +9,9 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('gportal:push-configs')->everyMinute()->onOneServer();
-Schedule::command('gportal:import-results')->everyMinute()->onOneServer(); // TEMP: testing, revert to everyFifteenMinutes() after
+// withoutOverlapping: an import with rating processing can outlast a minute, and a second
+// run that starts meanwhile re-imports the same file into another unfinished race (2026-10-18).
+Schedule::command('gportal:import-results')->everyMinute()->onOneServer()->withoutOverlapping(); // TEMP: testing, revert to everyFifteenMinutes() after
 Schedule::command('xcl:discord:sync-ranks')->everyFiveMinutes()->onOneServer();
 Schedule::command('races:announce-daily')->dailyAt('12:00')->timezone('Europe/London')->onOneServer();
 Schedule::command('reports:announce-daily')->dailyAt('12:00')->timezone('Europe/London')->onOneServer();
