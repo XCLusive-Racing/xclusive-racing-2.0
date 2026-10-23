@@ -5,8 +5,8 @@
 return [
 
     // Master switch: off shows no fillers on any grid or sign-up counter (the filler users
-    // stay in the database and on the rating list). User-directed 2026-10-16: off for now.
-    'enabled' => (bool) env('FILLERS_ENABLED', false),
+    // stay in the database and on the rating list). User-directed 2026-10-23: back on.
+    'enabled' => (bool) env('FILLERS_ENABLED', true),
 
     // One filler shown for every this many real sign-ups (4 → 5, 8 → 10, 12 → 15...).
     'per_real_drivers' => 4,
