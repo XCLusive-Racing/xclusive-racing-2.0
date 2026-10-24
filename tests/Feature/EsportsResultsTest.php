@@ -275,7 +275,7 @@ class EsportsResultsTest extends TestCase
 
         $html = $this->actingAs($this->esportsManager())->get(route('admin.results.index'))->getContent();
 
-        $this->assertStringContainsString("form:has(#driver-cb-{$one->id}:checked) [data-result-row=\"{$one->id}\"]{display:flex}", $html);
+        $this->assertStringContainsString("form:has(#driver-cb-acc-team-{$one->id}:checked) [data-driver-group=\"acc-team\"] [data-result-row=\"{$one->id}\"]{display:flex}", $html);
         $this->assertStringContainsString('[data-result-row]{display:none}', $html);
         $this->assertStringContainsString('Select drivers above to enter their results', $html);
     }

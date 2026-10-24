@@ -86,8 +86,8 @@
                 <p style="font-size:.78rem;color:#6b7280;margin-bottom:12px">Select every driver who took part</p>
                 <div class="xcl-driver-picker__grid">
                     @forelse($gameDrivers as $driver)
-                    <label class="xcl-driver-card" for="driver-cb-{{ $driver->id }}" data-driver-card>
-                        <input type="checkbox" id="driver-cb-{{ $driver->id }}" name="selected_drivers[]"
+                    <label class="xcl-driver-card" for="driver-cb-{{ $subject }}-{{ $driver->id }}" data-driver-card>
+                        <input type="checkbox" id="driver-cb-{{ $subject }}-{{ $driver->id }}" name="selected_drivers[]"
                                value="{{ $driver->id }}" {{ $isAdded($driver->id) ? 'checked' : '' }}>
                         <span class="xcl-driver-card__check"><i class="fa-solid fa-check"></i></span>
                         <span class="xcl-driver-card__avatar">
@@ -99,7 +99,7 @@
                         </span>
                         <span class="xcl-driver-card__body">
                             <span class="xcl-driver-card__name">{{ $driver->name }}</span>
-                            <span class="xcl-driver-card__badge">{{ \App\Models\EsportsDriver::gameLabel($driver->game) }}</span>
+                            <span class="xcl-driver-card__badge">{{ \App\Models\EsportsDriver::gameLabel($game) }}</span>
                         </span>
                     </label>
                     @empty
@@ -133,7 +133,7 @@
                            placeholder="Car #, e.g. 787">
                 </div>
                 @php
-                    $cssRules[] = 'form:has(#driver-cb-'.$driver->id.':checked) [data-result-row="'.$driver->id.'"]{display:flex}';
+                    $cssRules[] = 'form:has(#driver-cb-'.$subject.'-'.$driver->id.':checked) [data-driver-group="'.$subject.'"] [data-result-row="'.$driver->id.'"]{display:flex}';
                 @endphp
                 @endforeach
             </div>

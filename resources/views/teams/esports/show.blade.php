@@ -52,7 +52,7 @@ $posStyle = fn(string $pos): string => match(true) {
                     @if($driver->flag)
                     <img src="/images/flags/flag-{{ $driver->flag }}.png" alt="" class="pro-driver-hero__flag">
                     @endif
-                    <span class="pro-driver-hero__nationality">{{ \App\Models\EsportsDriver::gameLabel($driver->game) }}</span>
+                    <span class="pro-driver-hero__nationality">{{ collect($driver->games())->map(fn ($game) => \App\Models\EsportsDriver::gameLabel($game))->implode(' · ') }}</span>
                     <span class="pro-driver-hero__dot">·</span>
                     <span class="pro-driver-hero__nationality">ESPORTS DRIVER</span>
                 </div>

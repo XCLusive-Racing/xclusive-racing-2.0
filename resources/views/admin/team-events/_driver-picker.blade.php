@@ -24,7 +24,7 @@
                 </span>
                 <span class="xcl-driver-card__body">
                     <span class="xcl-driver-card__name">{{ $driver->name }}</span>
-                    <span class="xcl-driver-card__badge">{{ \App\Models\EsportsDriver::gameLabel($driver->game) }}</span>
+                    <span class="xcl-driver-card__badge">{{ \App\Models\EsportsDriver::gameLabel($game) }}</span>
                 </span>
             </div>
             @empty
