@@ -121,7 +121,7 @@ class TeamEventController extends Controller
 
     private function esportsDriversByGame()
     {
-        $drivers = EsportsDriver::orderBy('sort_order')->get()->groupBy('game');
+        $drivers = EsportsDriver::groupedByGame();
 
         foreach (array_values(TeamEvent::teamSubjectGames()) as $game) {
             if (! $drivers->has($game)) {

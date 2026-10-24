@@ -10,7 +10,7 @@ class EsportsController extends Controller
 {
     public function index()
     {
-        $drivers = EsportsDriver::orderBy('sort_order')->get()->groupBy('game');
+        $drivers = EsportsDriver::groupedByGame();
 
         $upcomingEventsByGame = [];
 

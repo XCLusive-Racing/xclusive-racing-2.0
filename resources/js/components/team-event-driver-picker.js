@@ -26,11 +26,12 @@ export function initTeamEventDriverPicker() {
                 const id = card.dataset.driverId;
                 if (selected.has(id)) {
                     selected.delete(id);
-                    card.classList.remove('is-selected');
                 } else {
                     selected.add(id);
-                    card.classList.add('is-selected');
                 }
+                // A driver on more than one team has a card in each team's group.
+                cards.filter(c => c.dataset.driverId === id)
+                    .forEach(c => c.classList.toggle('is-selected', selected.has(id)));
                 updateInput();
             });
         });
