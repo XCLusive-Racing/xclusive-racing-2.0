@@ -68,10 +68,10 @@
                             <div style="position:absolute;inset:0;background:linear-gradient(to top,#111827 0%,transparent 60%)"></div>
 
                             {{-- Status badge --}}
-                            @php $sc = ['active'=>'#16a34a','finished'=>'#6b7280','draft'=>'#f59e0b'][$c->status] ?? '#6b7280'; @endphp
+                            @php $sc = $c->statusColor(); @endphp
                             <div style="position:absolute;top:10px;right:10px">
                                 <span class="badge fw-bold" style="background:{{ $sc }};font-size:.65rem;padding:3px 8px;border-radius:20px">
-                                    {{ ucfirst($c->status) }}
+                                    {{ $c->statusLabel() }}
                                 </span>
                             </div>
 

@@ -284,7 +284,11 @@ class ChampionshipWizardController extends Controller
             }
 
             $unassignedRounds = DB::transaction(function () use ($championship, $data, $gameChanged) {
+                $renamed = $data['name'] !== $championship->name;
                 $championship->update($data);
+                if ($renamed) {
+                    $championship->retitleRounds();
+                }
 
                 return $gameChanged ? $championship->syncRoundsToGame() : 0;
             });
@@ -469,6 +473,12 @@ class ChampionshipWizardController extends Controller
     // too (ChampionshipRoundEntryService), same as the rounds that already existed.
     private function syncEntriesForNewRound(Championship $championship, Race $race): void
     {
+        // A round added to a finished season reopens it (closed for sign-ups;
+        // the league opens registration again if it wants to).
+        if ($championship->status === 'completed') {
+            $championship->update(['status' => 'registration_closed']);
+        }
+
         app(ChampionshipRoundEntryService::class)->syncRound($championship, $race);
     }
 
@@ -628,7 +638,7 @@ class ChampionshipWizardController extends Controller
 
         // "Title" is chosen once at Basics (the championship's Name) and composed
         // with the round number here — a manager never re-types it per round.
-        $data['title'] = $championship->name.' — Round '.$data['round_number'];
+        $data['title'] = $championship->roundTitle($data['round_number']);
 
         if (! empty($data['ftp_server_id'])) {
             $server = FtpServer::find($data['ftp_server_id']);

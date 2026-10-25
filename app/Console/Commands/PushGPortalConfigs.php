@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Championship;
 use App\Models\Race;
 use App\Services\Contracts\ServerConfigGenerator;
 use App\Services\FtpService;
@@ -42,7 +43,10 @@ class PushGPortalConfigs extends Command
             ->with(['ftpServer' => fn ($q) => $q->withoutTenantScope()])
             ->get();
 
-        $races = $normalRaces->merge($safetyRaces)->unique('id');
+        // A round of a championship still in draft isn't live yet: it doesn't take a server.
+        $races = $normalRaces->merge($safetyRaces)->unique('id')
+            ->reject(fn (Race $race) => $race->championship_id
+                && Championship::withoutTenantScope()->whereKey($race->championship_id)->value('status') === 'draft');
 
         if ($races->isEmpty()) {
             return;

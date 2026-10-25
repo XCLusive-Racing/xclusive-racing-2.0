@@ -54,10 +54,10 @@
                             Season {{ $championship->season }}
                         </span>
                         @php
-                            $sc = ['active'=>'#16a34a','finished'=>'#9ca3af','draft'=>'#f59e0b','published'=>'#2563eb','registration_open'=>'#16a34a','registration_closed'=>'#6b7280','running'=>'#7c3aed','completed'=>'#9ca3af','cancelled'=>'#dc2626'][$championship->status] ?? '#9ca3af';
+                            $sc = $championship->statusColor();
                         @endphp
                         <span class="badge fw-bold" style="background:{{ $sc }}33;color:{{ $sc }};font-size:.7rem;padding:4px 10px;border-radius:6px">
-                            {{ ucfirst(str_replace('_', ' ', $championship->status)) }}
+                            {{ $championship->statusLabel() }}
                         </span>
                         @if($championship->is_multiclass)
                         <span class="badge fw-bold" style="background:#db277733;color:#db2777;font-size:.7rem;padding:4px 10px;border-radius:6px">
@@ -523,8 +523,8 @@
                             $canAddTeamCar = $myTeamCars->isNotEmpty() && $myTeamCars->count() < $championship->maxCarsPerTeam()
                                 && $championship->acceptsRegistrations();
                         @endphp
-                        @if(!in_array($championship->status, ['active', 'registration_open']))
-                        <p style="color:#6b7280;font-size:.875rem">Registration is not open yet.</p>
+                        @if($championship->status !== 'registration_open')
+                        <p style="color:#6b7280;font-size:.875rem">{{ match ($championship->status) { 'completed' => 'This championship has finished.', 'registration_closed', 'running' => 'Registration is closed.', default => 'Registration is not open yet.' } }}</p>
 
                         @elseif($championship->isRegistered(auth()->user()) && !$canAddTeamCar)
                         @php

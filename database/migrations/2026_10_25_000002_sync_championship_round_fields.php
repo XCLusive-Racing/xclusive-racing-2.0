@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 // multiclass championship's rounds a single car class. One-off fix of the rounds
 // still to run; from now on the Format step keeps them in step
 // (Championship::syncRoundFields()). Finished rounds keep what they ran with.
+// Also puts every round's title back on the championship's current name.
 return new class extends Migration
 {
     public function up(): void
@@ -22,6 +23,11 @@ return new class extends Migration
                     'max_drivers' => $championship->max_drivers,
                     'is_multiclass' => (bool) $championship->is_multiclass,
                 ]);
+
+            // A rename never reached the rounds' titles (Championship::roundTitle()).
+            foreach (DB::table('races')->where('championship_id', $championship->id)->whereNotNull('round_number')->get(['id', 'round_number']) as $round) {
+                DB::table('races')->where('id', $round->id)->update(['title' => $championship->name.' — Round '.$round->round_number]);
+            }
         }
     }
 
