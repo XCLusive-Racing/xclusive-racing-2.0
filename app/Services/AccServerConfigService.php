@@ -99,12 +99,46 @@ class AccServerConfigService implements ServerConfigGenerator
         }
 
         self::assignUniqueRaceNumbers($entries);
+        self::addLeagueAdmins($entries, $race, $championship);
 
         return [
             'entries' => $entries,
             'configVersion' => 1,
             'forceEntryList' => 1,
         ];
+    }
+
+    // Like SimGrid: the managers of the league running the race (the championship's
+    // league, else XCL itself) go on the entrylist as server admins, free to join in
+    // any car for testing — a bare {drivers: [{playerID}], isServerAdmin: 1} entry,
+    // the shape gPortal expects. A manager already racing gets the flag on their own
+    // car instead of a second entry; one without a player ID can't be listed.
+    private static function addLeagueAdmins(array &$entries, Race $race, ?Championship $championship): void
+    {
+        $league = $championship
+            ? League::withoutTenantScope()->find($championship->league_id)
+            : League::withoutTenantScope()->where('is_system', true)->first();
+        if (! $league) {
+            return;
+        }
+
+        $playerIds = $league->managers()->with('connectedAccounts')->get()->toBase()
+            ->map(fn (User $manager) => $manager->playerIdFor($race->game))
+            ->filter()
+            ->unique();
+
+        foreach ($entries as &$entry) {
+            if (collect($entry['drivers'])->pluck('playerID')->intersect($playerIds)->isNotEmpty()) {
+                $entry['isServerAdmin'] = 1;
+            }
+        }
+        unset($entry);
+
+        $listed = collect($entries)->flatMap(fn (array $entry) => collect($entry['drivers'])->pluck('playerID'));
+
+        foreach ($playerIds->diff($listed) as $playerId) {
+            $entries[] = ['drivers' => [['playerID' => $playerId]], 'isServerAdmin' => 1];
+        }
     }
 
     public const TEAM_TAG_MAX = 24;
