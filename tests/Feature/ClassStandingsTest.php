@@ -42,7 +42,7 @@ class ClassStandingsTest extends TestCase
     {
         return Race::create([
             'championship_id' => $championship->id, 'round_number' => $roundNumber,
-            'title' => 'Round ' . $roundNumber, 'track' => 'Monza', 'game' => 'acc',
+            'title' => 'Round '.$roundNumber, 'track' => 'Monza', 'game' => 'acc',
             'status' => 'finished', 'scheduled_at' => now()->subWeeks(4 - $roundNumber),
         ]);
     }
@@ -56,24 +56,25 @@ class ClassStandingsTest extends TestCase
         ]);
     }
 
-    public function test_drivers_are_grouped_into_their_own_class_preserving_overall_points(): void
+    public function test_each_class_scores_on_its_own_finishing_order(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
         $championship->points_system = [25, 18, 15];
         $championship->save();
 
         $pro = ChampionshipClass::create(['championship_id' => $championship->id, 'name' => 'Pro', 'max_drivers' => 20]);
-        $am  = ChampionshipClass::create(['championship_id' => $championship->id, 'name' => 'Am', 'max_drivers' => 20]);
+        $am = ChampionshipClass::create(['championship_id' => $championship->id, 'name' => 'Am', 'max_drivers' => 20]);
 
         $proDriver = User::factory()->create();
-        $amDriver  = User::factory()->create();
+        $amDriver = User::factory()->create();
         ChampionshipRegistration::create(['championship_id' => $championship->id, 'user_id' => $proDriver->id, 'championship_class_id' => $pro->id]);
         ChampionshipRegistration::create(['championship_id' => $championship->id, 'user_id' => $amDriver->id, 'championship_class_id' => $am->id]);
 
         $race = $this->finishedRound($championship, 1);
-        // Am driver crosses the line ahead overall (P1), Pro driver P2 — class
-        // standings must still show each in their own class, not overall order.
+        // Am driver crosses the line ahead overall (P1), Pro driver P2 — each is
+        // first of their own class, so both score P1 (review 2026-10-25: points
+        // used to follow the overall finish).
         $this->makeResult($race, $amDriver, 1);
         $this->makeResult($race, $proDriver, 2);
 
@@ -82,7 +83,7 @@ class ClassStandingsTest extends TestCase
         $this->assertSame(['Pro', 'Am'], array_values(array_map(fn ($g) => $g['class']->name, $classStandings)));
         $this->assertCount(1, $classStandings[$pro->id]['standings']);
         $this->assertSame($proDriver->id, $classStandings[$pro->id]['standings'][0]['user_id']);
-        $this->assertSame(18.0, (float) $classStandings[$pro->id]['standings'][0]['total_points']);
+        $this->assertSame(25.0, (float) $classStandings[$pro->id]['standings'][0]['total_points']);
         $this->assertCount(1, $classStandings[$am->id]['standings']);
         $this->assertSame($amDriver->id, $classStandings[$am->id]['standings'][0]['user_id']);
         $this->assertSame(25.0, (float) $classStandings[$am->id]['standings'][0]['total_points']);
@@ -90,7 +91,7 @@ class ClassStandingsTest extends TestCase
 
     public function test_a_driver_with_no_class_assignment_is_omitted_from_every_group(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
         $pro = ChampionshipClass::create(['championship_id' => $championship->id, 'name' => 'Pro', 'max_drivers' => 20]);
 
@@ -104,7 +105,7 @@ class ClassStandingsTest extends TestCase
 
     public function test_class_standings_reflect_a_missed_rounds_penalty_from_the_same_driver_standings_build(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
         $championship->settings = array_replace_recursive($championship->settings->toArray(), [
             'scoring' => ['max_missed_rounds' => 0, 'missed_rounds_action' => 'penalise', 'missed_rounds_penalty_points' => 5],
@@ -125,7 +126,7 @@ class ClassStandingsTest extends TestCase
 
     public function test_class_standings_are_empty_for_a_single_class_championship(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league, ['is_multiclass' => false]);
         ChampionshipRegistration::create(['championship_id' => $championship->id, 'user_id' => User::factory()->create()->id]);
 

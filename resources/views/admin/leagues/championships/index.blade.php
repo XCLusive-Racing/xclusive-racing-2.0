@@ -48,7 +48,7 @@
             <tbody>
                 @foreach($championships as $c)
                 @php
-                    $sc = ['draft' => '#f59e0b', 'published' => '#2563eb', 'registration_open' => '#16a34a', 'registration_closed' => '#6b7280', 'running' => '#7c3aed', 'completed' => '#6b7280', 'cancelled' => '#dc2626'][$c->status] ?? '#6b7280';
+                    $sc = $c->statusColor();
                 @endphp
                 <tr>
                     <td class="ps-4">

@@ -6,6 +6,7 @@ use App\Models\Championship;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 // Full validation across every group, run again at publish time even though each
 // group already passed per-step validation on the way here — a step can be
@@ -27,6 +28,18 @@ class PublishChampionshipRequest extends FormRequest
             'game' => ['required', Rule::in(Championship::GAMES)],
             'platform' => 'required|in:pc,console,cross',
         ], ChampionshipSettingsSchema::rules());
+    }
+
+    // What a championship can't go live without (Championship::publishBlockers()).
+    public function after(): array
+    {
+        return [
+            function (Validator $validator) {
+                foreach ($this->route('championship')->publishBlockers() as $blocker) {
+                    $validator->errors()->add('publish', $blocker);
+                }
+            },
+        ];
     }
 
     protected function prepareForValidation(): void

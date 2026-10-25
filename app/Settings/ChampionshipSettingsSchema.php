@@ -93,10 +93,10 @@ class ChampionshipSettingsSchema
             // real-world slot (e.g. always 20:00 UK) with a different in-game time
             // (e.g. sunset lighting) or vice versa.
             ['group' => 'schedule', 'key' => 'time_of_day', 'type' => 'time', 'default' => '14:00',
-                'label' => 'Real-World Start Time', 'help' => 'Suggests each round\'s real-world date & time — always on the hour. Still editable per round in Add Round.',
+                'label' => 'Real-World Start Time', 'help' => 'Suggests each round\'s real-world date & time, on the hour or half hour (the same as a round\'s own start). Still editable per round in Add Round.',
                 // Array form, not a pipe-delimited string — the regex itself
                 // contains a "|", which a string rule would wrongly split on.
-                'rule' => ['required', 'date_format:H:i', 'regex:/^([01]\d|2[0-3]):00$/']],
+                'rule' => ['required', 'date_format:H:i', 'regex:/^([01]\d|2[0-3]):(00|30)$/']],
 
             // --- Format ---
             ['group' => 'format', 'key' => 'multiclass_enabled', 'type' => 'boolean', 'default' => false,
@@ -104,7 +104,7 @@ class ChampionshipSettingsSchema
             ['group' => 'format', 'key' => 'classes', 'type' => 'list', 'default' => [],
                 'label' => 'Classes', 'help' => 'Each class has a name and a list of eligible cars. Only used when multiclass is on.'],
             ['group' => 'format', 'key' => 'max_entries', 'type' => 'integer', 'nullable' => true, 'default' => null,
-                'label' => 'Maximum Drivers/Teams', 'help' => 'Entry cap for the whole championship. Ignored when multiclass is on — set a cap per class instead.'],
+                'label' => 'Maximum Drivers/Teams', 'help' => 'Entry cap for the whole championship, a team car counting as one entry. With multiclass, each class can have its own cap on top. Also the number of car slots on the server.'],
             // '!' prefix inverts the dependency — shown while multiclass is OFF,
             // hidden once it's on (a single car class doesn't mean anything once
             // there are several per-class ones instead).
@@ -145,25 +145,25 @@ class ChampionshipSettingsSchema
             // Session Lengths / Weather / Rating & Pitstops / Practice Server rather
             // than one long undivided list)
             ['group' => 'sessions', 'key' => 'race_length_minutes', 'type' => 'integer', 'default' => 30, 'section' => 'Session Lengths',
-                'label' => 'Race Length (minutes)', 'help' => 'Length of the race session.', 'rule' => 'required|integer|min:1|max:999'],
+                'label' => 'Race Length (minutes)', 'help' => 'Length of the race session. Default for new rounds; change it per round in Add/Edit Round.', 'rule' => 'required|integer|min:1|max:999'],
             ['group' => 'sessions', 'key' => 'practice_enabled', 'type' => 'boolean', 'default' => true, 'section' => 'Session Lengths',
-                'label' => 'Practice Session', 'help' => 'Run a practice session before qualifying.'],
+                'label' => 'Practice Session', 'help' => 'Run a practice session before qualifying. Default for new rounds; change it per round in Add/Edit Round.'],
             ['group' => 'sessions', 'key' => 'practice_length_minutes', 'type' => 'integer', 'nullable' => true, 'default' => 15, 'section' => 'Session Lengths', 'depends_on' => 'practice_enabled',
                 'label' => 'Practice Length (minutes)', 'help' => 'Only used when a practice session runs.'],
             ['group' => 'sessions', 'key' => 'qualifying_enabled', 'type' => 'boolean', 'default' => true, 'section' => 'Session Lengths',
-                'label' => 'Qualifying Session', 'help' => 'Run a qualifying session before the race.'],
+                'label' => 'Qualifying Session', 'help' => 'Run a qualifying session before the race. Default for new rounds; change it per round in Add/Edit Round.'],
             ['group' => 'sessions', 'key' => 'qualifying_length_minutes', 'type' => 'integer', 'nullable' => true, 'default' => 15, 'section' => 'Session Lengths', 'depends_on' => 'qualifying_enabled',
                 'label' => 'Qualifying Length (minutes)', 'help' => 'Only used when a qualifying session runs.'],
             // Split from schedule.time_of_day (the real-world start time) — see the
             // comment there. This is what prefills a round's own in-game clock in
             // Add/Edit Round, independent of the real-world slot.
             ['group' => 'sessions', 'key' => 'ingame_time_of_day', 'type' => 'time', 'default' => '14:00', 'section' => 'Session Lengths',
-                'label' => 'In-Game Start Time', 'help' => 'The in-game clock time for every round — independent of the real-world start time on Basics.',
+                'label' => 'In-Game Start Time', 'help' => 'The in-game clock time, independent of the real-world start time on Basics. Default for new rounds; change it per round in Add/Edit Round.',
                 'rule' => ['required', 'date_format:H:i', 'regex:/^([01]\d|2[0-3]):00$/']],
             ['group' => 'sessions', 'key' => 'formation_lap_type', 'type' => 'enum', 'options' => ['short', 'full'], 'default' => 'full', 'section' => 'Session Lengths',
-                'label' => 'Formation Lap', 'help' => 'How long the formation lap is.', 'rule' => 'required|in:short,full'],
+                'label' => 'Formation Lap', 'help' => 'How long the formation lap is. Applies to every round.', 'rule' => 'required|in:short,full'],
             ['group' => 'sessions', 'key' => 'weather_mode', 'type' => 'enum', 'options' => ['fixed', 'randomised'], 'default' => 'fixed', 'section' => 'Weather',
-                'label' => 'Weather', 'help' => 'Fixed weather is set once here; randomised is rolled per round.', 'rule' => 'required|in:fixed,randomised'],
+                'label' => 'Weather', 'help' => 'Fixed: the temperatures, clouds and rain below apply to every round. Randomised: rolled per round.', 'rule' => 'required|in:fixed,randomised'],
             ['group' => 'sessions', 'key' => 'ambient_temp', 'type' => 'integer', 'nullable' => true, 'default' => 20, 'section' => 'Weather',
                 'label' => 'Ambient Temperature (°C)', 'help' => 'Only used when weather is fixed.'],
             ['group' => 'sessions', 'key' => 'track_temp', 'type' => 'integer', 'nullable' => true, 'default' => 26, 'section' => 'Weather',
@@ -184,9 +184,9 @@ class ChampionshipSettingsSchema
             // $championship->xcl_rating_enabled directly, this field has no
             // xcl_rating_enabled-awareness of its own).
             ['group' => 'sessions', 'key' => 'xcl_r_multiplier', 'type' => 'float', 'nullable' => true, 'default' => null, 'section' => 'Rating & Pitstops',
-                'label' => 'XCL-R Multiplier', 'help' => 'How much this round\'s races count toward rating changes (0.6–2.5). Leave blank for the default (1.0, same for every length). Only used once XCL Rating is enabled.', 'rule' => 'nullable|numeric|min:0.6|max:2.5'],
+                'label' => 'XCL-R Multiplier', 'help' => 'How much this round\'s races count toward rating changes (0.6–2.5). Leave blank for the default (1.0, same for every length). Only used once XCL Rating is enabled. Default for new rounds; change it per round in Add/Edit Round.', 'rule' => 'nullable|numeric|min:0.6|max:2.5'],
             ['group' => 'sessions', 'key' => 'pitstop_count', 'type' => 'integer', 'nullable' => true, 'default' => 0, 'section' => 'Rating & Pitstops',
-                'label' => 'Mandatory Pitstops', 'help' => 'Number of mandatory pitstops. Leave at 0 for none.', 'rule' => 'nullable|integer|min:0|max:9'],
+                'label' => 'Mandatory Pitstops', 'help' => 'Number of mandatory pitstops. Leave at 0 for none. Default for new rounds; change it per round in Add/Edit Round.', 'rule' => 'nullable|integer|min:0|max:9'],
             // A plain on/off button, no accompanying number field — user-directed
             // 2026-09: "off = standaard game, on = 25 seconds". min_stop_secs still
             // exists as a real Race column (AccServerConfigService reads it,
@@ -194,7 +194,7 @@ class ChampionshipSettingsSchema
             // this toggle (25 when on, null when off) rather than admin-entered —
             // see applyStepSettings()/ChampionshipWizardController's round actions.
             ['group' => 'sessions', 'key' => 'fixed_stop_time', 'type' => 'boolean', 'default' => false, 'section' => 'Rating & Pitstops',
-                'label' => 'Fixed Stop Time', 'help' => 'Off = game default (dynamic). On = a fixed 25 seconds.'],
+                'label' => 'Fixed Stop Time', 'help' => 'Off = game default (dynamic). On = a fixed 25 seconds. Default for new rounds; change it per round in Add/Edit Round.'],
             // Not rendered ('hidden') — no longer a user-editable field, purely the
             // derived value the toggle above sets. Kept in the schema so it still
             // gets a tracked default/upgrade path and Add/Edit Round's prefill
@@ -204,7 +204,7 @@ class ChampionshipSettingsSchema
             // v8 (league feedback, NLRL 2026-09): ACC's eventRules.json tyreSetCount —
             // how many dry tyre sets each car gets for the whole event weekend.
             ['group' => 'sessions', 'key' => 'tyre_set_count', 'type' => 'integer', 'nullable' => true, 'default' => null, 'section' => 'Rating & Pitstops',
-                'label' => 'Tyre Sets', 'help' => 'Dry tyre sets per car for the whole event (1–50). Leave blank for unlimited (the ACC default of 50).', 'rule' => 'nullable|integer|min:1|max:50'],
+                'label' => 'Tyre Sets', 'help' => 'Dry tyre sets per car for the whole event (1–50). Leave blank for unlimited (the ACC default of 50). Default for new rounds; change it per round in Add/Edit Round.', 'rule' => 'nullable|integer|min:1|max:50'],
             // v13 (2026-09): a 24h open practice session on the rounds' own server,
             // pushed every midnight with the next round's track — see
             // ChampionshipPracticeService / championships:push-practice.
@@ -220,11 +220,11 @@ class ChampionshipSettingsSchema
             // scheme itself now (PointsScheme::fastest_lap_points etc), not here —
             // a flat yes/no toggle couldn't carry an actual point value anyway.
             ['group' => 'scoring', 'key' => 'team_points_enabled', 'type' => 'boolean', 'default' => false,
-                'label' => 'Separate Team Points', 'help' => 'Score teams independently of individual drivers.'],
+                'label' => 'Separate Team Points', 'help' => 'Adds team standings. With team cars: a table per car (all its drivers\' points). Solo drivers: a table per team, made of the drivers who race for it.'],
             // v12 (league feedback 2026-09): a team championship on top of the per-car
             // standings — each round only a team's best N cars score for the team.
             ['group' => 'scoring', 'key' => 'team_scoring_cars', 'type' => 'integer', 'nullable' => true, 'default' => null, 'depends_on' => 'team_points_enabled',
-                'label' => 'Scoring Cars per Team', 'help' => 'Adds a team championship: each round, a team\'s best-placed cars up to this number score for the team; the rest only score for themselves. Blank = no team championship, every car only scores on its own.', 'rule' => 'nullable|integer|min:1|max:20'],
+                'label' => 'Scoring Cars per Team', 'help' => 'How many of a team\'s best results count for the team each round (cars, or solo drivers). With team cars this adds a team championship on top of the per-car table. Blank = every car scores only for itself; for solo drivers, every driver counts.', 'rule' => 'nullable|integer|min:1|max:20'],
             // v11 (league feedback 2026-09): finishing points scale with race length
             // against a 60-minute race — 30 min = ×0.5, 90 min = ×1.5.
             ['group' => 'scoring', 'key' => 'points_scale_with_length', 'type' => 'boolean', 'default' => false,

@@ -556,7 +556,12 @@ class ChampionshipSettingsTest extends TestCase
         $league = $this->makeLeague('nlrl');
         $admin = $this->makeAdmin();
         $championship = $this->makeChampionship($league);
-        $championship->update(['game' => 'ac', 'platform' => 'pc', 'slug' => 'acc-pc-cup']);
+        // A round and a points system: publishing needs both (Championship::publishBlockers()).
+        $championship->update(['game' => 'ac', 'platform' => 'pc', 'slug' => 'acc-pc-cup', 'points_system' => [25, 18, 15]]);
+        \App\Models\Race::create([
+            'championship_id' => $championship->id, 'round_number' => 1, 'title' => 'Round 1',
+            'track' => 'Monza', 'game' => 'ac', 'status' => 'open', 'scheduled_at' => now()->addWeek(),
+        ]);
 
         $this->actingAs($admin)
             ->post(route('admin.leagues.championships.publish', [$league, $championship]))

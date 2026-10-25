@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Championship;
 use App\Models\FtpImportedFile;
 use App\Models\FtpServer;
 use App\Models\Race;
@@ -48,6 +49,9 @@ class ImportGportalResults extends Command
         if ($staleFinished > 0) {
             Log::info("gportal:import-results: auto-finished {$staleFinished} stale closed race(s) with no results");
         }
+
+        // A championship whose last round just finished (by either path above) is over.
+        Championship::completeFinished();
 
         // Every race that has started counts as a candidate, so a file always goes to the
         // closest slot before it. This used to wait 30 minutes past scheduled_at: a 22:00

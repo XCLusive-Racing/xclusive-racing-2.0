@@ -176,6 +176,17 @@
             @endunless
         </div>
         <div class="col-6 col-sm-3">
+            <label class="form-label" style="font-size:.75rem">Points</label>
+            @php $pointsMultiplier = (float) old('points_multiplier', $defaults['points_multiplier'] ?? 1); @endphp
+            <select name="points_multiplier" class="form-select form-select-sm @error('points_multiplier') is-invalid @enderror">
+                @foreach(\App\Models\Race::POINTS_MULTIPLIERS as $multiplier)
+                <option value="{{ $multiplier }}" @selected($pointsMultiplier === $multiplier)>{{ $multiplier === 1.0 ? 'Normal' : \App\Models\Race::multiplierLabel($multiplier) }}</option>
+                @endforeach
+            </select>
+            @error('points_multiplier')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+            <div class="form-text" style="font-size:.68rem;color:#9ca3af">Every point scored in this round counts this many times.</div>
+        </div>
+        <div class="col-6 col-sm-3">
             <label class="form-label" style="font-size:.75rem">Mandatory Pitstops</label>
             <input type="number" name="pitstop_count" id="{{ $idPrefix }}-pitstop-count" min="0" max="9" value="{{ old('pitstop_count', $defaults['pitstop_count']) }}"
                    class="form-control form-control-sm @error('pitstop_count') is-invalid @enderror">

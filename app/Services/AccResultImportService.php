@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Jobs\AwardRaceXp;
+use App\Models\Championship;
 use App\Models\Race;
 use App\Models\RaceResult;
 use App\Models\RaceSessionFile;
@@ -81,6 +82,7 @@ class AccResultImportService
             $racesIn = $race->raceResults()->reorder()->distinct()->pluck('race_number')->count();
             if ($racesIn >= $race->raceCount()) {
                 $race->update(['status' => 'finished']);
+                Championship::completeFinished();
             }
 
             (new RatingService(new XclRating))->processRace($race);

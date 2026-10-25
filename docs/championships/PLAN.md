@@ -11,6 +11,26 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-10-25 — Championship flow review + fixes.** (1) Rounds take car class,
+  cap and multiclass from the championship (`Championship::roundFields()`), the
+  Format step re-syncs rounds still to run, and a migration fixed live rounds:
+  they pushed FreeForAll/30 slots (XCL GT3, Monday Night) or GT3-only on a
+  multiclass championship (NLRL Special). (2) Multiclass scores each class on its
+  own finish, pole, fastest lap and cutoff (`computeDriverStandings()`, group by
+  `carClassByDriver()`). (3) Follows from (1): a multiclass round now rates each
+  class on its own. (4) The Format step refuses to remove a class with entries
+  (cascade). (5) Standings seed a team car's drivers, not the manager.
+  (6) `completed` is set once every round finished (`Championship::completeFinished()`),
+  adding a round reopens it; legacy `active` status checks gone; shared status
+  colour/label. (7) A rename retitles the rounds (`roundTitle()`). (8) Publish needs
+  a round and a points system; rounds without a server are a warning; the push
+  command skips rounds of a draft championship. (9) Ties on points go to countback.
+  (10) checked, not reachable (car numbers are unique per championship).
+  (11–14) Help texts: which Sessions settings only prefill new rounds, the entry
+  cap, the start time (now :00 or :30), team points. **Open:** registration still
+  has three controls (status buttons, `registration_open`, Registration Closes)
+  — explained on Review, not merged; `running` is still never set (setting it
+  would close mid-season sign-ups).
 - **2026-10-25 — League staff roles + server admins on the entrylist.** (1) Like
   SimGrid, a league's managers and admins go on every race entrylist as bare
   `{drivers: [{playerID}], isServerAdmin: 1}` entries

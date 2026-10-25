@@ -52,6 +52,95 @@ class Championship extends Model
         return $unassigned;
     }
 
+    // A championship is over once every round has finished: completed, no more
+    // sign-ups. Nothing set this before, so a finished season stayed "registration
+    // open" for good. Run after results come in (AccResultImportService) and by the
+    // scheduled gportal:import-results. Returns how many were completed.
+    public static function completeFinished(): int
+    {
+        $done = static::withoutTenantScope()
+            ->whereIn('status', ['published', 'registration_open', 'registration_closed', 'running'])
+            ->whereHas('rounds')
+            ->whereDoesntHave('rounds', fn ($q) => $q->where('status', '!=', 'finished'))
+            ->get();
+
+        $done->each->update(['status' => 'completed', 'registration_open' => false]);
+
+        return $done->count();
+    }
+
+    public const STATUS_COLORS = [
+        'draft' => '#f59e0b', 'published' => '#2563eb', 'registration_open' => '#16a34a',
+        'registration_closed' => '#6b7280', 'running' => '#7c3aed', 'completed' => '#9ca3af', 'cancelled' => '#dc2626',
+    ];
+
+    public function statusColor(): string
+    {
+        return self::STATUS_COLORS[$this->status] ?? '#9ca3af';
+    }
+
+    // "Registration open", not "Registration_open".
+    public function statusLabel(): string
+    {
+        return ucfirst(str_replace('_', ' ', $this->status));
+    }
+
+    // Why this championship can't be published yet (empty = it can). Without a
+    // points scheme or a points_system every finish scores 0.
+    public function publishBlockers(): array
+    {
+        return array_values(array_filter([
+            $this->rounds()->exists() ? null : 'Add at least one round.',
+            $this->pointsScheme() || ! empty($this->points_system) ? null : 'Pick a points scheme on the Scoring step.',
+        ]));
+    }
+
+    // Worth fixing, but no reason to hold publishing back.
+    public function publishWarnings(): array
+    {
+        $withoutServer = $this->rounds()->whereNull('ftp_server_id')->count();
+
+        return match (true) {
+            $withoutServer === 1 => ['1 round has no server yet, so it won\'t be pushed or run.'],
+            $withoutServer > 1 => [$withoutServer.' rounds have no server yet, so they won\'t be pushed or run.'],
+            default => [],
+        };
+    }
+
+    // A round's title: the championship's name and the round number, never typed per round.
+    public function roundTitle(int $roundNumber): string
+    {
+        return $this->name.' — Round '.$roundNumber;
+    }
+
+    // After a rename, so "Thursday Night… Round 3" doesn't outlive the new name.
+    public function retitleRounds(): void
+    {
+        foreach ($this->rounds()->whereNotNull('round_number')->get() as $round) {
+            $round->update(['title' => $this->roundTitle($round->round_number)]);
+        }
+    }
+
+    // What every round takes over from its championship. The server config (car
+    // group, slots) and the rating (one field per class) read these from the round
+    // itself. A multiclass championship has no single car class: its rounds let every
+    // class on (FreeForAll), and the entrylist forces each entry's own car.
+    public function roundFields(): array
+    {
+        return [
+            'car_class' => $this->is_multiclass ? null : $this->car_class,
+            'max_drivers' => $this->max_drivers,
+            'is_multiclass' => (bool) $this->is_multiclass,
+        ];
+    }
+
+    // roundFields() onto every round still to run, after the Format step changed them.
+    // A finished round keeps what it ran with (its results and rating came from it).
+    public function syncRoundFields(): int
+    {
+        return $this->rounds()->reorder()->where('status', '!=', 'finished')->update($this->roundFields());
+    }
+
     protected $fillable = [
         'name', 'tagline', 'slogan', 'game', 'season', 'status', 'description', 'image', 'icon',
         'max_drivers', 'is_multiclass', 'car_class', 'registration_open',
@@ -532,7 +621,7 @@ class Championship extends Model
     public function acceptsRegistrations(): bool
     {
         return $this->visibility !== 'unlisted'
-            && in_array($this->status, ['active', 'registration_open'], true)
+            && $this->status === 'registration_open'
             && $this->registration_open
             && $this->registrationIsOpen();
     }
@@ -579,7 +668,7 @@ class Championship extends Model
             return [];
         }
 
-        $classByUser = $this->registrations->pluck('championship_class_id', 'user_id');
+        $classByUser = $this->carClassByDriver();
 
         $grouped = $this->classes->mapWithKeys(fn ($class) => [$class->id => ['class' => $class, 'standings' => []]])->all();
 
@@ -591,6 +680,27 @@ class Championship extends Model
         }
 
         return $grouped;
+    }
+
+    // user_id => championship_class_id for everyone who races: a solo entrant, or
+    // every driver (and the reserve) of a team car — never the manager who only
+    // entered the car. Approved entries only.
+    public function carClassByDriver(): array
+    {
+        if (! isset($this->standingsCache['class_by_driver'])) {
+            $classOf = [];
+            $registrations = $this->registrations()->approved()
+                ->where('is_spectator', false)->whereNotNull('championship_class_id')
+                ->with('racingTeam.members')->get();
+            foreach ($registrations as $registration) {
+                foreach ($registration->scoringDriverIds() as $userId) {
+                    $classOf[$userId] = $registration->championship_class_id;
+                }
+            }
+            $this->standingsCache['class_by_driver'] = $classOf;
+        }
+
+        return $this->standingsCache['class_by_driver'];
     }
 
     // One standings table per driver class (Pro / Pro-Am / Am …), each scored on
@@ -881,6 +991,14 @@ class Championship extends Model
 
         $penalties = $this->penalties()->get()->groupBy('user_id');
 
+        // Multiclass: every class is its own race. A driver scores on their position
+        // among their own class (GT4's winner scores P1, not P15 overall), pole and
+        // fastest lap go to each class's best, and a percentage-depth cutoff counts
+        // the class's own finishers. Group 0 = no class (scored among themselves).
+        $classOf = $this->is_multiclass ? $this->carClassByDriver() : [];
+        $groupOf = fn ($userId) => $classOf[$userId] ?? 0;
+        $rerank = $this->is_multiclass || $onlyUserIds !== null;
+
         $driverData = [];
 
         // Seed every registered (non-spectator) entrant, even one with zero
@@ -888,17 +1006,15 @@ class Championship extends Model
         // never appears in standings, and max_missed_rounds would have nobody
         // to apply to. Matches how a real championship classification still
         // lists a no-show at the back on zero points, rather than omitting them.
-        foreach ($this->registrations()->approved()->where('is_spectator', false)->with('user')->get() as $registration) {
-            if ($onlyUserIds !== null && ! isset($onlyUserIds[$registration->user_id])) {
-                continue;
-            }
-            if (! isset($driverData[$registration->user_id])) {
-                $driverData[$registration->user_id] = [
-                    'user_id' => $registration->user_id,
-                    'user' => $registration->user,
-                    'rounds' => [],
-                ];
-            }
+        // A team car seeds its drivers (and reserve), not the manager who entered it.
+        $entrantIds = collect($this->driverEntrantIds())
+            ->when($onlyUserIds !== null, fn ($ids) => $ids->filter(fn ($id) => isset($onlyUserIds[$id])));
+        foreach (User::whereIn('id', $entrantIds)->get() as $entrant) {
+            $driverData[$entrant->id] = [
+                'user_id' => $entrant->id,
+                'user' => $entrant,
+                'rounds' => [],
+            ];
         }
 
         foreach ($finishedRounds as $race) {
@@ -908,7 +1024,8 @@ class Championship extends Model
                 $qualiResults = $qualiResults->filter(fn ($result) => isset($onlyUserIds[$result->user_id]));
                 $roundResults = $roundResults->filter(fn ($result) => isset($onlyUserIds[$result->user_id]));
             }
-            $poleUserId = $qualiResults->first()?->user_id;
+            $poleByGroup = $qualiResults->groupBy(fn ($result) => $groupOf($result->user_id))
+                ->map(fn (Collection $group) => $group->first()?->user_id);
 
             // A multi-race round scores every race with the same scheme and adds
             // them up into one round entry — drop rounds and missed rounds stay a
@@ -917,20 +1034,32 @@ class Championship extends Model
             $roundEntries = [];
 
             foreach ($roundResults->groupBy('race_number')->sortKeys() as $raceNumber => $raceResults) {
-                // Class standings: position among this class's classified finishers.
-                $classPositions = $onlyUserIds === null ? null : $raceResults
-                    ->filter(fn ($result) => ! $result->dnf && $result->position !== null)
-                    ->sortBy('position')
-                    ->values()
-                    ->mapWithKeys(fn ($result, $i) => [$result->user_id => $i + 1]);
+                // Class standings / multiclass: position among the group's classified finishers.
+                $classPositions = null;
+                if ($rerank) {
+                    $classPositions = [];
+                    $classified = $raceResults->filter(fn ($result) => ! $result->dnf && $result->position !== null)->sortBy('position');
+                    foreach ($classified->groupBy(fn ($result) => $groupOf($result->user_id)) as $group) {
+                        foreach ($group->values() as $i => $result) {
+                            $classPositions[$result->user_id] = $i + 1;
+                        }
+                    }
+                }
+
+                // Multiclass: the fastest lap of each class, not the overall one.
+                $fastestByGroup = $this->is_multiclass
+                    ? $raceResults->filter(fn ($result) => $result->best_lap > 0)
+                        ->groupBy(fn ($result) => $groupOf($result->user_id))
+                        ->map(fn (Collection $group) => $group->sortBy('best_lap')->first()->user_id)
+                    : null;
 
                 // Percentage-depth schemes resolve their scoring cutoff fresh per
-                // race, against that race's own classified-finisher count —
-                // never the starting grid, so a retirement elsewhere in the field
-                // never changes what a classified finisher scores.
-                $classifiedCount = $raceResults->where('dnf', false)->count();
-                $cutoff = $scheme ? $scheme->scoringCutoffFor($classifiedCount) : null;
+                // race, against that race's (or class's) own classified-finisher
+                // count — never the starting grid, so a retirement elsewhere in the
+                // field never changes what a classified finisher scores.
+                $classifiedByGroup = $raceResults->where('dnf', false)->countBy(fn ($result) => $groupOf($result->user_id));
                 $lengthFactor = $scaleByLength ? $this->lengthFactor($race, (int) $raceNumber) : 1.0;
+                $pointsMultiplier = (float) ($race->points_multiplier ?? 1);
 
                 foreach ($raceResults as $result) {
                     $userId = $result->user_id;
@@ -943,11 +1072,12 @@ class Championship extends Model
                     }
 
                     $pos = $result->dnf ? null : ($classPositions !== null ? $classPositions[$userId] ?? null : $result->position);
+                    $group = $groupOf($userId);
                     $pts = 0;
 
                     if ($pos !== null) {
                         if ($scheme) {
-                            if ($pos <= $cutoff) {
+                            if ($pos <= $scheme->scoringCutoffFor($classifiedByGroup[$group] ?? 0)) {
                                 $pts = (float) ($pointsTable[$pos] ?? 0);
                             }
                         } elseif (isset($pointsSystem[$pos - 1])) {
@@ -957,14 +1087,18 @@ class Championship extends Model
                             $pts = round($pts * $lengthFactor, 2);
                         }
                     }
-                    if ($result->fastest_lap) {
+                    if ($fastestByGroup !== null ? ($fastestByGroup[$group] ?? null) === $userId : $result->fastest_lap) {
                         $pts += $bonusFL;
                     }
-                    if ($poleUserId && $poleUserId === $userId && (int) $raceNumber === 1) {
+                    if (($poleByGroup[$group] ?? null) === $userId && (int) $raceNumber === 1) {
                         $pts += $bonusPole;
                     }
                     if ($bonusLead > 0 && $result->laps_led > 0) {
                         $pts += $bonusLead;
+                    }
+                    // A double-points (or 1.5× / 3×) round: everything scored in it, bonuses included.
+                    if ($pointsMultiplier !== 1.0) {
+                        $pts = round($pts * $pointsMultiplier, 2);
                     }
 
                     $roundEntries[$userId] ??= [
@@ -1028,9 +1162,33 @@ class Championship extends Model
         }
         unset($data);
 
-        usort($driverData, fn ($a, $b) => $b['total_points'] <=> $a['total_points']);
+        usort($driverData, fn ($a, $b) => ($b['total_points'] <=> $a['total_points']) ?: self::countback($a, $b));
 
         return $driverData;
+    }
+
+    // Level on points: the better set of finishes wins — most wins, then most
+    // second places, and so on (every race of a multi-race round counts). Still level
+    // after that keeps them in the order they were in.
+    private static function countback(array $a, array $b): int
+    {
+        $finishes = fn (array $driver) => collect($driver['rounds'])
+            ->flatMap(fn ($round) => collect($round['races'] ?? [])->pluck('position'))
+            ->filter()->sort()->values()->all();
+
+        $aFinishes = $finishes($a);
+        $bFinishes = $finishes($b);
+
+        foreach ($aFinishes as $i => $position) {
+            if (! isset($bFinishes[$i])) {
+                return -1;
+            }
+            if ($position !== $bFinishes[$i]) {
+                return $position <=> $bFinishes[$i];
+            }
+        }
+
+        return count($bFinishes) > count($aFinishes) ? 1 : 0;
     }
 
     // Race $raceNumber's length against a 60-minute race (30 min = 0.5, 90 = 1.5).

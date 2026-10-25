@@ -26,6 +26,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ChampionshipWizardController extends Controller
 {
@@ -104,7 +105,7 @@ class ChampionshipWizardController extends Controller
         'track', 'round_number', 'round_type', 'is_multiclass', 'is_endurance', 'practice_duration', 'qualifying_duration',
         'race_duration', 'race_durations', 'session_format_id', 'event_format_id', 'weather', 'weather_randomness',
         'rain_level', 'time_of_day', 'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier',
-        'race_time_multiplier', 'description', 'image', 'icon', 'xcl_r_multiplier', 'pitstop_count', 'min_stop_secs',
+        'race_time_multiplier', 'description', 'image', 'icon', 'xcl_r_multiplier', 'points_multiplier', 'pitstop_count', 'min_stop_secs',
         'tyre_set_count', 'driver_stint_time_mins', 'max_total_driving_time_mins', 'mandatory_driver_swap',
         'config_overrides', 'has_practice_server', 'practice_notes', 'ftp_server_id',
     ];
@@ -284,12 +285,20 @@ class ChampionshipWizardController extends Controller
             }
 
             $unassignedRounds = DB::transaction(function () use ($championship, $data, $gameChanged) {
+                $renamed = $data['name'] !== $championship->name;
                 $championship->update($data);
+                if ($renamed) {
+                    $championship->retitleRounds();
+                }
 
                 return $gameChanged ? $championship->syncRoundsToGame() : 0;
             });
             $this->applyStepSettings($request, $championship, 'basics');
         } else {
+            if ($step === 'format' && ($inUse = $this->removedClassesInUse($request, $championship))) {
+                return back()->withInput()->with('error', $inUse);
+            }
+
             $this->applyStepSettings($request, $championship, $step);
         }
 
@@ -465,6 +474,12 @@ class ChampionshipWizardController extends Controller
     // too (ChampionshipRoundEntryService), same as the rounds that already existed.
     private function syncEntriesForNewRound(Championship $championship, Race $race): void
     {
+        // A round added to a finished season reopens it (closed for sign-ups;
+        // the league opens registration again if it wants to).
+        if ($championship->status === 'completed') {
+            $championship->update(['status' => 'registration_closed']);
+        }
+
         app(ChampionshipRoundEntryService::class)->syncRound($championship, $race);
     }
 
@@ -485,6 +500,7 @@ class ChampionshipWizardController extends Controller
             'ambient_temp' => 'nullable|integer|min:-30|max:50',
             'description' => 'nullable|string',
             'xcl_r_multiplier' => 'nullable|numeric|min:0.6|max:2.5',
+            'points_multiplier' => ['nullable', Rule::in(Race::POINTS_MULTIPLIERS)],
             'pitstop_count' => 'nullable|integer|min:0|max:9',
             'tyre_set_count' => 'nullable|integer|min:1|max:50',
             'fixed_stop_time' => 'nullable|boolean',
@@ -516,6 +532,7 @@ class ChampionshipWizardController extends Controller
         // (null) when off. Same values applyStepSettings() derives for the
         // championship-wide Sessions-step default.
         $data['min_stop_secs'] = $request->boolean('fixed_stop_time') ? 25 : null;
+        $data['points_multiplier'] = (float) ($data['points_multiplier'] ?? 1);
 
         return $data;
     }
@@ -597,10 +614,9 @@ class ChampionshipWizardController extends Controller
             $data['rain_level'] = null;
         }
 
+        $data = array_merge($data, $championship->roundFields());
         $data['championship_id'] = $championship->id;
         $data['game'] = $championship->game;
-        $data['car_class'] = $championship->car_class;
-        $data['max_drivers'] = $championship->max_drivers;
         $data['status'] = 'open';
         $data['is_championship'] = true;
         $data['event_tag'] = 'championship';
@@ -625,7 +641,7 @@ class ChampionshipWizardController extends Controller
 
         // "Title" is chosen once at Basics (the championship's Name) and composed
         // with the round number here — a manager never re-types it per round.
-        $data['title'] = $championship->name.' — Round '.$data['round_number'];
+        $data['title'] = $championship->roundTitle($data['round_number']);
 
         if (! empty($data['ftp_server_id'])) {
             $server = FtpServer::find($data['ftp_server_id']);
@@ -916,6 +932,9 @@ class ChampionshipWizardController extends Controller
         $championship->save();
 
         if ($step === 'format') {
+            // Rounds made before this step (Rounds comes first in the wizard) or
+            // before a change here would otherwise keep the old class and cap.
+            $championship->syncRoundFields();
             $this->syncChampionshipClasses($championship, $settings['format']['classes'] ?? []);
 
             if ($request->filled('driver_classes_json')) {
@@ -977,6 +996,30 @@ class ChampionshipWizardController extends Controller
         }
 
         $championship->driverClasses()->whereNotIn('id', $keepIds)->delete();
+    }
+
+    // A class taken off the list (or swapped for another, which is the same thing:
+    // classes are matched by name) would take its entries with it — the
+    // registrations' championship_class_id cascades on delete. Refused while it
+    // still has any; null when the save may go ahead.
+    private function removedClassesInUse(Request $request, Championship $championship): ?string
+    {
+        if (! $request->filled('classes_json')) {
+            return null;
+        }
+
+        $kept = collect($this->decodeList($request->input('classes_json'), ['name']))
+            ->map(fn ($row) => trim((string) ($row['name'] ?? '')))->all();
+
+        $inUse = $championship->classes()->withCount('registrations')->get()
+            ->filter(fn ($class) => $class->registrations_count > 0 && ! in_array($class->name, $kept, true));
+
+        if ($inUse->isEmpty()) {
+            return null;
+        }
+
+        return $inUse->map(fn ($class) => $class->name.' ('.$class->registrations_count.' '.Str::plural('entry', $class->registrations_count).')')->join(', ')
+            .' can\'t be removed while drivers are entered in it. Nothing was saved.';
     }
 
     // Keeps the real ChampionshipClass rows the public registration flow

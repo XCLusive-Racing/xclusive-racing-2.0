@@ -120,6 +120,13 @@
     </a>
     @endif
     @if($championship->status === 'draft')
+    {{-- What still stops publishing, and what's merely worth fixing (Championship::publishBlockers()/publishWarnings()). --}}
+    @foreach($championship->publishBlockers() as $blocker)
+    <span class="badge me-1" style="background:#fee2e2;color:#b91c1c;font-size:.72rem;padding:6px 10px;border-radius:6px;font-weight:700">{{ $blocker }}</span>
+    @endforeach
+    @foreach($championship->publishWarnings() as $warning)
+    <span class="badge me-1" style="background:#fef3c7;color:#92400e;font-size:.72rem;padding:6px 10px;border-radius:6px;font-weight:700">{{ $warning }}</span>
+    @endforeach
     <form action="{{ route('admin.leagues.championships.publish', [$league, $championship]) }}" method="POST">
         @csrf
         <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#16a34a">
@@ -155,3 +162,13 @@
     </form>
     @endif
 </div>
+{{-- The order isn't obvious from the buttons alone. --}}
+<p class="text-secondary mt-2 mb-0" style="font-size:.78rem">
+    @switch($championship->status)
+        @case('draft') Publish puts the championship on the site. Drivers can sign up once you then click Open Registration. @break
+        @case('published') Published, but drivers can't sign up until you click Open Registration. @break
+        @case('registration_open') Drivers can sign up. The Registration Closes setting on Requirements can also close it automatically. @break
+        @case('completed') Every round has finished. Adding a round reopens the championship. @break
+        @default Drivers can't sign up right now.
+    @endswitch
+</p>
