@@ -317,7 +317,7 @@
         </div>
         @endif
 
-        @if(auth()->user()->canManage() || auth()->user()->isLeagueManager() || auth()->user()->isChampionshipManager())
+        @if(auth()->user()->canManage() || auth()->user()->isLeagueManager() || auth()->user()->isLeagueAdmin() || auth()->user()->isChampionshipManager())
         {{-- Leagues --}}
         <div class="admin-nav-section-header" data-section="leagues">
             <span>Leagues</span>

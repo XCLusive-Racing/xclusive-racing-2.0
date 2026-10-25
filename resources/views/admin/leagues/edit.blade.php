@@ -38,7 +38,7 @@
         </span>
         @unless($isAdmin)
         <span class="badge" style="background:#f3f4f6;color:#6b7280;font-size:.68rem;padding:5px 10px;border-radius:6px;font-weight:700">
-            You are acting as {{ $canEdit ? 'League Manager' : 'League Steward' }}
+            You are acting as {{ $canEdit ? 'League Manager' : ($isLeagueAdmin ? 'League Admin' : 'League Steward') }}
         </span>
         @endunless
     </div>
@@ -282,9 +282,11 @@
 
     </div>
 
-    @if($canEdit)
+    @if($canEditServers)
     <div class="col-12 col-lg-5">
-        @if($isAdmin)
+        {{-- XCL staff and the league's manager. A manager hands out admin and
+             steward only; adding a manager stays XCL staff (LeagueController::assignableRoles()). --}}
+        @if($canEdit)
         <div class="admin-card mb-4">
             <div class="admin-card-header">
                 <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.9rem">Members</div>
@@ -297,6 +299,7 @@
                         <div class="fw-bold text-dark" style="font-size:.85rem">{{ $member->user->name }}</div>
                         <div class="text-secondary text-uppercase" style="font-size:.68rem;letter-spacing:.05em">{{ ucfirst($member->role) }}</div>
                     </div>
+                    @if(in_array($member->role, $memberRoles, true))
                     <form action="{{ route('admin.leagues.members.destroy', [$league, $member]) }}" method="POST" onsubmit="return false">
                         @csrf @method('DELETE')
                         <button type="button" class="btn btn-sm fw-bold" style="background:transparent;color:#dc2626;font-size:.72rem"
@@ -304,6 +307,7 @@
                             Remove
                         </button>
                     </form>
+                    @endif
                 </div>
                 @empty
                 <p class="text-secondary mb-0" style="font-size:.82rem">No members yet.</p>
@@ -325,9 +329,13 @@
                     </div>
                     <div class="mb-3">
                         <select name="role" class="form-select form-select-sm @error('role') is-invalid @enderror" required>
-                            <option value="manager">Manager</option>
-                            <option value="steward">Steward</option>
+                            @foreach($memberRoles as $role)
+                            <option value="{{ $role }}">{{ ucfirst($role) }}</option>
+                            @endforeach
                         </select>
+                        <div class="form-text" style="font-size:.72rem">
+                            Admin: edits championships, servers and event settings, but can't create or delete them. Steward: handles incidents only.
+                        </div>
                         @error('role') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                     <button type="submit" class="btn btn-sm fw-black text-uppercase text-white w-100" style="background:#7c3aed;font-size:.78rem">
@@ -338,9 +346,9 @@
         </div>
         @endif
 
-        {{-- XCL staff and this league's own manager (this column is $canEdit-only) —
-             a manager only ever gets this league's own servers; removing a server and
-             the XCL-fleet "Assign Server" picker stay staff-only (LeagueController::edit()). --}}
+        {{-- XCL staff and this league's own manager or admin — they only ever get this
+             league's own servers; removing a server and the XCL-fleet "Assign Server"
+             picker stay staff-only, adding one is the manager's (LeagueController::edit()). --}}
         <div class="admin-card mb-4">
             <div class="admin-card-header">
                 <div class="fw-black text-uppercase fst-italic text-dark" style="font-size:.9rem">League Servers</div>
@@ -368,6 +376,7 @@
                 @endforelse
             </div>
 
+            @if($canEdit)
             <div style="border-top:1px solid #f3f4f6">
                 <div class="px-4 pt-3">
                     <p class="fw-black text-uppercase fst-italic mb-0" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Add Your Own Server</p>
@@ -385,6 +394,7 @@
                     </div>
                 </form>
             </div>
+            @endif
 
             @if($unassignedServers->isNotEmpty())
             <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">

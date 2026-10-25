@@ -11,6 +11,20 @@ up without re-deriving context.
 
 ## Current State
 
+- **2026-10-25 — League staff roles + server admins on the entrylist.** (1) Like
+  SimGrid, a league's managers and admins go on every race entrylist as bare
+  `{drivers: [{playerID}], isServerAdmin: 1}` entries
+  (`AccServerConfigService::addLeagueAdmins()`, never stewards; one already racing
+  gets the flag on their own car). (2) New league role **admin**
+  (`league_user.role = 'admin'`, global flag `league_admin`): edits championships,
+  rounds, entries, league servers, points schemes and race formats, but never
+  creates or deletes any of them, and never touches the league profile or members
+  (`User::editsLeague()` vs `managesLeague()`). (3) A league's **manager** now adds
+  and removes its own admins and stewards on the league page
+  (`LeagueController::assignableRoles()`); adding a manager stays XCL staff.
+  (4) All three league roles handle their own league's incidents (reports routes,
+  `User::canModerateReport()`, verdict buttons, which league stewards never got
+  before even though the routes allowed it).
 - **2026-10-22 — NLRL feedback (Sunday League / MTSS).** (1) An unlisted
   championship takes no registrations, not even by direct link
   (`acceptsRegistrations()`), until it's public again. (2) A multiclass

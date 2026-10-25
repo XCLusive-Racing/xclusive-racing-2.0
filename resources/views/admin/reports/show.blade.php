@@ -12,7 +12,8 @@
 @php
     $meta        = $report->statusMeta();
     $currentUser = auth()->user();
-    $canVerdict  = $currentUser->hasAnyRole(['owner', 'admin', 'steward']);
+    // A league's own staff too — only reachable for their own league's reports (User::canModerateReport()).
+    $canVerdict  = $currentUser->hasAnyRole(['owner', 'admin', 'steward', ...\App\Models\User::LEAGUE_ROLE_FLAGS]);
     $canProcess  = $currentUser->hasAnyRole(['owner', 'admin']);
     $agreement   = $report->agreementState();
     $bothSlotsFilled = $report->steward_1_id && $report->steward_2_id;

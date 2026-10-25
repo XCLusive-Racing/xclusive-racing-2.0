@@ -93,7 +93,7 @@
                     <td class="text-end pe-4">
                         @php
                             $canAccessLeague = auth()->user()->canManage()
-                                || auth()->user()->managesLeague($league)
+                                || auth()->user()->editsLeague($league)
                                 || auth()->user()->stewardsLeague($league);
                         @endphp
                         @unless($canAccessLeague)
@@ -108,7 +108,7 @@
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="font-size:.82rem;min-width:150px;border-color:#e5e7eb">
                                 <li>
                                     <a class="dropdown-item fw-bold" href="{{ route('admin.leagues.edit', $league) }}" style="color:#7c3aed">
-                                        {{ auth()->user()->canManage() || auth()->user()->managesLeague($league) ? 'Edit' : 'View' }}
+                                        {{ auth()->user()->canManage() || auth()->user()->editsLeague($league) ? 'Edit' : 'View' }}
                                     </a>
                                 </li>
                                 @if(auth()->user()->canManage())

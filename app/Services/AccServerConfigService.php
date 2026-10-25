@@ -108,11 +108,12 @@ class AccServerConfigService implements ServerConfigGenerator
         ];
     }
 
-    // Like SimGrid: the managers of the league running the race (the championship's
-    // league, else XCL itself) go on the entrylist as server admins, free to join in
-    // any car for testing — a bare {drivers: [{playerID}], isServerAdmin: 1} entry,
-    // the shape gPortal expects. A manager already racing gets the flag on their own
-    // car instead of a second entry; one without a player ID can't be listed.
+    // Like SimGrid: the managers and admins of the league running the race (the
+    // championship's league, else XCL itself; never its stewards) go on the entrylist
+    // as server admins, free to join in any car for testing — a bare
+    // {drivers: [{playerID}], isServerAdmin: 1} entry, the shape gPortal expects. One
+    // already racing gets the flag on their own car instead of a second entry; one
+    // without a player ID can't be listed.
     private static function addLeagueAdmins(array &$entries, Race $race, ?Championship $championship): void
     {
         $league = $championship
@@ -122,8 +123,8 @@ class AccServerConfigService implements ServerConfigGenerator
             return;
         }
 
-        $playerIds = $league->managers()->with('connectedAccounts')->get()->toBase()
-            ->map(fn (User $manager) => $manager->playerIdFor($race->game))
+        $playerIds = $league->eventStaff()->with('connectedAccounts')->get()->toBase()
+            ->map(fn (User $staff) => $staff->playerIdFor($race->game))
             ->filter()
             ->unique();
 

@@ -58,6 +58,12 @@ class League extends Model
         return $this->members()->wherePivot('role', 'manager');
     }
 
+    // Manager or admin: the league's own staff who run its events (no stewards).
+    public function eventStaff(): BelongsToMany
+    {
+        return $this->members()->wherePivotIn('role', ['manager', 'admin']);
+    }
+
     public function stewards(): BelongsToMany
     {
         return $this->members()->wherePivot('role', 'steward');

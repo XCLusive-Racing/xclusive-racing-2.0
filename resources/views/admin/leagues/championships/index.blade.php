@@ -4,12 +4,15 @@
 @section('page-title', $league->name . ' — Championships')
 
 @section('page-actions')
+    {{-- A league admin edits championships; only the manager creates or deletes them. --}}
+    @can('create', [\App\Models\Championship::class, $league])
     <form action="{{ route('admin.leagues.championships.store', $league) }}" method="POST">
         @csrf
         <button type="submit" class="btn btn-sm fw-black text-uppercase text-white px-3" style="background:#7c3aed;font-size:.78rem">
             + New Championship
         </button>
     </form>
+    @endcan
 @endsection
 
 @section('content')

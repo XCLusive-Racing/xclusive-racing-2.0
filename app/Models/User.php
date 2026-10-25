@@ -225,6 +225,11 @@ class User extends Authenticatable
         return $this->hasRole('league_manager');
     }
 
+    public function isLeagueAdmin(): bool
+    {
+        return $this->hasRole('league_admin');
+    }
+
     public function isLeagueSteward(): bool
     {
         return $this->hasRole('league_steward');
@@ -281,7 +286,7 @@ class User extends Authenticatable
 
     public function canModerateReports(): bool
     {
-        return $this->canManageEvents() || $this->isSteward() || $this->isLeagueSteward();
+        return $this->canManageEvents() || $this->isSteward() || $this->hasAnyRole(self::LEAGUE_ROLE_FLAGS);
     }
 
     // XCL staff roles (admin panel access) that carry the supporter badge and perks
@@ -322,7 +327,7 @@ class User extends Authenticatable
 
     public function canAccessAdminPanel(): bool
     {
-        return $this->hasAnyRole(['owner', 'admin', 'moderator', 'event_manager', 'steward', 'broadcaster', 'league_manager', 'league_steward', 'championship_manager', 'esports_manager']);
+        return $this->hasAnyRole(['owner', 'admin', 'moderator', 'event_manager', 'steward', 'broadcaster', 'league_manager', 'league_admin', 'league_steward', 'championship_manager', 'esports_manager']);
     }
 
     public function adminLandingRoute(): string
@@ -332,7 +337,7 @@ class User extends Authenticatable
             $this->canSeeUsers() => 'admin.users.index',
             $this->isSteward() => 'admin.reports.index',
             $this->canBroadcast() => 'admin.news.index',
-            $this->isLeagueManager() || $this->isChampionshipManager() => 'admin.leagues.index',
+            $this->isLeagueManager() || $this->isLeagueAdmin() || $this->isChampionshipManager() => 'admin.leagues.index',
             $this->isLeagueSteward() => 'admin.reports.index',
             $this->isEsportsManager() => 'admin.results.index',
             default => 'home',
@@ -356,21 +361,42 @@ class User extends Authenticatable
         return $this->leagueMemberships()->pluck('league_id')->unique()->values();
     }
 
+    // A league's own staff (league_user.role). Manager: everything in the league,
+    // including creating/deleting and adding admins/stewards (adding managers stays
+    // XCL staff). Admin: edits what exists (championships, servers, points schemes,
+    // session formats) but never creates or deletes. Steward: incidents only.
+    // All three handle incidents.
+    public const LEAGUE_ROLES = ['manager', 'admin', 'steward'];
+
+    // The global role flags syncLeagueRoleFlags() keeps in step with those memberships.
+    public const LEAGUE_ROLE_FLAGS = ['league_manager', 'league_admin', 'league_steward'];
+
     public function managesLeague(League $league): bool
     {
-        return $this->leagueMemberships()->where('league_id', $league->id)->where('role', 'manager')->exists();
+        return $this->hasLeagueRole($league, ['manager']);
+    }
+
+    // Manager or admin: may change existing championship/server/event settings.
+    public function editsLeague(League $league): bool
+    {
+        return $this->hasLeagueRole($league, ['manager', 'admin']);
     }
 
     public function stewardsLeague(League $league): bool
     {
-        return $this->leagueMemberships()->where('league_id', $league->id)->where('role', 'steward')->exists();
+        return $this->hasLeagueRole($league, ['steward']);
+    }
+
+    private function hasLeagueRole(League $league, array $roles): bool
+    {
+        return $this->leagueMemberships()->where('league_id', $league->id)->whereIn('role', $roles)->exists();
     }
 
     // Refinement request: a league may designate its own stewards, but XCL's
     // shared/global steward pool (canManageEvents()/isSteward()) must always
-    // remain an option too — additive, not exclusive. A pure league steward
-    // (no global steward/admin role) may only moderate reports on races that
-    // belong to a championship owned by a league they steward.
+    // remain an option too — additive, not exclusive. League staff without a
+    // global steward/admin role (a league's manager, admin or steward) may only
+    // moderate reports on races that belong to a championship of their own league.
     public function canModerateReport(Report $report): bool
     {
         if ($this->canManageEvents() || $this->isSteward()) {
@@ -384,18 +410,19 @@ class User extends Authenticatable
 
         $league = League::withoutTenantScope()->find($championship->league_id);
 
-        return $league !== null && $this->stewardsLeague($league);
+        return $league !== null && $this->hasLeagueRole($league, self::LEAGUE_ROLES);
     }
 
-    // Keeps the global league_manager/league_steward role flags (used for admin nav
-    // and route gating) in step with this user's actual league_user memberships —
-    // the memberships are the source of truth for what a user can actually do.
+    // Keeps the global league_manager/league_admin/league_steward role flags (used for
+    // admin nav and route gating) in step with this user's actual league_user
+    // memberships — the memberships are the source of truth for what a user can do.
     public function syncLeagueRoleFlags(): void
     {
-        $hasManager = $this->leagueMemberships()->where('role', 'manager')->exists();
-        $hasSteward = $this->leagueMemberships()->where('role', 'steward')->exists();
+        $roles = $this->leagueMemberships()->pluck('role');
 
-        foreach (['league_manager' => $hasManager, 'league_steward' => $hasSteward] as $slug => $shouldHave) {
+        foreach (self::LEAGUE_ROLES as $leagueRole) {
+            $slug = 'league_'.$leagueRole;
+            $shouldHave = $roles->contains($leagueRole);
             $role = Role::where('slug', $slug)->first();
             if (! $role) {
                 continue;

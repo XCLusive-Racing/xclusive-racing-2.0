@@ -212,7 +212,7 @@ class UserController extends Controller
             $before = $user->leagueMemberships()->pluck('role', 'league_id');
 
             foreach ($request->input('league_roles', []) as $leagueId => $role) {
-                $role = in_array($role, ['manager', 'steward'], true) ? $role : null;
+                $role = in_array($role, User::LEAGUE_ROLES, true) ? $role : null;
                 if (($before[$leagueId] ?? null) === $role) {
                     continue;
                 }

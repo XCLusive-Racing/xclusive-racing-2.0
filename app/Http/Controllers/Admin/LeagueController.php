@@ -12,6 +12,7 @@ use App\Services\AuditLogger;
 use App\Services\DiscordRoleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class LeagueController extends Controller
 {
@@ -96,18 +97,23 @@ class LeagueController extends Controller
         $user = $request->user();
         $isAdmin = $user->canManage();
         $isManager = $user->managesLeague($league);
+        $isLeagueAdmin = $user->editsLeague($league) && ! $isManager;
         $isSteward = $user->stewardsLeague($league);
 
-        abort_unless($isAdmin || $isManager || $isSteward, 403);
+        abort_unless($isAdmin || $isManager || $isLeagueAdmin || $isSteward, 403);
 
+        // The league profile and its members: XCL staff and the league's manager.
+        // A league admin only gets the servers (edit, never add or remove).
         $canEdit = $isAdmin || $isManager;
-        $members = $isAdmin ? $league->memberships()->with('user')->get() : collect();
-        $users = $isAdmin ? User::orderBy('name')->get(['id', 'name']) : collect();
+        $canEditServers = $canEdit || $isLeagueAdmin;
+        $members = $canEdit ? $league->memberships()->with('user')->get() : collect();
+        $users = $canEdit ? User::orderBy('name')->get(['id', 'name']) : collect();
+        $memberRoles = $this->assignableRoles($user);
 
-        // A league manager sees and edits their own league's servers only (user-directed
+        // A league manager/admin sees and edits their own league's servers only (user-directed
         // 2026-09) — never XCL's own fleet (the unassigned picker stays admin-only), and
         // never another league's (ftpServers() is this league's rows only).
-        $servers = $canEdit ? $league->ftpServers()->orderBy('name')->get() : collect();
+        $servers = $canEditServers ? $league->ftpServers()->orderBy('name')->get() : collect();
         $unassignedServers = $isAdmin ? FtpServer::withoutTenantScope()->where('league_id', League::system()->id)->orderBy('name')->get() : collect();
 
         // null = "couldn't check" (no bot token configured, or Discord unreachable),
@@ -116,7 +122,7 @@ class LeagueController extends Controller
             ? app(DiscordRoleService::class)->isBotInGuild($league->discord_guild_id)
             : null;
 
-        return view('admin.leagues.edit', compact('league', 'isAdmin', 'canEdit', 'members', 'users', 'servers', 'unassignedServers', 'discordBotInGuild'));
+        return view('admin.leagues.edit', compact('league', 'isAdmin', 'isLeagueAdmin', 'canEdit', 'canEditServers', 'members', 'users', 'memberRoles', 'servers', 'unassignedServers', 'discordBotInGuild'));
     }
 
     public function update(Request $request, League $league)
@@ -233,14 +239,18 @@ class LeagueController extends Controller
         return redirect()->route('admin.leagues.index')->with('success', $name.' has been permanently deleted.');
     }
 
+    // XCL staff add any role; a league's own manager adds and removes its admins and
+    // stewards, never another manager (that stays XCL staff).
     public function addMember(Request $request, League $league)
     {
-        abort_unless($request->user()->canManage(), 403);
+        $user = $request->user();
+        abort_unless($user->canManage() || $user->managesLeague($league), 403);
 
         $data = $request->validate([
             'user_id' => 'required|exists:users,id',
-            'role' => 'required|in:manager,steward',
+            'role' => ['required', Rule::in(User::LEAGUE_ROLES)],
         ]);
+        abort_unless(in_array($data['role'], $this->assignableRoles($user), true), 403);
 
         $member = $league->memberships()->firstOrCreate($data);
         $member->user->syncLeagueRoleFlags();
@@ -252,8 +262,10 @@ class LeagueController extends Controller
 
     public function removeMember(Request $request, League $league, LeagueUser $member)
     {
-        abort_unless($request->user()->canManage(), 403);
+        $user = $request->user();
+        abort_unless($user->canManage() || $user->managesLeague($league), 403);
         abort_unless($member->league_id === $league->id, 404);
+        abort_unless(in_array($member->role, $this->assignableRoles($user), true), 403);
 
         $memberUser = $member->user;
         $removed = ['user_id' => $member->user_id, 'role' => $member->role];
@@ -319,7 +331,7 @@ class LeagueController extends Controller
 
     public function editServer(Request $request, League $league, FtpServer $server)
     {
-        abort_unless($this->managesServers($request->user(), $league), 403);
+        abort_unless($this->editsServers($request->user(), $league), 403);
         abort_unless($server->league_id === $league->id, 404);
 
         return view('admin.leagues.server-edit', compact('league', 'server'));
@@ -330,7 +342,7 @@ class LeagueController extends Controller
     public function updateServer(Request $request, League $league, FtpServer $server)
     {
         $user = $request->user();
-        abort_unless($this->managesServers($user, $league), 403);
+        abort_unless($this->editsServers($user, $league), 403);
         abort_unless($server->league_id === $league->id, 404);
 
         $data = $request->validate($this->serverRules() + [
@@ -353,9 +365,21 @@ class LeagueController extends Controller
         return redirect()->route('admin.leagues.edit', $league)->with('success', $server->name.' updated.');
     }
 
+    // Adding a server: XCL staff or the league's manager. Editing one: also its admin.
     private function managesServers(User $user, League $league): bool
     {
         return $user->canManage() || $user->managesLeague($league);
+    }
+
+    private function editsServers(User $user, League $league): bool
+    {
+        return $user->canManage() || $user->editsLeague($league);
+    }
+
+    // The league roles this user may hand out (and take away) on the Members card.
+    private function assignableRoles(User $user): array
+    {
+        return $user->canManage() ? User::LEAGUE_ROLES : ['admin', 'steward'];
     }
 
     private function serverRules(): array

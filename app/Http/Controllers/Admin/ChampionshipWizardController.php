@@ -52,7 +52,7 @@ class ChampionshipWizardController extends Controller
     public function index(Request $request, League $league)
     {
         $user = $request->user();
-        abort_unless($user->canManage() || $user->managesLeague($league) || $user->stewardsLeague($league), 403);
+        abort_unless($user->canManage() || $user->editsLeague($league) || $user->stewardsLeague($league), 403);
 
         $championships = $league->championships()->orderBy('created_at', 'desc')->get();
 
