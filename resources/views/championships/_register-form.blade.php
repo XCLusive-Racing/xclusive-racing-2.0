@@ -214,6 +214,21 @@
     </p>
     @endif
 
+    {{-- In several teams: pick the one you score team points for. --}}
+    @if(!$driverSwaps && $championship->offersSoloTeamPick(auth()->user()))
+    <div class="mb-3">
+        <label class="form-label text-white" style="font-size:.82rem">Team</label>
+        <select name="solo_team_id" class="form-select form-select-sm" required
+                style="background:#1f2937;border-color:#374151;color:#e5e7eb">
+            <option value="">Choose the team you race for...</option>
+            @foreach(auth()->user()->allRacingTeams() as $myTeam)
+            <option value="{{ $myTeam->id }}" @selected((string) old('solo_team_id') === (string) $myTeam->id)>[{{ $myTeam->tag }}] {{ $myTeam->name }}</option>
+            @endforeach
+        </select>
+        <p class="mb-0 mt-1" style="color:#9ca3af;font-size:.72rem">Your points count toward this team in the team standings.</p>
+    </div>
+    @endif
+
     @if($championship->isFull())
     <p class="fw-bold mb-3" style="color:#f59e0b;font-size:.8rem">Full — you'll join the waiting list.</p>
     @endif

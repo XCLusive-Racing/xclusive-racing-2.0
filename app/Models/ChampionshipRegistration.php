@@ -22,6 +22,8 @@ class ChampionshipRegistration extends Model
         // driver_ids in a single round (RaceController::swapTeamDriver()). Never
         // entered into rounds on its own.
         'reserve_driver_id',
+        // A solo driver's pick of the team they score for (team points) — see soloTeam().
+        'solo_team_id',
         // Null while waiting for the league to approve the entry
         // (settings.requirements.manual_approval_required).
         'approved_at',
@@ -112,6 +114,20 @@ class ChampionshipRegistration extends Model
     public function racingTeam(): BelongsTo
     {
         return $this->belongsTo(RacingTeam::class);
+    }
+
+    // The team a solo driver races for (team standings, Teams tab, entry lists): the one
+    // they picked on sign-up while they're still in it, else User::primaryRacingTeam().
+    // Null for a team car — that's racingTeam.
+    public function soloTeam(): ?RacingTeam
+    {
+        if ($this->racing_team_id || ! $this->user) {
+            return null;
+        }
+
+        $teams = $this->user->allRacingTeams();
+
+        return $teams->firstWhere('id', $this->solo_team_id) ?? $teams->first();
     }
 
     public function startingDriver(): BelongsTo

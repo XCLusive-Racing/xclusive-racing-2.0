@@ -667,7 +667,7 @@ class Championship extends Model
     }
 
     // A solo championship with team points (no team cars): every solo driver scores for
-    // the team they're in now (User::primaryRacingTeam()). Each round a team scores
+    // the team they picked on sign-up (ChampionshipRegistration::soloTeam()). Each round a team scores
     // its best settings.scoring.team_scoring_cars drivers (blank = all of them). Every team
     // with a driver in is listed, at 0 until a round is scored.
     public function computeSoloTeamStandings(): array
@@ -702,6 +702,15 @@ class Championship extends Model
         return $teams;
     }
 
+    // Whether the sign-up asks a solo driver which team they race for: only with team
+    // points on, in a solo championship, and when they're in more than one team.
+    public function offersSoloTeamPick(User $user): bool
+    {
+        return ($this->settings->scoring->team_points_enabled ?? false)
+            && ! ($this->settings->format->driver_swaps_enabled ?? false)
+            && $user->allRacingTeams()->count() > 1;
+    }
+
     // [user, team] for every approved solo driver who is in a team — see computeSoloTeamStandings().
     public function soloDriverTeams(): Collection
     {
@@ -709,7 +718,7 @@ class Championship extends Model
             ->with('user.ownedRacingTeams', 'user.racingTeams')
             ->get()
             ->map(fn (ChampionshipRegistration $registration) => $registration->user
-                ? ['user' => $registration->user, 'team' => $registration->user->primaryRacingTeam()]
+                ? ['user' => $registration->user, 'team' => $registration->soloTeam()]
                 : null)
             ->filter(fn (?array $row) => $row && $row['team'])
             ->values();
@@ -717,7 +726,7 @@ class Championship extends Model
 
     // The public Teams tab: every team with an entry and who drives for it, no points.
     // A team car is one row with its line-up (and reserve); in a solo championship each
-    // driver in a team (User::primaryRacingTeam()) is a row of their own. Biggest team first.
+    // driver in a team (ChampionshipRegistration::soloTeam()) is a row of their own. Biggest team first.
     public function teamRoster(): array
     {
         $registrations = $this->registrations()->approved()->where('is_spectator', false)
@@ -735,7 +744,7 @@ class Championship extends Model
             'drivers' => collect($car->driverIds())->map(fn ($id) => $drivers[$id] ?? null)->filter()->values(),
             'reserve' => $car->reserve_driver_id ? ($drivers[$car->reserve_driver_id] ?? null) : null,
         ])->concat($registrations->whereNull('racing_team_id')->map(fn (ChampionshipRegistration $entry) => [
-            'team' => $entry->user?->primaryRacingTeam(),
+            'team' => $entry->soloTeam(),
             'is_car' => false,
             'car_number' => $entry->car_number,
             'class' => $entry->championshipClass,

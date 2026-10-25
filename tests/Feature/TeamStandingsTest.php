@@ -387,6 +387,94 @@ class TeamStandingsTest extends TestCase
             ->assertSee('Apex Racing');
     }
 
+    // --- A solo driver in several teams picks the one they race for ---
+
+    private function driverInTwoTeams(): array
+    {
+        $driver = User::factory()->create(['name' => 'Jan Jansen']);
+        $apex = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => User::factory()->create()->id]);
+        $blue = RacingTeam::create(['name' => 'Blue Motorsport', 'tag' => 'BLU', 'owner_id' => User::factory()->create()->id]);
+        $apex->members()->attach($driver->id);
+        $blue->members()->attach($driver->id);
+
+        return [$driver, $apex, $blue];
+    }
+
+    private function openSoloChampionship(): Championship
+    {
+        $championship = $this->soloChampionship(null);
+        $championship->update(['registration_open' => true]);
+
+        return $championship;
+    }
+
+    private function registerSolo(Championship $championship, User $driver, array $data = [])
+    {
+        return $this->actingAs($driver)->post(route('championships.register', $championship->id),
+            ['car_model' => 'Ferrari 296 GT3 (2023)', 'car_number' => 44] + $data);
+    }
+
+    public function test_a_driver_in_several_teams_picks_the_team_they_score_for(): void
+    {
+        $championship = $this->openSoloChampionship();
+        [$driver, , $blue] = $this->driverInTwoTeams();
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($this->actingAs($driver)->get(route('championships.show', $championship->id))->assertOk()->getContent());
+        $options = (new \DOMXPath($dom))->query('//select[@name="solo_team_id"]/option');
+        $this->assertSame(3, $options->length);
+
+        $this->registerSolo($championship, $driver, ['solo_team_id' => $blue->id])->assertSessionHas('success');
+
+        $this->assertSame($blue->id, ChampionshipRegistration::where('user_id', $driver->id)->sole()->solo_team_id);
+        $this->assertSame(['Blue Motorsport'], collect($championship->computeSoloTeamStandings())->pluck('team.name')->all());
+        $this->assertSame(['Blue Motorsport'], collect($championship->teamRoster())->pluck('team.name')->all());
+    }
+
+    public function test_the_team_pick_is_required_and_must_be_one_of_the_drivers_own_teams(): void
+    {
+        $championship = $this->openSoloChampionship();
+        [$driver] = $this->driverInTwoTeams();
+        $otherTeam = RacingTeam::create(['name' => 'Other Team', 'tag' => 'OTH', 'owner_id' => User::factory()->create()->id]);
+
+        $this->registerSolo($championship, $driver)->assertSessionHas('error', 'Pick the team you race for.');
+        $this->registerSolo($championship, $driver, ['solo_team_id' => $otherTeam->id])->assertSessionHas('error', 'Pick the team you race for.');
+
+        $this->assertSame(0, $championship->registrations()->count());
+    }
+
+    public function test_a_driver_in_one_team_is_not_asked(): void
+    {
+        $championship = $this->openSoloChampionship();
+        $apex = RacingTeam::create(['name' => 'Apex Racing', 'tag' => 'APX', 'owner_id' => User::factory()->create()->id]);
+        $driver = User::factory()->create();
+        $apex->members()->attach($driver->id);
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($this->actingAs($driver)->get(route('championships.show', $championship->id))->assertOk()->getContent());
+        $this->assertSame(0, (new \DOMXPath($dom))->query('//select[@name="solo_team_id"]')->length);
+
+        $this->registerSolo($championship, $driver)->assertSessionHas('success');
+        $this->assertSame(['Apex Racing'], collect($championship->teamRoster())->pluck('team.name')->all());
+    }
+
+    public function test_a_registered_driver_switches_team_while_sign_ups_are_open(): void
+    {
+        $championship = $this->openSoloChampionship();
+        [$driver, $apex, $blue] = $this->driverInTwoTeams();
+        $this->registerSolo($championship, $driver, ['solo_team_id' => $apex->id]);
+
+        $this->actingAs($driver)->put(route('championships.solo-team', $championship->id), ['solo_team_id' => $blue->id])
+            ->assertSessionHas('success');
+        $this->assertSame(['Blue Motorsport'], collect($championship->teamRoster())->pluck('team.name')->all());
+
+        // Once sign-ups close the team standings stay put.
+        $championship->update(['registration_open' => false]);
+        $this->actingAs($driver)->put(route('championships.solo-team', $championship->id), ['solo_team_id' => $apex->id])
+            ->assertForbidden();
+        $this->assertSame($blue->id, ChampionshipRegistration::where('user_id', $driver->id)->sole()->solo_team_id);
+    }
+
     public function test_no_teams_tab_without_any_team(): void
     {
         $championship = $this->soloChampionship(null);

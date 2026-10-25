@@ -109,6 +109,7 @@ Route::get('/championships', [ChampionshipController::class, 'index'])->name('ch
 Route::get('/championships/{championship}', [ChampionshipController::class, 'show'])->name('championships.show');
 Route::post('/championships/{championship}/register', [ChampionshipController::class, 'register'])->name('championships.register')->middleware('auth');
 Route::delete('/championships/{championship}/unregister', [ChampionshipController::class, 'unregister'])->name('championships.unregister')->middleware('auth');
+Route::put('/championships/{championship}/solo-team', [ChampionshipController::class, 'updateSoloTeam'])->name('championships.solo-team')->middleware('auth');
 Route::put('/championships/{championship}/cars/{registration}/reserve', [ChampionshipController::class, 'updateReserve'])->name('championships.cars.reserve')->middleware('auth');
 
 // News - public
