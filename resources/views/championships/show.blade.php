@@ -482,7 +482,7 @@
                                     {{ $reg->driverClass->name }}
                                 </span>
                                 @endif
-                                @if(!$reg->racingTeam && !$reg->is_spectator && ($soloTeam = $reg->user?->primaryRacingTeam()))
+                                @if(!$reg->racingTeam && !$reg->is_spectator && ($soloTeam = $reg->soloTeam()))
                                 <div style="color:#9ca3af;font-size:.75rem"><i class="fa-solid fa-users me-1"></i>{{ $soloTeam->name }}</div>
                                 @endif
                                 @if($reg->racingTeam)
@@ -555,6 +555,23 @@
                         @if($myTeamCars->isNotEmpty())
                         @include('championships._team-cars', ['ownedTeam' => $myOwnedTeam])
                         @elseif($ownRegistration)
+                        {{-- In several teams: switch the one you score for while sign-ups are open. --}}
+                        @if(!$ownRegistration->racing_team_id && !$ownRegistration->is_spectator
+                            && $championship->acceptsRegistrations() && $championship->offersSoloTeamPick(auth()->user()))
+                        <form method="POST" action="{{ route('championships.solo-team', $championship) }}" class="mb-3">
+                            @csrf @method('PUT')
+                            <label class="form-label text-white" style="font-size:.82rem">Racing for</label>
+                            <div class="d-flex gap-2">
+                                <select name="solo_team_id" class="form-select form-select-sm" required
+                                        style="background:#1f2937;border-color:#374151;color:#e5e7eb">
+                                    @foreach(auth()->user()->allRacingTeams() as $myTeam)
+                                    <option value="{{ $myTeam->id }}" @selected($ownRegistration->soloTeam()?->id === $myTeam->id)>[{{ $myTeam->tag }}] {{ $myTeam->name }}</option>
+                                    @endforeach
+                                </select>
+                                <button class="btn btn-sm fw-bold text-uppercase text-white" style="background:{{ $accent }};font-size:.72rem">Save</button>
+                            </div>
+                        </form>
+                        @endif
                         <form method="POST" action="{{ route('championships.unregister', $championship) }}" onsubmit="return confirm('Unregister from this championship?')">
                             @csrf @method('DELETE')
                             <button class="btn btn-sm fw-bold text-uppercase text-danger w-100" style="background:#fee2e2;border:1px solid #fca5a5;font-size:.75rem">

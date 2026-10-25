@@ -27,6 +27,14 @@ up without re-deriving context.
   Live, not stored: a driver changing team takes their points along — storing the
   team on the solo registration is the fallback if that becomes a problem.
   (4) That team shows under a solo driver on the Drivers tab and admin Entries page.
+  **2026-10-25 follow-up (NLRL Sunday League Special):** a driver in several teams
+  got whichever team came first. The team is now stored on the solo registration
+  (`championship_registrations.solo_team_id`): the sign-up form asks for it when
+  `Championship::offersSoloTeamPick()` (team points on, no driver swaps, driver in
+  2+ teams), and a registered driver can switch it on the championship page while
+  sign-ups are open (`ChampionshipController::updateSoloTeam()`).
+  `ChampionshipRegistration::soloTeam()` resolves it everywhere, falling back to
+  `User::primaryRacingTeam()` when unset or the driver left that team.
 - **2026-10-09 — Reserve driver per team car (MTSS feedback).** Line-ups stay
   fixed (e.g. 2 per car); each car can get one reserve afterwards: "Edit" next to
   Withdraw on the championship page (`ChampionshipController::updateReserve()`,

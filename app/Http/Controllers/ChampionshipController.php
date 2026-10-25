@@ -23,6 +23,8 @@ class ChampionshipController extends Controller
 {
     public const ERR_ALREADY_REGISTERED = 'You are already registered.';
 
+    public const ERR_PICK_SOLO_TEAM = 'Pick the team you race for.';
+
     public const ERR_TEAM_ONLY = 'This is a team championship — your team owner or manager registers the team.';
 
     // The fixed class list the championship wizard offers (ChampionshipSettingsSchema
@@ -221,6 +223,15 @@ class ChampionshipController extends Controller
                 'car_number' => 'required|integer|min:0|max:999',
                 'car_model' => ['required', 'string', Rule::in(array_keys(AccCarCatalog::namesWithClass($championship->game)))],
             ], ['car_model.required' => 'Pick the car you will race.']);
+        }
+
+        // A solo driver in several teams picks the one they score for (team points).
+        if (! $team && $championship->offersSoloTeamPick($user)) {
+            $soloTeamId = $this->validatedSoloTeamId($request, $user);
+            if ($soloTeamId === null) {
+                return back()->withInput()->with('error', self::ERR_PICK_SOLO_TEAM);
+            }
+            $entryFields['solo_team_id'] = $soloTeamId;
         }
 
         $thresholds = $championship->requirementThresholds();
@@ -432,6 +443,35 @@ class ChampionshipController extends Controller
         }
 
         return "Couldn't verify your Discord membership right now — please try again in a moment.";
+    }
+
+    // A solo driver switching the team they score for, while sign-ups are still open —
+    // after that the team standings shouldn't shift because a driver changed their mind.
+    public function updateSoloTeam(Request $request, int $championship)
+    {
+        $championship = $this->findChampionship($championship);
+        $user = $request->user();
+
+        $registration = $championship->registrations()->where('user_id', $user->id)
+            ->whereNull('racing_team_id')->where('is_spectator', false)->firstOrFail();
+        abort_unless($championship->acceptsRegistrations() && $championship->offersSoloTeamPick($user), 403);
+
+        $soloTeamId = $this->validatedSoloTeamId($request, $user);
+        if ($soloTeamId === null) {
+            return back()->with('error', self::ERR_PICK_SOLO_TEAM);
+        }
+
+        $registration->update(['solo_team_id' => $soloTeamId]);
+
+        return back()->with('success', 'You now race for '.$registration->soloTeam()->name.' in this championship.');
+    }
+
+    // The picked solo_team_id, or null when it isn't one of the user's own teams.
+    private function validatedSoloTeamId(Request $request, User $user): ?int
+    {
+        $id = $request->integer('solo_team_id');
+
+        return $user->allRacingTeams()->contains('id', $id) ? $id : null;
     }
 
     // The Edit button next to a team car's Withdraw: pick (or clear) the car's reserve —
