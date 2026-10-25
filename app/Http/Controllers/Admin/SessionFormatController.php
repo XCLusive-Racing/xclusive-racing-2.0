@@ -22,7 +22,7 @@ class SessionFormatController extends Controller
         $user = $request->user();
         $leagues = ($user->canManage() ? League::withoutTenantScope() : League::query())
             ->orderBy('name')->get()
-            ->filter(fn (League $league) => $user->canManage() || $user->managesLeague($league))
+            ->filter(fn (League $league) => $user->canManage() || $user->editsLeague($league))
             ->values();
 
         if ($leagues->count() === 1) {
@@ -49,7 +49,7 @@ class SessionFormatController extends Controller
 
     public function create(Request $request, League $league)
     {
-        $this->authorizeLeague($request, $league);
+        $this->authorizeLeague($request, $league, creates: true);
 
         $format = new SessionFormat(['race_durations' => [25], 'pitstop_count' => 0]);
 
@@ -58,7 +58,7 @@ class SessionFormatController extends Controller
 
     public function store(Request $request, League $league)
     {
-        $this->authorizeLeague($request, $league);
+        $this->authorizeLeague($request, $league, creates: true);
 
         $format = SessionFormat::create(['league_id' => $league->id] + $this->validatedInput($request));
 
@@ -91,7 +91,7 @@ class SessionFormatController extends Controller
 
     public function destroy(Request $request, League $league, SessionFormat $format)
     {
-        $this->authorizeLeague($request, $league, $format);
+        $this->authorizeLeague($request, $league, $format, creates: true);
 
         $name = $format->name;
         $format->delete();
@@ -101,9 +101,12 @@ class SessionFormatController extends Controller
         return redirect()->route('admin.leagues.session-formats.index', $league)->with('success', $name.' deleted.');
     }
 
-    private function authorizeLeague(Request $request, League $league, ?SessionFormat $format = null): void
+    // $creates: adding or deleting a format is the league manager's alone; a league
+    // admin only edits existing ones.
+    private function authorizeLeague(Request $request, League $league, ?SessionFormat $format = null, bool $creates = false): void
     {
-        abort_unless($request->user()->canManage() || $request->user()->managesLeague($league), 403);
+        $user = $request->user();
+        abort_unless($user->canManage() || ($creates ? $user->managesLeague($league) : $user->editsLeague($league)), 403);
         abort_if($format && $format->league_id !== $league->id, 404);
     }
 

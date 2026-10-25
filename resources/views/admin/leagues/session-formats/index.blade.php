@@ -3,10 +3,15 @@
 @section('title', $league->name . ' — Race Formats')
 @section('page-title', $league->name . ' — Race Formats')
 
+{{-- A league admin edits formats; only the manager adds or deletes them. --}}
+@php $canCreate = auth()->user()->canManage() || auth()->user()->managesLeague($league); @endphp
+
 @section('page-actions')
+    @if($canCreate)
     <a href="{{ route('admin.leagues.session-formats.create', $league) }}" class="btn btn-sm fw-black text-uppercase text-white px-3" style="background:#7c3aed;font-size:.78rem">
         + New Format
     </a>
+    @endif
 @endsection
 
 @section('content')
@@ -54,6 +59,7 @@
                     <td class="text-end pe-4">
                         <div class="d-flex gap-2 justify-content-end">
                             <a href="{{ route('admin.leagues.session-formats.edit', [$league, $format]) }}" class="fw-bold" style="color:#7c3aed;font-size:.78rem">Edit</a>
+                            @if($canCreate)
                             <form action="{{ route('admin.leagues.session-formats.destroy', [$league, $format]) }}" method="POST" onsubmit="return false">
                                 @csrf @method('DELETE')
                                 <button type="button" class="btn btn-sm fw-bold" style="background:transparent;color:#dc2626;font-size:.78rem;padding:0"
@@ -61,6 +67,7 @@
                                     Delete
                                 </button>
                             </form>
+                            @endif
                         </div>
                     </td>
                 </tr>

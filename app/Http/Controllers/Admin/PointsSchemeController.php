@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\League;
 use App\Models\PointsScheme;
+use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\PointsSchemeGenerator;
 use Illuminate\Http\Request;
@@ -19,10 +20,10 @@ class PointsSchemeController extends Controller
 {
     public function index(Request $request, League $league)
     {
-        abort_unless($request->user()->canManage() || $request->user()->managesLeague($league), 403);
+        abort_unless($request->user()->canManage() || $request->user()->editsLeague($league), 403);
 
         $templates = PointsScheme::withoutTenantScope()->where('is_template', true)->orderBy('name')->get();
-        $owned     = PointsScheme::where('league_id', $league->id)->where('is_template', false)->orderBy('name')->get();
+        $owned = PointsScheme::where('league_id', $league->id)->where('is_template', false)->orderBy('name')->get();
 
         return view('admin.leagues.points-schemes.index', compact('league', 'templates', 'owned'));
     }
@@ -34,7 +35,7 @@ class PointsSchemeController extends Controller
     public function browse(Request $request)
     {
         $user = $request->user();
-        abort_unless($user->canManage() || $user->isChampionshipManager() || $user->isLeagueManager() || $user->isLeagueSteward(), 403);
+        abort_unless($user->canManage() || $user->isChampionshipManager() || $user->hasAnyRole(User::LEAGUE_ROLE_FLAGS), 403);
 
         $schemes = PointsScheme::withoutTenantScope()
             ->with('league')
@@ -50,7 +51,7 @@ class PointsSchemeController extends Controller
     {
         abort_unless($request->user()->canManage() || $request->user()->managesLeague($league), 403);
 
-        $scheme           = new PointsScheme(['type' => 'manual']);
+        $scheme = new PointsScheme(['type' => 'manual']);
         $steepnessPresets = PointsSchemeGenerator::STEEPNESS_PRESETS;
 
         return view('admin.leagues.points-schemes.form', [
@@ -66,15 +67,15 @@ class PointsSchemeController extends Controller
         $data = $this->validatedInput($request);
 
         $scheme = new PointsScheme([
-            'league_id'          => $league->id,
-            'name'               => $data['name'],
-            'type'               => $data['type'],
-            'description'        => $data['description'],
-            'config'             => $data['config'],
+            'league_id' => $league->id,
+            'name' => $data['name'],
+            'type' => $data['type'],
+            'description' => $data['description'],
+            'config' => $data['config'],
             'fastest_lap_points' => $data['fastest_lap_points'],
-            'pole_points'        => $data['pole_points'],
+            'pole_points' => $data['pole_points'],
             'leading_lap_points' => $data['leading_lap_points'],
-            'is_template'        => false,
+            'is_template' => false,
         ]);
 
         $scheme->points_table = $this->resolveTable($scheme, $data);
@@ -82,7 +83,7 @@ class PointsSchemeController extends Controller
 
         AuditLogger::record($user, $scheme, 'points_scheme.created', ['name' => $scheme->name, 'type' => $scheme->type]);
 
-        return redirect()->route('admin.leagues.points-schemes.index', $league)->with('success', $scheme->name . ' created.');
+        return redirect()->route('admin.leagues.points-schemes.index', $league)->with('success', $scheme->name.' created.');
     }
 
     public function edit(Request $request, League $league, PointsScheme $scheme)
@@ -91,7 +92,7 @@ class PointsSchemeController extends Controller
         Gate::authorize('update', $scheme);
 
         $steepnessPresets = PointsSchemeGenerator::STEEPNESS_PRESETS;
-        $locked           = $scheme->isLockedByCompletedRounds();
+        $locked = $scheme->isLockedByCompletedRounds();
 
         return view('admin.leagues.points-schemes.form', compact('league', 'scheme', 'steepnessPresets', 'locked'));
     }
@@ -101,15 +102,15 @@ class PointsSchemeController extends Controller
         $this->assertOwned($league, $scheme);
         Gate::authorize('update', $scheme);
 
-        $user     = $request->user();
-        $locked   = $scheme->isLockedByCompletedRounds();
+        $user = $request->user();
+        $locked = $scheme->isLockedByCompletedRounds();
         $override = $locked && $user->canManage() && $request->boolean('override_lock');
 
         // Points already awarded must never change retroactively because
         // someone adjusted a setting mid season — once a round using this
         // scheme has been scored, only an explicit, audited admin override
         // can push a new table over the top of it.
-        if ($locked && !$override) {
+        if ($locked && ! $override) {
             return back()->withInput()->withErrors([
                 'scheme' => 'This scheme is locked — a round using it has already been scored. An XCL admin can override this.',
             ]);
@@ -117,14 +118,14 @@ class PointsSchemeController extends Controller
 
         $data = $this->validatedInput($request);
 
-        $scheme->name               = $data['name'];
-        $scheme->type               = $data['type'];
-        $scheme->description        = $data['description'];
-        $scheme->config             = $data['config'];
+        $scheme->name = $data['name'];
+        $scheme->type = $data['type'];
+        $scheme->description = $data['description'];
+        $scheme->config = $data['config'];
         $scheme->fastest_lap_points = $data['fastest_lap_points'];
-        $scheme->pole_points        = $data['pole_points'];
+        $scheme->pole_points = $data['pole_points'];
         $scheme->leading_lap_points = $data['leading_lap_points'];
-        $scheme->points_table       = $this->resolveTable($scheme, $data);
+        $scheme->points_table = $this->resolveTable($scheme, $data);
         $scheme->save();
 
         AuditLogger::record(
@@ -134,7 +135,7 @@ class PointsSchemeController extends Controller
             ['name' => $scheme->name]
         );
 
-        return redirect()->route('admin.leagues.points-schemes.index', $league)->with('success', $scheme->name . ' updated.');
+        return redirect()->route('admin.leagues.points-schemes.index', $league)->with('success', $scheme->name.' updated.');
     }
 
     public function destroy(Request $request, League $league, PointsScheme $scheme)
@@ -163,7 +164,7 @@ class PointsSchemeController extends Controller
 
         AuditLogger::record($request->user(), $copy, 'points_scheme.copied', ['from' => $template->id]);
 
-        return redirect()->route('admin.leagues.points-schemes.index', $league)->with('success', 'Copied "' . $template->name . '" as "' . $copy->name . '".');
+        return redirect()->route('admin.leagues.points-schemes.index', $league)->with('success', 'Copied "'.$template->name.'" as "'.$copy->name.'".');
     }
 
     private function assertOwned(League $league, PointsScheme $scheme): void
@@ -177,11 +178,11 @@ class PointsSchemeController extends Controller
         $type = $request->input('type', 'manual');
 
         $rules = [
-            'name'               => 'required|string|max:150',
-            'description'        => 'nullable|string|max:1000',
-            'type'               => 'required|in:manual,linear,curved',
+            'name' => 'required|string|max:150',
+            'description' => 'nullable|string|max:1000',
+            'type' => 'required|in:manual,linear,curved',
             'fastest_lap_points' => 'nullable|integer|min:0|max:100',
-            'pole_points'        => 'nullable|integer|min:0|max:100',
+            'pole_points' => 'nullable|integer|min:0|max:100',
             'leading_lap_points' => 'nullable|integer|min:0|max:100',
         ];
 
@@ -190,23 +191,23 @@ class PointsSchemeController extends Controller
         }
 
         if (in_array($type, ['linear', 'curved'], true)) {
-            $rules['top']                  = 'required|integer|min:1|max:1000';
-            $rules['depth_type']           = 'required|in:fixed,percentage';
+            $rules['top'] = 'required|integer|min:1|max:1000';
+            $rules['depth_type'] = 'required|in:fixed,percentage';
             // A percentage that rounds to zero scoring positions on even a
             // small grid is rejected below, after resolving depth — a plain
             // min:1 here only guards the raw input, not the resolved result.
-            $rules['depth_value']          = 'required|numeric|min:1';
+            $rules['depth_value'] = 'required|numeric|min:1';
             $rules['reference_field_size'] = 'nullable|integer|min:1|max:100';
         }
 
         if ($type === 'linear') {
-            $rules['gap']   = 'required|integer|min:0|max:100';
+            $rules['gap'] = 'required|integer|min:0|max:100';
             $rules['floor'] = 'nullable|integer|min:0|max:1000';
         }
 
         if ($type === 'curved') {
-            $rules['floor']     = 'required|integer|min:0|max:1000';
-            $rules['steepness'] = 'required|in:' . implode(',', array_keys(PointsSchemeGenerator::STEEPNESS_PRESETS));
+            $rules['floor'] = 'required|integer|min:0|max:1000';
+            $rules['steepness'] = 'required|in:'.implode(',', array_keys(PointsSchemeGenerator::STEEPNESS_PRESETS));
         }
 
         $validated = $request->validate($rules);
@@ -216,17 +217,17 @@ class PointsSchemeController extends Controller
             $referenceFieldSize = (int) ($validated['reference_field_size'] ?? 30);
 
             $config = [
-                'top'                  => (int) $validated['top'],
-                'depth_type'           => $validated['depth_type'],
-                'depth_value'          => (float) $validated['depth_value'],
+                'top' => (int) $validated['top'],
+                'depth_type' => $validated['depth_type'],
+                'depth_value' => (float) $validated['depth_value'],
                 'reference_field_size' => $referenceFieldSize,
             ];
 
             if ($type === 'linear') {
-                $config['gap']   = (int) $validated['gap'];
+                $config['gap'] = (int) $validated['gap'];
                 $config['floor'] = isset($validated['floor']) ? (int) $validated['floor'] : null;
             } else {
-                $config['floor']     = (int) $validated['floor'];
+                $config['floor'] = (int) $validated['floor'];
                 $config['steepness'] = $validated['steepness'];
             }
 
@@ -243,14 +244,14 @@ class PointsSchemeController extends Controller
         }
 
         return [
-            'name'               => $validated['name'],
-            'description'        => $validated['description'] ?? null,
-            'type'               => $type,
-            'config'             => $config,
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'type' => $type,
+            'config' => $config,
             'fastest_lap_points' => $validated['fastest_lap_points'] ?? 0,
-            'pole_points'        => $validated['pole_points'] ?? 0,
+            'pole_points' => $validated['pole_points'] ?? 0,
             'leading_lap_points' => $validated['leading_lap_points'] ?? 0,
-            'table_json'         => $validated['table_json'] ?? null,
+            'table_json' => $validated['table_json'] ?? null,
         ];
     }
 
@@ -274,12 +275,12 @@ class PointsSchemeController extends Controller
     private function decodeManualTable(string $json): array
     {
         $rows = json_decode($json, true);
-        abort_if(!is_array($rows), 422, 'Invalid points table.');
+        abort_if(! is_array($rows), 422, 'Invalid points table.');
 
         $table = [];
         foreach ($rows as $row) {
             $position = (int) ($row['position'] ?? 0);
-            if ($position < 1 || !isset($row['points']) || $row['points'] === '') {
+            if ($position < 1 || ! isset($row['points']) || $row['points'] === '') {
                 continue;
             }
 

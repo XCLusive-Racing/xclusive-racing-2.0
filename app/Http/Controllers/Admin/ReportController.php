@@ -45,12 +45,12 @@ class ReportController extends Controller
             ->withCount('verdicts');
 
         $user = $request->user();
-        // A pure league steward (no global steward/admin role — see
-        // User::canModerateReport()) only ever sees reports on races that
-        // belong to a championship owned by a league they steward. XCL's
-        // global steward pool keeps seeing everything, unscoped, as before.
+        // League staff without a global steward/admin role (see
+        // User::canModerateReport()) only ever see reports on races that
+        // belong to a championship of their own league. XCL's global
+        // steward pool keeps seeing everything, unscoped, as before.
         if (! $user->canManageEvents() && ! $user->isSteward()) {
-            $leagueIds = $user->leagueMemberships()->where('role', 'steward')->pluck('league_id');
+            $leagueIds = $user->leagueMemberships()->whereIn('role', User::LEAGUE_ROLES)->pluck('league_id');
             $query->whereHas('race.championship', fn ($q) => $q->withoutTenantScope()->whereIn('league_id', $leagueIds));
         }
 

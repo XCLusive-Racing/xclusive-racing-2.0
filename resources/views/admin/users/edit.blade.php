@@ -235,6 +235,7 @@
                     <select name="league_roles[{{ $l->id }}]" class="form-select form-select-sm" style="max-width:130px">
                         <option value="" {{ old('league_roles.' . $l->id, $leagueRoles[$l->id] ?? '') === '' ? 'selected' : '' }}>— None —</option>
                         <option value="manager" {{ old('league_roles.' . $l->id, $leagueRoles[$l->id] ?? '') === 'manager' ? 'selected' : '' }}>Manager</option>
+                        <option value="admin" {{ old('league_roles.' . $l->id, $leagueRoles[$l->id] ?? '') === 'admin' ? 'selected' : '' }}>Admin</option>
                         <option value="steward" {{ old('league_roles.' . $l->id, $leagueRoles[$l->id] ?? '') === 'steward' ? 'selected' : '' }}>Steward</option>
                     </select>
                 </div>
