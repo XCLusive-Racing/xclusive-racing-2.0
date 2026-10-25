@@ -290,6 +290,10 @@ class ChampionshipWizardController extends Controller
             });
             $this->applyStepSettings($request, $championship, 'basics');
         } else {
+            if ($step === 'format' && ($inUse = $this->removedClassesInUse($request, $championship))) {
+                return back()->withInput()->with('error', $inUse);
+            }
+
             $this->applyStepSettings($request, $championship, $step);
         }
 
@@ -597,10 +601,9 @@ class ChampionshipWizardController extends Controller
             $data['rain_level'] = null;
         }
 
+        $data = array_merge($data, $championship->roundFields());
         $data['championship_id'] = $championship->id;
         $data['game'] = $championship->game;
-        $data['car_class'] = $championship->car_class;
-        $data['max_drivers'] = $championship->max_drivers;
         $data['status'] = 'open';
         $data['is_championship'] = true;
         $data['event_tag'] = 'championship';
@@ -916,6 +919,9 @@ class ChampionshipWizardController extends Controller
         $championship->save();
 
         if ($step === 'format') {
+            // Rounds made before this step (Rounds comes first in the wizard) or
+            // before a change here would otherwise keep the old class and cap.
+            $championship->syncRoundFields();
             $this->syncChampionshipClasses($championship, $settings['format']['classes'] ?? []);
 
             if ($request->filled('driver_classes_json')) {
@@ -977,6 +983,30 @@ class ChampionshipWizardController extends Controller
         }
 
         $championship->driverClasses()->whereNotIn('id', $keepIds)->delete();
+    }
+
+    // A class taken off the list (or swapped for another, which is the same thing:
+    // classes are matched by name) would take its entries with it — the
+    // registrations' championship_class_id cascades on delete. Refused while it
+    // still has any; null when the save may go ahead.
+    private function removedClassesInUse(Request $request, Championship $championship): ?string
+    {
+        if (! $request->filled('classes_json')) {
+            return null;
+        }
+
+        $kept = collect($this->decodeList($request->input('classes_json'), ['name']))
+            ->map(fn ($row) => trim((string) ($row['name'] ?? '')))->all();
+
+        $inUse = $championship->classes()->withCount('registrations')->get()
+            ->filter(fn ($class) => $class->registrations_count > 0 && ! in_array($class->name, $kept, true));
+
+        if ($inUse->isEmpty()) {
+            return null;
+        }
+
+        return $inUse->map(fn ($class) => $class->name.' ('.$class->registrations_count.' '.Str::plural('entry', $class->registrations_count).')')->join(', ')
+            .' can\'t be removed while drivers are entered in it. Nothing was saved.';
     }
 
     // Keeps the real ChampionshipClass rows the public registration flow
