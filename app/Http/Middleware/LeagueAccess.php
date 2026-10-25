@@ -10,8 +10,9 @@ use Symfony\Component\HttpFoundation\Response;
 // unconditionally; everyone else needs the League Manager, League Steward or
 // Championship Manager role. Which specific league(s) a non-staff user may act on
 // is enforced separately by the TenantScope global scope on League/FtpServer, not
-// by this middleware (a Championship Manager bypasses that scope entirely, same as
-// canManage() — see TenantScope::apply()).
+// by this middleware. Only canManage() bypasses that scope; a Championship Manager
+// is scoped to the leagues they're a member of like everyone else (since 2026-09,
+// see TenantScope::apply()).
 class LeagueAccess
 {
     public function handle(Request $request, Closure $next): Response

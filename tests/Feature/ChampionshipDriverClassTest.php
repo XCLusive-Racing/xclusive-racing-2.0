@@ -209,7 +209,9 @@ class ChampionshipDriverClassTest extends TestCase
         RaceRegistration::create(['race_id' => $race->id, 'user_id' => $rookiePro->id]);
         RaceRegistration::create(['race_id' => $race->id, 'user_id' => $rookieAm->id]);
 
+        // The league's manager is on it too, as a bare server-admin entry without a car.
         $categories = collect(app(AccServerConfigService::class)->entryList($race)['entries'])
+            ->filter(fn ($entry) => isset($entry['raceNumber']))
             ->mapWithKeys(fn ($entry) => [$entry['drivers'][0]['playerID'] => $entry['drivers'][0]['driverCategory']]);
 
         $this->assertSame(2, $categories['XUID-PRO']); // white banner from the class
