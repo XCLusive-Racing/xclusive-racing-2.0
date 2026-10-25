@@ -24,6 +24,9 @@
                     @if($round->round_type)
                     <span class="badge ms-1 fw-bold text-uppercase" style="font-size:.6rem;background:#fce7f3;color:#be185d">{{ $round->round_type }}</span>
                     @endif
+                    @if($multiplierLabel = $round->pointsMultiplierLabel())
+                    <span class="badge ms-1 fw-bold text-uppercase" style="font-size:.6rem;background:#fef3c7;color:#92400e">{{ $multiplierLabel }}</span>
+                    @endif
                 </div>
                 <div class="text-secondary" style="font-size:.72rem">
                     {{ $round->track }} · {{ $round->scheduledAtUk()->format('d M Y, H:i T') }}

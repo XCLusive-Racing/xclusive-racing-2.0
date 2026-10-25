@@ -1059,6 +1059,7 @@ class Championship extends Model
                 // field never changes what a classified finisher scores.
                 $classifiedByGroup = $raceResults->where('dnf', false)->countBy(fn ($result) => $groupOf($result->user_id));
                 $lengthFactor = $scaleByLength ? $this->lengthFactor($race, (int) $raceNumber) : 1.0;
+                $pointsMultiplier = (float) ($race->points_multiplier ?? 1);
 
                 foreach ($raceResults as $result) {
                     $userId = $result->user_id;
@@ -1094,6 +1095,10 @@ class Championship extends Model
                     }
                     if ($bonusLead > 0 && $result->laps_led > 0) {
                         $pts += $bonusLead;
+                    }
+                    // A double-points (or 1.5× / 3×) round: everything scored in it, bonuses included.
+                    if ($pointsMultiplier !== 1.0) {
+                        $pts = round($pts * $pointsMultiplier, 2);
                     }
 
                     $roundEntries[$userId] ??= [

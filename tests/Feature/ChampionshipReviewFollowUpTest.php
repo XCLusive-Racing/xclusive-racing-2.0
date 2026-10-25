@@ -174,4 +174,42 @@ class ChampionshipReviewFollowUpTest extends TestCase
         $order = collect($championship->fresh()->computeStandings())->pluck('user_id');
         $this->assertTrue($order->search($winner->id) < $order->search($steady->id));
     }
+    // --- Double points ---
+
+    public function test_a_double_points_round_counts_every_point_twice(): void
+    {
+        $championship = $this->championship(['points_system' => [10, 6], 'bonus_pole' => 1]);
+        $driver = User::factory()->create();
+        ChampionshipRegistration::create(['championship_id' => $championship->id, 'user_id' => $driver->id]);
+
+        $this->finish($this->round($championship, 1, 'finished'), $driver, 1);
+        $double = $this->round($championship, 2, 'finished');
+        $double->update(['points_multiplier' => 2]);
+        $this->finish($double, $driver, 2);
+        RaceResult::create(['race_id' => $double->id, 'session_type' => 'quali', 'user_id' => $driver->id, 'driver_name' => $driver->name, 'position' => 1, 'dnf' => false, 'dns' => false, 'dsq' => false, 'dc' => false]);
+
+        // Round 1: 10. Round 2: (6 + 1 pole) × 2 = 14.
+        $this->assertEquals(24, collect($championship->computeStandings())->firstWhere('user_id', $driver->id)['total_points']);
+        $this->assertSame('2× points', $double->fresh()->pointsMultiplierLabel());
+        $this->assertNull($championship->rounds()->where('round_number', 1)->sole()->pointsMultiplierLabel());
+    }
+
+    public function test_the_round_form_saves_the_points_multiplier(): void
+    {
+        $championship = $this->championship();
+        $manager = User::factory()->create();
+        LeagueUser::create(['league_id' => $this->league->id, 'user_id' => $manager->id, 'role' => 'manager']);
+        $manager->syncLeagueRoleFlags();
+
+        $this->actingAs($manager->refresh())->post(route('admin.leagues.championships.rounds.store', [$this->league, $championship]), [
+            'track' => 'Spa', 'points_multiplier' => '1.5',
+            'scheduled_at' => now()->addMonth()->startOfHour()->tz('Europe/London')->format('Y-m-d\TH:i'),
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame(1.5, $championship->rounds()->sole()->points_multiplier);
+
+        $this->actingAs($manager)->post(route('admin.leagues.championships.rounds.store', [$this->league, $championship]), [
+            'track' => 'Monza', 'points_multiplier' => '10',
+            'scheduled_at' => now()->addMonths(2)->startOfHour()->tz('Europe/London')->format('Y-m-d\TH:i'),
+        ])->assertSessionHasErrors('points_multiplier');
+    }
 }

@@ -377,6 +377,9 @@
                                 @if($round->round_type)
                                 <span class="badge ms-1 fw-bold text-uppercase" style="font-size:.6rem;background:#db277722;color:#f472b6;letter-spacing:.04em">{{ $round->round_type }}</span>
                                 @endif
+                                @if($multiplierLabel = $round->pointsMultiplierLabel())
+                                <span class="badge ms-1 fw-bold text-uppercase" style="font-size:.6rem;background:#f59e0b22;color:#fbbf24;letter-spacing:.04em">{{ $multiplierLabel }}</span>
+                                @endif
                             </div>
                             <div style="font-size:.75rem;color:#6b7280">
                                 {{ $round->track }} · <x-local-time :at="$round->scheduled_at" format="date-time-comma" />

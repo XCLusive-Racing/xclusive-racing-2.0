@@ -21,6 +21,7 @@
         'weather_randomness'          => $race->weather_randomness,
         'rain_level'                  => $race->rain_level ?? 0.0,
         'xcl_r_multiplier'            => $race->xcl_r_multiplier,
+        'points_multiplier'           => $race->points_multiplier,
         'pitstop_count'               => $race->pitstop_count,
         'tyre_set_count'              => $race->tyre_set_count,
         'fixed_stop_time'             => $race->min_stop_secs !== null,
