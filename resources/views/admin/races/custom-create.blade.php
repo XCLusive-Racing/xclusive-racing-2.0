@@ -182,6 +182,11 @@ $tagsConfig = json_encode([
                                     <label class="form-check-label fw-bold" for="cr-minstop-toggle" style="font-size:.85rem">25s minimum waiting time</label>
                                     <input type="hidden" name="min_stop_secs" id="cr-minstop-val" value="{{ old('min_stop_secs', '') }}">
                                 </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="mandatory_refuelling" id="cr-refuel-toggle" value="1"
+                                           {{ old('mandatory_refuelling') ? 'checked' : '' }}>
+                                    <label class="form-check-label fw-bold" for="cr-refuel-toggle" style="font-size:.85rem">Mandatory refuelling</label>
+                                </div>
                             </div>
                         </div>
                     </div>

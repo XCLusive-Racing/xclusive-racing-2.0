@@ -124,6 +124,14 @@
                 <input type="number" name="min_stop_secs" value="{{ old('min_stop_secs', $eventFormat->min_stop_secs ?? '') }}"
                        class="form-control" min="1" placeholder="—">
             </div>
+            <div class="col-12">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="mandatory_refuelling" id="ef-mandatory-refuelling" value="1"
+                           {{ old('mandatory_refuelling', $eventFormat->mandatory_refuelling ?? false) ? 'checked' : '' }}>
+                    <label class="form-check-label fw-bold" for="ef-mandatory-refuelling">Mandatory Refuelling</label>
+                </div>
+                <div class="form-text mt-0">Drivers must take on fuel during the mandatory stop. Separate from Min Stop Time.</div>
+            </div>
         </div>
     </div>
 </div>

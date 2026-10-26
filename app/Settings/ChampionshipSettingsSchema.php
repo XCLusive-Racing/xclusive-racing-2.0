@@ -16,7 +16,7 @@ use Illuminate\Support\Arr;
 // defaults for new keys) once this class gains fields for a new version.
 class ChampionshipSettingsSchema
 {
-    const CURRENT_VERSION = 15;
+    const CURRENT_VERSION = 16;
 
     // A comma-separated list of whole kg values, each -40..40 (ACC's BOP range).
     const KG_LIST_RULE = 'regex:/^\s*-?(40|[1-3]?\d)(\s*,\s*-?(40|[1-3]?\d))*\s*$/';
@@ -195,6 +195,10 @@ class ChampionshipSettingsSchema
             // see applyStepSettings()/ChampionshipWizardController's round actions.
             ['group' => 'sessions', 'key' => 'fixed_stop_time', 'type' => 'boolean', 'default' => false, 'section' => 'Rating & Pitstops',
                 'label' => 'Fixed Stop Time', 'help' => 'Off = game default (dynamic). On = a fixed 25 seconds. Default for new rounds; change it per round in Add/Edit Round.'],
+            // v16 (2026-10-26): its own on/off, separate from Fixed Stop Time (it used to
+            // follow that toggle). The migration backfilled it from fixed_stop_time.
+            ['group' => 'sessions', 'key' => 'mandatory_refuelling', 'type' => 'boolean', 'default' => false, 'section' => 'Rating & Pitstops',
+                'label' => 'Mandatory Refuelling', 'help' => 'Drivers must take on fuel during the mandatory pitstop. Separate from Fixed Stop Time. Default for new rounds; change it per round in Add/Edit Round.'],
             // Not rendered ('hidden') — no longer a user-editable field, purely the
             // derived value the toggle above sets. Kept in the schema so it still
             // gets a tracked default/upgrade path and Add/Edit Round's prefill

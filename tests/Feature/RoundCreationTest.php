@@ -8,6 +8,7 @@ use App\Models\League;
 use App\Models\LeagueUser;
 use App\Models\Race;
 use App\Models\User;
+use App\Services\AccServerConfigService;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -32,6 +33,7 @@ class RoundCreationTest extends TestCase
         $manager = User::factory()->leagueManager()->create();
         LeagueUser::create(['league_id' => $league->id, 'user_id' => $manager->id, 'role' => 'manager']);
         $manager->syncLeagueRoleFlags();
+
         return $manager->fresh();
     }
 
@@ -45,9 +47,9 @@ class RoundCreationTest extends TestCase
 
     public function test_round_create_page_renders_single_and_bulk_panels(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $manager      = $this->makeManager($league);
+        $manager = $this->makeManager($league);
 
         $this->actingAs($manager)
             ->get(route('admin.leagues.championships.rounds.create', [$league, $championship]))
@@ -61,9 +63,9 @@ class RoundCreationTest extends TestCase
     // single-round creation still behaves exactly as before it was split out.
     public function test_single_round_creation_still_works_after_the_refactor(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $manager      = $this->makeManager($league);
+        $manager = $this->makeManager($league);
 
         $this->actingAs($manager)
             ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
@@ -78,9 +80,9 @@ class RoundCreationTest extends TestCase
 
     public function test_bulk_add_rounds_creates_every_row(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $manager      = $this->makeManager($league);
+        $manager = $this->makeManager($league);
 
         $this->actingAs($manager)
             ->post(route('admin.leagues.championships.rounds.bulk-store', [$league, $championship]), [
@@ -104,7 +106,7 @@ class RoundCreationTest extends TestCase
     // not just the championship-wide settings defaults they're pre-filled from.
     public function test_single_round_creation_carries_the_new_event_maker_options(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
         $championship->settings = array_replace_recursive($championship->settings->toArray(), [
             'format' => ['driver_swaps_enabled' => true],
@@ -115,14 +117,14 @@ class RoundCreationTest extends TestCase
         $this->actingAs($manager)
             ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
                 'track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i'),
-                'xcl_r_multiplier' => 1.5, 'pitstop_count' => 2, 'fixed_stop_time' => 1,
+                'xcl_r_multiplier' => 1.5, 'pitstop_count' => 2, 'fixed_stop_time' => 1, 'mandatory_refuelling' => 1,
                 'driver_stint_time_mins' => 45, 'max_total_driving_time_mins' => 120, 'mandatory_driver_swap' => 1,
             ])
             ->assertRedirect();
 
         $this->assertDatabaseHas('races', [
             'championship_id' => $championship->id, 'track' => 'Monza',
-            'xcl_r_multiplier' => 1.5, 'pitstop_count' => 2, 'min_stop_secs' => 25,
+            'xcl_r_multiplier' => 1.5, 'pitstop_count' => 2, 'min_stop_secs' => 25, 'mandatory_refuelling' => 1,
             'driver_stint_time_mins' => 45, 'max_total_driving_time_mins' => 120, 'mandatory_driver_swap' => 1,
         ]);
     }
@@ -130,9 +132,9 @@ class RoundCreationTest extends TestCase
     // User-directed 2026-09: bounded to 0.6–2.5x.
     public function test_xcl_r_multiplier_outside_0_6_to_2_5_is_rejected(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $manager      = $this->makeManager($league);
+        $manager = $this->makeManager($league);
 
         foreach ([0.5, 3.0] as $tooExtreme) {
             $this->actingAs($manager)
@@ -152,9 +154,9 @@ class RoundCreationTest extends TestCase
     // (fixed_stop_time unchecked) is chosen.
     public function test_dynamic_pitstop_time_leaves_min_stop_secs_null(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $manager      = $this->makeManager($league);
+        $manager = $this->makeManager($league);
 
         $this->actingAs($manager)
             ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
@@ -174,7 +176,7 @@ class RoundCreationTest extends TestCase
     // broadened isDriverSwapRace() gate actually fires for a championship round.
     public function test_driver_swap_enforcement_reaches_the_generated_config_for_a_championship_round(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
         $championship->settings = array_replace_recursive($championship->settings->toArray(), [
             'format' => ['driver_swaps_enabled' => true],
@@ -187,7 +189,7 @@ class RoundCreationTest extends TestCase
             'driver_stint_time_mins' => 45, 'max_total_driving_time_mins' => 120, 'mandatory_driver_swap' => true,
         ]);
 
-        $rules = app(\App\Services\AccServerConfigService::class)->eventRules($race);
+        $rules = app(AccServerConfigService::class)->eventRules($race);
 
         $this->assertSame(45 * 60, $rules['driverStintTimeSec']);
         $this->assertSame(120 * 60, $rules['maxTotalDrivingTime']);
@@ -196,9 +198,9 @@ class RoundCreationTest extends TestCase
 
     public function test_bulk_add_rounds_is_all_or_nothing_when_one_row_is_invalid(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $manager      = $this->makeManager($league);
+        $manager = $this->makeManager($league);
 
         $this->actingAs($manager)
             ->post(route('admin.leagues.championships.rounds.bulk-store', [$league, $championship]), [
@@ -220,9 +222,9 @@ class RoundCreationTest extends TestCase
     // still hour-only, see FtpServer::isValidSlot()'s $allowHalfHour param).
     public function test_add_round_accepts_a_half_past_the_hour_start(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $manager      = $this->makeManager($league);
+        $manager = $this->makeManager($league);
 
         $this->actingAs($manager)
             ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
@@ -242,14 +244,14 @@ class RoundCreationTest extends TestCase
             'server_type' => 'scheduled', 'league_id' => $league->id,
         ]);
         $championship = $this->makeChampionship($league);
-        $manager      = $this->makeManager($league);
+        $manager = $this->makeManager($league);
 
         $sameSlot = now()->addWeek()->startOfHour()->format('Y-m-d\TH:i');
 
         $this->actingAs($manager)
             ->post(route('admin.leagues.championships.rounds.bulk-store', [$league, $championship]), [
-                'race_duration'  => 30,
-                'ftp_server_id'  => $server->id,
+                'race_duration' => 30,
+                'ftp_server_id' => $server->id,
                 'rounds' => [
                     ['track' => 'Monza', 'scheduled_at' => $sameSlot],
                     ['track' => 'Spa', 'scheduled_at' => $sameSlot],
@@ -263,9 +265,9 @@ class RoundCreationTest extends TestCase
 
     public function test_bulk_row_track_is_required(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $manager      = $this->makeManager($league);
+        $manager = $this->makeManager($league);
 
         $this->actingAs($manager)
             ->post(route('admin.leagues.championships.rounds.bulk-store', [$league, $championship]), [
@@ -281,10 +283,10 @@ class RoundCreationTest extends TestCase
     // button just did nothing.
     public function test_rejected_bulk_submit_reopens_bulk_mode_with_its_rows_and_errors(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $manager      = $this->makeManager($league);
-        $createUrl    = route('admin.leagues.championships.rounds.create', [$league, $championship]);
+        $manager = $this->makeManager($league);
+        $createUrl = route('admin.leagues.championships.rounds.create', [$league, $championship]);
 
         $this->actingAs($manager)
             ->from($createUrl)
@@ -314,10 +316,10 @@ class RoundCreationTest extends TestCase
 
     public function test_round_edit_page_renders_with_the_rounds_current_values(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $manager      = $this->makeManager($league);
-        $race         = $this->makeRound($championship, ['track' => 'Spa']);
+        $manager = $this->makeManager($league);
+        $race = $this->makeRound($championship, ['track' => 'Spa']);
 
         $this->actingAs($manager)
             ->get(route('admin.leagues.championships.rounds.edit', [$league, $championship, $race]))
@@ -327,10 +329,10 @@ class RoundCreationTest extends TestCase
 
     public function test_updating_a_round_changes_its_track_and_time(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $manager      = $this->makeManager($league);
-        $race         = $this->makeRound($championship);
+        $manager = $this->makeManager($league);
+        $race = $this->makeRound($championship);
 
         $newTime = now()->addWeeks(2)->startOfHour();
 
@@ -356,8 +358,8 @@ class RoundCreationTest extends TestCase
             'server_type' => 'scheduled', 'league_id' => $league->id,
         ]);
         $championship = $this->makeChampionship($league);
-        $manager      = $this->makeManager($league);
-        $slot         = now()->addWeek()->startOfHour()->format('Y-m-d\TH:i');
+        $manager = $this->makeManager($league);
+        $slot = now()->addWeek()->startOfHour()->format('Y-m-d\TH:i');
 
         // Created through the actual HTTP flow (not Race::create() directly) so
         // the round's stored slot_time is the exact UTC value resolveRoundRow()
@@ -387,8 +389,8 @@ class RoundCreationTest extends TestCase
             'server_type' => 'scheduled', 'league_id' => $league->id,
         ]);
         $championship = $this->makeChampionship($league);
-        $manager      = $this->makeManager($league);
-        $takenSlot    = now()->addWeek()->startOfHour()->format('Y-m-d\TH:i');
+        $manager = $this->makeManager($league);
+        $takenSlot = now()->addWeek()->startOfHour()->format('Y-m-d\TH:i');
 
         // Created through the same HTTP flow (not directly via Race::create()) so
         // both rounds' slot_time go through the exact same Europe/London->UTC
@@ -410,10 +412,10 @@ class RoundCreationTest extends TestCase
 
     public function test_editing_a_round_never_resets_a_finished_rounds_status(): void
     {
-        $league       = $this->makeLeague('nlrl');
+        $league = $this->makeLeague('nlrl');
         $championship = $this->makeChampionship($league);
-        $manager      = $this->makeManager($league);
-        $race         = $this->makeRound($championship, ['status' => 'finished']);
+        $manager = $this->makeManager($league);
+        $race = $this->makeRound($championship, ['status' => 'finished']);
 
         $this->actingAs($manager)
             ->put(route('admin.leagues.championships.rounds.update', [$league, $championship, $race]), [
@@ -426,11 +428,11 @@ class RoundCreationTest extends TestCase
 
     public function test_a_manager_cannot_edit_a_round_belonging_to_a_different_championship(): void
     {
-        $league        = $this->makeLeague('nlrl');
-        $championship  = $this->makeChampionship($league);
+        $league = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
         $otherChampionship = $this->makeChampionship($league, ['name' => 'Other Cup']);
-        $manager       = $this->makeManager($league);
-        $otherRace     = $this->makeRound($otherChampionship);
+        $manager = $this->makeManager($league);
+        $otherRace = $this->makeRound($otherChampionship);
 
         $this->actingAs($manager)
             ->get(route('admin.leagues.championships.rounds.edit', [$league, $championship, $otherRace]))

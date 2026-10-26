@@ -1051,6 +1051,7 @@ class RaceController extends Controller
             'icon_path' => 'nullable|string|max:500',
             'pitstop_count' => 'nullable|integer|min:0|max:9',
             'min_stop_secs' => 'nullable|integer|min:1|max:3600',
+            'mandatory_refuelling' => 'nullable|boolean',
             'has_practice_server' => 'nullable|boolean',
             'practice_notes' => 'nullable|string|max:2000',
         ]);
@@ -1060,6 +1061,7 @@ class RaceController extends Controller
         $data['is_endurance'] = $request->boolean('is_endurance');
         $data['has_practice_server'] = $request->boolean('has_practice_server');
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
+        $data['mandatory_refuelling'] = $request->boolean('mandatory_refuelling');
         $data['practice_time_multiplier'] = $data['practice_time_multiplier'] ?? 1;
         $data['qualifying_time_multiplier'] = $data['qualifying_time_multiplier'] ?? 1;
         $data['race_time_multiplier'] = $data['race_time_multiplier'] ?? 1;
@@ -1190,6 +1192,7 @@ class RaceController extends Controller
             'ftp_server_id' => 'nullable|exists:ftp_servers,id',
             'pitstop_count' => 'nullable|integer|min:0|max:9',
             'min_stop_secs' => 'nullable|integer|min:1|max:3600',
+            'mandatory_refuelling' => 'nullable|boolean',
             'has_practice_server' => 'nullable|boolean',
             'practice_notes' => 'nullable|string|max:2000',
         ]);
@@ -1199,6 +1202,7 @@ class RaceController extends Controller
         $data['is_endurance'] = $request->boolean('is_endurance');
         $data['has_practice_server'] = $request->boolean('has_practice_server');
         $data['mandatory_driver_swap'] = $request->boolean('mandatory_driver_swap');
+        $data['mandatory_refuelling'] = $request->boolean('mandatory_refuelling');
         $data['practice_time_multiplier'] = $data['practice_time_multiplier'] ?? 1;
         $data['qualifying_time_multiplier'] = $data['qualifying_time_multiplier'] ?? 1;
         $data['race_time_multiplier'] = $data['race_time_multiplier'] ?? 1;

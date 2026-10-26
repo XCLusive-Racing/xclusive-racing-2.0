@@ -106,7 +106,7 @@ class ChampionshipWizardController extends Controller
         'race_duration', 'race_durations', 'session_format_id', 'event_format_id', 'weather', 'weather_randomness',
         'rain_level', 'time_of_day', 'ambient_temp', 'practice_time_multiplier', 'qualifying_time_multiplier',
         'race_time_multiplier', 'description', 'image', 'icon', 'xcl_r_multiplier', 'points_multiplier', 'pitstop_count', 'min_stop_secs',
-        'tyre_set_count', 'driver_stint_time_mins', 'max_total_driving_time_mins', 'mandatory_driver_swap',
+        'mandatory_refuelling', 'tyre_set_count', 'driver_stint_time_mins', 'max_total_driving_time_mins', 'mandatory_driver_swap',
         'config_overrides', 'has_practice_server', 'practice_notes', 'ftp_server_id',
     ];
 
@@ -504,6 +504,7 @@ class ChampionshipWizardController extends Controller
             'pitstop_count' => 'nullable|integer|min:0|max:9',
             'tyre_set_count' => 'nullable|integer|min:1|max:50',
             'fixed_stop_time' => 'nullable|boolean',
+            'mandatory_refuelling' => 'nullable|boolean',
             'driver_stint_time_mins' => 'nullable|integer|min:1|max:1440',
             'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
             'mandatory_driver_swap' => 'nullable|boolean',
@@ -532,6 +533,7 @@ class ChampionshipWizardController extends Controller
         // (null) when off. Same values applyStepSettings() derives for the
         // championship-wide Sessions-step default.
         $data['min_stop_secs'] = $request->boolean('fixed_stop_time') ? 25 : null;
+        $data['mandatory_refuelling'] = $request->boolean('mandatory_refuelling');
         $data['points_multiplier'] = (float) ($data['points_multiplier'] ?? 1);
 
         return $data;

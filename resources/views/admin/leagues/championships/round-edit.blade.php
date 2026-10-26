@@ -25,6 +25,7 @@
         'pitstop_count'               => $race->pitstop_count,
         'tyre_set_count'              => $race->tyre_set_count,
         'fixed_stop_time'             => $race->min_stop_secs !== null,
+        'mandatory_refuelling'        => $race->mandatory_refuelling,
         'driver_stint_time_mins'      => $race->driver_stint_time_mins,
         'max_total_driving_time_mins' => $race->max_total_driving_time_mins,
         'mandatory_driver_swap'       => $race->mandatory_driver_swap,
