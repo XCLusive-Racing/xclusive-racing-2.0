@@ -9,7 +9,7 @@ class EventFormat extends Model
     protected $fillable = [
         'game', 'name', 'formation_type',
         'practice_mins', 'quali_mins', 'race1_mins', 'quali2_mins', 'race2_mins',
-        'pitstop_type', 'pitstop_count', 'min_stop_secs',
+        'pitstop_type', 'pitstop_count', 'mandatory_refuelling', 'min_stop_secs',
         'xcl_r_multiplier', 'server_preference', 'server_group', 'default_event_tag', 'sort_order',
     ];
 
@@ -17,6 +17,7 @@ class EventFormat extends Model
     {
         return [
             'xcl_r_multiplier' => 'float',
+            'mandatory_refuelling' => 'boolean',
         ];
     }
 
@@ -26,6 +27,9 @@ class EventFormat extends Model
             return 'None';
         }
         $label = 'Fuel Only ('.$this->pitstop_count.'x';
+        if ($this->mandatory_refuelling) {
+            $label .= ', refuel required';
+        }
         if ($this->min_stop_secs) {
             $label .= ', min '.$this->min_stop_secs.'s';
         }

@@ -398,14 +398,17 @@ class AccServerConfigService implements ServerConfigGenerator
 
         $fmt = $race?->eventFormat;
 
+        // Refuelling required and the fixed (25s) stop time are two separate options.
         if ($fmt) {
             $pitstopType = $fmt->pitstop_type ?? 'none';
             $pitstopCount = (int) ($fmt->pitstop_count ?? 0);
             $minStopSecs = $fmt->min_stop_secs;
+            $refuellingRequired = (bool) $fmt->mandatory_refuelling;
         } elseif ($race && (int) ($race->pitstop_count ?? 0) > 0) {
             $pitstopType = 'mandatory';
             $pitstopCount = (int) $race->pitstop_count;
             $minStopSecs = $race->min_stop_secs;
+            $refuellingRequired = (bool) $race->mandatory_refuelling;
         } else {
             return $base;
         }
@@ -420,13 +423,11 @@ class AccServerConfigService implements ServerConfigGenerator
             ]);
         }
 
-        $timeFixed = ! empty($minStopSecs);
-
         return array_merge($base, [
             'mandatoryPitstopCount' => $pitstopCount,
             'isRefuellingAllowedInRace' => true,
-            'isRefuellingTimeFixed' => $timeFixed,
-            'isMandatoryPitstopRefuellingRequired' => $timeFixed,
+            'isRefuellingTimeFixed' => ! empty($minStopSecs),
+            'isMandatoryPitstopRefuellingRequired' => $refuellingRequired,
             'isMandatoryPitstopTyreChangeRequired' => false,
         ]);
     }

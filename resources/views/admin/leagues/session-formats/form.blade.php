@@ -79,6 +79,12 @@
                         <label class="form-check-label fw-bold" for="sf-fixed-stop">Fixed Stop Time</label>
                     </div>
                     <div class="form-text mt-0" style="font-size:.72rem;color:#9ca3af">Off = game default (dynamic). On = a fixed 25 seconds.</div>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" name="mandatory_refuelling" id="sf-mandatory-refuelling" value="1"
+                               {{ old('mandatory_refuelling', $format->mandatory_refuelling) ? 'checked' : '' }}>
+                        <label class="form-check-label fw-bold" for="sf-mandatory-refuelling">Mandatory Refuelling</label>
+                    </div>
+                    <div class="form-text mt-0" style="font-size:.72rem;color:#9ca3af">Drivers must take on fuel during the stop.</div>
                 </div>
             </div>
 

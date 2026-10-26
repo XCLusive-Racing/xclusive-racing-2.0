@@ -186,16 +186,18 @@
                         $hasPitstop   = $fmt->pitstop_count > 0;
                         $pitstopCount = $fmt->pitstop_count;
                         $minStopSecs  = $fmt->min_stop_secs;
+                        $mustRefuel   = (bool) $fmt->mandatory_refuelling;
                     } else {
                         $hasPitstop   = (int) ($race->pitstop_count ?? 0) > 0;
                         $pitstopCount = $race->pitstop_count ?? 0;
                         $minStopSecs  = $race->min_stop_secs ?? null;
+                        $mustRefuel   = (bool) $race->mandatory_refuelling;
                     }
                     $pitstopLabel = !$hasPitstop
                         ? 'None'
-                        : ($minStopSecs
-                            ? $pitstopCount . 'x, ' . $minStopSecs . 's waiting time'
-                            : $pitstopCount . 'x, fuel only');
+                        : $pitstopCount . 'x'
+                            . ($mustRefuel ? ', refuelling required' : '')
+                            . ($minStopSecs ? ', ' . $minStopSecs . 's waiting time' : '');
                 @endphp
                 @if($pracMins || $qualiMins || $race1Mins || $fmt)
                 <div class="xcl-ev-schedule xcl-event-card mb-4">
