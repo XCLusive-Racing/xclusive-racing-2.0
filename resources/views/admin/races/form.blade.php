@@ -1107,6 +1107,7 @@ function filterServersByGame(selectEl, game) {
         if (fmt.pitstop_count > 0) {
             pitstop = '(' + fmt.pitstop_count + 'x';
             if (fmt.mandatory_refuelling) pitstop += ', refuel';
+            if (fmt.mandatory_tyre_change) pitstop += ', tyres';
             if (fmt.min_stop_secs) pitstop += ', ' + fmt.min_stop_secs + 's';
             pitstop += ')';
         }

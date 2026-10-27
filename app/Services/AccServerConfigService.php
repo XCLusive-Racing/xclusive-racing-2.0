@@ -404,11 +404,13 @@ class AccServerConfigService implements ServerConfigGenerator
             $pitstopCount = (int) ($fmt->pitstop_count ?? 0);
             $minStopSecs = $fmt->min_stop_secs;
             $refuellingRequired = (bool) $fmt->mandatory_refuelling;
+            $tyreChangeRequired = (bool) $fmt->mandatory_tyre_change;
         } elseif ($race && (int) ($race->pitstop_count ?? 0) > 0) {
             $pitstopType = 'mandatory';
             $pitstopCount = (int) $race->pitstop_count;
             $minStopSecs = $race->min_stop_secs;
             $refuellingRequired = (bool) $race->mandatory_refuelling;
+            $tyreChangeRequired = false;
         } else {
             return $base;
         }
@@ -428,7 +430,7 @@ class AccServerConfigService implements ServerConfigGenerator
             'isRefuellingAllowedInRace' => true,
             'isRefuellingTimeFixed' => ! empty($minStopSecs),
             'isMandatoryPitstopRefuellingRequired' => $refuellingRequired,
-            'isMandatoryPitstopTyreChangeRequired' => false,
+            'isMandatoryPitstopTyreChangeRequired' => $tyreChangeRequired,
         ]);
     }
 

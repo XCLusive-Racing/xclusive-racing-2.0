@@ -187,16 +187,19 @@
                         $pitstopCount = $fmt->pitstop_count;
                         $minStopSecs  = $fmt->min_stop_secs;
                         $mustRefuel   = (bool) $fmt->mandatory_refuelling;
+                        $mustChangeTyres = (bool) $fmt->mandatory_tyre_change;
                     } else {
                         $hasPitstop   = (int) ($race->pitstop_count ?? 0) > 0;
                         $pitstopCount = $race->pitstop_count ?? 0;
                         $minStopSecs  = $race->min_stop_secs ?? null;
                         $mustRefuel   = (bool) $race->mandatory_refuelling;
+                        $mustChangeTyres = false;
                     }
                     $pitstopLabel = !$hasPitstop
                         ? 'None'
                         : $pitstopCount . 'x'
                             . ($mustRefuel ? ', refuelling required' : '')
+                            . ($mustChangeTyres ? ', tyre change required' : '')
                             . ($minStopSecs ? ', ' . $minStopSecs . 's waiting time' : '');
                 @endphp
                 @if($pracMins || $qualiMins || $race1Mins || $fmt)
