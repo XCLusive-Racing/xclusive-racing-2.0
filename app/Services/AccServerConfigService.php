@@ -410,7 +410,7 @@ class AccServerConfigService implements ServerConfigGenerator
             $pitstopCount = (int) $race->pitstop_count;
             $minStopSecs = $race->min_stop_secs;
             $refuellingRequired = (bool) $race->mandatory_refuelling;
-            $tyreChangeRequired = false;
+            $tyreChangeRequired = (bool) $race->mandatory_tyre_change;
         } else {
             return $base;
         }

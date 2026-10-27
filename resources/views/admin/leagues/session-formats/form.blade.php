@@ -85,6 +85,12 @@
                         <label class="form-check-label fw-bold" for="sf-mandatory-refuelling">Mandatory Refuelling</label>
                     </div>
                     <div class="form-text mt-0" style="font-size:.72rem;color:#9ca3af">Drivers must take on fuel during the stop.</div>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" name="mandatory_tyre_change" id="sf-mandatory-tyre-change" value="1"
+                               {{ old('mandatory_tyre_change', $format->mandatory_tyre_change) ? 'checked' : '' }}>
+                        <label class="form-check-label fw-bold" for="sf-mandatory-tyre-change">Mandatory Tyre Change</label>
+                    </div>
+                    <div class="form-text mt-0" style="font-size:.72rem;color:#9ca3af">Drivers must change tyres during the stop.</div>
                 </div>
             </div>
 

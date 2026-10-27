@@ -95,6 +95,14 @@ class MandatoryRefuellingTest extends TestCase
         $this->assertFalse($format->mandatory_refuelling);
     }
 
+    public function test_a_custom_race_or_round_can_require_a_tyre_change(): void
+    {
+        $rules = $this->rulesFor(['pitstop_count' => 1, 'mandatory_tyre_change' => true]);
+
+        $this->assertTrue($rules['isMandatoryPitstopTyreChangeRequired']);
+        $this->assertFalse($rules['isMandatoryPitstopRefuellingRequired']);
+    }
+
     public function test_a_custom_race_with_refuelling_on_requires_it(): void
     {
         $rules = $this->rulesFor(['pitstop_count' => 2, 'min_stop_secs' => null, 'mandatory_refuelling' => true]);

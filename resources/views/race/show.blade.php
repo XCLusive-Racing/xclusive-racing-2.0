@@ -193,7 +193,7 @@
                         $pitstopCount = $race->pitstop_count ?? 0;
                         $minStopSecs  = $race->min_stop_secs ?? null;
                         $mustRefuel   = (bool) $race->mandatory_refuelling;
-                        $mustChangeTyres = false;
+                        $mustChangeTyres = (bool) $race->mandatory_tyre_change;
                     }
                     $pitstopLabel = !$hasPitstop
                         ? 'None'

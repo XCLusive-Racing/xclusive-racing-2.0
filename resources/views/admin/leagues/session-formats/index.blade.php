@@ -53,7 +53,7 @@
                     </td>
                     <td class="text-secondary">{{ $format->summary() }}</td>
                     <td class="text-secondary d-none d-md-table-cell">
-                        {{ $format->pitstop_count ? $format->pitstop_count . ' stop' . ($format->pitstop_count > 1 ? 's' : '') : 'No stops' }}{{ $format->fixed_stop_time ? ' (25s)' : '' }}{{ $format->pitstop_count && $format->mandatory_refuelling ? ', refuel' : '' }}
+                        {{ $format->pitstop_count ? $format->pitstop_count . ' stop' . ($format->pitstop_count > 1 ? 's' : '') : 'No stops' }}{{ $format->fixed_stop_time ? ' (25s)' : '' }}{{ $format->pitstop_count && $format->mandatory_refuelling ? ', refuel' : '' }}{{ $format->pitstop_count && $format->mandatory_tyre_change ? ', tyres' : '' }}
                         · {{ $format->tyre_set_count ? $format->tyre_set_count . ' tyre sets' : 'Unlimited tyres' }}
                     </td>
                     <td class="text-end pe-4">

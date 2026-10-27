@@ -111,7 +111,7 @@
                 <label class="form-label">Mandatory Stops <span class="text-danger">*</span></label>
                 <input type="number" name="pitstop_count" value="{{ old('pitstop_count', $eventFormat->pitstop_count ?? 0) }}"
                        class="form-control" min="0" max="10">
-                <div class="form-text">0 means no mandatory stop, the options below are then ignored.</div>
+                <div class="form-text">0 means no mandatory stop.</div>
             </div>
             <div class="col-sm-8">
                 <div class="form-check form-switch mb-2">

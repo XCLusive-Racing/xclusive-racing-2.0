@@ -79,7 +79,7 @@ class SessionFormatController extends Controller
         $this->authorizeLeague($request, $league, $format);
 
         $before = $format->only([
-            'name', 'practice_duration', 'qualifying_duration', 'race_durations', 'pitstop_count', 'mandatory_refuelling', 'fixed_stop_time', 'tyre_set_count',
+            'name', 'practice_duration', 'qualifying_duration', 'race_durations', 'pitstop_count', 'mandatory_refuelling', 'mandatory_tyre_change', 'fixed_stop_time', 'tyre_set_count',
             'driver_stint_time_mins', 'max_total_driving_time_mins',
         ]);
         $format->update($this->validatedInput($request));
@@ -121,6 +121,7 @@ class SessionFormatController extends Controller
             'pitstop_count' => 'nullable|integer|min:0|max:9',
             'fixed_stop_time' => 'nullable|boolean',
             'mandatory_refuelling' => 'nullable|boolean',
+            'mandatory_tyre_change' => 'nullable|boolean',
             'tyre_set_count' => 'nullable|integer|min:1|max:50',
             'driver_stint_time_mins' => 'nullable|integer|min:1|max:1440',
             'max_total_driving_time_mins' => 'nullable|integer|min:1|max:1440',
@@ -134,6 +135,7 @@ class SessionFormatController extends Controller
             'pitstop_count' => (int) ($data['pitstop_count'] ?? 0),
             'fixed_stop_time' => $request->boolean('fixed_stop_time'),
             'mandatory_refuelling' => $request->boolean('mandatory_refuelling'),
+            'mandatory_tyre_change' => $request->boolean('mandatory_tyre_change'),
         ];
     }
 
