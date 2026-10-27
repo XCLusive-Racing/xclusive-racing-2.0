@@ -26,6 +26,19 @@ return [
     'practice_minutes' => 2,
     'qualifying_minutes' => 30,
 
+    // Fixed conditions for every event, so all laps of the week are set in the same weather
+    // and light. They win over the server's own event defaults. trackTemp -1 lets ACC derive
+    // it from the ambient temperature.
+    'conditions' => [
+        'ambientTemp' => 18,
+        'trackTemp' => -1,
+        'cloudLevel' => 0.4,
+        'rain' => 0.0,
+        'weatherRandomness' => 0,
+    ],
+    'practice_session' => ['hourOfDay' => 14, 'dayOfWeekend' => 3],
+    'qualifying_session' => ['hourOfDay' => 15, 'dayOfWeekend' => 3],
+
     // How often the event's config and entry list are uploaded again. An upload never
     // kicks anyone: the server only reads it when it restarts on its own.
     'push_every_minutes' => 60,
