@@ -270,6 +270,13 @@ class TimeTrialEventsTest extends TestCase
 
     // ── Results ─────────────────────────────────────────────────────────────────
 
+    // A gPortal file name (server time, Europe/Berlin) a few minutes from now: after the
+    // driver signs up, so the lap counts. A fixed date drops out once sign-up passes it.
+    private function resultFileName(string $type): string
+    {
+        return now()->addMinutes(5)->setTimezone('Europe/Berlin')->format('ymd_Hi').'_'.$type.'.json';
+    }
+
     private function resultFile(array $laps, string $track = 'spa', string $type = 'FP'): string
     {
         return json_encode([
@@ -297,7 +304,7 @@ class TimeTrialEventsTest extends TestCase
         ]);
 
         $collector = app(TimeTrialResultCollector::class);
-        $this->assertSame(1, $collector->storeFile($event, $this->server->id, '261005_1355_FP.json', $json));
+        $this->assertSame(1, $collector->storeFile($event, $this->server->id, $this->resultFileName('FP'), $json));
 
         $lap = TimeTrialEventLap::sole();
         $this->assertSame(135800, $lap->lap_time_ms);
@@ -315,7 +322,7 @@ class TimeTrialEventsTest extends TestCase
             ['carId' => 1001, 'driverIndex' => 0, 'laptime' => 136000, 'isValidForBest' => true, 'splits' => [40000, 50000, 46000]],
         ], type: 'Q');
 
-        $this->assertSame(1, app(TimeTrialResultCollector::class)->storeFile($event, $this->server->id, '261005_1432_Q.json', $json));
+        $this->assertSame(1, app(TimeTrialResultCollector::class)->storeFile($event, $this->server->id, $this->resultFileName('Q'), $json));
     }
 
     public function test_sessions_that_ended_before_the_driver_signed_up_do_not_count(): void
