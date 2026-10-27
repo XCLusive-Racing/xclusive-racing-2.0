@@ -108,29 +108,27 @@
 
         <div class="row g-3">
             <div class="col-sm-4">
-                <label class="form-label">Type <span class="text-danger">*</span></label>
-                <select name="pitstop_type" class="form-select">
-                    <option value="none"      {{ old('pitstop_type', $eventFormat->pitstop_type ?? 'none') === 'none'      ? 'selected' : '' }}>None</option>
-                    <option value="fuel_only" {{ old('pitstop_type', $eventFormat->pitstop_type ?? 'none') === 'fuel_only' ? 'selected' : '' }}>Fuel Only</option>
-                </select>
-            </div>
-            <div class="col-sm-4">
-                <label class="form-label">Count <span class="text-danger">*</span></label>
+                <label class="form-label">Mandatory Stops <span class="text-danger">*</span></label>
                 <input type="number" name="pitstop_count" value="{{ old('pitstop_count', $eventFormat->pitstop_count ?? 0) }}"
                        class="form-control" min="0" max="10">
+                <div class="form-text">0 means no mandatory stop.</div>
             </div>
-            <div class="col-sm-4">
-                <label class="form-label">Min Stop Time <span class="fw-normal text-secondary" style="text-transform:none">(seconds)</span></label>
-                <input type="number" name="min_stop_secs" value="{{ old('min_stop_secs', $eventFormat->min_stop_secs ?? '') }}"
-                       class="form-control" min="1" placeholder="—">
-            </div>
-            <div class="col-12">
-                <div class="form-check form-switch">
+            <div class="col-sm-8">
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" name="fixed_stop_time" id="ef-fixed-stop-time" value="1"
+                           {{ old('fixed_stop_time', ! empty($eventFormat->min_stop_secs ?? null)) ? 'checked' : '' }}>
+                    <label class="form-check-label fw-bold" for="ef-fixed-stop-time">Fixed Stop Time ({{ \App\Models\EventFormat::FIXED_STOP_SECS }}s)</label>
+                </div>
+                <div class="form-check form-switch mb-2">
                     <input class="form-check-input" type="checkbox" name="mandatory_refuelling" id="ef-mandatory-refuelling" value="1"
                            {{ old('mandatory_refuelling', $eventFormat->mandatory_refuelling ?? false) ? 'checked' : '' }}>
                     <label class="form-check-label fw-bold" for="ef-mandatory-refuelling">Mandatory Refuelling</label>
                 </div>
-                <div class="form-text mt-0">Drivers must take on fuel during the mandatory stop. Separate from Min Stop Time.</div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="mandatory_tyre_change" id="ef-mandatory-tyre-change" value="1"
+                           {{ old('mandatory_tyre_change', $eventFormat->mandatory_tyre_change ?? false) ? 'checked' : '' }}>
+                    <label class="form-check-label fw-bold" for="ef-mandatory-tyre-change">Mandatory Tyre Change</label>
+                </div>
             </div>
         </div>
     </div>

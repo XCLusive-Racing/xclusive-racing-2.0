@@ -264,6 +264,11 @@ $mcExisting = $isEdit
                                                    {{ old('mandatory_refuelling', $isEdit ? $race->mandatory_refuelling : false) ? 'checked' : '' }}>
                                             <label class="form-check-label fw-bold" for="ce-custom-refuel-toggle" style="font-size:.85rem">Mandatory refuelling</label>
                                         </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" name="mandatory_tyre_change" id="ce-custom-tyre-toggle" value="1"
+                                                   {{ old('mandatory_tyre_change', $isEdit ? $race->mandatory_tyre_change : false) ? 'checked' : '' }}>
+                                            <label class="form-check-label fw-bold" for="ce-custom-tyre-toggle" style="font-size:.85rem">Mandatory tyre change</label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1107,6 +1112,7 @@ function filterServersByGame(selectEl, game) {
         if (fmt.pitstop_count > 0) {
             pitstop = '(' + fmt.pitstop_count + 'x';
             if (fmt.mandatory_refuelling) pitstop += ', refuel';
+            if (fmt.mandatory_tyre_change) pitstop += ', tyres';
             if (fmt.min_stop_secs) pitstop += ', ' + fmt.min_stop_secs + 's';
             pitstop += ')';
         }

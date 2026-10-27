@@ -117,14 +117,14 @@ class RoundCreationTest extends TestCase
         $this->actingAs($manager)
             ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
                 'track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i'),
-                'xcl_r_multiplier' => 1.5, 'pitstop_count' => 2, 'fixed_stop_time' => 1, 'mandatory_refuelling' => 1,
+                'xcl_r_multiplier' => 1.5, 'pitstop_count' => 2, 'fixed_stop_time' => 1, 'mandatory_refuelling' => 1, 'mandatory_tyre_change' => 1,
                 'driver_stint_time_mins' => 45, 'max_total_driving_time_mins' => 120, 'mandatory_driver_swap' => 1,
             ])
             ->assertRedirect();
 
         $this->assertDatabaseHas('races', [
             'championship_id' => $championship->id, 'track' => 'Monza',
-            'xcl_r_multiplier' => 1.5, 'pitstop_count' => 2, 'min_stop_secs' => 25, 'mandatory_refuelling' => 1,
+            'xcl_r_multiplier' => 1.5, 'pitstop_count' => 2, 'min_stop_secs' => 25, 'mandatory_refuelling' => 1, 'mandatory_tyre_change' => 1,
             'driver_stint_time_mins' => 45, 'max_total_driving_time_mins' => 120, 'mandatory_driver_swap' => 1,
         ]);
     }

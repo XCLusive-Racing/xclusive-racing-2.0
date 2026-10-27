@@ -16,7 +16,7 @@ class SessionFormat extends Model
 
     protected $fillable = [
         'league_id', 'name', 'description', 'practice_duration', 'qualifying_duration',
-        'race_durations', 'pitstop_count', 'mandatory_refuelling', 'fixed_stop_time', 'tyre_set_count',
+        'race_durations', 'pitstop_count', 'mandatory_refuelling', 'mandatory_tyre_change', 'fixed_stop_time', 'tyre_set_count',
         'driver_stint_time_mins', 'max_total_driving_time_mins',
     ];
 
@@ -25,6 +25,7 @@ class SessionFormat extends Model
         return [
             'race_durations' => 'array',
             'mandatory_refuelling' => 'boolean',
+            'mandatory_tyre_change' => 'boolean',
             'fixed_stop_time' => 'boolean',
         ];
     }

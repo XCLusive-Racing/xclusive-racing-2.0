@@ -77,6 +77,7 @@
                     'tyre_set_count' => $sf->tyre_set_count,
                     'fixed_stop_time' => $sf->fixed_stop_time,
                     'mandatory_refuelling' => $sf->mandatory_refuelling,
+                    'mandatory_tyre_change' => $sf->mandatory_tyre_change,
                     'driver_stint_time_mins' => $sf->driver_stint_time_mins,
                     'max_total_driving_time_mins' => $sf->max_total_driving_time_mins,
                 ]) }}">{{ $sf->name }} — {{ $sf->summary() }}</option>
@@ -209,6 +210,14 @@
                 <label class="form-check-label fw-bold" for="{{ $idPrefix }}-mandatory-refuelling" style="font-size:.78rem">Mandatory Refuelling</label>
             </div>
             <div class="form-text mt-0" style="font-size:.68rem;color:#9ca3af">Drivers must take on fuel during the stop.</div>
+        </div>
+        <div class="col-6 col-sm-3 d-flex flex-column justify-content-end pb-1">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="mandatory_tyre_change" id="{{ $idPrefix }}-mandatory-tyre-change" value="1"
+                       {{ old('mandatory_tyre_change', $defaults['mandatory_tyre_change']) ? 'checked' : '' }}>
+                <label class="form-check-label fw-bold" for="{{ $idPrefix }}-mandatory-tyre-change" style="font-size:.78rem">Mandatory Tyre Change</label>
+            </div>
+            <div class="form-text mt-0" style="font-size:.68rem;color:#9ca3af">Drivers must change tyres during the stop.</div>
         </div>
         <div class="col-6 col-sm-3">
             <label class="form-label" style="font-size:.75rem">Tyre Sets</label>

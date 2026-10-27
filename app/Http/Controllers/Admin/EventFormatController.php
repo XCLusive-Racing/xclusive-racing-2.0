@@ -64,10 +64,10 @@ class EventFormatController extends Controller
             'race1_mins' => 'required|integer|min:1|max:999',
             'quali2_mins' => 'nullable|integer|min:1|max:999',
             'race2_mins' => 'nullable|integer|min:1|max:999',
-            'pitstop_type' => 'required|in:none,fuel_only',
             'pitstop_count' => 'required|integer|min:0|max:10',
             'mandatory_refuelling' => 'nullable|boolean',
-            'min_stop_secs' => 'nullable|integer|min:1|max:999',
+            'mandatory_tyre_change' => 'nullable|boolean',
+            'fixed_stop_time' => 'nullable|boolean',
             'xcl_r_multiplier' => 'required|numeric|min:0.1|max:10',
             'server_preference' => 'nullable|string|max:20',
             'server_group' => 'nullable|in:short,medium,long',
@@ -75,7 +75,14 @@ class EventFormatController extends Controller
             'sort_order' => 'required|integer|min:0',
         ]);
 
-        $data['mandatory_refuelling'] = $request->boolean('mandatory_refuelling');
+        // No separate pitstop type to pick: a stop count means a stop, and the options
+        // below say what that stop has to include.
+        $hasStop = (int) $data['pitstop_count'] > 0;
+        $data['pitstop_type'] = $hasStop ? 'fuel_only' : 'none';
+        $data['mandatory_refuelling'] = $hasStop && $request->boolean('mandatory_refuelling');
+        $data['mandatory_tyre_change'] = $hasStop && $request->boolean('mandatory_tyre_change');
+        $data['min_stop_secs'] = $hasStop && $request->boolean('fixed_stop_time') ? EventFormat::FIXED_STOP_SECS : null;
+        unset($data['fixed_stop_time']);
 
         return $data;
     }
