@@ -118,28 +118,25 @@ class TimeTrialServerService
     public function buildFiles(TimeTrialEvent $event, FtpServer $server): array
     {
         $race = $this->race($event);
-        $hour = $this->raceConfig->startHour(null);
 
-        $config = $this->raceConfig->configuration($race, $server);
+        // The same fixed conditions all week (config/time_trials.php), so every session is
+        // comparable. They replace whatever the server's own event defaults say.
+        $config = array_merge(
+            $this->raceConfig->configuration($race, $server),
+            config('time_trials.conditions'),
+        );
         $config['sessions'] = [
-            [
-                'hourOfDay' => $hour,
-                'dayOfWeekend' => 2,
+            config('time_trials.practice_session') + [
                 'timeMultiplier' => 1,
                 'sessionType' => 'P',
                 'sessionDurationMinutes' => (int) config('time_trials.practice_minutes', 2),
             ],
-            [
-                'hourOfDay' => $hour,
-                'dayOfWeekend' => 3,
+            config('time_trials.qualifying_session') + [
                 'timeMultiplier' => 1,
                 'sessionType' => 'Q',
                 'sessionDurationMinutes' => (int) config('time_trials.qualifying_minutes', 30),
             ],
         ];
-        // The same dry conditions all week, so every session is comparable.
-        $config['rain'] = 0.0;
-        $config['weatherRandomness'] = 0;
 
         $entryList = $this->entryList($event);
 

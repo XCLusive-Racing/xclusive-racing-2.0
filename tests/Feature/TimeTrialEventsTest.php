@@ -190,7 +190,10 @@ class TimeTrialEventsTest extends TestCase
 
         $config = json_decode($files['event.json'], true);
         $this->assertSame('spa', $config['track']);
-        $this->assertSame([['P', 2], ['Q', 30]], array_map(fn ($s) => [$s['sessionType'], $s['sessionDurationMinutes']], $config['sessions']));
+        $this->assertSame(
+            [['P', 2, 14, 3], ['Q', 30, 15, 3]],
+            array_map(fn ($s) => [$s['sessionType'], $s['sessionDurationMinutes'], $s['hourOfDay'], $s['dayOfWeekend']], $config['sessions'])
+        );
 
         $settings = json_decode($files['settings.json'], true);
         $this->assertSame('GT3', $settings['carGroup']);
@@ -201,6 +204,22 @@ class TimeTrialEventsTest extends TestCase
         $this->assertSame(0, $entryList['forceEntryList']);
         $this->assertSame(2, $entryCount);
         $this->assertSame(['M1', 'P2'], array_map(fn ($e) => $e['drivers'][0]['playerID'], $entryList['entries']));
+    }
+
+    public function test_the_config_uses_the_fixed_conditions_over_the_servers_own_defaults(): void
+    {
+        $this->server->update(['event_defaults' => [
+            'ambientTemp' => 26, 'trackTemp' => 30, 'cloudLevel' => 0.1, 'rain' => 0.2, 'weatherRandomness' => 3,
+        ]]);
+
+        [$files] = app(TimeTrialServerService::class)->buildFiles($this->event(), $this->server->fresh());
+
+        $config = json_decode($files['event.json'], true);
+        $this->assertSame(18, $config['ambientTemp']);
+        $this->assertSame(-1, $config['trackTemp']);
+        $this->assertSame(0.4, $config['cloudLevel']);
+        $this->assertEquals(0, $config['rain']);
+        $this->assertSame(0, $config['weatherRandomness']);
     }
 
     public function test_a_forced_entry_list_holds_only_the_signups(): void
