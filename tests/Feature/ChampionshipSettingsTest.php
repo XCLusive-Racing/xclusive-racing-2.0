@@ -7,6 +7,7 @@ use App\Models\Championship;
 use App\Models\ChampionshipRegistration;
 use App\Models\League;
 use App\Models\LeagueUser;
+use App\Models\Race;
 use App\Models\RacingTeam;
 use App\Models\Role;
 use App\Models\User;
@@ -253,7 +254,7 @@ class ChampionshipSettingsTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'basics']))
             ->assertOk()
-            ->assertSee('Disabled — click to enable');
+            ->assertSee('Disabled, click to enable');
 
         // Sessions step: the multiplier field is disabled while rating is off.
         $this->actingAs($admin)
@@ -268,12 +269,40 @@ class ChampionshipSettingsTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'basics']))
             ->assertOk()
-            ->assertSee('Enabled — click to disable');
+            ->assertSee('Enabled, click to disable');
 
         $this->actingAs($admin)
             ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'sessions']))
             ->assertOk()
             ->assertDontSee('disabled', false);
+    }
+
+    // 2026-10-27 revamp: the schedule and default server moved from Basics to the
+    // Rounds step, which saves them and stays put above the round list.
+    public function test_the_schedule_lives_on_the_rounds_step(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $manager = User::factory()->leagueManager()->create();
+        $this->attachManager($manager, $league);
+        $championship = $this->makeChampionship($league);
+
+        $this->actingAs($manager)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'basics']))
+            ->assertOk()->assertDontSee('f-schedule-recurrence', false);
+
+        $this->actingAs($manager)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'rounds']))
+            ->assertOk()->assertSee('f-schedule-recurrence', false);
+
+        $this->actingAs($manager)->put(
+            route('admin.leagues.championships.wizard.update', [$league, $championship, 'rounds']),
+            ['settings' => ['schedule' => ['recurrence' => 'biweekly', 'day_of_week' => 'sunday', 'time_of_day' => '19:30']]]
+        )->assertRedirect(route('admin.leagues.championships.wizard', [$league, $championship, 'rounds']));
+
+        $schedule = $championship->fresh()->settings->schedule;
+        $this->assertSame('biweekly', $schedule->recurrence);
+        $this->assertSame('sunday', $schedule->day_of_week);
+        $this->assertSame('19:30', $schedule->time_of_day);
     }
 
     public function test_basics_step_shows_the_rating_toggle_to_the_leagues_own_manager_too(): void
@@ -286,7 +315,7 @@ class ChampionshipSettingsTest extends TestCase
         $this->actingAs($manager)
             ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'basics']))
             ->assertOk()
-            ->assertSee('Disabled — click to enable');
+            ->assertSee('Disabled, click to enable');
     }
 
     // User-directed 2026-09: the Classes builder ("+ Add Class") moved from
@@ -558,7 +587,7 @@ class ChampionshipSettingsTest extends TestCase
         $championship = $this->makeChampionship($league);
         // A round and a points system: publishing needs both (Championship::publishBlockers()).
         $championship->update(['game' => 'ac', 'platform' => 'pc', 'slug' => 'acc-pc-cup', 'points_system' => [25, 18, 15]]);
-        \App\Models\Race::create([
+        Race::create([
             'championship_id' => $championship->id, 'round_number' => 1, 'title' => 'Round 1',
             'track' => 'Monza', 'game' => 'ac', 'status' => 'open', 'scheduled_at' => now()->addWeek(),
         ]);

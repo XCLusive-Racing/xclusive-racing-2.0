@@ -23,9 +23,8 @@
         ->filter()->unique()->values();
 @endphp
 
-<div class="mt-2" data-adjustments-builder>
-    <label class="form-label">Ballast &amp; Restrictor Adjustments</label>
-    <div class="form-text mb-2" style="font-size:.72rem;color:#9ca3af">Per-car overrides pick from this championship's own car class(es); per-driver/team overrides pick from its entry list.</div>
+<div data-adjustments-builder>
+    <p class="cw-section__note">Per car (from this championship's classes) or per driver/team (from its entries).</p>
 
     <div data-adjustment-rows>
         @foreach($adjustments as $a)
@@ -33,25 +32,25 @@
             $rowScope = ($a['scope'] ?? '') === 'driver' ? 'driver' : 'car';
             $rowOptions = $rowScope === 'car' ? $carOptions : $entrantOptions;
         @endphp
-        <div class="d-flex gap-2 mb-2" data-adjustment-row>
+        <div class="cw-repeat-row" data-adjustment-row>
             <select data-adj-scope class="form-select form-select-sm" style="max-width:130px">
                 <option value="car" {{ $rowScope === 'car' ? 'selected' : '' }}>Car</option>
                 <option value="driver" {{ $rowScope === 'driver' ? 'selected' : '' }}>Driver/Team</option>
             </select>
             <select data-adj-target class="form-select form-select-sm">
-                <option value="">— Select —</option>
+                <option value="">Select…</option>
                 @foreach($rowOptions as $option)
                 <option value="{{ $option }}" {{ ($a['target'] ?? '') === $option ? 'selected' : '' }}>{{ $option }}</option>
                 @endforeach
             </select>
             <input type="number" placeholder="Ballast kg" value="{{ $a['ballast_kg'] ?? '' }}" data-adj-ballast min="-40" max="40" class="form-control form-control-sm" style="max-width:110px">
             <input type="number" placeholder="Restrictor %" value="{{ $a['restrictor_percent'] ?? '' }}" data-adj-restrictor class="form-control form-control-sm" style="max-width:120px">
-            <button type="button" class="btn btn-sm btn-outline-secondary" data-remove-adjustment>×</button>
+            <button type="button" class="cw-btn-remove" data-remove-adjustment>×</button>
         </div>
         @endforeach
     </div>
 
-    <button type="button" class="btn btn-sm btn-outline-secondary fw-bold" data-add-adjustment>+ Add Adjustment</button>
+    <button type="button" class="cw-btn-add" data-add-adjustment>+ Add Adjustment</button>
     <input type="hidden" name="adjustments_json" data-adjustments-json value="">
 </div>
 
@@ -73,7 +72,7 @@
     }
 
     function optionsHtml(list) {
-        return '<option value="">— Select —</option>' + list.map(function (o) {
+        return '<option value="">Select…</option>' + list.map(function (o) {
             var safe = escapeHtml(o);
             return '<option value="' + safe + '">' + safe + '</option>';
         }).join('');
@@ -86,7 +85,7 @@
 
     function addRow() {
         var row = document.createElement('div');
-        row.className = 'd-flex gap-2 mb-2';
+        row.className = 'cw-repeat-row';
         row.setAttribute('data-adjustment-row', '');
         row.innerHTML =
             '<select data-adj-scope class="form-select form-select-sm" style="max-width:130px">' +
@@ -95,7 +94,7 @@
             '<select data-adj-target class="form-select form-select-sm"></select>' +
             '<input type="number" placeholder="Ballast kg" data-adj-ballast min="-40" max="40" class="form-control form-control-sm" style="max-width:110px">' +
             '<input type="number" placeholder="Restrictor %" data-adj-restrictor class="form-control form-control-sm" style="max-width:120px">' +
-            '<button type="button" class="btn btn-sm btn-outline-secondary" data-remove-adjustment>×</button>';
+            '<button type="button" class="cw-btn-remove" data-remove-adjustment>×</button>';
         rows.appendChild(row);
         fillTarget(row);
         row.querySelector('[data-adj-scope]').addEventListener('change', function () { fillTarget(row); });

@@ -20,7 +20,7 @@ class Championship extends Model
     // publish check so the two can't drift apart again.
     public const GAMES = ['acc', 'lmu', 'iracing', 'ac'];
 
-    public const ERR_GAME_LOCKED = 'The game can\'t be changed anymore — rounds of this championship already have results.';
+    public const ERR_GAME_LOCKED = 'The game can\'t be changed anymore: rounds of this championship already have results.';
 
     // Rounds copy the championship's game when they're created, so a later game
     // switch has to be carried down to them — otherwise an ACC PC championship

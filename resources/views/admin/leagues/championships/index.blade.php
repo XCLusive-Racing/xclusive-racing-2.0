@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', $league->name . ' — Championships')
-@section('page-title', $league->name . ' — Championships')
+@section('title', $league->name . ' · Championships')
+@section('page-title', $league->name . ' · Championships')
 
 @section('page-actions')
     {{-- A league admin edits championships; only the manager creates or deletes them. --}}

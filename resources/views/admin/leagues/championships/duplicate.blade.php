@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', 'Duplicate — ' . $championship->name)
-@section('page-title', $league->name . ' — Duplicate Championship')
+@section('title', 'Duplicate · ' . $championship->name)
+@section('page-title', $league->name . ' · Duplicate Championship')
 
 @section('page-actions')
     <a href="{{ route('admin.leagues.championships.index', $league) }}" class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.78rem">

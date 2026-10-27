@@ -189,7 +189,7 @@ class ChampionshipWizardController extends Controller
 
         return redirect()->route('admin.leagues.championships.wizard', [$league, $copy, 'basics'])
             ->with('success', trim($championship->name.' duplicated as a draft.'
-                .($roundIssues['without_server'] ? ' '.$roundIssues['without_server'].' '.Str::plural('round', $roundIssues['without_server']).' lost their server (slot taken or not valid) — pick one on the Rounds step.' : '')
+                .($roundIssues['without_server'] ? ' '.$roundIssues['without_server'].' '.Str::plural('round', $roundIssues['without_server']).' lost their server (slot taken or not valid). Pick one on the Rounds step.' : '')
                 .($roundIssues['skipped'] ? ' '.$roundIssues['skipped'].' '.Str::plural('round', $roundIssues['skipped']).' could not be copied (start time not on the hour or half hour).' : '')));
     }
 
@@ -232,10 +232,9 @@ class ChampionshipWizardController extends Controller
 
         $pointsSchemes = PointsScheme::orderByDesc('is_template')->orderBy('name')->get();
 
-        // Only needed by the Basics step's Server dropdown, but cheap enough to
-        // always pass — scoped to this league's own active servers, same as
-        // roundCreate() below.
-        $servers = $league->ftpServers()->where('active', true)->orderBy('name')->get();
+        // The Rounds step's default-server dropdown: the league's own servers this
+        // championship's game can run on, same list as Add Round.
+        $servers = $this->roundServers($league, $championship);
 
         return view('admin.leagues.championships.wizard', [
             'league' => $league,
@@ -254,9 +253,11 @@ class ChampionshipWizardController extends Controller
         $this->assertLeagueOfInterest($league, $championship);
         abort_unless(array_key_exists($step, ChampionshipSettingsSchema::STEPS) && $step !== 'review', 404);
 
-        $before = $step === 'basics'
-            ? $championship->only(['name', 'tagline', 'slogan', 'slug', 'game', 'platform', 'visibility'])
-            : $championship->settings->toArray();
+        $before = match ($step) {
+            'basics' => $championship->only(['name', 'tagline', 'slogan', 'slug', 'game', 'platform', 'visibility']),
+            'rounds' => ['ftp_server_id' => $championship->ftp_server_id, 'schedule' => $championship->settings->toArray()['schedule'] ?? []],
+            default => $championship->settings->toArray(),
+        };
 
         if ($step === 'basics') {
             $data = $request->validated();
@@ -264,24 +265,16 @@ class ChampionshipWizardController extends Controller
             $data['icon'] = $this->resolveMedia($request, 'icon', 'images/icons');
             unset($data['image_path'], $data['icon_path']);
 
-            // Nested settings.schedule.* comes along in validated() too (it rides
-            // on this same step) — applyStepSettings() below is what actually
-            // merges that into the settings blob; passing the raw partial array
-            // straight to update() would blow away every other settings group.
-            unset($data['settings']);
-
-            if (! empty($data['ftp_server_id'])) {
-                $server = $league->ftpServers()->find($data['ftp_server_id']);
-                abort_unless($server, 403, 'That server does not belong to this league.');
-
-                if (! $server->supportsRaceGame($data['game'])) {
-                    return back()->withInput()->withErrors(['ftp_server_id' => FtpServer::ERR_WRONG_PLATFORM]);
-                }
-            }
-
             $gameChanged = $data['game'] !== $championship->game;
             if ($gameChanged && ! $championship->canChangeGame()) {
                 return back()->withInput()->withErrors(['game' => Championship::ERR_GAME_LOCKED]);
+            }
+
+            // The default server sits on the Rounds step now; a game switch to the
+            // other ACC platform leaves it unusable, so it goes with the rounds' ones.
+            $defaultServer = $championship->ftpServer;
+            if ($gameChanged && $defaultServer && ! $defaultServer->supportsRaceGame($data['game'])) {
+                $data['ftp_server_id'] = null;
             }
 
             $unassignedRounds = DB::transaction(function () use ($championship, $data, $gameChanged) {
@@ -293,7 +286,19 @@ class ChampionshipWizardController extends Controller
 
                 return $gameChanged ? $championship->syncRoundsToGame() : 0;
             });
-            $this->applyStepSettings($request, $championship, 'basics');
+        } elseif ($step === 'rounds') {
+            $serverId = $request->validated('ftp_server_id');
+            if ($serverId) {
+                $server = $league->ftpServers()->find($serverId);
+                abort_unless($server, 403, 'That server does not belong to this league.');
+
+                if (! $server->supportsRaceGame($championship->game)) {
+                    return back()->withInput()->withErrors(['ftp_server_id' => FtpServer::ERR_WRONG_PLATFORM]);
+                }
+            }
+
+            $championship->update(['ftp_server_id' => $serverId ?: null]);
+            $this->applyStepSettings($request, $championship, 'rounds');
         } else {
             if ($step === 'format' && ($inUse = $this->removedClassesInUse($request, $championship))) {
                 return back()->withInput()->with('error', $inUse);
@@ -304,11 +309,12 @@ class ChampionshipWizardController extends Controller
 
         AuditLogger::record($request->user(), $championship, 'championship.step_saved', ['step' => $step, 'before' => $before]);
 
-        $next = $this->nextStep($step);
+        // The schedule card sits above the round list, so saving it stays on Rounds.
+        $next = $step === 'rounds' ? 'rounds' : $this->nextStep($step);
 
-        $message = ucfirst($step).' saved.';
+        $message = ($step === 'rounds' ? 'Schedule' : ChampionshipSettingsSchema::STEPS[$step]).' saved.';
         if (($unassignedRounds ?? 0) > 0) {
-            $message .= ' '.$unassignedRounds.' round(s) were on a server of the other ACC platform and no longer have a server — pick a new one per round.';
+            $message .= ' '.$unassignedRounds.' round(s) were on a server of the other ACC platform and no longer have a server. Pick a new one per round.';
         }
 
         return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, $next])

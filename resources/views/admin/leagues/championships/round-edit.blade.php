@@ -3,10 +3,8 @@
 @php
     $accTracks = \App\Models\Race::ACC_TRACKS;
 
-    // Resolved starting values for _round-shared-fields -- an existing round
-    // already has its own saved values for every field, unlike a brand new one
-    // (round-create.blade.php builds the same shape from the championship's
-    // Sessions-step defaults instead).
+    // Starting values for _round-shared-fields: the round's own saved values
+    // (round-create.blade.php builds the same shape from the Sessions defaults).
     $defaults = [
         'ftp_server_id'               => $race->ftp_server_id,
         'round_type'                  => $race->round_type,
@@ -33,8 +31,8 @@
     ];
 @endphp
 
-@section('title', 'Edit Round — ' . $championship->name)
-@section('page-title', $league->name . ' — Edit Round ' . $race->round_number)
+@section('title', 'Edit Round · ' . $championship->name)
+@section('page-title', $league->name . ' · Edit Round ' . $race->round_number)
 
 @section('page-actions')
     <a href="{{ route('admin.leagues.championships.wizard', [$league, $championship, 'rounds']) }}" class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.78rem">
@@ -44,46 +42,49 @@
 
 @section('content')
 
+<div class="row g-4">
+<div class="col-12 col-xl-9">
+
 <form action="{{ route('admin.leagues.championships.rounds.update', [$league, $championship, $race]) }}" method="POST">
     @csrf
     @method('PUT')
 
-    <div class="admin-card mb-4">
-        <div class="px-4 pt-4 pb-2">
-            <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">
-                Editing {{ $race->title }}
-            </p>
+    <div class="cw-card">
+        <div class="cw-card__head">
+            <h2 class="cw-card__title">Round {{ $race->round_number }}</h2>
+            <span class="cw-help mt-0">{{ $race->title }}</span>
         </div>
 
-        <div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
+        <div class="cw-section">
             <div class="row g-3">
-                <div class="col-sm-3">
-                    <label class="form-label">Round #</label>
+                <div class="col-md-2">
+                    <label class="cw-label">Round #</label>
                     <input type="number" name="round_number" value="{{ old('round_number', $race->round_number) }}"
                            class="form-control @error('round_number') is-invalid @enderror" min="1">
                     @error('round_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
-                <div class="col-sm-5">
-                    <label class="form-label">Track <span class="text-danger">*</span></label>
+                <div class="col-md-5">
+                    <label class="cw-label">Track <span class="text-danger">*</span></label>
                     @if(in_array($championship->game, ['acc', 'ac'], true))
                     <select name="track" class="form-select @error('track') is-invalid @enderror" required data-track-randomize>
                         <option value="">Select track…</option>
                         <option value="{{ \App\Models\Race::RANDOM_TRACK }}">🎲 Randomize</option>
                         @foreach($accTracks as $trackName)
-                        <option value="{{ $trackName }}" {{ old('track', $race->track) === $trackName ? 'selected' : '' }}>{{ $trackName }}</option>
+                        <option value="{{ $trackName }}" @selected(old('track', $race->track) === $trackName)>{{ $trackName }}</option>
                         @endforeach
                     </select>
                     @else
                     <input type="text" name="track" value="{{ old('track', $race->track) }}"
-                           class="form-control @error('track') is-invalid @enderror" placeholder="e.g. Le Mans" required>
+                           class="form-control @error('track') is-invalid @enderror" placeholder="Le Mans" required>
                     @endif
                     @error('track')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
-                <div class="col-sm-4">
-                    <label class="form-label">Date &amp; Time <span class="text-danger">*</span> <span class="fw-normal text-secondary" style="text-transform:none">(on the hour or half hour, BST)</span></label>
+                <div class="col-md-5">
+                    <label class="cw-label">Date &amp; Time (UK) <span class="text-danger">*</span></label>
                     <input type="datetime-local" name="scheduled_at"
                            value="{{ old('scheduled_at', $race->scheduledAtUk()->format('Y-m-d\TH:i')) }}" step="1800"
                            class="form-control @error('scheduled_at') is-invalid @enderror">
+                    <div class="cw-help">On the hour or half hour.</div>
                     @error('scheduled_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
@@ -92,10 +93,13 @@
         @include('admin.leagues.championships._round-shared-fields', ['idPrefix' => 're', 'defaults' => $defaults, 'openByDefault' => true])
     </div>
 
-    <div class="d-flex gap-2">
-        <button type="submit" class="btn fw-black text-uppercase text-white px-4" style="background:#7c3aed">Save Changes</button>
-        <a href="{{ route('admin.leagues.championships.wizard', [$league, $championship, 'rounds']) }}" class="btn btn-outline-secondary fw-bold text-uppercase px-4">Cancel</a>
+    <div class="cw-actions">
+        <a href="{{ route('admin.leagues.championships.wizard', [$league, $championship, 'rounds']) }}" class="cw-btn-secondary text-decoration-none">Cancel</a>
+        <button type="submit" class="cw-btn-primary">Save Changes</button>
     </div>
 </form>
+
+</div>
+</div>
 
 @endsection
