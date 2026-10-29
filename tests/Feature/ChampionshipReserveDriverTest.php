@@ -91,7 +91,7 @@ class ChampionshipReserveDriverTest extends TestCase
     public function test_a_reserve_is_picked_after_registration_and_is_not_entered_into_rounds(): void
     {
         $this->actingAs($this->owner)->get(route('championships.show', $this->championship))
-            ->assertOk()->assertSee('Withdraw')->assertSee('Edit');
+            ->assertOk()->assertSee('Withdraw')->assertSee('Manage Entry');
 
         $this->setReserve($this->drivers[2])->assertSessionHas('success');
 
