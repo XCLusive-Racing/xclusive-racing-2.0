@@ -94,6 +94,41 @@
         @include('admin.leagues.championships._round-shared-fields', ['idPrefix' => 're', 'defaults' => $defaults, 'openByDefault' => true])
     </div>
 
+    {{-- Copies the ticked parts of this round, as saved, to every other round that
+         hasn't run yet (ChampionshipWizardController::APPLY_TO_ROUNDS_GROUPS). --}}
+    @php
+        $otherOpenRounds = $championship->rounds()->whereKeyNot($race->id)->where('status', 'open')->count();
+        $applyGroups = array_filter([
+            'sessions' => 'Sessions',
+            'weather' => 'Weather & Time',
+            'pitstops' => 'Pit Stops & Tyres',
+            'swaps' => ($championship->settings->format->driver_swaps_enabled ?? false) ? 'Driver Swaps' : null,
+            'server' => 'Server',
+            'rating' => 'XCL-R Multiplier',
+        ]);
+        $applyOld = (array) old('apply_to', []);
+    @endphp
+    @if($otherOpenRounds)
+    <div class="cw-card">
+        <div class="cw-card__head">
+            <h2 class="cw-card__title">Apply to other rounds</h2>
+            <span class="cw-tag cw-tag--muted">{{ $otherOpenRounds }} {{ Str::plural('round', $otherOpenRounds) }}</span>
+        </div>
+        <div class="cw-section">
+            <p class="cw-section__note">Copy these parts of this round to every other round that hasn't run yet. Track, date, type, points and stream stay per round.</p>
+            <div class="d-flex flex-wrap gap-2">
+                @foreach($applyGroups as $key => $label)
+                <label class="cw-toggle">
+                    <input type="checkbox" name="apply_to[]" value="{{ $key }}" @checked(in_array($key, $applyOld, true))>
+                    <span class="cw-toggle__dot"></span>{{ $label }}
+                </label>
+                @endforeach
+            </div>
+            @error('apply_to')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+        </div>
+    </div>
+    @endif
+
     <div class="cw-actions">
         <a href="{{ route('admin.leagues.championships.wizard', [$league, $championship, 'rounds']) }}" class="cw-btn-secondary text-decoration-none">Cancel</a>
         <button type="submit" class="cw-btn-primary">Save Changes</button>

@@ -113,6 +113,18 @@ class ChampionshipWizardController extends Controller
         'config_overrides', 'has_practice_server', 'practice_notes', 'ftp_server_id',
     ];
 
+    // Edit Round's "Apply to other rounds" (2026-10-29): which round fields each
+    // checkbox copies to the championship's other rounds that haven't run yet.
+    // Track, date, number, type, points and stream always stay per round.
+    public const APPLY_TO_ROUNDS_GROUPS = [
+        'sessions' => ['practice_duration', 'qualifying_duration', 'race_duration', 'race_durations', 'session_format_id'],
+        'weather' => ['weather', 'weather_randomness', 'rain_level', 'time_of_day', 'ambient_temp'],
+        'pitstops' => ['pitstop_count', 'min_stop_secs', 'mandatory_refuelling', 'mandatory_tyre_change', 'tyre_set_count'],
+        'swaps' => ['driver_stint_time_mins', 'max_total_driving_time_mins', 'mandatory_driver_swap'],
+        'server' => ['ftp_server_id'],
+        'rating' => ['xcl_r_multiplier'],
+    ];
+
     public function duplicateForm(Request $request, League $league, Championship $championship)
     {
         $this->assertLeagueOfInterest($league, $championship);
@@ -416,12 +428,83 @@ class ChampionshipWizardController extends Controller
             $result['config_push_status'] = $result['ftp_server_id'] ? 'pending' : null;
         }
 
-        $race->update($result);
+        $applyTo = $request->validate([
+            'apply_to' => 'nullable|array',
+            'apply_to.*' => Rule::in(array_keys(self::APPLY_TO_ROUNDS_GROUPS)),
+        ])['apply_to'] ?? [];
+        $otherRounds = $applyTo
+            ? $championship->rounds()->whereKeyNot($race->id)->where('status', 'open')->get()
+            : collect();
+        $copies = $this->roundCopies($otherRounds, $result, $applyTo, $championship);
 
-        AuditLogger::record($request->user(), $championship, 'championship.round_updated', ['race_id' => $race->id]);
+        if (is_string($copies)) {
+            return back()->withInput()->withErrors(['apply_to' => $copies]);
+        }
+
+        DB::transaction(function () use ($race, $result, $copies) {
+            $race->update($result);
+            foreach ($copies as [$round, $changes]) {
+                $round->update($changes);
+            }
+        });
+
+        AuditLogger::record($request->user(), $championship, 'championship.round_updated', array_filter([
+            'race_id' => $race->id,
+            'applied_to' => $copies ? ['groups' => $applyTo, 'race_ids' => array_map(fn ($copy) => $copy[0]->id, $copies)] : null,
+        ]));
+
+        $message = $copies
+            ? 'Round updated and applied to '.count($copies).' other '.Str::plural('round', count($copies)).'.'
+            : 'Round updated.';
 
         return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'rounds'])
-            ->with('success', 'Round updated.');
+            ->with('success', $message);
+    }
+
+    // The changes Edit Round's "Apply to other rounds" makes to each other round,
+    // as [round, changes] pairs, or an error when a new server can't take one of
+    // them. Checked before anything is saved, so it's all or nothing.
+    private function roundCopies(Collection $rounds, array $source, array $groups, Championship $championship): array|string
+    {
+        $fields = collect($groups)->flatMap(fn ($group) => self::APPLY_TO_ROUNDS_GROUPS[$group])
+            ->filter(fn ($field) => array_key_exists($field, $source))
+            ->all();
+        $values = array_intersect_key($source, array_flip($fields));
+        if (! $values) {
+            return [];
+        }
+
+        $serverId = filled($values['ftp_server_id'] ?? null) ? (int) $values['ftp_server_id'] : null;
+        $server = $serverId ? FtpServer::find($serverId) : null;
+        $rolling = ($championship->settings->schedule->server_restarts ?? 'manual_restart') === 'rolling_resets';
+        // The edited round itself isn't saved yet, so its new slot isn't in takenSlots().
+        $claimedSlots = $server && ! empty($source['slot_time']) && (int) ($source['ftp_server_id'] ?? 0) === $serverId
+            ? [$source['slot_time']->format('Y-m-d H:i')]
+            : [];
+
+        $copies = [];
+        foreach ($rounds as $round) {
+            $changes = $values;
+
+            if (array_key_exists('ftp_server_id', $values) && $serverId !== $round->ftp_server_id) {
+                if ($server) {
+                    $slotKey = $round->scheduled_at->format('Y-m-d H:i');
+                    if ($rolling && ! $server->isValidSlot($round->scheduled_at, allowHalfHour: true)) {
+                        return 'Round '.$round->round_number.' is not on a valid slot of '.$server->name.'.';
+                    }
+                    if (in_array($slotKey, $server->takenSlots($round->id), true) || in_array($slotKey, $claimedSlots, true)) {
+                        return 'Round '.$round->round_number.'\'s slot is already taken on '.$server->name.'.';
+                    }
+                    $claimedSlots[] = $slotKey;
+                }
+                $changes['slot_time'] = $server ? $round->scheduled_at->copy() : null;
+                $changes['config_push_status'] = $server ? 'pending' : null;
+            }
+
+            $copies[] = [$round, $changes];
+        }
+
+        return $copies;
     }
 
     // "Bulk" the same way the race wizard's Bulk Schedule tab is: generate a run of
