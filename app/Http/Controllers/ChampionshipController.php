@@ -238,6 +238,9 @@ class ChampionshipController extends Controller
         if ($failure = $user->requirementFailure($championship->game, $thresholds['sr'], $thresholds['min'], $thresholds['max'])) {
             return back()->with('error', $failure);
         }
+        if ($failure = $championship->realNameFailure($team ? User::whereIn('id', $entryFields['driver_ids'])->get() : [$user])) {
+            return back()->withInput()->with('error', $failure);
+        }
 
         $classId = null;
         if ($championship->is_multiclass) {
@@ -503,6 +506,9 @@ class ChampionshipController extends Controller
             if ($failure) {
                 return back()->with('error', $reserve->displayName().': '.$failure);
             }
+            if ($failure = $championship->realNameFailure([$reserve])) {
+                return back()->with('error', $failure);
+            }
         }
 
         $car->update(['reserve_driver_id' => $reserveId]);
@@ -510,6 +516,68 @@ class ChampionshipController extends Controller
         return back()->with('success', $reserveId
             ? User::find($reserveId)->displayName().' is now the reserve of '.($car->car_number !== null ? '#'.$car->car_number : 'your car').'.'
             : 'The reserve has been removed.');
+    }
+
+    // Manage Entry (like SimGrid, 2026-10-29): the team changes a car's drivers and
+    // starting driver without withdrawing and re-registering. Same checks as at
+    // registration; every upcoming round's entry follows (applyLineup()).
+    public function updateLineup(Request $request, int $championship, int $registration)
+    {
+        $championship = $this->findChampionship($championship);
+        $car = $championship->registrations()->whereKey($registration)->whereNotNull('racing_team_id')->firstOrFail();
+        $team = RacingTeam::with('members')->findOrFail($car->racing_team_id);
+        abort_unless($team->canManage($request->user()), 403);
+
+        $validated = $request->validate([
+            'driver_ids' => 'required|array|min:1',
+            'driver_ids.*' => 'integer',
+            'starting_driver_id' => 'required|integer',
+        ], ['driver_ids.required' => 'Pick the drivers for your car.']);
+
+        $driverIds = collect($validated['driver_ids'])->map(fn ($id) => (int) $id)->unique()->values();
+        $eligibleIds = $team->members->pluck('id')->push($team->owner_id)->unique();
+
+        if ($driverIds->diff($eligibleIds)->isNotEmpty()) {
+            return back()->with('error', 'Every driver must be a member of your team.');
+        }
+        if ($failure = $championship->driverCountFailure($driverIds->count())) {
+            return back()->with('error', $failure);
+        }
+        if (! $driverIds->contains((int) $validated['starting_driver_id'])) {
+            return back()->with('error', 'The starting driver must be one of the selected drivers.');
+        }
+        // This car's own drivers and reserve are free to move around within it.
+        $inOtherCars = $championship->driverIdsInCars()->diff($car->carDriverIds());
+        if ($driverIds->intersect($inOtherCars)->isNotEmpty()) {
+            return back()->with('error', 'A driver you picked is already in another car of this championship.');
+        }
+
+        $thresholds = $championship->requirementThresholds();
+        $class = $car->championshipClass;
+        $newDrivers = User::whereIn('id', $driverIds->diff($car->driverIds()))->get();
+        foreach ($newDrivers as $driver) {
+            $failure = $driver->requirementFailure($championship->game, $thresholds['sr'], $thresholds['min'], $thresholds['max'])
+                ?? ($class ? $driver->requirementFailure($championship->game, $class->sr_requirement, $class->min_rating) : null);
+            if ($failure) {
+                return back()->with('error', $driver->displayName().': '.$failure);
+            }
+        }
+        if ($failure = $championship->realNameFailure($newDrivers)) {
+            return back()->with('error', $failure);
+        }
+
+        $car->update([
+            'driver_ids' => $driverIds->all(),
+            'starting_driver_id' => (int) $validated['starting_driver_id'],
+            // A reserve who now drives the car is no longer its reserve.
+            'reserve_driver_id' => $driverIds->contains($car->reserve_driver_id) ? null : $car->reserve_driver_id,
+        ]);
+
+        if (! $car->isPending()) {
+            app(ChampionshipRoundEntryService::class)->applyLineup($car, $championship);
+        }
+
+        return back()->with('success', 'The line-up of '.($car->car_number !== null ? '#'.$car->car_number : 'your car').' has been updated.');
     }
 
     public function unregister(int $championship)

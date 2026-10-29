@@ -96,14 +96,32 @@ class ChampionshipAccPcTest extends TestCase
         $this->assertSame('cross', $championship->fresh()->platform);
     }
 
+    // The default server lives on the Rounds step (2026-10-27), next to the schedule.
     public function test_default_server_must_match_the_games_platform(): void
     {
-        $championship = $this->makeChampionship();
+        $championship = $this->makeChampionship(['game' => 'ac', 'platform' => 'pc']);
         $console = $this->makeServer('console');
+        $pc = $this->makeServer('pc');
+        $saveRounds = fn (int $serverId) => $this->actingAs($this->manager)->put(
+            route('admin.leagues.championships.wizard.update', [$this->league, $championship, 'rounds']),
+            ['ftp_server_id' => $serverId, 'settings' => ['schedule' => ['recurrence' => 'weekly', 'time_of_day' => '14:00']]]
+        );
 
-        $this->saveBasics($championship, ['ftp_server_id' => $console->id])
-            ->assertSessionHasErrors(['ftp_server_id' => FtpServer::ERR_WRONG_PLATFORM]);
-        $this->assertSame('acc', $championship->fresh()->game);
+        $saveRounds($console->id)->assertSessionHasErrors(['ftp_server_id' => FtpServer::ERR_WRONG_PLATFORM]);
+        $this->assertNull($championship->fresh()->ftp_server_id);
+
+        $saveRounds($pc->id)->assertSessionHasNoErrors()
+            ->assertRedirect(route('admin.leagues.championships.wizard', [$this->league, $championship, 'rounds']));
+        $this->assertSame($pc->id, $championship->fresh()->ftp_server_id);
+    }
+
+    public function test_switching_to_the_other_acc_platform_drops_the_default_server(): void
+    {
+        $championship = $this->makeChampionship();
+        $championship->update(['ftp_server_id' => $this->makeServer('console')->id]);
+
+        $this->saveBasics($championship)->assertSessionHasNoErrors();
+        $this->assertNull($championship->fresh()->ftp_server_id);
     }
 
     public function test_changing_the_game_moves_the_rounds_and_drops_servers_of_the_other_platform(): void

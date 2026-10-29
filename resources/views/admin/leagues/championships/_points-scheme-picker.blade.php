@@ -23,15 +23,16 @@
 </style>
 
 <div class="mb-3">
-    <label class="form-label mb-1">Points Scheme</label>
+    <p class="cw-section__title">Points Scheme</p>
+    <p class="cw-section__note">Pick a template or your own copy. Templates are read-only.</p>
     @error('settings.scoring.points_scheme_id') <div class="invalid-feedback d-block mb-2">{{ $message }}</div> @enderror
 
     @if($ownedSchemes->isEmpty() && $templateSchemes->isEmpty())
-    <p class="text-secondary mb-0" style="font-size:.82rem">No points schemes yet — create one or copy a template.</p>
+    <p class="cw-section__note mb-0">No points schemes yet. Create one or copy a template.</p>
     @endif
 
     @if($ownedSchemes->isNotEmpty())
-    <p class="fw-black text-uppercase fst-italic mb-2" style="font-size:.68rem;letter-spacing:.08em;color:#9ca3af">{{ $league->name }}'s Own</p>
+    <p class="cw-label">{{ $league->name }}</p>
     <div class="ps-pick-list mb-3">
         @foreach($ownedSchemes as $scheme)
         <label class="ps-pick-card">
@@ -50,7 +51,7 @@
     @endif
 
     @if($templateSchemes->isNotEmpty())
-    <p class="fw-black text-uppercase fst-italic mb-2" style="font-size:.68rem;letter-spacing:.08em;color:#9ca3af">XCL Templates <span class="fw-normal text-secondary" style="text-transform:none">(read-only — copy one to edit it)</span></p>
+    <p class="cw-label">XCL Templates</p>
     <div class="ps-pick-list">
         @foreach($templateSchemes as $scheme)
         <label class="ps-pick-card">
@@ -59,7 +60,7 @@
             <div class="d-flex justify-content-between align-items-start gap-3">
                 <div>
                     <span class="fw-bold text-dark" style="font-size:.85rem">{{ $scheme->name }}</span>
-                    <span class="badge xcl-badge" style="background:#f3f4f6;color:#6b7280;font-size:.6rem;padding:2px 6px;border-radius:5px;font-weight:700">Template</span>
+                    <span class="cw-tag cw-tag--muted">Template</span>
                     <div class="text-secondary" style="font-size:.76rem">{!! $psPreview($scheme, 5) !!}{{ count($scheme->points_table ?? []) > 5 ? ' …' : '' }}</div>
                 </div>
                 <span class="text-secondary text-end" style="font-size:.72rem;white-space:nowrap">FL {{ $scheme->fastest_lap_points }} · Pole {{ $scheme->pole_points }} · Lead {{ $scheme->leading_lap_points }}</span>
@@ -69,7 +70,7 @@
     </div>
     @endif
 
-    <div class="form-text mt-2" style="font-size:.72rem;color:#9ca3af">
+    <div class="cw-help mt-2">
         <a href="{{ route('admin.leagues.points-schemes.index', $league) }}">Manage points schemes →</a>
     </div>
 </div>

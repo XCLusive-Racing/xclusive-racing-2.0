@@ -215,9 +215,9 @@
                                         <div class="d-flex align-items-center gap-2">
                                             <div class="rounded-circle d-flex align-items-center justify-content-center fw-black text-white flex-shrink-0"
                                                  style="width:30px;height:30px;font-size:.7rem;background:linear-gradient(135deg,{{ $championship->gameColor() }},#db2777)">
-                                                {{ strtoupper(substr($entry['user']?->displayName() ?? '?', 0, 1)) }}
+                                                {{ strtoupper(substr($entry['user']?->displayNameIn($championship) ?? '?', 0, 1)) }}
                                             </div>
-                                            <span class="fw-bold text-white">{{ $entry['user']?->displayName() ?? 'Unknown' }}</span>
+                                            <span class="fw-bold text-white">{{ $entry['user']?->displayNameIn($championship) ?? 'Unknown' }}</span>
                                         </div>
                                     </td>
                                     @foreach($rounds->where('status','finished') as $r)
@@ -284,7 +284,7 @@
                                             @endif
                                         </div>
                                         @if(isset($entry['drivers']))
-                                        <div style="color:#6b7280;font-size:.75rem">{{ $entry['drivers']->map->displayName()->implode(', ') }}</div>
+                                        <div style="color:#6b7280;font-size:.75rem">{{ $entry['drivers']->map(fn ($driver) => $driver->displayNameIn($championship))->implode(', ') }}</div>
                                         @endif
                                     </td>
                                     <td class="text-center pe-4 fw-black" style="color:#db2777;font-size:1rem">{{ $entry['total_points'] }}</td>
@@ -337,9 +337,9 @@
                             <span class="fw-black flex-shrink-0" style="width:2.6rem;color:#9ca3af;font-size:.8rem">#{{ $row['car_number'] }}</span>
                             @endif
                             <div class="flex-grow-1">
-                                <span class="text-white fw-bold" style="font-size:.82rem">{{ $row['drivers']->map->displayName()->implode(', ') }}</span>
+                                <span class="text-white fw-bold" style="font-size:.82rem">{{ $row['drivers']->map(fn ($driver) => $driver->displayNameIn($championship))->implode(', ') }}</span>
                                 @if($row['reserve'])
-                                <span style="color:#6b7280;font-size:.75rem"> · Reserve: {{ $row['reserve']->displayName() }}</span>
+                                <span style="color:#6b7280;font-size:.75rem"> · Reserve: {{ $row['reserve']->displayNameIn($championship) }}</span>
                                 @endif
                             </div>
                             @if($championship->is_multiclass && $row['class'])
@@ -365,15 +365,15 @@
                     <div class="px-4 py-4 text-center" style="color:#6b7280;font-size:.875rem">No rounds scheduled yet.</div>
                     @else
                     @foreach($rounds as $round)
-                    <a href="{{ route('events.show', $round) }}"
-                       class="px-4 py-3 d-flex align-items-center gap-3 text-decoration-none"
+                    {{-- The row links to the event (stretched-link); the stream link sits above it. --}}
+                    <div class="px-4 py-3 d-flex align-items-center gap-3 position-relative"
                        style="border-bottom:1px solid #1f2937">
                         <div class="fw-black flex-shrink-0" style="width:2rem;text-align:center;font-size:.85rem;color:#6b7280">
                             R{{ $round->round_number }}
                         </div>
                         <div class="flex-grow-1">
                             <div class="fw-bold text-white" style="font-size:.9rem">
-                                {{ $round->title }}
+                                <a href="{{ route('events.show', $round) }}" class="stretched-link text-white text-decoration-none">{{ $round->title }}</a>
                                 @if($round->round_type)
                                 <span class="badge ms-1 fw-bold text-uppercase" style="font-size:.6rem;background:#db277722;color:#f472b6;letter-spacing:.04em">{{ $round->round_type }}</span>
                                 @endif
@@ -385,10 +385,16 @@
                                 {{ $round->track }} · <x-local-time :at="$round->scheduled_at" format="date-time-comma" />
                             </div>
                         </div>
+                        @if($round->official_stream_url)
+                        <a href="{{ $round->official_stream_url }}" target="_blank" rel="noopener nofollow"
+                           class="xcl-official-stream xcl-official-stream--sm position-relative" style="z-index:2" title="Official stream">
+                            <i class="{{ $round->officialStreamIcon() }}"></i> <span class="d-none d-sm-inline">Watch</span>
+                        </a>
+                        @endif
                         <div>
                             <span class="status-badge status-{{ $round->status }}">{{ ucfirst($round->status) }}</span>
                         </div>
-                    </a>
+                    </div>
                     @endforeach
                     @endif
                 </div>
@@ -459,7 +465,7 @@
                             // (the registration's user is only the manager who entered it).
                             $entryName = $reg->racingTeam
                                 ? $reg->racingTeam->name.($reg->car_number !== null ? ' #'.$reg->car_number : '')
-                                : $reg->user?->displayName();
+                                : $reg->user?->displayNameIn($championship);
                             $lineUp = $reg->racingTeam
                                 ? collect($reg->driverIds())->map(fn ($id) => $carDrivers[$id] ?? null)->filter()
                                 : collect();
@@ -490,7 +496,7 @@
                                 @endif
                                 @if($reg->racingTeam)
                                 <div style="color:#d1d5db;font-size:.75rem">
-                                    {{ $lineUp->map->displayName()->implode(', ') }}@if($reserve)<span style="color:#6b7280"> · Reserve: {{ $reserve->displayName() }}</span>@endif
+                                    {{ $lineUp->map(fn ($driver) => $driver->displayNameIn($championship))->implode(', ') }}@if($reserve)<span style="color:#6b7280"> · Reserve: {{ $reserve->displayNameIn($championship) }}</span>@endif
                                 </div>
                                 @if($reg->car_model)
                                 <div style="color:#6b7280;font-size:.72rem">{{ $reg->car_model }}</div>
@@ -625,10 +631,23 @@
                             <span style="color:#6b7280">Discord Membership</span>
                             <span class="fw-bold" style="color:{{ $discordRequiredHere ? '#818cf8' : '#fff' }}">{{ $discordRequiredHere ? 'Required' : 'Not required' }}</span>
                         </div>
-                        <div class="d-flex justify-content-between py-1">
+                        <div class="d-flex justify-content-between py-1" @if($championship->requiresRealNames()) style="border-bottom:1px solid #1f2937" @endif>
                             <span style="color:#6b7280">Entry Approval</span>
                             <span class="fw-bold text-white">{{ ($req->manual_approval_required ?? false) ? 'Manually reviewed' : 'Automatic' }}</span>
                         </div>
+                        @if($championship->requiresRealNames())
+                        <div class="d-flex justify-content-between py-1">
+                            <span style="color:#6b7280">Real Name</span>
+                            <span class="fw-bold" style="color:#818cf8">Required</span>
+                        </div>
+                        @auth
+                        @if(! auth()->user()->realName())
+                        <div class="mt-2" style="color:#fbbf24;font-size:.75rem">
+                            This championship races under real names. <a href="{{ route('profile.edit') }}" style="color:#fbbf24">Add yours on your profile</a> before you sign up.
+                        </div>
+                        @endif
+                        @endauth
+                        @endif
                     </div>
                     @if($pen->stewarding_enabled ?? false)
                     <div class="px-4 py-3" style="border-top:1px solid #1f2937;font-size:.82rem">

@@ -74,8 +74,8 @@
                 <div class="col-sm-3">
                     <label class="form-label">Type</label>
                     <select name="server_type" class="form-select" required>
+                        <option value="scheduled" selected>Manual restart</option>
                         <option value="rolling">Rolling restart</option>
-                        <option value="scheduled">Manual restart</option>
                     </select>
                 </div>
             </div>

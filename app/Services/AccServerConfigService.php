@@ -35,6 +35,8 @@ class AccServerConfigService implements ServerConfigGenerator
         $categoryOverrides = $championship?->driverCategoryOverrides() ?? [];
         // A solo championship entrant's car and number, picked at registration.
         $soloCars = $championship?->soloCars() ?? [];
+        // Real Names on: everyone races as "J. Jansen", whatever their profile says.
+        $realNames = (bool) $championship?->requiresRealNames();
 
         foreach ($registrations as $reg) {
             if ($reg->team_entry_id !== null) {
@@ -50,7 +52,7 @@ class AccServerConfigService implements ServerConfigGenerator
 
                 $drivers = $teamRegs->map(fn ($tr) => [
                     'firstName' => '',
-                    'lastName' => self::entryLastName($tr->user, mb_substr($teamEntry?->team?->name ?? '', 0, self::TEAM_TAG_MAX)),
+                    'lastName' => self::entryLastName($tr->user, mb_substr($teamEntry?->team?->name ?? '', 0, self::TEAM_TAG_MAX), $realNames),
                     'shortName' => self::entryShortName($tr->user),
                     'playerID' => $tr->user?->playerIdFor($race->game) ?? '',
                     'driverCategory' => $categoryOverrides[$tr->user_id] ?? $tr->user->ratingClass($race->game),
@@ -81,7 +83,7 @@ class AccServerConfigService implements ServerConfigGenerator
                     'drivers' => [
                         [
                             'firstName' => '',
-                            'lastName' => self::entryLastName($user),
+                            'lastName' => self::entryLastName($user, null, $realNames),
                             'shortName' => $shortName,
                             'playerID' => $user->playerIdFor($race->game) ?? '',
                             'driverCategory' => $categoryOverrides[$user->id] ?? $user->ratingClass($race->game),
@@ -114,7 +116,7 @@ class AccServerConfigService implements ServerConfigGenerator
     // {drivers: [{playerID}], isServerAdmin: 1} entry, the shape gPortal expects. One
     // already racing gets the flag on their own car instead of a second entry; one
     // without a player ID can't be listed.
-    private static function addLeagueAdmins(array &$entries, Race $race, ?Championship $championship): void
+    public static function addLeagueAdmins(array &$entries, Race $race, ?Championship $championship): void
     {
         $league = $championship
             ? League::withoutTenantScope()->find($championship->league_id)
@@ -148,13 +150,14 @@ class AccServerConfigService implements ServerConfigGenerator
     // a team entry (driver swap / endurance) the team they're racing for, for every
     // other event their own "Team / Quote" profile field ($tag null, already max 16
     // chars via the profile form; supporters only, User::displayTeam()). A team name is cut at TEAM_TAG_MAX (24) chars by
-    // the caller. The name follows the driver's site choice (entryName()).
+    // the caller. The name follows the driver's site choice (entryName()), or is the
+    // real name in a championship with Real Names on ($forceRealName).
     // ACC renders the newline inside lastName as two lines; this is the only way to get
     // that second line -- teamName is not an ACC entrylist field (not in the server
     // handbook) and the server ignores it.
-    public static function entryLastName(User $user, ?string $tag = null): string
+    public static function entryLastName(User $user, ?string $tag = null, bool $forceRealName = false): string
     {
-        $name = self::entryName($user);
+        $name = self::entryName($user, $forceRealName);
         $tag = trim((string) ($tag ?? $user->displayTeam()));
 
         return $tag !== '' ? $name."\n".$tag : $name;
@@ -162,9 +165,9 @@ class AccServerConfigService implements ServerConfigGenerator
 
     // The gamertag, or — when the driver shows their real name on the site — that
     // name shortened for the in-game tag: "Jan Jansen" becomes "J. Jansen".
-    public static function entryName(User $user): string
+    public static function entryName(User $user, bool $forceRealName = false): string
     {
-        if (! self::usesRealName($user)) {
+        if (! self::usesRealName($user, $forceRealName)) {
             return $user->gamertag();
         }
 
@@ -186,9 +189,9 @@ class AccServerConfigService implements ServerConfigGenerator
         return $user->displayShortName() ?? self::DEFAULT_SHORT_NAME;
     }
 
-    private static function usesRealName(User $user): bool
+    private static function usesRealName(User $user, bool $forceRealName = false): bool
     {
-        return $user->display_name_preference === User::DISPLAY_REAL_NAME && $user->realName() !== null;
+        return ($forceRealName || $user->display_name_preference === User::DISPLAY_REAL_NAME) && $user->realName() !== null;
     }
 
     // Reverse of entryLastName() for a driver read back from an entrylist or results

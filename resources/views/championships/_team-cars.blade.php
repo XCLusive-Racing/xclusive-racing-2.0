@@ -1,6 +1,6 @@
 {{-- The manager's own team cars in this championship, each withdrawable on its
-     own (ChampionshipController::unregister(), registration_id), and each with an
-     Edit to pick its reserve driver (ChampionshipController::updateReserve()).
+     own (ChampionshipController::unregister(), registration_id), and each with a
+     Manage Entry to change its line-up (updateLineup()) and reserve (updateReserve()).
      $myTeamCars, $ownedTeam and $championship come from the parent view. --}}
 @php
     $teamCarDrivers = \App\Models\User::whereIn('id', $myTeamCars->flatMap->carDriverIds())->get()->keyBy('id');
@@ -14,6 +14,9 @@
 @php
     // Free for this car's reserve: team members in no car yet, plus its current reserve.
     $reserveOptions = $teamMembers->reject(fn ($member) => $takenDriverIds->contains($member->id) && $member->id !== $car->reserve_driver_id);
+    // Free for its line-up: team members in no other car (this car's own drivers and reserve included).
+    $lineupOptions = $teamMembers->reject(fn ($member) => $takenDriverIds->contains($member->id) && ! in_array($member->id, $car->carDriverIds(), true));
+    $carDriverIds = $car->driverIds();
 @endphp
 <div class="mb-2 p-2" style="background:#1f293766;border:1px solid #374151;border-radius:8px">
     <div class="d-flex align-items-center justify-content-between gap-2">
@@ -23,15 +26,15 @@
                 @if($car->car_model)<span style="color:#9ca3af;font-weight:400"> — {{ $car->car_model }}</span>@endif
             </div>
             <div style="color:#9ca3af;font-size:.72rem">
-                {{ collect($car->driverIds())->map(fn ($id) => $teamCarDrivers->get($id)?->displayName())->filter()->join(', ') }}
+                {{ collect($car->driverIds())->map(fn ($id) => $teamCarDrivers->get($id)?->displayNameIn($championship))->filter()->join(', ') }}
             </div>
             @if($car->reserve_driver_id)
-            <div style="color:#9ca3af;font-size:.72rem">Reserve: <span class="text-white">{{ $teamCarDrivers->get($car->reserve_driver_id)?->displayName() }}</span></div>
+            <div style="color:#9ca3af;font-size:.72rem">Reserve: <span class="text-white">{{ $teamCarDrivers->get($car->reserve_driver_id)?->displayNameIn($championship) }}</span></div>
             @endif
         </div>
         <div class="d-flex gap-1 flex-shrink-0">
             <button type="button" class="btn btn-sm fw-bold text-uppercase" data-bs-toggle="collapse" data-bs-target="#carEdit{{ $car->id }}"
-                    style="background:#374151;border:1px solid #4b5563;color:#e5e7eb;font-size:.65rem;padding:2px 8px">Edit</button>
+                    style="background:#374151;border:1px solid #4b5563;color:#e5e7eb;font-size:.65rem;padding:2px 8px">Manage Entry</button>
             {{-- Also for a team's only car — while it can still add more, this list is
                  the only place left to withdraw it. --}}
             <form method="POST" action="{{ route('championships.unregister', $championship) }}" onsubmit="return confirm('Withdraw this car from the championship?')">
@@ -42,6 +45,29 @@
         </div>
     </div>
     <div class="collapse mt-2" id="carEdit{{ $car->id }}">
+        <form method="POST" action="{{ route('championships.cars.lineup', [$championship, $car]) }}" class="mb-3">
+            @csrf @method('PUT')
+            <label class="form-label mb-1" style="color:#9ca3af;font-size:.72rem">Drivers: every upcoming round follows this line-up</label>
+            <div class="d-flex flex-column gap-1 mb-2">
+                @foreach($lineupOptions as $member)
+                <label class="d-flex align-items-center gap-2 text-white" style="font-size:.78rem">
+                    <input type="checkbox" name="driver_ids[]" value="{{ $member->id }}" class="form-check-input m-0" @checked(in_array($member->id, $carDriverIds, true))>
+                    {{ $member->displayNameIn($championship) }}
+                </label>
+                @endforeach
+            </div>
+            <div class="d-flex gap-2 align-items-end">
+                <div class="flex-grow-1">
+                    <label class="form-label mb-1" style="color:#9ca3af;font-size:.72rem">Starting driver</label>
+                    <select name="starting_driver_id" class="form-select form-select-sm" style="background:#1f2937;border-color:#374151;color:#e5e7eb">
+                        @foreach($lineupOptions as $member)
+                        <option value="{{ $member->id }}" @selected($member->id === $car->starting_driver_id)>{{ $member->displayNameIn($championship) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <button class="btn btn-sm fw-bold text-uppercase text-white" style="background:#7c3aed;font-size:.7rem">Save Line-up</button>
+            </div>
+        </form>
         <form method="POST" action="{{ route('championships.cars.reserve', [$championship, $car]) }}" class="d-flex gap-2 align-items-end">
             @csrf @method('PUT')
             <div class="flex-grow-1">
@@ -49,7 +75,7 @@
                 <select name="reserve_driver_id" class="form-select form-select-sm" style="background:#1f2937;border-color:#374151;color:#e5e7eb">
                     <option value="">No reserve</option>
                     @foreach($reserveOptions as $member)
-                    <option value="{{ $member->id }}" @selected($member->id === $car->reserve_driver_id)>{{ $member->displayName() }}</option>
+                    <option value="{{ $member->id }}" @selected($member->id === $car->reserve_driver_id)>{{ $member->displayNameIn($championship) }}</option>
                     @endforeach
                 </select>
             </div>

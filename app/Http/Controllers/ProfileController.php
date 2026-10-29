@@ -88,6 +88,12 @@ class ProfileController extends Controller
             }],
         ]);
 
+        // "Real name" needs a name to show: the form only offers it once one is saved.
+        if (($data['display_name_preference'] ?? null) === User::DISPLAY_REAL_NAME
+            && trim(($data['first_name'] ?? '').' '.($data['last_name'] ?? '')) === '') {
+            return back()->withInput()->withErrors(['display_name_preference' => 'Fill in and save your first and last name first.']);
+        }
+
         // Supporter perks (Team / Quote, stream link, abbreviation): the form has them disabled otherwise,
         // and a hand-made request can't set them either.
         if (! $user->isSupporter()) {

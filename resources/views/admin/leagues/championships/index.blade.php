@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', $league->name . ' — Championships')
-@section('page-title', $league->name . ' — Championships')
+@section('title', $league->name . ' · Championships')
+@section('page-title', $league->name . ' · Championships')
 
 @section('page-actions')
     {{-- A league admin edits championships; only the manager creates or deletes them. --}}
@@ -34,71 +34,50 @@
         <div class="text-secondary mt-2 mb-4" style="font-size:.82rem">Start the setup wizard to configure your first one.</div>
     </div>
     @else
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0" style="font-size:.875rem">
-            <thead style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
-                <tr>
-                    <th class="fw-bold text-uppercase ps-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Name</th>
-                    <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Game</th>
-                    <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:120px">Status</th>
-                    <th class="fw-bold text-uppercase text-center d-none d-lg-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:110px">XCL Rating</th>
-                    <th class="fw-bold text-uppercase text-end pe-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:250px">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($championships as $c)
-                @php
-                    $sc = $c->statusColor();
-                @endphp
-                <tr>
-                    <td class="ps-4">
-                        <div class="fw-bold text-dark">{{ $c->name }}</div>
+    <div class="cw-champ-grid">
+        @foreach($championships as $c)
+        @php $sc = $c->statusColor(); @endphp
+        <div class="cw-champ" style="--champ-color:{{ $sc }}">
+            <a href="{{ route('admin.leagues.championships.wizard', [$league, $c, 'basics']) }}" class="cw-champ__head">
+                <div class="d-flex align-items-start justify-content-between gap-2">
+                    <div style="min-width:0">
+                        <div class="cw-champ__name">{{ $c->name }}</div>
                         @if($c->tagline)
-                        <div class="text-secondary" style="font-size:.75rem">{{ $c->tagline }}</div>
+                        <div class="cw-champ__tagline">{{ $c->tagline }}</div>
                         @endif
-                    </td>
-                    <td class="d-none d-md-table-cell text-secondary">{{ strtoupper($c->game) }}</td>
-                    <td class="text-center">
-                        <span class="badge" style="background:{{ $sc }}22;color:{{ $sc }};font-size:.68rem;padding:3px 8px;border-radius:6px;font-weight:700">
-                            {{ ucfirst(str_replace('_', ' ', $c->status)) }}
-                        </span>
+                    </div>
+                    <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
+                        <span class="cw-champ__status">{{ $c->statusLabel() }}</span>
                         @if($c->visibility === 'unlisted')
-                        <span class="badge" style="background:#fef3c7;color:#92400e;font-size:.68rem;padding:3px 8px;border-radius:6px;font-weight:700">Hidden</span>
+                        <span class="cw-champ__status" style="--champ-color:#92400e">Hidden</span>
                         @endif
-                    </td>
-                    <td class="text-center d-none d-lg-table-cell">
-                        @if($c->xcl_rating_enabled)
-                        <span class="badge" style="background:#d1fae5;color:#065f46;font-size:.65rem;padding:3px 7px;border-radius:5px;font-weight:700">On</span>
-                        @else
-                        <span class="badge" style="background:#f3f4f6;color:#6b7280;font-size:.65rem;padding:3px 7px;border-radius:5px;font-weight:700">Off</span>
-                        @endif
-                    </td>
-                    <td class="text-end pe-4">
-                        <a href="{{ route('admin.leagues.championships.wizard', [$league, $c, 'basics']) }}" class="fw-bold" style="color:#7c3aed;font-size:.8rem">
-                            Edit
-                        </a>
-                        <a href="{{ route('admin.leagues.championships.entries.index', [$league, $c]) }}" class="fw-bold ms-3" style="color:#7c3aed;font-size:.8rem">
-                            Entries
-                        </a>
-                        @can('create', [\App\Models\Championship::class, $league])
-                        <a href="{{ route('admin.leagues.championships.duplicate', [$league, $c]) }}" class="fw-bold ms-3" style="color:#7c3aed;font-size:.8rem">
-                            Duplicate
-                        </a>
-                        @endcan
-                        @can('delete', $c)
-                        <form action="{{ route('admin.leagues.championships.destroy', [$league, $c]) }}" method="POST" class="d-inline" onsubmit="return false">
-                            @csrf @method('DELETE')
-                            <button type="button" class="btn btn-link fw-bold p-0 ms-3" style="color:#dc2626;font-size:.8rem"
-                                    onclick="xcDeleteSubmit(this.closest('form'), 'Remove {{ addslashes($c->name) }}? Its rounds, registrations and results are kept but the championship itself will no longer be listed.')">
-                                Remove
-                            </button>
-                        </form>
-                        @endcan
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+                    </div>
+                </div>
+                <div class="cw-champ__meta">
+                    <span>{{ $c->gameLabel() }}</span>
+                    <span>{{ $c->rounds_count }} {{ Str::plural('round', $c->rounds_count) }}</span>
+                    <span>{{ $c->entries_count }} {{ Str::plural('entry', $c->entries_count) }}</span>
+                    <span>XCL-R {{ $c->xcl_rating_enabled ? 'on' : 'off' }}</span>
+                </div>
+            </a>
+            <div class="cw-champ__actions">
+                <a href="{{ route('admin.leagues.championships.wizard', [$league, $c, 'basics']) }}" class="cw-btn-sm cw-btn-sm--primary">Edit</a>
+                <a href="{{ route('admin.leagues.championships.entries.index', [$league, $c]) }}" class="cw-btn-sm">Entries</a>
+                @can('create', [\App\Models\Championship::class, $league])
+                <a href="{{ route('admin.leagues.championships.duplicate', [$league, $c]) }}" class="cw-btn-sm">Duplicate</a>
+                @endcan
+                @can('delete', $c)
+                <form action="{{ route('admin.leagues.championships.destroy', [$league, $c]) }}" method="POST" class="m-0 ms-auto" onsubmit="return false">
+                    @csrf @method('DELETE')
+                    <button type="button" class="cw-btn-sm cw-btn-sm--danger"
+                            onclick="xcDeleteSubmit(this.closest('form'), 'Remove {{ addslashes($c->name) }}? Its rounds, registrations and results are kept but the championship itself will no longer be listed.')">
+                        Remove
+                    </button>
+                </form>
+                @endcan
+            </div>
+        </div>
+        @endforeach
     </div>
     @endif
 </div>

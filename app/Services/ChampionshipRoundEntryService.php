@@ -133,6 +133,38 @@ class ChampionshipRoundEntryService
         return array_values(array_diff($car->carDriverIds(), $inCar));
     }
 
+    // After the team changed the car's line-up (ChampionshipController::updateLineup()):
+    // every upcoming round's entry for this car gets the new drivers and starting
+    // driver. Drops a one-round reserve swap there too, the new line-up is the plan.
+    public function applyLineup(ChampionshipRegistration $car, Championship $championship): void
+    {
+        if (! $car->racing_team_id || $car->car_number === null) {
+            return;
+        }
+
+        $driverIds = $car->driverIds();
+        $entries = RaceTeamEntry::where('racing_team_id', $car->racing_team_id)
+            ->where('car_number', $car->car_number)
+            ->whereIn('race_id', $this->upcomingRounds($championship)->pluck('id'))
+            ->get();
+
+        DB::transaction(function () use ($entries, $driverIds, $car) {
+            foreach ($entries as $entry) {
+                RaceRegistration::where('team_entry_id', $entry->id)->whereNotIn('user_id', $driverIds)->forceDelete();
+
+                foreach ($driverIds as $userId) {
+                    $seat = RaceRegistration::withTrashed()->firstOrNew(['race_id' => $entry->race_id, 'user_id' => $userId]);
+                    $seat->team_entry_id = $entry->id;
+                    $seat->race_class_id = null;
+                    $seat->deleted_at = null;
+                    $seat->save();
+                }
+
+                $entry->update(['starting_driver_id' => $car->starting_driver_id]);
+            }
+        });
+    }
+
     // One round only: $outId leaves the car, $inId (from the bench) takes their seat,
     // and the starting spot when they had it. The championship line-up is untouched,
     // so later rounds still get the regular drivers.

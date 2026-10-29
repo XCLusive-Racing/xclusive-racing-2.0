@@ -438,4 +438,108 @@ class RoundCreationTest extends TestCase
             ->get(route('admin.leagues.championships.rounds.edit', [$league, $championship, $otherRace]))
             ->assertNotFound();
     }
+
+    // User-directed 2026-10-29: NLRL's own server was set to rolling resets
+    // (00:00, every 1440 min), so every other round time failed as "not a valid
+    // slot". A championship is now on Manual restart by default and only checks
+    // the server's reset slots when set to Rolling resets.
+    private function makeMidnightRollingServer(League $league): FtpServer
+    {
+        return FtpServer::create([
+            'name' => 'NLRL Server 1', 'host' => '1.2.3.4', 'port' => 21,
+            'username' => 'u', 'password' => 'p', 'path' => '/results',
+            'server_type' => 'rolling', 'reset_start_hour' => 0, 'reset_interval_minutes' => 1440,
+            'league_id' => $league->id, 'active' => true,
+        ]);
+    }
+
+    public function test_manual_restart_championship_ignores_the_servers_reset_slots(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $server = $this->makeMidnightRollingServer($league);
+        $championship = $this->makeChampionship($league);
+        $manager = $this->makeManager($league);
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
+                'track' => 'Monza', 'ftp_server_id' => $server->id,
+                'scheduled_at' => now()->addWeek()->setTime(20, 0)->format('Y-m-d\TH:i'),
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('races', ['championship_id' => $championship->id, 'track' => 'Monza', 'ftp_server_id' => $server->id]);
+    }
+
+    public function test_rolling_resets_championship_still_requires_a_reset_slot(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $server = $this->makeMidnightRollingServer($league);
+        $championship = $this->makeChampionship($league);
+        $championship->settings = array_replace_recursive($championship->settings->toArray(), [
+            'schedule' => ['server_restarts' => 'rolling_resets'],
+        ]);
+        $championship->save();
+        $manager = $this->makeManager($league);
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
+                'track' => 'Monza', 'ftp_server_id' => $server->id,
+                'scheduled_at' => now()->addWeek()->setTime(20, 0)->format('Y-m-d\TH:i'),
+            ]);
+
+        $this->assertDatabaseMissing('races', ['championship_id' => $championship->id, 'track' => 'Monza']);
+    }
+
+    // User-directed 2026-10-29: a round can be marked as having an official
+    // stream, linked on the championship's Rounds tab and on the event page.
+    public function test_round_official_stream_is_saved_and_linked_publicly(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league, ['status' => 'published']);
+        $manager = $this->makeManager($league);
+        $url = 'https://twitch.tv/xclusiveracing';
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
+                'track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i'),
+                'official_stream' => '1', 'official_stream_url' => $url,
+            ])
+            ->assertSessionHasNoErrors();
+
+        $round = $championship->rounds()->firstOrFail();
+        $this->assertSame($url, $round->official_stream_url);
+
+        $this->get(route('championships.show', $championship))->assertOk()->assertSee($url, false);
+        $this->get(route('events.show', $round))->assertOk()->assertSee('Official stream')->assertSee($url, false);
+    }
+
+    public function test_switching_official_stream_off_clears_the_link(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+        $manager = $this->makeManager($league);
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
+                'track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i'),
+                'official_stream_url' => 'https://twitch.tv/xclusiveracing',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertNull($championship->rounds()->firstOrFail()->official_stream_url);
+    }
+
+    public function test_official_stream_on_requires_a_link(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+        $manager = $this->makeManager($league);
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
+                'track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i'),
+                'official_stream' => '1', 'official_stream_url' => '',
+            ])
+            ->assertSessionHasErrors('official_stream_url');
+    }
 }

@@ -8,26 +8,26 @@
     $classOptions = ['GT2', 'GT3', 'GT4', 'TCX', 'GTC'];
 @endphp
 
-<div class="mt-2 mb-3" data-classes-builder style="{{ ($championship->settings->format->multiclass_enabled ?? false) ? '' : 'display:none' }}">
-    <label class="form-label">Classes</label>
-    <div class="form-text mb-2" style="font-size:.72rem;color:#9ca3af">Pick which classes race in this championship, and an optional entry cap per class (empty = no max).</div>
+<div class="cw-group__sub mt-0" data-classes-builder style="{{ ($championship->settings->format->multiclass_enabled ?? false) ? '' : 'display:none' }}">
+    <label class="cw-label">Classes</label>
+    <div class="cw-help mt-0 mb-2">Each class with an optional entry cap.</div>
 
     <div data-class-rows>
         @foreach($classes as $i => $class)
         @php $selectedClass = $class['name'] ?? ''; @endphp
-        <div class="d-flex gap-2 mb-2" data-class-row>
+        <div class="cw-repeat-row" data-class-row>
             <select data-class-name class="form-select form-select-sm" style="max-width:150px">
                 @foreach($classOptions as $option)
                 <option value="{{ $option }}" {{ $selectedClass === $option ? 'selected' : '' }}>{{ $option }}</option>
                 @endforeach
             </select>
-            <input type="number" placeholder="No max" min="1" title="Max entries in this class — empty = no max" value="{{ $class['max_entries'] ?? '' }}" data-class-max class="form-control form-control-sm" style="max-width:90px">
-            <button type="button" class="btn btn-sm btn-outline-secondary" data-remove-class>×</button>
+            <input type="number" placeholder="No max" min="1" title="Max entries in this class. Empty = no max." value="{{ $class['max_entries'] ?? '' }}" data-class-max class="form-control form-control-sm" style="max-width:100px">
+            <button type="button" class="cw-btn-remove" data-remove-class>×</button>
         </div>
         @endforeach
     </div>
 
-    <button type="button" class="btn btn-sm btn-outline-secondary fw-bold" data-add-class>+ Add Class</button>
+    <button type="button" class="cw-btn-add" data-add-class>+ Add Class</button>
     <input type="hidden" name="classes_json" data-classes-json value="">
 </div>
 
@@ -45,7 +45,7 @@
 
     function addRow(name, max) {
         var row = document.createElement('div');
-        row.className = 'd-flex gap-2 mb-2';
+        row.className = 'cw-repeat-row';
         row.setAttribute('data-class-row', '');
 
         var optionsHtml = classOptions.map(function (c) {
@@ -54,8 +54,8 @@
 
         row.innerHTML =
             '<select data-class-name class="form-select form-select-sm" style="max-width:150px">' + optionsHtml + '</select>' +
-            '<input type="number" placeholder="No max" min="1" title="Max entries in this class — empty = no max" data-class-max class="form-control form-control-sm" style="max-width:90px">' +
-            '<button type="button" class="btn btn-sm btn-outline-secondary" data-remove-class>×</button>';
+            '<input type="number" placeholder="No max" min="1" title="Max entries in this class. Empty = no max." data-class-max class="form-control form-control-sm" style="max-width:100px">' +
+            '<button type="button" class="cw-btn-remove" data-remove-class>×</button>';
         if (name) row.querySelector('[data-class-name]').value = name;
         row.querySelector('[data-class-max]').value = max || '';
         rows.appendChild(row);

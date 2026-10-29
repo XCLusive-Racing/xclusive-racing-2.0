@@ -26,12 +26,12 @@
             @endfor
             @foreach($ballastChart['series'] as $i => $line)
             <g>
-                <title>{{ $line['user']->displayName() }}: {{ $line['current'] }} kg</title>
+                <title>{{ $line['user']->displayNameIn($championship) }}: {{ $line['current'] }} kg</title>
                 <polyline fill="none" stroke="{{ $colour($i) }}" stroke-width="2" stroke-linejoin="round"
                           points="{{ collect($line['points'])->map(fn ($p) => $x($p[0]).','.$y($p[1]))->join(' ') }}"/>
                 @foreach($line['points'] as [$round, $kg])
                 <circle cx="{{ $x($round) }}" cy="{{ $y($kg) }}" r="3" fill="{{ $colour($i) }}">
-                    <title>{{ $line['user']->displayName() }} — R{{ $round }}: {{ $kg }} kg</title>
+                    <title>{{ $line['user']->displayNameIn($championship) }} — R{{ $round }}: {{ $kg }} kg</title>
                 </circle>
                 @endforeach
             </g>
@@ -42,7 +42,7 @@
         @foreach($ballastChart['series'] as $i => $line)
         <span class="d-inline-flex align-items-center gap-1" style="color:#d1d5db">
             <span style="width:10px;height:10px;border-radius:50%;background:{{ $colour($i) }};display:inline-block"></span>
-            {{ $line['user']->displayName() }}
+            {{ $line['user']->displayNameIn($championship) }}
             <span class="fw-bold" style="color:#9ca3af">{{ $line['current'] }} kg</span>
         </span>
         @endforeach

@@ -107,6 +107,15 @@
             </div>
         </div>
 
+        {{-- Official broadcast, set on the round (Add/Edit Round). --}}
+        @if($race->official_stream_url)
+        <a href="{{ $race->official_stream_url }}" target="_blank" rel="noopener nofollow" class="xcl-official-stream xcl-official-stream--bar mb-4">
+            <i class="{{ $race->officialStreamIcon() }}"></i>
+            <span>Official stream</span>
+            <span class="xcl-official-stream__cta">Watch live <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i></span>
+        </a>
+        @endif
+
         {{-- Streamers bar — up to eight supporters' Twitch/YouTube links for this race
              (RaceController::updateStream()); not shown until someone has added one. --}}
         @php

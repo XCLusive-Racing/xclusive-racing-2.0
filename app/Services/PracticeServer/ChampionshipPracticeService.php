@@ -141,7 +141,8 @@ class ChampionshipPracticeService
     // driver's own Team / Quote. Never forced:
     // the practice stays open to everyone, and it has to be written anyway — the
     // previous round's forced entry list would otherwise still be on the server,
-    // locking everyone else out.
+    // locking everyone else out. The league's managers and admins are listed as
+    // server admins, same as on a round (2026-10-29).
     public function entryList(Race $round): array
     {
         $championship = Championship::withoutTenantScope()->find($round->championship_id);
@@ -170,7 +171,7 @@ class ChampionshipPracticeService
                 ->filter(fn (User $user) => $user->playerIdFor($round->game))
                 ->map(fn (User $user) => [
                     'firstName' => '',
-                    'lastName' => AccServerConfigService::entryLastName($user, $tag),
+                    'lastName' => AccServerConfigService::entryLastName($user, $tag, (bool) $championship?->requiresRealNames()),
                     'shortName' => AccServerConfigService::entryShortName($user),
                     'playerID' => $user->playerIdFor($round->game),
                     'driverCategory' => $categoryOverrides[$user->id] ?? $user->ratingClass($round->game),
@@ -192,6 +193,7 @@ class ChampionshipPracticeService
         }
 
         AccServerConfigService::assignUniqueRaceNumbers($entries);
+        AccServerConfigService::addLeagueAdmins($entries, $round, $championship);
 
         return ['entries' => $entries, 'configVersion' => 1, 'forceEntryList' => 0];
     }

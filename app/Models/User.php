@@ -453,6 +453,16 @@ class User extends Authenticatable
         return $this->gamertag();
     }
 
+    // Inside a championship with Real Names on, the real name whatever the profile says.
+    public function displayNameIn(?Championship $championship): string
+    {
+        if ($championship?->requiresRealNames() && ($realName = $this->realName())) {
+            return $realName;
+        }
+
+        return $this->displayName();
+    }
+
     // users.name without a Discord-style "#1234" suffix.
     public function gamertag(): string
     {

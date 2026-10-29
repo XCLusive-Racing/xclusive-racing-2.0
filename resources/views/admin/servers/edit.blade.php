@@ -140,9 +140,10 @@
                     <div class="mb-3">
                         <label class="form-label">Server Type</label>
                         <select name="server_type" id="srv-type" class="form-select @error('server_type') is-invalid @enderror">
+                            <option value="scheduled" {{ old('server_type', $server->server_type) === 'scheduled' ? 'selected' : '' }}>{{ $server->isXclServer() ? 'Manual restart (SERVER 4)' : 'Manual restart (you start the server yourself)' }}</option>
                             <option value="rolling" {{ old('server_type', $server->server_type) === 'rolling' ? 'selected' : '' }}>{{ $server->isXclServer() ? 'Rolling resets (SERVER 1 / 2 / 3)' : 'Rolling resets (gPortal restarts it on a schedule)' }}</option>
-                            <option value="scheduled" {{ old('server_type', $server->server_type) === 'scheduled' ? 'selected' : '' }}>{{ $server->isXclServer() ? 'Manual restart (SERVER 4)' : 'Manual restart' }}</option>
                         </select>
+                        <div class="form-text" style="font-size:.72rem;color:#9ca3af">Manual: a race can start at any time. Rolling: gPortal restarts the server at fixed times and only then loads the new config, so a race must start on one of those restarts.</div>
                         @error('server_type') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 

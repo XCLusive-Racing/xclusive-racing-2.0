@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', $championship->name . ' — Entries')
-@section('page-title', $league->name . ' — ' . $championship->name . ' — Entries')
+@section('title', $championship->name . ' · Entries')
+@section('page-title', $league->name . ' · ' . $championship->name . ' · Entries')
 
 @section('page-actions')
     <a href="{{ route('admin.leagues.championships.wizard', [$league, $championship, 'basics']) }}" class="btn btn-sm btn-outline-secondary fw-bold text-uppercase" style="font-size:.78rem">
@@ -41,7 +41,7 @@
             </button>
         </form>
         @if($championship->requiresManualApproval())
-        <span class="text-secondary" style="font-size:.75rem">Manual approval is on — new entries wait here until you approve them.</span>
+        <span class="text-secondary" style="font-size:.75rem">Manual approval is on. New entries wait here until you approve them.</span>
         @endif
     </div>
 
@@ -108,7 +108,7 @@
                         <form action="{{ route('admin.leagues.championships.entries.driver-class', [$league, $championship, $entry]) }}" method="POST">
                             @csrf @method('PUT')
                             <select name="driver_class_id" class="form-select form-select-sm" style="min-width:130px;font-size:.8rem" onchange="this.form.submit()">
-                                <option value="">— No class —</option>
+                                <option value="">No class</option>
                                 @foreach($driverClasses as $driverClass)
                                 <option value="{{ $driverClass->id }}" @selected($entry->driver_class_id === $driverClass->id)>
                                     {{ $driverClass->name }}{{ $driverClass->max_entries ? ' ('.$driverClass->registrations_count.'/'.$driverClass->max_entries.')' : '' }}

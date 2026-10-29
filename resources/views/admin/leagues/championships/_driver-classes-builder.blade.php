@@ -8,18 +8,16 @@
     $rankOptions = collect(\App\Models\User::ranks())->reverse()->pluck('name', 'slug');
 @endphp
 
-<div class="mt-2 mb-3" data-driver-classes-builder style="{{ $championship->usesDriverClasses() ? '' : 'display:none' }}">
-    <label class="form-label">Classes</label>
-    <div class="form-text mb-2" style="font-size:.72rem;color:#9ca3af">
-        Name each class and pick its in-game number banner. "By XCL rating" keeps each driver's usual banner.
-        Max is optional — leave it blank and only the championship's total entry cap applies.
-        From/To puts a driver in the class automatically by their XCL rank when they register
-        (e.g. Pro: From Silver; Am: To Bronze) — leave both blank to assign that class by hand.
-    </div>
+<div class="cw-group__sub mt-0" data-driver-classes-builder style="{{ $championship->usesDriverClasses() ? '' : 'display:none' }}">
+    <label class="cw-label">
+        Classes
+        <span class="cw-info" tabindex="0" data-tip="Banner: the in-game number colour; By XCL rating keeps each driver's own. From/To places a driver by XCL rank when they register, e.g. Pro from Silver, Am to Bronze. Leave both blank to assign by hand.">i</span>
+    </label>
+    <div class="cw-help mt-0 mb-2">Name, banner, optional max and rank range.</div>
 
     <div data-driver-class-rows>
         @foreach($driverClasses as $class)
-        <div class="d-flex flex-wrap gap-2 mb-2" data-driver-class-row data-id="{{ $class->id }}">
+        <div class="cw-repeat-row" data-driver-class-row data-id="{{ $class->id }}">
             <input type="text" maxlength="50" placeholder="e.g. Pro" value="{{ $class->name }}" data-driver-class-name class="form-control form-control-sm" style="max-width:180px">
             <select data-driver-class-banner class="form-select form-select-sm" style="max-width:160px">
                 <option value="">By XCL rating</option>
@@ -40,12 +38,12 @@
                 <option value="{{ $slug }}" @selected($class->max_rank === $slug)>To: {{ $label }}</option>
                 @endforeach
             </select>
-            <button type="button" class="btn btn-sm btn-outline-secondary" data-remove-driver-class>×</button>
+            <button type="button" class="cw-btn-remove" data-remove-driver-class>×</button>
         </div>
         @endforeach
     </div>
 
-    <button type="button" class="btn btn-sm btn-outline-secondary fw-bold" data-add-driver-class>+ Add Class</button>
+    <button type="button" class="cw-btn-add" data-add-driver-class>+ Add Class</button>
     <input type="hidden" name="driver_classes_json" data-driver-classes-json value="">
 </div>
 
@@ -71,7 +69,7 @@
 
     builder.querySelector('[data-add-driver-class]').addEventListener('click', function () {
         var row = document.createElement('div');
-        row.className = 'd-flex flex-wrap gap-2 mb-2';
+        row.className = 'cw-repeat-row';
         row.setAttribute('data-driver-class-row', '');
 
         var options = '<option value="">By XCL rating</option>';
@@ -85,7 +83,7 @@
             '<input type="number" min="1" placeholder="Max" data-driver-class-max class="form-control form-control-sm" style="max-width:90px">' +
             rankSelect('data-driver-class-min-rank', 'From', 'Lowest XCL rank in this class') +
             rankSelect('data-driver-class-max-rank', 'To', 'Highest XCL rank in this class') +
-            '<button type="button" class="btn btn-sm btn-outline-secondary" data-remove-driver-class>×</button>';
+            '<button type="button" class="cw-btn-remove" data-remove-driver-class>×</button>';
         rows.appendChild(row);
         row.querySelector('[data-driver-class-name]').focus();
     });

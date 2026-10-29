@@ -1,72 +1,103 @@
-{{-- Server/Notes/Session-override fields shared by round-create (single + bulk)
-     AND round-edit — one round's worth of settings. $idPrefix keeps element ids
-     unique when more than one copy exists in the DOM at once (round-create's
-     single/bulk panels). $defaults resolves each field's starting value: the
-     championship's Sessions-step defaults for a brand new round, or the round's
-     own saved values when editing one -- the parent view computes this array,
-     this partial just renders it. $openByDefault controls whether the override
-     panel starts expanded: false for a fresh round (every field starts blank/
-     inherited, nothing to see yet), true when editing an existing round (its
-     current values are worth seeing right away).
-     $servers/$league/$championship come from the parent view. --}}
-<div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-    <p class="fw-black text-uppercase fst-italic mb-1" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af">Server <span class="fw-normal" style="text-transform:none">(optional)</span></p>
-    @if($servers->isEmpty())
-    <p class="text-secondary mb-0" style="font-size:.82rem">
-        No servers assigned to {{ $league->name }} yet — an XCL admin needs to assign one from the League page before rounds can auto-push.
-    </p>
-    @else
-    <select name="ftp_server_id" class="form-select form-select-sm">
-        <option value="">— No server assigned —</option>
-        @foreach($servers as $srv)
-        <option value="{{ $srv->id }}" {{ (string) old('ftp_server_id', $defaults['ftp_server_id']) === (string) $srv->id ? 'selected' : '' }}>{{ $srv->name }}</option>
-        @endforeach
-    </select>
-    @endif
-</div>
-
-{{-- Round type: the built-in types plus the league's own. "+ Add type…" opens a
-     text field; the new name joins this league's list for every later round
-     (ChampionshipWizardController::resolveRoundType()). --}}
+{{-- One round's settings, shared by round-create (single + bulk) and round-edit.
+     $idPrefix keeps ids unique when two copies are on the page; $defaults holds the
+     starting values (the championship's Sessions defaults for a new round, the
+     round's own values when editing); $openByDefault opens the session block.
+     $servers/$league/$championship/$sessionFormats come from the parent view. --}}
 @php
     $roundTypeOptions = $league->roundTypeOptions();
     $currentRoundType = old('round_type', $defaults['round_type'] ?? null);
+    $toggle = function (string $name, string $label, bool $on, string $id) {
+        return '<label class="cw-toggle"><input type="checkbox" name="'.$name.'" id="'.$id.'" value="1"'.($on ? ' checked' : '').'>'
+            .'<span class="cw-toggle__dot"></span>'.e($label).'</label>';
+    };
 @endphp
-<div class="px-4 py-3" style="border-top:1px solid #f3f4f6" data-round-type>
-    <label class="form-label" style="font-size:.75rem">Round Type <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
-    <div class="d-flex flex-wrap gap-2">
-        <select name="round_type" data-round-type-select class="form-select form-select-sm" style="max-width:220px">
-            <option value="">— None —</option>
-            @foreach($roundTypeOptions as $option)
-            <option value="{{ $option }}" @selected($currentRoundType === $option)>{{ $option }}</option>
-            @endforeach
-            @if($currentRoundType && $currentRoundType !== \App\Models\Race::NEW_ROUND_TYPE && !in_array($currentRoundType, $roundTypeOptions, true))
-            <option value="{{ $currentRoundType }}" selected>{{ $currentRoundType }}</option>
+
+<div class="cw-section">
+    <p class="cw-section__title">Server &amp; Type</p>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="cw-label">Server <span class="cw-optional">(optional)</span></label>
+            @if($servers->isEmpty())
+            <div class="cw-help mt-0">{{ $league->name }} has no server for this game yet. An XCL admin assigns one on the League page.</div>
+            @else
+            <select name="ftp_server_id" class="form-select form-select-sm">
+                <option value="">No server</option>
+                @foreach($servers as $srv)
+                <option value="{{ $srv->id }}" @selected((string) old('ftp_server_id', $defaults['ftp_server_id']) === (string) $srv->id)>{{ $srv->name }}</option>
+                @endforeach
+            </select>
             @endif
-            <option value="{{ \App\Models\Race::NEW_ROUND_TYPE }}" @selected($currentRoundType === \App\Models\Race::NEW_ROUND_TYPE)>+ Add type…</option>
-        </select>
-        <input type="text" name="round_type_new" data-round-type-new maxlength="50" value="{{ old('round_type_new') }}"
-               placeholder="New type, e.g. Night Race" class="form-control form-control-sm" style="max-width:220px"
-               @if($currentRoundType !== \App\Models\Race::NEW_ROUND_TYPE) hidden @endif>
+        </div>
+
+        {{-- Built-in types plus the league's own; "+ Add type…" adds one to the
+             league's list (ChampionshipWizardController::resolveRoundType()). --}}
+        <div class="col-md-6" data-round-type>
+            <label class="cw-label">Round Type <span class="cw-optional">(optional)</span></label>
+            <div class="d-flex flex-wrap gap-2">
+                <select name="round_type" data-round-type-select class="form-select form-select-sm" style="max-width:220px">
+                    <option value="">None</option>
+                    @foreach($roundTypeOptions as $option)
+                    <option value="{{ $option }}" @selected($currentRoundType === $option)>{{ $option }}</option>
+                    @endforeach
+                    @if($currentRoundType && $currentRoundType !== \App\Models\Race::NEW_ROUND_TYPE && !in_array($currentRoundType, $roundTypeOptions, true))
+                    <option value="{{ $currentRoundType }}" selected>{{ $currentRoundType }}</option>
+                    @endif
+                    <option value="{{ \App\Models\Race::NEW_ROUND_TYPE }}" @selected($currentRoundType === \App\Models\Race::NEW_ROUND_TYPE)>+ Add type…</option>
+                </select>
+                <input type="text" name="round_type_new" data-round-type-new maxlength="50" value="{{ old('round_type_new') }}"
+                       placeholder="New type, e.g. Night Race" class="form-control form-control-sm" style="max-width:220px"
+                       @if($currentRoundType !== \App\Models\Race::NEW_ROUND_TYPE) hidden @endif>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <label class="cw-label">Points</label>
+            @php $pointsMultiplier = (float) old('points_multiplier', $defaults['points_multiplier'] ?? 1); @endphp
+            <select name="points_multiplier" class="form-select form-select-sm @error('points_multiplier') is-invalid @enderror">
+                @foreach(\App\Models\Race::POINTS_MULTIPLIERS as $multiplier)
+                <option value="{{ $multiplier }}" @selected($pointsMultiplier === $multiplier)>{{ $multiplier === 1.0 ? 'Normal' : \App\Models\Race::multiplierLabel($multiplier) }}</option>
+                @endforeach
+            </select>
+            <div class="cw-help">Every point in this round counts this many times.</div>
+            @error('points_multiplier')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+        </div>
+
+        @php
+            $streamUrl = old('official_stream_url', $defaults['official_stream_url'] ?? null);
+            $streamOn = (bool) old('official_stream', filled($streamUrl));
+        @endphp
+        <div class="col-md-6" data-official-stream>
+            <label class="cw-label">Official Stream</label>
+            <div class="d-flex flex-column gap-2">
+                {!! $toggle('official_stream', 'Streamed live', $streamOn, $idPrefix.'-official-stream') !!}
+                <input type="url" name="official_stream_url" value="{{ $streamUrl }}" maxlength="255"
+                       placeholder="https://twitch.tv/xclusiveracing" data-official-stream-url
+                       class="form-control form-control-sm @error('official_stream_url') is-invalid @enderror"
+                       @if(!$streamOn) hidden @endif>
+            </div>
+            <div class="cw-help">Linked on the championship and event pages.</div>
+            @error('official_stream_url')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+        </div>
+
+        <div class="col-md-6">
+            <label class="cw-label">Notes <span class="cw-optional">(optional)</span></label>
+            <textarea name="description" rows="1" class="form-control form-control-sm">{{ old('description', $defaults['description']) }}</textarea>
+        </div>
     </div>
 </div>
 
-<div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-    <label class="form-label" style="font-size:.75rem">Notes <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
-    <textarea name="description" rows="2" class="form-control form-control-sm">{{ old('description', $defaults['description']) }}</textarea>
-</div>
-
-{{-- Race format: picking one fills the session fields below (the round keeps its
-     own copy, still editable) — SessionFormatController / session_formats. --}}
-<div class="px-4 py-3" style="border-top:1px solid #f3f4f6">
-    <label class="form-label" style="font-size:.75rem">Race Format <span class="fw-normal text-secondary" style="text-transform:none">(optional)</span></label>
+{{-- Race format: picking one fills the session block below (the round keeps its own
+     editable copy). The <details> must stay this div's next sibling: the picker
+     script opens it. --}}
+<div class="cw-section">
+    <p class="cw-section__title">Race Format <span class="cw-optional">(optional)</span></p>
     @if($sessionFormats->isEmpty())
-    <p class="text-secondary mb-0" style="font-size:.8rem">
-        No race formats yet — <a href="{{ route('admin.leagues.session-formats.index', $league) }}">create one</a> to reuse session lengths and multi-race setups across rounds.
+    <p class="cw-section__note mb-0">
+        No race formats yet. <a href="{{ route('admin.leagues.session-formats.index', $league) }}">Create one</a> to reuse lengths and multi-race setups.
     </p>
     @else
     <select name="session_format_id" data-session-format class="form-select form-select-sm" style="max-width:420px">
-        <option value="">— Custom (set below) —</option>
+        <option value="">Custom (set below)</option>
         @foreach($sessionFormats as $sf)
         <option value="{{ $sf->id }}" {{ (string) old('session_format_id', $defaults['session_format_id'] ?? '') === (string) $sf->id ? 'selected' : '' }}
                 data-values="{{ json_encode([
@@ -80,82 +111,82 @@
                     'mandatory_tyre_change' => $sf->mandatory_tyre_change,
                     'driver_stint_time_mins' => $sf->driver_stint_time_mins,
                     'max_total_driving_time_mins' => $sf->max_total_driving_time_mins,
-                ]) }}">{{ $sf->name }} — {{ $sf->summary() }}</option>
+                ]) }}">{{ $sf->name }} · {{ $sf->summary() }}</option>
         @endforeach
     </select>
-    <div class="form-text" style="font-size:.72rem;color:#9ca3af">Fills the session settings below — you can still change them for this round.</div>
+    <div class="cw-help">Fills the session settings below. You can still change them.</div>
     @endif
 </div>
 
-<details class="px-4 py-3" style="border-top:1px solid #f3f4f6" {{ ($openByDefault ?? false) || $errors->any() ? 'open' : '' }}>
-    <summary class="fw-black text-uppercase fst-italic" style="font-size:.72rem;letter-spacing:.08em;color:#9ca3af;cursor:pointer;list-style:none">
-        <span style="display:inline-block;width:.8em">▸</span> Override Session Defaults for This Round
-    </summary>
+<details class="cw-section cw-details" {{ ($openByDefault ?? false) || $errors->any() ? 'open' : '' }}>
+    <summary class="cw-section__title mb-0">Session Settings for This Round</summary>
+    @unless($openByDefault ?? false)
+    <p class="cw-section__note mt-2">Filled in from the championship's Sessions step.</p>
+    @endunless
 
-    <div class="row g-3 mb-3 mt-2">
-        <div class="col-6 col-sm-2">
-            <label class="form-label" style="font-size:.75rem">Practice <span class="fw-normal text-secondary">(min)</span></label>
+    <p class="cw-label mt-3">Sessions</p>
+    <div class="row g-3">
+        <div class="col-6 col-md-3">
+            <label class="cw-label">Practice (min)</label>
             <input type="number" name="practice_duration" value="{{ old('practice_duration', $defaults['practice_duration']) }}"
-                   class="form-control form-control-sm @error('practice_duration') is-invalid @enderror" min="1" max="999" placeholder="—">
+                   class="form-control form-control-sm @error('practice_duration') is-invalid @enderror" min="1" max="999" placeholder="None">
             @error('practice_duration')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         </div>
-        <div class="col-6 col-sm-2">
-            <label class="form-label" style="font-size:.75rem">Quali <span class="fw-normal text-secondary">(min)</span></label>
+        <div class="col-6 col-md-3">
+            <label class="cw-label">Qualifying (min)</label>
             <input type="number" name="qualifying_duration" value="{{ old('qualifying_duration', $defaults['qualifying_duration']) }}"
-                   class="form-control form-control-sm @error('qualifying_duration') is-invalid @enderror" min="1" max="999" placeholder="—">
+                   class="form-control form-control-sm @error('qualifying_duration') is-invalid @enderror" min="1" max="999" placeholder="None">
             @error('qualifying_duration')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         </div>
-        <div class="col-6 col-sm-2">
-            <label class="form-label" style="font-size:.75rem">Races <span class="fw-normal text-secondary">(min)</span></label>
+        <div class="col-6 col-md-3">
+            <label class="cw-label">
+                Races (min)
+                <span class="cw-info" tabindex="0" data-tip="One length per race: 25, 25 runs two races this round. Up to 4.">i</span>
+            </label>
             <input type="text" name="race_lengths" data-sf="race_lengths" value="{{ old('race_lengths', $defaults['race_lengths']) }}"
-                   class="form-control form-control-sm @error('race_lengths') is-invalid @enderror" placeholder="e.g. 25, 25"
-                   title="One length per race — &quot;25, 25&quot; runs two races this round (max 4)">
+                   class="form-control form-control-sm @error('race_lengths') is-invalid @enderror" placeholder="25, 25">
             @error('race_lengths')<div class="invalid-feedback d-block">Enter race lengths like "25" or "25, 25" (max 4 races).</div>@enderror
         </div>
-        <div class="col-6 col-sm-3">
-            <label class="form-label" style="font-size:.75rem">Start Time <span class="fw-normal text-secondary">(in-game)</span></label>
+        <div class="col-6 col-md-3">
+            <label class="cw-label">In-Game Time</label>
             <input type="time" name="time_of_day" class="form-control form-control-sm" value="{{ old('time_of_day', $defaults['time_of_day']) }}" step="3600">
-        </div>
-        <div class="col-6 col-sm-3">
-            <label class="form-label" style="font-size:.75rem">Ambient Temp (°C)</label>
-            <input type="number" name="ambient_temp" value="{{ old('ambient_temp', $defaults['ambient_temp']) }}"
-                   class="form-control form-control-sm @error('ambient_temp') is-invalid @enderror" placeholder="Server default">
-            @error('ambient_temp')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         </div>
     </div>
 
-    <div class="row g-3 align-items-end mb-3">
-        <div class="col-sm-3">
-            <label class="form-label" style="font-size:.75rem">Weather</label>
+    <p class="cw-label mt-4">Weather</p>
+    <div class="row g-3 align-items-start">
+        <div class="col-6 col-md-3">
+            <label class="cw-label">Weather</label>
             <select name="weather" id="{{ $idPrefix }}-weather" class="form-select form-select-sm">
-                <option value="">— Not set —</option>
-                <option value="dry"    {{ old('weather', $defaults['weather']) === 'dry'    ? 'selected' : '' }}>Dry</option>
-                <option value="wet"    {{ old('weather', $defaults['weather']) === 'wet'    ? 'selected' : '' }}>Wet</option>
-                <option value="mixed"  {{ old('weather', $defaults['weather']) === 'mixed'  ? 'selected' : '' }}>Mixed</option>
-                <option value="random" {{ old('weather', $defaults['weather']) === 'random' ? 'selected' : '' }}>Random</option>
+                <option value="">Server default</option>
+                @foreach(['dry' => 'Dry', 'wet' => 'Wet', 'mixed' => 'Mixed', 'random' => 'Random'] as $value => $label)
+                <option value="{{ $value }}" @selected(old('weather', $defaults['weather']) === $value)>{{ $label }}</option>
+                @endforeach
             </select>
         </div>
-        <div class="col-sm-4">
-            <label class="form-label" style="font-size:.75rem">Dynamic Weather <span class="fw-normal text-secondary" style="text-transform:none">(how much it changes mid-session)</span></label>
+        <div class="col-6 col-md-3">
+            <label class="cw-label">
+                Changes
+                <span class="cw-info" tabindex="0" data-tip="How much the weather changes during a session: 0 static, 1 to 4 realistic, 5 to 7 sensational.">i</span>
+            </label>
             @php $wr = old('weather_randomness', $defaults['weather_randomness']); @endphp
             <select name="weather_randomness" class="form-select form-select-sm">
-                <option value="" {{ $wr === null || $wr === '' ? 'selected' : '' }}>— Not set —</option>
-                <option value="0" {{ (string) $wr === '0' ? 'selected' : '' }}>0 — Static</option>
+                <option value="" @selected($wr === null || $wr === '')>Server default</option>
+                <option value="0" @selected((string) $wr === '0')>0 · Static</option>
                 @foreach(['1','2','3','4'] as $n)
-                <option value="{{ $n }}" {{ (string) $wr === $n ? 'selected' : '' }}>{{ $n }} — Realistic</option>
+                <option value="{{ $n }}" @selected((string) $wr === $n)>{{ $n }} · Realistic</option>
                 @endforeach
                 @foreach(['5','6','7'] as $n)
-                <option value="{{ $n }}" {{ (string) $wr === $n ? 'selected' : '' }}>{{ $n }} — Sensational</option>
+                <option value="{{ $n }}" @selected((string) $wr === $n)>{{ $n }} · Sensational</option>
                 @endforeach
-                <option value="random" {{ $wr === 'random' ? 'selected' : '' }}>Randomize</option>
+                <option value="random" @selected($wr === 'random')>Random</option>
             </select>
         </div>
-        <div class="col-sm-3">
-            {{-- A standalone option, not tucked behind Weather=wet/mixed — a league
-                 may want a rain chance set regardless of the fixed/random weather
-                 pick above. --}}
+        <div class="col-6 col-md-3">
+            {{-- Standalone, not tied to Weather = wet/mixed: a league may want a rain
+                 chance whatever the weather pick. --}}
             @php $savedRainLevel = old('rain_level', $defaults['rain_level']); @endphp
-            <label class="form-label" style="font-size:.75rem">Rain Level <span class="fw-normal text-secondary">(0–1)</span></label>
+            <label class="cw-label">Rain (0 to 1)</label>
             <div class="d-flex align-items-center gap-2">
                 <input type="range" name="rain_level" id="{{ $idPrefix }}-rain-level" min="0" max="1" step="0.1"
                        value="{{ $savedRainLevel }}" class="form-range flex-grow-1" style="accent-color:#7c3aed">
@@ -164,90 +195,61 @@
                 </span>
             </div>
         </div>
+        <div class="col-6 col-md-3">
+            <label class="cw-label">Air (°C)</label>
+            <input type="number" name="ambient_temp" value="{{ old('ambient_temp', $defaults['ambient_temp']) }}"
+                   class="form-control form-control-sm @error('ambient_temp') is-invalid @enderror" placeholder="Server default">
+            @error('ambient_temp')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+        </div>
     </div>
 
-    <div class="row g-3 mb-3">
-        <div class="col-6 col-sm-3">
-            <label class="form-label" style="font-size:.75rem">XCL-R Multiplier</label>
-            <input type="number" name="xcl_r_multiplier" step="0.01" min="0.6" max="2.5" value="{{ old('xcl_r_multiplier', $defaults['xcl_r_multiplier']) }}"
-                   class="form-control form-control-sm @error('xcl_r_multiplier') is-invalid @enderror" placeholder="1.0"
-                   {{ $championship->xcl_rating_enabled ? '' : 'disabled' }}>
-            @error('xcl_r_multiplier')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-            @unless($championship->xcl_rating_enabled)
-            <div class="form-text" style="font-size:.68rem;color:#9ca3af">Only available once XCL Rating is enabled for this championship.</div>
-            @endunless
-        </div>
-        <div class="col-6 col-sm-3">
-            <label class="form-label" style="font-size:.75rem">Points</label>
-            @php $pointsMultiplier = (float) old('points_multiplier', $defaults['points_multiplier'] ?? 1); @endphp
-            <select name="points_multiplier" class="form-select form-select-sm @error('points_multiplier') is-invalid @enderror">
-                @foreach(\App\Models\Race::POINTS_MULTIPLIERS as $multiplier)
-                <option value="{{ $multiplier }}" @selected($pointsMultiplier === $multiplier)>{{ $multiplier === 1.0 ? 'Normal' : \App\Models\Race::multiplierLabel($multiplier) }}</option>
-                @endforeach
-            </select>
-            @error('points_multiplier')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-            <div class="form-text" style="font-size:.68rem;color:#9ca3af">Every point scored in this round counts this many times.</div>
-        </div>
-        <div class="col-6 col-sm-3">
-            <label class="form-label" style="font-size:.75rem">Mandatory Pitstops</label>
+    <p class="cw-label mt-4">Pitstops &amp; Rating</p>
+    <div class="row g-3">
+        <div class="col-6 col-md-3">
+            <label class="cw-label">Mandatory Stops</label>
             <input type="number" name="pitstop_count" id="{{ $idPrefix }}-pitstop-count" min="0" max="9" value="{{ old('pitstop_count', $defaults['pitstop_count']) }}"
                    class="form-control form-control-sm @error('pitstop_count') is-invalid @enderror">
             @error('pitstop_count')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         </div>
-        <div class="col-6 col-sm-3 d-flex flex-column justify-content-end pb-1">
-            @php $fixedStopDefault = old('fixed_stop_time', $defaults['fixed_stop_time']); @endphp
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="fixed_stop_time" id="{{ $idPrefix }}-fixed-stop" value="1"
-                       {{ $fixedStopDefault ? 'checked' : '' }}>
-                <label class="form-check-label fw-bold" for="{{ $idPrefix }}-fixed-stop" style="font-size:.78rem">Fixed Stop Time</label>
-            </div>
-            <div class="form-text mt-0" style="font-size:.68rem;color:#9ca3af">Off = game default (dynamic). On = a fixed 25 seconds.</div>
-        </div>
-        <div class="col-6 col-sm-3 d-flex flex-column justify-content-end pb-1">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="mandatory_refuelling" id="{{ $idPrefix }}-mandatory-refuelling" value="1"
-                       {{ old('mandatory_refuelling', $defaults['mandatory_refuelling']) ? 'checked' : '' }}>
-                <label class="form-check-label fw-bold" for="{{ $idPrefix }}-mandatory-refuelling" style="font-size:.78rem">Mandatory Refuelling</label>
-            </div>
-            <div class="form-text mt-0" style="font-size:.68rem;color:#9ca3af">Drivers must take on fuel during the stop.</div>
-        </div>
-        <div class="col-6 col-sm-3 d-flex flex-column justify-content-end pb-1">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="mandatory_tyre_change" id="{{ $idPrefix }}-mandatory-tyre-change" value="1"
-                       {{ old('mandatory_tyre_change', $defaults['mandatory_tyre_change']) ? 'checked' : '' }}>
-                <label class="form-check-label fw-bold" for="{{ $idPrefix }}-mandatory-tyre-change" style="font-size:.78rem">Mandatory Tyre Change</label>
-            </div>
-            <div class="form-text mt-0" style="font-size:.68rem;color:#9ca3af">Drivers must change tyres during the stop.</div>
-        </div>
-        <div class="col-6 col-sm-3">
-            <label class="form-label" style="font-size:.75rem">Tyre Sets</label>
-            <input type="number" name="tyre_set_count" id="{{ $idPrefix }}-tyre-sets" min="1" max="50" placeholder="Unlimited" value="{{ old('tyre_set_count', $defaults['tyre_set_count']) }}"
+        <div class="col-6 col-md-3">
+            <label class="cw-label">Tyre Sets</label>
+            <input type="number" name="tyre_set_count" id="{{ $idPrefix }}-tyre-sets" min="1" max="50" placeholder="50" value="{{ old('tyre_set_count', $defaults['tyre_set_count']) }}"
                    class="form-control form-control-sm @error('tyre_set_count') is-invalid @enderror">
-            <div class="form-text mt-0" style="font-size:.68rem;color:#9ca3af">Dry sets per car for the event. Blank = ACC default (50).</div>
+            <div class="cw-help">Dry sets per car. Blank = 50.</div>
             @error('tyre_set_count')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="cw-label">XCL-R Multiplier</label>
+            <input type="number" name="xcl_r_multiplier" step="0.01" min="0.6" max="2.5" value="{{ old('xcl_r_multiplier', $defaults['xcl_r_multiplier']) }}"
+                   class="form-control form-control-sm @error('xcl_r_multiplier') is-invalid @enderror" placeholder="1.0"
+                   {{ $championship->xcl_rating_enabled ? '' : 'disabled' }}>
+            <div class="cw-help">{{ $championship->xcl_rating_enabled ? '0.6 to 2.5. Blank = 1.0.' : 'Needs XCL Rating (Basics).' }}</div>
+            @error('xcl_r_multiplier')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+        </div>
+        <div class="col-12 d-flex flex-wrap gap-2">
+            {!! $toggle('fixed_stop_time', 'Fixed Stop Time (25s)', (bool) old('fixed_stop_time', $defaults['fixed_stop_time']), $idPrefix.'-fixed-stop') !!}
+            {!! $toggle('mandatory_refuelling', 'Mandatory Refuelling', (bool) old('mandatory_refuelling', $defaults['mandatory_refuelling']), $idPrefix.'-mandatory-refuelling') !!}
+            {!! $toggle('mandatory_tyre_change', 'Mandatory Tyre Change', (bool) old('mandatory_tyre_change', $defaults['mandatory_tyre_change']), $idPrefix.'-mandatory-tyre-change') !!}
         </div>
     </div>
 
     @if($championship->settings->format->driver_swaps_enabled ?? false)
-    <div class="row g-3">
-        <div class="col-6 col-sm-4">
-            <label class="form-label" style="font-size:.75rem">Max. Stint Time (min)</label>
+    <p class="cw-label mt-4">Driver Swaps</p>
+    <div class="row g-3 align-items-end">
+        <div class="col-6 col-md-3">
+            <label class="cw-label">Max Stint (min)</label>
             <input type="number" name="driver_stint_time_mins" value="{{ old('driver_stint_time_mins', $defaults['driver_stint_time_mins']) }}"
                    class="form-control form-control-sm @error('driver_stint_time_mins') is-invalid @enderror" placeholder="No limit">
             @error('driver_stint_time_mins')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         </div>
-        <div class="col-6 col-sm-4">
-            <label class="form-label" style="font-size:.75rem">Max Driving Time / Driver (min)</label>
+        <div class="col-6 col-md-3">
+            <label class="cw-label">Max per Driver (min)</label>
             <input type="number" name="max_total_driving_time_mins" value="{{ old('max_total_driving_time_mins', $defaults['max_total_driving_time_mins']) }}"
                    class="form-control form-control-sm @error('max_total_driving_time_mins') is-invalid @enderror" placeholder="No limit">
             @error('max_total_driving_time_mins')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         </div>
-        <div class="col-6 col-sm-4 d-flex align-items-end pb-1">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="mandatory_driver_swap" id="{{ $idPrefix }}-swap" value="1"
-                       {{ old('mandatory_driver_swap', $defaults['mandatory_driver_swap']) ? 'checked' : '' }}>
-                <label class="form-check-label fw-bold" for="{{ $idPrefix }}-swap" style="font-size:.78rem">Mandatory Pitstop Swap</label>
-            </div>
+        <div class="col-12 col-md-6">
+            {!! $toggle('mandatory_driver_swap', 'Mandatory Driver Swap', (bool) old('mandatory_driver_swap', $defaults['mandatory_driver_swap']), $idPrefix.'-swap') !!}
         </div>
     </div>
     @endif
@@ -255,8 +257,8 @@
 
 <script>
 (function () {
-    var rainRange  = document.getElementById('{{ $idPrefix }}-rain-level');
-    var rainVal    = document.getElementById('{{ $idPrefix }}-rain-level-val');
+    var rainRange = document.getElementById('{{ $idPrefix }}-rain-level');
+    var rainVal   = document.getElementById('{{ $idPrefix }}-rain-level-val');
     if (rainRange) {
         rainRange.addEventListener('input', function () { rainVal.textContent = parseFloat(rainRange.value).toFixed(1); });
     }
@@ -284,6 +286,16 @@ document.addEventListener('change', function (e) {
     if (details && details.tagName === 'DETAILS') details.open = true;
 });
 
+// Official Stream on shows the link field.
+document.addEventListener('change', function (e) {
+    var wrap = e.target.closest('[data-official-stream]');
+    if (!wrap || e.target.name !== 'official_stream') return;
+    var input = wrap.querySelector('[data-official-stream-url]');
+    input.hidden = !e.target.checked;
+    input.required = e.target.checked;
+    if (e.target.checked) input.focus();
+});
+
 // Round type "+ Add type…" shows the field for the new name.
 document.addEventListener('change', function (e) {
     var select = e.target.closest('[data-round-type-select]');
@@ -295,9 +307,9 @@ document.addEventListener('change', function (e) {
     if (adding) input.focus();
 });
 
-// A field failing browser validation inside the collapsed override panel can't
-// be focused or show its message, so submit silently does nothing — open the
-// panel first ('invalid' doesn't bubble, hence the capture listener).
+// A field failing browser validation inside the closed session block can't show
+// its message, so submit does nothing; open the block first ('invalid' doesn't
+// bubble, hence the capture listener).
 document.addEventListener('invalid', function (e) {
     var details = e.target.closest('details');
     if (details) details.open = true;

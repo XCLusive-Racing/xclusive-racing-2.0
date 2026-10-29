@@ -162,7 +162,7 @@ class SessionFormatTest extends TestCase
         $this->actingAs($this->manager)
             ->get(route('admin.leagues.championships.rounds.create', [$this->league, $championship]))
             ->assertOk()
-            ->assertSee('Double Header — P 10 · Q 15 · R 25 + 20 min');
+            ->assertSee('Double Header · P 10 · Q 15 · R 25 + 20 min');
 
         $this->actingAs($this->manager)
             ->post(route('admin.leagues.championships.rounds.store', [$this->league, $championship]), [

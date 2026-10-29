@@ -33,7 +33,7 @@ class SaveChampionshipStepRequest extends FormRequest
         if ($step === 'basics') {
             $championship = $this->route('championship');
 
-            return array_merge([
+            return [
                 'name' => 'required|string|max:150',
                 'tagline' => 'nullable|string|max:100',
                 'slogan' => 'nullable|string|max:150',
@@ -48,9 +48,13 @@ class SaveChampionshipStepRequest extends FormRequest
                 'image_path' => 'nullable|string|max:500',
                 'icon' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,svg|max:4096',
                 'icon_path' => 'nullable|string|max:500',
-                // Ownership (does this server actually belong to the championship's
-                // league?) is checked in the controller, not here — a plain
-                // exists:ftp_servers,id can't scope that.
+            ];
+        }
+
+        if ($step === 'rounds') {
+            return array_merge([
+                // Ownership (does this server belong to the championship's league?)
+                // is checked in the controller: a plain exists rule can't scope that.
                 'ftp_server_id' => 'nullable|exists:ftp_servers,id',
             ], ChampionshipSettingsSchema::rulesForGroups(['schedule']));
         }
