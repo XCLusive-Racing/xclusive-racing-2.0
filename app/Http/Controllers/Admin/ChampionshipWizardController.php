@@ -55,7 +55,10 @@ class ChampionshipWizardController extends Controller
         $user = $request->user();
         abort_unless($user->canManage() || $user->editsLeague($league) || $user->stewardsLeague($league), 403);
 
-        $championships = $league->championships()->orderBy('created_at', 'desc')->get();
+        $championships = $league->championships()
+            ->withCount(['rounds', 'registrations as entries_count' => fn ($q) => $q->where('is_spectator', false)])
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return view('admin.leagues.championships.index', compact('league', 'championships'));
     }

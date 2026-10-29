@@ -534,12 +534,76 @@ $cw-text: #374151;
     &:hover &__go { background: $cw-accent; color: #fff; }
 }
 
-// Small action buttons in list rows.
-.cw-row-actions {
-    display: inline-flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: .35rem;
+// Championship list: one card per championship, status colour on the left edge.
+.cw-champ-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: .85rem;
+    padding: 1.25rem;
+}
+
+.cw-champ {
+    --champ-color: #{$cw-muted};
+    display: flex;
+    flex-direction: column;
+    border: 1px solid $cw-border;
+    border-left: 4px solid var(--champ-color);
+    border-radius: 10px;
+    background: #fff;
+    transition: border-color .15s, box-shadow .15s, transform .15s;
+
+    &:hover {
+        box-shadow: 0 4px 14px rgba(17, 24, 39, .08);
+        transform: translateY(-1px);
+    }
+
+    &__head {
+        flex: 1;
+        padding: .9rem 1rem .75rem;
+        color: $cw-text;
+        text-decoration: none;
+
+        &:hover { color: $cw-text; }
+    }
+
+    &__name { font-weight: 900; font-size: .95rem; color: #111827; overflow-wrap: anywhere; }
+    &__tagline { margin-top: .15rem; font-size: .75rem; color: #6b7280; }
+
+    &__status {
+        padding: .2rem .55rem;
+        border-radius: 6px;
+        background: color-mix(in srgb, var(--champ-color) 13%, transparent);
+        color: var(--champ-color);
+        font-size: .65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    &__meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .35rem;
+        margin-top: .7rem;
+
+        span {
+            padding: .15rem .5rem;
+            border-radius: 5px;
+            background: #f3f4f6;
+            color: #4b5563;
+            font-size: .7rem;
+            font-weight: 600;
+        }
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .35rem;
+        padding: .6rem 1rem;
+        border-top: 1px solid $cw-divider;
+    }
 }
 
 .cw-btn-sm {
