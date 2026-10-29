@@ -42,7 +42,7 @@
                     <th class="fw-bold text-uppercase d-none d-md-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af">Game</th>
                     <th class="fw-bold text-uppercase text-center" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:120px">Status</th>
                     <th class="fw-bold text-uppercase text-center d-none d-lg-table-cell" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:110px">XCL Rating</th>
-                    <th class="fw-bold text-uppercase text-end pe-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:250px">Actions</th>
+                    <th class="fw-bold text-uppercase text-end pe-4" style="font-size:.72rem;letter-spacing:.06em;color:#9ca3af;width:320px">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -74,26 +74,22 @@
                         @endif
                     </td>
                     <td class="text-end pe-4">
-                        <a href="{{ route('admin.leagues.championships.wizard', [$league, $c, 'basics']) }}" class="fw-bold" style="color:#7c3aed;font-size:.8rem">
-                            Edit
-                        </a>
-                        <a href="{{ route('admin.leagues.championships.entries.index', [$league, $c]) }}" class="fw-bold ms-3" style="color:#7c3aed;font-size:.8rem">
-                            Entries
-                        </a>
-                        @can('create', [\App\Models\Championship::class, $league])
-                        <a href="{{ route('admin.leagues.championships.duplicate', [$league, $c]) }}" class="fw-bold ms-3" style="color:#7c3aed;font-size:.8rem">
-                            Duplicate
-                        </a>
-                        @endcan
-                        @can('delete', $c)
-                        <form action="{{ route('admin.leagues.championships.destroy', [$league, $c]) }}" method="POST" class="d-inline" onsubmit="return false">
-                            @csrf @method('DELETE')
-                            <button type="button" class="btn btn-link fw-bold p-0 ms-3" style="color:#dc2626;font-size:.8rem"
-                                    onclick="xcDeleteSubmit(this.closest('form'), 'Remove {{ addslashes($c->name) }}? Its rounds, registrations and results are kept but the championship itself will no longer be listed.')">
-                                Remove
-                            </button>
-                        </form>
-                        @endcan
+                        <div class="cw-row-actions">
+                            <a href="{{ route('admin.leagues.championships.wizard', [$league, $c, 'basics']) }}" class="cw-btn-sm cw-btn-sm--primary">Edit</a>
+                            <a href="{{ route('admin.leagues.championships.entries.index', [$league, $c]) }}" class="cw-btn-sm">Entries</a>
+                            @can('create', [\App\Models\Championship::class, $league])
+                            <a href="{{ route('admin.leagues.championships.duplicate', [$league, $c]) }}" class="cw-btn-sm">Duplicate</a>
+                            @endcan
+                            @can('delete', $c)
+                            <form action="{{ route('admin.leagues.championships.destroy', [$league, $c]) }}" method="POST" class="m-0" onsubmit="return false">
+                                @csrf @method('DELETE')
+                                <button type="button" class="cw-btn-sm cw-btn-sm--danger"
+                                        onclick="xcDeleteSubmit(this.closest('form'), 'Remove {{ addslashes($c->name) }}? Its rounds, registrations and results are kept but the championship itself will no longer be listed.')">
+                                    Remove
+                                </button>
+                            </form>
+                            @endcan
+                        </div>
                     </td>
                 </tr>
                 @endforeach

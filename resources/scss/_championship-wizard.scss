@@ -471,3 +471,106 @@ $cw-text: #374151;
 
     &[open] > summary::before { transform: rotate(90deg); }
 }
+
+// ── League picker + championship list ────────────────────────────────────
+.cw-pick-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: .75rem;
+    padding: 1.25rem;
+}
+
+.cw-pick {
+    --pick-color: #{$cw-accent};
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .85rem 1rem;
+    border: 1px solid $cw-border;
+    border-left: 4px solid var(--pick-color);
+    border-radius: 10px;
+    background: #fff;
+    color: $cw-text;
+    text-decoration: none;
+    transition: border-color .15s, box-shadow .15s, transform .15s;
+
+    &:hover {
+        border-color: var(--pick-color);
+        box-shadow: 0 4px 14px rgba(17, 24, 39, .08);
+        transform: translateY(-1px);
+        color: $cw-text;
+    }
+
+    &__logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        border-radius: 8px;
+        background: #f9fafb;
+        color: var(--pick-color);
+        font-weight: 900;
+        font-size: 1rem;
+
+        img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+    }
+
+    &__name { flex: 1; min-width: 0; font-weight: 800; font-size: .9rem; color: #111827; }
+
+    &__go {
+        flex-shrink: 0;
+        padding: .3rem .7rem;
+        border-radius: 6px;
+        background: $cw-accent-soft;
+        color: $cw-accent;
+        font-size: .7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    &:hover &__go { background: $cw-accent; color: #fff; }
+}
+
+// Small action buttons in list rows.
+.cw-row-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: .35rem;
+}
+
+.cw-btn-sm {
+    display: inline-flex;
+    align-items: center;
+    padding: .3rem .7rem;
+    border: 1px solid $cw-border;
+    border-radius: 6px;
+    background: #fff;
+    color: $cw-text;
+    font-size: .72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    text-decoration: none;
+    line-height: 1.2;
+
+    &:hover { border-color: $cw-accent; color: $cw-accent; }
+
+    &--primary {
+        border-color: $cw-accent;
+        background: $cw-accent;
+        color: #fff;
+
+        &:hover { background: $primary-hover; border-color: $primary-hover; color: #fff; }
+    }
+
+    &--danger {
+        border-color: #fecaca;
+        background: #fef2f2;
+        color: #dc2626;
+
+        &:hover { border-color: #dc2626; background: #fee2e2; color: #b91c1c; }
+    }
+}
