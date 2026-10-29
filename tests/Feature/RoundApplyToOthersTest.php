@@ -57,7 +57,9 @@ class RoundApplyToOthersTest extends TestCase
     {
         return $this->actingAs($this->manager)->put(
             route('admin.leagues.championships.rounds.update', [$this->league, $this->championship, $race]),
+            // Same fields the Edit Round form always sends.
             array_merge([
+                'round_number' => $race->round_number,
                 'track' => $race->track,
                 'scheduled_at' => $race->scheduledAtUk()->format('Y-m-d\TH:i'),
             ], $input)
