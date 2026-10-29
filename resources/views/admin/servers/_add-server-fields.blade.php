@@ -117,10 +117,14 @@
 
     <div class="mb-3">
         <label class="form-label">Server Type</label>
+        {{-- A new league server starts on Manual restart (2026-10-29): leagues start
+             their own server, rolling resets only fit gPortal's fixed schedule. --}}
+        @php $serverType = old('server_type', $editServer?->server_type ?? ($xclHints ? 'rolling' : 'scheduled')); @endphp
         <select name="server_type" id="{{ $idPrefix ?? '' }}srv-type" class="form-select @error('server_type') is-invalid @enderror">
-            <option value="rolling" {{ old('server_type', $editServer?->server_type ?? 'rolling') === 'rolling' ? 'selected' : '' }}>{{ $xclHints ? 'Rolling resets (SERVER 1 / 2 / 3)' : 'Rolling resets (gPortal restarts it on a schedule)' }}</option>
-            <option value="scheduled" {{ old('server_type', $editServer?->server_type) === 'scheduled' ? 'selected' : '' }}>{{ $xclHints ? 'Manual restart (SERVER 4)' : 'Manual restart' }}</option>
+            <option value="scheduled" @selected($serverType === 'scheduled')>{{ $xclHints ? 'Manual restart (SERVER 4)' : 'Manual restart (you start the server yourself)' }}</option>
+            <option value="rolling" @selected($serverType === 'rolling')>{{ $xclHints ? 'Rolling resets (SERVER 1 / 2 / 3)' : 'Rolling resets (gPortal restarts it on a schedule)' }}</option>
         </select>
+        <div class="form-text" style="font-size:.72rem;color:#9ca3af">Manual: a race can start at any time. Rolling: gPortal restarts the server at fixed times and only then loads the new config, so a race must start on one of those restarts.</div>
         @error('server_type') <div class="invalid-feedback">{{ $message }}</div> @enderror
     </div>
 

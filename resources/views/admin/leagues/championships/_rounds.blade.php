@@ -14,6 +14,7 @@
             <p class="cw-section__note">Add Round suggests each date from this. Every round can still be changed.</p>
             <div class="row g-3">
                 @foreach(\App\Settings\ChampionshipSettingsSchema::fieldsForGroup('schedule') as $field)
+                    @continue($field['key'] === 'server_restarts')
                     @include('admin.leagues.championships._field', ['field' => $field, 'col' => 'col-md-6 col-lg-3'])
                 @endforeach
             </div>
@@ -37,6 +38,12 @@
                 </div>
             </div>
             @endif
+            <div class="row g-3 mt-0">
+                @include('admin.leagues.championships._field', [
+                    'field' => collect(\App\Settings\ChampionshipSettingsSchema::fieldsForGroup('schedule'))->firstWhere('key', 'server_restarts'),
+                    'col' => 'col-md-6',
+                ])
+            </div>
         </div>
     </div>
 </form>

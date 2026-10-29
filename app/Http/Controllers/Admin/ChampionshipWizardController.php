@@ -663,7 +663,10 @@ class ChampionshipWizardController extends Controller
             if ($server && ! $server->supportsRaceGame($championship->game)) {
                 return FtpServer::ERR_WRONG_PLATFORM;
             }
-            if ($server && ! $server->isValidSlot($data['scheduled_at'], allowHalfHour: true)) {
+            // Only a championship set to Rolling resets is held to the server's reset
+            // slots; on Manual restart (the default) the league starts it itself.
+            $rolling = ($championship->settings->schedule->server_restarts ?? 'manual_restart') === 'rolling_resets';
+            if ($server && $rolling && ! $server->isValidSlot($data['scheduled_at'], allowHalfHour: true)) {
                 return 'That time is not a valid slot on this server.';
             }
             if ($server && (in_array($slotKey, $server->takenSlots($excludeRaceId), true) || in_array($slotKey, $claimedSlots, true))) {

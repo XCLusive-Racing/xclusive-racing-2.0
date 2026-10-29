@@ -16,7 +16,7 @@ use Illuminate\Support\Arr;
 // defaults for new keys) once this class gains fields for a new version.
 class ChampionshipSettingsSchema
 {
-    const CURRENT_VERSION = 17;
+    const CURRENT_VERSION = 18;
 
     // A comma-separated list of whole kg values, each -40..40 (ACC's BOP range).
     const KG_LIST_RULE = 'regex:/^\s*-?(40|[1-3]?\d)(\s*,\s*-?(40|[1-3]?\d))*\s*$/';
@@ -103,6 +103,13 @@ class ChampionshipSettingsSchema
                 // Array form, not a pipe-delimited string: the regex itself
                 // contains a "|", which a string rule would wrongly split on.
                 'rule' => ['required', 'date_format:H:i', 'regex:/^([01]\d|2[0-3]):(00|30)$/']],
+            // Rendered under Default Server, not with the schedule fields. Manual by
+            // default (2026-10-29): a league's own server is started by the league
+            // itself, so only Rolling holds rounds to the server's reset slots.
+            ['group' => 'schedule', 'key' => 'server_restarts', 'type' => 'enum', 'options' => ['manual_restart', 'rolling_resets'], 'default' => 'manual_restart',
+                'label' => 'Server Restarts', 'help' => 'Manual: any start time. Rolling: only on the server\'s reset times.',
+                'info' => 'Manual restart: you start or restart the server yourself, so a round can start at any hour or half hour. Rolling resets: gPortal restarts the server on a fixed schedule (set on the server itself) and only then loads the new config, so a round must start on one of those restarts.',
+                'rule' => 'sometimes|required|in:manual_restart,rolling_resets'],
 
             // --- Format ---
             ['group' => 'format', 'key' => 'multiclass_enabled', 'type' => 'boolean', 'default' => false,
