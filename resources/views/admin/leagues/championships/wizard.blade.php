@@ -156,9 +156,11 @@
         var toggle = document.getElementById(field.dataset.shownIf);
         if (!toggle) return;
         var invert = field.hasAttribute('data-invert');
+        var value = field.dataset.shownValue;
 
         function apply() {
-            field.hidden = invert ? toggle.checked : !toggle.checked;
+            var on = value !== undefined ? toggle.value === value : toggle.checked;
+            field.hidden = invert ? on : !on;
         }
 
         toggle.addEventListener('change', apply);

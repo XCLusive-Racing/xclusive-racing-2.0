@@ -56,7 +56,8 @@ class ChampionshipSettingsSchema
         'balance' => 'Success Ballast',
     ];
 
-    // A field can carry 'depends_on' => '<boolean field key, same group>' (see
+    // A field can carry 'depends_on' => '<boolean field key, same group>', or
+    // '<enum field key>=<option>' to show only while that option is picked (see
     // fields() below) — _field.blade.php renders it inside a wrapper
     // wizard.blade.php's shared script actually shows/hides (not just greys)
     // based on that boolean's live checked state, un-hiding again the moment
@@ -247,12 +248,12 @@ class ChampionshipSettingsSchema
             // --- Registration ---
             ['group' => 'requirements', 'key' => 'registration_mode', 'type' => 'enum', 'section' => 'Registration',
                 'options' => ['always_open', 'closes_at_first_round', 'specific_period'], 'default' => 'always_open',
-                'label' => 'Registration Closes', 'help' => 'Always open: you close it by hand.',
+                'label' => 'Registration Closes', 'help' => 'Always open: stays open until you close it on Review.',
                 'rule' => 'required|in:always_open,closes_at_first_round,specific_period'],
             ['group' => 'requirements', 'key' => 'registration_opens_at', 'type' => 'datetime', 'nullable' => true, 'default' => null, 'section' => 'Registration',
-                'label' => 'Opens At', 'help' => 'Specific period only.'],
+                'depends_on' => 'registration_mode=specific_period', 'label' => 'Opens At', 'help' => 'Blank = from publish.'],
             ['group' => 'requirements', 'key' => 'registration_closes_at', 'type' => 'datetime', 'nullable' => true, 'default' => null, 'section' => 'Registration',
-                'label' => 'Closes At', 'help' => 'Specific period only.'],
+                'depends_on' => 'registration_mode=specific_period', 'label' => 'Closes At', 'help' => 'Blank = no end date.'],
             ['group' => 'requirements', 'key' => 'waitlist_enabled', 'type' => 'boolean', 'default' => false, 'section' => 'Registration',
                 'label' => 'Waiting List', 'help' => 'When full, new entries wait and move up automatically.'],
 

@@ -14,9 +14,11 @@
             if (in_array($field['key'], $consumed, true)) {
                 continue;
             }
-            $dependents = $field['type'] === 'boolean'
-                ? $visible->filter(fn ($f) => ($f['depends_on'] ?? null) === $field['key'])->values()
-                : collect();
+            $dependents = match ($field['type']) {
+                'boolean' => $visible->filter(fn ($f) => ($f['depends_on'] ?? null) === $field['key'])->values(),
+                'enum' => $visible->filter(fn ($f) => str_starts_with($f['depends_on'] ?? '', $field['key'].'='))->values(),
+                default => collect(),
+            };
             $consumed = array_merge($consumed, $dependents->pluck('key')->all());
             $items[] = ['field' => $field, 'dependents' => $dependents];
         }

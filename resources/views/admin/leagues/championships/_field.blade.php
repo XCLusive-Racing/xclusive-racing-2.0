@@ -15,13 +15,17 @@
 
     // 'depends_on' names a boolean field (same group) that decides whether this
     // one shows; a leading '!' inverts it (e.g. Car Class only while Multiclass is
-    // off). Hiding never clears the value, so switching back restores it.
+    // off). 'key=option' names an enum instead: shown only while that option is
+    // picked. Hiding never clears the value, so switching back restores it.
     // Rendered hidden from the first paint, so there's no flash pre-JS.
     $dependsOnRaw    = $field['depends_on'] ?? null;
     $dependsInverted = $dependsOnRaw !== null && str_starts_with($dependsOnRaw, '!');
-    $dependsOnKey    = $dependsOnRaw !== null ? ltrim($dependsOnRaw, '!') : null;
+    [$dependsOnKey, $dependsOnValue] = $dependsOnRaw !== null
+        ? array_pad(explode('=', ltrim($dependsOnRaw, '!'), 2), 2, null)
+        : [null, null];
     $dependsOnId     = $dependsOnKey ? "f-{$field['group']}-{$dependsOnKey}" : null;
-    $dependsOnOn     = $dependsOnKey ? (bool) old("settings.{$field['group']}.{$dependsOnKey}", $championship->settings->{$field['group']}->{$dependsOnKey} ?? false) : true;
+    $dependsOnState  = $dependsOnKey ? old("settings.{$field['group']}.{$dependsOnKey}", $championship->settings->{$field['group']}->{$dependsOnKey} ?? null) : true;
+    $dependsOnOn     = $dependsOnValue !== null ? $dependsOnState === $dependsOnValue : (bool) $dependsOnState;
     $shouldShow      = $dependsInverted ? !$dependsOnOn : $dependsOnOn;
 
     // Locked (greyed, not editable): XCL-R Multiplier while XCL Rating is off, or a
@@ -32,7 +36,7 @@
     $info = $field['info'] ?? null;
 @endphp
 
-<div class="{{ $col }}" @if($locked) style="opacity:.6" @endif @if($dependsOnId) data-shown-if="{{ $dependsOnId }}" @if($dependsInverted) data-invert @endif @if(!$shouldShow) hidden @endif @endif>
+<div class="{{ $col }}" @if($locked) style="opacity:.6" @endif @if($dependsOnId) data-shown-if="{{ $dependsOnId }}" @if($dependsOnValue !== null) data-shown-value="{{ $dependsOnValue }}" @endif @if($dependsInverted) data-invert @endif @if(!$shouldShow) hidden @endif @endif>
     @if($field['type'] === 'boolean')
         @php $isOn = (bool) old($errorKey, $current); @endphp
         <div class="d-flex align-items-center gap-2">

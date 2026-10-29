@@ -361,6 +361,34 @@ class ChampionshipSettingsTest extends TestCase
         $this->assertTrue($this->isFieldHidden($on->getContent(), 'f-format-car_class'));
     }
 
+    // User-directed 2026-10: with Registration Closes on "always open" the
+    // Opens At / Closes At dates don't apply, so they only show for a set period.
+    public function test_requirements_step_shows_registration_dates_only_for_a_specific_period(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $admin = $this->makeAdmin();
+        $championship = $this->makeChampionship($league);
+
+        $alwaysOpen = $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'requirements']))
+            ->assertOk()
+            ->getContent();
+        $this->assertTrue($this->isFieldHidden($alwaysOpen, 'f-requirements-registration_opens_at'));
+        $this->assertTrue($this->isFieldHidden($alwaysOpen, 'f-requirements-registration_closes_at'));
+
+        $championship->settings = array_replace_recursive($championship->settings->toArray(), [
+            'requirements' => ['registration_mode' => 'specific_period'],
+        ]);
+        $championship->save();
+
+        $period = $this->actingAs($admin)
+            ->get(route('admin.leagues.championships.wizard', [$league, $championship, 'requirements']))
+            ->assertOk()
+            ->getContent();
+        $this->assertFalse($this->isFieldHidden($period, 'f-requirements-registration_opens_at'));
+        $this->assertFalse($this->isFieldHidden($period, 'f-requirements-registration_closes_at'));
+    }
+
     // User-directed 2026-09 (corrected after an initial miss — "nee niet de
     // autos, je moet gwn de dropdown weer terug brengen met de classes"): a
     // championship class is picked from the same fixed GT2/GT3/GT4/TCX/GTC
