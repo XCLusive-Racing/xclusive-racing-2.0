@@ -114,7 +114,7 @@ class AccServerConfigService implements ServerConfigGenerator
     // {drivers: [{playerID}], isServerAdmin: 1} entry, the shape gPortal expects. One
     // already racing gets the flag on their own car instead of a second entry; one
     // without a player ID can't be listed.
-    private static function addLeagueAdmins(array &$entries, Race $race, ?Championship $championship): void
+    public static function addLeagueAdmins(array &$entries, Race $race, ?Championship $championship): void
     {
         $league = $championship
             ? League::withoutTenantScope()->find($championship->league_id)

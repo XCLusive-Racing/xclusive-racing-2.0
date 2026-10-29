@@ -9,6 +9,7 @@ use App\Models\Race;
 use App\Models\RaceRegistration;
 use App\Models\User;
 use App\Services\AccServerConfigService;
+use App\Services\PracticeServer\ChampionshipPracticeService;
 use App\Settings\ChampionshipSettingsSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -87,5 +88,16 @@ class EntryListLeagueAdminsTest extends TestCase
         $race = $this->roundOf($this->leagueWithManagers('nlrl', [null]));
 
         $this->assertSame([], app(AccServerConfigService::class)->entryList($race)['entries']);
+    }
+
+    // User-directed 2026-10-29: the championship's 24h practice server lists the
+    // league's managers/admins as server admins too, not only its entrants.
+    public function test_championship_practice_entrylist_lists_league_managers_as_server_admins(): void
+    {
+        $race = $this->roundOf($this->leagueWithManagers('nlrl', ['M-ADMIN-1']));
+
+        $entries = app(ChampionshipPracticeService::class)->entryList($race)['entries'];
+
+        $this->assertSame([['drivers' => [['playerID' => 'M-ADMIN-1']], 'isServerAdmin' => 1]], $entries);
     }
 }
