@@ -238,6 +238,9 @@ class ChampionshipController extends Controller
         if ($failure = $user->requirementFailure($championship->game, $thresholds['sr'], $thresholds['min'], $thresholds['max'])) {
             return back()->with('error', $failure);
         }
+        if ($failure = $championship->realNameFailure($team ? User::whereIn('id', $entryFields['driver_ids'])->get() : [$user])) {
+            return back()->withInput()->with('error', $failure);
+        }
 
         $classId = null;
         if ($championship->is_multiclass) {
@@ -503,6 +506,9 @@ class ChampionshipController extends Controller
             if ($failure) {
                 return back()->with('error', $reserve->displayName().': '.$failure);
             }
+            if ($failure = $championship->realNameFailure([$reserve])) {
+                return back()->with('error', $failure);
+            }
         }
 
         $car->update(['reserve_driver_id' => $reserveId]);
@@ -548,12 +554,16 @@ class ChampionshipController extends Controller
 
         $thresholds = $championship->requirementThresholds();
         $class = $car->championshipClass;
-        foreach (User::whereIn('id', $driverIds->diff($car->driverIds()))->get() as $driver) {
+        $newDrivers = User::whereIn('id', $driverIds->diff($car->driverIds()))->get();
+        foreach ($newDrivers as $driver) {
             $failure = $driver->requirementFailure($championship->game, $thresholds['sr'], $thresholds['min'], $thresholds['max'])
                 ?? ($class ? $driver->requirementFailure($championship->game, $class->sr_requirement, $class->min_rating) : null);
             if ($failure) {
                 return back()->with('error', $driver->displayName().': '.$failure);
             }
+        }
+        if ($failure = $championship->realNameFailure($newDrivers)) {
+            return back()->with('error', $failure);
         }
 
         $car->update([

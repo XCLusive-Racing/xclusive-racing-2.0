@@ -49,9 +49,9 @@
                                 <label class="form-label fw-bold text-dark" style="font-size:.82rem">Show My Name As</label>
                                 <select name="display_name_preference" class="form-select @error('display_name_preference') is-invalid @enderror">
                                     <option value="{{ \App\Models\User::DISPLAY_GAMERTAG }}" @selected(old('display_name_preference', $user->display_name_preference) !== \App\Models\User::DISPLAY_REAL_NAME)>Gamertag</option>
-                                    <option value="{{ \App\Models\User::DISPLAY_REAL_NAME }}" @selected(old('display_name_preference', $user->display_name_preference) === \App\Models\User::DISPLAY_REAL_NAME)>Real name</option>
+                                    <option value="{{ \App\Models\User::DISPLAY_REAL_NAME }}" @selected(old('display_name_preference', $user->display_name_preference) === \App\Models\User::DISPLAY_REAL_NAME) @disabled(! $user->realName())>Real name{{ $user->realName() ? '' : ' (save your name first)' }}</option>
                                 </select>
-                                <div class="form-text" style="font-size:.72rem">On the site and in-game, shortened there (Jan Jansen → J. Jansen). Without a real name filled in, your gamertag is shown.</div>
+                                <div class="form-text" style="font-size:.72rem">On the site and in-game, shortened there (Jan Jansen → J. Jansen). Fill in and save your first and last name to pick it. Some championships require your real name.</div>
                                 @error('display_name_preference')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-sm-6">

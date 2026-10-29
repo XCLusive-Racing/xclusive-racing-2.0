@@ -567,6 +567,27 @@ class Championship extends Model
         return (bool) ($this->settings->requirements->manual_approval_required ?? false);
     }
 
+    public function requiresRealNames(): bool
+    {
+        return (bool) ($this->settings->requirements->real_names_required ?? false);
+    }
+
+    // Why these drivers can't enter while Real Names is on, null when they can.
+    public function realNameFailure(iterable $drivers): ?string
+    {
+        if (! $this->requiresRealNames()) {
+            return null;
+        }
+
+        foreach ($drivers as $driver) {
+            if ($driver->realName() === null) {
+                return $driver->gamertag().': this championship races under real names. Add your first and last name on your profile first.';
+            }
+        }
+
+        return null;
+    }
+
     public function waitlistEnabled(): bool
     {
         return (bool) ($this->settings->requirements->waitlist_enabled ?? false);

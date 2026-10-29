@@ -16,7 +16,7 @@ use Illuminate\Support\Arr;
 // defaults for new keys) once this class gains fields for a new version.
 class ChampionshipSettingsSchema
 {
-    const CURRENT_VERSION = 18;
+    const CURRENT_VERSION = 19;
 
     // A comma-separated list of whole kg values, each -40..40 (ACC's BOP range).
     const KG_LIST_RULE = 'regex:/^\s*-?(40|[1-3]?\d)(\s*,\s*-?(40|[1-3]?\d))*\s*$/';
@@ -251,6 +251,10 @@ class ChampionshipSettingsSchema
                 'locked_help' => 'Temporarily locked: the Discord bot setup is not finished yet.'],
             ['group' => 'requirements', 'key' => 'manual_approval_required', 'type' => 'boolean', 'default' => false,
                 'label' => 'Manual Approval', 'help' => 'Staff approve each entry before it counts.'],
+            // 2026-10-29: Championship::requiresRealNames(), User::displayNameIn().
+            ['group' => 'requirements', 'key' => 'real_names_required', 'type' => 'boolean', 'default' => false,
+                'label' => 'Real Names', 'help' => 'Drivers race under their real name from their profile.',
+                'info' => 'Signing up needs a real name on the driver\'s profile (for a team car, every driver). The server and this championship\'s pages then show that name (in-game as J. Jansen), whatever the driver picked on their profile.'],
 
             // --- Registration ---
             ['group' => 'requirements', 'key' => 'registration_mode', 'type' => 'enum', 'section' => 'Registration',

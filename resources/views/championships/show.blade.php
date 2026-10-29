@@ -215,9 +215,9 @@
                                         <div class="d-flex align-items-center gap-2">
                                             <div class="rounded-circle d-flex align-items-center justify-content-center fw-black text-white flex-shrink-0"
                                                  style="width:30px;height:30px;font-size:.7rem;background:linear-gradient(135deg,{{ $championship->gameColor() }},#db2777)">
-                                                {{ strtoupper(substr($entry['user']?->displayName() ?? '?', 0, 1)) }}
+                                                {{ strtoupper(substr($entry['user']?->displayNameIn($championship) ?? '?', 0, 1)) }}
                                             </div>
-                                            <span class="fw-bold text-white">{{ $entry['user']?->displayName() ?? 'Unknown' }}</span>
+                                            <span class="fw-bold text-white">{{ $entry['user']?->displayNameIn($championship) ?? 'Unknown' }}</span>
                                         </div>
                                     </td>
                                     @foreach($rounds->where('status','finished') as $r)
@@ -284,7 +284,7 @@
                                             @endif
                                         </div>
                                         @if(isset($entry['drivers']))
-                                        <div style="color:#6b7280;font-size:.75rem">{{ $entry['drivers']->map->displayName()->implode(', ') }}</div>
+                                        <div style="color:#6b7280;font-size:.75rem">{{ $entry['drivers']->map(fn ($driver) => $driver->displayNameIn($championship))->implode(', ') }}</div>
                                         @endif
                                     </td>
                                     <td class="text-center pe-4 fw-black" style="color:#db2777;font-size:1rem">{{ $entry['total_points'] }}</td>
@@ -337,9 +337,9 @@
                             <span class="fw-black flex-shrink-0" style="width:2.6rem;color:#9ca3af;font-size:.8rem">#{{ $row['car_number'] }}</span>
                             @endif
                             <div class="flex-grow-1">
-                                <span class="text-white fw-bold" style="font-size:.82rem">{{ $row['drivers']->map->displayName()->implode(', ') }}</span>
+                                <span class="text-white fw-bold" style="font-size:.82rem">{{ $row['drivers']->map(fn ($driver) => $driver->displayNameIn($championship))->implode(', ') }}</span>
                                 @if($row['reserve'])
-                                <span style="color:#6b7280;font-size:.75rem"> · Reserve: {{ $row['reserve']->displayName() }}</span>
+                                <span style="color:#6b7280;font-size:.75rem"> · Reserve: {{ $row['reserve']->displayNameIn($championship) }}</span>
                                 @endif
                             </div>
                             @if($championship->is_multiclass && $row['class'])
@@ -465,7 +465,7 @@
                             // (the registration's user is only the manager who entered it).
                             $entryName = $reg->racingTeam
                                 ? $reg->racingTeam->name.($reg->car_number !== null ? ' #'.$reg->car_number : '')
-                                : $reg->user?->displayName();
+                                : $reg->user?->displayNameIn($championship);
                             $lineUp = $reg->racingTeam
                                 ? collect($reg->driverIds())->map(fn ($id) => $carDrivers[$id] ?? null)->filter()
                                 : collect();
@@ -496,7 +496,7 @@
                                 @endif
                                 @if($reg->racingTeam)
                                 <div style="color:#d1d5db;font-size:.75rem">
-                                    {{ $lineUp->map->displayName()->implode(', ') }}@if($reserve)<span style="color:#6b7280"> · Reserve: {{ $reserve->displayName() }}</span>@endif
+                                    {{ $lineUp->map(fn ($driver) => $driver->displayNameIn($championship))->implode(', ') }}@if($reserve)<span style="color:#6b7280"> · Reserve: {{ $reserve->displayNameIn($championship) }}</span>@endif
                                 </div>
                                 @if($reg->car_model)
                                 <div style="color:#6b7280;font-size:.72rem">{{ $reg->car_model }}</div>
@@ -631,10 +631,23 @@
                             <span style="color:#6b7280">Discord Membership</span>
                             <span class="fw-bold" style="color:{{ $discordRequiredHere ? '#818cf8' : '#fff' }}">{{ $discordRequiredHere ? 'Required' : 'Not required' }}</span>
                         </div>
-                        <div class="d-flex justify-content-between py-1">
+                        <div class="d-flex justify-content-between py-1" @if($championship->requiresRealNames()) style="border-bottom:1px solid #1f2937" @endif>
                             <span style="color:#6b7280">Entry Approval</span>
                             <span class="fw-bold text-white">{{ ($req->manual_approval_required ?? false) ? 'Manually reviewed' : 'Automatic' }}</span>
                         </div>
+                        @if($championship->requiresRealNames())
+                        <div class="d-flex justify-content-between py-1">
+                            <span style="color:#6b7280">Real Name</span>
+                            <span class="fw-bold" style="color:#818cf8">Required</span>
+                        </div>
+                        @auth
+                        @if(! auth()->user()->realName())
+                        <div class="mt-2" style="color:#fbbf24;font-size:.75rem">
+                            This championship races under real names. <a href="{{ route('profile.edit') }}" style="color:#fbbf24">Add yours on your profile</a> before you sign up.
+                        </div>
+                        @endif
+                        @endauth
+                        @endif
                     </div>
                     @if($pen->stewarding_enabled ?? false)
                     <div class="px-4 py-3" style="border-top:1px solid #1f2937;font-size:.82rem">

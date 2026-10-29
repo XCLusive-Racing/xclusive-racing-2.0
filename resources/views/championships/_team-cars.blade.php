@@ -26,10 +26,10 @@
                 @if($car->car_model)<span style="color:#9ca3af;font-weight:400"> — {{ $car->car_model }}</span>@endif
             </div>
             <div style="color:#9ca3af;font-size:.72rem">
-                {{ collect($car->driverIds())->map(fn ($id) => $teamCarDrivers->get($id)?->displayName())->filter()->join(', ') }}
+                {{ collect($car->driverIds())->map(fn ($id) => $teamCarDrivers->get($id)?->displayNameIn($championship))->filter()->join(', ') }}
             </div>
             @if($car->reserve_driver_id)
-            <div style="color:#9ca3af;font-size:.72rem">Reserve: <span class="text-white">{{ $teamCarDrivers->get($car->reserve_driver_id)?->displayName() }}</span></div>
+            <div style="color:#9ca3af;font-size:.72rem">Reserve: <span class="text-white">{{ $teamCarDrivers->get($car->reserve_driver_id)?->displayNameIn($championship) }}</span></div>
             @endif
         </div>
         <div class="d-flex gap-1 flex-shrink-0">
@@ -52,7 +52,7 @@
                 @foreach($lineupOptions as $member)
                 <label class="d-flex align-items-center gap-2 text-white" style="font-size:.78rem">
                     <input type="checkbox" name="driver_ids[]" value="{{ $member->id }}" class="form-check-input m-0" @checked(in_array($member->id, $carDriverIds, true))>
-                    {{ $member->displayName() }}
+                    {{ $member->displayNameIn($championship) }}
                 </label>
                 @endforeach
             </div>
@@ -61,7 +61,7 @@
                     <label class="form-label mb-1" style="color:#9ca3af;font-size:.72rem">Starting driver</label>
                     <select name="starting_driver_id" class="form-select form-select-sm" style="background:#1f2937;border-color:#374151;color:#e5e7eb">
                         @foreach($lineupOptions as $member)
-                        <option value="{{ $member->id }}" @selected($member->id === $car->starting_driver_id)>{{ $member->displayName() }}</option>
+                        <option value="{{ $member->id }}" @selected($member->id === $car->starting_driver_id)>{{ $member->displayNameIn($championship) }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -75,7 +75,7 @@
                 <select name="reserve_driver_id" class="form-select form-select-sm" style="background:#1f2937;border-color:#374151;color:#e5e7eb">
                     <option value="">No reserve</option>
                     @foreach($reserveOptions as $member)
-                    <option value="{{ $member->id }}" @selected($member->id === $car->reserve_driver_id)>{{ $member->displayName() }}</option>
+                    <option value="{{ $member->id }}" @selected($member->id === $car->reserve_driver_id)>{{ $member->displayNameIn($championship) }}</option>
                     @endforeach
                 </select>
             </div>

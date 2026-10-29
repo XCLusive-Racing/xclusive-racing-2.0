@@ -171,7 +171,7 @@ class ChampionshipPracticeService
                 ->filter(fn (User $user) => $user->playerIdFor($round->game))
                 ->map(fn (User $user) => [
                     'firstName' => '',
-                    'lastName' => AccServerConfigService::entryLastName($user, $tag),
+                    'lastName' => AccServerConfigService::entryLastName($user, $tag, (bool) $championship?->requiresRealNames()),
                     'shortName' => AccServerConfigService::entryShortName($user),
                     'playerID' => $user->playerIdFor($round->game),
                     'driverCategory' => $categoryOverrides[$user->id] ?? $user->ratingClass($round->game),
