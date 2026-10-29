@@ -113,8 +113,8 @@ class ChampionshipWizardController extends Controller
         'config_overrides', 'has_practice_server', 'practice_notes', 'ftp_server_id',
     ];
 
-    // Edit Round's "Apply to other rounds" (2026-10-29): which round fields each
-    // checkbox copies to the championship's other rounds that haven't run yet.
+    // Edit Round's "Apply to later rounds" (2026-10-29): which round fields each
+    // checkbox copies to the championship's later rounds that haven't run yet.
     // Track, date, number, type, points and stream always stay per round.
     public const APPLY_TO_ROUNDS_GROUPS = [
         'sessions' => ['practice_duration', 'qualifying_duration', 'race_duration', 'race_durations', 'session_format_id'],
@@ -433,7 +433,7 @@ class ChampionshipWizardController extends Controller
             'apply_to.*' => Rule::in(array_keys(self::APPLY_TO_ROUNDS_GROUPS)),
         ])['apply_to'] ?? [];
         $otherRounds = $applyTo
-            ? $championship->rounds()->whereKeyNot($race->id)->where('status', 'open')->get()
+            ? $championship->rounds()->where('round_number', '>', $result['round_number'])->where('status', 'open')->get()
             : collect();
         $copies = $this->roundCopies($otherRounds, $result, $applyTo, $championship);
 
@@ -454,14 +454,14 @@ class ChampionshipWizardController extends Controller
         ]));
 
         $message = $copies
-            ? 'Round updated and applied to '.count($copies).' other '.Str::plural('round', count($copies)).'.'
+            ? 'Round updated and applied to '.count($copies).' later '.Str::plural('round', count($copies)).'.'
             : 'Round updated.';
 
         return redirect()->route('admin.leagues.championships.wizard', [$league, $championship, 'rounds'])
             ->with('success', $message);
     }
 
-    // The changes Edit Round's "Apply to other rounds" makes to each other round,
+    // The changes Edit Round's "Apply to later rounds" makes to each other round,
     // as [round, changes] pairs, or an error when a new server can't take one of
     // them. Checked before anything is saved, so it's all or nothing.
     private function roundCopies(Collection $rounds, array $source, array $groups, Championship $championship): array|string

@@ -94,10 +94,10 @@
         @include('admin.leagues.championships._round-shared-fields', ['idPrefix' => 're', 'defaults' => $defaults, 'openByDefault' => true])
     </div>
 
-    {{-- Copies the ticked parts of this round, as saved, to every other round that
+    {{-- Copies the ticked parts of this round, as saved, to every later round that
          hasn't run yet (ChampionshipWizardController::APPLY_TO_ROUNDS_GROUPS). --}}
     @php
-        $otherOpenRounds = $championship->rounds()->whereKeyNot($race->id)->where('status', 'open')->count();
+        $otherOpenRounds = $championship->rounds()->where('round_number', '>', $race->round_number)->where('status', 'open')->count();
         $applyGroups = array_filter([
             'sessions' => 'Sessions',
             'weather' => 'Weather & Time',
@@ -111,11 +111,11 @@
     @if($otherOpenRounds)
     <div class="cw-card">
         <div class="cw-card__head">
-            <h2 class="cw-card__title">Apply to other rounds</h2>
+            <h2 class="cw-card__title">Apply to later rounds</h2>
             <span class="cw-tag cw-tag--muted">{{ $otherOpenRounds }} {{ Str::plural('round', $otherOpenRounds) }}</span>
         </div>
         <div class="cw-section">
-            <p class="cw-section__note">Copy these parts of this round to every other round that hasn't run yet. Track, date, type, points and stream stay per round.</p>
+            <p class="cw-section__note">Copy these parts of this round to every later round that hasn't run yet. Track, date, type, points and stream stay per round.</p>
             <div class="d-flex flex-wrap gap-2">
                 @foreach($applyGroups as $key => $label)
                 <label class="cw-toggle">

@@ -13,8 +13,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 // User-directed 2026-10-29: change a setting on every existing round at once.
-// Edit Round's "Apply to other rounds" copies the ticked groups to the
-// championship's other rounds that haven't run yet.
+// Edit Round's "Apply to later rounds" copies the ticked groups to the
+// championship's later rounds that haven't run yet (earlier ones stay as they are).
 class RoundApplyToOthersTest extends TestCase
 {
     use RefreshDatabase;
@@ -123,14 +123,31 @@ class RoundApplyToOthersTest extends TestCase
         $this->assertSame(30, (int) $round1->fresh()->race_duration);
     }
 
-    public function test_edit_page_offers_apply_to_other_rounds(): void
+    public function test_only_later_rounds_get_the_copy(): void
     {
         $round1 = $this->round(1);
-        $this->round(2);
+        $round2 = $this->round(2);
+        $round3 = $this->round(3);
+
+        $this->update($round2, ['race_duration' => 60, 'apply_to' => ['sessions']])->assertSessionHasNoErrors();
+
+        $this->assertSame(30, (int) $round1->fresh()->race_duration);
+        $this->assertSame(60, (int) $round3->fresh()->race_duration);
+    }
+
+    public function test_edit_page_offers_apply_to_later_rounds_only_when_there_are_any(): void
+    {
+        $round1 = $this->round(1);
+        $round2 = $this->round(2);
 
         $this->actingAs($this->manager)
             ->get(route('admin.leagues.championships.rounds.edit', [$this->league, $this->championship, $round1]))
             ->assertOk()
-            ->assertSee('Apply to other rounds');
+            ->assertSee('Apply to later rounds');
+
+        $this->actingAs($this->manager)
+            ->get(route('admin.leagues.championships.rounds.edit', [$this->league, $this->championship, $round2]))
+            ->assertOk()
+            ->assertDontSee('Apply to later rounds');
     }
 }
