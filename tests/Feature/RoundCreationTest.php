@@ -489,4 +489,57 @@ class RoundCreationTest extends TestCase
 
         $this->assertDatabaseMissing('races', ['championship_id' => $championship->id, 'track' => 'Monza']);
     }
+
+    // User-directed 2026-10-29: a round can be marked as having an official
+    // stream, linked on the championship's Rounds tab and on the event page.
+    public function test_round_official_stream_is_saved_and_linked_publicly(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league, ['status' => 'published']);
+        $manager = $this->makeManager($league);
+        $url = 'https://twitch.tv/xclusiveracing';
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
+                'track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i'),
+                'official_stream' => '1', 'official_stream_url' => $url,
+            ])
+            ->assertSessionHasNoErrors();
+
+        $round = $championship->rounds()->firstOrFail();
+        $this->assertSame($url, $round->official_stream_url);
+
+        $this->get(route('championships.show', $championship))->assertOk()->assertSee($url, false);
+        $this->get(route('events.show', $round))->assertOk()->assertSee('Official stream')->assertSee($url, false);
+    }
+
+    public function test_switching_official_stream_off_clears_the_link(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+        $manager = $this->makeManager($league);
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
+                'track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i'),
+                'official_stream_url' => 'https://twitch.tv/xclusiveracing',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertNull($championship->rounds()->firstOrFail()->official_stream_url);
+    }
+
+    public function test_official_stream_on_requires_a_link(): void
+    {
+        $league = $this->makeLeague('nlrl');
+        $championship = $this->makeChampionship($league);
+        $manager = $this->makeManager($league);
+
+        $this->actingAs($manager)
+            ->post(route('admin.leagues.championships.rounds.store', [$league, $championship]), [
+                'track' => 'Monza', 'scheduled_at' => now()->addWeek()->startOfHour()->format('Y-m-d\TH:i'),
+                'official_stream' => '1', 'official_stream_url' => '',
+            ])
+            ->assertSessionHasErrors('official_stream_url');
+    }
 }

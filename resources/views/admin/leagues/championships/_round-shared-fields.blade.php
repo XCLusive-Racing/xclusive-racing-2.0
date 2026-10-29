@@ -62,6 +62,23 @@
             @error('points_multiplier')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         </div>
 
+        @php
+            $streamUrl = old('official_stream_url', $defaults['official_stream_url'] ?? null);
+            $streamOn = (bool) old('official_stream', filled($streamUrl));
+        @endphp
+        <div class="col-md-6" data-official-stream>
+            <label class="cw-label">Official Stream</label>
+            <div class="d-flex flex-column gap-2">
+                {!! $toggle('official_stream', 'Streamed live', $streamOn, $idPrefix.'-official-stream') !!}
+                <input type="url" name="official_stream_url" value="{{ $streamUrl }}" maxlength="255"
+                       placeholder="https://twitch.tv/xclusiveracing" data-official-stream-url
+                       class="form-control form-control-sm @error('official_stream_url') is-invalid @enderror"
+                       @if(!$streamOn) hidden @endif>
+            </div>
+            <div class="cw-help">Linked on the championship and event pages.</div>
+            @error('official_stream_url')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+        </div>
+
         <div class="col-md-6">
             <label class="cw-label">Notes <span class="cw-optional">(optional)</span></label>
             <textarea name="description" rows="1" class="form-control form-control-sm">{{ old('description', $defaults['description']) }}</textarea>
@@ -267,6 +284,16 @@ document.addEventListener('change', function (e) {
     });
     var details = select.closest('div').nextElementSibling;
     if (details && details.tagName === 'DETAILS') details.open = true;
+});
+
+// Official Stream on shows the link field.
+document.addEventListener('change', function (e) {
+    var wrap = e.target.closest('[data-official-stream]');
+    if (!wrap || e.target.name !== 'official_stream') return;
+    var input = wrap.querySelector('[data-official-stream-url]');
+    input.hidden = !e.target.checked;
+    input.required = e.target.checked;
+    if (e.target.checked) input.focus();
 });
 
 // Round type "+ Add type…" shows the field for the new name.

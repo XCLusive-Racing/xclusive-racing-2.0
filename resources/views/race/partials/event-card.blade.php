@@ -109,6 +109,11 @@
             @if($race->sr_requirement)
             <span class="xcl-sb-badge xcl-sb-badge--sr">{{ number_format($race->sr_requirement, 1) }} SR</span>
             @endif
+            @if($race->official_stream_url)
+            <a href="{{ $race->official_stream_url }}" target="_blank" rel="noopener nofollow" class="xcl-official-stream xcl-official-stream--xs" title="Official stream">
+                <i class="{{ $race->officialStreamIcon() }}"></i> STREAM
+            </a>
+            @endif
             @if($race->status === 'open')
                 <span class="xcl-sb-badge xcl-sb-badge--open">OPEN</span>
             @else

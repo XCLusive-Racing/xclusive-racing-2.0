@@ -510,6 +510,8 @@ class ChampionshipWizardController extends Controller
             'description' => 'nullable|string',
             'xcl_r_multiplier' => 'nullable|numeric|min:0.6|max:2.5',
             'points_multiplier' => ['nullable', Rule::in(Race::POINTS_MULTIPLIERS)],
+            'official_stream' => 'nullable|boolean',
+            'official_stream_url' => 'nullable|required_if_accepted:official_stream|url:http,https|max:255',
             'pitstop_count' => 'nullable|integer|min:0|max:9',
             'tyre_set_count' => 'nullable|integer|min:1|max:50',
             'fixed_stop_time' => 'nullable|boolean',
@@ -546,6 +548,9 @@ class ChampionshipWizardController extends Controller
         $data['mandatory_refuelling'] = $request->boolean('mandatory_refuelling');
         $data['mandatory_tyre_change'] = $request->boolean('mandatory_tyre_change');
         $data['points_multiplier'] = (float) ($data['points_multiplier'] ?? 1);
+        // Switching Official Stream off drops the link rather than keeping it hidden.
+        $data['official_stream_url'] = $request->boolean('official_stream') ? ($data['official_stream_url'] ?? null) : null;
+        unset($data['official_stream']);
 
         return $data;
     }

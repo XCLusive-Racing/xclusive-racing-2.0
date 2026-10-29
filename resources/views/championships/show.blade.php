@@ -365,15 +365,15 @@
                     <div class="px-4 py-4 text-center" style="color:#6b7280;font-size:.875rem">No rounds scheduled yet.</div>
                     @else
                     @foreach($rounds as $round)
-                    <a href="{{ route('events.show', $round) }}"
-                       class="px-4 py-3 d-flex align-items-center gap-3 text-decoration-none"
+                    {{-- The row links to the event (stretched-link); the stream link sits above it. --}}
+                    <div class="px-4 py-3 d-flex align-items-center gap-3 position-relative"
                        style="border-bottom:1px solid #1f2937">
                         <div class="fw-black flex-shrink-0" style="width:2rem;text-align:center;font-size:.85rem;color:#6b7280">
                             R{{ $round->round_number }}
                         </div>
                         <div class="flex-grow-1">
                             <div class="fw-bold text-white" style="font-size:.9rem">
-                                {{ $round->title }}
+                                <a href="{{ route('events.show', $round) }}" class="stretched-link text-white text-decoration-none">{{ $round->title }}</a>
                                 @if($round->round_type)
                                 <span class="badge ms-1 fw-bold text-uppercase" style="font-size:.6rem;background:#db277722;color:#f472b6;letter-spacing:.04em">{{ $round->round_type }}</span>
                                 @endif
@@ -385,10 +385,16 @@
                                 {{ $round->track }} · <x-local-time :at="$round->scheduled_at" format="date-time-comma" />
                             </div>
                         </div>
+                        @if($round->official_stream_url)
+                        <a href="{{ $round->official_stream_url }}" target="_blank" rel="noopener nofollow"
+                           class="xcl-official-stream xcl-official-stream--sm position-relative" style="z-index:2" title="Official stream">
+                            <i class="{{ $round->officialStreamIcon() }}"></i> <span class="d-none d-sm-inline">Watch</span>
+                        </a>
+                        @endif
                         <div>
                             <span class="status-badge status-{{ $round->status }}">{{ ucfirst($round->status) }}</span>
                         </div>
-                    </a>
+                    </div>
                     @endforeach
                     @endif
                 </div>
